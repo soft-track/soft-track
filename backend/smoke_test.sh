@@ -80,11 +80,28 @@ comment_resp=$(curl -sf -X POST "$BASE_URL/issues/$ISSUE_ID/comments" \
 
 echo "== list issues (filtered by status) =="
 list_resp=$(curl -sf "$BASE_URL/teams/$TEAM_ID/issues?status=in_progress" -H "$AUTH_HEADER")
-[ "$(echo "$list_resp" | jq 'length')" = "1" ] && pass "GET issues filtered by status returns 1 issue" || fail "status filter returned wrong count"
+# Collections are paginated: {"items": [...], "total": n, "limit": n, "offset": n}
+[ "$(echo "$list_resp" | jq '.items | length')" = "1" ] && pass "GET issues filtered by status returns 1 issue" || fail "status filter returned wrong count"
+[ "$(echo "$list_resp" | jq -r '.total')" = "1" ] && pass "the page reports total=1 for the filter" || fail "total did not match the filter"
+
+echo "== pagination =="
+page_resp=$(curl -sf "$BASE_URL/teams/$TEAM_ID/issues?limit=1&offset=0" -H "$AUTH_HEADER")
+[ "$(echo "$page_resp" | jq -r '.limit')" = "1" ] && pass "limit is echoed in the envelope" || fail "limit not echoed"
+capped=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/teams/$TEAM_ID/issues?limit=201" -H "$AUTH_HEADER")
+[ "$capped" = "422" ] && pass "a limit above the maximum is rejected" || fail "limit cap not enforced (got $capped)"
+
+echo "== comments are paginated too =="
+comments_resp=$(curl -sf "$BASE_URL/issues/$ISSUE_ID/comments" -H "$AUTH_HEADER")
+[ "$(echo "$comments_resp" | jq '.items | length')" = "1" ] && pass "GET comments returns the comment" || fail "comment list wrong"
 
 echo "== get single issue =="
 get_resp=$(curl -sf "$BASE_URL/issues/$ISSUE_ID" -H "$AUTH_HEADER")
 [ "$(echo "$get_resp" | jq -r .title)" = "Smoke issue" ] && pass "GET /issues/$ISSUE_ID returns correct title" || fail "get issue mismatch"
+
+echo "== deleting an issue that has a label and a comment =="
+del_code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$BASE_URL/issues/$ISSUE_ID" -H "$AUTH_HEADER")
+[ "$del_code" = "204" ] && pass "DELETE removes the issue and its dependent rows" || fail "delete returned $del_code"
+
 
 echo ""
 echo "All smoke tests passed."

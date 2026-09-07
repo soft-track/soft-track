@@ -121,7 +121,7 @@ jobs:
           echo "openapi.json matches the running app."
 
   docker:
-    name: Docker · images build
+    name: Docker · build and smoke test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -129,3 +129,30 @@ jobs:
 
       - name: Build the stack
         run: docker compose build
+
+      # The unit suite runs against SQLite with the app in-process. This runs
+      # the real images against real Postgres over HTTP, which is the only
+      # place a response-shape change shows up before a user finds it.
+      - name: Start the stack
+        run: |
+          docker compose up -d
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:8000/health >/dev/null; then
+              echo "backend healthy"; exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::backend did not become healthy"
+          docker compose logs backend
+          exit 1
+
+      - name: Smoke test the running API
+        run: BASE_URL=http://localhost:8000 ./backend/smoke_test.sh
+
+      - name: Backend logs on failure
+        if: failure()
+        run: docker compose logs backend
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
