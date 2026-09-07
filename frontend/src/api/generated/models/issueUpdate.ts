@@ -15,5 +15,6 @@ export interface IssueUpdate {
   status?: IssueStatus | null;
   priority?: IssuePriority | null;
   assignee_id?: number | null;
+  parent_id?: number | null;
   label_ids?: number[] | null;
 }

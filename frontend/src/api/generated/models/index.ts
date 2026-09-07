@@ -21,6 +21,7 @@ export * from './listCommentsIssuesIssueIdCommentsGetParams';
 export * from './listIssuesTeamsTeamIdIssuesGetParams';
 export * from './pageCommentRead';
 export * from './pageIssueRead';
+export * from './parentRef';
 export * from './projectCreate';
 export * from './projectRead';
 export * from './teamCreate';

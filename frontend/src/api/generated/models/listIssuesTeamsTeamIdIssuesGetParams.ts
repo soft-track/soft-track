@@ -14,6 +14,10 @@ status?: IssueStatus | null;
 priority?: IssuePriority | null;
 assignee_id?: number | null;
 /**
+ * Only sub-issues of this issue.
+ */
+parent_id?: number | null;
+/**
  * @minimum 1
  * @maximum 200
  */

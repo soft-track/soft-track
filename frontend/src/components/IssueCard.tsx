@@ -35,7 +35,17 @@ export function IssueCard({ issue }: { issue: IssueRead }) {
     >
       <div className="mb-1.5 flex items-center justify-between">
         <span className="identifier text-xs font-medium text-neutral-400">{issue.identifier}</span>
-        <PriorityIcon priority={issue.priority} />
+        <div className="flex items-center gap-1.5">
+          {issue.child_count > 0 && (
+            <span
+              className="identifier text-[10px] text-neutral-400"
+              title={`${issue.completed_child_count} of ${issue.child_count} sub-issues done`}
+            >
+              {issue.completed_child_count}/{issue.child_count}
+            </span>
+          )}
+          <PriorityIcon priority={issue.priority} />
+        </div>
       </div>
       <p className="mb-2 text-sm font-medium leading-snug text-neutral-900">{issue.title}</p>
       <div className="flex items-center justify-between">

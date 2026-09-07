@@ -9,7 +9,7 @@ from sqlalchemy import func
 from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
-from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate
+from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate, ParentRef
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.tables import (
     Comment,
@@ -21,11 +21,28 @@ from lib_softtrack.tables import (
     Team,
     User,
 )
+from lib_softtrack.subissues import child_progress, detach_children, validate_parent
 from lib_softtrack.teams import get_team_or_404, require_team_member
+
+
+def _parent_ref(issue: Issue, session: Session) -> Optional[ParentRef]:
+    """The breadcrumb back to a sub-issue's parent, if it has one."""
+    if issue.parent_id is None:
+        return None
+    parent = session.get(Issue, issue.parent_id)
+    if parent is None:
+        return None
+    team = session.get(Team, parent.team_id)
+    return ParentRef(
+        id=parent.id,
+        identifier=f"{team.key}-{parent.number}",
+        title=parent.title,
+    )
 
 
 def issue_to_read(issue: Issue, session: Session) -> IssueRead:
     """Expand an Issue row into the shape the API returns."""
+    done, total = child_progress(session, [issue.id]).get(issue.id, (0, 0))
     team = session.get(Team, issue.team_id)
     assignee = session.get(User, issue.assignee_id) if issue.assignee_id else None
     creator = session.get(User, issue.creator_id)
@@ -45,6 +62,9 @@ def issue_to_read(issue: Issue, session: Session) -> IssueRead:
         status=issue.status,
         priority=issue.priority,
         assignee=UserPublic.model_validate(assignee) if assignee else None,
+        parent=_parent_ref(issue, session),
+        completed_child_count=done,
+        child_count=total,
         creator=UserPublic.model_validate(creator),
         labels=[label for label in labels if label is not None],
         created_at=issue.created_at,
@@ -82,7 +102,17 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
         for user in session.exec(select(User).where(User.id.in_(user_ids))).all()
     }
 
+    # One query each for sub-issue progress and for the parents on this page,
+    # keeping the constant-query property this function exists for.
+    progress = child_progress(session, issue_ids)
+    parent_ids = {issue.parent_id for issue in issues if issue.parent_id}
+    parents = {
+        parent.id: parent
+        for parent in session.exec(select(Issue).where(Issue.id.in_(parent_ids))).all()
+    }
+
     team_ids = {issue.team_id for issue in issues}
+    team_ids |= {parent.team_id for parent in parents.values()}
     teams = {
         team.id: team
         for team in session.exec(select(Team).where(Team.id.in_(team_ids))).all()
@@ -106,11 +136,24 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
             ),
             creator=UserPublic.model_validate(users[issue.creator_id]),
             labels=labels_by_issue.get(issue.id, []),
+            parent=_parent_ref_from(parents.get(issue.parent_id), teams),
+            completed_child_count=progress.get(issue.id, (0, 0))[0],
+            child_count=progress.get(issue.id, (0, 0))[1],
             created_at=issue.created_at,
             updated_at=issue.updated_at,
         )
         for issue in issues
     ]
+
+
+def _parent_ref_from(parent: Optional[Issue], teams: dict) -> Optional[ParentRef]:
+    if parent is None or parent.team_id not in teams:
+        return None
+    return ParentRef(
+        id=parent.id,
+        identifier=f"{teams[parent.team_id].key}-{parent.number}",
+        title=parent.title,
+    )
 
 
 def set_labels(issue_id: int, label_ids: list[int], session: Session) -> None:
@@ -152,6 +195,10 @@ def create_issue(
         assignee_id=payload.assignee_id,
         creator_id=current_user.id,
     )
+
+    if payload.parent_id is not None:
+        issue.parent_id = validate_parent(session, issue, payload.parent_id).id
+
     session.add(issue)
     session.commit()
     session.refresh(issue)
@@ -171,6 +218,7 @@ def list_issues(
     status: Optional[IssueStatus] = None,
     priority: Optional[IssuePriority] = None,
     assignee_id: Optional[int] = None,
+    parent_id: Optional[int] = None,
     limit: int = DEFAULT_LIMIT,
     offset: int = 0,
 ) -> Page[IssueRead]:
@@ -186,6 +234,8 @@ def list_issues(
         filters.append(Issue.priority == priority)
     if assignee_id is not None:
         filters.append(Issue.assignee_id == assignee_id)
+    if parent_id is not None:
+        filters.append(Issue.parent_id == parent_id)
 
     # `total` counts everything matching the filters, not the page, so the UI
     # can show "50 of 1,204" without a second request.
@@ -220,6 +270,10 @@ def update_issue(
     require_team_member(issue.team_id, current_user, session)
 
     data = payload.model_dump(exclude_unset=True, exclude={"label_ids"})
+    if data.get("parent_id") is not None:
+        # Validate before assigning, so a rejected parent leaves the issue
+        # exactly as it was rather than half-updated.
+        validate_parent(session, issue, data["parent_id"])
     for field, value in data.items():
         setattr(issue, field, value)
     issue.updated_at = datetime.now(timezone.utc)
@@ -255,6 +309,19 @@ def delete_issue(session: Session, current_user: User, issue_id: int) -> None:
     comments = session.exec(select(Comment).where(Comment.issue_id == issue_id)).all()
     for comment in comments:
         session.delete(comment)
+
+    # Children are promoted to top level rather than deleted. Losing a parent
+    # should not lose the work underneath it -- that is a lot of data to
+    # destroy with one click, and the children are usually the part worth
+    # keeping. They also hold a foreign key to this row, so they have to be
+    # dealt with either way.
+    detach_children(session, issue_id)
+
+    # Flush the dependent changes before removing the issue itself. With no
+    # relationship configured between these tables SQLAlchemy has no
+    # dependency graph to order the statements by, so it is free to emit the
+    # parent DELETE before the children are detached and trip the foreign key.
+    session.flush()
 
     session.delete(issue)
     session.commit()

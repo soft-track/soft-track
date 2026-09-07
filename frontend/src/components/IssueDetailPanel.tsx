@@ -9,6 +9,7 @@ import { PRIORITY_META, PRIORITY_ORDER, STATUS_META, STATUS_ORDER } from '../lib
 import { useTeamContext } from '../team/TeamContext'
 import { Avatar } from './Avatar'
 import { PriorityIcon } from './PriorityIcon'
+import { SubIssuesSection } from './SubIssuesSection'
 
 export function IssueDetailPanel({
   issueId,
@@ -94,6 +95,7 @@ export function IssueDetailPanel({
         ) : (
           <>
             <div className="flex-1 px-4 py-4">
+              {issue.parent && <SubIssuesSection issue={issue} />}
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -186,7 +188,9 @@ export function IssueDetailPanel({
                 </div>
               </div>
 
-              <div className="mt-2 flex items-center gap-1.5 text-xs text-neutral-400">
+              {!issue.parent && <SubIssuesSection issue={issue} />}
+
+              <div className="mt-4 flex items-center gap-1.5 text-xs text-neutral-400">
                 <PriorityIcon priority={issue.priority} />
                 <span>
                   Created by {issue.creator.full_name},{' '}

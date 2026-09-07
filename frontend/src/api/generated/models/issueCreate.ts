@@ -15,5 +15,6 @@ export interface IssueCreate {
   status?: IssueStatus;
   priority?: IssuePriority;
   assignee_id?: number | null;
+  parent_id?: number | null;
   label_ids?: number[];
 }
