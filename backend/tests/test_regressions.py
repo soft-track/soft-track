@@ -1,8 +1,11 @@
-"""Regressions for known, filed bugs.
+"""Regressions for filed bugs.
 
-These are marked xfail(strict=True): they fail today, and the moment someone
-fixes the underlying bug pytest reports XPASS as a failure, which is the prompt
-to delete the marker. That keeps a fixed bug from quietly losing its test.
+Tests for bugs that are still open are marked xfail(strict=True): the moment
+someone fixes one, pytest reports XPASS as a failure, which is the prompt to
+delete the marker. That keeps a fixed bug from quietly losing its test.
+
+soft-track#1 is fixed, so its two tests now run normally and assert not just
+that the delete succeeds but that the dependent rows are actually gone.
 """
 
 import subprocess
@@ -10,14 +13,13 @@ import sys
 import textwrap
 
 import pytest
+from sqlmodel import select
+
+from lib_softtrack.tables import Comment, IssueLabelLink, Label
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="soft-track#1: delete_issue drops the Issue row without clearing "
-    "IssueLabelLink/Comment first, so the FK blocks it",
-)
-def test_deleting_an_issue_that_has_a_label(client, team):
+def test_deleting_an_issue_that_has_a_label(client, team, session):
+    """Regression for soft-track#1."""
     label = client.post(
         f"/teams/{team['team']['id']}/labels",
         json={"name": "Bug", "color": "#e0424a"},
@@ -32,12 +34,19 @@ def test_deleting_an_issue_that_has_a_label(client, team):
     response = client.delete(f"/issues/{issue['id']}", headers=team["headers"])
     assert response.status_code == 204
 
+    # the link row must be gone too, not merely orphaned
+    assert (
+        session.exec(
+            select(IssueLabelLink).where(IssueLabelLink.issue_id == issue["id"])
+        ).all()
+        == []
+    )
+    # the label itself survives -- it belongs to the team, not the issue
+    assert session.get(Label, label["id"]) is not None
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="soft-track#1: the same FK problem, reached through a comment",
-)
-def test_deleting_an_issue_that_has_a_comment(client, team):
+
+def test_deleting_an_issue_that_has_a_comment(client, team, session):
+    """Regression for soft-track#1."""
     issue = client.post(
         f"/teams/{team['team']['id']}/issues",
         json={"title": "has a comment"},
@@ -51,6 +60,10 @@ def test_deleting_an_issue_that_has_a_comment(client, team):
 
     response = client.delete(f"/issues/{issue['id']}", headers=team["headers"])
     assert response.status_code == 204
+
+    assert (
+        session.exec(select(Comment).where(Comment.issue_id == issue["id"])).all() == []
+    )
 
 
 @pytest.mark.xfail(

@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate
 from lib_softtrack.tables import (
+    Comment,
     Issue,
     IssueLabelLink,
     IssuePriority,
@@ -153,5 +154,25 @@ def update_issue(
 def delete_issue(session: Session, current_user: User, issue_id: int) -> None:
     issue = get_issue_or_404(session, issue_id)
     require_team_member(issue.team_id, current_user, session)
+
+    # Clear the rows that point at this issue before removing it. Postgres
+    # enforces these foreign keys and rejects the delete otherwise; SQLite only
+    # does so with PRAGMA foreign_keys=ON, which is why this survived until the
+    # stack moved to Postgres (soft-track#1).
+    #
+    # Done in the service rather than with ON DELETE CASCADE because the schema
+    # is still created by SQLModel.metadata.create_all, so a constraint change
+    # would never reach an existing database. Worth revisiting once Alembic
+    # lands (soft-track#5).
+    label_links = session.exec(
+        select(IssueLabelLink).where(IssueLabelLink.issue_id == issue_id)
+    ).all()
+    for link in label_links:
+        session.delete(link)
+
+    comments = session.exec(select(Comment).where(Comment.issue_id == issue_id)).all()
+    for comment in comments:
+        session.delete(comment)
+
     session.delete(issue)
     session.commit()
