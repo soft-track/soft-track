@@ -1,4 +1,11 @@
-import { type KeyboardEvent, useRef, useState } from 'react'
+import {
+  type ClipboardEvent,
+  type DragEvent,
+  type KeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
 import { Markdown } from './Markdown'
 import { type Mentionable, matchMentions, mentionHandles } from './mentions'
@@ -15,6 +22,7 @@ export function MarkdownEditor({
   autoFocus = false,
   onSubmit,
   onBlur,
+  onUploadFiles,
   className = '',
 }: {
   value: string
@@ -26,6 +34,14 @@ export function MarkdownEditor({
   /** Called on Cmd/Ctrl+Enter. */
   onSubmit?: () => void
   onBlur?: () => void
+  /**
+   * Store files and return what to write into the text, in the same order.
+   *
+   * Deliberately not typed as attachments: this component knows about
+   * markdown and a caret, and nothing about issues. Omit it and paste, drop
+   * and the attach button all disappear rather than failing when used.
+   */
+  onUploadFiles?: (files: File[]) => Promise<Array<{ markdown: string }>>
   className?: string
 }) {
   const [mode, setMode] = useState<Mode>('write')
@@ -34,7 +50,18 @@ export function MarkdownEditor({
   // selection during render, with no effect and no intermediate frame showing
   // the old row highlighted.
   const [selection, setSelection] = useState({ query: '', index: 0 })
+  const [droppingOver, setDroppingOver] = useState(false)
+  const [busy, setBusy] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // An upload takes a moment, and the caret can move while it runs. Reading
+  // the current text from a ref rather than from the render that started the
+  // upload means the insertion cannot clobber what was typed in between.
+  const valueRef = useRef(value)
+  useEffect(() => {
+    valueRef.current = value
+  }, [value])
 
   const suggestions = mention ? matchMentions(people, mention.query) : []
   const highlighted = selection.query === (mention?.query ?? '') ? selection.index : 0
@@ -70,6 +97,63 @@ export function MarkdownEditor({
       el.focus()
       el.setSelectionRange(caret, caret)
     })
+  }
+
+  /**
+   * Upload files and write links to them in at the caret.
+   *
+   * The caret is read before the upload starts, because that is where the
+   * user was looking when they pasted. Anything typed while it uploads is
+   * kept -- the text is re-read from the ref and the offset is clamped to it.
+   */
+  const uploadInto = async (files: File[]) => {
+    if (!onUploadFiles || files.length === 0) return
+    const caret = textareaRef.current?.selectionStart ?? value.length
+
+    setBusy(true)
+    try {
+      const written = await onUploadFiles(files)
+      if (written.length === 0) return
+
+      const current = valueRef.current
+      const at = Math.min(caret, current.length)
+      const before = current.slice(0, at)
+      const after = current.slice(at)
+      // Keep the embed on its own line: an image dropped mid-sentence
+      // otherwise renders inline and pushes the text around it.
+      const lead = before === '' || before.endsWith('\n') ? '' : '\n'
+      const inserted = lead + written.map((item) => item.markdown).join('\n') + '\n'
+
+      onChange(before + inserted + after)
+
+      const next = before.length + inserted.length
+      requestAnimationFrame(() => {
+        const element = textareaRef.current
+        if (!element) return
+        element.focus()
+        element.setSelectionRange(next, next)
+      })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const onPaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const files = Array.from(event.clipboardData?.files ?? [])
+    if (!onUploadFiles || files.length === 0) return
+    // A screenshot on the clipboard also arrives as an image/png text flavour
+    // in some browsers; taking the files means the default paste must not
+    // also run, or the same picture lands twice.
+    event.preventDefault()
+    void uploadInto(files)
+  }
+
+  const onDrop = (event: DragEvent<HTMLTextAreaElement>) => {
+    const files = Array.from(event.dataTransfer?.files ?? [])
+    setDroppingOver(false)
+    if (!onUploadFiles || files.length === 0) return
+    event.preventDefault()
+    void uploadInto(files)
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -127,8 +211,37 @@ export function MarkdownEditor({
           </button>
         </div>
         {mode === 'write' && (
-          <span className="text-[11px] text-neutral-400">
-            Markdown supported · <span className="identifier">@</span> to mention
+          <span className="flex items-center gap-2 text-[11px] text-neutral-400">
+            {onUploadFiles ? (
+              <>
+                <span>
+                  Markdown · <span className="identifier">@</span> to mention · paste or
+                  drop a file
+                </span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    void uploadInto(Array.from(e.target.files ?? []))
+                    // Let the same file be picked twice in a row.
+                    e.target.value = ''
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="rounded-md px-1.5 py-0.5 font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
+                >
+                  {busy ? 'Uploading…' : 'Attach'}
+                </button>
+              </>
+            ) : (
+              <span>
+                Markdown supported · <span className="identifier">@</span> to mention
+              </span>
+            )}
           </span>
         )}
       </div>
@@ -146,6 +259,16 @@ export function MarkdownEditor({
             onKeyUp={syncMention}
             onClick={syncMention}
             onKeyDown={onKeyDown}
+            onPaste={onPaste}
+            onDrop={onDrop}
+            onDragOver={(e) => {
+              if (!onUploadFiles) return
+              // Without preventDefault the browser navigates to the dropped
+              // file and takes the half-written comment with it.
+              e.preventDefault()
+              setDroppingOver(true)
+            }}
+            onDragLeave={() => setDroppingOver(false)}
             onBlur={() => {
               // Let a click on a suggestion land before the menu closes.
               setTimeout(() => setMention(null), 120)
@@ -153,7 +276,11 @@ export function MarkdownEditor({
             }}
             placeholder={placeholder}
             rows={rows}
-            className="w-full resize-y rounded-md border border-neutral-200 px-2.5 py-2 text-sm text-neutral-700 placeholder-neutral-300 focus:border-brand-400 focus:outline-none"
+            className={`w-full resize-y rounded-md border px-2.5 py-2 text-sm text-neutral-700 placeholder-neutral-300 focus:outline-none ${
+              droppingOver
+                ? 'border-brand-400 bg-brand-50'
+                : 'border-neutral-200 focus:border-brand-400'
+            }`}
           />
 
           {mention && suggestions.length > 0 && (

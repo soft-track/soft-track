@@ -979,6 +979,7 @@
           "issues"
         ],
         "summary": "Delete Issue",
+        "description": "Delete an issue and everything that only existed because of it.\n\nAttachments go with it, bytes included -- see\n`lib_softtrack/issues.py`. Sub-issues do not: they are promoted to top\nlevel rather than destroyed.",
         "operationId": "delete_issue_issues__issue_id__delete",
         "security": [
           {
@@ -1276,6 +1277,201 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issue_id}/attachments": {
+      "post": {
+        "tags": [
+          "attachments"
+        ],
+        "summary": "Upload Attachment",
+        "description": "Attach a file to an issue.\n\nThe file starts out belonging to the issue. Posting a comment with its id\nin `attachment_ids` moves it to that comment -- which is the order the\ninterface needs, because a screenshot is pasted before the sentence about\nit is written.",
+        "operationId": "upload_attachment_issues__issue_id__attachments_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_attachment_issues__issue_id__attachments_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "attachments"
+        ],
+        "summary": "List Issue Attachments",
+        "description": "Files attached to the issue itself.\n\nFiles belonging to a comment are returned with that comment instead, so\nnothing appears twice.",
+        "operationId": "list_issue_attachments_issues__issue_id__attachments_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AttachmentRead"
+                  },
+                  "title": "Response List Issue Attachments Issues  Issue Id  Attachments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attachments/{attachment_id}/content": {
+      "get": {
+        "tags": [
+          "attachments"
+        ],
+        "summary": "Download Attachment",
+        "description": "The bytes.\n\nAuthenticated like every other route, which means an `<img src>` cannot\nfetch it directly -- the browser sends no Authorization header. The\nfrontend loads images through the API client and renders the result as a\nblob URL. The alternative, a token in the URL, would put a credential into\nevery issue description that embeds an image and into every log line that\nrecords the request.",
+        "operationId": "download_attachment_attachments__attachment_id__content_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Attachment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attachments/{attachment_id}": {
+      "delete": {
+        "tags": [
+          "attachments"
+        ],
+        "summary": "Delete Attachment",
+        "description": "Remove an attachment and its bytes.\n\nAny member of the team may, which matches how the rest of the app treats\nissues and comments: membership is the boundary, and there is no\nper-object ownership anywhere else to be consistent with.",
+        "operationId": "delete_attachment_attachments__attachment_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Attachment Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -2068,6 +2264,70 @@
         "title": "AssigneeLoad",
         "description": "What one person is carrying. `user` is null for unassigned work."
       },
+      "AttachmentRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "issue_id": {
+            "type": "integer",
+            "title": "Issue Id"
+          },
+          "comment_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "is_image": {
+            "type": "boolean",
+            "title": "Is Image"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "uploaded_by": {
+            "$ref": "#/components/schemas/UserPublic"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "issue_id",
+          "filename",
+          "content_type",
+          "size_bytes",
+          "is_image",
+          "url",
+          "uploaded_by",
+          "created_at"
+        ],
+        "title": "AttachmentRead"
+      },
       "Body_import_jira_teams__team_id__import_jira_post": {
         "properties": {
           "file": {
@@ -2147,6 +2407,21 @@
           "password"
         ],
         "title": "Body_login_auth_login_post"
+      },
+      "Body_upload_attachment_issues__issue_id__attachments_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "The file to attach."
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_attachment_issues__issue_id__attachments_post"
       },
       "Burndown": {
         "properties": {
@@ -2239,6 +2514,14 @@
             "type": "string",
             "minLength": 1,
             "title": "Body"
+          },
+          "attachment_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Attachment Ids",
+            "default": []
           }
         },
         "type": "object",
@@ -2263,6 +2546,14 @@
           },
           "author": {
             "$ref": "#/components/schemas/UserPublic"
+          },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/AttachmentRead"
+            },
+            "type": "array",
+            "title": "Attachments",
+            "default": []
           },
           "created_at": {
             "type": "string",

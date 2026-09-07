@@ -30,6 +30,11 @@ services:
       #   python -c "import secrets; print(secrets.token_urlsafe(48))"
       ENVIRONMENT: ${ENVIRONMENT:-development}
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-me-in-production}
+      # Uploaded files. On a volume for the same reason the database is: a
+      # rebuilt container must not take everyone's screenshots with it.
+      ATTACHMENT_DIR: /data/attachments
+    volumes:
+      - softtrack-files:/data
     depends_on:
       db:
         condition: service_healthy
@@ -58,3 +63,4 @@ services:
 
 volumes:
   softtrack-db:
+  softtrack-files:

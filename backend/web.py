@@ -28,6 +28,20 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
     ]
 
+    # --- Attachments ---------------------------------------------------
+    #: "local" (files under attachment_dir) or "s3" (any S3-compatible
+    #: store). See lib_softtrack/storage.py.
+    attachment_storage: str = "local"
+    attachment_dir: str = "./attachments"
+    #: Per file. Generous enough for a screen recording of a bug, small
+    #: enough that one upload cannot fill a disk.
+    attachment_max_bytes: int = 25 * 1024 * 1024
+    attachment_s3_bucket: str = ""
+    #: Set for MinIO, Ceph, R2 and the like; leave blank for AWS.
+    attachment_s3_endpoint_url: str = ""
+    attachment_s3_region: str = ""
+    attachment_s3_prefix: str = ""
+
     class Config:
         env_file = ".env"
 
@@ -47,6 +61,23 @@ class Settings(BaseSettings):
                 '  python -c "import secrets; print(secrets.token_urlsafe(48))"\n'
                 "and set SECRET_KEY, or set ENVIRONMENT=development if this is "
                 "a local machine."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _require_a_bucket_for_s3_attachments(self) -> "Settings":
+        """Fail at startup rather than on the first upload.
+
+        A misconfigured store is not discovered until someone attaches a file,
+        which in practice is days after the deploy and by then looks like a
+        bug in the feature rather than a missing setting.
+        """
+        if self.attachment_storage == "s3" and not self.attachment_s3_bucket:
+            raise ValueError("ATTACHMENT_STORAGE=s3 needs ATTACHMENT_S3_BUCKET set.")
+        if self.attachment_storage not in ("local", "s3"):
+            raise ValueError(
+                f"ATTACHMENT_STORAGE={self.attachment_storage!r} is not one of "
+                "'local' or 's3'."
             )
         return self
 

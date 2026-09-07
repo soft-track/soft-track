@@ -15,7 +15,11 @@ COPY . .
 # Fallback for running this image on its own (`docker run`). docker compose
 # overrides it to point at the Postgres service.
 ENV DATABASE_URL=sqlite:////data/softtrack.db
-RUN mkdir -p /data
+# Attachment bytes live on the filesystem rather than in the database. Under
+# /data so one volume mount keeps them, and so an image run without a volume
+# still works instead of failing on the first upload.
+ENV ATTACHMENT_DIR=/data/attachments
+RUN mkdir -p /data/attachments
 
 EXPOSE 8000
 

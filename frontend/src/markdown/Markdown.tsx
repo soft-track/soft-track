@@ -3,6 +3,8 @@ import ReactMarkdown, { type Components } from 'react-markdown'
 import type { PluggableList } from 'unified'
 import remarkGfm from 'remark-gfm'
 
+import { AttachmentImage } from '../attachments/AttachmentImage'
+import { isAttachmentUrl } from '../attachments/urls'
 import type { Mentionable } from './mentions'
 import { remarkMentions } from './remarkMentions'
 
@@ -134,9 +136,15 @@ export function Markdown({
     ),
     td: ({ children }) => <td className="border-b border-neutral-100 px-2 py-1">{children}</td>,
     hr: () => <hr className="my-3 border-neutral-100" />,
-    img: ({ src, alt }) => (
-      <img src={src} alt={alt} className="my-2 max-w-full rounded-md" loading="lazy" />
-    ),
+    // An attachment is behind the same bearer token as everything else, and
+    // an <img> sends no Authorization header, so ours are fetched through the
+    // API client and shown as blob URLs. Anything else is an ordinary image.
+    img: ({ src, alt }) =>
+      isAttachmentUrl(src) ? (
+        <AttachmentImage src={src} alt={alt} />
+      ) : (
+        <img src={src} alt={alt} className="my-2 max-w-full rounded-md" loading="lazy" />
+      ),
   }
 
   return (

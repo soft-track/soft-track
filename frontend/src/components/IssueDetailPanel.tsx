@@ -2,9 +2,16 @@ import { useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
 import { type FormEvent, useEffect, useState } from 'react'
 
+import {
+  useDeleteAttachmentAttachmentsAttachmentIdDelete,
+  useListIssueAttachmentsIssuesIssueIdAttachmentsGet,
+} from '../api/generated/endpoints/attachments/attachments'
 import { useCreateCommentIssuesIssueIdCommentsPost, useListCommentsIssuesIssueIdCommentsGet } from '../api/generated/endpoints/comments/comments'
 import { useGetIssueIssuesIssueIdGet, useUpdateIssueIssuesIssueIdPatch } from '../api/generated/endpoints/issues/issues'
-import { IssuePriority, IssueStatus } from '../api/generated/models'
+import { type AttachmentRead, IssuePriority, IssueStatus } from '../api/generated/models'
+import { AttachmentList } from '../attachments/AttachmentList'
+import { useAttachmentUpload } from '../attachments/useAttachmentUpload'
+import { attachmentMarkdown } from '../attachments/urls'
 import { isPlainKey, isTypingTarget } from '../keyboard/typing'
 import {
   ESTIMATE_SCALE,
@@ -33,8 +40,11 @@ export function IssueDetailPanel({
 
   const issueQuery = useGetIssueIssuesIssueIdGet(issueId)
   const commentsQuery = useListCommentsIssuesIssueIdCommentsGet(issueId)
+  const attachmentsQuery = useListIssueAttachmentsIssuesIssueIdAttachmentsGet(issueId)
   const updateIssue = useUpdateIssueIssuesIssueIdPatch()
   const createComment = useCreateCommentIssuesIssueIdCommentsPost()
+  const deleteAttachment = useDeleteAttachmentAttachmentsAttachmentIdDelete()
+  const { uploadFiles, uploading, error: uploadError } = useAttachmentUpload(issueId)
 
   const issue = issueQuery.data
 
@@ -42,6 +52,10 @@ export function IssueDetailPanel({
   const [description, setDescription] = useState('')
   const [commentBody, setCommentBody] = useState('')
   const [editingDescription, setEditingDescription] = useState(false)
+  // Files uploaded while this comment is being written. They belong to the
+  // issue until the comment is posted and claims them, which is why they are
+  // tracked here rather than read back from the server.
+  const [commentFiles, setCommentFiles] = useState<AttachmentRead[]>([])
 
   useEffect(() => {
     if (issue) {
@@ -79,6 +93,29 @@ export function IssueDetailPanel({
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [onClose])
 
+  const invalidateAttachments = () =>
+    queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}/attachments`] })
+
+  /** Upload for the description: the files stay on the issue. */
+  const uploadForDescription = async (files: File[]) => {
+    const uploaded = await uploadFiles(files)
+    invalidateAttachments()
+    return uploaded.map((a) => ({ markdown: attachmentMarkdown(a) }))
+  }
+
+  /** Upload for the comment box: remember what to claim on submit. */
+  const uploadForComment = async (files: File[]) => {
+    const uploaded = await uploadFiles(files)
+    setCommentFiles((current) => [...current, ...uploaded])
+    return uploaded.map((a) => ({ markdown: attachmentMarkdown(a) }))
+  }
+
+  const removeAttachment = async (attachment: AttachmentRead) => {
+    await deleteAttachment.mutateAsync({ attachmentId: attachment.id })
+    setCommentFiles((current) => current.filter((a) => a.id !== attachment.id))
+    invalidateAttachments()
+  }
+
   const invalidateIssue = () => {
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/issues`] })
     queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}`] })
@@ -110,9 +147,18 @@ export function IssueDetailPanel({
   const onSubmitComment = async (event: FormEvent) => {
     event.preventDefault()
     if (!commentBody.trim()) return
-    await createComment.mutateAsync({ issueId, data: { body: commentBody.trim() } })
+    await createComment.mutateAsync({
+      issueId,
+      data: {
+        body: commentBody.trim(),
+        attachment_ids: commentFiles.map((a) => a.id),
+      },
+    })
     setCommentBody('')
+    setCommentFiles([])
     queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}/comments`] })
+    // The comment has taken the files off the issue's own list.
+    invalidateAttachments()
   }
 
   const currentLabelIds = new Set((issue?.labels ?? []).map((l) => l.id))
@@ -172,6 +218,7 @@ export function IssueDetailPanel({
                       placeholder="Add a description… Markdown works here."
                       rows={8}
                       autoFocus
+                      onUploadFiles={uploadForDescription}
                     />
                     <div className="mt-2 flex gap-2">
                       <button
@@ -222,6 +269,24 @@ export function IssueDetailPanel({
                   </button>
                 )}
               </div>
+
+              {(attachmentsQuery.data?.length ?? 0) > 0 && (
+                <div className="mt-4">
+                  <h3 className="mb-1.5 text-xs font-medium text-neutral-500">Files</h3>
+                  {/* Every file on the issue, including the ones embedded in
+                      the description above. This list is also where they get
+                      deleted, so leaving the embedded ones out would make
+                      them impossible to remove. */}
+                  <AttachmentList
+                    attachments={attachmentsQuery.data ?? []}
+                    onRemove={removeAttachment}
+                  />
+                </div>
+              )}
+
+              {uploadError && (
+                <p className="mt-2 text-xs text-danger-600">{uploadError}</p>
+              )}
 
               <div className="mt-4 space-y-3 rounded-lg border border-neutral-100 bg-neutral-50 p-3">
                 <div className="flex items-center justify-between">
@@ -383,8 +448,10 @@ export function IssueDetailPanel({
                         </span>
                       </div>
                       {/* Read-only checkboxes: there is no endpoint to edit
-                          a comment yet, so a toggle here could not be saved. */}
+                          a comment yet, so a toggle here could not be saved.
+                          Its attachments are read-only for the same reason. */}
                       <Markdown people={people}>{comment.body}</Markdown>
+                      <AttachmentList attachments={comment.attachments ?? []} compact />
                     </div>
                   </div>
                 ))}
@@ -401,14 +468,21 @@ export function IssueDetailPanel({
                   placeholder="Leave a comment…"
                   rows={3}
                   onSubmit={() => void onSubmitComment(new Event('submit') as unknown as FormEvent)}
+                  onUploadFiles={uploadForComment}
                 />
+                {/* Uploaded, but not attached to anything until this comment
+                    is sent. Removing one here deletes it, which is what the
+                    user means by taking it back out of a draft. */}
+                <AttachmentList attachments={commentFiles} onRemove={removeAttachment} />
                 <div className="mt-2 flex items-center justify-end gap-3">
                   <span className="text-[11px] text-neutral-400">
                     <span className="identifier">⌘↵</span> to send
                   </span>
                   <button
                     type="submit"
-                    disabled={!commentBody.trim() || createComment.isPending}
+                    disabled={
+                      !commentBody.trim() || createComment.isPending || uploading > 0
+                    }
                     className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
                   >
                     Send

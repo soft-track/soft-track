@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app_identity.identity import router as identity_router
 from lib_identity.identity import warm_password_hasher
+from app_softtrack.attachments import router as attachments_router
 from app_softtrack.comments import router as comments_router
 from app_softtrack.cycles import router as cycles_router
 from app_softtrack.imports import router as imports_router
@@ -50,6 +51,7 @@ app.include_router(projects_router)
 app.include_router(labels_router)
 app.include_router(issues_router)
 app.include_router(comments_router)
+app.include_router(attachments_router)
 app.include_router(cycles_router)
 app.include_router(reports_router)
 app.include_router(imports_router)

@@ -482,6 +482,11 @@ export const useUpdateIssueIssuesIssueIdPatch = <TError = HTTPValidationError,
       return useMutation(getUpdateIssueIssuesIssueIdPatchMutationOptions(options), queryClient);
     }
     /**
+ * Delete an issue and everything that only existed because of it.
+ *
+ * Attachments go with it, bytes included -- see
+ * `lib_softtrack/issues.py`. Sub-issues do not: they are promoted to top
+ * level rather than destroyed.
  * @summary Delete Issue
  */
 export const deleteIssueIssuesIssueIdDelete = (
