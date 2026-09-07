@@ -20,6 +20,7 @@ from fastapi import HTTPException
 from sqlalchemy import case, func
 from sqlmodel import Session, select
 
+from lib_softtrack.history import record_changes, snapshot
 from lib_softtrack.models.cycles import (
     CycleCompletion,
     CycleCreate,
@@ -238,8 +239,13 @@ def complete_cycle(
     for issue in unfinished:
         # No successor means the backlog, not limbo -- an issue must never end
         # up pointing at a cycle that is over.
+        before = snapshot(issue)
         issue.cycle_id = successor.id if successor else None
         session.add(issue)
+        # Carry-over is a scope change like any other, and a report that
+        # cannot see it would show work vanishing from one cycle and
+        # appearing in the next with no explanation.
+        record_changes(session, issue, before, current_user)
 
     cycle.state = CycleState.completed
     cycle.completed_at = datetime.now(timezone.utc)
@@ -267,8 +273,10 @@ def delete_cycle(session: Session, current_user: User, cycle_id: int) -> None:
     # Its issues go back to the backlog rather than being deleted with it, and
     # they hold a foreign key here either way.
     for issue in session.exec(select(Issue).where(Issue.cycle_id == cycle_id)).all():
+        before = snapshot(issue)
         issue.cycle_id = None
         session.add(issue)
+        record_changes(session, issue, before, current_user)
     session.flush()
 
     session.delete(cycle)

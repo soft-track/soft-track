@@ -19,6 +19,7 @@ import { KanbanBoard } from '../components/KanbanBoard'
 import { CycleBanner } from '../components/CycleBanner'
 import { NewCycleModal } from '../components/NewCycleModal'
 import { SearchResults } from '../components/SearchResults'
+import { ReportsView } from '../reports/ReportsView'
 import { useListCyclesTeamsTeamIdCyclesGet } from '../api/generated/endpoints/cycles/cycles'
 import { CommandPalette, type Command } from '../keyboard/CommandPalette'
 import { ShortcutsCheatsheet } from '../keyboard/ShortcutsCheatsheet'
@@ -38,7 +39,7 @@ export default function BoardPage() {
   const [activeProjectId, setActiveProjectId] = useState<number | 'all'>('all')
   const [activeCycleId, setActiveCycleId] = useState<number | null>(null)
   const [showNewCycle, setShowNewCycle] = useState(false)
-  const [view, setView] = useState<'board' | 'list'>('board')
+  const [view, setView] = useState<'board' | 'list' | 'reports'>('board')
   const [search, setSearch] = useState('')
   const [showNewIssue, setShowNewIssue] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
@@ -267,6 +268,8 @@ export default function BoardPage() {
               <div className="flex h-full items-center justify-center text-sm text-neutral-400">
                 Loading issues…
               </div>
+            ) : view === 'reports' ? (
+              <ReportsView />
             ) : view === 'board' ? (
               <KanbanBoard
                 issues={filteredIssues}

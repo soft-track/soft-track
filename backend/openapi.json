@@ -1632,6 +1632,236 @@
         }
       }
     },
+    "/cycles/{cycle_id}/burndown": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Cycle Burndown",
+        "description": "Points and issues outstanding on each day of the cycle.\n\nCarries the burnup line and the days scope moved, from the same data --\na burndown that hides scope changes makes a team look slow when what\nactually happened is that the sprint grew.",
+        "operationId": "cycle_burndown_cycles__cycle_id__burndown_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cycle Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Burndown"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/velocity": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Team Velocity",
+        "description": "Committed and completed points for recent completed cycles.",
+        "operationId": "team_velocity_teams__team_id__velocity_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 24,
+              "minimum": 1,
+              "description": "How many recent cycles.",
+              "default": 6,
+              "title": "Limit"
+            },
+            "description": "How many recent cycles."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Velocity"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/cumulative-flow": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Team Cumulative Flow",
+        "description": "Issue counts per status per day. Widening bands mean work is piling up.",
+        "operationId": "team_cumulative_flow_teams__team_id__cumulative_flow_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CumulativeFlow"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/created-vs-resolved": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Team Created Vs Resolved",
+        "description": "Issues opened against issues closed, with the running backlog.",
+        "operationId": "team_created_vs_resolved_teams__team_id__created_vs_resolved_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedVsResolved"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/search": {
       "get": {
         "tags": [
@@ -1839,6 +2069,91 @@
         ],
         "title": "Body_login_auth_login_post"
       },
+      "Burndown": {
+        "properties": {
+          "cycle_id": {
+            "type": "integer",
+            "title": "Cycle Id"
+          },
+          "cycle_name": {
+            "type": "string",
+            "title": "Cycle Name"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date",
+            "title": "Starts At"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date",
+            "title": "Ends At"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/BurndownPoint"
+            },
+            "type": "array",
+            "title": "Points"
+          },
+          "scope_changes": {
+            "items": {
+              "$ref": "#/components/schemas/ScopeChange"
+            },
+            "type": "array",
+            "title": "Scope Changes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cycle_id",
+          "cycle_name",
+          "starts_at",
+          "ends_at",
+          "points",
+          "scope_changes"
+        ],
+        "title": "Burndown"
+      },
+      "BurndownPoint": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "points_remaining": {
+            "type": "integer",
+            "title": "Points Remaining"
+          },
+          "issues_remaining": {
+            "type": "integer",
+            "title": "Issues Remaining"
+          },
+          "points_completed": {
+            "type": "integer",
+            "title": "Points Completed"
+          },
+          "points_total": {
+            "type": "integer",
+            "title": "Points Total"
+          },
+          "ideal_remaining": {
+            "type": "number",
+            "title": "Ideal Remaining"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "points_remaining",
+          "issues_remaining",
+          "points_completed",
+          "points_total",
+          "ideal_remaining"
+        ],
+        "title": "BurndownPoint"
+      },
       "CommentCreate": {
         "properties": {
           "body": {
@@ -1885,6 +2200,77 @@
           "created_at"
         ],
         "title": "CommentRead"
+      },
+      "CreatedResolvedPoint": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "created": {
+            "type": "integer",
+            "title": "Created"
+          },
+          "resolved": {
+            "type": "integer",
+            "title": "Resolved"
+          },
+          "open_at_end_of_day": {
+            "type": "integer",
+            "title": "Open At End Of Day"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "created",
+          "resolved",
+          "open_at_end_of_day"
+        ],
+        "title": "CreatedResolvedPoint"
+      },
+      "CreatedVsResolved": {
+        "properties": {
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/CreatedResolvedPoint"
+            },
+            "type": "array",
+            "title": "Days"
+          },
+          "total_created": {
+            "type": "integer",
+            "title": "Total Created"
+          },
+          "total_resolved": {
+            "type": "integer",
+            "title": "Total Resolved"
+          }
+        },
+        "type": "object",
+        "required": [
+          "days",
+          "total_created",
+          "total_resolved"
+        ],
+        "title": "CreatedVsResolved"
+      },
+      "CumulativeFlow": {
+        "properties": {
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/FlowPoint"
+            },
+            "type": "array",
+            "title": "Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "days"
+        ],
+        "title": "CumulativeFlow"
       },
       "CycleCompletion": {
         "properties": {
@@ -2143,6 +2529,31 @@
           "by_assignee"
         ],
         "title": "EstimateSummary"
+      },
+      "FlowPoint": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/IssueStatus"
+            },
+            "type": "object",
+            "title": "Counts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "counts"
+        ],
+        "title": "FlowPoint"
       },
       "HTTPValidationError": {
         "properties": {
@@ -2924,6 +3335,40 @@
         ],
         "title": "ProjectRead"
       },
+      "ScopeChange": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "issues_added": {
+            "type": "integer",
+            "title": "Issues Added"
+          },
+          "issues_removed": {
+            "type": "integer",
+            "title": "Issues Removed"
+          },
+          "points_added": {
+            "type": "integer",
+            "title": "Points Added"
+          },
+          "points_removed": {
+            "type": "integer",
+            "title": "Points Removed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "issues_added",
+          "issues_removed",
+          "points_added",
+          "points_removed"
+        ],
+        "title": "ScopeChange"
+      },
       "SearchHit": {
         "properties": {
           "id": {
@@ -3228,6 +3673,78 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "Velocity": {
+        "properties": {
+          "cycles": {
+            "items": {
+              "$ref": "#/components/schemas/VelocityCycle"
+            },
+            "type": "array",
+            "title": "Cycles"
+          },
+          "average_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cycles"
+        ],
+        "title": "Velocity"
+      },
+      "VelocityCycle": {
+        "properties": {
+          "cycle_id": {
+            "type": "integer",
+            "title": "Cycle Id"
+          },
+          "cycle_name": {
+            "type": "string",
+            "title": "Cycle Name"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "points_committed": {
+            "type": "integer",
+            "title": "Points Committed"
+          },
+          "points_completed": {
+            "type": "integer",
+            "title": "Points Completed"
+          },
+          "issues_completed": {
+            "type": "integer",
+            "title": "Issues Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cycle_id",
+          "cycle_name",
+          "points_committed",
+          "points_completed",
+          "issues_completed"
+        ],
+        "title": "VelocityCycle"
       }
     },
     "securitySchemes": {

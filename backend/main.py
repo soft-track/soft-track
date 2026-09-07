@@ -10,6 +10,7 @@ from app_softtrack.cycles import router as cycles_router
 from app_softtrack.issues import router as issues_router
 from app_softtrack.labels import router as labels_router
 from app_softtrack.projects import router as projects_router
+from app_softtrack.reports import router as reports_router
 from app_softtrack.search import router as search_router
 from app_softtrack.teams import router as teams_router
 from web import init_db, settings
@@ -49,6 +50,7 @@ app.include_router(labels_router)
 app.include_router(issues_router)
 app.include_router(comments_router)
 app.include_router(cycles_router)
+app.include_router(reports_router)
 app.include_router(search_router)
 
 

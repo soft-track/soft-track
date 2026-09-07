@@ -11,10 +11,12 @@ from sqlmodel import Session, select
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate, ParentRef
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
+from lib_softtrack.history import record_changes, record_creation, snapshot
 from lib_softtrack.links import open_blocker_counts
 from lib_softtrack.tables import (
     Comment,
     Issue,
+    IssueEvent,
     IssueLabelLink,
     IssueLink,
     IssuePriority,
@@ -214,6 +216,9 @@ def create_issue(
     session.commit()
     session.refresh(issue)
 
+    record_creation(session, issue, current_user)
+    session.commit()
+
     if payload.label_ids:
         set_labels(issue.id, payload.label_ids, session)
         session.commit()
@@ -283,6 +288,7 @@ def update_issue(
     issue = get_issue_or_404(session, issue_id)
     require_team_member(issue.team_id, current_user, session)
 
+    before = snapshot(issue)
     data = payload.model_dump(exclude_unset=True, exclude={"label_ids"})
     if data.get("parent_id") is not None:
         # Validate before assigning, so a rejected parent leaves the issue
@@ -295,6 +301,8 @@ def update_issue(
 
     if payload.label_ids is not None:
         set_labels(issue.id, payload.label_ids, session)
+
+    record_changes(session, issue, before, current_user)
 
     session.commit()
     session.refresh(issue)
@@ -335,6 +343,14 @@ def delete_issue(session: Session, current_user: User, issue_id: int) -> None:
     ).all()
     for link in issue_links:
         session.delete(link)
+
+    # History rows point at the issue, so they go with it. There is no
+    # reporting value in events for an issue that no longer exists, and
+    # keeping them would mean every report having to tolerate dangling ids.
+    for event in session.exec(
+        select(IssueEvent).where(IssueEvent.issue_id == issue_id)
+    ).all():
+        session.delete(event)
 
     # Children are promoted to top level rather than deleted. Losing a parent
     # should not lose the work underneath it -- that is a lot of data to

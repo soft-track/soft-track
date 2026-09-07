@@ -70,6 +70,14 @@ class CycleState(str, enum.Enum):
     completed = "completed"
 
 
+class IssueEventField(str, enum.Enum):
+    """Which field an IssueEvent records a change to."""
+
+    status = "status"
+    cycle = "cycle"
+    estimate = "estimate"
+
+
 class TeamRole(str, enum.Enum):
     admin = "admin"
     member = "member"
@@ -192,6 +200,34 @@ class Cycle(SQLModel, table=True):
     state: CycleState = Field(default=CycleState.upcoming, index=True)
     completed_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=utcnow)
+
+
+class IssueEvent(SQLModel, table=True):
+    """One recorded change to an issue field.
+
+    This table is why reporting is possible at all. A burndown asks what the
+    board looked like on the ninth of the month, and no amount of querying the
+    current rows can answer that -- the history is simply gone unless it was
+    written down as it happened. Every day this table does not exist is a day
+    that can never be charted.
+
+    Deliberately generic (field/old/new as text) rather than one table per
+    field. The alternative is a new table and a new migration every time
+    something else turns out to be worth charting, and the read patterns --
+    "changes to this issue, in order" -- are identical whatever the field.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    issue_id: int = Field(foreign_key="issue.id", index=True)
+    #: Denormalised from the issue so a report can filter a date range by team
+    #: without joining, and so the row survives as history if the issue moves.
+    team_id: int = Field(foreign_key="team.id", index=True)
+    field: IssueEventField = Field(index=True)
+    #: Null on the creation event for a field, and for a value being cleared.
+    old_value: Optional[str] = None
+    new_value: Optional[str] = None
+    actor_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow, index=True)
 
 
 class Comment(SQLModel, table=True):

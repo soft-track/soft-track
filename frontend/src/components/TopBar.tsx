@@ -15,8 +15,8 @@ export function TopBar({
   assigneeFilter,
   onAssigneeFilterChange,
 }: {
-  view: 'board' | 'list'
-  onViewChange: (view: 'board' | 'list') => void
+  view: 'board' | 'list' | 'reports'
+  onViewChange: (view: 'board' | 'list' | 'reports') => void
   onNewIssue: () => void
   search: string
   onSearchChange: (value: string) => void
@@ -47,6 +47,16 @@ export function TopBar({
             }`}
           >
             List
+          </button>
+          <button
+            onClick={() => onViewChange('reports')}
+            className={`rounded px-2 py-1 font-medium ${
+              view === 'reports'
+                ? 'bg-neutral-900 text-white'
+                : 'text-neutral-500 hover:text-neutral-800'
+            }`}
+          >
+            Reports
           </button>
         </div>
 
