@@ -254,20 +254,17 @@ generated from, so drift there means the client and the API disagree.
 
 ## Contributing
 
-Issues and pull requests are welcome. A good first step is `docker compose up
---build` to get the stack running, then `backend/smoke_test.sh` to confirm the
-API works end to end.
+Issues and pull requests are welcome, and there are
+[good first issues](https://github.com/soft-track/soft-track/labels/good%20first%20issue)
+open. **[CONTRIBUTING.md](CONTRIBUTING.md)** covers setup, the checks CI runs,
+and the three project conventions worth knowing before you open a PR: the API
+client is generated *and committed*, business logic belongs in `lib_softtrack/`
+rather than in a route handler, and schema changes need an Alembic migration.
 
-Two things worth knowing before you open a PR:
-
-- The frontend's API client under `frontend/src/api/generated/` is generated
-  from the backend's OpenAPI schema and **is committed**. If you change backend
-  routes or schemas, regenerate it (see
-  [Regenerating the API client](#regenerating-the-api-client)) and commit the
-  result, or the frontend and backend will drift apart.
-- The backend is organised as thin routers (`app_*`) over a service layer
-  (`lib_*`). Business logic belongs in `lib_softtrack/`, not in the route
-  handler.
+Everyone taking part is asked to follow the
+[Code of Conduct](CODE_OF_CONDUCT.md). Security problems should go through
+[private reporting](https://github.com/soft-track/soft-track/security/advisories/new),
+not a public issue.
 
 ## License
 

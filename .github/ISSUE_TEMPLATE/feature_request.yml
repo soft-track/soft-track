@@ -1,0 +1,50 @@
+name: Feature request
+description: Something SoftTrack should be able to do and cannot.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a look at the [Roadmap](https://github.com/soft-track/soft-track#roadmap)
+        first -- it may already be there, in which case a comment on the
+        existing issue is more useful than a new one.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: >
+        The problem, not the solution. "I cannot tell which issues are blocked
+        on someone else" leads somewhere better than "add a Blocked column",
+        because it leaves room for a better answer than the one you had in mind.
+      placeholder: |
+        When I open the board on Monday I cannot tell which of my issues moved
+        over the weekend, so I re-read all of them.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What do you think should happen?
+      description: If you already have a shape in mind, describe it here.
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What are you doing instead today?
+      description: >
+        The workaround, if you have one. How annoying the workaround is tells us
+        how much the feature is worth.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Would you like to build it?
+      options:
+        - label: I would be willing to open a pull request for this
+          required: false
