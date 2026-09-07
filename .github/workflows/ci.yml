@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   backend:
-    name: Backend · black + pytest
+    name: Backend · black + migrations + pytest
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -35,6 +35,27 @@ jobs:
 
       - name: Check formatting
         run: black --check --diff . --exclude venv
+
+      - name: Exactly one migration head
+        # Two branches that each add a migration from the same parent produce
+        # two Alembic heads. Nothing fails until a deploy runs `upgrade head`
+        # and the app refuses to boot, which is a bad place to find out --
+        # so find out here instead.
+        env:
+          DATABASE_URL: "sqlite://"
+        run: |
+          heads=$(alembic heads)
+          count=$(printf '%s\n' "$heads" | grep -c '(head)' || true)
+          if [ "$count" -ne 1 ]; then
+            echo "Expected exactly one Alembic head, found $count:"
+            printf '%s\n' "$heads"
+            echo
+            echo "Another branch added a migration from the same parent."
+            echo "Rebase onto main, then point this branch's migration at the"
+            echo "other head by editing its down_revision."
+            exit 1
+          fi
+          printf 'Single head: %s\n' "$heads"
 
       - name: Run tests with coverage
         # Tests use in-memory SQLite with PRAGMA foreign_keys=ON, so they catch
