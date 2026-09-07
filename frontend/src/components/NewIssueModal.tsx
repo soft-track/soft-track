@@ -4,6 +4,7 @@ import { type FormEvent, useState } from 'react'
 import { useCreateIssueTeamsTeamIdIssuesPost } from '../api/generated/endpoints/issues/issues'
 import { IssuePriority, IssueStatus } from '../api/generated/models'
 import { PRIORITY_ORDER, STATUS_ORDER, PRIORITY_META, STATUS_META } from '../lib/issueMeta'
+import { MarkdownEditor } from '../markdown/lazy'
 import { useTeamContext } from '../team/TeamContext'
 
 export function NewIssueModal({ onClose }: { onClose: () => void }) {
@@ -68,12 +69,13 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
               placeholder="Issue title"
               className="w-full border-none p-0 text-base font-medium text-neutral-900 placeholder-neutral-300 focus:outline-none focus:ring-0"
             />
-            <textarea
+            <MarkdownEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add a description…"
-              rows={3}
-              className="mt-2 w-full resize-none border-none p-0 text-sm text-neutral-600 placeholder-neutral-300 focus:outline-none focus:ring-0"
+              onChange={setDescription}
+              people={members.map((m) => m.user)}
+              placeholder="Add a description… Markdown works here."
+              rows={4}
+              className="mt-2"
             />
           </div>
 

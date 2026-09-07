@@ -6,6 +6,8 @@ import { useCreateCommentIssuesIssueIdCommentsPost, useListCommentsIssuesIssueId
 import { useGetIssueIssuesIssueIdGet, useUpdateIssueIssuesIssueIdPatch } from '../api/generated/endpoints/issues/issues'
 import { IssuePriority, IssueStatus } from '../api/generated/models'
 import { PRIORITY_META, PRIORITY_ORDER, STATUS_META, STATUS_ORDER } from '../lib/issueMeta'
+import { Markdown, MarkdownEditor } from '../markdown/lazy'
+import { taskProgress, toggleTaskAtOffset } from '../markdown/tasks'
 import { useTeamContext } from '../team/TeamContext'
 import { Avatar } from './Avatar'
 import { PriorityIcon } from './PriorityIcon'
@@ -30,6 +32,7 @@ export function IssueDetailPanel({
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [commentBody, setCommentBody] = useState('')
+  const [editingDescription, setEditingDescription] = useState(false)
 
   useEffect(() => {
     if (issue) {
@@ -54,6 +57,21 @@ export function IssueDetailPanel({
   const patch = async (data: Parameters<typeof updateIssue.mutateAsync>[0]['data']) => {
     await updateIssue.mutateAsync({ issueId, data })
     invalidateIssue()
+  }
+
+  const people = members.map((m) => m.user)
+
+  /**
+   * Toggling a checkbox in the rendered description edits the stored markdown
+   * and saves it. The offset comes from the source position of the list item,
+   * so nothing else in the description is touched -- see markdown/tasks.ts.
+   */
+  const onToggleTask = async (offset: number) => {
+    const source = issue?.description ?? ''
+    const next = toggleTaskAtOffset(source, offset)
+    if (next === null) return
+    setDescription(next)
+    await patch({ description: next })
   }
 
   const onSubmitComment = async (event: FormEvent) => {
@@ -100,14 +118,66 @@ export function IssueDetailPanel({
                 onBlur={() => title.trim() && title !== issue.title && patch({ title: title.trim() })}
                 className="w-full border-none p-0 text-lg font-semibold text-neutral-900 focus:outline-none focus:ring-0"
               />
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                onBlur={() => description !== (issue.description ?? '') && patch({ description })}
-                placeholder="Add a description…"
-                rows={5}
-                className="mt-3 w-full resize-none border-none p-0 text-sm text-neutral-600 placeholder-neutral-300 focus:outline-none focus:ring-0"
-              />
+              <div className="mt-3">
+                {editingDescription ? (
+                  <>
+                    <MarkdownEditor
+                      value={description}
+                      onChange={setDescription}
+                      people={people}
+                      placeholder="Add a description… Markdown works here."
+                      rows={8}
+                      autoFocus
+                    />
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (description !== (issue.description ?? '')) await patch({ description })
+                          setEditingDescription(false)
+                        }}
+                        className="rounded-md bg-brand-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand-700"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDescription(issue.description ?? '')
+                          setEditingDescription(false)
+                        }}
+                        className="rounded-md px-2.5 py-1 text-xs font-medium text-neutral-500 hover:text-neutral-700"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                ) : issue.description?.trim() ? (
+                  <>
+                    <Markdown people={people} onToggleTask={onToggleTask}>
+                      {issue.description}
+                    </Markdown>
+                    <div className="mt-2 flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setEditingDescription(true)}
+                        className="text-xs font-medium text-neutral-400 hover:text-neutral-700"
+                      >
+                        Edit description
+                      </button>
+                      <TaskProgress source={issue.description} />
+                    </div>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setEditingDescription(true)}
+                    className="text-sm text-neutral-300 hover:text-neutral-500"
+                  >
+                    Add a description…
+                  </button>
+                )}
+              </div>
 
               <div className="mt-4 space-y-3 rounded-lg border border-neutral-100 bg-neutral-50 p-3">
                 <div className="flex items-center justify-between">
@@ -214,7 +284,9 @@ export function IssueDetailPanel({
                           })}
                         </span>
                       </div>
-                      <p className="whitespace-pre-wrap text-sm text-neutral-700">{comment.body}</p>
+                      {/* Read-only checkboxes: there is no endpoint to edit
+                          a comment yet, so a toggle here could not be saved. */}
+                      <Markdown people={people}>{comment.body}</Markdown>
                     </div>
                   </div>
                 ))}
@@ -223,25 +295,51 @@ export function IssueDetailPanel({
                 )}
               </div>
 
-              <form onSubmit={onSubmitComment} className="flex gap-2">
-                <input
+              <form onSubmit={onSubmitComment}>
+                <MarkdownEditor
                   value={commentBody}
-                  onChange={(e) => setCommentBody(e.target.value)}
+                  onChange={setCommentBody}
+                  people={people}
                   placeholder="Leave a comment…"
-                  className="flex-1 rounded-md border border-neutral-200 px-2.5 py-1.5 text-sm focus:border-brand-400 focus:outline-none"
+                  rows={3}
+                  onSubmit={() => void onSubmitComment(new Event('submit') as unknown as FormEvent)}
                 />
-                <button
-                  type="submit"
-                  disabled={!commentBody.trim() || createComment.isPending}
-                  className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
-                >
-                  Send
-                </button>
+                <div className="mt-2 flex items-center justify-end gap-3">
+                  <span className="text-[11px] text-neutral-400">
+                    <span className="identifier">⌘↵</span> to send
+                  </span>
+                  <button
+                    type="submit"
+                    disabled={!commentBody.trim() || createComment.isPending}
+                    className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+                  >
+                    Send
+                  </button>
+                </div>
               </form>
             </div>
           </>
         )}
       </div>
     </div>
+  )
+}
+
+
+/** "3 of 7 tasks" plus a thin bar, shown only when there are tasks. */
+function TaskProgress({ source }: { source: string }) {
+  const { done, total } = taskProgress(source)
+  if (total === 0) return null
+
+  return (
+    <span className="flex items-center gap-2 text-xs text-neutral-400">
+      <span className="h-1 w-16 overflow-hidden rounded-full bg-neutral-100">
+        <span
+          className="block h-full rounded-full bg-brand-500 transition-all"
+          style={{ width: `${(done / total) * 100}%` }}
+        />
+      </span>
+      {done} of {total} tasks
+    </span>
   )
 }
