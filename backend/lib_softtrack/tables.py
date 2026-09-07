@@ -56,6 +56,20 @@ class IssueLinkType(str, enum.Enum):
 DIRECTED_LINK_TYPES = (IssueLinkType.blocks, IssueLinkType.duplicates)
 
 
+class CycleState(str, enum.Enum):
+    """Where a cycle is in its life.
+
+    Derived from dates would be simpler, but a team that forgets to start a
+    cycle on Monday should not have Monday counted against its burndown, and a
+    cycle that runs a day long should not silently complete itself and carry
+    work away. So the state is set deliberately and the dates are the plan.
+    """
+
+    upcoming = "upcoming"
+    active = "active"
+    completed = "completed"
+
+
 class TeamRole(str, enum.Enum):
     admin = "admin"
     member = "member"
@@ -98,6 +112,7 @@ class Team(SQLModel, table=True):
     key: str = Field(index=True, unique=True, description="Short prefix, e.g. ENG")
     description: Optional[str] = None
     next_issue_number: int = Field(default=1)
+    next_cycle_number: int = Field(default=1)
     created_at: datetime = Field(default_factory=utcnow)
 
 
@@ -133,6 +148,7 @@ class Issue(SQLModel, table=True):
     # parent. See lib_softtrack/subissues.py for why that limit is enforced
     # rather than left to convention.
     parent_id: Optional[int] = Field(default=None, foreign_key="issue.id", index=True)
+    cycle_id: Optional[int] = Field(default=None, foreign_key="cycle.id", index=True)
     creator_id: int = Field(foreign_key="user.id")
     # Story points. Null means "not sized yet", which is a different thing
     # from zero -- a burndown has to be able to tell them apart.
@@ -159,6 +175,22 @@ class IssueLink(SQLModel, table=True):
     target_id: int = Field(foreign_key="issue.id", index=True)
     type: IssueLinkType
     created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class Cycle(SQLModel, table=True):
+    """A time-boxed iteration belonging to one team."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    #: Per team, and stable: "Cycle 7" keeps meaning the same fortnight after
+    #: another cycle is deleted, which a positional index would not.
+    number: int
+    name: Optional[str] = None
+    starts_at: datetime
+    ends_at: datetime
+    state: CycleState = Field(default=CycleState.upcoming, index=True)
+    completed_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=utcnow)
 
 

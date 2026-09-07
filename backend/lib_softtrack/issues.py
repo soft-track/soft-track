@@ -66,6 +66,7 @@ def issue_to_read(issue: Issue, session: Session) -> IssueRead:
         assignee=UserPublic.model_validate(assignee) if assignee else None,
         estimate=issue.estimate,
         blocked_by_count=open_blocker_counts(session, [issue.id]).get(issue.id, 0),
+        cycle_id=issue.cycle_id,
         parent=_parent_ref(issue, session),
         completed_child_count=done,
         child_count=total,
@@ -141,6 +142,7 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
             ),
             estimate=issue.estimate,
             blocked_by_count=blocker_counts.get(issue.id, 0),
+            cycle_id=issue.cycle_id,
             creator=UserPublic.model_validate(users[issue.creator_id]),
             labels=labels_by_issue.get(issue.id, []),
             parent=_parent_ref_from(parents.get(issue.parent_id), teams),
@@ -201,6 +203,7 @@ def create_issue(
         priority=payload.priority,
         assignee_id=payload.assignee_id,
         estimate=payload.estimate,
+        cycle_id=payload.cycle_id,
         creator_id=current_user.id,
     )
 
@@ -227,6 +230,7 @@ def list_issues(
     priority: Optional[IssuePriority] = None,
     assignee_id: Optional[int] = None,
     parent_id: Optional[int] = None,
+    cycle_id: Optional[int] = None,
     limit: int = DEFAULT_LIMIT,
     offset: int = 0,
 ) -> Page[IssueRead]:
@@ -244,6 +248,8 @@ def list_issues(
         filters.append(Issue.assignee_id == assignee_id)
     if parent_id is not None:
         filters.append(Issue.parent_id == parent_id)
+    if cycle_id is not None:
+        filters.append(Issue.cycle_id == cycle_id)
 
     # `total` counts everything matching the filters, not the page, so the UI
     # can show "50 of 1,204" without a second request.

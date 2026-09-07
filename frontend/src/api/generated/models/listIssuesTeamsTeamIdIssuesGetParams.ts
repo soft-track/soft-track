@@ -18,6 +18,10 @@ assignee_id?: number | null;
  */
 parent_id?: number | null;
 /**
+ * Only issues in this cycle.
+ */
+cycle_id?: number | null;
+/**
  * @minimum 1
  * @maximum 200
  */

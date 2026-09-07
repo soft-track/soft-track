@@ -37,6 +37,7 @@ def list_issues(
     parent_id: Optional[int] = Query(
         None, description="Only sub-issues of this issue."
     ),
+    cycle_id: Optional[int] = Query(None, description="Only issues in this cycle."),
     limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(0, ge=0),
     session: Session = Depends(get_session),
@@ -51,6 +52,7 @@ def list_issues(
         priority=priority,
         assignee_id=assignee_id,
         parent_id=parent_id,
+        cycle_id=cycle_id,
         limit=limit,
         offset=offset,
     )

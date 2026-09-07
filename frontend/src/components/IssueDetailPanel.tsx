@@ -28,7 +28,7 @@ export function IssueDetailPanel({
   issueId: number
   onClose: () => void
 }) {
-  const { team, members, labels } = useTeamContext()
+  const { team, members, labels, cycles } = useTeamContext()
   const queryClient = useQueryClient()
 
   const issueQuery = useGetIssueIssuesIssueIdGet(issueId)
@@ -83,6 +83,8 @@ export function IssueDetailPanel({
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/issues`] })
     queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}`] })
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
+    // Cycle progress moves whenever an issue's status or cycle changes.
+    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/cycles`] })
   }
 
   const patch = async (data: Parameters<typeof updateIssue.mutateAsync>[0]['data']) => {
@@ -265,6 +267,29 @@ export function IssueDetailPanel({
                         {points} {points === 1 ? 'point' : 'points'}
                       </option>
                     ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-neutral-500">Cycle</span>
+                  <select
+                    data-field="cycle"
+                    value={issue.cycle_id ?? ''}
+                    onChange={(e) =>
+                      patch({ cycle_id: e.target.value ? Number(e.target.value) : null })
+                    }
+                    className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs"
+                  >
+                    <option value="">Backlog</option>
+                    {cycles
+                      // A completed cycle is history; moving work into one
+                      // would rewrite numbers already reported.
+                      .filter((c) => c.state !== 'completed' || c.id === issue.cycle_id)
+                      .map((cycle) => (
+                        <option key={cycle.id} value={cycle.id}>
+                          {cycle.display_name}
+                        </option>
+                      ))}
                   </select>
                 </div>
 

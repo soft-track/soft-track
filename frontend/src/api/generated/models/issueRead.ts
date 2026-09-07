@@ -24,6 +24,7 @@ export interface IssueRead {
   assignee?: UserPublic | null;
   estimate?: number | null;
   blocked_by_count: number;
+  cycle_id?: number | null;
   parent?: ParentRef | null;
   child_count: number;
   completed_child_count: number;

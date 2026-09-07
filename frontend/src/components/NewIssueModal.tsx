@@ -14,7 +14,7 @@ import { MarkdownEditor } from '../markdown/lazy'
 import { useTeamContext } from '../team/TeamContext'
 
 export function NewIssueModal({ onClose }: { onClose: () => void }) {
-  const { team, projects, labels, members } = useTeamContext()
+  const { team, projects, labels, members, cycles } = useTeamContext()
   const queryClient = useQueryClient()
   const createIssue = useCreateIssueTeamsTeamIdIssuesPost()
 
@@ -24,6 +24,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
   const [status, setStatus] = useState<IssueStatus>(IssueStatus.backlog)
   const [priority, setPriority] = useState<IssuePriority>(IssuePriority.no_priority)
   const [estimate, setEstimate] = useState<(typeof ESTIMATE_SCALE)[number] | null>(null)
+  const [cycleId, setCycleId] = useState<string>('')
   const [assigneeId, setAssigneeId] = useState<string>('')
   const [labelIds, setLabelIds] = useState<number[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -46,6 +47,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
           status,
           priority,
           estimate,
+          cycle_id: cycleId ? Number(cycleId) : undefined,
           assignee_id: assigneeId ? Number(assigneeId) : undefined,
           label_ids: labelIds,
         },
@@ -127,6 +129,21 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
                   {points} {points === 1 ? 'point' : 'points'}
                 </option>
               ))}
+            </select>
+
+            <select
+              value={cycleId}
+              onChange={(e) => setCycleId(e.target.value)}
+              className="rounded-md border border-neutral-200 px-2 py-1 text-xs"
+            >
+              <option value="">Backlog</option>
+              {cycles
+                .filter((c) => c.state !== 'completed')
+                .map((cycle) => (
+                  <option key={cycle.id} value={cycle.id}>
+                    {cycle.display_name}
+                  </option>
+                ))}
             </select>
 
             <select

@@ -3,17 +3,24 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { useTeamContext } from '../team/TeamContext'
 import { Avatar } from './Avatar'
+import { CycleList } from './CycleList'
 import { Logo } from './Logo'
 
 export function Sidebar({
   activeProjectId,
   onSelectProject,
+  activeCycleId,
+  onSelectCycle,
+  onNewCycle,
 }: {
   activeProjectId: number | 'all'
   onSelectProject: (projectId: number | 'all') => void
+  activeCycleId: number | null
+  onSelectCycle: (cycleId: number | null) => void
+  onNewCycle: () => void
 }) {
   const { user, logout } = useAuth()
-  const { team, teams, projects } = useTeamContext()
+  const { team, teams, projects, cycles } = useTeamContext()
   const navigate = useNavigate()
 
   return (
@@ -51,6 +58,26 @@ export function Sidebar({
           >
             All issues
           </button>
+        </div>
+
+        <div>
+          <div className="mb-1 flex items-center justify-between px-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              Cycles
+            </span>
+            <button
+              onClick={onNewCycle}
+              aria-label="New cycle"
+              className="text-neutral-400 hover:text-neutral-700"
+            >
+              +
+            </button>
+          </div>
+          <CycleList
+            cycles={cycles}
+            activeCycleId={activeCycleId}
+            onSelect={onSelectCycle}
+          />
         </div>
 
         <div>

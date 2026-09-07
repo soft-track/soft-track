@@ -760,6 +760,24 @@
             "description": "Only sub-issues of this issue."
           },
           {
+            "name": "cycle_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only issues in this cycle.",
+              "title": "Cycle Id"
+            },
+            "description": "Only issues in this cycle."
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -1272,6 +1290,348 @@
         }
       }
     },
+    "/teams/{team_id}/cycles": {
+      "post": {
+        "tags": [
+          "cycles"
+        ],
+        "summary": "Create Cycle",
+        "operationId": "create_cycle_teams__team_id__cycles_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CycleCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CycleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "cycles"
+        ],
+        "summary": "List Cycles",
+        "operationId": "list_cycles_teams__team_id__cycles_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CycleRead"
+                  },
+                  "title": "Response List Cycles Teams  Team Id  Cycles Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cycles/{cycle_id}": {
+      "get": {
+        "tags": [
+          "cycles"
+        ],
+        "summary": "Get Cycle",
+        "operationId": "get_cycle_cycles__cycle_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cycle Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CycleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "cycles"
+        ],
+        "summary": "Update Cycle",
+        "operationId": "update_cycle_cycles__cycle_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cycle Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CycleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CycleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "cycles"
+        ],
+        "summary": "Delete Cycle",
+        "operationId": "delete_cycle_cycles__cycle_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cycle Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cycles/{cycle_id}/start": {
+      "post": {
+        "tags": [
+          "cycles"
+        ],
+        "summary": "Start Cycle",
+        "description": "Make this the team's active cycle. Only one may be active at a time.",
+        "operationId": "start_cycle_cycles__cycle_id__start_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cycle Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CycleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cycles/{cycle_id}/complete": {
+      "post": {
+        "tags": [
+          "cycles"
+        ],
+        "summary": "Complete Cycle",
+        "description": "Close the cycle, carrying unfinished issues into the next one.\n\nNothing is deleted: if there is no later cycle to carry into, the\nunfinished issues go back to the backlog.",
+        "operationId": "complete_cycle_cycles__cycle_id__complete_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cycle Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CycleCompletion"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/search": {
       "get": {
         "tags": [
@@ -1526,6 +1886,222 @@
         ],
         "title": "CommentRead"
       },
+      "CycleCompletion": {
+        "properties": {
+          "cycle": {
+            "$ref": "#/components/schemas/CycleRead"
+          },
+          "carried_over": {
+            "type": "integer",
+            "title": "Carried Over"
+          },
+          "carried_into_cycle_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Carried Into Cycle Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cycle",
+          "carried_over"
+        ],
+        "title": "CycleCompletion",
+        "description": "The result of completing a cycle."
+      },
+      "CycleCreate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starts At"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ends At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "starts_at",
+          "ends_at"
+        ],
+        "title": "CycleCreate"
+      },
+      "CycleProgress": {
+        "properties": {
+          "issues_total": {
+            "type": "integer",
+            "title": "Issues Total"
+          },
+          "issues_completed": {
+            "type": "integer",
+            "title": "Issues Completed"
+          },
+          "points_total": {
+            "type": "integer",
+            "title": "Points Total"
+          },
+          "points_completed": {
+            "type": "integer",
+            "title": "Points Completed"
+          },
+          "issues_unestimated": {
+            "type": "integer",
+            "title": "Issues Unestimated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "issues_total",
+          "issues_completed",
+          "points_total",
+          "points_completed",
+          "issues_unestimated"
+        ],
+        "title": "CycleProgress",
+        "description": "How much of the cycle's work is done.\n\nIssues and points are reported separately because they disagree, and the\ndisagreement is the interesting part: eight of ten issues done with two\npoints of thirty burned means the hard work is all still ahead."
+      },
+      "CycleRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starts At"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ends At"
+          },
+          "state": {
+            "$ref": "#/components/schemas/CycleState"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/CycleProgress"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "number",
+          "display_name",
+          "starts_at",
+          "ends_at",
+          "state",
+          "progress"
+        ],
+        "title": "CycleRead"
+      },
+      "CycleState": {
+        "type": "string",
+        "enum": [
+          "upcoming",
+          "active",
+          "completed"
+        ],
+        "title": "CycleState",
+        "description": "Where a cycle is in its life.\n\nDerived from dates would be simpler, but a team that forgets to start a\ncycle on Monday should not have Monday counted against its burndown, and a\ncycle that runs a day long should not silently complete itself and carry\nwork away. So the state is set deliberately and the dates are the plan."
+      },
+      "CycleUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "starts_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starts At"
+          },
+          "ends_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ends At"
+          }
+        },
+        "type": "object",
+        "title": "CycleUpdate"
+      },
       "EstimateSummary": {
         "properties": {
           "total_points": {
@@ -1658,6 +2234,17 @@
               }
             ],
             "title": "Parent Id"
+          },
+          "cycle_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cycle Id"
           },
           "label_ids": {
             "items": {
@@ -1861,6 +2448,17 @@
             "type": "integer",
             "title": "Blocked By Count"
           },
+          "cycle_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cycle Id"
+          },
           "parent": {
             "anyOf": [
               {
@@ -2027,6 +2625,17 @@
               }
             ],
             "title": "Parent Id"
+          },
+          "cycle_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cycle Id"
           },
           "label_ids": {
             "anyOf": [

@@ -56,6 +56,7 @@ class IssueCreate(BaseModel):
     assignee_id: Optional[int] = None
     estimate: Estimate = None
     parent_id: Optional[int] = None
+    cycle_id: Optional[int] = None
     label_ids: list[int] = []
 
 
@@ -72,6 +73,8 @@ class IssueUpdate(BaseModel):
     estimate: Estimate = None
     #: An explicit null detaches the issue from its parent.
     parent_id: Optional[int] = None
+    #: An explicit null moves the issue out of its cycle, back to the backlog.
+    cycle_id: Optional[int] = None
     label_ids: Optional[list[int]] = None
 
 
@@ -90,6 +93,7 @@ class IssueRead(BaseModel):
     #: Unresolved issues that block this one. Zero for an issue that is free
     #: to start; the board marks anything above zero.
     blocked_by_count: int
+    cycle_id: Optional[int] = None
     parent: Optional[ParentRef] = None
     #: Sub-issue progress, excluding cancelled children from both numbers.
     #: Zero of zero for an issue with no sub-issues.

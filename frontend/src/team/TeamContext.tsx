@@ -1,6 +1,12 @@
 import { createContext, useContext, type ReactNode } from 'react'
 
-import type { LabelRead, ProjectRead, TeamMemberRead, TeamRead } from '../api/generated/models'
+import type {
+  CycleRead,
+  LabelRead,
+  ProjectRead,
+  TeamMemberRead,
+  TeamRead,
+} from '../api/generated/models'
 
 export interface TeamContextValue {
   team: TeamRead
@@ -8,6 +14,7 @@ export interface TeamContextValue {
   projects: ProjectRead[]
   labels: LabelRead[]
   members: TeamMemberRead[]
+  cycles: CycleRead[]
 }
 
 const TeamContext = createContext<TeamContextValue | undefined>(undefined)

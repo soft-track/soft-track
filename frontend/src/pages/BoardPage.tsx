@@ -16,7 +16,10 @@ import type { IssuePriority, IssueRead, IssueStatus } from '../api/generated/mod
 import { IssueDetailPanel } from '../components/IssueDetailPanel'
 import { IssueListView } from '../components/IssueListView'
 import { KanbanBoard } from '../components/KanbanBoard'
+import { CycleBanner } from '../components/CycleBanner'
+import { NewCycleModal } from '../components/NewCycleModal'
 import { SearchResults } from '../components/SearchResults'
+import { useListCyclesTeamsTeamIdCyclesGet } from '../api/generated/endpoints/cycles/cycles'
 import { CommandPalette, type Command } from '../keyboard/CommandPalette'
 import { ShortcutsCheatsheet } from '../keyboard/ShortcutsCheatsheet'
 import { isPlainKey, isTypingTarget } from '../keyboard/typing'
@@ -33,6 +36,8 @@ export default function BoardPage() {
   const { team, isLoading, teams } = useTeamByKey(teamKey)
 
   const [activeProjectId, setActiveProjectId] = useState<number | 'all'>('all')
+  const [activeCycleId, setActiveCycleId] = useState<number | null>(null)
+  const [showNewCycle, setShowNewCycle] = useState(false)
   const [view, setView] = useState<'board' | 'list'>('board')
   const [search, setSearch] = useState('')
   const [showNewIssue, setShowNewIssue] = useState(false)
@@ -48,6 +53,9 @@ export default function BoardPage() {
     query: { enabled: Boolean(team) },
   })
   const membersQuery = useListTeamMembersTeamsTeamIdMembersGet(team?.id ?? 0, {
+    query: { enabled: Boolean(team) },
+  })
+  const cyclesQuery = useListCyclesTeamsTeamIdCyclesGet(team?.id ?? 0, {
     query: { enabled: Boolean(team) },
   })
   const issuesParams = { project_id: activeProjectId === 'all' ? undefined : activeProjectId }
@@ -69,13 +77,16 @@ export default function BoardPage() {
     if (priorityFilter !== 'all') {
       issues = issues.filter((issue) => issue.priority === priorityFilter)
     }
+    if (activeCycleId !== null) {
+      issues = issues.filter((issue) => issue.cycle_id === activeCycleId)
+    }
     if (assigneeFilter === 'unassigned') {
       issues = issues.filter((issue) => !issue.assignee)
     } else if (assigneeFilter !== 'all') {
       issues = issues.filter((issue) => issue.assignee?.id === assigneeFilter)
     }
     return issues
-  }, [issuesQuery.data, priorityFilter, assigneeFilter])
+  }, [issuesQuery.data, priorityFilter, assigneeFilter, activeCycleId])
 
   // Search runs on the server. The old client-side filter could only see the
   // page that was already loaded, and only matched titles.
@@ -102,6 +113,7 @@ export default function BoardPage() {
       queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}`] })
       // Moving a card moves its points between columns.
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
+      queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/cycles`] })
     } catch {
       queryClient.setQueryData(queryKey, previous)
     }
@@ -206,6 +218,9 @@ export default function BoardPage() {
     return <Navigate to="/new-team" replace />
   }
 
+  const selectedCycle =
+    (cyclesQuery.data ?? []).find((cycle) => cycle.id === activeCycleId) ?? null
+
   const closeIssue = () => navigate(`/${team.key}`)
 
   return (
@@ -216,10 +231,17 @@ export default function BoardPage() {
         projects: projectsQuery.data ?? [],
         labels: labelsQuery.data ?? [],
         members: membersQuery.data ?? [],
+        cycles: cyclesQuery.data ?? [],
       }}
     >
       <div className="flex h-screen bg-neutral-50">
-        <Sidebar activeProjectId={activeProjectId} onSelectProject={setActiveProjectId} />
+        <Sidebar
+          activeProjectId={activeProjectId}
+          onSelectProject={setActiveProjectId}
+          activeCycleId={activeCycleId}
+          onSelectCycle={setActiveCycleId}
+          onNewCycle={() => setShowNewCycle(true)}
+        />
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar
             view={view}
@@ -232,6 +254,7 @@ export default function BoardPage() {
             assigneeFilter={assigneeFilter}
             onAssigneeFilterChange={setAssigneeFilter}
           />
+          {selectedCycle && !searchQuery && <CycleBanner cycle={selectedCycle} />}
           <div className="min-h-0 flex-1">
             {searchQuery ? (
               <SearchResults
@@ -268,6 +291,7 @@ export default function BoardPage() {
       {showShortcuts && <ShortcutsCheatsheet onClose={() => setShowShortcuts(false)} />}
 
       {showNewIssue && <NewIssueModal onClose={() => setShowNewIssue(false)} />}
+      {showNewCycle && <NewCycleModal onClose={() => setShowNewCycle(false)} />}
       {issueNumber && openIssue && (
         <IssueDetailPanel issueId={openIssue.id} onClose={closeIssue} />
       )}
