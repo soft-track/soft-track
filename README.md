@@ -136,9 +136,12 @@ Notes worth knowing:
   API, not the frontend container. Serving this anywhere other than localhost
   means rebuilding with the right value:
   `docker compose build --build-arg VITE_API_BASE_URL=https://api.example.com frontend`.
-- **Set a real `SECRET_KEY`** before running this anywhere but your own machine.
-  It is read from the environment, so `SECRET_KEY=... docker compose up` or a
-  `.env` file next to `docker-compose.yml` both work.
+- **Set a real `SECRET_KEY`** before running this anywhere but your own machine,
+  and set `ENVIRONMENT` to something other than `development`. In that
+  combination the app **refuses to start** while `SECRET_KEY` is still the
+  default, because that default is published in this repository and anyone who
+  reads it can forge a token. `SECRET_KEY=... ENVIRONMENT=production docker
+  compose up` or a `.env` file next to `docker-compose.yml` both work.
 - Host port 5173 is deliberate: it matches the backend's default `cors_origins`,
   so the API accepts the frontend's requests without extra configuration. If
   something else on your machine already holds 5173 (a `npm run dev` you left

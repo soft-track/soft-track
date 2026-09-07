@@ -24,8 +24,11 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-softtrack}:${POSTGRES_PASSWORD:-softtrack}@db:5432/${POSTGRES_DB:-softtrack}
-      # Override before exposing this anywhere beyond your own machine:
+      # development keeps the convenient defaults. Set ENVIRONMENT to anything
+      # else and the app refuses to start unless SECRET_KEY is a real value,
+      # because the default below is published in this repository.
       #   python -c "import secrets; print(secrets.token_urlsafe(48))"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-me-in-production}
     depends_on:
       db:

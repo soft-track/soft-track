@@ -6,15 +6,21 @@ neither routing (`app_*`) nor business logic (`lib_*`) lives here.
 
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 from sqlalchemy import inspect
 from sqlmodel import Session, create_engine
 
+# Published in this repository, so anyone can sign a token with it. Fine for
+# local development, never acceptable on a host anyone else can reach.
+DEV_SECRET_KEY = "dev-secret-key-change-me-in-production"
+
 
 class Settings(BaseSettings):
     app_name: str = "SoftTrack"
+    environment: str = "development"
     database_url: str = "sqlite:///./softtrack.db"
-    secret_key: str = "dev-secret-key-change-me-in-production"
+    secret_key: str = DEV_SECRET_KEY
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24 * 7  # 7 days
     cors_origins: list[str] = [
@@ -24,6 +30,25 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+
+    @model_validator(mode="after")
+    def _refuse_the_published_secret_in_production(self) -> "Settings":
+        """Fail at startup rather than serve forgeable tokens.
+
+        The default signing key is in this repository, so a deployment that
+        never set SECRET_KEY can have any user's JWT forged by anyone who has
+        read the source. Refusing to boot is noisy; the alternative is a
+        service that looks healthy and is not.
+        """
+        if self.environment != "development" and self.secret_key == DEV_SECRET_KEY:
+            raise ValueError(
+                "SECRET_KEY is still the published development default while "
+                f"ENVIRONMENT={self.environment!r}. Generate one with:\n"
+                '  python -c "import secrets; print(secrets.token_urlsafe(48))"\n'
+                "and set SECRET_KEY, or set ENVIRONMENT=development if this is "
+                "a local machine."
+            )
+        return self
 
 
 settings = Settings()
