@@ -1,5 +1,7 @@
 """Identity services: registration, login, and resolving the current user."""
 
+import hashlib
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, select
@@ -21,6 +23,18 @@ AVATAR_COLORS = [
     "#ef4444",
     "#22c55e",
 ]
+
+
+def avatar_color_for(email: str) -> str:
+    """Pick a stable avatar colour for an address.
+
+    Deliberately not `hash()`: Python randomises string hashing per process
+    (PYTHONHASHSEED), so the built-in would hand the same address a different
+    colour after every restart. A digest is stable across processes, machines
+    and releases, which is what "the same person always looks the same" needs.
+    """
+    digest = hashlib.sha256(email.strip().lower().encode("utf-8")).hexdigest()
+    return AVATAR_COLORS[int(digest, 16) % len(AVATAR_COLORS)]
 
 
 def get_current_user(
@@ -51,7 +65,7 @@ def register_user(session: Session, email: str, password: str, full_name: str) -
         email=email,
         hashed_password=hash_password(password),
         full_name=full_name,
-        avatar_color=AVATAR_COLORS[hash(email) % len(AVATAR_COLORS)],
+        avatar_color=avatar_color_for(email),
     )
     session.add(user)
     session.commit()
