@@ -14,7 +14,11 @@ import sqlmodel  # autogenerate emits sqlmodel.sql.sqltypes.AutoString()
 
 # revision identifiers, used by Alembic.
 revision: str = "09e8c6a6a4b4"
-down_revision: Union[str, Sequence[str], None] = "e2b56dbe1777"
+# Chained onto the merge revision rather than the original baseline: issue
+# links and search both landed on main first, and this migration has never
+# been merged, so repointing it is free -- where rewriting a published
+# migration's parent would not be.
+down_revision: Union[str, Sequence[str], None] = "09d941255b48"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
