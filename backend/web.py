@@ -4,8 +4,11 @@ Mirrors the role `web.py` plays in the Educare backend -- everything that is
 neither routing (`app_*`) nor business logic (`lib_*`) lives here.
 """
 
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
-from sqlmodel import SQLModel, Session, create_engine
+from sqlalchemy import inspect
+from sqlmodel import Session, create_engine
 
 
 class Settings(BaseSettings):
@@ -30,11 +33,41 @@ connect_args = {"check_same_thread": False} if "sqlite" in settings.database_url
 engine = create_engine(settings.database_url, echo=False, connect_args=connect_args)
 
 
-def init_db() -> None:
-    # Import the tables so they are registered on SQLModel.metadata before create_all.
-    from lib_softtrack import tables  # noqa: F401
+# The first Alembic revision. Its output is exactly the schema that
+# SQLModel.metadata.create_all used to produce, which is what lets an
+# install that predates Alembic be adopted rather than rebuilt.
+_BASELINE_REVISION = "e2b56dbe1777"
 
-    SQLModel.metadata.create_all(engine)
+
+def _alembic_config():
+    from alembic.config import Config
+
+    here = Path(__file__).parent
+    config = Config(str(here / "alembic.ini"))
+    config.set_main_option("script_location", str(here / "alembic"))
+    return config
+
+
+def init_db() -> None:
+    """Bring the database schema up to date.
+
+    Runs `alembic upgrade head`, with one piece of care for existing installs.
+    A database created before Alembic has all the tables but no
+    `alembic_version` row, so a plain upgrade would try to CREATE TABLE over
+    live tables and fail on boot. Detect that and stamp the baseline first, so
+    upgrading SoftTrack adopts the existing database instead of breaking it.
+    """
+    from alembic import command
+
+    config = _alembic_config()
+    table_names = set(inspect(engine).get_table_names())
+
+    if "alembic_version" not in table_names and "user" in table_names:
+        # Pre-Alembic install: record that it is already at the baseline, then
+        # let the upgrade below apply anything newer.
+        command.stamp(config, _BASELINE_REVISION)
+
+    command.upgrade(config, "head")
 
 
 def get_session():

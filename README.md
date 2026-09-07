@@ -206,6 +206,29 @@ is at the default path.)
 - CORS origins for local dev are set in `backend/web.py`
   (`cors_origins`) — add your deployed frontend's origin there for production.
 
+## Database migrations
+
+The schema is managed by **Alembic**. The URL comes from `DATABASE_URL`, the same
+setting the app uses, so nothing is duplicated in `alembic.ini`.
+
+You do not normally run anything: the app applies migrations on startup, so
+`docker compose up` is enough, and **upgrading an existing install adopts its
+database rather than rebuilding it** — a database created before Alembic gets
+stamped at the baseline automatically, keeping its data.
+
+To change the schema:
+
+```bash
+cd backend
+alembic revision --autogenerate -m "add x to y"   # then READ the generated file
+alembic upgrade head
+```
+
+Autogenerate is reliable for added tables, columns and indexes, and unreliable
+for server defaults, constraint renames, and anything touching data — review
+what it writes before committing it. Migrations run with `render_as_batch` on
+SQLite, which cannot `ALTER` most things in place.
+
 ## Running the checks
 
 CI runs four jobs on every pull request; all of them run locally too.
