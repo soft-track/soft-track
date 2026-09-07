@@ -9,6 +9,7 @@ import {
 } from '../api/generated/endpoints/issues/issues'
 import { useListLabelsTeamsTeamIdLabelsGet } from '../api/generated/endpoints/labels/labels'
 import { useListProjectsTeamsTeamIdProjectsGet } from '../api/generated/endpoints/projects/projects'
+import { useGetEstimateSummaryTeamsTeamIdEstimatesGet } from '../api/generated/endpoints/issues/issues'
 import { useListTeamMembersTeamsTeamIdMembersGet } from '../api/generated/endpoints/teams/teams'
 import type { IssuePriority, IssueRead, IssueStatus } from '../api/generated/models'
 import { IssueDetailPanel } from '../components/IssueDetailPanel'
@@ -43,6 +44,13 @@ export default function BoardPage() {
     query: { enabled: Boolean(team) },
   })
   const issuesParams = { project_id: activeProjectId === 'all' ? undefined : activeProjectId }
+  // Rolled up on the server rather than summed from `issues` below: that
+  // list is one page, so a client-side total would be the total of whatever
+  // happened to be loaded.
+  const estimatesQuery = useGetEstimateSummaryTeamsTeamIdEstimatesGet(team?.id ?? 0, {
+    query: { enabled: Boolean(team) },
+  })
+
   const issuesQuery = useListIssuesTeamsTeamIdIssuesGet(team?.id ?? 0, issuesParams, {
     query: { enabled: Boolean(team) },
   })
@@ -84,6 +92,8 @@ export default function BoardPage() {
     try {
       await updateIssue.mutateAsync({ issueId, data: { status } })
       queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}`] })
+      // Moving a card moves its points between columns.
+      queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
     } catch {
       queryClient.setQueryData(queryKey, previous)
     }
@@ -134,7 +144,11 @@ export default function BoardPage() {
                 Loading issues…
               </div>
             ) : view === 'board' ? (
-              <KanbanBoard issues={filteredIssues} onStatusChange={handleStatusChange} />
+              <KanbanBoard
+                issues={filteredIssues}
+                onStatusChange={handleStatusChange}
+                estimates={estimatesQuery.data}
+              />
             ) : (
               <IssueListView issues={filteredIssues} />
             )}

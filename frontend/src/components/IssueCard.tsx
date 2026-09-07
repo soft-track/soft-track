@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import type { IssueRead } from '../api/generated/models'
 import { useTeamContext } from '../team/TeamContext'
 import { Avatar } from './Avatar'
+import { EstimateBadge } from './EstimateBadge'
 import { PriorityIcon } from './PriorityIcon'
 
 export function IssueCard({ issue }: { issue: IssueRead }) {
@@ -35,7 +36,10 @@ export function IssueCard({ issue }: { issue: IssueRead }) {
     >
       <div className="mb-1.5 flex items-center justify-between">
         <span className="identifier text-xs font-medium text-neutral-400">{issue.identifier}</span>
-        <PriorityIcon priority={issue.priority} />
+        <div className="flex items-center gap-1.5">
+          {issue.estimate != null && <EstimateBadge points={issue.estimate} />}
+          <PriorityIcon priority={issue.priority} />
+        </div>
       </div>
       <p className="mb-2 text-sm font-medium leading-snug text-neutral-900">{issue.title}</p>
       <div className="flex items-center justify-between">

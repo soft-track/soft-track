@@ -7,11 +7,19 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core'
 
-import type { IssueRead, IssueStatus } from '../api/generated/models'
+import type { EstimateSummary, IssueRead, IssueStatus } from '../api/generated/models'
 import { STATUS_META, STATUS_ORDER } from '../lib/issueMeta'
 import { IssueCard } from './IssueCard'
 
-function Column({ status, issues }: { status: IssueStatus; issues: IssueRead[] }) {
+function Column({
+  status,
+  issues,
+  load,
+}: {
+  status: IssueStatus
+  issues: IssueRead[]
+  load?: EstimateSummary['by_status'][IssueStatus]
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: status })
   const meta = STATUS_META[status]
 
@@ -26,6 +34,23 @@ function Column({ status, issues }: { status: IssueStatus; issues: IssueRead[] }
         <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
         <span className="text-sm font-medium text-neutral-700">{meta.label}</span>
         <span className="text-xs text-neutral-400">{issues.length}</span>
+        {load && load.points > 0 && (
+          <span
+            className="identifier ml-auto text-xs text-neutral-400"
+            title={
+              load.unestimated_count > 0
+                ? `${load.points} points, with ${load.unestimated_count} issue${
+                    load.unestimated_count === 1 ? '' : 's'
+                  } not yet sized`
+                : `${load.points} points`
+            }
+          >
+            {load.points} pts
+            {/* An unsized issue is not worth zero, so say so rather than let
+                the total read as complete. */}
+            {load.unestimated_count > 0 && <span className="text-neutral-300"> +?</span>}
+          </span>
+        )}
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto px-2 pb-3">
         {issues.map((issue) => (
@@ -42,9 +67,12 @@ function Column({ status, issues }: { status: IssueStatus; issues: IssueRead[] }
 export function KanbanBoard({
   issues,
   onStatusChange,
+  estimates,
 }: {
   issues: IssueRead[]
   onStatusChange: (issueId: number, status: IssueStatus) => void
+  /** Server-side point rollups. Undefined while they load. */
+  estimates?: EstimateSummary
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -69,6 +97,7 @@ export function KanbanBoard({
             key={status}
             status={status}
             issues={issues.filter((issue) => issue.status === status)}
+            load={estimates?.by_status?.[status]}
           />
         ))}
       </div>

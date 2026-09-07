@@ -5,7 +5,7 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { useCreateCommentIssuesIssueIdCommentsPost, useListCommentsIssuesIssueIdCommentsGet } from '../api/generated/endpoints/comments/comments'
 import { useGetIssueIssuesIssueIdGet, useUpdateIssueIssuesIssueIdPatch } from '../api/generated/endpoints/issues/issues'
 import { IssuePriority, IssueStatus } from '../api/generated/models'
-import { PRIORITY_META, PRIORITY_ORDER, STATUS_META, STATUS_ORDER } from '../lib/issueMeta'
+import { ESTIMATE_SCALE, PRIORITY_META, PRIORITY_ORDER, STATUS_META, STATUS_ORDER } from '../lib/issueMeta'
 import { useTeamContext } from '../team/TeamContext'
 import { Avatar } from './Avatar'
 import { PriorityIcon } from './PriorityIcon'
@@ -49,6 +49,7 @@ export function IssueDetailPanel({
   const invalidateIssue = () => {
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/issues`] })
     queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}`] })
+    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
   }
 
   const patch = async (data: Parameters<typeof updateIssue.mutateAsync>[0]['data']) => {
@@ -135,6 +136,30 @@ export function IssueDetailPanel({
                     {PRIORITY_ORDER.map((p) => (
                       <option key={p} value={p}>
                         {PRIORITY_META[p].label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-neutral-500">Estimate</span>
+                  <select
+                    value={issue.estimate ?? ''}
+                    onChange={(e) =>
+                      // Read the value back out of the scale rather than
+                      // casting a string to it, so the value is provably one
+                      // the API accepts.
+                      patch({
+                        estimate:
+                          ESTIMATE_SCALE.find((p) => String(p) === e.target.value) ?? null,
+                      })
+                    }
+                    className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs"
+                  >
+                    <option value="">Not sized</option>
+                    {ESTIMATE_SCALE.map((points) => (
+                      <option key={points} value={points}>
+                        {points} {points === 1 ? 'point' : 'points'}
                       </option>
                     ))}
                   </select>

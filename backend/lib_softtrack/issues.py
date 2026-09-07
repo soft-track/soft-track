@@ -45,6 +45,7 @@ def issue_to_read(issue: Issue, session: Session) -> IssueRead:
         status=issue.status,
         priority=issue.priority,
         assignee=UserPublic.model_validate(assignee) if assignee else None,
+        estimate=issue.estimate,
         creator=UserPublic.model_validate(creator),
         labels=[label for label in labels if label is not None],
         created_at=issue.created_at,
@@ -104,6 +105,7 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
                 if issue.assignee_id
                 else None
             ),
+            estimate=issue.estimate,
             creator=UserPublic.model_validate(users[issue.creator_id]),
             labels=labels_by_issue.get(issue.id, []),
             created_at=issue.created_at,
@@ -150,6 +152,7 @@ def create_issue(
         status=payload.status,
         priority=payload.priority,
         assignee_id=payload.assignee_id,
+        estimate=payload.estimate,
         creator_id=current_user.id,
     )
     session.add(issue)

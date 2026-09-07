@@ -789,6 +789,54 @@
         }
       }
     },
+    "/teams/{team_id}/estimates": {
+      "get": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "Get Estimate Summary",
+        "description": "Story-point rollups by column and by assignee for the whole team.\n\nSeparate from the issue list because the list is paginated: summing a page\nwould silently report the total of whatever the client happened to load.",
+        "operationId": "get_estimate_summary_teams__team_id__estimates_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimateSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/issues/{issue_id}": {
       "get": {
         "tags": [
@@ -1076,6 +1124,40 @@
   },
   "components": {
     "schemas": {
+      "AssigneeLoad": {
+        "properties": {
+          "user": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          },
+          "issue_count": {
+            "type": "integer",
+            "title": "Issue Count"
+          },
+          "unestimated_count": {
+            "type": "integer",
+            "title": "Unestimated Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "points",
+          "issue_count",
+          "unestimated_count"
+        ],
+        "title": "AssigneeLoad",
+        "description": "What one person is carrying. `user` is null for unassigned work."
+      },
       "Body_login_auth_login_post": {
         "properties": {
           "grant_type": {
@@ -1182,6 +1264,48 @@
         ],
         "title": "CommentRead"
       },
+      "EstimateSummary": {
+        "properties": {
+          "total_points": {
+            "type": "integer",
+            "title": "Total Points"
+          },
+          "total_issues": {
+            "type": "integer",
+            "title": "Total Issues"
+          },
+          "unestimated_issues": {
+            "type": "integer",
+            "title": "Unestimated Issues"
+          },
+          "by_status": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StatusLoad"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/IssueStatus"
+            },
+            "type": "object",
+            "title": "By Status"
+          },
+          "by_assignee": {
+            "items": {
+              "$ref": "#/components/schemas/AssigneeLoad"
+            },
+            "type": "array",
+            "title": "By Assignee"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_points",
+          "total_issues",
+          "unestimated_issues",
+          "by_status",
+          "by_assignee"
+        ],
+        "title": "EstimateSummary"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1241,6 +1365,26 @@
               }
             ],
             "title": "Assignee Id"
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              null,
+              1,
+              2,
+              3,
+              5,
+              8
+            ],
+            "title": "Estimate",
+            "description": "Story points on the scale 1, 2, 3, 5, 8. Null means not sized yet, which is distinct from an estimate of zero."
           },
           "label_ids": {
             "items": {
@@ -1327,6 +1471,17 @@
                 "type": "null"
               }
             ]
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimate"
           },
           "creator": {
             "$ref": "#/components/schemas/UserPublic"
@@ -1442,6 +1597,26 @@
               }
             ],
             "title": "Assignee Id"
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              null,
+              1,
+              2,
+              3,
+              5,
+              8
+            ],
+            "title": "Estimate",
+            "description": "Story points on the scale 1, 2, 3, 5, 8. Null means not sized yet, which is distinct from an estimate of zero."
           },
           "label_ids": {
             "anyOf": [
@@ -1642,6 +1817,30 @@
           "created_at"
         ],
         "title": "ProjectRead"
+      },
+      "StatusLoad": {
+        "properties": {
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          },
+          "issue_count": {
+            "type": "integer",
+            "title": "Issue Count"
+          },
+          "unestimated_count": {
+            "type": "integer",
+            "title": "Unestimated Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "points",
+          "issue_count",
+          "unestimated_count"
+        ],
+        "title": "StatusLoad",
+        "description": "The work sitting in one board column."
       },
       "TeamCreate": {
         "properties": {

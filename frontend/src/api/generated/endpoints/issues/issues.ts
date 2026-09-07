@@ -25,6 +25,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  EstimateSummary,
   HTTPValidationError,
   IssueCreate,
   IssueRead,
@@ -210,6 +211,102 @@ export function useListIssuesTeamsTeamIdIssuesGet<TData = Awaited<ReturnType<typ
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getListIssuesTeamsTeamIdIssuesGetQueryOptions(teamId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Story-point rollups by column and by assignee for the whole team.
+ *
+ * Separate from the issue list because the list is paginated: summing a page
+ * would silently report the total of whatever the client happened to load.
+ * @summary Get Estimate Summary
+ */
+export const getEstimateSummaryTeamsTeamIdEstimatesGet = (
+    teamId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<EstimateSummary>(
+      {url: `/teams/${teamId}/estimates`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getGetEstimateSummaryTeamsTeamIdEstimatesGetQueryKey = (teamId: number,) => {
+    return [
+    `/teams/${teamId}/estimates`
+    ] as const;
+    }
+
+
+export const getGetEstimateSummaryTeamsTeamIdEstimatesGetQueryOptions = <TData = Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError = HTTPValidationError>(teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEstimateSummaryTeamsTeamIdEstimatesGetQueryKey(teamId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>> = ({ signal }) => getEstimateSummaryTeamsTeamIdEstimatesGet(teamId, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: teamId !== null && teamId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetEstimateSummaryTeamsTeamIdEstimatesGetQueryResult = NonNullable<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>>
+export type GetEstimateSummaryTeamsTeamIdEstimatesGetQueryError = HTTPValidationError
+
+
+export function useGetEstimateSummaryTeamsTeamIdEstimatesGet<TData = Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError = HTTPValidationError>(
+ teamId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>,
+          TError,
+          Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEstimateSummaryTeamsTeamIdEstimatesGet<TData = Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>,
+          TError,
+          Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEstimateSummaryTeamsTeamIdEstimatesGet<TData = Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Estimate Summary
+ */
+
+export function useGetEstimateSummaryTeamsTeamIdEstimatesGet<TData = Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetEstimateSummaryTeamsTeamIdEstimatesGetQueryOptions(teamId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

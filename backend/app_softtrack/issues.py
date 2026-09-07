@@ -4,7 +4,9 @@ from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
 from lib_identity.identity import get_current_user
+from lib_softtrack import estimates as estimates_service
 from lib_softtrack import issues as issues_service
+from lib_softtrack.models.estimates import EstimateSummary
 from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
 from lib_softtrack.tables import IssuePriority, IssueStatus, User
@@ -46,6 +48,20 @@ def list_issues(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get("/teams/{team_id}/estimates", response_model=EstimateSummary)
+def get_estimate_summary(
+    team_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Story-point rollups by column and by assignee for the whole team.
+
+    Separate from the issue list because the list is paginated: summing a page
+    would silently report the total of whatever the client happened to load.
+    """
+    return estimates_service.estimate_summary(session, current_user, team_id)
 
 
 @router.get("/issues/{issue_id}", response_model=IssueRead)

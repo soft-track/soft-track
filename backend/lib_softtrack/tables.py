@@ -108,6 +108,9 @@ class Issue(SQLModel, table=True):
     priority: IssuePriority = Field(default=IssuePriority.no_priority)
     assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
     creator_id: int = Field(foreign_key="user.id")
+    # Story points. Null means "not sized yet", which is a different thing
+    # from zero -- a burndown has to be able to tell them apart.
+    estimate: Optional[int] = Field(default=None)
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
 

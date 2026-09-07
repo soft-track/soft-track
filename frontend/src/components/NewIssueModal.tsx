@@ -3,7 +3,7 @@ import { type FormEvent, useState } from 'react'
 
 import { useCreateIssueTeamsTeamIdIssuesPost } from '../api/generated/endpoints/issues/issues'
 import { IssuePriority, IssueStatus } from '../api/generated/models'
-import { PRIORITY_ORDER, STATUS_ORDER, PRIORITY_META, STATUS_META } from '../lib/issueMeta'
+import { ESTIMATE_SCALE, PRIORITY_ORDER, STATUS_ORDER, PRIORITY_META, STATUS_META } from '../lib/issueMeta'
 import { useTeamContext } from '../team/TeamContext'
 
 export function NewIssueModal({ onClose }: { onClose: () => void }) {
@@ -16,6 +16,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
   const [projectId, setProjectId] = useState<string>('')
   const [status, setStatus] = useState<IssueStatus>(IssueStatus.backlog)
   const [priority, setPriority] = useState<IssuePriority>(IssuePriority.no_priority)
+  const [estimate, setEstimate] = useState<(typeof ESTIMATE_SCALE)[number] | null>(null)
   const [assigneeId, setAssigneeId] = useState<string>('')
   const [labelIds, setLabelIds] = useState<number[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -37,6 +38,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
           project_id: projectId ? Number(projectId) : undefined,
           status,
           priority,
+          estimate,
           assignee_id: assigneeId ? Number(assigneeId) : undefined,
           label_ids: labelIds,
         },
@@ -100,6 +102,21 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
               {PRIORITY_ORDER.map((p) => (
                 <option key={p} value={p}>
                   {PRIORITY_META[p].label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={estimate ?? ''}
+              onChange={(e) =>
+                setEstimate(ESTIMATE_SCALE.find((p) => String(p) === e.target.value) ?? null)
+              }
+              className="rounded-md border border-neutral-200 px-2 py-1 text-xs"
+            >
+              <option value="">No estimate</option>
+              {ESTIMATE_SCALE.map((points) => (
+                <option key={points} value={points}>
+                  {points} {points === 1 ? 'point' : 'points'}
                 </option>
               ))}
             </select>
