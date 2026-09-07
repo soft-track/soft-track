@@ -85,14 +85,24 @@ soft_track/
 │   └── requirements.txt
 └── frontend/
     ├── orval.config.ts       # codegen config (reads ../backend/openapi.json)
-    ├── src/
+    ├── src/                  # one folder per feature; `@/` aliases this dir
+    │   ├── app/              # App (routes), main.tsx entry
     │   ├── api/
     │   │   ├── client.ts     # axios instance + JWT interceptor (Orval mutator)
     │   │   └── generated/    # typed client + React Query hooks (generated)
-    │   ├── auth/             # AuthContext, RequireAuth route guard
-    │   ├── team/             # TeamContext (current team/projects/labels/members)
-    │   ├── components/       # Sidebar, TopBar, KanbanBoard, IssueDetailPanel, ...
-    │   └── pages/             # Login, Register, NewTeam, Board
+    │   ├── auth/             # AuthContext, RequireAuth, Login/Register pages
+    │   ├── team/             # TeamContext, useTeams, useTeamData, team pages
+    │   ├── board/            # BoardPage + its hooks (filters, overlays, status
+    │   │                     #   change), KanbanBoard, IssueListView, Sidebar, TopBar
+    │   ├── issues/           # IssueCard, NewIssueModal, issueMeta, and detail/
+    │   │   └── detail/       #   the panel's sections + useIssueEditor
+    │   ├── cycles/           # CycleList, CycleBanner, NewCycleModal
+    │   ├── search/           # SearchResults, useDebounced
+    │   ├── imports/          # ImportJiraModal
+    │   ├── reports/          # charts
+    │   ├── markdown/         # renderer, editor, mentions, task lists
+    │   ├── keyboard/         # command palette, shortcuts, global key handling
+    │   └── ui/               # Avatar, Logo -- the genuinely shared primitives
     └── package.json
 ```
 

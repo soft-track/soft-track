@@ -1,8 +1,8 @@
 import type { IssuePriority } from '@/api/generated/models'
 import { PRIORITY_META, PRIORITY_ORDER } from '@/issues/issueMeta'
+import type { AssigneeFilter } from '@/board/filterIssues'
+import type { BoardView } from '@/keyboard/useCommands'
 import { useTeamContext } from '@/team/TeamContext'
-
-export type AssigneeFilter = 'all' | 'unassigned' | number
 
 export function TopBar({
   view,
@@ -15,8 +15,8 @@ export function TopBar({
   assigneeFilter,
   onAssigneeFilterChange,
 }: {
-  view: 'board' | 'list' | 'reports'
-  onViewChange: (view: 'board' | 'list' | 'reports') => void
+  view: BoardView
+  onViewChange: (view: BoardView) => void
   onNewIssue: () => void
   search: string
   onSearchChange: (value: string) => void

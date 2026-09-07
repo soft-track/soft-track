@@ -1,95 +1,54 @@
-import { useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
-import {
-  getListIssuesTeamsTeamIdIssuesGetQueryKey,
-  useListIssuesTeamsTeamIdIssuesGet,
-  useUpdateIssueIssuesIssueIdPatch,
-} from '@/api/generated/endpoints/issues/issues'
-import { useListLabelsTeamsTeamIdLabelsGet } from '@/api/generated/endpoints/labels/labels'
-import { useListProjectsTeamsTeamIdProjectsGet } from '@/api/generated/endpoints/projects/projects'
-import { useGetEstimateSummaryTeamsTeamIdEstimatesGet } from '@/api/generated/endpoints/issues/issues'
+import { useListIssuesTeamsTeamIdIssuesGet } from '@/api/generated/endpoints/issues/issues'
 import { useSearchSearchGet } from '@/api/generated/endpoints/search/search'
-import { useListTeamMembersTeamsTeamIdMembersGet } from '@/api/generated/endpoints/teams/teams'
-import type { IssuePriority, IssueRead, IssueStatus } from '@/api/generated/models'
-import { IssueDetailPanel } from '@/issues/IssueDetailPanel'
+import type { IssueRead } from '@/api/generated/models'
+import { filterIssues, type IssueFilters, NO_FILTERS } from '@/board/filterIssues'
 import { IssueListView } from '@/board/IssueListView'
 import { KanbanBoard } from '@/board/KanbanBoard'
-import { CycleBanner } from '@/cycles/CycleBanner'
-import { ImportJiraModal } from '@/imports/ImportJiraModal'
-import { NewCycleModal } from '@/cycles/NewCycleModal'
-import { SearchResults } from '@/search/SearchResults'
-import { ReportsView } from '@/reports/ReportsView'
-import { useListCyclesTeamsTeamIdCyclesGet } from '@/api/generated/endpoints/cycles/cycles'
-import { CommandPalette, type Command } from '@/keyboard/CommandPalette'
-import { ShortcutsCheatsheet } from '@/keyboard/ShortcutsCheatsheet'
-import { isPlainKey, isTypingTarget } from '@/keyboard/typing'
-import { NewIssueModal } from '@/issues/NewIssueModal'
 import { Sidebar } from '@/board/Sidebar'
-import { TopBar, type AssigneeFilter } from '@/board/TopBar'
-import { useTeamByKey } from '@/team/useTeams'
+import { TopBar } from '@/board/TopBar'
+import { useOverlays } from '@/board/useOverlays'
+import { useStatusChange } from '@/board/useStatusChange'
+import { CycleBanner } from '@/cycles/CycleBanner'
+import { NewCycleModal } from '@/cycles/NewCycleModal'
+import { ImportJiraModal } from '@/imports/ImportJiraModal'
+import { IssueDetailPanel } from '@/issues/IssueDetailPanel'
+import { NewIssueModal } from '@/issues/NewIssueModal'
+import { CommandPalette } from '@/keyboard/CommandPalette'
+import { ShortcutsCheatsheet } from '@/keyboard/ShortcutsCheatsheet'
+import { type BoardView, useCommands } from '@/keyboard/useCommands'
+import { useGlobalShortcuts } from '@/keyboard/useGlobalShortcuts'
+import { ReportsView } from '@/reports/ReportsView'
+import { SearchResults } from '@/search/SearchResults'
+import { useDebounced } from '@/search/useDebounced'
 import { TeamProvider } from '@/team/TeamContext'
+import { useTeamData } from '@/team/useTeamData'
+import { useTeamByKey } from '@/team/useTeams'
 
 export default function BoardPage() {
   const { teamKey, issueNumber } = useParams<{ teamKey: string; issueNumber?: string }>()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const { team, isLoading, teams } = useTeamByKey(teamKey)
 
+  const [view, setView] = useState<BoardView>('board')
   const [activeProjectId, setActiveProjectId] = useState<number | 'all'>('all')
-  const [activeCycleId, setActiveCycleId] = useState<number | null>(null)
-  const [showNewCycle, setShowNewCycle] = useState(false)
-  const [showImport, setShowImport] = useState(false)
-  const [view, setView] = useState<'board' | 'list' | 'reports'>('board')
+  const [filters, setFilters] = useState<IssueFilters>(NO_FILTERS)
   const [search, setSearch] = useState('')
-  const [showNewIssue, setShowNewIssue] = useState(false)
-  const [showPalette, setShowPalette] = useState(false)
-  const [showShortcuts, setShowShortcuts] = useState(false)
-  const [priorityFilter, setPriorityFilter] = useState<IssuePriority | 'all'>('all')
-  const [assigneeFilter, setAssigneeFilter] = useState<AssigneeFilter>('all')
+  const overlays = useOverlays()
 
-  const projectsQuery = useListProjectsTeamsTeamIdProjectsGet(team?.id ?? 0, {
-    query: { enabled: Boolean(team) },
-  })
-  const labelsQuery = useListLabelsTeamsTeamIdLabelsGet(team?.id ?? 0, {
-    query: { enabled: Boolean(team) },
-  })
-  const membersQuery = useListTeamMembersTeamsTeamIdMembersGet(team?.id ?? 0, {
-    query: { enabled: Boolean(team) },
-  })
-  const cyclesQuery = useListCyclesTeamsTeamIdCyclesGet(team?.id ?? 0, {
-    query: { enabled: Boolean(team) },
-  })
+  const teamData = useTeamData(team)
   const issuesParams = { project_id: activeProjectId === 'all' ? undefined : activeProjectId }
-  // Rolled up on the server rather than summed from `issues` below: that
-  // list is one page, so a client-side total would be the total of whatever
-  // happened to be loaded.
-  const estimatesQuery = useGetEstimateSummaryTeamsTeamIdEstimatesGet(team?.id ?? 0, {
-    query: { enabled: Boolean(team) },
-  })
-
   const issuesQuery = useListIssuesTeamsTeamIdIssuesGet(team?.id ?? 0, issuesParams, {
     query: { enabled: Boolean(team) },
   })
-  const updateIssue = useUpdateIssueIssuesIssueIdPatch()
+  const changeStatus = useStatusChange(team, issuesParams)
 
-  const filteredIssues = useMemo(() => {
-    let issues = issuesQuery.data?.items ?? []
-
-    if (priorityFilter !== 'all') {
-      issues = issues.filter((issue) => issue.priority === priorityFilter)
-    }
-    if (activeCycleId !== null) {
-      issues = issues.filter((issue) => issue.cycle_id === activeCycleId)
-    }
-    if (assigneeFilter === 'unassigned') {
-      issues = issues.filter((issue) => !issue.assignee)
-    } else if (assigneeFilter !== 'all') {
-      issues = issues.filter((issue) => issue.assignee?.id === assigneeFilter)
-    }
-    return issues
-  }, [issuesQuery.data, priorityFilter, assigneeFilter, activeCycleId])
+  // Memoised on the query result, not rebuilt each render: `?? []` would be
+  // a fresh array every time and defeat the filter memo below it.
+  const issues = useMemo(() => issuesQuery.data?.items ?? [], [issuesQuery.data])
+  const visibleIssues = useMemo(() => filterIssues(issues, filters), [issues, filters])
 
   // Search runs on the server. The old client-side filter could only see the
   // page that was already loaded, and only matched titles.
@@ -99,114 +58,23 @@ export default function BoardPage() {
     { query: { enabled: Boolean(team) && searchQuery.length > 0 } },
   )
 
-  const openIssue = issueNumber
-    ? issuesQuery.data?.items.find((i) => String(i.number) === issueNumber)
-    : undefined
+  const openNewIssue = useCallback(() => overlays.open('newIssue'), [overlays])
+  const openShortcuts = useCallback(() => overlays.open('shortcuts'), [overlays])
+  const togglePalette = useCallback(() => overlays.toggle('palette'), [overlays])
 
-  const handleStatusChange = async (issueId: number, status: IssueStatus) => {
-    if (!team) return
-    const queryKey = getListIssuesTeamsTeamIdIssuesGetQueryKey(team.id, issuesParams)
-    const previous = queryClient.getQueryData<IssueRead[]>(queryKey)
-    queryClient.setQueryData<IssueRead[]>(
-      queryKey,
-      (old) => old?.map((issue) => (issue.id === issueId ? { ...issue, status } : issue)) ?? old,
-    )
-    try {
-      await updateIssue.mutateAsync({ issueId, data: { status } })
-      queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}`] })
-      // Moving a card moves its points between columns.
-      queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
-      queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/cycles`] })
-    } catch {
-      queryClient.setQueryData(queryKey, previous)
-    }
-  }
-
-  /**
-   * Global shortcuts.
-   *
-   * Every single-key binding is gated on `isTypingTarget` first. Without that
-   * guard, typing an issue title containing "c" fires "create issue" -- which
-   * is how keyboard shortcuts get added and then quietly turned off again.
-   */
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault()
-        setShowPalette((open) => !open)
-        return
-      }
-
-      if (event.key === 'Escape') {
-        // Close the shallowest thing that is open, so Escape never skips a
-        // layer or closes two at once.
-        if (showPalette) setShowPalette(false)
-        else if (showShortcuts) setShowShortcuts(false)
-        else if (showNewIssue) setShowNewIssue(false)
-        return
-      }
-
-      if (!isPlainKey(event) || isTypingTarget(event.target)) return
-      if (showPalette || showShortcuts) return
-
-      if (event.key === 'c') {
-        event.preventDefault()
-        setShowNewIssue(true)
-      } else if (event.key === '?') {
-        event.preventDefault()
-        setShowShortcuts(true)
-      } else if (event.key === '/') {
-        event.preventDefault()
-        document.querySelector<HTMLInputElement>('input[type="search"], input[placeholder*="Search"]')?.focus()
-      }
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [showPalette, showShortcuts, showNewIssue])
+  useGlobalShortcuts({
+    togglePalette,
+    closeTop: overlays.closeTop,
+    openNewIssue,
+    openShortcuts,
+    suppressed: overlays.isOpen('palette') || overlays.isOpen('shortcuts'),
+  })
+  const commands = useCommands({ view, setView, team, teams, openNewIssue, openShortcuts })
 
   const openIssueFromPalette = useCallback(
     (issue: IssueRead) => navigate(`/${team?.key}/issue/${issue.number}`),
     [navigate, team?.key],
   )
-
-  const commands = useMemo<Command[]>(() => {
-    const list: Command[] = [
-      {
-        id: 'new-issue',
-        label: 'Create an issue',
-        hint: 'C',
-        group: 'Actions',
-        run: () => setShowNewIssue(true),
-      },
-      {
-        id: 'toggle-view',
-        label: view === 'board' ? 'Switch to list view' : 'Switch to board view',
-        group: 'Actions',
-        run: () => setView(view === 'board' ? 'list' : 'board'),
-      },
-      {
-        id: 'shortcuts',
-        label: 'Show keyboard shortcuts',
-        hint: '?',
-        group: 'Actions',
-        run: () => setShowShortcuts(true),
-      },
-    ]
-
-    for (const candidate of teams) {
-      if (candidate.id === team?.id) continue
-      list.push({
-        id: `team-${candidate.id}`,
-        label: `Switch to ${candidate.name}`,
-        hint: candidate.key,
-        group: 'Teams',
-        run: () => navigate(`/${candidate.key}`),
-      })
-    }
-
-    return list
-  }, [view, teams, team?.id, navigate])
 
   if (isLoading) {
     return (
@@ -221,42 +89,33 @@ export default function BoardPage() {
     return <Navigate to="/new-team" replace />
   }
 
-  const selectedCycle =
-    (cyclesQuery.data ?? []).find((cycle) => cycle.id === activeCycleId) ?? null
-
-  const closeIssue = () => navigate(`/${team.key}`)
+  const openIssue = issueNumber ? issues.find((i) => String(i.number) === issueNumber) : undefined
+  const selectedCycle = teamData.cycles.find((cycle) => cycle.id === filters.cycleId) ?? null
+  const setFilter = <K extends keyof IssueFilters>(key: K, value: IssueFilters[K]) =>
+    setFilters((current) => ({ ...current, [key]: value }))
 
   return (
-    <TeamProvider
-      value={{
-        team,
-        teams,
-        projects: projectsQuery.data ?? [],
-        labels: labelsQuery.data ?? [],
-        members: membersQuery.data ?? [],
-        cycles: cyclesQuery.data ?? [],
-      }}
-    >
+    <TeamProvider value={{ team, teams, ...teamData }}>
       <div className="flex h-screen bg-neutral-50">
         <Sidebar
           activeProjectId={activeProjectId}
           onSelectProject={setActiveProjectId}
-          activeCycleId={activeCycleId}
-          onSelectCycle={setActiveCycleId}
-          onNewCycle={() => setShowNewCycle(true)}
-          onImport={() => setShowImport(true)}
+          activeCycleId={filters.cycleId}
+          onSelectCycle={(cycleId) => setFilter('cycleId', cycleId)}
+          onNewCycle={() => overlays.open('newCycle')}
+          onImport={() => overlays.open('import')}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar
             view={view}
             onViewChange={setView}
-            onNewIssue={() => setShowNewIssue(true)}
+            onNewIssue={openNewIssue}
             search={search}
             onSearchChange={setSearch}
-            priorityFilter={priorityFilter}
-            onPriorityFilterChange={setPriorityFilter}
-            assigneeFilter={assigneeFilter}
-            onAssigneeFilterChange={setAssigneeFilter}
+            priorityFilter={filters.priority}
+            onPriorityFilterChange={(value) => setFilter('priority', value)}
+            assigneeFilter={filters.assignee}
+            onAssigneeFilterChange={(value) => setFilter('assignee', value)}
           />
           {selectedCycle && !searchQuery && <CycleBanner cycle={selectedCycle} />}
           <div className="min-h-0 flex-1">
@@ -275,51 +134,34 @@ export default function BoardPage() {
               <ReportsView />
             ) : view === 'board' ? (
               <KanbanBoard
-                issues={filteredIssues}
-                onStatusChange={handleStatusChange}
-                estimates={estimatesQuery.data}
+                issues={visibleIssues}
+                onStatusChange={changeStatus}
+                estimates={teamData.estimates}
               />
             ) : (
-              <IssueListView issues={filteredIssues} />
+              <IssueListView issues={visibleIssues} />
             )}
           </div>
         </div>
       </div>
 
-      {showPalette && (
+      {overlays.isOpen('palette') && (
         <CommandPalette
-          onClose={() => setShowPalette(false)}
+          onClose={() => overlays.close('palette')}
           commands={commands}
-          issues={issuesQuery.data?.items ?? []}
+          issues={issues}
           onOpenIssue={openIssueFromPalette}
         />
       )}
-      {showShortcuts && <ShortcutsCheatsheet onClose={() => setShowShortcuts(false)} />}
-
-      {showNewIssue && <NewIssueModal onClose={() => setShowNewIssue(false)} />}
-      {showNewCycle && <NewCycleModal onClose={() => setShowNewCycle(false)} />}
-      {showImport && <ImportJiraModal onClose={() => setShowImport(false)} />}
+      {overlays.isOpen('shortcuts') && (
+        <ShortcutsCheatsheet onClose={() => overlays.close('shortcuts')} />
+      )}
+      {overlays.isOpen('newIssue') && <NewIssueModal onClose={() => overlays.close('newIssue')} />}
+      {overlays.isOpen('newCycle') && <NewCycleModal onClose={() => overlays.close('newCycle')} />}
+      {overlays.isOpen('import') && <ImportJiraModal onClose={() => overlays.close('import')} />}
       {issueNumber && openIssue && (
-        <IssueDetailPanel issueId={openIssue.id} onClose={closeIssue} />
+        <IssueDetailPanel issueId={openIssue.id} onClose={() => navigate(`/${team.key}`)} />
       )}
     </TeamProvider>
   )
-}
-
-
-/**
- * Hold a value back until it stops changing.
- *
- * Search hits the database, so firing on every keystroke would send a request
- * per character and race the responses back out of order.
- */
-function useDebounced<T>(value: T, delayMs: number): T {
-  const [settled, setSettled] = useState(value)
-
-  useEffect(() => {
-    const timer = setTimeout(() => setSettled(value), delayMs)
-    return () => clearTimeout(timer)
-  }, [value, delayMs])
-
-  return settled
 }
