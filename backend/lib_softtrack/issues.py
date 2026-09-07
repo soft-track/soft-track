@@ -5,16 +5,18 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate, ParentRef
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
+from lib_softtrack.links import open_blocker_counts
 from lib_softtrack.tables import (
     Comment,
     Issue,
     IssueLabelLink,
+    IssueLink,
     IssuePriority,
     IssueStatus,
     Label,
@@ -62,6 +64,8 @@ def issue_to_read(issue: Issue, session: Session) -> IssueRead:
         status=issue.status,
         priority=issue.priority,
         assignee=UserPublic.model_validate(assignee) if assignee else None,
+        estimate=issue.estimate,
+        blocked_by_count=open_blocker_counts(session, [issue.id]).get(issue.id, 0),
         parent=_parent_ref(issue, session),
         completed_child_count=done,
         child_count=total,
@@ -102,8 +106,9 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
         for user in session.exec(select(User).where(User.id.in_(user_ids))).all()
     }
 
-    # One query each for sub-issue progress and for the parents on this page,
-    # keeping the constant-query property this function exists for.
+    # One query each for blockers, sub-issue progress and the parents on this
+    # page, keeping the constant-query property this function exists for.
+    blocker_counts = open_blocker_counts(session, issue_ids)
     progress = child_progress(session, issue_ids)
     parent_ids = {issue.parent_id for issue in issues if issue.parent_id}
     parents = {
@@ -134,6 +139,8 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
                 if issue.assignee_id
                 else None
             ),
+            estimate=issue.estimate,
+            blocked_by_count=blocker_counts.get(issue.id, 0),
             creator=UserPublic.model_validate(users[issue.creator_id]),
             labels=labels_by_issue.get(issue.id, []),
             parent=_parent_ref_from(parents.get(issue.parent_id), teams),
@@ -193,6 +200,7 @@ def create_issue(
         status=payload.status,
         priority=payload.priority,
         assignee_id=payload.assignee_id,
+        estimate=payload.estimate,
         creator_id=current_user.id,
     )
 
@@ -310,6 +318,18 @@ def delete_issue(session: Session, current_user: User, issue_id: int) -> None:
     for comment in comments:
         session.delete(comment)
 
+    # Links point at this issue from either end, so both have to go -- and the
+    # relationship is gone for the issue at the other end too, which is the
+    # right outcome: it was a relationship *with* something that no longer
+    # exists.
+    issue_links = session.exec(
+        select(IssueLink).where(
+            or_(IssueLink.source_id == issue_id, IssueLink.target_id == issue_id)
+        )
+    ).all()
+    for link in issue_links:
+        session.delete(link)
+
     # Children are promoted to top level rather than deleted. Losing a parent
     # should not lose the work underneath it -- that is a lot of data to
     # destroy with one click, and the children are usually the part worth
@@ -317,10 +337,12 @@ def delete_issue(session: Session, current_user: User, issue_id: int) -> None:
     # dealt with either way.
     detach_children(session, issue_id)
 
-    # Flush the dependent changes before removing the issue itself. With no
+    # Flush every dependent change before removing the issue itself. Without a
     # relationship configured between these tables SQLAlchemy has no
     # dependency graph to order the statements by, so it is free to emit the
-    # parent DELETE before the children are detached and trip the foreign key.
+    # parent DELETE first and trip a foreign key. The comment and label
+    # deletes above happened to be ordered correctly; this makes all of them
+    # deterministic rather than lucky.
     session.flush()
 
     session.delete(issue)

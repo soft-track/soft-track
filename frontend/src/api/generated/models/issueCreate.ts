@@ -5,6 +5,7 @@
  * An open-source, self-hostable issue tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { IssueCreateEstimate } from './issueCreateEstimate';
 import type { IssuePriority } from './issuePriority';
 import type { IssueStatus } from './issueStatus';
 
@@ -15,6 +16,8 @@ export interface IssueCreate {
   status?: IssueStatus;
   priority?: IssuePriority;
   assignee_id?: number | null;
+  /** Story points on the scale 1, 2, 3, 5, 8. Null means not sized yet, which is distinct from an estimate of zero. */
+  estimate?: IssueCreateEstimate;
   parent_id?: number | null;
   label_ids?: number[];
 }

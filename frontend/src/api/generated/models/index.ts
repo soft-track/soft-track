@@ -6,24 +6,37 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './assigneeLoad';
 export * from './bodyLoginAuthLoginPost';
 export * from './commentCreate';
 export * from './commentRead';
+export * from './estimateSummary';
 export * from './hTTPValidationError';
 export * from './issueCreate';
+export * from './issueCreateEstimate';
+export * from './issueLinkCreate';
+export * from './issueLinkRead';
+export * from './issueLinks';
+export * from './issueLinkType';
 export * from './issuePriority';
 export * from './issueRead';
 export * from './issueStatus';
 export * from './issueUpdate';
+export * from './issueUpdateEstimate';
 export * from './labelCreate';
 export * from './labelRead';
+export * from './linkedIssue';
 export * from './listCommentsIssuesIssueIdCommentsGetParams';
 export * from './listIssuesTeamsTeamIdIssuesGetParams';
 export * from './pageCommentRead';
 export * from './pageIssueRead';
+export * from './pageSearchHit';
 export * from './parentRef';
 export * from './projectCreate';
 export * from './projectRead';
+export * from './searchHit';
+export * from './searchSearchGetParams';
+export * from './statusLoad';
 export * from './teamCreate';
 export * from './teamMemberAdd';
 export * from './teamMemberRead';

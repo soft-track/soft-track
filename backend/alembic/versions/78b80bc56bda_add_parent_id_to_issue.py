@@ -12,7 +12,11 @@ from alembic import op
 import sqlalchemy as sa
 
 revision: str = "78b80bc56bda"
-down_revision: Union[str, Sequence[str], None] = "e2b56dbe1777"
+# Chained onto main's current head rather than the original baseline: issue
+# links, search and estimates all landed first. Safe to repoint because this
+# migration has never been on main, so no database has stamped it -- rewriting
+# a published migration's parent would be a different matter.
+down_revision: Union[str, Sequence[str], None] = "09e8c6a6a4b4"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

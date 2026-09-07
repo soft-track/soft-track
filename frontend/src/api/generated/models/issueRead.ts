@@ -22,6 +22,8 @@ export interface IssueRead {
   status: IssueStatus;
   priority: IssuePriority;
   assignee?: UserPublic | null;
+  estimate?: number | null;
+  blocked_by_count: number;
   parent?: ParentRef | null;
   child_count: number;
   completed_child_count: number;

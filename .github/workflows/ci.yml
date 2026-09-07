@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   backend:
-    name: Backend · black + pytest
+    name: Backend · black + migrations + pytest
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -35,6 +35,34 @@ jobs:
 
       - name: Check formatting
         run: black --check --diff . --exclude venv
+
+      - name: Exactly one migration head
+        # Two branches that each add a migration from the same parent produce
+        # two Alembic heads. Nothing fails until a deploy runs `upgrade head`
+        # and the app refuses to boot, which is a bad place to find out --
+        # so find out here instead.
+        env:
+          DATABASE_URL: "sqlite://"
+        run: |
+          heads=$(alembic heads)
+          count=$(printf '%s\n' "$heads" | grep -c '(head)' || true)
+          if [ "$count" -ne 1 ]; then
+            echo "Expected exactly one Alembic head, found $count:"
+            printf '%s\n' "$heads"
+            echo
+            echo "Two migrations share a parent, so 'alembic upgrade head'"
+            echo "fails and the app cannot boot on a fresh database."
+            echo
+            echo "If the other migration is not merged yet: rebase onto main"
+            echo "and point this branch's migration at the other head by"
+            echo "editing its down_revision."
+            echo
+            echo "If both are already on main: add a merge revision instead,"
+            echo "so neither published revision id has to be rewritten --"
+            echo "  alembic merge -m 'merge <a> and <b>' <head1> <head2>"
+            exit 1
+          fi
+          printf 'Single head: %s\n' "$heads"
 
       - name: Run tests with coverage
         # Tests use in-memory SQLite with PRAGMA foreign_keys=ON, so they catch
@@ -62,7 +90,7 @@ jobs:
           if-no-files-found: warn
 
   frontend:
-    name: Frontend · lint + typecheck + build
+    name: Frontend · lint + typecheck + test + build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -84,6 +112,9 @@ jobs:
 
       - name: Typecheck
         run: npx tsc -b --noEmit
+
+      - name: Test
+        run: npm test
 
       - name: Build
         run: npm run build
