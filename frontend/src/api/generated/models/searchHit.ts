@@ -7,24 +7,15 @@
  */
 import type { IssuePriority } from './issuePriority';
 import type { IssueStatus } from './issueStatus';
-import type { LabelRead } from './labelRead';
-import type { UserPublic } from './userPublic';
 
-export interface IssueRead {
+export interface SearchHit {
   id: number;
-  team_id: number;
-  project_id?: number | null;
-  number: number;
   identifier: string;
   title: string;
-  description?: string | null;
   status: IssueStatus;
   priority: IssuePriority;
-  assignee?: UserPublic | null;
-  estimate?: number | null;
-  blocked_by_count: number;
-  creator: UserPublic;
-  labels?: LabelRead[];
-  created_at: string;
+  team_id: number;
   updated_at: string;
+  matched_in: string;
+  snippet: string;
 }

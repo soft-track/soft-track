@@ -89,6 +89,9 @@ export function CommandPalette({
       choose(highlighted)
     } else if (event.key === 'Escape') {
       event.preventDefault()
+      // Same reason as the markdown editor: the detail panel can be open
+      // behind the palette, and one Escape should close one thing.
+      event.stopPropagation()
       onClose()
     }
   }

@@ -25,8 +25,12 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  EstimateSummary,
   HTTPValidationError,
   IssueCreate,
+  IssueLinkCreate,
+  IssueLinkRead,
+  IssueLinks,
   IssueRead,
   IssueUpdate,
   ListIssuesTeamsTeamIdIssuesGetParams,
@@ -210,6 +214,102 @@ export function useListIssuesTeamsTeamIdIssuesGet<TData = Awaited<ReturnType<typ
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getListIssuesTeamsTeamIdIssuesGetQueryOptions(teamId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Story-point rollups by column and by assignee for the whole team.
+ *
+ * Separate from the issue list because the list is paginated: summing a page
+ * would silently report the total of whatever the client happened to load.
+ * @summary Get Estimate Summary
+ */
+export const getEstimateSummaryTeamsTeamIdEstimatesGet = (
+    teamId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<EstimateSummary>(
+      {url: `/teams/${teamId}/estimates`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getGetEstimateSummaryTeamsTeamIdEstimatesGetQueryKey = (teamId: number,) => {
+    return [
+    `/teams/${teamId}/estimates`
+    ] as const;
+    }
+
+
+export const getGetEstimateSummaryTeamsTeamIdEstimatesGetQueryOptions = <TData = Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError = HTTPValidationError>(teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEstimateSummaryTeamsTeamIdEstimatesGetQueryKey(teamId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>> = ({ signal }) => getEstimateSummaryTeamsTeamIdEstimatesGet(teamId, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: teamId !== null && teamId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetEstimateSummaryTeamsTeamIdEstimatesGetQueryResult = NonNullable<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>>
+export type GetEstimateSummaryTeamsTeamIdEstimatesGetQueryError = HTTPValidationError
+
+
+export function useGetEstimateSummaryTeamsTeamIdEstimatesGet<TData = Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError = HTTPValidationError>(
+ teamId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>,
+          TError,
+          Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEstimateSummaryTeamsTeamIdEstimatesGet<TData = Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>,
+          TError,
+          Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEstimateSummaryTeamsTeamIdEstimatesGet<TData = Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Estimate Summary
+ */
+
+export function useGetEstimateSummaryTeamsTeamIdEstimatesGet<TData = Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEstimateSummaryTeamsTeamIdEstimatesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetEstimateSummaryTeamsTeamIdEstimatesGetQueryOptions(teamId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -445,4 +545,234 @@ export const useDeleteIssueIssuesIssueIdDelete = <TError = HTTPValidationError,
         TContext
       > => {
       return useMutation(getDeleteIssueIssuesIssueIdDeleteMutationOptions(options), queryClient);
+    }
+    /**
+ * Every relationship this issue has, grouped by how it reads from here.
+ *
+ * A `blocks` row appears under `blocks` for the source issue and under
+ * `blocked_by` for the target -- one stored row, two readings.
+ * @summary List Issue Links
+ */
+export const listIssueLinksIssuesIssueIdLinksGet = (
+    issueId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<IssueLinks>(
+      {url: `/issues/${issueId}/links`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getListIssueLinksIssuesIssueIdLinksGetQueryKey = (issueId: number,) => {
+    return [
+    `/issues/${issueId}/links`
+    ] as const;
+    }
+
+
+export const getListIssueLinksIssuesIssueIdLinksGetQueryOptions = <TData = Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>, TError = HTTPValidationError>(issueId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListIssueLinksIssuesIssueIdLinksGetQueryKey(issueId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>> = ({ signal }) => listIssueLinksIssuesIssueIdLinksGet(issueId, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: issueId !== null && issueId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListIssueLinksIssuesIssueIdLinksGetQueryResult = NonNullable<Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>>
+export type ListIssueLinksIssuesIssueIdLinksGetQueryError = HTTPValidationError
+
+
+export function useListIssueLinksIssuesIssueIdLinksGet<TData = Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>, TError = HTTPValidationError>(
+ issueId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>,
+          TError,
+          Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListIssueLinksIssuesIssueIdLinksGet<TData = Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>, TError = HTTPValidationError>(
+ issueId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>,
+          TError,
+          Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListIssueLinksIssuesIssueIdLinksGet<TData = Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>, TError = HTTPValidationError>(
+ issueId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Issue Links
+ */
+
+export function useListIssueLinksIssuesIssueIdLinksGet<TData = Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>, TError = HTTPValidationError>(
+ issueId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listIssueLinksIssuesIssueIdLinksGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListIssueLinksIssuesIssueIdLinksGetQueryOptions(issueId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * @summary Create Issue Link
+ */
+export const createIssueLinkIssuesIssueIdLinksPost = (
+    issueId: number,
+    issueLinkCreate: IssueLinkCreate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<IssueLinkRead>(
+      {url: `/issues/${issueId}/links`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: issueLinkCreate, signal
+    },
+      );
+    }
+
+
+
+
+export const getCreateIssueLinkIssuesIssueIdLinksPostMutationKey = () => ['createIssueLinkIssuesIssueIdLinksPost'] as const;
+
+export const getCreateIssueLinkIssuesIssueIdLinksPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createIssueLinkIssuesIssueIdLinksPost>>, TError,CreateIssueLinkIssuesIssueIdLinksPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createIssueLinkIssuesIssueIdLinksPost>>, TError,CreateIssueLinkIssuesIssueIdLinksPostMutationVariables, TContext> => {
+
+const mutationKey = getCreateIssueLinkIssuesIssueIdLinksPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createIssueLinkIssuesIssueIdLinksPost>>, CreateIssueLinkIssuesIssueIdLinksPostMutationVariables> = (props) => {
+          const {issueId,data} = props ?? {};
+
+          return  createIssueLinkIssuesIssueIdLinksPost(issueId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateIssueLinkIssuesIssueIdLinksPostMutationResult = NonNullable<Awaited<ReturnType<typeof createIssueLinkIssuesIssueIdLinksPost>>>
+    export type CreateIssueLinkIssuesIssueIdLinksPostMutationBody = IssueLinkCreate
+    export type CreateIssueLinkIssuesIssueIdLinksPostMutationError = HTTPValidationError
+    export type CreateIssueLinkIssuesIssueIdLinksPostMutationVariables = {issueId: number;data: IssueLinkCreate}
+
+    /**
+ * @summary Create Issue Link
+ */
+export const useCreateIssueLinkIssuesIssueIdLinksPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createIssueLinkIssuesIssueIdLinksPost>>, TError,CreateIssueLinkIssuesIssueIdLinksPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createIssueLinkIssuesIssueIdLinksPost>>,
+        TError,
+        CreateIssueLinkIssuesIssueIdLinksPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateIssueLinkIssuesIssueIdLinksPostMutationOptions(options), queryClient);
+    }
+    /**
+ * @summary Delete Issue Link
+ */
+export const deleteIssueLinkIssuesIssueIdLinksLinkIdDelete = (
+    issueId: number,
+    linkId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/issues/${issueId}/links/${linkId}`, method: 'DELETE', signal
+    },
+      );
+    }
+
+
+
+
+export const getDeleteIssueLinkIssuesIssueIdLinksLinkIdDeleteMutationKey = () => ['deleteIssueLinkIssuesIssueIdLinksLinkIdDelete'] as const;
+
+export const getDeleteIssueLinkIssuesIssueIdLinksLinkIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteIssueLinkIssuesIssueIdLinksLinkIdDelete>>, TError,DeleteIssueLinkIssuesIssueIdLinksLinkIdDeleteMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteIssueLinkIssuesIssueIdLinksLinkIdDelete>>, TError,DeleteIssueLinkIssuesIssueIdLinksLinkIdDeleteMutationVariables, TContext> => {
+
+const mutationKey = getDeleteIssueLinkIssuesIssueIdLinksLinkIdDeleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteIssueLinkIssuesIssueIdLinksLinkIdDelete>>, DeleteIssueLinkIssuesIssueIdLinksLinkIdDeleteMutationVariables> = (props) => {
+          const {issueId,linkId} = props ?? {};
+
+          return  deleteIssueLinkIssuesIssueIdLinksLinkIdDelete(issueId,linkId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteIssueLinkIssuesIssueIdLinksLinkIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteIssueLinkIssuesIssueIdLinksLinkIdDelete>>>
+
+    export type DeleteIssueLinkIssuesIssueIdLinksLinkIdDeleteMutationError = HTTPValidationError
+    export type DeleteIssueLinkIssuesIssueIdLinksLinkIdDeleteMutationVariables = {issueId: number;linkId: number}
+
+    /**
+ * @summary Delete Issue Link
+ */
+export const useDeleteIssueLinkIssuesIssueIdLinksLinkIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteIssueLinkIssuesIssueIdLinksLinkIdDelete>>, TError,DeleteIssueLinkIssuesIssueIdLinksLinkIdDeleteMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteIssueLinkIssuesIssueIdLinksLinkIdDelete>>,
+        TError,
+        DeleteIssueLinkIssuesIssueIdLinksLinkIdDeleteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteIssueLinkIssuesIssueIdLinksLinkIdDeleteMutationOptions(options), queryClient);
     }

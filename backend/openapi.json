@@ -789,6 +789,54 @@
         }
       }
     },
+    "/teams/{team_id}/estimates": {
+      "get": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "Get Estimate Summary",
+        "description": "Story-point rollups by column and by assignee for the whole team.\n\nSeparate from the issue list because the list is paginated: summing a page\nwould silently report the total of whatever the client happened to load.",
+        "operationId": "get_estimate_summary_teams__team_id__estimates_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimateSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/issues/{issue_id}": {
       "get": {
         "tags": [
@@ -909,6 +957,158 @@
             "schema": {
               "type": "integer",
               "title": "Issue Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issue_id}/links": {
+      "get": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "List Issue Links",
+        "description": "Every relationship this issue has, grouped by how it reads from here.\n\nA `blocks` row appears under `blocks` for the source issue and under\n`blocked_by` for the target -- one stored row, two readings.",
+        "operationId": "list_issue_links_issues__issue_id__links_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueLinks"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "Create Issue Link",
+        "operationId": "create_issue_link_issues__issue_id__links_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueLinkCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueLinkRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issue_id}/links/{link_id}": {
+      "delete": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "Delete Issue Link",
+        "operationId": "delete_issue_link_issues__issue_id__links__link_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          },
+          {
+            "name": "link_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Link Id"
             }
           }
         ],
@@ -1054,6 +1254,98 @@
         }
       }
     },
+    "/search": {
+      "get": {
+        "tags": [
+          "search"
+        ],
+        "summary": "Search",
+        "description": "Search issue titles, descriptions and comments.\n\nAlways scoped to the teams the caller belongs to. Postgres uses full-text\nsearch with stemming and relevance ranking; SQLite falls back to a\nsubstring match.",
+        "operationId": "search_search_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "What to search for.",
+              "title": "Q"
+            },
+            "description": "What to search for."
+          },
+          {
+            "name": "team_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Restrict to one team. Defaults to every team you are in.",
+              "title": "Team Id"
+            },
+            "description": "Restrict to one team. Defaults to every team you are in."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_SearchHit_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -1076,6 +1368,40 @@
   },
   "components": {
     "schemas": {
+      "AssigneeLoad": {
+        "properties": {
+          "user": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          },
+          "issue_count": {
+            "type": "integer",
+            "title": "Issue Count"
+          },
+          "unestimated_count": {
+            "type": "integer",
+            "title": "Unestimated Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "points",
+          "issue_count",
+          "unestimated_count"
+        ],
+        "title": "AssigneeLoad",
+        "description": "What one person is carrying. `user` is null for unassigned work."
+      },
       "Body_login_auth_login_post": {
         "properties": {
           "grant_type": {
@@ -1182,6 +1508,48 @@
         ],
         "title": "CommentRead"
       },
+      "EstimateSummary": {
+        "properties": {
+          "total_points": {
+            "type": "integer",
+            "title": "Total Points"
+          },
+          "total_issues": {
+            "type": "integer",
+            "title": "Total Issues"
+          },
+          "unestimated_issues": {
+            "type": "integer",
+            "title": "Unestimated Issues"
+          },
+          "by_status": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StatusLoad"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/IssueStatus"
+            },
+            "type": "object",
+            "title": "By Status"
+          },
+          "by_assignee": {
+            "items": {
+              "$ref": "#/components/schemas/AssigneeLoad"
+            },
+            "type": "array",
+            "title": "By Assignee"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_points",
+          "total_issues",
+          "unestimated_issues",
+          "by_status",
+          "by_assignee"
+        ],
+        "title": "EstimateSummary"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1242,6 +1610,26 @@
             ],
             "title": "Assignee Id"
           },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              null,
+              1,
+              2,
+              3,
+              5,
+              8
+            ],
+            "title": "Estimate",
+            "description": "Story points on the scale 1, 2, 3, 5, 8. Null means not sized yet, which is distinct from an estimate of zero."
+          },
           "label_ids": {
             "items": {
               "type": "integer"
@@ -1256,6 +1644,107 @@
           "title"
         ],
         "title": "IssueCreate"
+      },
+      "IssueLinkCreate": {
+        "properties": {
+          "target_id": {
+            "type": "integer",
+            "title": "Target Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/IssueLinkType"
+          }
+        },
+        "type": "object",
+        "required": [
+          "target_id",
+          "type"
+        ],
+        "title": "IssueLinkCreate"
+      },
+      "IssueLinkRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "relation": {
+            "type": "string",
+            "title": "Relation"
+          },
+          "issue": {
+            "$ref": "#/components/schemas/LinkedIssue"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "relation",
+          "issue",
+          "created_at"
+        ],
+        "title": "IssueLinkRead"
+      },
+      "IssueLinkType": {
+        "type": "string",
+        "enum": [
+          "blocks",
+          "relates_to",
+          "duplicates"
+        ],
+        "title": "IssueLinkType",
+        "description": "How one issue relates to another.\n\nOnly three are stored. \"Blocked by\" and \"duplicated by\" are not types --\nthey are the same rows read from the other end, which is what keeps the\ntwo issues from ever disagreeing about their relationship.\n\n`relates_to` is symmetric, so it is stored once and shown identically on\nboth issues."
+      },
+      "IssueLinks": {
+        "properties": {
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/IssueLinkRead"
+            },
+            "type": "array",
+            "title": "Blocks",
+            "default": []
+          },
+          "blocked_by": {
+            "items": {
+              "$ref": "#/components/schemas/IssueLinkRead"
+            },
+            "type": "array",
+            "title": "Blocked By",
+            "default": []
+          },
+          "relates_to": {
+            "items": {
+              "$ref": "#/components/schemas/IssueLinkRead"
+            },
+            "type": "array",
+            "title": "Relates To",
+            "default": []
+          },
+          "duplicates": {
+            "items": {
+              "$ref": "#/components/schemas/IssueLinkRead"
+            },
+            "type": "array",
+            "title": "Duplicates",
+            "default": []
+          },
+          "duplicated_by": {
+            "items": {
+              "$ref": "#/components/schemas/IssueLinkRead"
+            },
+            "type": "array",
+            "title": "Duplicated By",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "IssueLinks"
       },
       "IssuePriority": {
         "type": "string",
@@ -1328,6 +1817,21 @@
               }
             ]
           },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimate"
+          },
+          "blocked_by_count": {
+            "type": "integer",
+            "title": "Blocked By Count"
+          },
           "creator": {
             "$ref": "#/components/schemas/UserPublic"
           },
@@ -1359,6 +1863,7 @@
           "title",
           "status",
           "priority",
+          "blocked_by_count",
           "creator",
           "created_at",
           "updated_at"
@@ -1443,6 +1948,26 @@
             ],
             "title": "Assignee Id"
           },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              null,
+              1,
+              2,
+              3,
+              5,
+              8
+            ],
+            "title": "Estimate",
+            "description": "Story points on the scale 1, 2, 3, 5, 8. Null means not sized yet, which is distinct from an estimate of zero."
+          },
           "label_ids": {
             "anyOf": [
               {
@@ -1507,6 +2032,38 @@
         ],
         "title": "LabelRead"
       },
+      "LinkedIssue": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IssueStatus"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/IssuePriority"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "identifier",
+          "title",
+          "status",
+          "priority"
+        ],
+        "title": "LinkedIssue",
+        "description": "Just enough of the other issue to render a row and click through."
+      },
       "Page_CommentRead_": {
         "properties": {
           "items": {
@@ -1568,6 +2125,37 @@
           "offset"
         ],
         "title": "Page[IssueRead]"
+      },
+      "Page_SearchHit_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[SearchHit]"
       },
       "ProjectCreate": {
         "properties": {
@@ -1642,6 +2230,82 @@
           "created_at"
         ],
         "title": "ProjectRead"
+      },
+      "SearchHit": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IssueStatus"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/IssuePriority"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "matched_in": {
+            "type": "string",
+            "title": "Matched In"
+          },
+          "snippet": {
+            "type": "string",
+            "title": "Snippet"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "identifier",
+          "title",
+          "status",
+          "priority",
+          "team_id",
+          "updated_at",
+          "matched_in",
+          "snippet"
+        ],
+        "title": "SearchHit"
+      },
+      "StatusLoad": {
+        "properties": {
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          },
+          "issue_count": {
+            "type": "integer",
+            "title": "Issue Count"
+          },
+          "unestimated_count": {
+            "type": "integer",
+            "title": "Unestimated Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "points",
+          "issue_count",
+          "unestimated_count"
+        ],
+        "title": "StatusLoad",
+        "description": "The work sitting in one board column."
       },
       "TeamCreate": {
         "properties": {

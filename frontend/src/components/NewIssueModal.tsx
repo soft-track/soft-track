@@ -3,7 +3,14 @@ import { type FormEvent, useState } from 'react'
 
 import { useCreateIssueTeamsTeamIdIssuesPost } from '../api/generated/endpoints/issues/issues'
 import { IssuePriority, IssueStatus } from '../api/generated/models'
-import { PRIORITY_ORDER, STATUS_ORDER, PRIORITY_META, STATUS_META } from '../lib/issueMeta'
+import {
+  ESTIMATE_SCALE,
+  PRIORITY_META,
+  PRIORITY_ORDER,
+  STATUS_META,
+  STATUS_ORDER,
+} from '../lib/issueMeta'
+import { MarkdownEditor } from '../markdown/lazy'
 import { useTeamContext } from '../team/TeamContext'
 
 export function NewIssueModal({ onClose }: { onClose: () => void }) {
@@ -16,6 +23,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
   const [projectId, setProjectId] = useState<string>('')
   const [status, setStatus] = useState<IssueStatus>(IssueStatus.backlog)
   const [priority, setPriority] = useState<IssuePriority>(IssuePriority.no_priority)
+  const [estimate, setEstimate] = useState<(typeof ESTIMATE_SCALE)[number] | null>(null)
   const [assigneeId, setAssigneeId] = useState<string>('')
   const [labelIds, setLabelIds] = useState<number[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -37,6 +45,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
           project_id: projectId ? Number(projectId) : undefined,
           status,
           priority,
+          estimate,
           assignee_id: assigneeId ? Number(assigneeId) : undefined,
           label_ids: labelIds,
         },
@@ -68,12 +77,13 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
               placeholder="Issue title"
               className="w-full border-none p-0 text-base font-medium text-neutral-900 placeholder-neutral-300 focus:outline-none focus:ring-0"
             />
-            <textarea
+            <MarkdownEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add a description…"
-              rows={3}
-              className="mt-2 w-full resize-none border-none p-0 text-sm text-neutral-600 placeholder-neutral-300 focus:outline-none focus:ring-0"
+              onChange={setDescription}
+              people={members.map((m) => m.user)}
+              placeholder="Add a description… Markdown works here."
+              rows={4}
+              className="mt-2"
             />
           </div>
 
@@ -100,6 +110,21 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
               {PRIORITY_ORDER.map((p) => (
                 <option key={p} value={p}>
                   {PRIORITY_META[p].label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={estimate ?? ''}
+              onChange={(e) =>
+                setEstimate(ESTIMATE_SCALE.find((p) => String(p) === e.target.value) ?? null)
+              }
+              className="rounded-md border border-neutral-200 px-2 py-1 text-xs"
+            >
+              <option value="">No estimate</option>
+              {ESTIMATE_SCALE.map((points) => (
+                <option key={points} value={points}>
+                  {points} {points === 1 ? 'point' : 'points'}
                 </option>
               ))}
             </select>

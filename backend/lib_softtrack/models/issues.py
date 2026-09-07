@@ -1,11 +1,42 @@
 from datetime import datetime
-from typing import Optional
+from typing import Annotated, Optional
 
-from pydantic import BaseModel
+from pydantic import AfterValidator, BaseModel, Field
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.labels import LabelRead
 from lib_softtrack.tables import IssuePriority, IssueStatus
+
+# A modified Fibonacci scale. The gaps are the point: they stop a team
+# arguing about whether something is a 6 or a 7, a distinction no estimate is
+# accurate enough to carry.
+ESTIMATE_SCALE = (1, 2, 3, 5, 8)
+
+
+def _on_the_scale(value: Optional[int]) -> Optional[int]:
+    """Reject an estimate that is not on the scale.
+
+    An explicit check rather than a `Literal` so the error names the scale: a
+    422 reading "estimate must be null or one of 1, 2, 3, 5, 8" is actionable
+    where pydantic's default union error is not.
+    """
+    if value is None or value in ESTIMATE_SCALE:
+        return value
+    allowed = ", ".join(str(point) for point in ESTIMATE_SCALE)
+    raise ValueError(f"estimate must be null or one of {allowed}; got {value}")
+
+
+Estimate = Annotated[
+    Optional[int],
+    AfterValidator(_on_the_scale),
+    Field(
+        json_schema_extra={"enum": [None, *ESTIMATE_SCALE]},
+        description=(
+            "Story points on the scale 1, 2, 3, 5, 8. Null means not sized "
+            "yet, which is distinct from an estimate of zero."
+        ),
+    ),
+]
 
 
 class IssueCreate(BaseModel):
@@ -15,6 +46,7 @@ class IssueCreate(BaseModel):
     status: IssueStatus = IssueStatus.backlog
     priority: IssuePriority = IssuePriority.no_priority
     assignee_id: Optional[int] = None
+    estimate: Estimate = None
     label_ids: list[int] = []
 
 
@@ -25,6 +57,9 @@ class IssueUpdate(BaseModel):
     status: Optional[IssueStatus] = None
     priority: Optional[IssuePriority] = None
     assignee_id: Optional[int] = None
+    # `exclude_unset` in the service keeps "clear the estimate" (an explicit
+    # null) distinct from "leave it alone" (the field omitted).
+    estimate: Estimate = None
     label_ids: Optional[list[int]] = None
 
 
@@ -39,6 +74,14 @@ class IssueRead(BaseModel):
     status: IssueStatus
     priority: IssuePriority
     assignee: Optional[UserPublic] = None
+    estimate: Optional[int] = None
+    #: Unresolved issues that block this one. Zero for an issue that is free
+    #: to start; the board marks anything above zero.
+    #:
+    #: No default: every path that builds an IssueRead sets it, and leaving it
+    #: defaulted would make it optional in the schema, which pushes an
+    #: `undefined` check into every client that reads it.
+    blocked_by_count: int
     creator: UserPublic
     labels: list[LabelRead] = []
     created_at: datetime

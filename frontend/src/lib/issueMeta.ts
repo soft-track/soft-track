@@ -1,4 +1,5 @@
 import { IssuePriority, IssueStatus } from '../api/generated/models'
+import type { IssueUpdateEstimate } from '../api/generated/models'
 
 export const STATUS_ORDER: IssueStatus[] = [
   IssueStatus.backlog,
@@ -33,3 +34,17 @@ export const PRIORITY_META: Record<IssuePriority, { label: string; color: string
   low: { label: 'Low', color: 'text-priority-low' },
   no_priority: { label: 'No priority', color: 'text-priority-none' },
 }
+
+/**
+ * The story-point scale, mirroring ESTIMATE_SCALE in
+ * backend/lib_softtrack/models/issues.py.
+ *
+ * The schema declares those five values as an enum, so orval generates a
+ * literal union for the field and TypeScript refuses an off-scale estimate at
+ * compile time. `satisfies` below is what keeps this list honest against it:
+ * if the backend scale changes and the client is regenerated, this line stops
+ * compiling instead of silently offering a value the API will reject.
+ */
+export const ESTIMATE_SCALE = [1, 2, 3, 5, 8] as const satisfies readonly NonNullable<
+  IssueUpdateEstimate
+>[]
