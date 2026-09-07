@@ -50,9 +50,16 @@ jobs:
             echo "Expected exactly one Alembic head, found $count:"
             printf '%s\n' "$heads"
             echo
-            echo "Another branch added a migration from the same parent."
-            echo "Rebase onto main, then point this branch's migration at the"
-            echo "other head by editing its down_revision."
+            echo "Two migrations share a parent, so 'alembic upgrade head'"
+            echo "fails and the app cannot boot on a fresh database."
+            echo
+            echo "If the other migration is not merged yet: rebase onto main"
+            echo "and point this branch's migration at the other head by"
+            echo "editing its down_revision."
+            echo
+            echo "If both are already on main: add a merge revision instead,"
+            echo "so neither published revision id has to be rewritten --"
+            echo "  alembic merge -m 'merge <a> and <b>' <head1> <head2>"
             exit 1
           fi
           printf 'Single head: %s\n' "$heads"
