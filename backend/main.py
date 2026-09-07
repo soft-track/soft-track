@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app_identity.identity import router as identity_router
+from lib_identity.identity import warm_password_hasher
 from app_softtrack.comments import router as comments_router
 from app_softtrack.issues import router as issues_router
 from app_softtrack.labels import router as labels_router
@@ -16,6 +17,10 @@ from web import init_db, settings
 async def lifespan(app: FastAPI):
     """Startup and shutdown. Replaces the deprecated @app.on_event hooks."""
     init_db()
+    # Pay for the decoy hash now rather than on the first sign-in attempt at
+    # an unknown address, which would otherwise be measurably slower than
+    # every one after it -- a one-shot version of the oracle we just closed.
+    warm_password_hasher()
     yield
 
 

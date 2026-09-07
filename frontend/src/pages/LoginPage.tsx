@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthContext'
 import { Logo } from '../components/Logo'
+import { errorDetail } from '../api/errors'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -23,8 +24,13 @@ export default function LoginPage() {
     try {
       await login(email, password)
       navigate(from, { replace: true })
-    } catch {
-      setError('Incorrect email or password.')
+    } catch (err: unknown) {
+      // Surface what the API said rather than always blaming the password.
+      // Sign-in is rate limited, and a throttled person told "incorrect
+      // password" just retries -- straight into a longer backoff. The 401 text
+      // is identical for a wrong password and an unknown address, so showing
+      // it leaks nothing.
+      setError(errorDetail(err, 'Incorrect email or password.'))
     } finally {
       setSubmitting(false)
     }

@@ -36,6 +36,21 @@ def _enforce_sqlite_foreign_keys(dbapi_connection, _record):
     cursor.close()
 
 
+@pytest.fixture(autouse=True)
+def _reset_auth_throttles():
+    """Keep the login/registration counters from leaking between tests.
+
+    They are module-level singletons, so without this a test that exhausts a
+    budget would 429 the next test that happens to register a user -- and
+    which test that is would depend on collection order.
+    """
+    from lib_utils.rate_limit import reset_all
+
+    reset_all()
+    yield
+    reset_all()
+
+
 @pytest.fixture(name="session")
 def session_fixture():
     engine = create_engine(

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthContext'
 import { Logo } from '../components/Logo'
+import { errorDetail } from '../api/errors'
 
 export default function RegisterPage() {
   const { register } = useAuth()
@@ -22,9 +23,7 @@ export default function RegisterPage() {
       await register(email, password, fullName)
       navigate('/', { replace: true })
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data
-        ?.detail
-      setError(detail ?? 'Could not create your account.')
+      setError(errorDetail(err, 'Could not create your account.'))
     } finally {
       setSubmitting(false)
     }

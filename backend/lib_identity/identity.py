@@ -1,6 +1,8 @@
 """Identity services: registration, login, and resolving the current user."""
 
 import hashlib
+import secrets
+from functools import lru_cache
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -75,9 +77,33 @@ def register_user(session: Session, email: str, password: str, full_name: str) -
     return Token(access_token=token, user=UserPublic.model_validate(user))
 
 
+@lru_cache(maxsize=1)
+def _unmatchable_hash() -> str:
+    """A bcrypt hash of a random string, so no password can ever match it.
+
+    Computed once, lazily, because bcrypt at the default cost takes a
+    noticeable fraction of a second and importing this module should not.
+    """
+    return hash_password(secrets.token_urlsafe(32))
+
+
+def warm_password_hasher() -> None:
+    """Fill the decoy-hash cache at startup. See `_unmatchable_hash`."""
+    _unmatchable_hash()
+
+
 def login_user(session: Session, email: str, password: str) -> Token:
     user = session.exec(select(User).where(User.email == email)).first()
-    if not user or not verify_password(password, user.hashed_password):
+
+    # Verify against a hash that cannot match rather than returning early, so
+    # an unknown address costs the same ~100ms of bcrypt as a known one with
+    # the wrong password. The early return was a clean timing oracle: the two
+    # answers are worded identically, but one came back in microseconds, which
+    # told an attacker exactly which addresses have accounts here.
+    hashed = user.hashed_password if user else _unmatchable_hash()
+    password_matches = verify_password(password, hashed)
+
+    if not user or not password_matches:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
