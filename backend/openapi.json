@@ -1862,6 +1862,64 @@
         }
       }
     },
+    "/teams/{team_id}/import/jira": {
+      "post": {
+        "tags": [
+          "import"
+        ],
+        "summary": "Import Jira",
+        "description": "Import a Jira export into this team.\n\nDefaults to a dry run. The dry run takes exactly the same path as the real\none and rolls back at the end, so the report you approve is the report you\nthen get -- rather than a preview built by separate code that can drift\nfrom what the import actually does.",
+        "operationId": "import_jira_teams__team_id__import_jira_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_jira_teams__team_id__import_jira_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportReport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/search": {
       "get": {
         "tags": [
@@ -2009,6 +2067,27 @@
         ],
         "title": "AssigneeLoad",
         "description": "What one person is carrying. `user` is null for unassigned work."
+      },
+      "Body_import_jira_teams__team_id__import_jira_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "A Jira CSV or JSON export."
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "Report what would happen without writing anything.",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_jira_teams__team_id__import_jira_post"
       },
       "Body_login_auth_login_post": {
         "properties": {
@@ -2568,6 +2647,96 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "ImportReport": {
+        "properties": {
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run"
+          },
+          "issues_found": {
+            "type": "integer",
+            "title": "Issues Found"
+          },
+          "issues_created": {
+            "type": "integer",
+            "title": "Issues Created"
+          },
+          "issues_skipped_existing": {
+            "type": "integer",
+            "title": "Issues Skipped Existing"
+          },
+          "comments_created": {
+            "type": "integer",
+            "title": "Comments Created"
+          },
+          "labels_created": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Labels Created"
+          },
+          "projects_created": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Projects Created"
+          },
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/UserMatch"
+            },
+            "type": "array",
+            "title": "Users"
+          },
+          "unmapped_statuses": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unmapped Statuses"
+          },
+          "unmapped_priorities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unmapped Priorities"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "preview": {
+            "items": {
+              "$ref": "#/components/schemas/ParsedIssue"
+            },
+            "type": "array",
+            "title": "Preview"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dry_run",
+          "issues_found",
+          "issues_created",
+          "issues_skipped_existing",
+          "comments_created",
+          "labels_created",
+          "projects_created",
+          "users",
+          "unmapped_statuses",
+          "unmapped_priorities",
+          "warnings",
+          "preview"
+        ],
+        "title": "ImportReport",
+        "description": "What an import did, or would do.\n\nThe same shape for a dry run and a real one, so what you approve is\nliterally what you then get."
+      },
       "IssueCreate": {
         "properties": {
           "title": {
@@ -2869,6 +3038,17 @@
               }
             ],
             "title": "Cycle Id"
+          },
+          "external_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Key"
           },
           "parent": {
             "anyOf": [
@@ -3261,6 +3441,181 @@
         "title": "ParentRef",
         "description": "Just enough of the parent to render a breadcrumb."
       },
+      "ParsedComment": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "ParsedComment"
+      },
+      "ParsedIssue": {
+        "properties": {
+          "external_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Key"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IssueStatus"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/IssuePriority"
+          },
+          "raw_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Status"
+          },
+          "raw_priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Priority"
+          },
+          "assignee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee"
+          },
+          "reporter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Labels",
+            "default": []
+          },
+          "epic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epic"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "comments": {
+            "items": {
+              "$ref": "#/components/schemas/ParsedComment"
+            },
+            "type": "array",
+            "title": "Comments",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "status",
+          "priority"
+        ],
+        "title": "ParsedIssue",
+        "description": "One issue as read out of an export, before anything is written."
+      },
       "ProjectCreate": {
         "properties": {
           "name": {
@@ -3605,6 +3960,53 @@
           "full_name"
         ],
         "title": "UserCreate"
+      },
+      "UserMatch": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "matched_user_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched User Id"
+          },
+          "matched_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Email"
+          },
+          "matched_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source"
+        ],
+        "title": "UserMatch",
+        "description": "A person named in the export, and who they were matched to."
       },
       "UserPublic": {
         "properties": {

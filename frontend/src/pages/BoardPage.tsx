@@ -17,6 +17,7 @@ import { IssueDetailPanel } from '../components/IssueDetailPanel'
 import { IssueListView } from '../components/IssueListView'
 import { KanbanBoard } from '../components/KanbanBoard'
 import { CycleBanner } from '../components/CycleBanner'
+import { ImportJiraModal } from '../components/ImportJiraModal'
 import { NewCycleModal } from '../components/NewCycleModal'
 import { SearchResults } from '../components/SearchResults'
 import { ReportsView } from '../reports/ReportsView'
@@ -39,6 +40,7 @@ export default function BoardPage() {
   const [activeProjectId, setActiveProjectId] = useState<number | 'all'>('all')
   const [activeCycleId, setActiveCycleId] = useState<number | null>(null)
   const [showNewCycle, setShowNewCycle] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [view, setView] = useState<'board' | 'list' | 'reports'>('board')
   const [search, setSearch] = useState('')
   const [showNewIssue, setShowNewIssue] = useState(false)
@@ -242,6 +244,7 @@ export default function BoardPage() {
           activeCycleId={activeCycleId}
           onSelectCycle={setActiveCycleId}
           onNewCycle={() => setShowNewCycle(true)}
+          onImport={() => setShowImport(true)}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar
@@ -295,6 +298,7 @@ export default function BoardPage() {
 
       {showNewIssue && <NewIssueModal onClose={() => setShowNewIssue(false)} />}
       {showNewCycle && <NewCycleModal onClose={() => setShowNewCycle(false)} />}
+      {showImport && <ImportJiraModal onClose={() => setShowImport(false)} />}
       {issueNumber && openIssue && (
         <IssueDetailPanel issueId={openIssue.id} onClose={closeIssue} />
       )}

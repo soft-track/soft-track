@@ -7,6 +7,7 @@
  */
 
 export * from './assigneeLoad';
+export * from './bodyImportJiraTeamsTeamIdImportJiraPost';
 export * from './bodyLoginAuthLoginPost';
 export * from './burndown';
 export * from './burndownPoint';
@@ -24,6 +25,7 @@ export * from './cycleUpdate';
 export * from './estimateSummary';
 export * from './flowPoint';
 export * from './hTTPValidationError';
+export * from './importReport';
 export * from './issueCreate';
 export * from './issueCreateEstimate';
 export * from './issueLinkCreate';
@@ -44,6 +46,8 @@ export * from './pageCommentRead';
 export * from './pageIssueRead';
 export * from './pageSearchHit';
 export * from './parentRef';
+export * from './parsedComment';
+export * from './parsedIssue';
 export * from './projectCreate';
 export * from './projectRead';
 export * from './scopeChange';
@@ -60,6 +64,7 @@ export * from './teamRole';
 export * from './teamVelocityTeamsTeamIdVelocityGetParams';
 export * from './token';
 export * from './userCreate';
+export * from './userMatch';
 export * from './userPublic';
 export * from './validationError';
 export * from './validationErrorCtx';

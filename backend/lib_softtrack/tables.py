@@ -157,6 +157,11 @@ class Issue(SQLModel, table=True):
     # rather than left to convention.
     parent_id: Optional[int] = Field(default=None, foreign_key="issue.id", index=True)
     cycle_id: Optional[int] = Field(default=None, foreign_key="cycle.id", index=True)
+    #: The identifier this issue had in the system it was imported from, e.g.
+    #: a Jira key like "PROJ-142". Kept so links in old documents, commit
+    #: messages and chat history stay traceable after a migration -- which is
+    #: most of what makes a migration survivable.
+    external_key: Optional[str] = Field(default=None, index=True)
     creator_id: int = Field(foreign_key="user.id")
     # Story points. Null means "not sized yet", which is a different thing
     # from zero -- a burndown has to be able to tell them apart.

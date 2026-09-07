@@ -130,8 +130,18 @@ export function IssueDetailPanel({
         className="flex h-full w-full max-w-lg flex-col overflow-y-auto border-l border-neutral-200 bg-white shadow-xl"
       >
         <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
-          <span className="identifier text-xs font-medium text-neutral-400">
-            {issue ? issue.identifier : '…'}
+          <span className="flex items-baseline gap-2">
+            <span className="identifier text-xs font-medium text-neutral-400">
+              {issue ? issue.identifier : '…'}
+            </span>
+            {issue?.external_key && (
+              <span
+                className="identifier rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-500"
+                title="This issue's key before it was imported"
+              >
+                {issue.external_key}
+              </span>
+            )}
           </span>
           <button onClick={onClose} className="text-neutral-400 hover:text-neutral-700" aria-label="Close">
             ✕

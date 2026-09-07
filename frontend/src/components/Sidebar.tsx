@@ -12,12 +12,14 @@ export function Sidebar({
   activeCycleId,
   onSelectCycle,
   onNewCycle,
+  onImport,
 }: {
   activeProjectId: number | 'all'
   onSelectProject: (projectId: number | 'all') => void
   activeCycleId: number | null
   onSelectCycle: (cycleId: number | null) => void
   onNewCycle: () => void
+  onImport: () => void
 }) {
   const { user, logout } = useAuth()
   const { team, teams, projects, cycles } = useTeamContext()
@@ -106,6 +108,15 @@ export function Sidebar({
           ))}
         </div>
       </nav>
+
+      <div className="px-3 pb-1">
+        <button
+          onClick={onImport}
+          className="w-full rounded-md px-2 py-1.5 text-left text-sm text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700"
+        >
+          Import from Jira
+        </button>
+      </div>
 
       <div className="border-t border-neutral-200 p-3">
         <Link

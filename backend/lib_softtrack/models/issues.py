@@ -94,6 +94,8 @@ class IssueRead(BaseModel):
     #: to start; the board marks anything above zero.
     blocked_by_count: int
     cycle_id: Optional[int] = None
+    #: The key this issue had before it was imported, e.g. "PROJ-142".
+    external_key: Optional[str] = None
     parent: Optional[ParentRef] = None
     #: Sub-issue progress, excluding cancelled children from both numbers.
     #: Zero of zero for an issue with no sub-issues.
