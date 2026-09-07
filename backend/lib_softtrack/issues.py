@@ -4,10 +4,12 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import HTTPException
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate
+from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.tables import (
     Comment,
     Issue,
@@ -107,22 +109,40 @@ def list_issues(
     status: Optional[IssueStatus] = None,
     priority: Optional[IssuePriority] = None,
     assignee_id: Optional[int] = None,
-) -> list[IssueRead]:
+    limit: int = DEFAULT_LIMIT,
+    offset: int = 0,
+) -> Page[IssueRead]:
     get_team_or_404(team_id, session)
     require_team_member(team_id, current_user, session)
 
-    statement = select(Issue).where(Issue.team_id == team_id)
+    filters = [Issue.team_id == team_id]
     if project_id is not None:
-        statement = statement.where(Issue.project_id == project_id)
+        filters.append(Issue.project_id == project_id)
     if status is not None:
-        statement = statement.where(Issue.status == status)
+        filters.append(Issue.status == status)
     if priority is not None:
-        statement = statement.where(Issue.priority == priority)
+        filters.append(Issue.priority == priority)
     if assignee_id is not None:
-        statement = statement.where(Issue.assignee_id == assignee_id)
+        filters.append(Issue.assignee_id == assignee_id)
 
-    issues = session.exec(statement.order_by(Issue.number.desc())).all()
-    return [issue_to_read(issue, session) for issue in issues]
+    # `total` counts everything matching the filters, not the page, so the UI
+    # can show "50 of 1,204" without a second request.
+    total = session.exec(select(func.count()).select_from(Issue).where(*filters)).one()
+
+    issues = session.exec(
+        select(Issue)
+        .where(*filters)
+        .order_by(Issue.number.desc())
+        .offset(offset)
+        .limit(limit)
+    ).all()
+
+    return Page(
+        items=[issue_to_read(issue, session) for issue in issues],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 def get_issue(session: Session, current_user: User, issue_id: int) -> IssueRead:

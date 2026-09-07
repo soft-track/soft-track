@@ -1,11 +1,12 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
 from lib_identity.identity import get_current_user
 from lib_softtrack import issues as issues_service
 from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate
+from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
 from lib_softtrack.tables import IssuePriority, IssueStatus, User
 from web import get_session
 
@@ -22,13 +23,15 @@ def create_issue(
     return issues_service.create_issue(session, current_user, team_id, payload)
 
 
-@router.get("/teams/{team_id}/issues", response_model=list[IssueRead])
+@router.get("/teams/{team_id}/issues", response_model=Page[IssueRead])
 def list_issues(
     team_id: int,
     project_id: Optional[int] = None,
     status: Optional[IssueStatus] = None,
     priority: Optional[IssuePriority] = None,
     assignee_id: Optional[int] = None,
+    limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
+    offset: int = Query(0, ge=0),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
@@ -40,6 +43,8 @@ def list_issues(
         status=status,
         priority=priority,
         assignee_id=assignee_id,
+        limit=limit,
+        offset=offset,
     )
 
 

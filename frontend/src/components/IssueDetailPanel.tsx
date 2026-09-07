@@ -197,10 +197,10 @@ export function IssueDetailPanel({
 
             <div className="border-t border-neutral-100 px-4 py-4">
               <h3 className="mb-3 text-sm font-medium text-neutral-700">
-                Comments {commentsQuery.data ? `(${commentsQuery.data.length})` : ''}
+                Comments {commentsQuery.data ? `(${commentsQuery.data.total})` : ''}
               </h3>
               <div className="mb-3 space-y-3">
-                {commentsQuery.data?.map((comment) => (
+                {commentsQuery.data?.items.map((comment) => (
                   <div key={comment.id} className="flex gap-2">
                     <Avatar user={comment.author} size={24} />
                     <div className="min-w-0 flex-1">
@@ -218,7 +218,7 @@ export function IssueDetailPanel({
                     </div>
                   </div>
                 ))}
-                {commentsQuery.data?.length === 0 && (
+                {commentsQuery.data?.items.length === 0 && (
                   <p className="text-xs text-neutral-400">No comments yet.</p>
                 )}
               </div>

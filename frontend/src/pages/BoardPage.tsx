@@ -49,7 +49,7 @@ export default function BoardPage() {
   const updateIssue = useUpdateIssueIssuesIssueIdPatch()
 
   const filteredIssues = useMemo(() => {
-    let issues = issuesQuery.data ?? []
+    let issues = issuesQuery.data?.items ?? []
 
     if (priorityFilter !== 'all') {
       issues = issues.filter((issue) => issue.priority === priorityFilter)
@@ -70,7 +70,7 @@ export default function BoardPage() {
   }, [issuesQuery.data, search, priorityFilter, assigneeFilter])
 
   const openIssue = issueNumber
-    ? issuesQuery.data?.find((i) => String(i.number) === issueNumber)
+    ? issuesQuery.data?.items.find((i) => String(i.number) === issueNumber)
     : undefined
 
   const handleStatusChange = async (issueId: number, status: IssueStatus) => {

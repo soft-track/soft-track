@@ -70,7 +70,9 @@ def test_filtering_issues_by_status(client, team, issue):
     response = client.get(
         f"/teams/{team['team']['id']}/issues?status=done", headers=team["headers"]
     )
-    assert [i["title"] for i in response.json()] == ["another"]
+    body = response.json()
+    assert [i["title"] for i in body["items"]] == ["another"]
+    assert body["total"] == 1
 
 
 def test_a_label_can_be_attached_at_creation(client, team):
@@ -95,8 +97,10 @@ def test_comments_round_trip(client, issue, team):
     )
     assert created.status_code == 200
     listed = client.get(f"/issues/{issue['id']}/comments", headers=team["headers"])
-    assert [c["body"] for c in listed.json()] == ["Looks good to me"]
-    assert listed.json()[0]["author"]["email"] == team["user"]["email"]
+    body = listed.json()
+    assert [c["body"] for c in body["items"]] == ["Looks good to me"]
+    assert body["items"][0]["author"]["email"] == team["user"]["email"]
+    assert body["total"] == 1
 
 
 def test_an_empty_comment_is_rejected(client, issue, team):

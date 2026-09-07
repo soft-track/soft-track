@@ -27,7 +27,9 @@ import type {
 import type {
   CommentCreate,
   CommentRead,
-  HTTPValidationError
+  HTTPValidationError,
+  ListCommentsIssuesIssueIdCommentsGetParams,
+  PageCommentRead
 } from '../../models';
 
 import { apiClient } from '../../../client';
@@ -123,12 +125,14 @@ export const useCreateCommentIssuesIssueIdCommentsPost = <TError = HTTPValidatio
  */
 export const listCommentsIssuesIssueIdCommentsGet = (
     issueId: number,
+    params?: ListCommentsIssuesIssueIdCommentsGetParams,
  signal?: AbortSignal
 ) => {
 
 
-      return apiClient<CommentRead[]>(
-      {url: `/issues/${issueId}/comments`, method: 'GET', signal
+      return apiClient<PageCommentRead>(
+      {url: `/issues/${issueId}/comments`, method: 'GET',
+        params, signal
     },
       );
     }
@@ -136,23 +140,25 @@ export const listCommentsIssuesIssueIdCommentsGet = (
 
 
 
-export const getListCommentsIssuesIssueIdCommentsGetQueryKey = (issueId: number,) => {
+export const getListCommentsIssuesIssueIdCommentsGetQueryKey = (issueId: number,
+    params?: ListCommentsIssuesIssueIdCommentsGetParams,) => {
     return [
-    `/issues/${issueId}/comments`
+    `/issues/${issueId}/comments`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListCommentsIssuesIssueIdCommentsGetQueryOptions = <TData = Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError = HTTPValidationError>(issueId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError, TData>>, }
+export const getListCommentsIssuesIssueIdCommentsGetQueryOptions = <TData = Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError = HTTPValidationError>(issueId: number,
+    params?: ListCommentsIssuesIssueIdCommentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListCommentsIssuesIssueIdCommentsGetQueryKey(issueId);
+  const queryKey =  queryOptions?.queryKey ?? getListCommentsIssuesIssueIdCommentsGetQueryKey(issueId,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>> = ({ signal }) => listCommentsIssuesIssueIdCommentsGet(issueId, signal);
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>> = ({ signal }) => listCommentsIssuesIssueIdCommentsGet(issueId,params, signal);
 
 
 
@@ -166,7 +172,8 @@ export type ListCommentsIssuesIssueIdCommentsGetQueryError = HTTPValidationError
 
 
 export function useListCommentsIssuesIssueIdCommentsGet<TData = Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError = HTTPValidationError>(
- issueId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError, TData>> & Pick<
+ issueId: number,
+    params: undefined |  ListCommentsIssuesIssueIdCommentsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>,
           TError,
@@ -176,7 +183,8 @@ export function useListCommentsIssuesIssueIdCommentsGet<TData = Awaited<ReturnTy
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListCommentsIssuesIssueIdCommentsGet<TData = Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError = HTTPValidationError>(
- issueId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError, TData>> & Pick<
+ issueId: number,
+    params?: ListCommentsIssuesIssueIdCommentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>,
           TError,
@@ -186,7 +194,8 @@ export function useListCommentsIssuesIssueIdCommentsGet<TData = Awaited<ReturnTy
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListCommentsIssuesIssueIdCommentsGet<TData = Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError = HTTPValidationError>(
- issueId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError, TData>>, }
+ issueId: number,
+    params?: ListCommentsIssuesIssueIdCommentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -194,11 +203,12 @@ export function useListCommentsIssuesIssueIdCommentsGet<TData = Awaited<ReturnTy
  */
 
 export function useListCommentsIssuesIssueIdCommentsGet<TData = Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError = HTTPValidationError>(
- issueId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError, TData>>, }
+ issueId: number,
+    params?: ListCommentsIssuesIssueIdCommentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCommentsIssuesIssueIdCommentsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getListCommentsIssuesIssueIdCommentsGetQueryOptions(issueId,options)
+  const queryOptions = getListCommentsIssuesIssueIdCommentsGetQueryOptions(issueId,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

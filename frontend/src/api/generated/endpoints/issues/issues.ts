@@ -29,7 +29,8 @@ import type {
   IssueCreate,
   IssueRead,
   IssueUpdate,
-  ListIssuesTeamsTeamIdIssuesGetParams
+  ListIssuesTeamsTeamIdIssuesGetParams,
+  PageIssueRead
 } from '../../models';
 
 import { apiClient } from '../../../client';
@@ -130,7 +131,7 @@ export const listIssuesTeamsTeamIdIssuesGet = (
 ) => {
 
 
-      return apiClient<IssueRead[]>(
+      return apiClient<PageIssueRead>(
       {url: `/teams/${teamId}/issues`, method: 'GET',
         params, signal
     },

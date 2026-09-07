@@ -13,4 +13,13 @@ project_id?: number | null;
 status?: IssueStatus | null;
 priority?: IssuePriority | null;
 assignee_id?: number | null;
+/**
+ * @minimum 1
+ * @maximum 200
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
 };
