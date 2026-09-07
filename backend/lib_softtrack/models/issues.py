@@ -39,6 +39,13 @@ class IssueRead(BaseModel):
     status: IssueStatus
     priority: IssuePriority
     assignee: Optional[UserPublic] = None
+    #: Unresolved issues that block this one. Zero for an issue that is free
+    #: to start; the board marks anything above zero.
+    #:
+    #: No default: every path that builds an IssueRead sets it, and leaving it
+    #: defaulted would make it optional in the schema, which pushes an
+    #: `undefined` check into every client that reads it.
+    blocked_by_count: int
     creator: UserPublic
     labels: list[LabelRead] = []
     created_at: datetime

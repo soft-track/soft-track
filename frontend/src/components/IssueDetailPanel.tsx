@@ -8,6 +8,7 @@ import { IssuePriority, IssueStatus } from '../api/generated/models'
 import { PRIORITY_META, PRIORITY_ORDER, STATUS_META, STATUS_ORDER } from '../lib/issueMeta'
 import { useTeamContext } from '../team/TeamContext'
 import { Avatar } from './Avatar'
+import { IssueLinksSection } from './IssueLinksSection'
 import { PriorityIcon } from './PriorityIcon'
 
 export function IssueDetailPanel({
@@ -186,7 +187,9 @@ export function IssueDetailPanel({
                 </div>
               </div>
 
-              <div className="mt-2 flex items-center gap-1.5 text-xs text-neutral-400">
+              <IssueLinksSection issueId={issue.id} />
+
+              <div className="mt-4 flex items-center gap-1.5 text-xs text-neutral-400">
                 <PriorityIcon priority={issue.priority} />
                 <span>
                   Created by {issue.creator.full_name},{' '}

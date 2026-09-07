@@ -10,6 +10,7 @@ import enum
 from datetime import datetime, timezone
 from typing import Optional
 
+from sqlalchemy import UniqueConstraint
 from sqlmodel import SQLModel, Field
 
 
@@ -32,6 +33,27 @@ class IssuePriority(str, enum.Enum):
     high = "high"
     medium = "medium"
     low = "low"
+
+
+class IssueLinkType(str, enum.Enum):
+    """How one issue relates to another.
+
+    Only three are stored. "Blocked by" and "duplicated by" are not types --
+    they are the same rows read from the other end, which is what keeps the
+    two issues from ever disagreeing about their relationship.
+
+    `relates_to` is symmetric, so it is stored once and shown identically on
+    both issues.
+    """
+
+    blocks = "blocks"
+    relates_to = "relates_to"
+    duplicates = "duplicates"
+
+
+#: The types where direction carries meaning, and so where the same pair
+#: cannot be linked both ways round.
+DIRECTED_LINK_TYPES = (IssueLinkType.blocks, IssueLinkType.duplicates)
 
 
 class TeamRole(str, enum.Enum):
@@ -110,6 +132,27 @@ class Issue(SQLModel, table=True):
     creator_id: int = Field(foreign_key="user.id")
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
+
+
+class IssueLink(SQLModel, table=True):
+    """A relationship between two issues, stored once and read from both ends.
+
+    The unique constraint is what enforces "no duplicate links" -- doing it in
+    the database rather than only in the service means two simultaneous
+    requests cannot both pass a check-then-insert and create a pair of
+    identical rows.
+    """
+
+    __table_args__ = (
+        UniqueConstraint("source_id", "target_id", "type", name="uq_issue_link"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    source_id: int = Field(foreign_key="issue.id", index=True)
+    target_id: int = Field(foreign_key="issue.id", index=True)
+    type: IssueLinkType
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
 
 
 class Comment(SQLModel, table=True):

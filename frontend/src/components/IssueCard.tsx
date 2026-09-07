@@ -35,7 +35,10 @@ export function IssueCard({ issue }: { issue: IssueRead }) {
     >
       <div className="mb-1.5 flex items-center justify-between">
         <span className="identifier text-xs font-medium text-neutral-400">{issue.identifier}</span>
-        <PriorityIcon priority={issue.priority} />
+        <div className="flex items-center gap-1.5">
+          {issue.blocked_by_count > 0 && <BlockedMarker count={issue.blocked_by_count} />}
+          <PriorityIcon priority={issue.priority} />
+        </div>
       </div>
       <p className="mb-2 text-sm font-medium leading-snug text-neutral-900">{issue.title}</p>
       <div className="flex items-center justify-between">
@@ -57,5 +60,29 @@ export function IssueCard({ issue }: { issue: IssueRead }) {
         )}
       </div>
     </div>
+  )
+}
+
+
+/**
+ * Shown on a card that cannot be started yet.
+ *
+ * Deliberately loud -- amber, not another grey chip. The whole reason to
+ * record a blocker is so nobody picks the card up, and a marker that reads as
+ * decoration does not do that job.
+ */
+function BlockedMarker({ count }: { count: number }) {
+  return (
+    <span
+      title={`Blocked by ${count} unresolved ${count === 1 ? 'issue' : 'issues'}`}
+      className="inline-flex items-center gap-0.5 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700"
+    >
+      <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M4 12 L12 4" stroke="currentColor" strokeWidth="1.6" />
+      </svg>
+      {count > 1 && count}
+      <span className="sr-only">Blocked</span>
+    </span>
   )
 }

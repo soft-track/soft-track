@@ -7,23 +7,14 @@
  */
 import type { IssuePriority } from './issuePriority';
 import type { IssueStatus } from './issueStatus';
-import type { LabelRead } from './labelRead';
-import type { UserPublic } from './userPublic';
 
-export interface IssueRead {
+/**
+ * Just enough of the other issue to render a row and click through.
+ */
+export interface LinkedIssue {
   id: number;
-  team_id: number;
-  project_id?: number | null;
-  number: number;
   identifier: string;
   title: string;
-  description?: string | null;
   status: IssueStatus;
   priority: IssuePriority;
-  assignee?: UserPublic | null;
-  blocked_by_count: number;
-  creator: UserPublic;
-  labels?: LabelRead[];
-  created_at: string;
-  updated_at: string;
 }

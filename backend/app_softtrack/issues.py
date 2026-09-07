@@ -5,7 +5,9 @@ from sqlmodel import Session
 
 from lib_identity.identity import get_current_user
 from lib_softtrack import issues as issues_service
+from lib_softtrack import links as links_service
 from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate
+from lib_softtrack.models.links import IssueLinkCreate, IssueLinkRead, IssueLinks
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
 from lib_softtrack.tables import IssuePriority, IssueStatus, User
 from web import get_session
@@ -74,3 +76,37 @@ def delete_issue(
     current_user: User = Depends(get_current_user),
 ):
     issues_service.delete_issue(session, current_user, issue_id)
+
+
+@router.get("/issues/{issue_id}/links", response_model=IssueLinks)
+def list_issue_links(
+    issue_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Every relationship this issue has, grouped by how it reads from here.
+
+    A `blocks` row appears under `blocks` for the source issue and under
+    `blocked_by` for the target -- one stored row, two readings.
+    """
+    return links_service.list_links(session, current_user, issue_id)
+
+
+@router.post("/issues/{issue_id}/links", response_model=IssueLinkRead)
+def create_issue_link(
+    issue_id: int,
+    payload: IssueLinkCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    return links_service.create_link(session, current_user, issue_id, payload)
+
+
+@router.delete("/issues/{issue_id}/links/{link_id}", status_code=204)
+def delete_issue_link(
+    issue_id: int,
+    link_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    links_service.delete_link(session, current_user, issue_id, link_id)

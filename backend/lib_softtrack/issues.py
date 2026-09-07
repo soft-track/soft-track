@@ -5,16 +5,18 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
+from lib_softtrack.links import open_blocker_counts
 from lib_softtrack.tables import (
     Comment,
     Issue,
     IssueLabelLink,
+    IssueLink,
     IssuePriority,
     IssueStatus,
     Label,
@@ -45,6 +47,7 @@ def issue_to_read(issue: Issue, session: Session) -> IssueRead:
         status=issue.status,
         priority=issue.priority,
         assignee=UserPublic.model_validate(assignee) if assignee else None,
+        blocked_by_count=open_blocker_counts(session, [issue.id]).get(issue.id, 0),
         creator=UserPublic.model_validate(creator),
         labels=[label for label in labels if label is not None],
         created_at=issue.created_at,
@@ -82,6 +85,8 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
         for user in session.exec(select(User).where(User.id.in_(user_ids))).all()
     }
 
+    # One query for the whole page, keeping the constant-query property.
+    blocker_counts = open_blocker_counts(session, issue_ids)
     team_ids = {issue.team_id for issue in issues}
     teams = {
         team.id: team
@@ -104,6 +109,7 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
                 if issue.assignee_id
                 else None
             ),
+            blocked_by_count=blocker_counts.get(issue.id, 0),
             creator=UserPublic.model_validate(users[issue.creator_id]),
             labels=labels_by_issue.get(issue.id, []),
             created_at=issue.created_at,
@@ -255,6 +261,26 @@ def delete_issue(session: Session, current_user: User, issue_id: int) -> None:
     comments = session.exec(select(Comment).where(Comment.issue_id == issue_id)).all()
     for comment in comments:
         session.delete(comment)
+
+    # Links point at this issue from either end, so both have to go -- and the
+    # relationship is gone for the issue at the other end too, which is the
+    # right outcome: it was a relationship *with* something that no longer
+    # exists.
+    issue_links = session.exec(
+        select(IssueLink).where(
+            or_(IssueLink.source_id == issue_id, IssueLink.target_id == issue_id)
+        )
+    ).all()
+    for link in issue_links:
+        session.delete(link)
+
+    # Flush the dependent rows before removing the issue itself. Without a
+    # relationship configured between these tables SQLAlchemy has no
+    # dependency graph to order the deletes by, so it is free to emit the
+    # parent DELETE first and trip the foreign key. The comment and label
+    # deletes above happened to be ordered correctly; this makes all three
+    # deterministic rather than lucky.
+    session.flush()
 
     session.delete(issue)
     session.commit()

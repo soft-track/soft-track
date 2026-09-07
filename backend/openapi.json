@@ -929,6 +929,158 @@
         }
       }
     },
+    "/issues/{issue_id}/links": {
+      "get": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "List Issue Links",
+        "description": "Every relationship this issue has, grouped by how it reads from here.\n\nA `blocks` row appears under `blocks` for the source issue and under\n`blocked_by` for the target -- one stored row, two readings.",
+        "operationId": "list_issue_links_issues__issue_id__links_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueLinks"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "Create Issue Link",
+        "operationId": "create_issue_link_issues__issue_id__links_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueLinkCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueLinkRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issue_id}/links/{link_id}": {
+      "delete": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "Delete Issue Link",
+        "operationId": "delete_issue_link_issues__issue_id__links__link_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          },
+          {
+            "name": "link_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Link Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/issues/{issue_id}/comments": {
       "post": {
         "tags": [
@@ -1257,6 +1409,107 @@
         ],
         "title": "IssueCreate"
       },
+      "IssueLinkCreate": {
+        "properties": {
+          "target_id": {
+            "type": "integer",
+            "title": "Target Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/IssueLinkType"
+          }
+        },
+        "type": "object",
+        "required": [
+          "target_id",
+          "type"
+        ],
+        "title": "IssueLinkCreate"
+      },
+      "IssueLinkRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "relation": {
+            "type": "string",
+            "title": "Relation"
+          },
+          "issue": {
+            "$ref": "#/components/schemas/LinkedIssue"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "relation",
+          "issue",
+          "created_at"
+        ],
+        "title": "IssueLinkRead"
+      },
+      "IssueLinkType": {
+        "type": "string",
+        "enum": [
+          "blocks",
+          "relates_to",
+          "duplicates"
+        ],
+        "title": "IssueLinkType",
+        "description": "How one issue relates to another.\n\nOnly three are stored. \"Blocked by\" and \"duplicated by\" are not types --\nthey are the same rows read from the other end, which is what keeps the\ntwo issues from ever disagreeing about their relationship.\n\n`relates_to` is symmetric, so it is stored once and shown identically on\nboth issues."
+      },
+      "IssueLinks": {
+        "properties": {
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/IssueLinkRead"
+            },
+            "type": "array",
+            "title": "Blocks",
+            "default": []
+          },
+          "blocked_by": {
+            "items": {
+              "$ref": "#/components/schemas/IssueLinkRead"
+            },
+            "type": "array",
+            "title": "Blocked By",
+            "default": []
+          },
+          "relates_to": {
+            "items": {
+              "$ref": "#/components/schemas/IssueLinkRead"
+            },
+            "type": "array",
+            "title": "Relates To",
+            "default": []
+          },
+          "duplicates": {
+            "items": {
+              "$ref": "#/components/schemas/IssueLinkRead"
+            },
+            "type": "array",
+            "title": "Duplicates",
+            "default": []
+          },
+          "duplicated_by": {
+            "items": {
+              "$ref": "#/components/schemas/IssueLinkRead"
+            },
+            "type": "array",
+            "title": "Duplicated By",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "IssueLinks"
+      },
       "IssuePriority": {
         "type": "string",
         "enum": [
@@ -1328,6 +1581,10 @@
               }
             ]
           },
+          "blocked_by_count": {
+            "type": "integer",
+            "title": "Blocked By Count"
+          },
           "creator": {
             "$ref": "#/components/schemas/UserPublic"
           },
@@ -1359,6 +1616,7 @@
           "title",
           "status",
           "priority",
+          "blocked_by_count",
           "creator",
           "created_at",
           "updated_at"
@@ -1506,6 +1764,38 @@
           "color"
         ],
         "title": "LabelRead"
+      },
+      "LinkedIssue": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IssueStatus"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/IssuePriority"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "identifier",
+          "title",
+          "status",
+          "priority"
+        ],
+        "title": "LinkedIssue",
+        "description": "Just enough of the other issue to render a row and click through."
       },
       "Page_CommentRead_": {
         "properties": {
