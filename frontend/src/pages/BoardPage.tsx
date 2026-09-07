@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import {
@@ -9,11 +9,13 @@ import {
 } from '../api/generated/endpoints/issues/issues'
 import { useListLabelsTeamsTeamIdLabelsGet } from '../api/generated/endpoints/labels/labels'
 import { useListProjectsTeamsTeamIdProjectsGet } from '../api/generated/endpoints/projects/projects'
+import { useSearchSearchGet } from '../api/generated/endpoints/search/search'
 import { useListTeamMembersTeamsTeamIdMembersGet } from '../api/generated/endpoints/teams/teams'
 import type { IssuePriority, IssueRead, IssueStatus } from '../api/generated/models'
 import { IssueDetailPanel } from '../components/IssueDetailPanel'
 import { IssueListView } from '../components/IssueListView'
 import { KanbanBoard } from '../components/KanbanBoard'
+import { SearchResults } from '../components/SearchResults'
 import { NewIssueModal } from '../components/NewIssueModal'
 import { Sidebar } from '../components/Sidebar'
 import { TopBar, type AssigneeFilter } from '../components/TopBar'
@@ -59,15 +61,16 @@ export default function BoardPage() {
     } else if (assigneeFilter !== 'all') {
       issues = issues.filter((issue) => issue.assignee?.id === assigneeFilter)
     }
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      issues = issues.filter(
-        (issue) =>
-          issue.title.toLowerCase().includes(q) || issue.identifier.toLowerCase().includes(q),
-      )
-    }
     return issues
-  }, [issuesQuery.data, search, priorityFilter, assigneeFilter])
+  }, [issuesQuery.data, priorityFilter, assigneeFilter])
+
+  // Search runs on the server. The old client-side filter could only see the
+  // page that was already loaded, and only matched titles.
+  const searchQuery = useDebounced(search.trim(), 250)
+  const searchResults = useSearchSearchGet(
+    { q: searchQuery || 'x', team_id: team?.id, limit: 50 },
+    { query: { enabled: Boolean(team) && searchQuery.length > 0 } },
+  )
 
   const openIssue = issueNumber
     ? issuesQuery.data?.items.find((i) => String(i.number) === issueNumber)
@@ -129,7 +132,14 @@ export default function BoardPage() {
             onAssigneeFilterChange={setAssigneeFilter}
           />
           <div className="min-h-0 flex-1">
-            {issuesQuery.isLoading ? (
+            {searchQuery ? (
+              <SearchResults
+                query={searchQuery}
+                hits={searchResults.data?.items ?? []}
+                total={searchResults.data?.total ?? 0}
+                isLoading={searchResults.isLoading}
+              />
+            ) : issuesQuery.isLoading ? (
               <div className="flex h-full items-center justify-center text-sm text-neutral-400">
                 Loading issues…
               </div>
@@ -148,4 +158,22 @@ export default function BoardPage() {
       )}
     </TeamProvider>
   )
+}
+
+
+/**
+ * Hold a value back until it stops changing.
+ *
+ * Search hits the database, so firing on every keystroke would send a request
+ * per character and race the responses back out of order.
+ */
+function useDebounced<T>(value: T, delayMs: number): T {
+  const [settled, setSettled] = useState(value)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(value), delayMs)
+    return () => clearTimeout(timer)
+  }, [value, delayMs])
+
+  return settled
 }
