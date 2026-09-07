@@ -1,0 +1,131 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch cancels the older run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend · black + pytest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"   # matches backend/Dockerfile
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Check formatting
+        run: black --check --diff . --exclude venv
+
+      - name: Run tests with coverage
+        # Tests use in-memory SQLite with PRAGMA foreign_keys=ON, so they catch
+        # the referential bugs Postgres would catch without needing a service.
+        env:
+          DATABASE_URL: "sqlite://"
+        run: pytest --cov --cov-report=term-missing --cov-report=xml --cov-fail-under=85
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          {
+            echo '### Backend coverage'
+            echo
+            echo '```'
+            coverage report | tail -n 20
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+          if-no-files-found: warn
+
+  frontend:
+    name: Frontend · lint + typecheck + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"       # matches frontend/Dockerfile
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc -b --noEmit
+
+      - name: Build
+        run: npm run build
+
+  api-contract:
+    name: API contract · openapi.json is current
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - run: pip install -r backend/requirements.txt
+
+      # backend/openapi.json is the contract Orval generates the typed frontend
+      # client from. If a route or schema changes without regenerating it, the
+      # client silently drifts out of sync with the API. Fail loudly instead.
+      - name: Regenerate the schema and fail on drift
+        working-directory: backend
+        env:
+          DATABASE_URL: "sqlite://"
+        run: |
+          python export_openapi.py
+          if ! git diff --quiet -- openapi.json; then
+            echo "::error file=backend/openapi.json::openapi.json is out of date."
+            echo "Run 'python export_openapi.py' in backend/, then 'npm run generate:api'"
+            echo "in frontend/, and commit both."
+            git diff -- openapi.json
+            exit 1
+          fi
+          echo "openapi.json matches the running app."
+
+  docker:
+    name: Docker · images build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build the stack
+        run: docker compose build

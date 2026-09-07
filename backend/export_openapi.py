@@ -6,6 +6,7 @@ The frontend's Orval codegen (frontend/orval.config.ts) reads this file directly
 so re-run this (and `npm run generate:api` in frontend/) any time backend routes,
 schemas, or models change.
 """
+
 import json
 
 from main import app

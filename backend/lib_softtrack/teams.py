@@ -38,7 +38,9 @@ def create_team(session: Session, current_user: User, payload: TeamCreate) -> Te
     session.commit()
     session.refresh(team)
 
-    membership = TeamMember(team_id=team.id, user_id=current_user.id, role=TeamRole.admin)
+    membership = TeamMember(
+        team_id=team.id, user_id=current_user.id, role=TeamRole.admin
+    )
     session.add(membership)
     session.commit()
 

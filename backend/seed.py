@@ -2,6 +2,7 @@
 
 Run with:  python seed.py
 """
+
 from sqlmodel import Session, select
 
 from web import engine, init_db
@@ -69,14 +70,49 @@ def run():
         session.refresh(label_design)
 
         demo_issues = [
-            ("Set up CI pipeline", IssueStatus.done, IssuePriority.high, [label_feature]),
-            ("Design the kanban board layout", IssueStatus.done, IssuePriority.medium, [label_design]),
-            ("Implement JWT auth", IssueStatus.in_progress, IssuePriority.urgent, [label_feature]),
-            ("Drag and drop issue cards", IssueStatus.in_progress, IssuePriority.high, [label_feature]),
-            ("Fix avatar color hashing bug", IssueStatus.todo, IssuePriority.low, [label_bug]),
+            (
+                "Set up CI pipeline",
+                IssueStatus.done,
+                IssuePriority.high,
+                [label_feature],
+            ),
+            (
+                "Design the kanban board layout",
+                IssueStatus.done,
+                IssuePriority.medium,
+                [label_design],
+            ),
+            (
+                "Implement JWT auth",
+                IssueStatus.in_progress,
+                IssuePriority.urgent,
+                [label_feature],
+            ),
+            (
+                "Drag and drop issue cards",
+                IssueStatus.in_progress,
+                IssuePriority.high,
+                [label_feature],
+            ),
+            (
+                "Fix avatar color hashing bug",
+                IssueStatus.todo,
+                IssuePriority.low,
+                [label_bug],
+            ),
             ("Write onboarding docs", IssueStatus.todo, IssuePriority.medium, []),
-            ("Add keyboard shortcuts", IssueStatus.backlog, IssuePriority.no_priority, [label_feature]),
-            ("Dark mode support", IssueStatus.backlog, IssuePriority.low, [label_design]),
+            (
+                "Add keyboard shortcuts",
+                IssueStatus.backlog,
+                IssuePriority.no_priority,
+                [label_feature],
+            ),
+            (
+                "Dark mode support",
+                IssueStatus.backlog,
+                IssuePriority.low,
+                [label_design],
+            ),
         ]
 
         for title, status, priority, labels in demo_issues:

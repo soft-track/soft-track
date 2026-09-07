@@ -27,3 +27,8 @@ dist-ssr/
 .idea/
 .DS_Store
 *.swp
+
+# Coverage artifacts
+.coverage
+coverage.xml
+htmlcov/

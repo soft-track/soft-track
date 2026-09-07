@@ -1,0 +1,8 @@
+# Test and lint tooling. Deliberately separate from requirements.txt so the
+# production image (see Dockerfile) does not ship pytest and black.
+-r requirements.txt
+
+black==25.9.0
+httpx==0.28.1
+pytest==8.4.2
+pytest-cov==7.0.0

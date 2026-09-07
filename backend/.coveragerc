@@ -1,0 +1,11 @@
+[run]
+source = app_identity,app_softtrack,lib_identity,lib_softtrack,lib_utils,web,main
+omit =
+    venv/*
+    tests/*
+    seed.py
+    export_openapi.py
+
+[report]
+show_missing = True
+skip_covered = False

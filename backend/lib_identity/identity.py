@@ -13,7 +13,13 @@ from web import get_session
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 AVATAR_COLORS = [
-    "#6366f1", "#ec4899", "#14b8a6", "#f59e0b", "#8b5cf6", "#ef4444", "#22c55e",
+    "#6366f1",
+    "#ec4899",
+    "#14b8a6",
+    "#f59e0b",
+    "#8b5cf6",
+    "#ef4444",
+    "#22c55e",
 ]
 
 
