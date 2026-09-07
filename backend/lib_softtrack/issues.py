@@ -1,5 +1,6 @@
 """Issue services, including the assembly of the denormalised IssueRead payload."""
 
+from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -49,6 +50,67 @@ def issue_to_read(issue: Issue, session: Session) -> IssueRead:
         created_at=issue.created_at,
         updated_at=issue.updated_at,
     )
+
+
+def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
+    """Build IssueRead for a page of issues with a fixed number of queries.
+
+    `issue_to_read` is fine for one issue but costs a query per issue for its
+    label links, so a page of 50 cost ~58 queries. Loading labels, users and
+    teams in one query each makes the cost constant in the page size.
+
+    (The identity map already absorbed the repeated user and team lookups when
+    a page shared an assignee -- the label links were the real N+1.)
+    """
+    if not issues:
+        return []
+
+    issue_ids = [issue.id for issue in issues]
+
+    labels_by_issue: dict[int, list[Label]] = defaultdict(list)
+    for issue_id, label in session.exec(
+        select(IssueLabelLink.issue_id, Label)
+        .join(Label, Label.id == IssueLabelLink.label_id)
+        .where(IssueLabelLink.issue_id.in_(issue_ids))
+    ).all():
+        labels_by_issue[issue_id].append(label)
+
+    user_ids = {issue.creator_id for issue in issues}
+    user_ids |= {issue.assignee_id for issue in issues if issue.assignee_id}
+    users = {
+        user.id: user
+        for user in session.exec(select(User).where(User.id.in_(user_ids))).all()
+    }
+
+    team_ids = {issue.team_id for issue in issues}
+    teams = {
+        team.id: team
+        for team in session.exec(select(Team).where(Team.id.in_(team_ids))).all()
+    }
+
+    return [
+        IssueRead(
+            id=issue.id,
+            team_id=issue.team_id,
+            project_id=issue.project_id,
+            number=issue.number,
+            identifier=f"{teams[issue.team_id].key}-{issue.number}",
+            title=issue.title,
+            description=issue.description,
+            status=issue.status,
+            priority=issue.priority,
+            assignee=(
+                UserPublic.model_validate(users[issue.assignee_id])
+                if issue.assignee_id
+                else None
+            ),
+            creator=UserPublic.model_validate(users[issue.creator_id]),
+            labels=labels_by_issue.get(issue.id, []),
+            created_at=issue.created_at,
+            updated_at=issue.updated_at,
+        )
+        for issue in issues
+    ]
 
 
 def set_labels(issue_id: int, label_ids: list[int], session: Session) -> None:
@@ -138,7 +200,7 @@ def list_issues(
     ).all()
 
     return Page(
-        items=[issue_to_read(issue, session) for issue in issues],
+        items=_expand_issues(list(issues), session),
         total=total,
         limit=limit,
         offset=offset,
