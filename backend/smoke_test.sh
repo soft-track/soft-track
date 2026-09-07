@@ -7,7 +7,8 @@
 #
 # Exercises: register -> login -> create team -> create project ->
 # create label -> create issue -> patch issue status -> add comment ->
-# list issues -> get issue. Exits non-zero on the first failed assertion.
+# list issues -> get issue -> attach a file -> delete the issue.
+# Exits non-zero on the first failed assertion.
 
 set -euo pipefail
 
@@ -98,9 +99,43 @@ echo "== get single issue =="
 get_resp=$(curl -sf "$BASE_URL/issues/$ISSUE_ID" -H "$AUTH_HEADER")
 [ "$(echo "$get_resp" | jq -r .title)" = "Smoke issue" ] && pass "GET /issues/$ISSUE_ID returns correct title" || fail "get issue mismatch"
 
-echo "== deleting an issue that has a label and a comment =="
+echo "== attach a file =="
+# A real PNG header, because the API checks that an image is the image it
+# claims to be rather than trusting the upload's content type.
+PNG_FILE=$(mktemp /tmp/softtrack-smoke-XXXXXX.png)
+trap 'rm -f "$PNG_FILE"' EXIT
+printf '\211PNG\r\n\032\n' > "$PNG_FILE"
+head -c 64 /dev/zero >> "$PNG_FILE"
+
+attach_resp=$(curl -sf -X POST "$BASE_URL/issues/$ISSUE_ID/attachments" \
+  -H "$AUTH_HEADER" -F "file=@$PNG_FILE;type=image/png")
+ATTACHMENT_ID=$(echo "$attach_resp" | jq -r .id)
+[ "$ATTACHMENT_ID" != "null" ] && pass "POST attachment created $ATTACHMENT_ID" || fail "attachment upload failed"
+[ "$(echo "$attach_resp" | jq -r .content_type)" = "image/png" ] && pass "served type derived from the name" || fail "content type wrong"
+
+echo "== download it back =="
+downloaded=$(mktemp)
+content_type=$(curl -sf -o "$downloaded" -w "%{content_type}" \
+  "$BASE_URL/attachments/$ATTACHMENT_ID/content" -H "$AUTH_HEADER")
+cmp -s "$PNG_FILE" "$downloaded" && pass "the bytes come back unchanged" || fail "downloaded bytes differ"
+[ "${content_type%%;*}" = "image/png" ] && pass "GET content is served as image/png" || fail "served as $content_type"
+rm -f "$downloaded"
+
+echo "== a type that is not on the allowlist =="
+BAD_FILE=$(mktemp /tmp/softtrack-smoke-XXXXXX.html)
+echo '<script>alert(1)</script>' > "$BAD_FILE"
+bad_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/issues/$ISSUE_ID/attachments" \
+  -H "$AUTH_HEADER" -F "file=@$BAD_FILE;type=image/png")
+rm -f "$BAD_FILE"
+[ "$bad_code" = "415" ] && pass "an .html upload is refused with 415" || fail "expected 415, got $bad_code"
+
+echo "== deleting an issue that has a label, a comment and an attachment =="
 del_code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$BASE_URL/issues/$ISSUE_ID" -H "$AUTH_HEADER")
 [ "$del_code" = "204" ] && pass "DELETE removes the issue and its dependent rows" || fail "delete returned $del_code"
+
+gone_code=$(curl -s -o /dev/null -w "%{http_code}" \
+  "$BASE_URL/attachments/$ATTACHMENT_ID/content" -H "$AUTH_HEADER")
+[ "$gone_code" = "404" ] && pass "the attachment went with the issue" || fail "attachment still readable ($gone_code)"
 
 
 echo ""

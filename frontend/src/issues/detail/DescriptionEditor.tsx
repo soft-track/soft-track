@@ -18,6 +18,7 @@ export function DescriptionEditor({
   people,
   onSave,
   onToggleTask,
+  onUploadFiles,
 }: {
   /** What the server has. */
   saved: string | null | undefined
@@ -27,6 +28,7 @@ export function DescriptionEditor({
   people: Mentionable[]
   onSave: (description: string) => Promise<void>
   onToggleTask: (offset: number) => void
+  onUploadFiles?: (files: File[]) => Promise<Array<{ markdown: string }>>
 }) {
   const [editing, setEditing] = useState(false)
 
@@ -40,6 +42,7 @@ export function DescriptionEditor({
           placeholder="Add a description… Markdown works here."
           rows={8}
           autoFocus
+          onUploadFiles={onUploadFiles}
         />
         <div className="mt-2 flex gap-2">
           <button

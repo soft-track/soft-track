@@ -1,10 +1,13 @@
 import { formatDistanceToNow } from 'date-fns'
 
+import { AttachmentList } from '@/attachments/AttachmentList'
+
 import { CommentsSection } from '@/issues/detail/CommentsSection'
 import { DescriptionEditor } from '@/issues/detail/DescriptionEditor'
 import { IssueLinksSection } from '@/issues/detail/IssueLinksSection'
 import { IssueProperties } from '@/issues/detail/IssueProperties'
 import { SubIssuesSection } from '@/issues/detail/SubIssuesSection'
+import { useIssueAttachments } from '@/issues/detail/useIssueAttachments'
 import { useIssueEditor } from '@/issues/detail/useIssueEditor'
 import { usePanelShortcuts } from '@/issues/detail/usePanelShortcuts'
 import { PriorityIcon } from '@/issues/PriorityIcon'
@@ -12,6 +15,7 @@ import { PriorityIcon } from '@/issues/PriorityIcon'
 /** The slide-over for one issue. Composes the sections; owns none of them. */
 export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClose: () => void }) {
   const editor = useIssueEditor(issueId)
+  const files = useIssueAttachments(issueId)
   usePanelShortcuts(onClose)
   const { issue } = editor
 
@@ -62,7 +66,20 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
                 people={editor.people}
                 onSave={(description) => editor.patch({ description })}
                 onToggleTask={editor.toggleTask}
+                onUploadFiles={files.uploadForDescription}
               />
+
+              {files.attachments.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="mb-1.5 text-xs font-medium text-neutral-500">Files</h3>
+                  {/* Every file on the issue, including the ones embedded in
+                      the description above. This list is also where they get
+                      deleted, so leaving the embedded ones out would make
+                      them impossible to remove. */}
+                  <AttachmentList attachments={files.attachments} onRemove={files.remove} />
+                </div>
+              )}
+              {files.error && <p className="mt-2 text-xs text-danger-600">{files.error}</p>}
 
               <IssueProperties
                 issue={issue}
@@ -83,7 +100,14 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
               </div>
             </div>
 
-            <CommentsSection issueId={issue.id} people={editor.people} />
+            <CommentsSection
+              issueId={issue.id}
+              people={editor.people}
+              uploadFiles={files.uploadFiles}
+              removeAttachment={files.remove}
+              uploading={files.uploading}
+              onFilesClaimed={files.invalidate}
+            />
           </>
         )}
       </div>

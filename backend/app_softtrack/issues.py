@@ -11,6 +11,7 @@ from lib_softtrack.models.estimates import EstimateSummary
 from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate
 from lib_softtrack.models.links import IssueLinkCreate, IssueLinkRead, IssueLinks
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
+from lib_softtrack.storage import Storage, get_storage
 from lib_softtrack.tables import IssuePriority, IssueStatus, User
 from web import get_session
 
@@ -95,9 +96,16 @@ def update_issue(
 def delete_issue(
     issue_id: int,
     session: Session = Depends(get_session),
+    storage: Storage = Depends(get_storage),
     current_user: User = Depends(get_current_user),
 ):
-    issues_service.delete_issue(session, current_user, issue_id)
+    """Delete an issue and everything that only existed because of it.
+
+    Attachments go with it, bytes included -- see
+    `lib_softtrack/issues.py`. Sub-issues do not: they are promoted to top
+    level rather than destroyed.
+    """
+    issues_service.delete_issue(session, current_user, issue_id, storage)
 
 
 @router.get("/issues/{issue_id}/links", response_model=IssueLinks)

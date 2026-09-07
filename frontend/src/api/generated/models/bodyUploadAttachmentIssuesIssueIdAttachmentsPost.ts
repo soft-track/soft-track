@@ -6,8 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CommentCreate {
-  /** @minLength 1 */
-  body: string;
-  attachment_ids?: number[];
+export interface BodyUploadAttachmentIssuesIssueIdAttachmentsPost {
+  /** The file to attach. */
+  file: Blob;
 }

@@ -24,6 +24,7 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
+from lib_softtrack.storage import LocalStorage, get_storage
 from main import app
 from web import get_session
 
@@ -63,9 +64,20 @@ def session_fixture():
         yield session
 
 
+@pytest.fixture(name="storage")
+def storage_fixture(tmp_path):
+    """Attachment bytes go to a per-test directory.
+
+    Overridden the same way the session is, so a test never writes into the
+    working tree and two tests never see each other's files.
+    """
+    return LocalStorage(tmp_path / "attachments")
+
+
 @pytest.fixture(name="client")
-def client_fixture(session):
+def client_fixture(session, storage):
     app.dependency_overrides[get_session] = lambda: session
+    app.dependency_overrides[get_storage] = lambda: storage
     with TestClient(app) as client:
         yield client
     app.dependency_overrides.clear()

@@ -7,8 +7,10 @@
  */
 
 export * from './assigneeLoad';
+export * from './attachmentRead';
 export * from './bodyImportJiraTeamsTeamIdImportJiraPost';
 export * from './bodyLoginAuthLoginPost';
+export * from './bodyUploadAttachmentIssuesIssueIdAttachmentsPost';
 export * from './burndown';
 export * from './burndownPoint';
 export * from './commentCreate';

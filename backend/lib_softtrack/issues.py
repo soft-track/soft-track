@@ -9,6 +9,7 @@ from sqlalchemy import func, or_
 from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
+from lib_softtrack import attachments as attachments_service
 from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate, ParentRef
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.history import record_changes, record_creation, snapshot
@@ -25,6 +26,7 @@ from lib_softtrack.tables import (
     Team,
     User,
 )
+from lib_softtrack.storage import Storage
 from lib_softtrack.subissues import child_progress, detach_children, validate_parent
 from lib_softtrack.teams import get_team_or_404, require_team_member
 
@@ -311,7 +313,9 @@ def update_issue(
     return issue_to_read(issue, session)
 
 
-def delete_issue(session: Session, current_user: User, issue_id: int) -> None:
+def delete_issue(
+    session: Session, current_user: User, issue_id: int, storage: Storage
+) -> None:
     issue = get_issue_or_404(session, issue_id)
     require_team_member(issue.team_id, current_user, session)
 
@@ -329,6 +333,12 @@ def delete_issue(session: Session, current_user: User, issue_id: int) -> None:
     ).all()
     for link in label_links:
         session.delete(link)
+
+    # Attachments before comments: a comment attachment holds a foreign key to
+    # the comment, so removing the comment first is the delete Postgres
+    # rejects. The bytes are purged after the commit below -- an orphaned file
+    # costs disk, an orphaned row costs a broken image on somebody's issue.
+    storage_keys = attachments_service.take_keys_for_issue(session, issue_id)
 
     comments = session.exec(select(Comment).where(Comment.issue_id == issue_id)).all()
     for comment in comments:
@@ -371,3 +381,5 @@ def delete_issue(session: Session, current_user: User, issue_id: int) -> None:
 
     session.delete(issue)
     session.commit()
+
+    attachments_service.purge(storage, storage_keys)

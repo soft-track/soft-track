@@ -241,3 +241,36 @@ class Comment(SQLModel, table=True):
     author_id: int = Field(foreign_key="user.id")
     body: str
     created_at: datetime = Field(default_factory=utcnow)
+
+
+class Attachment(SQLModel, table=True):
+    """One uploaded file. The bytes live in storage; this is the metadata.
+
+    Every attachment belongs to an issue, and *optionally* to one comment on
+    that issue. Two reasons for the issue_id being mandatory rather than one
+    nullable owner column: it is the only path to a team, so it is what every
+    permission check reads; and it is what makes deleting an issue able to
+    clean up in one query rather than walking its comments.
+
+    A file is uploaded before the comment it belongs to exists -- you paste a
+    screenshot, then write the sentence about it -- so it starts with
+    comment_id null and the comment claims it on submit.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    issue_id: int = Field(foreign_key="issue.id", index=True)
+    comment_id: Optional[int] = Field(
+        default=None, foreign_key="comment.id", index=True
+    )
+    #: The name the uploader saw, stripped of any directory part. Shown and
+    #: sent in Content-Disposition; never used to build a path.
+    filename: str
+    #: Derived from the extension, not copied from the request. See
+    #: lib_softtrack/attachments.py -- a client does not get to choose the
+    #: type its file is served back as.
+    content_type: str
+    size_bytes: int
+    #: Opaque key into whichever storage backend is configured.
+    storage_key: str
+    uploaded_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)

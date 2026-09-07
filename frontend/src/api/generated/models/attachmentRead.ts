@@ -5,14 +5,17 @@
  * An open-source, self-hostable issue tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
-import type { AttachmentRead } from './attachmentRead';
 import type { UserPublic } from './userPublic';
 
-export interface CommentRead {
+export interface AttachmentRead {
   id: number;
   issue_id: number;
-  body: string;
-  author: UserPublic;
-  attachments?: AttachmentRead[];
+  comment_id?: number | null;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  is_image: boolean;
+  url: string;
+  uploaded_by: UserPublic;
   created_at: string;
 }
