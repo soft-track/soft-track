@@ -1,10 +1,10 @@
 import { format, parseISO } from 'date-fns'
 
-import type { CumulativeFlow, IssueStatus } from '../api/generated/models'
-import { STATUS_META } from '../lib/issueMeta'
-import { Figure, Key, Tooltip, XAxis, YAxis } from './Chart'
-import { PAD, useCrosshair } from './chartGeometry'
-import { FLOW_ORDER, FLOW_RAMP, INK } from './chartTokens'
+import type { CumulativeFlow, IssueStatus } from '@/api/generated/models'
+import { STATUS_META } from '@/issues/issueMeta'
+import { Figure, Key, Tooltip, XAxis, YAxis } from '@/reports/Chart'
+import { PAD, useCrosshair } from '@/reports/chartGeometry'
+import { FLOW_ORDER, FLOW_RAMP, INK } from '@/reports/chartTokens'
 
 const W = 640
 const H = 220

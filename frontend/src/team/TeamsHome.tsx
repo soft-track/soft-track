@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom'
 
-import { useMyTeams } from '../lib/useTeams'
+import { useMyTeams } from '@/team/useTeams'
 
 /**
  * Landing route for authenticated users: redirect to their first team's

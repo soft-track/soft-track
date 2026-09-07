@@ -6,10 +6,10 @@ import {
   useCreateIssueTeamsTeamIdIssuesPost,
   useListIssuesTeamsTeamIdIssuesGet,
   useUpdateIssueIssuesIssueIdPatch,
-} from '../api/generated/endpoints/issues/issues'
-import type { IssueRead } from '../api/generated/models'
-import { STATUS_META } from '../lib/issueMeta'
-import { useTeamContext } from '../team/TeamContext'
+} from '@/api/generated/endpoints/issues/issues'
+import type { IssueRead } from '@/api/generated/models'
+import { STATUS_META } from '@/issues/issueMeta'
+import { useTeamContext } from '@/team/TeamContext'
 
 /**
  * The sub-issues of one issue, plus the breadcrumb when it is itself a child.

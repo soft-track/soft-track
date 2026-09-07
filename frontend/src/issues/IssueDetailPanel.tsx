@@ -2,24 +2,24 @@ import { useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
 import { type FormEvent, useEffect, useState } from 'react'
 
-import { useCreateCommentIssuesIssueIdCommentsPost, useListCommentsIssuesIssueIdCommentsGet } from '../api/generated/endpoints/comments/comments'
-import { useGetIssueIssuesIssueIdGet, useUpdateIssueIssuesIssueIdPatch } from '../api/generated/endpoints/issues/issues'
-import { IssuePriority, IssueStatus } from '../api/generated/models'
-import { isPlainKey, isTypingTarget } from '../keyboard/typing'
+import { useCreateCommentIssuesIssueIdCommentsPost, useListCommentsIssuesIssueIdCommentsGet } from '@/api/generated/endpoints/comments/comments'
+import { useGetIssueIssuesIssueIdGet, useUpdateIssueIssuesIssueIdPatch } from '@/api/generated/endpoints/issues/issues'
+import { IssuePriority, IssueStatus } from '@/api/generated/models'
+import { isPlainKey, isTypingTarget } from '@/keyboard/typing'
 import {
   ESTIMATE_SCALE,
   PRIORITY_META,
   PRIORITY_ORDER,
   STATUS_META,
   STATUS_ORDER,
-} from '../lib/issueMeta'
-import { Markdown, MarkdownEditor } from '../markdown/lazy'
-import { taskProgress, toggleTaskAtOffset } from '../markdown/tasks'
-import { useTeamContext } from '../team/TeamContext'
-import { Avatar } from './Avatar'
-import { IssueLinksSection } from './IssueLinksSection'
-import { PriorityIcon } from './PriorityIcon'
-import { SubIssuesSection } from './SubIssuesSection'
+} from '@/issues/issueMeta'
+import { Markdown, MarkdownEditor } from '@/markdown/lazy'
+import { taskProgress, toggleTaskAtOffset } from '@/markdown/tasks'
+import { useTeamContext } from '@/team/TeamContext'
+import { Avatar } from '@/ui/Avatar'
+import { IssueLinksSection } from '@/issues/detail/IssueLinksSection'
+import { PriorityIcon } from '@/issues/PriorityIcon'
+import { SubIssuesSection } from '@/issues/detail/SubIssuesSection'
 
 export function IssueDetailPanel({
   issueId,

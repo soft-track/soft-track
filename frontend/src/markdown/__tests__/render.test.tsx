@@ -9,8 +9,8 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-import { Markdown } from '../Markdown'
-import type { Mentionable } from '../mentions'
+import { Markdown } from '@/markdown/Markdown'
+import type { Mentionable } from '@/markdown/mentions'
 
 const people: Mentionable[] = [
   { id: 7, full_name: 'Demo User', email: 'demo@softtrack.dev' },

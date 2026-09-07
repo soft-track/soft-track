@@ -1,6 +1,6 @@
 import { formatDistanceToNow, isPast } from 'date-fns'
 
-import type { CycleRead } from '../api/generated/models'
+import type { CycleRead } from '@/api/generated/models'
 
 /**
  * Cycles in the sidebar.

@@ -7,10 +7,10 @@ import {
   useDeleteIssueLinkIssuesIssueIdLinksLinkIdDelete,
   useListIssueLinksIssuesIssueIdLinksGet,
   useListIssuesTeamsTeamIdIssuesGet,
-} from '../api/generated/endpoints/issues/issues'
-import { IssueLinkType, type IssueLinks, type IssueLinkRead } from '../api/generated/models'
-import { STATUS_META } from '../lib/issueMeta'
-import { useTeamContext } from '../team/TeamContext'
+} from '@/api/generated/endpoints/issues/issues'
+import { IssueLinkType, type IssueLinks, type IssueLinkRead } from '@/api/generated/models'
+import { STATUS_META } from '@/issues/issueMeta'
+import { useTeamContext } from '@/team/TeamContext'
 
 /**
  * The five buckets, in the order they matter to someone reading an issue.

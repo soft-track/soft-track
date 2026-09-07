@@ -1,4 +1,4 @@
-import { MOD_KEY, SHORTCUT_GROUPS } from './shortcuts'
+import { MOD_KEY, SHORTCUT_GROUPS } from '@/keyboard/shortcuts'
 
 export function ShortcutsCheatsheet({ onClose }: { onClose: () => void }) {
   return (

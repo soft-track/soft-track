@@ -1,9 +1,9 @@
 import { useState } from 'react'
 
-import type { Velocity } from '../api/generated/models'
-import { Figure, Key } from './Chart'
-import { PAD } from './chartGeometry'
-import { INK } from './chartTokens'
+import type { Velocity } from '@/api/generated/models'
+import { Figure, Key } from '@/reports/Chart'
+import { PAD } from '@/reports/chartGeometry'
+import { INK } from '@/reports/chartTokens'
 
 const W = 640
 const H = 220

@@ -2,8 +2,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { addDays, format } from 'date-fns'
 import { type FormEvent, useState } from 'react'
 
-import { useCreateCycleTeamsTeamIdCyclesPost } from '../api/generated/endpoints/cycles/cycles'
-import { useTeamContext } from '../team/TeamContext'
+import { useCreateCycleTeamsTeamIdCyclesPost } from '@/api/generated/endpoints/cycles/cycles'
+import { useTeamContext } from '@/team/TeamContext'
 
 /** A day, as the value an <input type="date"> wants. */
 const asDateInput = (date: Date) => format(date, 'yyyy-MM-dd')

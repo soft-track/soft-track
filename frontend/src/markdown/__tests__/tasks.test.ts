@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { hasTaskList, taskProgress, toggleTaskAtOffset } from '../tasks'
+import { hasTaskList, taskProgress, toggleTaskAtOffset } from '@/markdown/tasks'
 
 const DOC = `# Release checklist
 

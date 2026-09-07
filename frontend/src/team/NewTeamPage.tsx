@@ -1,8 +1,8 @@
 import { type FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { useCreateTeamTeamsPost } from '../api/generated/endpoints/teams/teams'
-import { useAuth } from '../auth/AuthContext'
+import { useCreateTeamTeamsPost } from '@/api/generated/endpoints/teams/teams'
+import { useAuth } from '@/auth/AuthContext'
 
 export default function NewTeamPage() {
   const navigate = useNavigate()

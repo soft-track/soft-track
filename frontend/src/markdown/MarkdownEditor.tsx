@@ -1,8 +1,8 @@
 import { type KeyboardEvent, useRef, useState } from 'react'
 
-import { Markdown } from './Markdown'
-import { type Mentionable, matchMentions, mentionHandles } from './mentions'
-import { mentionQueryAt } from './mentionQuery'
+import { Markdown } from '@/markdown/Markdown'
+import { type Mentionable, matchMentions, mentionHandles } from '@/markdown/mentions'
+import { mentionQueryAt } from '@/markdown/mentionQuery'
 
 type Mode = 'write' | 'preview'
 

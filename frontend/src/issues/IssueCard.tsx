@@ -2,11 +2,11 @@ import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useNavigate } from 'react-router-dom'
 
-import type { IssueRead } from '../api/generated/models'
-import { useTeamContext } from '../team/TeamContext'
-import { Avatar } from './Avatar'
-import { EstimateBadge } from './EstimateBadge'
-import { PriorityIcon } from './PriorityIcon'
+import type { IssueRead } from '@/api/generated/models'
+import { useTeamContext } from '@/team/TeamContext'
+import { Avatar } from '@/ui/Avatar'
+import { EstimateBadge } from '@/issues/EstimateBadge'
+import { PriorityIcon } from '@/issues/PriorityIcon'
 
 export function IssueCard({ issue }: { issue: IssueRead }) {
   const navigate = useNavigate()

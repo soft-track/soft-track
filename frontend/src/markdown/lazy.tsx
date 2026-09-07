@@ -1,7 +1,7 @@
 import { type ComponentProps, Suspense, lazy } from 'react'
 
-import type { Markdown as MarkdownComponent } from './Markdown'
-import type { MarkdownEditor as MarkdownEditorComponent } from './MarkdownEditor'
+import type { Markdown as MarkdownComponent } from '@/markdown/Markdown'
+import type { MarkdownEditor as MarkdownEditorComponent } from '@/markdown/MarkdownEditor'
 
 /**
  * The markdown renderer and its editor, split out of the initial bundle.
@@ -16,9 +16,9 @@ import type { MarkdownEditor as MarkdownEditorComponent } from './MarkdownEditor
  * sized, and no layout jump when the real renderer replaces it.
  */
 
-const MarkdownImpl = lazy(() => import('./Markdown').then((m) => ({ default: m.Markdown })))
+const MarkdownImpl = lazy(() => import('@/markdown/Markdown').then((m) => ({ default: m.Markdown })))
 const MarkdownEditorImpl = lazy(() =>
-  import('./MarkdownEditor').then((m) => ({ default: m.MarkdownEditor })),
+  import('@/markdown/MarkdownEditor').then((m) => ({ default: m.MarkdownEditor })),
 )
 
 export function Markdown(props: ComponentProps<typeof MarkdownComponent>) {

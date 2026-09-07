@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react'
 
-import { PAD } from './chartGeometry'
-import { INK } from './chartTokens'
+import { PAD } from '@/reports/chartGeometry'
+import { INK } from '@/reports/chartTokens'
 
 /** A figure: title, optional note, legend, and the plot itself. */
 export function Figure({

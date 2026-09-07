@@ -1,10 +1,10 @@
 import { formatDistanceToNow } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 
-import type { SearchHit } from '../api/generated/models'
-import { STATUS_META } from '../lib/issueMeta'
-import { useTeamContext } from '../team/TeamContext'
-import { PriorityIcon } from './PriorityIcon'
+import type { SearchHit } from '@/api/generated/models'
+import { STATUS_META } from '@/issues/issueMeta'
+import { useTeamContext } from '@/team/TeamContext'
+import { PriorityIcon } from '@/issues/PriorityIcon'
 
 /** Where the match was found, said plainly. */
 const MATCHED_IN_LABEL: Record<string, string> = {

@@ -6,7 +6,7 @@ import {
   matchMentions,
   mentionHandles,
   peopleByHandle,
-} from '../mentions'
+} from '@/markdown/mentions'
 
 const people: Mentionable[] = [
   { id: 1, full_name: 'Demo User', email: 'demo@softtrack.dev' },

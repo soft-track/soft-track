@@ -5,9 +5,9 @@ import { useState } from 'react'
 import {
   useCompleteCycleCyclesCycleIdCompletePost,
   useStartCycleCyclesCycleIdStartPost,
-} from '../api/generated/endpoints/cycles/cycles'
-import type { CycleRead } from '../api/generated/models'
-import { useTeamContext } from '../team/TeamContext'
+} from '@/api/generated/endpoints/cycles/cycles'
+import type { CycleRead } from '@/api/generated/models'
+import { useTeamContext } from '@/team/TeamContext'
 
 /** Shown above the board while a cycle is selected. */
 export function CycleBanner({ cycle }: { cycle: CycleRead }) {

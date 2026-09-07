@@ -1,11 +1,11 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
-import { RequireAuth } from './auth/RequireAuth'
-import BoardPage from './pages/BoardPage'
-import LoginPage from './pages/LoginPage'
-import NewTeamPage from './pages/NewTeamPage'
-import RegisterPage from './pages/RegisterPage'
-import TeamsHome from './pages/TeamsHome'
+import { RequireAuth } from '@/auth/RequireAuth'
+import BoardPage from '@/board/BoardPage'
+import LoginPage from '@/auth/LoginPage'
+import NewTeamPage from '@/team/NewTeamPage'
+import RegisterPage from '@/auth/RegisterPage'
+import TeamsHome from '@/team/TeamsHome'
 
 export default function App() {
   return (

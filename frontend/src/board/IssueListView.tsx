@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom'
 
-import type { IssueRead } from '../api/generated/models'
-import { STATUS_META } from '../lib/issueMeta'
-import { useTeamContext } from '../team/TeamContext'
-import { Avatar } from './Avatar'
-import { PriorityIcon } from './PriorityIcon'
+import type { IssueRead } from '@/api/generated/models'
+import { STATUS_META } from '@/issues/issueMeta'
+import { useTeamContext } from '@/team/TeamContext'
+import { Avatar } from '@/ui/Avatar'
+import { PriorityIcon } from '@/issues/PriorityIcon'
 
 export function IssueListView({ issues }: { issues: IssueRead[] }) {
   const navigate = useNavigate()

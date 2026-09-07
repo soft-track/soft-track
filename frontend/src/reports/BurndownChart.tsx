@@ -1,9 +1,9 @@
 import { format, parseISO } from 'date-fns'
 
-import type { Burndown } from '../api/generated/models'
-import { Figure, Key, Tooltip, XAxis, YAxis } from './Chart'
-import { PAD, useCrosshair } from './chartGeometry'
-import { INK } from './chartTokens'
+import type { Burndown } from '@/api/generated/models'
+import { Figure, Key, Tooltip, XAxis, YAxis } from '@/reports/Chart'
+import { PAD, useCrosshair } from '@/reports/chartGeometry'
+import { INK } from '@/reports/chartTokens'
 
 const W = 640
 const H = 220

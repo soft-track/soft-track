@@ -1,4 +1,4 @@
-import type { UserPublic } from '../api/generated/models'
+import type { UserPublic } from '@/api/generated/models'
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/)

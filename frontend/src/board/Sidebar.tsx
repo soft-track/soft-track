@@ -1,10 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom'
 
-import { useAuth } from '../auth/AuthContext'
-import { useTeamContext } from '../team/TeamContext'
-import { Avatar } from './Avatar'
-import { CycleList } from './CycleList'
-import { Logo } from './Logo'
+import { useAuth } from '@/auth/AuthContext'
+import { useTeamContext } from '@/team/TeamContext'
+import { Avatar } from '@/ui/Avatar'
+import { CycleList } from '@/cycles/CycleList'
+import { Logo } from '@/ui/Logo'
 
 export function Sidebar({
   activeProjectId,

@@ -1,5 +1,5 @@
-import type { IssuePriority } from '../api/generated/models'
-import { PRIORITY_META } from '../lib/issueMeta'
+import type { IssuePriority } from '@/api/generated/models'
+import { PRIORITY_META } from '@/issues/issueMeta'
 
 const BAR_HEIGHTS = [3, 5, 7, 9]
 const FILLED_BARS: Record<IssuePriority, number> = {

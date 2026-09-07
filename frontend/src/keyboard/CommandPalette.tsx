@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import type { IssueRead } from '../api/generated/models'
-import { STATUS_META } from '../lib/issueMeta'
+import type { IssueRead } from '@/api/generated/models'
+import { STATUS_META } from '@/issues/issueMeta'
 
 export type Command = {
   id: string

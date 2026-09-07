@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { mentionQueryAt } from '../mentionQuery'
+import { mentionQueryAt } from '@/markdown/mentionQuery'
 
 /** Caret position is marked with | in these fixtures. */
 function at(withCaret: string) {

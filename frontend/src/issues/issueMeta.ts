@@ -1,5 +1,5 @@
-import { IssuePriority, IssueStatus } from '../api/generated/models'
-import type { IssueUpdateEstimate } from '../api/generated/models'
+import { IssuePriority, IssueStatus } from '@/api/generated/models'
+import type { IssueUpdateEstimate } from '@/api/generated/models'
 
 export const STATUS_ORDER: IssueStatus[] = [
   IssueStatus.backlog,

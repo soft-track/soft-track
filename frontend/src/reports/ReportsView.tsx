@@ -5,12 +5,12 @@ import {
   useTeamCreatedVsResolvedTeamsTeamIdCreatedVsResolvedGet,
   useTeamCumulativeFlowTeamsTeamIdCumulativeFlowGet,
   useTeamVelocityTeamsTeamIdVelocityGet,
-} from '../api/generated/endpoints/reports/reports'
-import { useTeamContext } from '../team/TeamContext'
-import { BurndownChart } from './BurndownChart'
-import { CreatedResolvedChart } from './CreatedResolvedChart'
-import { FlowChart } from './FlowChart'
-import { VelocityChart } from './VelocityChart'
+} from '@/api/generated/endpoints/reports/reports'
+import { useTeamContext } from '@/team/TeamContext'
+import { BurndownChart } from '@/reports/BurndownChart'
+import { CreatedResolvedChart } from '@/reports/CreatedResolvedChart'
+import { FlowChart } from '@/reports/FlowChart'
+import { VelocityChart } from '@/reports/VelocityChart'
 
 const WINDOWS = [14, 30, 90] as const
 

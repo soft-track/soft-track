@@ -1,7 +1,7 @@
 import type { Root, Text } from 'mdast'
 import { visit } from 'unist-util-visit'
 
-import { MENTION_PATTERN, type Mentionable, peopleByHandle } from './mentions'
+import { MENTION_PATTERN, type Mentionable, peopleByHandle } from '@/markdown/mentions'
 
 /**
  * Turn `@handle` into a link node for each member of the team.

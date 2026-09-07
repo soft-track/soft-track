@@ -1,17 +1,17 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 
-import { useCreateIssueTeamsTeamIdIssuesPost } from '../api/generated/endpoints/issues/issues'
-import { IssuePriority, IssueStatus } from '../api/generated/models'
+import { useCreateIssueTeamsTeamIdIssuesPost } from '@/api/generated/endpoints/issues/issues'
+import { IssuePriority, IssueStatus } from '@/api/generated/models'
 import {
   ESTIMATE_SCALE,
   PRIORITY_META,
   PRIORITY_ORDER,
   STATUS_META,
   STATUS_ORDER,
-} from '../lib/issueMeta'
-import { MarkdownEditor } from '../markdown/lazy'
-import { useTeamContext } from '../team/TeamContext'
+} from '@/issues/issueMeta'
+import { MarkdownEditor } from '@/markdown/lazy'
+import { useTeamContext } from '@/team/TeamContext'
 
 export function NewIssueModal({ onClose }: { onClose: () => void }) {
   const { team, projects, labels, members, cycles } = useTeamContext()

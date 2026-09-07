@@ -7,14 +7,14 @@ import {
 } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { AUTH_TOKEN_STORAGE_KEY } from '../api/client'
+import { AUTH_TOKEN_STORAGE_KEY } from '@/api/client'
 import {
   getMeAuthMeGetQueryKey,
   useLoginAuthLoginPost,
   useMeAuthMeGet,
   useRegisterAuthRegisterPost,
-} from '../api/generated/endpoints/auth/auth'
-import type { UserPublic } from '../api/generated/models'
+} from '@/api/generated/endpoints/auth/auth'
+import type { UserPublic } from '@/api/generated/models'
 
 interface AuthContextValue {
   user: UserPublic | null

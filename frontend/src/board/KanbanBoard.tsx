@@ -9,9 +9,9 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core'
 
-import type { EstimateSummary, IssueRead, IssueStatus } from '../api/generated/models'
-import { STATUS_META, STATUS_ORDER } from '../lib/issueMeta'
-import { IssueCard } from './IssueCard'
+import type { EstimateSummary, IssueRead, IssueStatus } from '@/api/generated/models'
+import { STATUS_META, STATUS_ORDER } from '@/issues/issueMeta'
+import { IssueCard } from '@/issues/IssueCard'
 
 function Column({
   status,

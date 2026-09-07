@@ -1,9 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
-import { AXIOS_INSTANCE } from '../api/client'
-import type { ImportReport } from '../api/generated/models'
-import { useTeamContext } from '../team/TeamContext'
+import { AXIOS_INSTANCE } from '@/api/client'
+import type { ImportReport } from '@/api/generated/models'
+import { useTeamContext } from '@/team/TeamContext'
 
 /**
  * Import a Jira export.

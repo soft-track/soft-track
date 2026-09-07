@@ -1,5 +1,5 @@
-import { useListMyTeamsTeamsGet } from '../api/generated/endpoints/teams/teams'
-import type { TeamRead } from '../api/generated/models'
+import { useListMyTeamsTeamsGet } from '@/api/generated/endpoints/teams/teams'
+import type { TeamRead } from '@/api/generated/models'
 
 /** All teams the current user belongs to. */
 export function useMyTeams() {

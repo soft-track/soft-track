@@ -6,7 +6,7 @@ import type {
   ProjectRead,
   TeamMemberRead,
   TeamRead,
-} from '../api/generated/models'
+} from '@/api/generated/models'
 
 export interface TeamContextValue {
   team: TeamRead

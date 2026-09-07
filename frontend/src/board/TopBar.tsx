@@ -1,6 +1,6 @@
-import type { IssuePriority } from '../api/generated/models'
-import { PRIORITY_META, PRIORITY_ORDER } from '../lib/issueMeta'
-import { useTeamContext } from '../team/TeamContext'
+import type { IssuePriority } from '@/api/generated/models'
+import { PRIORITY_META, PRIORITY_ORDER } from '@/issues/issueMeta'
+import { useTeamContext } from '@/team/TeamContext'
 
 export type AssigneeFilter = 'all' | 'unassigned' | number
 
