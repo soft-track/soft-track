@@ -19,20 +19,20 @@ function Column({ status, issues }: { status: IssueStatus; issues: IssueRead[] }
     <div
       ref={setNodeRef}
       className={`flex w-72 shrink-0 flex-col rounded-lg transition-colors ${
-        isOver ? 'bg-indigo-100/70' : 'bg-gray-100/70'
+        isOver ? 'bg-brand-100/70' : 'bg-neutral-100/70'
       }`}
     >
       <div className="flex items-center gap-2 px-3 pb-2 pt-3">
         <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
-        <span className="text-sm font-medium text-gray-700">{meta.label}</span>
-        <span className="text-xs text-gray-400">{issues.length}</span>
+        <span className="text-sm font-medium text-neutral-700">{meta.label}</span>
+        <span className="text-xs text-neutral-400">{issues.length}</span>
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto px-2 pb-3">
         {issues.map((issue) => (
           <IssueCard key={issue.id} issue={issue} />
         ))}
         {issues.length === 0 && (
-          <p className="px-2 py-4 text-center text-xs text-gray-400">No issues</p>
+          <p className="px-2 py-4 text-center text-xs text-neutral-400">No issues</p>
         )}
       </div>
     </div>

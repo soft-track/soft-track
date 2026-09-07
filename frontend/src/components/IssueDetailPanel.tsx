@@ -76,19 +76,19 @@ export function IssueDetailPanel({
     <div className="fixed inset-0 z-20 flex justify-end bg-black/20" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex h-full w-full max-w-lg flex-col overflow-y-auto border-l border-gray-200 bg-white shadow-xl"
+        className="flex h-full w-full max-w-lg flex-col overflow-y-auto border-l border-neutral-200 bg-white shadow-xl"
       >
-        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-          <span className="text-xs font-medium text-gray-400">
+        <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
+          <span className="identifier text-xs font-medium text-neutral-400">
             {issue ? issue.identifier : '…'}
           </span>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700" aria-label="Close">
+          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-700" aria-label="Close">
             ✕
           </button>
         </div>
 
         {!issue ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
+          <div className="flex flex-1 items-center justify-center text-sm text-neutral-400">
             Loading…
           </div>
         ) : (
@@ -98,7 +98,7 @@ export function IssueDetailPanel({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 onBlur={() => title.trim() && title !== issue.title && patch({ title: title.trim() })}
-                className="w-full border-none p-0 text-lg font-semibold text-gray-900 focus:outline-none focus:ring-0"
+                className="w-full border-none p-0 text-lg font-semibold text-neutral-900 focus:outline-none focus:ring-0"
               />
               <textarea
                 value={description}
@@ -106,16 +106,16 @@ export function IssueDetailPanel({
                 onBlur={() => description !== (issue.description ?? '') && patch({ description })}
                 placeholder="Add a description…"
                 rows={5}
-                className="mt-3 w-full resize-none border-none p-0 text-sm text-gray-600 placeholder-gray-300 focus:outline-none focus:ring-0"
+                className="mt-3 w-full resize-none border-none p-0 text-sm text-neutral-600 placeholder-neutral-300 focus:outline-none focus:ring-0"
               />
 
-              <div className="mt-4 space-y-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+              <div className="mt-4 space-y-3 rounded-lg border border-neutral-100 bg-neutral-50 p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Status</span>
+                  <span className="text-xs text-neutral-500">Status</span>
                   <select
                     value={issue.status}
                     onChange={(e) => patch({ status: e.target.value as IssueStatus })}
-                    className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs"
+                    className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs"
                   >
                     {STATUS_ORDER.map((s) => (
                       <option key={s} value={s}>
@@ -126,11 +126,11 @@ export function IssueDetailPanel({
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Priority</span>
+                  <span className="text-xs text-neutral-500">Priority</span>
                   <select
                     value={issue.priority}
                     onChange={(e) => patch({ priority: e.target.value as IssuePriority })}
-                    className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs"
+                    className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs"
                   >
                     {PRIORITY_ORDER.map((p) => (
                       <option key={p} value={p}>
@@ -141,13 +141,13 @@ export function IssueDetailPanel({
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Assignee</span>
+                  <span className="text-xs text-neutral-500">Assignee</span>
                   <select
                     value={issue.assignee?.id ?? ''}
                     onChange={(e) =>
                       patch({ assignee_id: e.target.value ? Number(e.target.value) : null })
                     }
-                    className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs"
+                    className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs"
                   >
                     <option value="">Unassigned</option>
                     {members.map((m) => (
@@ -159,7 +159,7 @@ export function IssueDetailPanel({
                 </div>
 
                 <div>
-                  <span className="mb-1.5 block text-xs text-gray-500">Labels</span>
+                  <span className="mb-1.5 block text-xs text-neutral-500">Labels</span>
                   <div className="flex flex-wrap gap-1.5">
                     {labels.map((label) => {
                       const active = currentLabelIds.has(label.id)
@@ -180,13 +180,13 @@ export function IssueDetailPanel({
                       )
                     })}
                     {labels.length === 0 && (
-                      <span className="text-xs text-gray-400">No labels on this team yet.</span>
+                      <span className="text-xs text-neutral-400">No labels on this team yet.</span>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-400">
+              <div className="mt-2 flex items-center gap-1.5 text-xs text-neutral-400">
                 <PriorityIcon priority={issue.priority} />
                 <span>
                   Created by {issue.creator.full_name},{' '}
@@ -195,8 +195,8 @@ export function IssueDetailPanel({
               </div>
             </div>
 
-            <div className="border-t border-gray-100 px-4 py-4">
-              <h3 className="mb-3 text-sm font-medium text-gray-700">
+            <div className="border-t border-neutral-100 px-4 py-4">
+              <h3 className="mb-3 text-sm font-medium text-neutral-700">
                 Comments {commentsQuery.data ? `(${commentsQuery.data.length})` : ''}
               </h3>
               <div className="mb-3 space-y-3">
@@ -205,21 +205,21 @@ export function IssueDetailPanel({
                     <Avatar user={comment.author} size={24} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline gap-2">
-                        <span className="text-sm font-medium text-gray-800">
+                        <span className="text-sm font-medium text-neutral-800">
                           {comment.author.full_name}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-neutral-400">
                           {formatDistanceToNow(new Date(comment.created_at), {
                             addSuffix: true,
                           })}
                         </span>
                       </div>
-                      <p className="whitespace-pre-wrap text-sm text-gray-700">{comment.body}</p>
+                      <p className="whitespace-pre-wrap text-sm text-neutral-700">{comment.body}</p>
                     </div>
                   </div>
                 ))}
                 {commentsQuery.data?.length === 0 && (
-                  <p className="text-xs text-gray-400">No comments yet.</p>
+                  <p className="text-xs text-neutral-400">No comments yet.</p>
                 )}
               </div>
 
@@ -228,12 +228,12 @@ export function IssueDetailPanel({
                   value={commentBody}
                   onChange={(e) => setCommentBody(e.target.value)}
                   placeholder="Leave a comment…"
-                  className="flex-1 rounded-md border border-gray-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:outline-none"
+                  className="flex-1 rounded-md border border-neutral-200 px-2.5 py-1.5 text-sm focus:border-brand-400 focus:outline-none"
                 />
                 <button
                   type="submit"
                   disabled={!commentBody.trim() || createComment.isPending}
-                  className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+                  className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
                 >
                   Send
                 </button>

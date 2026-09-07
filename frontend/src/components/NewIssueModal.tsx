@@ -55,35 +55,35 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-xl border border-gray-200 bg-white shadow-xl"
+        className="w-full max-w-lg rounded-xl border border-neutral-200 bg-white shadow-xl"
       >
         <form onSubmit={onSubmit}>
-          <div className="border-b border-gray-100 px-4 py-3">
-            <p className="text-xs font-medium text-gray-400">{team.key}</p>
+          <div className="border-b border-neutral-100 px-4 py-3">
+            <p className="text-xs font-medium text-neutral-400">{team.key}</p>
             <input
               autoFocus
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Issue title"
-              className="w-full border-none p-0 text-base font-medium text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-0"
+              className="w-full border-none p-0 text-base font-medium text-neutral-900 placeholder-neutral-300 focus:outline-none focus:ring-0"
             />
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add a description…"
               rows={3}
-              className="mt-2 w-full resize-none border-none p-0 text-sm text-gray-600 placeholder-gray-300 focus:outline-none focus:ring-0"
+              className="mt-2 w-full resize-none border-none p-0 text-sm text-neutral-600 placeholder-neutral-300 focus:outline-none focus:ring-0"
             />
           </div>
 
-          {error && <div className="px-4 pt-2 text-sm text-red-600">{error}</div>}
+          {error && <div className="px-4 pt-2 text-sm text-danger-600">{error}</div>}
 
           <div className="flex flex-wrap gap-2 px-4 py-3">
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as IssueStatus)}
-              className="rounded-md border border-gray-200 px-2 py-1 text-xs"
+              className="rounded-md border border-neutral-200 px-2 py-1 text-xs"
             >
               {STATUS_ORDER.map((s) => (
                 <option key={s} value={s}>
@@ -95,7 +95,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value as IssuePriority)}
-              className="rounded-md border border-gray-200 px-2 py-1 text-xs"
+              className="rounded-md border border-neutral-200 px-2 py-1 text-xs"
             >
               {PRIORITY_ORDER.map((p) => (
                 <option key={p} value={p}>
@@ -107,7 +107,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
             <select
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
-              className="rounded-md border border-gray-200 px-2 py-1 text-xs"
+              className="rounded-md border border-neutral-200 px-2 py-1 text-xs"
             >
               <option value="">No project</option>
               {projects.map((p) => (
@@ -120,7 +120,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
             <select
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
-              className="rounded-md border border-gray-200 px-2 py-1 text-xs"
+              className="rounded-md border border-neutral-200 px-2 py-1 text-xs"
             >
               <option value="">Unassigned</option>
               {members.map((m) => (
@@ -154,18 +154,18 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          <div className="flex justify-end gap-2 border-t border-gray-100 px-4 py-3">
+          <div className="flex justify-end gap-2 border-t border-neutral-100 px-4 py-3">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+              className="rounded-md px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={createIssue.isPending || !title.trim()}
-              className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+              className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
             >
               {createIssue.isPending ? 'Creating…' : 'Create issue'}
             </button>

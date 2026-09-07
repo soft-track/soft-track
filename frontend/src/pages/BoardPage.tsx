@@ -91,7 +91,7 @@ export default function BoardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center text-sm text-gray-400">
+      <div className="flex h-screen items-center justify-center text-sm text-neutral-400">
         Loading…
       </div>
     )
@@ -114,7 +114,7 @@ export default function BoardPage() {
         members: membersQuery.data ?? [],
       }}
     >
-      <div className="flex h-screen bg-gray-50">
+      <div className="flex h-screen bg-neutral-50">
         <Sidebar activeProjectId={activeProjectId} onSelectProject={setActiveProjectId} />
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar
@@ -130,7 +130,7 @@ export default function BoardPage() {
           />
           <div className="min-h-0 flex-1">
             {issuesQuery.isLoading ? (
-              <div className="flex h-full items-center justify-center text-sm text-gray-400">
+              <div className="flex h-full items-center justify-center text-sm text-neutral-400">
                 Loading issues…
               </div>
             ) : view === 'board' ? (

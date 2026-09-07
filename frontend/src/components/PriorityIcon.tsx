@@ -19,7 +19,7 @@ export function PriorityIcon({ priority, size = 14 }: { priority: IssuePriority;
     return (
       <span
         title={meta.label}
-        className="flex items-center justify-center rounded-sm bg-red-500"
+        className="flex items-center justify-center rounded-sm bg-priority-urgent"
         style={{ width: size, height: size }}
       >
         <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 10 10" fill="none">
@@ -38,7 +38,7 @@ export function PriorityIcon({ priority, size = 14 }: { priority: IssuePriority;
       {BAR_HEIGHTS.map((h, i) => (
         <span
           key={i}
-          className={`w-[3px] rounded-sm ${i < filled ? 'bg-gray-600' : 'bg-gray-200'}`}
+          className={`w-[3px] rounded-sm ${i < filled ? 'bg-neutral-600' : 'bg-neutral-200'}`}
           style={{ height: h }}
         />
       ))}

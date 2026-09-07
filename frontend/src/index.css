@@ -1,5 +1,94 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   SoftTrack design tokens
+   ---------------------------------------------------------------------------
+   Tailwind v4 is configured CSS-first: everything declared in `@theme` becomes
+   both a utility class (`bg-brand-600`) and a CSS variable (`--color-brand-600`).
+
+   Three layers, in order of how often you should reach for them:
+     1. semantic  -- status.*, priority.*  : meaning, not appearance
+     2. brand     -- brand.*               : the product's identity
+     3. neutral   -- neutral.*             : surfaces, borders, text
+
+   Prefer the semantic layer. `bg-status-progress` survives a palette change;
+   `bg-amber-500` does not.
+--------------------------------------------------------------------------- */
+
+@theme {
+  /* -- Brand -------------------------------------------------------------
+     A violet-leaning indigo. 600 is the primary: it is the fill of the logo
+     mark, the colour of every primary action, and the only saturated colour
+     allowed to carry brand meaning. */
+  --color-brand-50:  #f2f1fd;
+  --color-brand-100: #e6e4fb;
+  --color-brand-200: #cfcbf8;
+  --color-brand-300: #b0a8f3;
+  --color-brand-400: #8f80ec;
+  --color-brand-500: #7559e4;
+  --color-brand-600: #6342db;
+  --color-brand-700: #5433bd;
+  --color-brand-800: #462c9a;
+  --color-brand-900: #3b277b;
+
+  /* -- Neutrals ----------------------------------------------------------
+     Biased very slightly toward the brand hue rather than pure grey, so
+     surfaces sit with the accent instead of fighting it. */
+  --color-neutral-50:  #fafafb;
+  --color-neutral-100: #f4f4f7;
+  --color-neutral-200: #e9e9ef;
+  --color-neutral-300: #d8d8e1;
+  --color-neutral-400: #a9a9b8;
+  --color-neutral-500: #7d7d8d;
+  --color-neutral-600: #5b5b6a;
+  --color-neutral-700: #44444f;
+  --color-neutral-800: #2d2d36;
+  --color-neutral-900: #1a1a21;
+
+  /* -- Status ------------------------------------------------------------
+     One colour per workflow state. The two unstarted states are deliberately
+     neutral so that colour on a board means "something is happening". */
+  --color-status-backlog:   #a9a9b8;
+  --color-status-todo:      #7d7d8d;
+  --color-status-progress:  #ef9d0b;
+  --color-status-review:    #8b5cf6;
+  --color-status-done:      #12a474;
+  --color-status-cancelled: #f2647d;
+
+  /* -- Priority ----------------------------------------------------------
+     A warm ramp: the hotter the hue, the more urgent. `none` drops out of the
+     ramp entirely so unprioritised work reads as absence, not as low. */
+  --color-priority-urgent: #e0424a;
+  --color-priority-high:   #f2721c;
+  --color-priority-medium: #ef9d0b;
+  --color-priority-low:    #3f82f6;
+  --color-priority-none:   #a9a9b8;
+
+  /* -- Feedback ----------------------------------------------------------
+     Danger is separate from priority.urgent on purpose: one is a destructive
+     or failed action, the other is how important a piece of work is. They
+     look similar today but must be free to diverge. */
+  --color-danger-50:  #fef2f3;
+  --color-danger-500: #e0424a;
+  --color-danger-600: #cf3038;
+  --color-danger-700: #a81d24;
+
+  /* -- Type --------------------------------------------------------------
+     System stacks on purpose: SoftTrack is self-hosted, and a webfont CDN
+     would add a third-party request to every install. Mono is not decorative
+     -- issue identifiers (ENG-42) are tabular data and must align. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, "Apple Color Emoji", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* -- Radii -------------------------------------------------------------
+     Cards and controls share a radius so the board reads as one material. */
+  --radius-control: 0.375rem;
+  --radius-card:    0.5rem;
+  --radius-panel:   0.75rem;
+}
+
 :root {
   color-scheme: light;
 }
@@ -12,13 +101,19 @@ body,
 
 body {
   margin: 0;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
-  background-color: #f8f8fa;
-  color: #1c1c1f;
+  font-family: var(--font-sans);
+  background-color: var(--color-neutral-50);
+  color: var(--color-neutral-900);
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Issue identifiers are data. Tabular figures keep ENG-9 and ENG-42 aligned
+   in a column, and the slight tracking stops the mono face from looking wide. */
+.identifier {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }

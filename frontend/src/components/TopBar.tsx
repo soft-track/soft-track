@@ -28,14 +28,14 @@ export function TopBar({
   const { team, members } = useTeamContext()
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 bg-white px-4 py-2.5">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200 bg-white px-4 py-2.5">
       <div className="flex items-center gap-3">
-        <h1 className="text-sm font-semibold text-gray-900">{team.name}</h1>
-        <div className="flex rounded-md border border-gray-200 p-0.5 text-xs">
+        <h1 className="text-sm font-semibold text-neutral-900">{team.name}</h1>
+        <div className="flex rounded-md border border-neutral-200 p-0.5 text-xs">
           <button
             onClick={() => onViewChange('board')}
             className={`rounded px-2 py-1 font-medium ${
-              view === 'board' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-800'
+              view === 'board' ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-800'
             }`}
           >
             Board
@@ -43,7 +43,7 @@ export function TopBar({
           <button
             onClick={() => onViewChange('list')}
             className={`rounded px-2 py-1 font-medium ${
-              view === 'list' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-800'
+              view === 'list' ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-800'
             }`}
           >
             List
@@ -53,7 +53,7 @@ export function TopBar({
         <select
           value={priorityFilter}
           onChange={(e) => onPriorityFilterChange(e.target.value as IssuePriority | 'all')}
-          className="rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 focus:outline-none"
+          className="rounded-md border border-neutral-200 px-2 py-1 text-xs text-neutral-600 focus:outline-none"
         >
           <option value="all">All priorities</option>
           {PRIORITY_ORDER.map((p) => (
@@ -69,7 +69,7 @@ export function TopBar({
             const v = e.target.value
             onAssigneeFilterChange(v === 'all' || v === 'unassigned' ? v : Number(v))
           }}
-          className="rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 focus:outline-none"
+          className="rounded-md border border-neutral-200 px-2 py-1 text-xs text-neutral-600 focus:outline-none"
         >
           <option value="all">Everyone</option>
           <option value="unassigned">Unassigned</option>
@@ -86,11 +86,11 @@ export function TopBar({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search issues…"
-          className="w-52 rounded-md border border-gray-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:outline-none"
+          className="w-52 rounded-md border border-neutral-200 px-2.5 py-1.5 text-sm focus:border-brand-400 focus:outline-none"
         />
         <button
           onClick={onNewIssue}
-          className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+          className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
         >
           New issue
         </button>
