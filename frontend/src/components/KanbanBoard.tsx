@@ -1,3 +1,5 @@
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
+
 import {
   DndContext,
   PointerSensor,
@@ -18,6 +20,7 @@ function Column({ status, issues }: { status: IssueStatus; issues: IssueRead[] }
   return (
     <div
       ref={setNodeRef}
+      data-column={status}
       className={`flex w-72 shrink-0 flex-col rounded-lg transition-colors ${
         isOver ? 'bg-brand-100/70' : 'bg-neutral-100/70'
       }`}
@@ -50,6 +53,51 @@ export function KanbanBoard({
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   )
 
+  /**
+   * Arrow keys move focus between cards.
+   *
+   * Read off the DOM rather than from a focused-card state value: the board
+   * is filtered, reordered and drag-and-dropped, and an index held in React
+   * state would go stale against what is actually on screen. The DOM is the
+   * one source that cannot disagree with itself.
+   */
+  const moveFocus = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const keys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']
+    if (!keys.includes(event.key)) return
+
+    const board = event.currentTarget
+    const active = document.activeElement
+    if (!(active instanceof HTMLElement) || !active.hasAttribute('data-card')) return
+
+    const columns = [...board.querySelectorAll<HTMLElement>('[data-column]')]
+    const column = active.closest<HTMLElement>('[data-column]')
+    if (!column) return
+
+    const cardsIn = (element: HTMLElement) => [
+      ...element.querySelectorAll<HTMLElement>('[data-card]'),
+    ]
+
+    event.preventDefault()
+
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+      const cards = cardsIn(column)
+      const next = cards.indexOf(active) + (event.key === 'ArrowDown' ? 1 : -1)
+      cards[next]?.focus()
+      return
+    }
+
+    // Sideways: keep the same position in the next column that has any cards,
+    // so an empty column does not swallow the keystroke.
+    const step = event.key === 'ArrowRight' ? 1 : -1
+    const row = cardsIn(column).indexOf(active)
+    for (let i = columns.indexOf(column) + step; i >= 0 && i < columns.length; i += step) {
+      const cards = cardsIn(columns[i])
+      if (cards.length === 0) continue
+      cards[Math.min(row, cards.length - 1)].focus()
+      return
+    }
+  }
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over) return
@@ -63,7 +111,7 @@ export function KanbanBoard({
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="flex h-full gap-3 overflow-x-auto p-4">
+      <div className="flex h-full gap-3 overflow-x-auto p-4" onKeyDown={moveFocus}>
         {STATUS_ORDER.map((status) => (
           <Column
             key={status}

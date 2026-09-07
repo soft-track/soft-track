@@ -30,8 +30,17 @@ export function IssueCard({ issue }: { issue: IssueRead }) {
       {...attributes}
       role="button"
       tabIndex={0}
+      data-card={issue.id}
       onClick={() => navigate(`/${team.key}/issue/${issue.number}`)}
-      className="w-full cursor-grab touch-none rounded-lg border border-neutral-200 bg-white p-3 text-left shadow-sm transition hover:border-neutral-300 hover:shadow active:cursor-grabbing"
+      onKeyDown={(e) => {
+        // The card is a div, so Enter and Space have to be wired by hand to
+        // match what a real button would do.
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          navigate(`/${team.key}/issue/${issue.number}`)
+        }
+      }}
+      className="w-full cursor-grab touch-none rounded-lg border border-neutral-200 bg-white p-3 text-left shadow-sm transition hover:border-neutral-300 hover:shadow focus:outline-none focus-visible:border-brand-400 focus-visible:ring-2 focus-visible:ring-brand-200 active:cursor-grabbing"
     >
       <div className="mb-1.5 flex items-center justify-between">
         <span className="identifier text-xs font-medium text-neutral-400">{issue.identifier}</span>

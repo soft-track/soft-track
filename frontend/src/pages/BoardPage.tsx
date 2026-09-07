@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import {
@@ -14,6 +14,9 @@ import type { IssuePriority, IssueRead, IssueStatus } from '../api/generated/mod
 import { IssueDetailPanel } from '../components/IssueDetailPanel'
 import { IssueListView } from '../components/IssueListView'
 import { KanbanBoard } from '../components/KanbanBoard'
+import { CommandPalette, type Command } from '../keyboard/CommandPalette'
+import { ShortcutsCheatsheet } from '../keyboard/ShortcutsCheatsheet'
+import { isPlainKey, isTypingTarget } from '../keyboard/typing'
 import { NewIssueModal } from '../components/NewIssueModal'
 import { Sidebar } from '../components/Sidebar'
 import { TopBar, type AssigneeFilter } from '../components/TopBar'
@@ -30,6 +33,8 @@ export default function BoardPage() {
   const [view, setView] = useState<'board' | 'list'>('board')
   const [search, setSearch] = useState('')
   const [showNewIssue, setShowNewIssue] = useState(false)
+  const [showPalette, setShowPalette] = useState(false)
+  const [showShortcuts, setShowShortcuts] = useState(false)
   const [priorityFilter, setPriorityFilter] = useState<IssuePriority | 'all'>('all')
   const [assigneeFilter, setAssigneeFilter] = useState<AssigneeFilter>('all')
 
@@ -89,6 +94,92 @@ export default function BoardPage() {
     }
   }
 
+  /**
+   * Global shortcuts.
+   *
+   * Every single-key binding is gated on `isTypingTarget` first. Without that
+   * guard, typing an issue title containing "c" fires "create issue" -- which
+   * is how keyboard shortcuts get added and then quietly turned off again.
+   */
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setShowPalette((open) => !open)
+        return
+      }
+
+      if (event.key === 'Escape') {
+        // Close the shallowest thing that is open, so Escape never skips a
+        // layer or closes two at once.
+        if (showPalette) setShowPalette(false)
+        else if (showShortcuts) setShowShortcuts(false)
+        else if (showNewIssue) setShowNewIssue(false)
+        return
+      }
+
+      if (!isPlainKey(event) || isTypingTarget(event.target)) return
+      if (showPalette || showShortcuts) return
+
+      if (event.key === 'c') {
+        event.preventDefault()
+        setShowNewIssue(true)
+      } else if (event.key === '?') {
+        event.preventDefault()
+        setShowShortcuts(true)
+      } else if (event.key === '/') {
+        event.preventDefault()
+        document.querySelector<HTMLInputElement>('input[type="search"], input[placeholder*="Search"]')?.focus()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [showPalette, showShortcuts, showNewIssue])
+
+  const openIssueFromPalette = useCallback(
+    (issue: IssueRead) => navigate(`/${team?.key}/issue/${issue.number}`),
+    [navigate, team?.key],
+  )
+
+  const commands = useMemo<Command[]>(() => {
+    const list: Command[] = [
+      {
+        id: 'new-issue',
+        label: 'Create an issue',
+        hint: 'C',
+        group: 'Actions',
+        run: () => setShowNewIssue(true),
+      },
+      {
+        id: 'toggle-view',
+        label: view === 'board' ? 'Switch to list view' : 'Switch to board view',
+        group: 'Actions',
+        run: () => setView(view === 'board' ? 'list' : 'board'),
+      },
+      {
+        id: 'shortcuts',
+        label: 'Show keyboard shortcuts',
+        hint: '?',
+        group: 'Actions',
+        run: () => setShowShortcuts(true),
+      },
+    ]
+
+    for (const candidate of teams) {
+      if (candidate.id === team?.id) continue
+      list.push({
+        id: `team-${candidate.id}`,
+        label: `Switch to ${candidate.name}`,
+        hint: candidate.key,
+        group: 'Teams',
+        run: () => navigate(`/${candidate.key}`),
+      })
+    }
+
+    return list
+  }, [view, teams, team?.id, navigate])
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center text-sm text-neutral-400">
@@ -141,6 +232,16 @@ export default function BoardPage() {
           </div>
         </div>
       </div>
+
+      {showPalette && (
+        <CommandPalette
+          onClose={() => setShowPalette(false)}
+          commands={commands}
+          issues={issuesQuery.data?.items ?? []}
+          onOpenIssue={openIssueFromPalette}
+        />
+      )}
+      {showShortcuts && <ShortcutsCheatsheet onClose={() => setShowShortcuts(false)} />}
 
       {showNewIssue && <NewIssueModal onClose={() => setShowNewIssue(false)} />}
       {issueNumber && openIssue && (
