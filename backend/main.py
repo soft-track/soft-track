@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,10 +11,19 @@ from app_softtrack.projects import router as projects_router
 from app_softtrack.teams import router as teams_router
 from web import init_db, settings
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup and shutdown. Replaces the deprecated @app.on_event hooks."""
+    init_db()
+    yield
+
+
 app = FastAPI(
     title=settings.app_name,
     description="An open-source, self-hostable issue tracker inspired by Linear.",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -22,11 +33,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-def on_startup():
-    init_db()
 
 
 app.include_router(identity_router)
