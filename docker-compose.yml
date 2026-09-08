@@ -33,6 +33,17 @@ services:
       # Uploaded files. On a volume for the same reason the database is: a
       # rebuilt container must not take everyone's screenshots with it.
       ATTACHMENT_DIR: /data/attachments
+      # Notifications reach the in-app inbox with nothing configured. Set
+      # SMTP_HOST to also send the batched email digest; blank leaves it off
+      # and starts no digest loop. APP_BASE_URL is where the links in that
+      # mail point, so it is the frontend's address, not the API's.
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      EMAIL_FROM: ${EMAIL_FROM:-softtrack@localhost}
     volumes:
       - softtrack-files:/data
     depends_on:

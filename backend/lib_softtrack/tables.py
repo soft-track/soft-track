@@ -83,6 +83,21 @@ class TeamRole(str, enum.Enum):
     member = "member"
 
 
+class NotificationKind(str, enum.Enum):
+    """Why a notification was raised.
+
+    Deliberately about *what happened*, not about how the recipient came to
+    care -- "someone commented" reads the same whether you are watching the
+    issue because you filed it or because you were assigned it. Which of
+    those is true is not information the inbox has any use for.
+    """
+
+    assigned = "assigned"
+    mentioned = "mentioned"
+    commented = "commented"
+    status_changed = "status_changed"
+
+
 # ---------------------------------------------------------------------------
 # Link tables
 # ---------------------------------------------------------------------------
@@ -123,6 +138,10 @@ class User(SQLModel, table=True):
     #: resets. The first account registered gets it. Distinct from TeamRole,
     #: which only ever means something inside one team.
     is_site_admin: bool = Field(default=False)
+    #: The per-user off switch for the email digest. Only consulted when the
+    #: instance has SMTP configured at all -- with no mail server there is
+    #: nothing to switch off, and the setting is hidden rather than lying.
+    email_notifications: bool = Field(default=True)
     #: Copied into every JWT as `ver` and compared on each request. Bumping it
     #: invalidates every token already issued for this user, which is what
     #: makes "sign out everywhere", a password change and a deactivation take
@@ -325,3 +344,57 @@ class Attachment(SQLModel, table=True):
     storage_key: str
     uploaded_by_id: int = Field(foreign_key="user.id")
     created_at: datetime = Field(default_factory=utcnow)
+
+
+class IssueWatch(SQLModel, table=True):
+    """Whether one person is following one issue.
+
+    A row exists as soon as SoftTrack has an opinion about someone and an
+    issue, and `watching` says which way. Storing "no" rather than deleting
+    the row is the whole point: creating, commenting on or being assigned an
+    issue auto-watches it, so a deleted row would be silently recreated by the
+    next thing the person did and the unwatch would not survive the afternoon.
+    A mute that does not stick is not a mute.
+    """
+
+    issue_id: int = Field(foreign_key="issue.id", primary_key=True)
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    watching: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class Notification(SQLModel, table=True):
+    """One thing that happened, addressed to one person.
+
+    A row per recipient rather than one event fanned out at read time. The
+    read/unread state belongs to the person, not to the event, and so does
+    "which of these have already been emailed" -- both of which a shared event
+    row would have to carry in a side table keyed by exactly this pair.
+
+    Nothing about the event is denormalised into it. The issue's title and the
+    comment's body are read through the foreign keys when the inbox is built,
+    so an issue renamed after the fact shows up under the name it has now,
+    which is the one the reader will recognise.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    #: Who is being told. Indexed with `read_at` because every read of this
+    #: table is "my unread ones" or "my recent ones".
+    user_id: int = Field(foreign_key="user.id", index=True)
+    kind: NotificationKind
+    issue_id: int = Field(foreign_key="issue.id", index=True)
+    #: Set when the event was a comment, so the inbox can quote it and link
+    #: straight to it. Null for assignment and status changes.
+    comment_id: Optional[int] = Field(
+        default=None, foreign_key="comment.id", index=True
+    )
+    #: Who did it. Nullable because an importer or a future automation has no
+    #: user behind it, and "Jira import assigned this to you" is still worth
+    #: saying.
+    actor_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    read_at: Optional[datetime] = Field(default=None, index=True)
+    #: When this row went out in a digest. Set *before* the mail is sent and
+    #: only on rows the update actually claimed, so two processes running the
+    #: digest loop cannot both send the same notification.
+    emailed_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=utcnow, index=True)

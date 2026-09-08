@@ -36,6 +36,7 @@ export default function SettingsLayout() {
       title: 'Account',
       entries: [
         { to: '/settings/profile', label: 'Profile', icon: 'users' },
+        { to: '/settings/notifications', label: 'Notifications', icon: 'bell' },
         { to: '/settings/security', label: 'Security', icon: 'shield' },
       ],
     },

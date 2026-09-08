@@ -5,6 +5,7 @@ from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack import attachments as attachments_service
+from lib_softtrack import notifications as notifications_service
 from lib_softtrack.models.attachments import AttachmentRead
 from lib_softtrack.models.comments import CommentCreate, CommentRead
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
@@ -42,6 +43,7 @@ def create_comment(
     session.flush()
     try:
         attachments_service.claim_for_comment(session, comment, payload.attachment_ids)
+        notifications_service.on_comment_created(session, issue, comment, current_user)
         session.commit()
     except Exception:
         # Roll back explicitly rather than leaving it to the session closing.

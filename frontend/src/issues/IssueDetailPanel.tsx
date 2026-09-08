@@ -11,6 +11,7 @@ import { useIssueEditor } from '@/issues/detail/useIssueEditor'
 import { usePanelShortcuts } from '@/issues/detail/usePanelShortcuts'
 import { PriorityIcon } from '@/issues/PriorityIcon'
 import { STATUS_META } from '@/issues/issueMeta'
+import { WatchToggle } from '@/notifications/WatchToggle'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 
@@ -50,15 +51,18 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
               </span>
             )}
           </span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn btn-ghost btn-icon btn-sm text-neutral-500"
-            aria-label="Close"
-            title="Close (Esc)"
-          >
-            <Icon name="close" size={15} />
-          </button>
+          <span className="flex shrink-0 items-center gap-1">
+            {issue && <WatchToggle issueId={issue.id} />}
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-ghost btn-icon btn-sm text-neutral-500"
+              aria-label="Close"
+              title="Close (Esc)"
+            >
+              <Icon name="close" size={15} />
+            </button>
+          </span>
         </div>
 
         {!issue ? (

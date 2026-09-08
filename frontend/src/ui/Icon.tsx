@@ -27,6 +27,10 @@ export type IconName =
   | 'settings'
   | 'shield'
   | 'mail'
+  | 'bell'
+  | 'bell-off'
+  | 'eye'
+  | 'eye-off'
   | 'trash'
   | 'copy'
   | 'more'
@@ -101,6 +105,32 @@ const PATHS: Record<IconName, JSX.Element> = {
     <>
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="m3.5 7 8.5 6 8.5-6" />
+    </>
+  ),
+  bell: (
+    <>
+      <path d="M18 9a6 6 0 1 0-12 0c0 5-2 6.5-2 6.5h16S18 14 18 9Z" />
+      <path d="M13.7 19.5a2 2 0 0 1-3.4 0" />
+    </>
+  ),
+  'bell-off': (
+    <>
+      <path d="M8.6 4.4A6 6 0 0 1 18 9c0 1.8.3 3.1.7 4.1M5.2 8.3A6 6 0 0 0 5 9c0 5-2 6.5-2 6.5h13" />
+      <path d="M13.7 19.5a2 2 0 0 1-3.4 0" />
+      <path d="M3 3l18 18" />
+    </>
+  ),
+  eye: (
+    <>
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  'eye-off': (
+    <>
+      <path d="M10 5.8a8.6 8.6 0 0 1 2-.3c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-2.9 3.7M6.4 6.5A17 17 0 0 0 2.5 12S6 18.5 12 18.5c1.5 0 2.9-.4 4.1-1" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+      <path d="M3 3l18 18" />
     </>
   ),
   trash: <path d="M4 7h16M10 7V5h4v2M6 7l1 13h10l1-13M10 11v6M14 11v6" />,

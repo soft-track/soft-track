@@ -34,6 +34,7 @@ Then open <http://localhost:5173> and sign in as `demo@softtrack.dev` / `passwor
 - Issue status workflow: Backlog → Todo → In Progress → In Review → Done, plus Cancelled
 - Priority levels (Urgent/High/Medium/Low/No priority)
 - Labels, assignees, comments
+- Notifications: an in-app inbox, per-issue watching, and an optional email digest
 - File attachments on issues and comments — paste, drag and drop, or pick
 - Kanban board with drag-and-drop status changes, plus a filterable list view
 - Filter by priority, assignee, and free-text search
@@ -46,8 +47,7 @@ and skip the rest deliberately.
 
 **Next up — what a team switching from Jira actually needs:** a Jira importer,
 markdown descriptions, sub-issues, issue links (blocks / relates-to), cycles
-(sprints), estimates, notifications, full-text search, and keyboard-first
-navigation.
+(sprints), estimates, full-text search, and keyboard-first navigation.
 
 **After that:** saved views and filters (the useful core of JQL without a query
 language), per-team custom statuses, burndown/velocity reports, automation
@@ -81,7 +81,7 @@ soft_track/
 │   ├── app_identity/         # auth routes (register, login, me, profile, admin)
 │   ├── lib_identity/         # auth, usernames, site admin + models/ (schemas)
 │   ├── app_softtrack/        # routes: teams, projects, labels, issues, comments,
-│   │                         #   invites
+│   │                         #   invites, notifications
 │   ├── lib_softtrack/        # services per domain, tables.py (SQLModel),
 │   │                         #   and models/ (pydantic request/response schemas)
 │   ├── lib_utils/            # shared helpers: password hashing, JWT tokens
@@ -110,6 +110,7 @@ soft_track/
     │   ├── imports/          # ImportJiraModal
     │   ├── reports/          # charts
     │   ├── markdown/         # renderer, editor, mentions, task lists
+    │   ├── notifications/    # the bell and its inbox, the watch toggle
     │   ├── keyboard/         # command palette, shortcuts, global key handling
     │   └── ui/               # Avatar, Logo -- the genuinely shared primitives
     └── package.json
@@ -257,7 +258,9 @@ chat logs and browser history by the time anyone wants to rename it.
 
 ### Invitations, without a mail server
 
-SoftTrack sends no email. An invitation is a row and a link: a team admin
+SoftTrack does not send invitations by email — the only mail it sends is the
+[notification digest](#notifications), and that is off unless SMTP is
+configured. An invitation is a row and a link: a team admin
 invites an address from **Settings → *Team* → Members**, and copies the link
 into whatever the team already uses. That works whether or not the person has
 an account — `/invite/<token>` shows who invited them, to which team, and as
@@ -378,6 +381,64 @@ embeds a screenshot, and into every log line that records the request.
 Deleting an issue deletes its attachments, rows and bytes both. The rows go
 first and the bytes after the commit: an orphaned file costs disk, while an
 orphaned row costs a broken image on somebody's issue.
+
+## Notifications
+
+Four things raise one: an issue is **assigned** to you, someone **mentions**
+you with `@handle`, or an issue you are **watching** gets a comment or changes
+status. They land in the inbox behind the bell in the top bar, with an unread
+badge that polls once a minute.
+
+Two rules keep the inbox worth opening, and both are enforced in
+`backend/lib_softtrack/notifications.py` rather than at each call site:
+
+- **Nothing tells you what you just did.** An inbox that reports your own
+  actions back to you is one people learn to ignore.
+- **One event is at most one notification per person.** A PATCH that assigns an
+  issue *and* moves it to In Progress is one thing that happened, and the
+  assignment is the half worth saying.
+
+**Watching.** You start watching an issue when you create it, comment on it, or
+are assigned it. The **Watch** button on any issue overrides that in either
+direction, and an explicit unwatch sticks: auto-watch only ever applies where
+you have expressed no preference, so muting a noisy issue survives the next
+thing you do on it.
+
+Mentions resolve to the `username` on a profile, and only to members of the
+issue's team — a handle is instance-wide, and resolving one against the whole
+instance would tell a stranger that a team they are not in has an issue and
+what it is called. Handles inside code spans and fenced blocks are left alone,
+matching what the renderer does with them; `curl -u @admin` in a snippet
+mentions nobody.
+
+**Email is optional and off by default.** With no `SMTP_HOST` set, the inbox is
+the whole feature, no digest loop runs, and **Settings → Notifications** says so
+instead of offering a switch that cannot do anything. Configure a host and each
+person gets one email gathering up what they have not already read:
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `SMTP_HOST` | *(blank)* | Blank disables email entirely |
+| `SMTP_PORT` | `587` | |
+| `SMTP_USERNAME` / `SMTP_PASSWORD` | *(blank)* | Omit for an unauthenticated relay |
+| `SMTP_USE_TLS` | `true` | STARTTLS; negotiated before any credentials are sent |
+| `EMAIL_FROM` | `softtrack@localhost` | |
+| `APP_BASE_URL` | `http://localhost:5173` | Where the links in the mail point |
+| `DIGEST_INTERVAL_MINUTES` | `15` | How often the loop wakes up |
+| `DIGEST_DELAY_MINUTES` | `10` | How long a notification waits first |
+
+That delay is what makes it a digest rather than a mail per event: someone
+triaging a dozen issues generates one email instead of twelve, and anything you
+read in the app before the delay is up is never mailed at all. Anyone can turn
+the mail off for themselves in **Settings → Notifications** and keep the inbox.
+
+The loop runs in the API process, because what this project promises is
+`docker compose up`. Running several replicas is still safe: each notification
+is claimed with an `UPDATE ... WHERE emailed_at IS NULL RETURNING id` before
+anything is sent, so only the process that wins the claim sends it. A send that
+fails is logged and not retried — it is already in the recipient's inbox, and a
+relay rejecting everything would otherwise have every worker re-sending the
+same batch every quarter of an hour.
 
 ## Database migrations
 

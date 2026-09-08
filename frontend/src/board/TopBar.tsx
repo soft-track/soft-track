@@ -2,6 +2,7 @@ import type { IssuePriority } from '@/api/generated/models'
 import type { AssigneeFilter } from '@/board/filterIssues'
 import { PRIORITY_META, PRIORITY_ORDER } from '@/issues/issueMeta'
 import type { BoardView } from '@/keyboard/useCommands'
+import { NotificationsBell } from '@/notifications/NotificationsBell'
 import { useTeamContext } from '@/team/TeamContext'
 import { Icon, type IconName } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
@@ -23,6 +24,9 @@ export function TopBar({
   onPriorityFilterChange,
   assigneeFilter,
   onAssigneeFilterChange,
+  notificationsOpen,
+  onToggleNotifications,
+  onCloseNotifications,
 }: {
   view: BoardView
   onViewChange: (view: BoardView) => void
@@ -34,6 +38,9 @@ export function TopBar({
   onPriorityFilterChange: (value: IssuePriority | 'all') => void
   assigneeFilter: AssigneeFilter
   onAssigneeFilterChange: (value: AssigneeFilter) => void
+  notificationsOpen: boolean
+  onToggleNotifications: () => void
+  onCloseNotifications: () => void
 }) {
   const { team, members } = useTeamContext()
 
@@ -136,6 +143,12 @@ export function TopBar({
             </kbd>
           )}
         </label>
+
+        <NotificationsBell
+          open={notificationsOpen}
+          onToggle={onToggleNotifications}
+          onClose={onCloseNotifications}
+        />
 
         <button type="button" onClick={onNewIssue} className="btn btn-primary">
           <Icon name="plus" size={14} strokeWidth={2.2} />

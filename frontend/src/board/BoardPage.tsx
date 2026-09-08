@@ -161,6 +161,9 @@ export default function BoardPage() {
             onPriorityFilterChange={(value) => setFilter('priority', value)}
             assigneeFilter={filters.assignee}
             onAssigneeFilterChange={(value) => setFilter('assignee', value)}
+            notificationsOpen={overlays.isOpen('notifications')}
+            onToggleNotifications={() => overlays.toggle('notifications')}
+            onCloseNotifications={() => overlays.close('notifications')}
           />
           {selectedCycle && !searchQuery && <CycleBanner cycle={selectedCycle} />}
           <div className="min-h-0 flex-1">

@@ -13,7 +13,13 @@
  *
  * Pure so it can be tested without React.
  */
-export type Overlay = 'newIssue' | 'palette' | 'shortcuts' | 'newCycle' | 'import'
+export type Overlay =
+  | 'newIssue'
+  | 'palette'
+  | 'shortcuts'
+  | 'newCycle'
+  | 'import'
+  | 'notifications'
 
 /** Bottom first; the last entry is on top. */
 export type OverlayStack = readonly Overlay[]

@@ -8,6 +8,7 @@ import NewTeamPage from '@/team/NewTeamPage'
 import RegisterPage from '@/auth/RegisterPage'
 import TeamsHome from '@/team/TeamsHome'
 import AdminUsersPage from '@/settings/AdminUsersPage'
+import NotificationSettings from '@/settings/NotificationSettings'
 import ProfileSettings from '@/settings/ProfileSettings'
 import SecuritySettings from '@/settings/SecuritySettings'
 import SettingsLayout from '@/settings/SettingsLayout'
@@ -40,6 +41,7 @@ export default function App() {
             <Route index element={<Navigate to="/settings/profile" replace />} />
             <Route path="profile" element={<ProfileSettings />} />
             <Route path="security" element={<SecuritySettings />} />
+            <Route path="notifications" element={<NotificationSettings />} />
             <Route
               path="teams/:teamKey"
               element={<Navigate to="members" replace />}

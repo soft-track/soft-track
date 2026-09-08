@@ -13,6 +13,7 @@ from lib_softtrack import attachments as attachments_service
 from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate, ParentRef
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.history import record_changes, record_creation, snapshot
+from lib_softtrack import notifications as notifications_service
 from lib_softtrack.links import open_blocker_counts
 from lib_softtrack.tables import (
     Comment,
@@ -221,6 +222,7 @@ def create_issue(
     session.refresh(issue)
 
     record_creation(session, issue, current_user)
+    notifications_service.on_issue_created(session, issue, current_user)
     session.commit()
 
     if payload.label_ids:
@@ -293,6 +295,10 @@ def update_issue(
     require_team_member(issue.team_id, current_user, session)
 
     before = snapshot(issue)
+    # A second snapshot: history tracks what can be charted, notifications
+    # track what somebody would want to be told about, and the two lists only
+    # overlap on `status`.
+    watched_before = notifications_service.snapshot(issue)
     data = payload.model_dump(exclude_unset=True, exclude={"label_ids"})
     if data.get("parent_id") is not None:
         # Validate before assigning, so a rejected parent leaves the issue
@@ -307,6 +313,7 @@ def update_issue(
         set_labels(issue.id, payload.label_ids, session)
 
     record_changes(session, issue, before, current_user)
+    notifications_service.on_issue_updated(session, issue, watched_before, current_user)
 
     session.commit()
     session.refresh(issue)
@@ -333,6 +340,15 @@ def delete_issue(
     ).all()
     for link in label_links:
         session.delete(link)
+
+    # Before the comments below, and flushed rather than left queued: a
+    # notification holds a foreign key to the comment it is about, and with no
+    # relationship configured between the two tables SQLAlchemy has no
+    # dependency graph to order one flush's DELETEs by. Emitting these now is
+    # what makes "notifications first" true of the SQL and not just of the
+    # Python -- the distinction that let soft-track#1 through.
+    notifications_service.delete_for_issue(session, issue_id)
+    session.flush()
 
     # Attachments before comments: a comment attachment holds a foreign key to
     # the comment, so removing the comment first is the delete Postgres

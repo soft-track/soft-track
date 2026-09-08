@@ -52,6 +52,28 @@ class Settings(BaseSettings):
     attachment_s3_region: str = ""
     attachment_s3_prefix: str = ""
 
+    # --- Notifications --------------------------------------------------
+    #: Where this instance is reachable, used to build the issue links in a
+    #: digest email. A mail whose links point at localhost is worse than no
+    #: mail, so leaving this wrong is worth noticing.
+    app_base_url: str = "http://localhost:5173"
+    #: Blank disables email delivery entirely: no digest loop starts, and the
+    #: per-user switch is hidden rather than offering something that cannot
+    #: happen. Everything else about notifications works without it.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    #: STARTTLS on the port above. Set false only for a local relay.
+    smtp_use_tls: bool = True
+    email_from: str = "softtrack@localhost"
+    #: How often the digest loop wakes up.
+    digest_interval_minutes: int = 15
+    #: How long a notification waits before it can be emailed. This is what
+    #: makes it a digest rather than a mail per event: someone triaging a
+    #: dozen issues generates one mail, not twelve.
+    digest_delay_minutes: int = 10
+
     class Config:
         env_file = ".env"
 
@@ -90,6 +112,10 @@ class Settings(BaseSettings):
                 "'local' or 's3'."
             )
         return self
+
+    @property
+    def email_delivery_configured(self) -> bool:
+        return bool(self.smtp_host)
 
 
 settings = Settings()
