@@ -5,10 +5,10 @@
  * An open-source, self-hostable issue tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
-import type { UserPublic } from './userPublic';
+import type { UserMe } from './userMe';
 
 export interface Token {
   access_token: string;
   token_type?: string;
-  user: UserPublic;
+  user: UserMe;
 }

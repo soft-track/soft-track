@@ -9,6 +9,8 @@
 export interface UserPublic {
   id: number;
   email: string;
+  username: string;
   full_name: string;
   avatar_color: string;
+  is_active: boolean;
 }

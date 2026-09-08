@@ -13,9 +13,12 @@ function initials(name: string): string {
 export function Avatar({
   user,
   size = 24,
+  inactive = false,
 }: {
   user: Pick<UserPublic, 'full_name' | 'avatar_color'>
   size?: number
+  /** Fade a deactivated account on a roster, without hiding who it is. */
+  inactive?: boolean
 }) {
   return (
     <div
@@ -24,6 +27,7 @@ export function Avatar({
       style={{
         width: size,
         height: size,
+        opacity: inactive ? 0.45 : 1,
         fontSize: Math.max(9, size * 0.38),
         background: `linear-gradient(145deg, color-mix(in oklab, ${user.avatar_color} 78%, #fff), ${user.avatar_color})`,
         boxShadow:

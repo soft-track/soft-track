@@ -6,8 +6,10 @@ import { filterIssues, NO_FILTERS } from '@/board/filterIssues'
 const user = (id: number) => ({
   id,
   email: `u${id}@x.dev`,
+  username: `u${id}`,
   full_name: `User ${id}`,
   avatar_color: '#000000',
+  is_active: true,
 })
 
 const issue = (over: Partial<IssueRead>): IssueRead =>

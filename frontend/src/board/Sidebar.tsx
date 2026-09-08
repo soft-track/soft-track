@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/auth/AuthContext'
 import { CycleList } from '@/cycles/CycleList'
+import { InvitesBanner } from '@/team/InvitesBanner'
 import { useTeamContext } from '@/team/TeamContext'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
@@ -71,6 +72,10 @@ export function Sidebar({
             <Icon name="board" size={15} className="opacity-70" />
             All issues
           </button>
+          <Link to={`/settings/teams/${team.key}/members`} className="nav-item">
+            <Icon name="users" size={15} className="opacity-70" />
+            Members
+          </Link>
         </div>
 
         <div>
@@ -113,6 +118,10 @@ export function Sidebar({
         </div>
       </nav>
 
+      <div className="px-3 pb-2 empty:hidden">
+        <InvitesBanner compact />
+      </div>
+
       <div className="space-y-0.5 px-3 pb-2">
         <button type="button" onClick={onImport} className="nav-item text-neutral-500">
           <Icon name="upload" size={15} className="opacity-70" />
@@ -131,6 +140,14 @@ export function Sidebar({
             <p className="truncate text-sm font-medium text-neutral-900">{user.full_name}</p>
             <p className="truncate text-[11px] text-neutral-400">{user.email}</p>
           </div>
+          <Link
+            to="/settings/profile"
+            className="btn btn-ghost btn-icon btn-sm text-neutral-400"
+            title="Settings"
+            aria-label="Settings"
+          >
+            <Icon name="settings" size={15} />
+          </Link>
           <button
             type="button"
             onClick={logout}

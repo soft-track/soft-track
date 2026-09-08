@@ -30,7 +30,12 @@ def _seeded_engine(issue_count: int):
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         users = [
-            User(email=f"u{k}@softtrack.dev", hashed_password="x", full_name=f"U{k}")
+            User(
+                email=f"u{k}@softtrack.dev",
+                username=f"u{k}",
+                hashed_password="x",
+                full_name=f"U{k}",
+            )
             for k in range(5)  # several assignees, so the identity map cannot hide it
         ]
         for user in users:

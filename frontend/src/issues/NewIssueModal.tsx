@@ -11,6 +11,7 @@ import {
   STATUS_ORDER,
 } from '@/issues/issueMeta'
 import { MarkdownEditor } from '@/markdown/lazy'
+import { activeMembers } from '@/team/members'
 import { useTeamContext } from '@/team/TeamContext'
 import { Icon } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
@@ -99,7 +100,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
             <MarkdownEditor
               value={description}
               onChange={setDescription}
-              people={members.map((m) => m.user)}
+              people={activeMembers(members)}
               placeholder="Add a description… Markdown works here."
               rows={4}
               className="mt-3"
@@ -177,9 +178,9 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
               aria-label="Assignee"
             >
               <option value="">Unassigned</option>
-              {members.map((m) => (
-                <option key={m.user.id} value={m.user.id}>
-                  {m.user.full_name}
+              {activeMembers(members).map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.full_name}
                 </option>
               ))}
             </Select>

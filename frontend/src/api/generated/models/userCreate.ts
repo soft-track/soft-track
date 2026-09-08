@@ -11,4 +11,6 @@ export interface UserCreate {
   /** @minLength 8 */
   password: string;
   full_name: string;
+  username?: string | null;
+  invite_token?: string | null;
 }

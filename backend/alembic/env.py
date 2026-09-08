@@ -25,7 +25,12 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# Only when the caller has not already chosen one. alembic.ini carries no
+# URL, so the application path is unchanged -- but a test (or an operator
+# running a migration against a copy) can set it on the Config and have that
+# respected instead of silently retargeted at the configured database.
+if not config.get_main_option("sqlalchemy.url", None):
+    config.set_main_option("sqlalchemy.url", settings.database_url)
 
 target_metadata = SQLModel.metadata
 

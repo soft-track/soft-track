@@ -7,6 +7,7 @@ import {
 } from '@/api/generated/endpoints/issues/issues'
 import type { IssueRead, IssueUpdate } from '@/api/generated/models'
 import { toggleTaskAtOffset } from '@/markdown/tasks'
+import { activeMembers } from '@/team/members'
 import { useTeamContext } from '@/team/TeamContext'
 
 /**
@@ -86,6 +87,6 @@ export function useIssueEditor(issueId: number) {
     currentLabelIds,
     toggleLabel,
     /** Members as mentionable people, for the markdown editors. */
-    people: members.map((member) => member.user),
+    people: activeMembers(members),
   }
 }

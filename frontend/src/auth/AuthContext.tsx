@@ -14,14 +14,28 @@ import {
   useMeAuthMeGet,
   useRegisterAuthRegisterPost,
 } from '@/api/generated/endpoints/auth/auth'
-import type { UserPublic } from '@/api/generated/models'
+import type { UserMe } from '@/api/generated/models'
 
 interface AuthContextValue {
-  user: UserPublic | null
+  user: UserMe | null
   isLoading: boolean
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, fullName: string) => Promise<void>
+  register: (
+    email: string,
+    password: string,
+    fullName: string,
+    options?: { username?: string; inviteToken?: string },
+  ) => Promise<void>
+  /**
+   * Adopt a token the API just handed back.
+   *
+   * Changing a password or signing out everywhere invalidates every token
+   * including the one in this tab, and the endpoints return a fresh one so the
+   * person who just secured their account is not thrown out of it. Exposed
+   * rather than private because the settings pages are where that happens.
+   */
+  setSession: (token: string, user: UserMe) => void
   logout: () => void
 }
 
@@ -40,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useLoginAuthLoginPost()
   const registerMutation = useRegisterAuthRegisterPost()
 
-  const persistToken = (newToken: string, user: UserPublic) => {
+  const setSession = (newToken: string, user: UserMe) => {
     localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, newToken)
     setToken(newToken)
     queryClient.setQueryData(getMeAuthMeGetQueryKey(), user)
@@ -50,14 +64,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await loginMutation.mutateAsync({
       data: { username: email, password },
     })
-    persistToken(result.access_token, result.user)
+    setSession(result.access_token, result.user)
   }
 
-  const register = async (email: string, password: string, fullName: string) => {
+  const register = async (
+    email: string,
+    password: string,
+    fullName: string,
+    options?: { username?: string; inviteToken?: string },
+  ) => {
     const result = await registerMutation.mutateAsync({
-      data: { email, password, full_name: fullName },
+      data: {
+        email,
+        password,
+        full_name: fullName,
+        username: options?.username || undefined,
+        invite_token: options?.inviteToken || undefined,
+      },
     })
-    persistToken(result.access_token, result.user)
+    setSession(result.access_token, result.user)
   }
 
   const logout = () => {
@@ -73,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: Boolean(token) && Boolean(meQuery.data),
       login,
       register,
+      setSession,
       logout,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps

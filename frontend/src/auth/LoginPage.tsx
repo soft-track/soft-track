@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
+import { useAuthConfigAuthConfigGet } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/AuthContext'
 import { Logo } from '@/ui/Logo'
@@ -9,13 +10,19 @@ export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [params] = useSearchParams()
+  const config = useAuthConfigAuthConfigGet()
 
   const [email, setEmail] = useState('demo@softtrack.dev')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const from = (location.state as { from?: Location })?.from?.pathname ?? '/'
+  // `?next=` as well as the router's own state: an invitation link sends
+  // people here with a query string, and there is no navigation state to
+  // carry when the link was pasted into a fresh tab.
+  const from =
+    params.get('next') ?? (location.state as { from?: Location })?.from?.pathname ?? '/'
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -102,12 +109,14 @@ export default function LoginPage() {
           </p>
         </form>
 
-        <p className="mt-5 text-center text-sm text-neutral-500">
-          Don't have an account?{' '}
-          <Link to="/register" className="font-medium text-brand-600 hover:text-brand-700">
-            Create one
-          </Link>
-        </p>
+        {config.data?.open_registration !== false && (
+          <p className="mt-5 text-center text-sm text-neutral-500">
+            Don't have an account?{' '}
+            <Link to="/register" className="font-medium text-brand-600 hover:text-brand-700">
+              Create one
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   )

@@ -25,11 +25,15 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AuthConfig,
   BodyLoginAuthLoginPost,
   HTTPValidationError,
+  InviteRead,
+  PasswordChange,
   Token,
   UserCreate,
-  UserPublic
+  UserMe,
+  UserUpdate
 } from '../../models';
 
 import { apiClient } from '../../../client';
@@ -51,6 +55,104 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+/**
+ * What the sign-in and sign-up pages need before anyone has a token.
+ *
+ * Public by necessity: the register page has to know whether to show a form
+ * or an "ask an admin for a link" notice, and it asks before authenticating.
+ * It reveals only that this instance is invite-only, which its sign-up page
+ * would say out loud anyway.
+ * @summary Auth Config
+ */
+export const authConfigAuthConfigGet = (
+
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<AuthConfig>(
+      {url: `/auth/config`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getAuthConfigAuthConfigGetQueryKey = () => {
+    return [
+    `/auth/config`
+    ] as const;
+    }
+
+
+export const getAuthConfigAuthConfigGetQueryOptions = <TData = Awaited<ReturnType<typeof authConfigAuthConfigGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authConfigAuthConfigGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAuthConfigAuthConfigGetQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof authConfigAuthConfigGet>>> = ({ signal }) => authConfigAuthConfigGet(signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof authConfigAuthConfigGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AuthConfigAuthConfigGetQueryResult = NonNullable<Awaited<ReturnType<typeof authConfigAuthConfigGet>>>
+export type AuthConfigAuthConfigGetQueryError = unknown
+
+
+export function useAuthConfigAuthConfigGet<TData = Awaited<ReturnType<typeof authConfigAuthConfigGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof authConfigAuthConfigGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof authConfigAuthConfigGet>>,
+          TError,
+          Awaited<ReturnType<typeof authConfigAuthConfigGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAuthConfigAuthConfigGet<TData = Awaited<ReturnType<typeof authConfigAuthConfigGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authConfigAuthConfigGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof authConfigAuthConfigGet>>,
+          TError,
+          Awaited<ReturnType<typeof authConfigAuthConfigGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAuthConfigAuthConfigGet<TData = Awaited<ReturnType<typeof authConfigAuthConfigGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authConfigAuthConfigGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Auth Config
+ */
+
+export function useAuthConfigAuthConfigGet<TData = Awaited<ReturnType<typeof authConfigAuthConfigGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authConfigAuthConfigGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAuthConfigAuthConfigGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
 
 /**
  * @summary Register
@@ -210,7 +312,7 @@ export const meAuthMeGet = (
 ) => {
 
 
-      return apiClient<UserPublic>(
+      return apiClient<UserMe>(
       {url: `/auth/me`, method: 'GET', signal
     },
       );
@@ -282,6 +384,298 @@ export function useMeAuthMeGet<TData = Awaited<ReturnType<typeof meAuthMeGet>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getMeAuthMeGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * @summary Update Me
+ */
+export const updateMeAuthMePatch = (
+    userUpdate: UserUpdate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<UserMe>(
+      {url: `/auth/me`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: userUpdate, signal
+    },
+      );
+    }
+
+
+
+
+export const getUpdateMeAuthMePatchMutationKey = () => ['updateMeAuthMePatch'] as const;
+
+export const getUpdateMeAuthMePatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMeAuthMePatch>>, TError,UpdateMeAuthMePatchMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateMeAuthMePatch>>, TError,UpdateMeAuthMePatchMutationVariables, TContext> => {
+
+const mutationKey = getUpdateMeAuthMePatchMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMeAuthMePatch>>, UpdateMeAuthMePatchMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateMeAuthMePatch(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMeAuthMePatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateMeAuthMePatch>>>
+    export type UpdateMeAuthMePatchMutationBody = UserUpdate
+    export type UpdateMeAuthMePatchMutationError = HTTPValidationError
+    export type UpdateMeAuthMePatchMutationVariables = {data: UserUpdate}
+
+    /**
+ * @summary Update Me
+ */
+export const useUpdateMeAuthMePatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMeAuthMePatch>>, TError,UpdateMeAuthMePatchMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateMeAuthMePatch>>,
+        TError,
+        UpdateMeAuthMePatchMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateMeAuthMePatchMutationOptions(options), queryClient);
+    }
+    /**
+ * Change the password, and return a token so this tab stays signed in.
+ * @summary Change My Password
+ */
+export const changeMyPasswordAuthMePasswordPost = (
+    passwordChange: PasswordChange,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<Token>(
+      {url: `/auth/me/password`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: passwordChange, signal
+    },
+      );
+    }
+
+
+
+
+export const getChangeMyPasswordAuthMePasswordPostMutationKey = () => ['changeMyPasswordAuthMePasswordPost'] as const;
+
+export const getChangeMyPasswordAuthMePasswordPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeMyPasswordAuthMePasswordPost>>, TError,ChangeMyPasswordAuthMePasswordPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof changeMyPasswordAuthMePasswordPost>>, TError,ChangeMyPasswordAuthMePasswordPostMutationVariables, TContext> => {
+
+const mutationKey = getChangeMyPasswordAuthMePasswordPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof changeMyPasswordAuthMePasswordPost>>, ChangeMyPasswordAuthMePasswordPostMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  changeMyPasswordAuthMePasswordPost(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ChangeMyPasswordAuthMePasswordPostMutationResult = NonNullable<Awaited<ReturnType<typeof changeMyPasswordAuthMePasswordPost>>>
+    export type ChangeMyPasswordAuthMePasswordPostMutationBody = PasswordChange
+    export type ChangeMyPasswordAuthMePasswordPostMutationError = HTTPValidationError
+    export type ChangeMyPasswordAuthMePasswordPostMutationVariables = {data: PasswordChange}
+
+    /**
+ * @summary Change My Password
+ */
+export const useChangeMyPasswordAuthMePasswordPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeMyPasswordAuthMePasswordPost>>, TError,ChangeMyPasswordAuthMePasswordPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof changeMyPasswordAuthMePasswordPost>>,
+        TError,
+        ChangeMyPasswordAuthMePasswordPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getChangeMyPasswordAuthMePasswordPostMutationOptions(options), queryClient);
+    }
+    /**
+ * @summary Sign Out Everywhere Route
+ */
+export const signOutEverywhereRouteAuthMeSignOutEverywherePost = (
+
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<Token>(
+      {url: `/auth/me/sign-out-everywhere`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+
+export const getSignOutEverywhereRouteAuthMeSignOutEverywherePostMutationKey = () => ['signOutEverywhereRouteAuthMeSignOutEverywherePost'] as const;
+
+export const getSignOutEverywhereRouteAuthMeSignOutEverywherePostMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signOutEverywhereRouteAuthMeSignOutEverywherePost>>, TError,void, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof signOutEverywhereRouteAuthMeSignOutEverywherePost>>, TError,void, TContext> => {
+
+const mutationKey = getSignOutEverywhereRouteAuthMeSignOutEverywherePostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signOutEverywhereRouteAuthMeSignOutEverywherePost>>, void> = () => {
+
+
+          return  signOutEverywhereRouteAuthMeSignOutEverywherePost()
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SignOutEverywhereRouteAuthMeSignOutEverywherePostMutationResult = NonNullable<Awaited<ReturnType<typeof signOutEverywhereRouteAuthMeSignOutEverywherePost>>>
+
+    export type SignOutEverywhereRouteAuthMeSignOutEverywherePostMutationError = unknown
+
+
+    /**
+ * @summary Sign Out Everywhere Route
+ */
+export const useSignOutEverywhereRouteAuthMeSignOutEverywherePost = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signOutEverywhereRouteAuthMeSignOutEverywherePost>>, TError,void, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof signOutEverywhereRouteAuthMeSignOutEverywherePost>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getSignOutEverywhereRouteAuthMeSignOutEverywherePostMutationOptions(options), queryClient);
+    }
+    /**
+ * @summary My Invites
+ */
+export const myInvitesAuthMeInvitesGet = (
+
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<InviteRead[]>(
+      {url: `/auth/me/invites`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getMyInvitesAuthMeInvitesGetQueryKey = () => {
+    return [
+    `/auth/me/invites`
+    ] as const;
+    }
+
+
+export const getMyInvitesAuthMeInvitesGetQueryOptions = <TData = Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getMyInvitesAuthMeInvitesGetQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>> = ({ signal }) => myInvitesAuthMeInvitesGet(signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type MyInvitesAuthMeInvitesGetQueryResult = NonNullable<Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>>
+export type MyInvitesAuthMeInvitesGetQueryError = unknown
+
+
+export function useMyInvitesAuthMeInvitesGet<TData = Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>,
+          TError,
+          Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useMyInvitesAuthMeInvitesGet<TData = Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>,
+          TError,
+          Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useMyInvitesAuthMeInvitesGet<TData = Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary My Invites
+ */
+
+export function useMyInvitesAuthMeInvitesGet<TData = Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof myInvitesAuthMeInvitesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getMyInvitesAuthMeInvitesGetQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import type { TeamRead } from '@/api/generated/models'
+import type { TeamRead, UserMe } from '@/api/generated/models'
 import type { Command } from '@/keyboard/CommandPalette'
 
 export type BoardView = 'board' | 'list' | 'reports'
@@ -12,6 +12,7 @@ export function useCommands({
   setView,
   team,
   teams,
+  user,
   openNewIssue,
   openShortcuts,
 }: {
@@ -19,6 +20,7 @@ export function useCommands({
   setView: (view: BoardView) => void
   team: TeamRead | undefined
   teams: TeamRead[]
+  user: UserMe | null
   openNewIssue: () => void
   openShortcuts: () => void
 }): Command[] {
@@ -53,6 +55,39 @@ export function useCommands({
       })
     }
 
+    list.push({
+      id: 'settings',
+      label: 'Open settings',
+      group: 'Account',
+      run: () => navigate('/settings/profile'),
+    })
+    if (team) {
+      list.push({
+        id: 'team-members',
+        label: 'Manage team members',
+        hint: team.key,
+        group: 'Account',
+        run: () => navigate(`/settings/teams/${team.key}/members`),
+      })
+    }
+    if (user?.is_site_admin) {
+      list.push({
+        id: 'site-admin',
+        label: 'Site administration',
+        group: 'Account',
+        run: () => navigate('/settings/admin/users'),
+      })
+    }
+
     return list
-  }, [view, setView, teams, team?.id, navigate, openNewIssue, openShortcuts])
+  }, [
+    view,
+    setView,
+    teams,
+    team,
+    user?.is_site_admin,
+    navigate,
+    openNewIssue,
+    openShortcuts,
+  ])
 }

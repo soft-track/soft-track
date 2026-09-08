@@ -3,12 +3,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app_identity.admin import router as admin_router
 from app_identity.identity import router as identity_router
 from lib_identity.identity import warm_password_hasher
 from app_softtrack.attachments import router as attachments_router
 from app_softtrack.comments import router as comments_router
 from app_softtrack.cycles import router as cycles_router
 from app_softtrack.imports import router as imports_router
+from app_softtrack.invites import router as invites_router
 from app_softtrack.issues import router as issues_router
 from app_softtrack.labels import router as labels_router
 from app_softtrack.projects import router as projects_router
@@ -46,7 +48,9 @@ app.add_middleware(
 
 
 app.include_router(identity_router)
+app.include_router(admin_router)
 app.include_router(teams_router)
+app.include_router(invites_router)
 app.include_router(projects_router)
 app.include_router(labels_router)
 app.include_router(issues_router)

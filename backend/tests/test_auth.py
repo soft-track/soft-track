@@ -61,7 +61,20 @@ def test_me_returns_the_current_user(client, auth):
     actor = auth(email="me@softtrack.dev")
     response = client.get("/auth/me", headers=actor["headers"])
     assert response.status_code == 200
-    assert response.json()["email"] == "me@softtrack.dev"
+    body = response.json()
+    assert body["email"] == "me@softtrack.dev"
+    # UserMe: what the account is, plus what it may do instance-wide. Only
+    # ever returned for yourself -- UserPublic elsewhere stops short of it.
+    assert set(body) == {
+        "id",
+        "email",
+        "username",
+        "full_name",
+        "avatar_color",
+        "is_active",
+        "is_site_admin",
+        "created_at",
+    }
 
 
 def test_me_requires_a_token(client):
@@ -71,3 +84,34 @@ def test_me_requires_a_token(client):
 def test_me_rejects_a_garbage_token(client):
     response = client.get("/auth/me", headers={"Authorization": "Bearer not-a-jwt"})
     assert response.status_code == 401
+
+
+def test_a_token_for_the_wrong_version_is_rejected(client, auth):
+    """The revocation check itself, independent of what bumped the version."""
+    from lib_utils.token import create_access_token
+
+    actor = auth(email="ver@softtrack.dev")
+    stale = create_access_token(subject=str(actor["user"]["id"]), version=99)
+    response = client.get("/auth/me", headers={"Authorization": f"Bearer {stale}"})
+    assert response.status_code == 401
+
+
+def test_a_token_without_a_version_still_works(client, auth):
+    """Tokens minted before this feature carry no `ver`; read as 0, they match."""
+    from datetime import datetime, timedelta, timezone
+
+    from jose import jwt
+
+    from web import settings
+
+    actor = auth(email="legacy@softtrack.dev")
+    legacy = jwt.encode(
+        {
+            "sub": str(actor["user"]["id"]),
+            "exp": datetime.now(timezone.utc) + timedelta(minutes=5),
+        },
+        settings.secret_key,
+        algorithm=settings.algorithm,
+    )
+    response = client.get("/auth/me", headers={"Authorization": f"Bearer {legacy}"})
+    assert response.status_code == 200

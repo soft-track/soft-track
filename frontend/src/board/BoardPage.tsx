@@ -4,6 +4,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useListIssuesTeamsTeamIdIssuesGet } from '@/api/generated/endpoints/issues/issues'
 import { useSearchSearchGet } from '@/api/generated/endpoints/search/search'
 import type { IssueRead } from '@/api/generated/models'
+import { useAuth } from '@/auth/AuthContext'
 import { filterIssues, type IssueFilters, NO_FILTERS } from '@/board/filterIssues'
 import { IssueListView } from '@/board/IssueListView'
 import { KanbanBoard } from '@/board/KanbanBoard'
@@ -32,6 +33,7 @@ export default function BoardPage() {
   const { teamKey, issueNumber } = useParams<{ teamKey: string; issueNumber?: string }>()
   const navigate = useNavigate()
   const { team, isLoading, teams } = useTeamByKey(teamKey)
+  const { user } = useAuth()
 
   const [view, setView] = useState<BoardView>('board')
   const [activeProjectId, setActiveProjectId] = useState<number | 'all'>('all')
@@ -72,7 +74,15 @@ export default function BoardPage() {
     openShortcuts,
     suppressed: overlays.isOpen('palette') || overlays.isOpen('shortcuts'),
   })
-  const commands = useCommands({ view, setView, team, teams, openNewIssue, openShortcuts })
+  const commands = useCommands({
+    view,
+    setView,
+    team,
+    teams,
+    user,
+    openNewIssue,
+    openShortcuts,
+  })
 
   const openIssueFromPalette = useCallback(
     (issue: IssueRead) => navigate(`/${team?.key}/issue/${issue.number}`),

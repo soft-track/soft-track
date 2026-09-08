@@ -11,4 +11,5 @@ import type { UserPublic } from './userPublic';
 export interface TeamMemberRead {
   user: UserPublic;
   role: TeamRole;
+  joined_at: string;
 }

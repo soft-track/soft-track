@@ -108,10 +108,61 @@ class IssueLabelLink(SQLModel, table=True):
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(index=True, unique=True)
+    #: The stable handle an `@mention` resolves to. Separate from the email
+    #: because a mention written today should keep pointing at the same person
+    #: after they change address, which an email-derived handle cannot promise.
+    username: str = Field(index=True, unique=True)
     hashed_password: str
     full_name: str
     avatar_color: str = Field(default="#6366f1")
+    #: Deactivated rather than deleted. Issues, comments and history all carry
+    #: foreign keys to users, so removing the row would either cascade away
+    #: someone's work or leave the tracker unable to say who did it.
+    is_active: bool = Field(default=True)
+    #: Instance-wide administrator: the user directory, deactivation, password
+    #: resets. The first account registered gets it. Distinct from TeamRole,
+    #: which only ever means something inside one team.
+    is_site_admin: bool = Field(default=False)
+    #: Copied into every JWT as `ver` and compared on each request. Bumping it
+    #: invalidates every token already issued for this user, which is what
+    #: makes "sign out everywhere", a password change and a deactivation take
+    #: effect immediately rather than whenever the last token happens to expire.
+    #: A blocklist would need storage and pruning to do the same job.
+    token_version: int = Field(default=0)
+    last_login_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=utcnow)
+
+
+class TeamInvite(SQLModel, table=True):
+    """A pending invitation to join a team, addressed to an email.
+
+    Deliberately a row that disappears rather than one carrying a status: an
+    invite is accepted, declined or revoked, and in every case the interesting
+    record afterwards is the TeamMember row (or its absence). Keeping dead
+    invites around would mean every query filtering them out, and "resend"
+    having to decide which of several rows it meant.
+
+    One live invite per address per team, enforced in the database so two
+    admins inviting the same person concurrently cannot both insert.
+    """
+
+    __table_args__ = (
+        UniqueConstraint("team_id", "email", name="uq_team_invite_team_email"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    #: Stored lowercased; accepting requires the signed-in user's address to
+    #: match, so a forwarded link admits nobody it was not sent to.
+    email: str = Field(index=True)
+    role: TeamRole = Field(default=TeamRole.member)
+    #: The bearer secret in the invite link. Unguessable rather than sequential
+    #: because the link is the whole authentication for a stranger's first
+    #: contact with the instance.
+    token: str = Field(index=True, unique=True)
+    invited_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    expires_at: datetime
 
 
 class Team(SQLModel, table=True):

@@ -48,6 +48,8 @@ def test_adding_a_member_by_email(client, team, auth):
     )
     assert response.status_code == 200
     assert response.json()["user"]["email"] == "colleague@softtrack.dev"
+    assert response.json()["user"]["username"] == "colleague"
+    assert response.json()["joined_at"]
     # the new member can now see the team
     assert (
         client.get(f"/teams/{team['team']['id']}", headers=other["headers"]).status_code

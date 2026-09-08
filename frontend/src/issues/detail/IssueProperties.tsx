@@ -13,6 +13,7 @@ import {
   STATUS_META,
   STATUS_ORDER,
 } from '@/issues/issueMeta'
+import { activeMembers } from '@/team/members'
 import { useTeamContext } from '@/team/TeamContext'
 import { Select } from '@/ui/Select'
 
@@ -114,9 +115,12 @@ export function IssueProperties({
           onChange={(e) => patch({ assignee_id: e.target.value ? Number(e.target.value) : null })}
         >
           <option value="">Unassigned</option>
-          {members.map((m) => (
-            <option key={m.user.id} value={m.user.id}>
-              {m.user.full_name}
+          {/* The current assignee stays listed even if their account was
+              switched off, so opening the issue does not quietly offer to
+              unassign it. */}
+          {activeMembers(members, issue.assignee?.id).map((user) => (
+            <option key={user.id} value={user.id}>
+              {user.full_name}
             </option>
           ))}
         </Select>

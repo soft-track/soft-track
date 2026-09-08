@@ -28,6 +28,16 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
     ]
 
+    # --- Accounts -------------------------------------------------------
+    #: False locks the instance to invitations: /auth/register only accepts a
+    #: registration whose email has a live invite waiting for it. The switch
+    #: an internal instance wants on day one, when the sign-up form is
+    #: otherwise reachable by anyone who can route to the host.
+    open_registration: bool = True
+    #: How long an invitation link stays usable. Long enough to survive a
+    #: holiday, short enough that a link found in an old inbox is dead.
+    invite_expire_days: int = 7
+
     # --- Attachments ---------------------------------------------------
     #: "local" (files under attachment_dir) or "s3" (any S3-compatible
     #: store). See lib_softtrack/storage.py.

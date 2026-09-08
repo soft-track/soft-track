@@ -34,9 +34,13 @@ def run():
 
         user = User(
             email=DEMO_EMAIL,
+            username="demo",
             hashed_password=hash_password(DEMO_PASSWORD),
             full_name="Demo User",
             avatar_color="#6366f1",
+            # The seeded instance has to have somebody who can reach the admin
+            # console, and this is its only account.
+            is_site_admin=True,
         )
         session.add(user)
         session.commit()

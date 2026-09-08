@@ -7,7 +7,9 @@
 #
 # Exercises: register -> login -> create team -> create project ->
 # create label -> create issue -> patch issue status -> add comment ->
-# list issues -> get issue -> attach a file -> delete the issue.
+# list issues -> get issue -> attach a file -> delete the issue ->
+# edit the profile -> invite a second person -> register through the invite ->
+# change their role -> have them leave.
 # Exits non-zero on the first failed assertion.
 
 set -euo pipefail
@@ -136,6 +138,56 @@ del_code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$BASE_URL/issues/$I
 gone_code=$(curl -s -o /dev/null -w "%{http_code}" \
   "$BASE_URL/attachments/$ATTACHMENT_ID/content" -H "$AUTH_HEADER")
 [ "$gone_code" = "404" ] && pass "the attachment went with the issue" || fail "attachment still readable ($gone_code)"
+
+echo "== edit the profile =="
+patch_me_resp=$(curl -sf -X PATCH "$BASE_URL/auth/me" \
+  -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+  -d '{"full_name":"Smoke Tester"}')
+[ "$(echo "$patch_me_resp" | jq -r .full_name)" = "Smoke Tester" ] && pass "PATCH /auth/me renamed the account" || fail "profile rename failed"
+[ "$(echo "$patch_me_resp" | jq -r .username)" != "null" ] && pass "the account has a username" || fail "no username on /auth/me"
+
+echo "== invite a second person =="
+INVITEE="smoke-invitee-$(date +%s)@softtrack.dev"
+invite_resp=$(curl -sf -X POST "$BASE_URL/teams/$TEAM_ID/invites" \
+  -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+  -d "{\"email\":\"$INVITEE\",\"role\":\"member\"}")
+INVITE_TOKEN=$(echo "$invite_resp" | jq -r .token)
+[ "$INVITE_TOKEN" != "null" ] && [ -n "$INVITE_TOKEN" ] && pass "POST invite returned a link token" || fail "invite did not return a token"
+
+pending=$(curl -sf "$BASE_URL/teams/$TEAM_ID/invites" -H "$AUTH_HEADER")
+[ "$(echo "$pending" | jq 'length')" = "1" ] && pass "the invitation is listed as pending" || fail "pending invite list wrong"
+
+# The preview is what a stranger holding the link sees, with no token of
+# their own -- so it is fetched without the Authorization header on purpose.
+preview=$(curl -sf "$BASE_URL/invites/$INVITE_TOKEN")
+[ "$(echo "$preview" | jq -r .team_key)" = "$TEAM_KEY" ] && pass "GET /invites/<token> previews the team without auth" || fail "invite preview failed"
+
+echo "== register through the invitation =="
+joined_resp=$(curl -sf -X POST "$BASE_URL/auth/register" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$INVITEE\",\"password\":\"$PASSWORD\",\"full_name\":\"Smoke Invitee\",\"invite_token\":\"$INVITE_TOKEN\"}")
+INVITEE_TOKEN=$(echo "$joined_resp" | jq -r .access_token)
+INVITEE_ID=$(echo "$joined_resp" | jq -r .user.id)
+INVITEE_HEADER="Authorization: Bearer $INVITEE_TOKEN"
+[ "$INVITEE_TOKEN" != "null" ] && pass "registering with the invite token created the account" || fail "invited registration failed"
+[ "$(curl -sf "$BASE_URL/teams" -H "$INVITEE_HEADER" | jq -r '.[0].key')" = "$TEAM_KEY" ] && pass "the newcomer landed in $TEAM_KEY" || fail "invited user did not join the team"
+
+members=$(curl -sf "$BASE_URL/teams/$TEAM_ID/members" -H "$AUTH_HEADER")
+[ "$(echo "$members" | jq 'length')" = "2" ] && pass "the team now has 2 members" || fail "member count wrong after joining"
+
+# Spent on accept, so the pending list is empty again.
+[ "$(curl -sf "$BASE_URL/teams/$TEAM_ID/invites" -H "$AUTH_HEADER" | jq 'length')" = "0" ] && pass "the invitation was consumed" || fail "invitation still pending after acceptance"
+
+echo "== change the newcomer's role =="
+role_resp=$(curl -sf -X PATCH "$BASE_URL/teams/$TEAM_ID/members/$INVITEE_ID" \
+  -H "$AUTH_HEADER" -H "Content-Type: application/json" -d '{"role":"admin"}')
+[ "$(echo "$role_resp" | jq -r .role)" = "admin" ] && pass "PATCH member role promoted the newcomer" || fail "role change failed"
+
+echo "== the newcomer leaves =="
+leave_code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
+  "$BASE_URL/teams/$TEAM_ID/members/$INVITEE_ID" -H "$INVITEE_HEADER")
+[ "$leave_code" = "204" ] && pass "DELETE own membership leaves the team" || fail "leaving returned $leave_code"
+[ "$(curl -sf "$BASE_URL/teams/$TEAM_ID/members" -H "$AUTH_HEADER" | jq 'length')" = "1" ] && pass "the team is back to 1 member" || fail "member count wrong after leaving"
 
 
 echo ""

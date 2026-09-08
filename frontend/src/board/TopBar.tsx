@@ -95,9 +95,12 @@ export function TopBar({
         >
           <option value="all">Everyone</option>
           <option value="unassigned">Unassigned</option>
+          {/* Everyone, including deactivated accounts: their issues are
+              still on the board and still have to be filterable. */}
           {members.map((m) => (
             <option key={m.user.id} value={m.user.id}>
               {m.user.full_name}
+              {m.user.is_active ? '' : ' (deactivated)'}
             </option>
           ))}
         </Select>

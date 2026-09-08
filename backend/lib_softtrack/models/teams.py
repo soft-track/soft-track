@@ -24,11 +24,28 @@ class TeamRead(BaseModel):
         from_attributes = True
 
 
+class TeamUpdate(BaseModel):
+    """What an admin may change about a team.
+
+    No `key`: identifiers like ENG-42 are already in commit messages, chat
+    logs and browser history, and renaming the prefix would strand every one
+    of them. See README.
+    """
+
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
 class TeamMemberAdd(BaseModel):
     email: EmailStr
     role: TeamRole = TeamRole.member
 
 
+class TeamMemberUpdate(BaseModel):
+    role: TeamRole
+
+
 class TeamMemberRead(BaseModel):
     user: UserPublic
     role: TeamRole
+    joined_at: datetime

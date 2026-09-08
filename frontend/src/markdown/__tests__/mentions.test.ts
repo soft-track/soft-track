@@ -9,9 +9,14 @@ import {
 } from '@/markdown/mentions'
 
 const people: Mentionable[] = [
-  { id: 1, full_name: 'Demo User', email: 'demo@softtrack.dev' },
-  { id: 2, full_name: 'Ada Lovelace', email: 'ada.lovelace@softtrack.dev' },
-  { id: 3, full_name: 'Grace Hopper', email: 'Grace+work@softtrack.dev' },
+  { id: 1, full_name: 'Demo User', email: 'demo@softtrack.dev', username: 'demo' },
+  {
+    id: 2,
+    full_name: 'Ada Lovelace',
+    email: 'ada.lovelace@softtrack.dev',
+    username: 'ada.lovelace',
+  },
+  { id: 3, full_name: 'Grace Hopper', email: 'grace@softtrack.dev', username: 'grace-work' },
 ]
 
 function matches(text: string): string[] {
@@ -19,38 +24,20 @@ function matches(text: string): string[] {
 }
 
 describe('mentionHandles', () => {
-  it('uses the local part of the address', () => {
+  it('uses the stored username', () => {
     const handles = mentionHandles(people)
     expect(handles.get(1)).toBe('demo')
     expect(handles.get(2)).toBe('ada.lovelace')
+    expect(handles.get(3)).toBe('grace-work')
   })
 
-  it('lowercases and replaces characters a handle cannot contain', () => {
-    expect(mentionHandles(people).get(3)).toBe('grace-work')
-  })
-
-  it('falls back to the full address when local parts collide', () => {
-    const colliding: Mentionable[] = [
-      { id: 1, full_name: 'Sam A', email: 'sam@a.example' },
-      { id: 2, full_name: 'Sam B', email: 'sam@b.example' },
-      { id: 3, full_name: 'Ada', email: 'ada@a.example' },
-    ]
-    const handles = mentionHandles(colliding)
-
-    expect(handles.get(1)).toBe('sam@a.example')
-    expect(handles.get(2)).toBe('sam@b.example')
-    // A handle that does not collide is left alone.
-    expect(handles.get(3)).toBe('ada')
+  it('lowercases the handle', () => {
+    expect(mentionHandles([{ ...people[0], username: 'Demo' }]).get(1)).toBe('demo')
   })
 
   it('does not depend on the order people arrive in', () => {
-    const colliding: Mentionable[] = [
-      { id: 1, full_name: 'Sam A', email: 'sam@a.example' },
-      { id: 2, full_name: 'Sam B', email: 'sam@b.example' },
-    ]
-    const forwards = mentionHandles(colliding)
-    const backwards = mentionHandles([...colliding].reverse())
-
+    const forwards = mentionHandles(people)
+    const backwards = mentionHandles([...people].reverse())
     expect([...forwards.entries()].sort()).toEqual([...backwards.entries()].sort())
   })
 
@@ -59,6 +46,13 @@ describe('mentionHandles', () => {
     expect(byHandle.get('demo')?.id).toBe(1)
     expect(byHandle.get('ada.lovelace')?.full_name).toBe('Ada Lovelace')
     expect(byHandle.get('nobody')).toBeUndefined()
+  })
+
+  it('follows the person, not their address', () => {
+    // The point of the username column: the same handle after a change of
+    // email still resolves to the same person.
+    const renamed = [{ ...people[1], email: 'ada@newdomain.dev' }]
+    expect(peopleByHandle(renamed).get('ada.lovelace')?.id).toBe(2)
   })
 })
 
@@ -76,12 +70,12 @@ describe('MENTION_PATTERN', () => {
     expect(matches('write to demo@softtrack.dev instead')).toEqual([])
   })
 
-  it('matches a full address when that is the handle', () => {
-    expect(matches('@sam@a.example please review')).toEqual(['sam@a.example'])
-  })
-
   it('ignores an @ inside a path', () => {
     expect(matches('see /users/@demo')).toEqual([])
+  })
+
+  it('accepts every character a username may contain', () => {
+    expect(matches('@grace-work @a.b_c')).toEqual(['grace-work', 'a.b_c'])
   })
 })
 

@@ -13,8 +13,8 @@ import { Markdown } from '@/markdown/Markdown'
 import type { Mentionable } from '@/markdown/mentions'
 
 const people: Mentionable[] = [
-  { id: 7, full_name: 'Demo User', email: 'demo@softtrack.dev' },
-  { id: 8, full_name: 'Ada Lovelace', email: 'ada@softtrack.dev' },
+  { id: 7, full_name: 'Demo User', email: 'demo@softtrack.dev', username: 'demo' },
+  { id: 8, full_name: 'Ada Lovelace', email: 'ada@softtrack.dev', username: 'ada' },
 ]
 
 const render = (source: string) =>
