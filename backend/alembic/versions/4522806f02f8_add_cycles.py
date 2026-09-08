@@ -55,13 +55,12 @@ def upgrade() -> None:
         )
         batch_op.create_foreign_key(_CYCLE_FK, "cycle", ["cycle_id"], ["id"])
 
+    # server_default, then dropped: the column is NOT NULL and existing teams
+    # have no value for it, so adding it bare would fail on any database that
+    # already has rows. Every existing team starts at 1, which is correct --
+    # none of them has a cycle yet. The default is then removed so the schema
+    # matches the model and autogenerate does not keep reporting a difference.
     with op.batch_alter_table("team", schema=None) as batch_op:
-        # server_default, then dropped: the column is NOT NULL and existing
-        # teams have no value for it, so adding it bare would fail on any
-        # database that already has rows. Every existing team starts at 1,
-        # which is correct -- none of them has a cycle yet. The default is
-        # then removed so the schema matches the model and autogenerate does
-        # not keep reporting a difference.
         batch_op.add_column(
             sa.Column(
                 "next_cycle_number",
@@ -70,7 +69,16 @@ def upgrade() -> None:
                 server_default="1",
             )
         )
-        batch_op.alter_column("next_cycle_number", server_default=None)
+
+    # A second batch on purpose. SQLite's batch mode rebuilds the table once,
+    # from the column's *final* definition, so doing both steps in one batch
+    # rebuilt it with no default and copying existing rows into a NOT NULL
+    # column failed -- which left every SQLite install with a team stuck on
+    # this migration. Two batches: the rows get their 1, then the default goes.
+    with op.batch_alter_table("team", schema=None) as batch_op:
+        batch_op.alter_column(
+            "next_cycle_number", existing_type=sa.Integer(), server_default=None
+        )
 
 
 def downgrade() -> None:
