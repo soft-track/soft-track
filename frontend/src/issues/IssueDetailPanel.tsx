@@ -1,5 +1,5 @@
 import { formatDistanceToNow } from 'date-fns'
-
+import { parseServerDate } from '@/api/dates'
 import { AttachmentList } from '@/attachments/AttachmentList'
 import { CommentsSection } from '@/issues/detail/CommentsSection'
 import { DescriptionEditor } from '@/issues/detail/DescriptionEditor'
@@ -121,7 +121,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
                 <Avatar user={issue.creator} size={16} />
                 <span>
                   Created by {issue.creator.full_name}{' '}
-                  {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
+                  {formatDistanceToNow(parseServerDate(issue.created_at), { addSuffix: true })}
                 </span>
               </div>
             </div>

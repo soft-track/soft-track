@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { format, formatDistanceToNow, isPast } from 'date-fns'
+import { parseServerDate } from '@/api/dates'
 import { useState } from 'react'
 
 import {
@@ -39,7 +40,7 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
   }
 
   const { progress } = cycle
-  const ends = new Date(cycle.ends_at)
+  const ends = parseServerDate(cycle.ends_at)
   const overdue = cycle.state === 'active' && isPast(ends)
   const done = progress.issues_total > 0 ? progress.issues_completed / progress.issues_total : 0
 
@@ -49,7 +50,7 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
         <Icon name="calendar" size={15} className="text-neutral-400" />
         <span className="text-sm font-semibold text-neutral-900">{cycle.display_name}</span>
         <span className="text-xs text-neutral-500">
-          {format(new Date(cycle.starts_at), 'd MMM')} – {format(ends, 'd MMM')}
+          {format(parseServerDate(cycle.starts_at), 'd MMM')} – {format(ends, 'd MMM')}
           {cycle.state !== 'completed' && (
             <span className={overdue ? 'text-danger-600' : undefined}>
               {' · '}

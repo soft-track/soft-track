@@ -1,5 +1,5 @@
 import { formatDistanceToNow, isPast } from 'date-fns'
-
+import { parseServerDate } from '@/api/dates'
 import type { CycleRead } from '@/api/generated/models'
 
 /**
@@ -61,7 +61,7 @@ function CycleRow({
 }) {
   const { progress } = cycle
   const done = progress.issues_total > 0 ? progress.issues_completed / progress.issues_total : 0
-  const ends = new Date(cycle.ends_at)
+  const ends = parseServerDate(cycle.ends_at)
   const overdue = cycle.state === 'active' && isPast(ends)
 
   return (

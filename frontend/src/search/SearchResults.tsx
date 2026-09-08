@@ -1,5 +1,6 @@
 import { formatDistanceToNow } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
+import { parseServerDate } from '@/api/dates'
 
 import type { SearchHit } from '@/api/generated/models'
 import { PriorityIcon } from '@/issues/PriorityIcon'
@@ -85,7 +86,7 @@ export function SearchResults({
                   {/* Saying where the match was stops a result whose title has
                       nothing to do with the query looking like a mistake. */}
                   matched in {MATCHED_IN_LABEL[hit.matched_in] ?? hit.matched_in} ·{' '}
-                  {formatDistanceToNow(new Date(hit.updated_at), { addSuffix: true })}
+                  {formatDistanceToNow(parseServerDate(hit.updated_at), { addSuffix: true })}
                 </p>
               </button>
             </li>

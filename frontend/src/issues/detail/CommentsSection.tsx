@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
+import { parseServerDate } from '@/api/dates'
 import { type FormEvent, useState } from 'react'
 
 import {
@@ -88,7 +89,7 @@ export function CommentsSection({
                   {comment.author.full_name}
                 </span>
                 <span className="text-[11px] text-neutral-400">
-                  {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                  {formatDistanceToNow(parseServerDate(comment.created_at), { addSuffix: true })}
                 </span>
               </div>
               <div className="well mt-1 rounded-card rounded-tl-sm px-3 py-2">
