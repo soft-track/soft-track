@@ -9,12 +9,19 @@
 /**
  * What makes an automation rule look at an issue.
  *
- * Five, and not extensible by a team. Every one of them is something
+ * Eight, and not extensible by a team. Every one of them is something
  * SoftTrack already writes down as it happens, which is what keeps the
  * engine to "read the event, read the rules, apply them" instead of a
  * scheduler with a clock of its own. There is deliberately no "every
  * Monday": a rule that fires while nobody is doing anything is a rule
  * nobody remembers exists when it surprises them.
+ *
+ * The last three arrive from a connected repository rather than from
+ * somebody using the tracker. They are triggers rather than a settings pair
+ * of their own -- "which status means in review", "which means shipped" --
+ * because that pair is a second engine for "when X happens, change the
+ * issue", and this one already exists, already has conditions, and already
+ * writes down what it did.
  */
 export type AutomationTrigger = typeof AutomationTrigger[keyof typeof AutomationTrigger];
 
@@ -25,4 +32,7 @@ export const AutomationTrigger = {
   issue_assigned: 'issue_assigned',
   comment_added: 'comment_added',
   cycle_completed: 'cycle_completed',
+  branch_created: 'branch_created',
+  pull_request_opened: 'pull_request_opened',
+  pull_request_merged: 'pull_request_merged',
 } as const;

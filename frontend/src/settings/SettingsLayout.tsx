@@ -59,6 +59,11 @@ export default function SettingsLayout() {
           icon: 'sparkle' as IconName,
         },
         {
+          to: `/settings/teams/${team.key}/repositories`,
+          label: 'Repositories',
+          icon: 'branch' as IconName,
+        },
+        {
           to: `/settings/teams/${team.key}/general`,
           label: 'General',
           icon: 'settings' as IconName,

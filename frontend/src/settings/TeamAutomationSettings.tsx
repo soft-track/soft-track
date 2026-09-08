@@ -50,6 +50,12 @@ const TRIGGER_ORDER: AutomationTrigger[] = [
   AutomationTrigger.issue_assigned,
   AutomationTrigger.comment_added,
   AutomationTrigger.cycle_completed,
+  // The three that arrive from a connected repository rather than from
+  // somebody using the tracker. Last because a team with no repository
+  // connected can still pick them, and they would do nothing.
+  AutomationTrigger.branch_created,
+  AutomationTrigger.pull_request_opened,
+  AutomationTrigger.pull_request_merged,
 ]
 
 const EMPTY_CONDITIONS: RuleConditions = { if_unassigned: false }

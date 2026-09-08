@@ -155,7 +155,28 @@ registration_by_address = Throttle(
     forget_after=60 * 60.0,
 )
 
-_ALL = (login_by_address, login_by_account, registration_by_address)
+# Per address, webhook deliveries that failed verification. Only failures are
+# counted and a good delivery forgives the address, so a busy repository is
+# never throttled for being busy -- what this catches is somebody who has
+# found a webhook URL and is trying signatures against it.
+#
+# Generous on free attempts because a genuinely misconfigured repository (the
+# secret pasted with a trailing newline, say) will fail every delivery, and
+# the person fixing it should not also have to wait out a lockout.
+webhook_by_address = Throttle(
+    name="webhook deliveries that failed verification from this address",
+    free_attempts=20,
+    base_delay=1.0,
+    max_delay=5 * 60.0,
+    forget_after=15 * 60.0,
+)
+
+_ALL = (
+    login_by_address,
+    login_by_account,
+    registration_by_address,
+    webhook_by_address,
+)
 
 
 def reset_all() -> None:

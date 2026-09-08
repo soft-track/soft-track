@@ -38,6 +38,10 @@ services:
       # and starts no digest loop. APP_BASE_URL is where the links in that
       # mail point, so it is the frontend's address, not the API's.
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+      # And where GitHub or GitLab reaches the API, for the webhook URLs on a
+      # team's Repositories page. The default is right for a laptop and wrong
+      # for anywhere a provider has to route to.
+      API_BASE_URL: ${API_BASE_URL:-http://localhost:8000}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USERNAME: ${SMTP_USERNAME:-}

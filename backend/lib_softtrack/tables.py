@@ -127,12 +127,19 @@ class NotificationKind(str, enum.Enum):
 class AutomationTrigger(str, enum.Enum):
     """What makes an automation rule look at an issue.
 
-    Five, and not extensible by a team. Every one of them is something
+    Eight, and not extensible by a team. Every one of them is something
     SoftTrack already writes down as it happens, which is what keeps the
     engine to "read the event, read the rules, apply them" instead of a
     scheduler with a clock of its own. There is deliberately no "every
     Monday": a rule that fires while nobody is doing anything is a rule
     nobody remembers exists when it surprises them.
+
+    The last three arrive from a connected repository rather than from
+    somebody using the tracker. They are triggers rather than a settings pair
+    of their own -- "which status means in review", "which means shipped" --
+    because that pair is a second engine for "when X happens, change the
+    issue", and this one already exists, already has conditions, and already
+    writes down what it did.
     """
 
     issue_created = "issue_created"
@@ -146,6 +153,46 @@ class AutomationTrigger(str, enum.Enum):
     #: Once per issue that was in the cycle, after the unfinished work has
     #: carried over -- see lib_softtrack/cycles.py.
     cycle_completed = "cycle_completed"
+
+    #: A branch naming this issue appeared. Fires the first time the branch is
+    #: seen, not on every push to it.
+    branch_created = "branch_created"
+    #: A pull or merge request naming this issue was opened.
+    pull_request_opened = "pull_request_opened"
+    #: ...and merged. Closed-without-merging is not this trigger: the work did
+    #: not ship, and a rule moving the issue to Done would be wrong about the
+    #: one thing it is for.
+    pull_request_merged = "pull_request_merged"
+
+
+class GitProvider(str, enum.Enum):
+    github = "github"
+    gitlab = "gitlab"
+
+
+class CodeLinkKind(str, enum.Enum):
+    """What kind of thing in a repository is linked to an issue."""
+
+    branch = "branch"
+    commit = "commit"
+    #: A GitHub pull request or a GitLab merge request. One name here because
+    #: they are the same object with two vendors' words for it, and an issue
+    #: page that said "merge requests" to half its readers would be worse than
+    #: one that picks a word.
+    pull_request = "pull_request"
+
+
+class PullRequestState(str, enum.Enum):
+    """Where a pull request is. Only meaningful for `CodeLinkKind.pull_request`.
+
+    `merged` and `closed` are separate states rather than one "not open",
+    because the whole point of the distinction is that one of them shipped
+    the work and the other did not.
+    """
+
+    open = "open"
+    merged = "merged"
+    closed = "closed"
 
 
 # ---------------------------------------------------------------------------
@@ -667,3 +714,107 @@ class AutomationRun(SQLModel, table=True):
     #: is now, which is exactly the question the log is not being asked.
     summary: str
     created_at: datetime = Field(default_factory=utcnow, index=True)
+
+
+class Repository(SQLModel, table=True):
+    """A GitHub or GitLab repository one team has connected.
+
+    Connected per team, not per instance. The team is the tenancy boundary
+    everywhere else in SoftTrack, and it is what makes the identifier scan
+    safe: text arriving from this repository can only ever resolve to issues
+    on the team that connected it, so a webhook nobody on the DES team set up
+    cannot move a DES issue. A repository two teams both work in is connected
+    twice, with a webhook each -- which is more setup, and the alternative is
+    one team's CI able to reach another team's board.
+
+    Nothing about the repository's contents is stored. SoftTrack never clones,
+    never calls the provider's API and holds no access token: everything it
+    knows arrives in a webhook it can verify. That is the difference between
+    an integration that needs an OAuth app and a `repo`-scoped token, and one
+    that needs a URL and a shared secret.
+    """
+
+    __table_args__ = (
+        UniqueConstraint("team_id", "full_name", name="uq_repository_team_full_name"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    provider: GitProvider
+    #: "owner/name" as the provider writes it, e.g. "acme/api". Compared
+    #: against the repository in each payload, so a webhook configured on the
+    #: wrong repository is refused rather than quietly linking the wrong
+    #: commits.
+    full_name: str
+    #: The unguessable segment in this connection's webhook URL. It is what
+    #: says *which* repository a delivery is for; the signature below is what
+    #: says the delivery is genuine. Both are needed, and neither is enough --
+    #: knowing the URL does not let you forge a payload, and knowing the
+    #: secret does not tell you where to send one.
+    hook_token: str = Field(index=True, unique=True)
+    #: The shared secret. GitHub HMACs the body with it, GitLab sends it back
+    #: verbatim in a header.
+    #:
+    #: Stored readable, and that is a real cost worth naming: anyone who can
+    #: read this table can forge deliveries for this repository, which means
+    #: moving issues on its team's board. It cannot be hashed -- an HMAC needs
+    #: the key itself, not a digest of it -- so the honest options were this
+    #: or a key management service SoftTrack does not have and would not be
+    #: self-hostable without. It is scoped to one repository on one team, and
+    #: rotating it is one button.
+    secret: str
+    #: When a verified delivery last arrived. The one thing that distinguishes
+    #: "set up correctly" from "set up and never fired", which is otherwise
+    #: indistinguishable from the settings page and is what people actually
+    #: get wrong.
+    last_delivery_at: Optional[datetime] = None
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class CodeLink(SQLModel, table=True):
+    """One branch, commit or pull request that names an issue.
+
+    Created by the identifier scan, never by hand: the connection between an
+    issue and the code that implements it is already written down in the
+    branch name and the commit message, and asking somebody to record it a
+    second time is how it stops being recorded at all.
+
+    One table with a `kind` rather than three, for the reason IssueEvent gives:
+    the read pattern is "everything linked to this issue, in one list", which
+    is one query here and a three-way union otherwise, and the columns the
+    three kinds do not share are all nullable facts rather than different
+    shapes.
+
+    `external_id` is the branch name, the commit sha or the pull request
+    number as text -- whatever identifies the thing to its provider. Together
+    with the repository and the kind it is unique, which is what makes a
+    redelivered webhook update a row instead of adding one.
+    """
+
+    __table_args__ = (
+        UniqueConstraint(
+            "repository_id", "kind", "external_id", "issue_id", name="uq_code_link"
+        ),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    issue_id: int = Field(foreign_key="issue.id", index=True)
+    repository_id: int = Field(foreign_key="repository.id", index=True)
+    kind: CodeLinkKind = Field(index=True)
+    external_id: str
+    #: The pull request's title or the commit's subject line. Null for a
+    #: branch, which is its own title.
+    title: Optional[str] = None
+    url: str
+    #: Pull requests only. Null for branches and commits, which do not have a
+    #: state that changes -- a commit is a fact, and a deleted branch is a
+    #: fact SoftTrack is not told about reliably enough to display.
+    state: Optional[PullRequestState] = None
+    #: The provider's name for whoever did it -- a GitHub login, a GitLab
+    #: display name. Deliberately not resolved to a SoftTrack user: the
+    #: mapping between the two is a guess, and a wrong guess here would put
+    #: somebody's face on somebody else's commit.
+    author_name: Optional[str] = None
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)

@@ -14,6 +14,7 @@ from app_softtrack.automations import router as automations_router
 from app_softtrack.comments import router as comments_router
 from app_softtrack.cycles import router as cycles_router
 from app_softtrack.imports import router as imports_router
+from app_softtrack.integrations import router as integrations_router
 from app_softtrack.invites import router as invites_router
 from app_softtrack.issues import router as issues_router
 from app_softtrack.labels import router as labels_router
@@ -23,6 +24,7 @@ from app_softtrack.reports import router as reports_router
 from app_softtrack.search import router as search_router
 from app_softtrack.statuses import router as statuses_router
 from app_softtrack.teams import router as teams_router
+from app_softtrack.webhooks import router as webhooks_router
 from app_softtrack.views import router as views_router
 from web import init_db, settings
 
@@ -93,6 +95,8 @@ app.include_router(notifications_router)
 app.include_router(views_router)
 app.include_router(statuses_router)
 app.include_router(automations_router)
+app.include_router(integrations_router)
+app.include_router(webhooks_router)
 
 
 @app.get("/health", tags=["health"])

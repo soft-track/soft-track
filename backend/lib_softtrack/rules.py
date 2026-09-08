@@ -1,7 +1,7 @@
 """Running automation rules: the engine the rest of the tracker calls into.
 
-The issue, comment and cycle services call the `on_*` hooks below and know
-nothing else about automation -- the same arrangement as `history.py` and
+The issue, comment, cycle and repository-integration services call the `on_*`
+hooks below and know nothing else about automation -- the same arrangement as `history.py` and
 `notifications.py`, and for the same reason. "What fires, and what it does"
 is one policy, and it is only correct if it lives in one place.
 
@@ -146,6 +146,22 @@ def on_cycle_completed(
     cycle unfinished and act on all of them, not only the ones that stayed.
     """
     _dispatch(session, cycle.team_id, AutomationTrigger.cycle_completed, issues, actor)
+
+
+def on_code_event(session: Session, issue: Issue, trigger: AutomationTrigger) -> None:
+    """A branch or pull request in a connected repository named this issue.
+
+    No actor, and not because one was hard to find: the person who pushed is a
+    GitHub login or a GitLab display name, and mapping that to a SoftTrack
+    account is a guess. A wrong guess would put somebody's name on a status
+    change they did not make, which is the one thing this module refuses to
+    do. `AutomationRun.actor_id` is nullable for exactly this.
+
+    Firing on transitions rather than on deliveries is the caller's job -- see
+    `integrations._upsert`. Webhooks are at-least-once, and both providers have
+    a "redeliver" button.
+    """
+    _dispatch(session, issue.team_id, trigger, [issue], None)
 
 
 # ---------------------------------------------------------------------------

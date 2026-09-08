@@ -16,6 +16,7 @@ from lib_softtrack.models.statuses import StatusRead
 from lib_softtrack.history import record_changes, record_creation, snapshot
 from lib_softtrack import notifications as notifications_service
 from lib_softtrack import automations as automations_service
+from lib_softtrack import integrations as integrations_service
 from lib_softtrack import rules as rules_service
 from lib_softtrack.links import open_blocker_counts
 from lib_softtrack.tables import (
@@ -409,6 +410,10 @@ def delete_issue(
     # Same reasoning, same place: a run-log row about an issue that no longer
     # exists is a link to a 404, and it holds a foreign key to this row.
     automations_service.delete_runs_for_issue(session, issue_id)
+    # And the branches, commits and pull requests linked to it. Same reason
+    # again: the rows hold a foreign key here, and a link to the code for an
+    # issue that no longer exists is not worth keeping.
+    integrations_service.delete_links_for_issue(session, issue_id)
     session.flush()
 
     # Attachments before comments: a comment attachment holds a foreign key to

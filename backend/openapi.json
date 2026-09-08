@@ -4310,6 +4310,337 @@
         }
       }
     },
+    "/teams/{team_id}/repositories": {
+      "get": {
+        "tags": [
+          "integrations"
+        ],
+        "summary": "List Repositories",
+        "description": "The team's connected repositories.\n\nAdmins only, unlike the automation rules next to it: this response carries\nthe webhook secrets, and a secret every member can read is one that has to\nbe rotated whenever anybody leaves the team.",
+        "operationId": "list_repositories_teams__team_id__repositories_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RepositoryRead"
+                  },
+                  "title": "Response List Repositories Teams  Team Id  Repositories Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "integrations"
+        ],
+        "summary": "Create Repository",
+        "description": "Connect a repository. Returns the webhook URL and secret to paste into\nthe provider; nothing happens until the first delivery arrives.",
+        "operationId": "create_repository_teams__team_id__repositories_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RepositoryCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepositoryRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/{repository_id}/rotate": {
+      "post": {
+        "tags": [
+          "integrations"
+        ],
+        "summary": "Rotate Secret",
+        "description": "Issue a new secret *and* a new webhook URL -- see the service for why\nboth move together.",
+        "operationId": "rotate_secret_repositories__repository_id__rotate_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "repository_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Repository Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepositoryRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/{repository_id}": {
+      "delete": {
+        "tags": [
+          "integrations"
+        ],
+        "summary": "Delete Repository",
+        "description": "Disconnect a repository. Its links come off the issues with it.",
+        "operationId": "delete_repository_repositories__repository_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "repository_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Repository Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issue_id}/code-links": {
+      "get": {
+        "tags": [
+          "integrations"
+        ],
+        "summary": "List Code Links",
+        "description": "The branches, commits and pull requests that name this issue.\n\nAny member, unlike the repository list above: this carries no secrets, and\n\"where is the code for this\" is the question the whole feature exists to\nanswer.",
+        "operationId": "list_code_links_issues__issue_id__code_links_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeLinks"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/github/{hook_token}": {
+      "post": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Github Webhook",
+        "description": "A GitHub delivery: `push` and `pull_request` are acted on, the rest\naccepted and ignored.\n\nVerified with `X-Hub-Signature-256`, an HMAC-SHA256 of the raw body. The\nbody has to be read unparsed for that, which is why this route takes a\n`Request` rather than a typed model -- FastAPI's parsed body is not the\nbytes that were signed.",
+        "operationId": "github_webhook_webhooks_github__hook_token__post",
+        "parameters": [
+          {
+            "name": "hook_token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Hook Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookReceipt"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/gitlab/{hook_token}": {
+      "post": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Gitlab Webhook",
+        "description": "A GitLab delivery: `Push Hook` and `Merge Request Hook`.\n\nVerified with `X-Gitlab-Token`, which is the secret sent back verbatim\nrather than an HMAC. That is weaker than GitHub's scheme -- it is a bearer\nsecret on the wire, so it depends entirely on TLS -- and it is what GitLab\noffers, so it is compared in constant time and left at that.",
+        "operationId": "gitlab_webhook_webhooks_gitlab__hook_token__post",
+        "parameters": [
+          {
+            "name": "hook_token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Hook Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookReceipt"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -4794,10 +5125,13 @@
           "status_changed",
           "issue_assigned",
           "comment_added",
-          "cycle_completed"
+          "cycle_completed",
+          "branch_created",
+          "pull_request_opened",
+          "pull_request_merged"
         ],
         "title": "AutomationTrigger",
-        "description": "What makes an automation rule look at an issue.\n\nFive, and not extensible by a team. Every one of them is something\nSoftTrack already writes down as it happens, which is what keeps the\nengine to \"read the event, read the rules, apply them\" instead of a\nscheduler with a clock of its own. There is deliberately no \"every\nMonday\": a rule that fires while nobody is doing anything is a rule\nnobody remembers exists when it surprises them."
+        "description": "What makes an automation rule look at an issue.\n\nEight, and not extensible by a team. Every one of them is something\nSoftTrack already writes down as it happens, which is what keeps the\nengine to \"read the event, read the rules, apply them\" instead of a\nscheduler with a clock of its own. There is deliberately no \"every\nMonday\": a rule that fires while nobody is doing anything is a rule\nnobody remembers exists when it surprises them.\n\nThe last three arrive from a connected repository rather than from\nsomebody using the tracker. They are triggers rather than a settings pair\nof their own -- \"which status means in review\", \"which means shipped\" --\nbecause that pair is a second engine for \"when X happens, change the\nissue\", and this one already exists, already has conditions, and already\nwrites down what it did."
       },
       "Body_import_jira_teams__team_id__import_jira_post": {
         "properties": {
@@ -4978,6 +5312,125 @@
           "ideal_remaining"
         ],
         "title": "BurndownPoint"
+      },
+      "CodeLinkKind": {
+        "type": "string",
+        "enum": [
+          "branch",
+          "commit",
+          "pull_request"
+        ],
+        "title": "CodeLinkKind",
+        "description": "What kind of thing in a repository is linked to an issue."
+      },
+      "CodeLinkRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CodeLinkKind"
+          },
+          "external_id": {
+            "type": "string",
+            "title": "External Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PullRequestState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "author_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "repository": {
+            "$ref": "#/components/schemas/RepositoryLinkedItem"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "external_id",
+          "title",
+          "url",
+          "state",
+          "author_name",
+          "repository",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CodeLinkRead"
+      },
+      "CodeLinks": {
+        "properties": {
+          "branches": {
+            "items": {
+              "$ref": "#/components/schemas/CodeLinkRead"
+            },
+            "type": "array",
+            "title": "Branches",
+            "default": []
+          },
+          "commits": {
+            "items": {
+              "$ref": "#/components/schemas/CodeLinkRead"
+            },
+            "type": "array",
+            "title": "Commits",
+            "default": []
+          },
+          "pull_requests": {
+            "items": {
+              "$ref": "#/components/schemas/CodeLinkRead"
+            },
+            "type": "array",
+            "title": "Pull Requests",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "CodeLinks",
+        "description": "Everything connected to one issue, in the three groups it reads as.\n\nGrouped in the response rather than sorted in the browser, the same way\nIssueLinks is: the three have different shapes on the page -- a pull\nrequest has a state, a commit has a sha -- so a flat list would be\nregrouped by every client that rendered it."
       },
       "CommentCreate": {
         "properties": {
@@ -5417,6 +5870,14 @@
           "counts"
         ],
         "title": "FlowPoint"
+      },
+      "GitProvider": {
+        "type": "string",
+        "enum": [
+          "github",
+          "gitlab"
+        ],
+        "title": "GitProvider"
       },
       "HTTPValidationError": {
         "properties": {
@@ -6846,6 +7307,119 @@
         ],
         "title": "ProjectRead"
       },
+      "PullRequestState": {
+        "type": "string",
+        "enum": [
+          "open",
+          "merged",
+          "closed"
+        ],
+        "title": "PullRequestState",
+        "description": "Where a pull request is. Only meaningful for `CodeLinkKind.pull_request`.\n\n`merged` and `closed` are separate states rather than one \"not open\",\nbecause the whole point of the distinction is that one of them shipped\nthe work and the other did not."
+      },
+      "RepositoryCreate": {
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/GitProvider"
+          },
+          "full_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Full Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "full_name"
+        ],
+        "title": "RepositoryCreate"
+      },
+      "RepositoryLinkedItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/GitProvider"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "provider",
+          "full_name"
+        ],
+        "title": "RepositoryLinkedItem",
+        "description": "Which repository a link came from, for an issue that has several."
+      },
+      "RepositoryRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/GitProvider"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "webhook_url": {
+            "type": "string",
+            "title": "Webhook Url"
+          },
+          "secret": {
+            "type": "string",
+            "title": "Secret"
+          },
+          "last_delivery_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Delivery At"
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/UserPublic"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "provider",
+          "full_name",
+          "webhook_url",
+          "secret",
+          "last_delivery_at",
+          "created_by",
+          "created_at"
+        ],
+        "title": "RepositoryRead",
+        "description": "A connected repository, as the settings page receives it.\n\nCarries the secret. There is no point hiding it: the person reading this\npage is a team admin, it has to be pasted into the provider's settings\nform, and a \"shown once\" secret only means the rotate button gets used as\na \"show it again\" button. What it does mean is that this response is\nadmin-only -- see the router."
+      },
       "RuleActions": {
         "properties": {
           "set_status_id": {
@@ -8052,6 +8626,33 @@
           "watching"
         ],
         "title": "WatchState"
+      },
+      "WebhookReceipt": {
+        "properties": {
+          "events": {
+            "type": "integer",
+            "title": "Events"
+          },
+          "links": {
+            "type": "integer",
+            "title": "Links"
+          },
+          "issues": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Issues",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "events",
+          "links"
+        ],
+        "title": "WebhookReceipt",
+        "description": "What the webhook endpoint answers with.\n\nMore than an empty 200 on purpose. Both providers show the response body\nin their delivery log, and that log is the entire debugging surface for\nwhoever is setting this up -- \"accepted, matched nothing\" is the answer to\nthe question they are about to ask, and it is much cheaper to read there\nthan to work out from an issue page that did not change."
       }
     },
     "securitySchemes": {

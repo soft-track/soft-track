@@ -30,6 +30,9 @@ export const TRIGGER_LABELS: Record<AutomationTrigger, string> = {
   issue_assigned: 'an issue is assigned',
   comment_added: 'a comment is added',
   cycle_completed: 'a cycle is completed',
+  branch_created: 'a branch for it appears',
+  pull_request_opened: 'a pull request for it opens',
+  pull_request_merged: 'a pull request for it merges',
 }
 
 /** Everything the sentences need to turn an id into a name. */
