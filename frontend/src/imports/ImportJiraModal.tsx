@@ -2,8 +2,10 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { AXIOS_INSTANCE } from '@/api/client'
+import { errorDetail } from '@/api/errors'
 import type { ImportReport } from '@/api/generated/models'
 import { useTeamContext } from '@/team/TeamContext'
+import { Icon } from '@/ui/Icon'
 
 /**
  * Import a Jira export.
@@ -42,9 +44,7 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
         queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/projects`] })
       }
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data
-        ?.detail
-      setError(typeof detail === 'string' ? detail : 'That import could not be read.')
+      setError(errorDetail(err, 'That import could not be read.'))
       setReport(null)
     } finally {
       setBusy(false)
@@ -55,40 +55,56 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-30 flex items-start justify-center bg-black/20 p-4 pt-[8vh]"
+      className="scrim fixed inset-0 z-30 flex items-start justify-center p-4 pt-[8vh]"
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-label="Import from Jira"
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-2xl"
+        className="pop-in glass-strong flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-panel"
       >
-        <div className="border-b border-neutral-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-neutral-900">Import from Jira</h2>
+        <div className="hairline border-b px-5 py-4">
+          <h2 className="text-base font-semibold tracking-tight text-neutral-900">Import from Jira</h2>
           <p className="mt-0.5 text-xs text-neutral-500">
             A Jira CSV or JSON export. Export with the <em>Issue key</em> column so the
             import can be re-run safely.
           </p>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-          <input
-            type="file"
-            accept=".csv,.json,text/csv,application/json"
-            onChange={(e) => {
-              setFile(e.target.files?.[0] ?? null)
-              setReport(null)
-              setDone(false)
-              setError(null)
-            }}
-            className="w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-neutral-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
-          />
+        <div className="scroll-thin min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <label className="well flex cursor-pointer items-center gap-3 rounded-card border-dashed px-4 py-3 transition hover:border-brand-400/60">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500/12 text-brand-700">
+              <Icon name="upload" size={16} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium text-neutral-800">
+                {file ? file.name : 'Choose a Jira export'}
+              </span>
+              <span className="block text-xs text-neutral-400">
+                {file ? `${Math.max(1, Math.round(file.size / 1024))} KB` : '.csv or .json, up to 20 MB'}
+              </span>
+            </span>
+            <span className="btn btn-secondary btn-sm">Browse</span>
+            <input
+              type="file"
+              accept=".csv,.json,text/csv,application/json"
+              className="sr-only"
+              onChange={(e) => {
+                setFile(e.target.files?.[0] ?? null)
+                setReport(null)
+                setDone(false)
+                setError(null)
+              }}
+            />
+          </label>
 
           {error && <p className="mt-3 text-sm text-danger-600">{error}</p>}
 
           {report && (
             <div className="mt-4 space-y-3">
-              <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                <p className="text-sm font-medium text-neutral-800">
+              <div className="well rounded-card p-3">
+                <p className="text-sm font-medium text-neutral-900">
                   {done ? 'Imported' : 'This import would create'}
                 </p>
                 <ul className="mt-1 space-y-0.5 text-sm text-neutral-600">
@@ -138,7 +154,8 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
                   {report.warnings.map((warning) => (
                     <li
                       key={warning}
-                      className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900"
+                      className="chip h-auto whitespace-normal rounded-card px-3 py-2 text-xs font-normal"
+                      style={{ ['--chip' as string]: 'var(--color-accent-amber)' }}
                     >
                       {warning}
                     </li>
@@ -148,9 +165,7 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
 
               {unmatched.length > 0 && !done && (
                 <div>
-                  <p className="mb-1 text-xs font-medium text-neutral-500">
-                    Not members of this team
-                  </p>
+                  <p className="eyebrow mb-1">Not members of this team</p>
                   <ul className="space-y-0.5">
                     {unmatched.map((user) => (
                       <li key={user.source} className="text-xs text-neutral-600">
@@ -167,7 +182,7 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
 
               {report.preview.length > 0 && !done && (
                 <div>
-                  <p className="mb-1 text-xs font-medium text-neutral-500">
+                  <p className="eyebrow mb-1">
                     First {report.preview.length} of {report.issues_found}
                   </p>
                   <ul className="space-y-0.5">
@@ -192,18 +207,16 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-neutral-100 px-4 py-3">
-          <button
-            onClick={onClose}
-            className="rounded-md px-2.5 py-1.5 text-sm text-neutral-500 hover:text-neutral-700"
-          >
+        <div className="hairline flex items-center justify-end gap-2 border-t px-5 py-3">
+          <button type="button" onClick={onClose} className="btn btn-ghost">
             {done ? 'Close' : 'Cancel'}
           </button>
           {!done && (
             <button
+              type="button"
               onClick={() => send(report ? false : true)}
               disabled={!file || busy}
-              className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+              className="btn btn-primary"
             >
               {busy
                 ? 'Working…'
@@ -221,7 +234,7 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
 function Count({ n, one, many }: { n: number; one: string; many: string }) {
   return (
     <>
-      <span className="identifier font-medium text-neutral-800">{n}</span>{' '}
+      <span className="identifier font-medium text-neutral-900">{n}</span>{' '}
       {n === 1 ? one : many}
     </>
   )

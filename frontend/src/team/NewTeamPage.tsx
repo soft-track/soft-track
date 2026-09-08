@@ -2,7 +2,9 @@ import { type FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useCreateTeamTeamsPost } from '@/api/generated/endpoints/teams/teams'
+import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/AuthContext'
+import { Logo } from '@/ui/Logo'
 
 export default function NewTeamPage() {
   const navigate = useNavigate()
@@ -22,56 +24,67 @@ export default function NewTeamPage() {
       })
       navigate(`/${team.key}`, { replace: true })
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data
-        ?.detail
-      setError(detail ?? 'Could not create the team.')
+      setError(errorDetail(err, 'Could not create the team.'))
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-neutral-900">
-              {user ? `Welcome, ${user.full_name.split(' ')[0]}` : 'Create a team'}
-            </h1>
-            <p className="mt-1 text-sm text-neutral-500">
-              Teams group your projects and issues, e.g. "Engineering" with key ENG.
-            </p>
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+      <div className="pop-in w-full max-w-sm">
+        <div className="mb-8 text-center">
+          <div className="mb-4 flex justify-center">
+            <Logo size={52} />
           </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
+            {user ? (
+              <>
+                Welcome, <span className="text-gradient">{user.full_name.split(' ')[0]}</span>
+              </>
+            ) : (
+              'Create a team'
+            )}
+          </h1>
+          <p className="mt-1.5 text-sm text-neutral-500">
+            Teams group your projects and issues, e.g. "Engineering" with key ENG.
+          </p>
         </div>
 
-        <form
-          onSubmit={onSubmit}
-          className="space-y-4 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm"
-        >
+        <form onSubmit={onSubmit} className="glass-strong sheen space-y-4 rounded-panel p-6">
           {error && (
-            <div className="rounded-md bg-danger-50 px-3 py-2 text-sm text-danger-700">{error}</div>
+            <div
+              role="alert"
+              className="rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+            >
+              {error}
+            </div>
           )}
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-neutral-700">Team name</label>
+            <label htmlFor="team-name" className="mb-1.5 block text-sm font-medium text-neutral-700">
+              Team name
+            </label>
             <input
+              id="team-name"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="field"
               placeholder="Engineering"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-neutral-700">
-              Key <span className="text-neutral-400">(2-6 letters, used as issue prefix)</span>
+            <label htmlFor="team-key" className="mb-1.5 block text-sm font-medium text-neutral-700">
+              Key <span className="font-normal text-neutral-400">· 2 to 6 letters, the issue prefix</span>
             </label>
             <input
+              id="team-key"
               required
               minLength={2}
               maxLength={6}
               value={key}
               onChange={(e) => setKey(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm uppercase tracking-wide focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="field identifier uppercase tracking-wide"
               placeholder="ENG"
             />
           </div>
@@ -79,15 +92,16 @@ export default function NewTeamPage() {
           <button
             type="submit"
             disabled={createTeam.isPending}
-            className="w-full rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-60"
+            className="btn btn-primary h-10 w-full text-sm"
           >
             {createTeam.isPending ? 'Creating…' : 'Create team'}
           </button>
         </form>
 
         <button
+          type="button"
           onClick={logout}
-          className="mt-4 w-full text-center text-sm text-neutral-400 hover:text-neutral-600"
+          className="mt-5 w-full text-center text-sm text-neutral-400 hover:text-neutral-700"
         >
           Sign out
         </button>

@@ -1,6 +1,7 @@
 import type { AttachmentRead } from '@/api/generated/models'
 import { AttachmentImage } from '@/attachments/AttachmentImage'
 import { downloadAttachment, formatBytes } from '@/attachments/urls'
+import { Icon } from '@/ui/Icon'
 
 /**
  * The files on an issue or a comment.
@@ -23,14 +24,14 @@ export function AttachmentList({
   if (attachments.length === 0) return null
 
   return (
-    <ul className={`flex flex-wrap gap-2 ${compact ? '' : 'mt-2'}`}>
+    <ul className={`flex flex-wrap gap-2 ${compact ? 'mt-2' : 'mt-2'}`}>
       {attachments.map((attachment) => (
         <li key={attachment.id} className="group relative">
           <button
             type="button"
             onClick={() => downloadAttachment(attachment.url, attachment.filename)}
             title={`${attachment.filename} · ${formatBytes(attachment.size_bytes)}`}
-            className="block max-w-[12rem] overflow-hidden rounded-md border border-neutral-200 text-left transition hover:border-neutral-300"
+            className="glass-card block max-w-[12rem] overflow-hidden rounded-card text-left"
           >
             {attachment.is_image ? (
               <AttachmentImage
@@ -39,12 +40,12 @@ export function AttachmentList({
                 className="!my-0 !rounded-none !border-0 h-20 w-32 object-cover"
               />
             ) : (
-              <span className="flex items-center gap-2 px-2.5 py-2">
-                <span aria-hidden className="text-neutral-400">
-                  ⎘
+              <span className="flex items-center gap-2.5 px-3 py-2">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-neutral-900/6 text-neutral-500">
+                  <Icon name="paperclip" size={13} />
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-xs font-medium text-neutral-700">
+                  <span className="block truncate text-xs font-medium text-neutral-800">
                     {attachment.filename}
                   </span>
                   <span className="block text-[11px] text-neutral-400">
@@ -60,9 +61,9 @@ export function AttachmentList({
               type="button"
               onClick={() => onRemove(attachment)}
               aria-label={`Remove ${attachment.filename}`}
-              className="absolute -right-1.5 -top-1.5 hidden h-5 w-5 items-center justify-center rounded-full border border-neutral-200 bg-white text-xs text-neutral-500 shadow-sm hover:text-danger-600 group-hover:flex focus:flex"
+              className="glass-strong absolute -right-1.5 -top-1.5 hidden h-5 w-5 items-center justify-center rounded-full text-neutral-500 hover:text-danger-600 focus:flex group-hover:flex"
             >
-              ✕
+              <Icon name="close" size={11} strokeWidth={2.2} />
             </button>
           )}
         </li>

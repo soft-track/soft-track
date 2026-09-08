@@ -43,21 +43,13 @@ export function Markdown({
       void node
       if (linkClass === 'mention') {
         return (
-          <span
-            className="rounded bg-brand-50 px-1 font-medium text-brand-700"
-            title={props.title}
-          >
+          <span className="mention" title={props.title}>
             {linkChildren}
           </span>
         )
       }
       return (
-        <a
-          {...props}
-          target="_blank"
-          rel="noopener noreferrer nofollow"
-          className="text-brand-600 underline underline-offset-2 hover:text-brand-700"
-        >
+        <a {...props} target="_blank" rel="noopener noreferrer nofollow" className="link">
           {linkChildren}
         </a>
       )
@@ -122,9 +114,7 @@ export function Markdown({
       return <code className="font-mono text-xs leading-relaxed">{children}</code>
     },
     pre: ({ children }) => (
-      <pre className="my-2 overflow-x-auto rounded-md bg-neutral-50 p-3 ring-1 ring-neutral-100">
-        {children}
-      </pre>
+      <pre className="well scroll-thin my-2 overflow-x-auto rounded-card p-3">{children}</pre>
     ),
     table: ({ children }) => (
       <div className="my-2 overflow-x-auto">

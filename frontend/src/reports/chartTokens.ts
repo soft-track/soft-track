@@ -18,6 +18,9 @@
  *
  * The two-series pairs below both pass every check (ΔE 44 and ΔE 34 in normal
  * vision, and no worse than 26 under simulated CVD).
+ *
+ * Grid and axis inks are mixed from the neutral ramp so they follow the theme:
+ * a fixed light grey would vanish on the dark canvas.
  */
 
 /** Workflow stages, bottom to top, light to dark. */
@@ -49,7 +52,7 @@ export const INK = {
   contrastSeries: 'var(--color-priority-medium)',
   /** Validated against `measure`: ΔE 34 normal, 27 deutan. */
   resolved: 'var(--color-status-done)',
-  grid: 'var(--color-neutral-200)',
+  grid: 'color-mix(in oklab, var(--color-neutral-900) 9%, transparent)',
   axis: 'var(--color-neutral-400)',
-  surface: 'var(--color-neutral-50)',
+  surface: 'transparent',
 } as const

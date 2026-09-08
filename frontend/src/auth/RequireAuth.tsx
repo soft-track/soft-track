@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/auth/AuthContext'
+import { Loading } from '@/ui/Loading'
 
 export function RequireAuth() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -8,8 +9,8 @@ export function RequireAuth() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center text-sm text-neutral-400">
-        Loading…
+      <div className="h-screen">
+        <Loading />
       </div>
     )
   }

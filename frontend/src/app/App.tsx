@@ -9,18 +9,23 @@ import TeamsHome from '@/team/TeamsHome'
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+    <>
+      {/* The aurora sits behind every route; the glass surfaces above it are
+          what give the interface its depth. */}
+      <div className="aurora" aria-hidden="true" />
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-      <Route element={<RequireAuth />}>
-        <Route path="/" element={<TeamsHome />} />
-        <Route path="/new-team" element={<NewTeamPage />} />
-        <Route path="/:teamKey" element={<BoardPage />} />
-        <Route path="/:teamKey/issue/:issueNumber" element={<BoardPage />} />
-      </Route>
+        <Route element={<RequireAuth />}>
+          <Route path="/" element={<TeamsHome />} />
+          <Route path="/new-team" element={<NewTeamPage />} />
+          <Route path="/:teamKey" element={<BoardPage />} />
+          <Route path="/:teamKey/issue/:issueNumber" element={<BoardPage />} />
+        </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   )
 }

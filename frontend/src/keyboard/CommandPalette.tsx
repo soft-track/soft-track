@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { IssueRead } from '@/api/generated/models'
 import { STATUS_META } from '@/issues/issueMeta'
+import { Icon } from '@/ui/Icon'
 
 export type Command = {
   id: string
@@ -100,36 +101,39 @@ export function CommandPalette({
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-start justify-center bg-black/20 pt-[12vh]"
+      className="scrim fixed inset-0 z-40 flex items-start justify-center px-4 pt-[12vh]"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-label="Command palette"
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-2xl"
+        className="pop-in glass-strong w-full max-w-lg overflow-hidden rounded-panel"
       >
-        <input
-          autoFocus
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder="Jump to an issue, or type a command…"
-          aria-label="Command"
-          className="w-full border-b border-neutral-100 px-4 py-3 text-sm text-neutral-800 placeholder-neutral-300 focus:outline-none"
-        />
+        <div className="hairline relative border-b">
+          <Icon
+            name="search"
+            size={16}
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"
+          />
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder="Jump to an issue, or type a command…"
+            aria-label="Command"
+            className="w-full bg-transparent py-3.5 pl-11 pr-4 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none"
+          />
+        </div>
 
-        <ul ref={listRef} className="max-h-80 overflow-y-auto py-1" role="listbox">
+        <ul ref={listRef} className="scroll-thin max-h-80 overflow-y-auto p-1.5" role="listbox">
           {results.map((result, index) => {
             const header = result.group !== lastGroup ? result.group : null
             lastGroup = result.group
             return (
               <li key={result.id}>
-                {header && (
-                  <p className="px-4 pb-1 pt-2 text-[11px] uppercase tracking-wide text-neutral-400">
-                    {header}
-                  </p>
-                )}
+                {header && <p className="eyebrow px-2.5 pb-1 pt-2">{header}</p>}
                 <button
                   type="button"
                   role="option"
@@ -137,13 +141,11 @@ export function CommandPalette({
                   data-highlighted={index === highlighted}
                   onMouseEnter={() => setHighlighted(index)}
                   onClick={() => choose(index)}
-                  className={`flex w-full items-baseline gap-2 px-4 py-1.5 text-left text-sm ${
-                    index === highlighted ? 'bg-brand-50' : ''
+                  className={`flex w-full items-center gap-3 rounded-control px-2.5 py-2 text-left text-sm transition-colors ${
+                    index === highlighted ? 'bg-brand-500/12 text-neutral-900' : 'text-neutral-800'
                   }`}
                 >
-                  <span className="min-w-0 flex-1 truncate text-neutral-800">
-                    {result.label}
-                  </span>
+                  <span className="min-w-0 flex-1 truncate">{result.label}</span>
                   {result.hint && (
                     <span className="identifier shrink-0 text-xs text-neutral-400">
                       {result.hint}
@@ -160,6 +162,19 @@ export function CommandPalette({
             </li>
           )}
         </ul>
+
+        <div className="hairline flex items-center gap-3 border-t px-4 py-2 text-[11px] text-neutral-400">
+          <span className="flex items-center gap-1">
+            <kbd className="kbd">↑</kbd>
+            <kbd className="kbd">↓</kbd> navigate
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="kbd">↵</kbd> open
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="kbd">esc</kbd> close
+          </span>
+        </div>
       </div>
     </div>
   )

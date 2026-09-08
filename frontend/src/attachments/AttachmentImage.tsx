@@ -43,7 +43,7 @@ export function AttachmentImage({
 
   if (state.failed) {
     return (
-      <span className="my-2 inline-flex items-center gap-1.5 rounded-md border border-neutral-200 px-2 py-1 text-xs text-neutral-400">
+      <span className="well my-2 inline-flex items-center gap-1.5 rounded-control px-2 py-1 text-xs text-neutral-500">
         <span aria-hidden>🖼</span>
         {alt || 'This image could not be loaded'}
       </span>
@@ -55,7 +55,7 @@ export function AttachmentImage({
       <span
         role="img"
         aria-label={alt ? `Loading ${alt}` : 'Loading image'}
-        className={`my-2 block h-32 w-full max-w-xs animate-pulse rounded-md bg-neutral-100 ${className}`}
+        className={`skeleton my-2 block h-32 w-full max-w-xs rounded-card ${className}`}
       />
     )
   }
@@ -64,7 +64,7 @@ export function AttachmentImage({
     <img
       src={state.url}
       alt={alt ?? ''}
-      className={`my-2 max-w-full rounded-md border border-neutral-100 ${className}`}
+      className={`my-2 max-w-full rounded-card border border-neutral-900/8 shadow-sm ${className}`}
     />
   )
 }

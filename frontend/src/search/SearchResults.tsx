@@ -2,9 +2,10 @@ import { formatDistanceToNow } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 
 import type { SearchHit } from '@/api/generated/models'
+import { PriorityIcon } from '@/issues/PriorityIcon'
 import { STATUS_META } from '@/issues/issueMeta'
 import { useTeamContext } from '@/team/TeamContext'
-import { PriorityIcon } from '@/issues/PriorityIcon'
+import { Loading } from '@/ui/Loading'
 
 /** Where the match was found, said plainly. */
 const MATCHED_IN_LABEL: Record<string, string> = {
@@ -28,33 +29,32 @@ export function SearchResults({
   const { team } = useTeamContext()
 
   if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-neutral-400">
-        Searching…
-      </div>
-    )
+    return <Loading label="Searching…" />
   }
 
   if (hits.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-1 text-sm text-neutral-400">
+      <div className="glass flex h-full flex-col items-center justify-center gap-1 rounded-panel text-sm text-neutral-500">
         <p>
-          Nothing matches <span className="font-medium text-neutral-600">“{query}”</span>.
+          Nothing matches <span className="font-medium text-neutral-800">“{query}”</span>.
         </p>
-        <p className="text-xs">Titles, descriptions and comments were all searched.</p>
+        <p className="text-xs text-neutral-400">
+          Titles, descriptions and comments were all searched.
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="h-full overflow-y-auto p-4">
-      <p className="mb-3 text-xs text-neutral-400">
-        {total} {total === 1 ? 'result' : 'results'} for{' '}
-        <span className="font-medium text-neutral-600">“{query}”</span>
+    <div className="glass scroll-thin h-full overflow-y-auto rounded-panel">
+      <p className="hairline border-b px-4 py-2.5 text-xs text-neutral-500">
+        <span className="identifier font-medium text-neutral-800">{total}</span>{' '}
+        {total === 1 ? 'result' : 'results'} for{' '}
+        <span className="font-medium text-neutral-800">“{query}”</span>
         {total > hits.length && <> · showing the first {hits.length}</>}
       </p>
 
-      <ul className="space-y-1.5">
+      <ul className="divide-y divide-neutral-900/8">
         {hits.map((hit) => {
           const meta = STATUS_META[hit.status]
           return (
@@ -62,11 +62,11 @@ export function SearchResults({
               <button
                 type="button"
                 onClick={() => navigate(`/${team.key}/issue/${hit.identifier.split('-')[1]}`)}
-                className="w-full rounded-lg border border-neutral-200 bg-white p-3 text-left transition hover:border-neutral-300 hover:shadow-sm"
+                className="w-full px-4 py-3 text-left transition-colors hover:bg-neutral-900/4 focus:outline-none focus-visible:bg-brand-500/10"
               >
-                <div className="flex items-baseline gap-2">
-                  <span className={`h-2 w-2 shrink-0 translate-y-px rounded-full ${meta.dot}`} />
-                  <span className="identifier shrink-0 text-xs text-neutral-400">
+                <div className="flex items-center gap-2.5">
+                  <span className="dot" style={{ ['--dot' as string]: meta.color }} />
+                  <span className="identifier shrink-0 text-xs font-medium text-neutral-400">
                     {hit.identifier}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-900">
@@ -76,12 +76,12 @@ export function SearchResults({
                 </div>
 
                 {hit.snippet && (
-                  <p className="mt-1 line-clamp-2 pl-4 text-xs leading-relaxed text-neutral-500">
+                  <p className="mt-1 line-clamp-2 pl-[1.4rem] text-xs leading-relaxed text-neutral-500">
                     {hit.snippet}
                   </p>
                 )}
 
-                <p className="mt-1 pl-4 text-[11px] text-neutral-400">
+                <p className="mt-1 pl-[1.4rem] text-[11px] text-neutral-400">
                   {/* Saying where the match was stops a result whose title has
                       nothing to do with the query looking like a mistake. */}
                   matched in {MATCHED_IN_LABEL[hit.matched_in] ?? hit.matched_in} ·{' '}

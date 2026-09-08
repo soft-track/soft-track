@@ -6,11 +6,12 @@ import {
   useTeamCumulativeFlowTeamsTeamIdCumulativeFlowGet,
   useTeamVelocityTeamsTeamIdVelocityGet,
 } from '@/api/generated/endpoints/reports/reports'
-import { useTeamContext } from '@/team/TeamContext'
 import { BurndownChart } from '@/reports/BurndownChart'
 import { CreatedResolvedChart } from '@/reports/CreatedResolvedChart'
 import { FlowChart } from '@/reports/FlowChart'
 import { VelocityChart } from '@/reports/VelocityChart'
+import { useTeamContext } from '@/team/TeamContext'
+import { Select } from '@/ui/Select'
 
 const WINDOWS = [14, 30, 90] as const
 
@@ -38,14 +39,14 @@ export function ReportsView() {
   )
 
   return (
-    <div className="h-full overflow-y-auto p-4">
+    <div className="scroll-thin h-full overflow-y-auto">
       {/* Filters in one row above the charts. */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <select
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <Select
+          dense
           value={selected?.id ?? ''}
           onChange={(e) => setCycleId(e.target.value ? Number(e.target.value) : null)}
           disabled={cycles.length === 0}
-          className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs disabled:opacity-60"
           aria-label="Cycle"
         >
           {cycles.length === 0 && <option value="">No cycles</option>}
@@ -54,18 +55,18 @@ export function ReportsView() {
               {cycle.display_name}
             </option>
           ))}
-        </select>
+        </Select>
 
-        <div className="inline-flex gap-0.5 rounded-lg bg-neutral-100 p-0.5">
+        <div className="segmented" role="tablist" aria-label="Window">
           {WINDOWS.map((window) => (
             <button
               key={window}
+              type="button"
+              role="tab"
+              aria-selected={days === window}
+              data-active={days === window}
               onClick={() => setDays(window)}
-              className={`rounded-md px-2 py-1 text-xs font-medium transition ${
-                days === window
-                  ? 'bg-white text-neutral-800 shadow-sm'
-                  : 'text-neutral-500 hover:text-neutral-700'
-              }`}
+              className="segmented-item"
             >
               {window}d
             </button>
@@ -73,12 +74,12 @@ export function ReportsView() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-3 xl:grid-cols-2">
         {selected && burndown.data ? (
           <BurndownChart data={burndown.data} />
         ) : (
-          <figure className="rounded-lg border border-neutral-200 bg-white p-4">
-            <h3 className="text-sm font-medium text-neutral-900">Burndown</h3>
+          <figure className="glass rounded-panel p-4">
+            <h3 className="text-sm font-semibold text-neutral-900">Burndown</h3>
             <p className="py-10 text-center text-sm text-neutral-400">
               {cycles.length === 0
                 ? 'Create a cycle to see a burndown.'
@@ -92,7 +93,7 @@ export function ReportsView() {
         {createdResolved.data && <CreatedResolvedChart data={createdResolved.data} />}
       </div>
 
-      <p className="mt-4 text-xs text-neutral-400">
+      <p className="mt-3 px-1 text-xs text-neutral-400">
         {/* Say why an empty chart is empty, rather than letting it look broken. */}
         Charts are built from recorded issue history, so they begin from the day
         history started being kept — earlier activity cannot be reconstructed.

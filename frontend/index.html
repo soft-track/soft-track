@@ -4,7 +4,26 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#eef0f8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c0b15" media="(prefers-color-scheme: dark)" />
     <title>SoftTrack</title>
+    <script>
+      // Stamp the theme before the first paint so a dark-mode user never
+      // sees a light flash. Mirrors src/ui/theme.ts.
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('softtrack.theme')
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+          document.documentElement.dataset.theme = theme
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

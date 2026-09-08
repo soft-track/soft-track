@@ -1,13 +1,22 @@
 import type { IssuePriority } from '@/api/generated/models'
-import { PRIORITY_META, PRIORITY_ORDER } from '@/issues/issueMeta'
 import type { AssigneeFilter } from '@/board/filterIssues'
+import { PRIORITY_META, PRIORITY_ORDER } from '@/issues/issueMeta'
 import type { BoardView } from '@/keyboard/useCommands'
 import { useTeamContext } from '@/team/TeamContext'
+import { Icon, type IconName } from '@/ui/Icon'
+import { Select } from '@/ui/Select'
+
+const VIEWS: Array<{ id: BoardView; label: string; icon: IconName }> = [
+  { id: 'board', label: 'Board', icon: 'board' },
+  { id: 'list', label: 'List', icon: 'list' },
+  { id: 'reports', label: 'Reports', icon: 'chart' },
+]
 
 export function TopBar({
   view,
   onViewChange,
   onNewIssue,
+  onOpenSidebar,
   search,
   onSearchChange,
   priorityFilter,
@@ -18,6 +27,7 @@ export function TopBar({
   view: BoardView
   onViewChange: (view: BoardView) => void
   onNewIssue: () => void
+  onOpenSidebar: () => void
   search: string
   onSearchChange: (value: string) => void
   priorityFilter: IssuePriority | 'all'
@@ -28,42 +38,43 @@ export function TopBar({
   const { team, members } = useTeamContext()
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200 bg-white px-4 py-2.5">
-      <div className="flex items-center gap-3">
-        <h1 className="text-sm font-semibold text-neutral-900">{team.name}</h1>
-        <div className="flex rounded-md border border-neutral-200 p-0.5 text-xs">
-          <button
-            onClick={() => onViewChange('board')}
-            className={`rounded px-2 py-1 font-medium ${
-              view === 'board' ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-800'
-            }`}
-          >
-            Board
-          </button>
-          <button
-            onClick={() => onViewChange('list')}
-            className={`rounded px-2 py-1 font-medium ${
-              view === 'list' ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-800'
-            }`}
-          >
-            List
-          </button>
-          <button
-            onClick={() => onViewChange('reports')}
-            className={`rounded px-2 py-1 font-medium ${
-              view === 'reports'
-                ? 'bg-neutral-900 text-white'
-                : 'text-neutral-500 hover:text-neutral-800'
-            }`}
-          >
-            Reports
-          </button>
-        </div>
+    <header className="glass flex flex-wrap items-center gap-2 rounded-panel px-3 py-2">
+      <button
+        type="button"
+        onClick={onOpenSidebar}
+        className="btn btn-ghost btn-icon btn-sm lg:hidden"
+        aria-label="Open navigation"
+      >
+        <Icon name="menu" size={16} />
+      </button>
 
-        <select
+      <h1 className="mr-1 truncate text-sm font-semibold tracking-tight text-neutral-900">
+        {team.name}
+      </h1>
+
+      <div className="segmented" role="tablist" aria-label="View">
+        {VIEWS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={view === item.id}
+            data-active={view === item.id}
+            onClick={() => onViewChange(item.id)}
+            className="segmented-item"
+          >
+            <Icon name={item.icon} size={13} />
+            <span className="hidden sm:inline">{item.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Select
+          dense
           value={priorityFilter}
           onChange={(e) => onPriorityFilterChange(e.target.value as IssuePriority | 'all')}
-          className="rounded-md border border-neutral-200 px-2 py-1 text-xs text-neutral-600 focus:outline-none"
+          aria-label="Filter by priority"
         >
           <option value="all">All priorities</option>
           {PRIORITY_ORDER.map((p) => (
@@ -71,15 +82,16 @@ export function TopBar({
               {PRIORITY_META[p].label}
             </option>
           ))}
-        </select>
+        </Select>
 
-        <select
+        <Select
+          dense
           value={String(assigneeFilter)}
           onChange={(e) => {
             const v = e.target.value
             onAssigneeFilterChange(v === 'all' || v === 'unassigned' ? v : Number(v))
           }}
-          className="rounded-md border border-neutral-200 px-2 py-1 text-xs text-neutral-600 focus:outline-none"
+          aria-label="Filter by assignee"
         >
           <option value="all">Everyone</option>
           <option value="unassigned">Unassigned</option>
@@ -88,23 +100,45 @@ export function TopBar({
               {m.user.full_name}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
-      <div className="flex items-center gap-2">
-        <input
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search issues…"
-          className="w-52 rounded-md border border-neutral-200 px-2.5 py-1.5 text-sm focus:border-brand-400 focus:outline-none"
-        />
-        <button
-          onClick={onNewIssue}
-          className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
-        >
-          New issue
+      <div className="ml-auto flex items-center gap-2">
+        <label className="relative block">
+          <span className="sr-only">Search issues</span>
+          <Icon
+            name="search"
+            size={14}
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400"
+          />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search issues…"
+            className="field field-sm w-40 rounded-full pl-8 pr-8 sm:w-56 [&::-webkit-search-cancel-button]:hidden"
+          />
+          {search ? (
+            <button
+              type="button"
+              onClick={() => onSearchChange('')}
+              aria-label="Clear search"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-neutral-400 hover:text-neutral-800"
+            >
+              <Icon name="close" size={13} />
+            </button>
+          ) : (
+            <kbd className="kbd pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 sm:inline-flex">
+              /
+            </kbd>
+          )}
+        </label>
+
+        <button type="button" onClick={onNewIssue} className="btn btn-primary">
+          <Icon name="plus" size={14} strokeWidth={2.2} />
+          <span className="hidden sm:inline">New issue</span>
         </button>
       </div>
-    </div>
+    </header>
   )
 }

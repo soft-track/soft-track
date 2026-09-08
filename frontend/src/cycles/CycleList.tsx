@@ -27,7 +27,7 @@ export function CycleList({
   )
 
   if (cycles.length === 0) {
-    return <p className="px-2 text-sm text-neutral-400">No cycles yet.</p>
+    return <p className="px-2 text-xs text-neutral-400">No cycles yet.</p>
   }
 
   return (
@@ -43,6 +43,12 @@ export function CycleList({
     </div>
   )
 }
+
+const STATE_COLOUR = {
+  active: 'var(--color-status-progress)',
+  upcoming: 'var(--color-status-todo)',
+  completed: 'var(--color-status-done)',
+} as const
 
 function CycleRow({
   cycle,
@@ -60,26 +66,22 @@ function CycleRow({
 
   return (
     <button
+      type="button"
       onClick={onSelect}
-      className={`w-full rounded-md px-2 py-1.5 text-left ${
-        selected ? 'bg-brand-50' : 'hover:bg-neutral-50'
-      }`}
+      data-active={selected}
+      aria-pressed={selected}
+      className="nav-item flex-col items-stretch gap-1"
     >
-      <div className="flex items-baseline gap-1.5">
+      <span className="flex items-center gap-2">
         <span
-          className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-            cycle.state === 'active'
-              ? 'bg-status-in_progress'
-              : cycle.state === 'completed'
-                ? 'bg-neutral-300'
-                : 'bg-neutral-200 ring-1 ring-neutral-300'
-          }`}
+          className="dot"
+          style={{ ['--dot' as string]: STATE_COLOUR[cycle.state] }}
           title={cycle.state}
         />
         <span
-          className={`min-w-0 flex-1 truncate text-sm ${
-            selected ? 'font-medium text-brand-700' : 'text-neutral-700'
-          } ${cycle.state === 'completed' ? 'text-neutral-400' : ''}`}
+          className={`min-w-0 flex-1 truncate ${
+            cycle.state === 'completed' ? 'text-neutral-400' : ''
+          }`}
         >
           {cycle.display_name}
         </span>
@@ -88,17 +90,21 @@ function CycleRow({
             {progress.issues_completed}/{progress.issues_total}
           </span>
         )}
-      </div>
+      </span>
 
       {cycle.state !== 'completed' && (
         <>
-          <div className="mt-1 h-1 overflow-hidden rounded-full bg-neutral-100">
-            <div
-              className="h-full rounded-full bg-brand-500 transition-all"
+          <span className="block h-1 overflow-hidden rounded-full bg-neutral-900/8">
+            <span
+              className="block h-full rounded-full bg-linear-to-r from-brand-500 to-accent-sky transition-all"
               style={{ width: `${done * 100}%` }}
             />
-          </div>
-          <p className={`mt-0.5 text-[11px] ${overdue ? 'text-danger-600' : 'text-neutral-400'}`}>
+          </span>
+          <span
+            className={`block text-[11px] font-normal ${
+              overdue ? 'text-danger-600' : 'text-neutral-400'
+            }`}
+          >
             {/* Points, not just issues -- eight of ten issues done with two of
                 thirty points burned means the hard work is still ahead. */}
             {progress.points_total > 0 && (
@@ -108,7 +114,7 @@ function CycleRow({
             )}
             {overdue ? 'ended ' : 'ends '}
             {formatDistanceToNow(ends, { addSuffix: true })}
-          </p>
+          </span>
         </>
       )}
     </button>

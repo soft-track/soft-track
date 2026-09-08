@@ -1,7 +1,6 @@
 import { formatDistanceToNow } from 'date-fns'
 
 import { AttachmentList } from '@/attachments/AttachmentList'
-
 import { CommentsSection } from '@/issues/detail/CommentsSection'
 import { DescriptionEditor } from '@/issues/detail/DescriptionEditor'
 import { IssueLinksSection } from '@/issues/detail/IssueLinksSection'
@@ -11,6 +10,9 @@ import { useIssueAttachments } from '@/issues/detail/useIssueAttachments'
 import { useIssueEditor } from '@/issues/detail/useIssueEditor'
 import { usePanelShortcuts } from '@/issues/detail/usePanelShortcuts'
 import { PriorityIcon } from '@/issues/PriorityIcon'
+import { STATUS_META } from '@/issues/issueMeta'
+import { Avatar } from '@/ui/Avatar'
+import { Icon } from '@/ui/Icon'
 
 /** The slide-over for one issue. Composes the sections; owns none of them. */
 export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClose: () => void }) {
@@ -20,43 +22,62 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
   const { issue } = editor
 
   return (
-    <div className="fixed inset-0 z-20 flex justify-end bg-black/20" onClick={onClose}>
+    <div className="scrim fixed inset-0 z-20 flex justify-end" onClick={onClose}>
       <div
+        role="dialog"
+        aria-label={issue ? `${issue.identifier} ${issue.title}` : 'Issue'}
         onClick={(e) => e.stopPropagation()}
-        className="flex h-full w-full max-w-lg flex-col overflow-y-auto border-l border-neutral-200 bg-white shadow-xl"
+        className="slide-in-right glass-strong m-2 flex w-full max-w-xl flex-col overflow-hidden rounded-panel sm:m-3"
       >
-        <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
-          <span className="flex items-baseline gap-2">
-            <span className="identifier text-xs font-medium text-neutral-400">
+        <div className="hairline flex items-center justify-between gap-3 border-b px-4 py-3">
+          <span className="flex min-w-0 items-center gap-2">
+            {issue && (
+              <span
+                className="dot"
+                style={{ ['--dot' as string]: STATUS_META[issue.status].color }}
+                title={STATUS_META[issue.status].label}
+              />
+            )}
+            <span className="identifier text-xs font-semibold text-neutral-500">
               {issue ? issue.identifier : '…'}
             </span>
             {issue?.external_key && (
               <span
-                className="identifier rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-500"
+                className="identifier rounded-full bg-neutral-900/6 px-2 py-0.5 text-[10px] text-neutral-500"
                 title="This issue's key before it was imported"
               >
                 {issue.external_key}
               </span>
             )}
           </span>
-          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-700" aria-label="Close">
-            ✕
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn btn-ghost btn-icon btn-sm text-neutral-500"
+            aria-label="Close"
+            title="Close (Esc)"
+          >
+            <Icon name="close" size={15} />
           </button>
         </div>
 
         {!issue ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-neutral-400">
-            Loading…
+          <div className="flex flex-1 flex-col gap-3 p-5">
+            <div className="skeleton h-7 w-3/4" />
+            <div className="skeleton h-4 w-full" />
+            <div className="skeleton h-4 w-5/6" />
+            <div className="skeleton mt-4 h-36 w-full" />
           </div>
         ) : (
-          <>
-            <div className="flex-1 px-4 py-4">
+          <div className="scroll-thin flex-1 overflow-y-auto">
+            <div className="px-5 pb-5 pt-4">
               {issue.parent && <SubIssuesSection issue={issue} />}
               <input
                 value={editor.title}
                 onChange={(e) => editor.setTitle(e.target.value)}
                 onBlur={editor.saveTitle}
-                className="w-full border-none p-0 text-lg font-semibold text-neutral-900 focus:outline-none focus:ring-0"
+                aria-label="Title"
+                className="w-full border-none bg-transparent p-0 text-lg font-semibold leading-snug tracking-tight text-neutral-900 focus:outline-none focus:ring-0"
               />
 
               <DescriptionEditor
@@ -70,8 +91,8 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
               />
 
               {files.attachments.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="mb-1.5 text-xs font-medium text-neutral-500">Files</h3>
+                <div className="mt-5">
+                  <p className="eyebrow mb-2">Files</p>
                   {/* Every file on the issue, including the ones embedded in
                       the description above. This list is also where they get
                       deleted, so leaving the embedded ones out would make
@@ -91,10 +112,11 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
               {!issue.parent && <SubIssuesSection issue={issue} />}
               <IssueLinksSection issueId={issue.id} />
 
-              <div className="mt-4 flex items-center gap-1.5 text-xs text-neutral-400">
-                <PriorityIcon priority={issue.priority} />
+              <div className="mt-5 flex items-center gap-2 text-xs text-neutral-400">
+                <PriorityIcon priority={issue.priority} size={12} />
+                <Avatar user={issue.creator} size={16} />
                 <span>
-                  Created by {issue.creator.full_name},{' '}
+                  Created by {issue.creator.full_name}{' '}
                   {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
                 </span>
               </div>
@@ -108,7 +130,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
               uploading={files.uploading}
               onFilesClaimed={files.invalidate}
             />
-          </>
+          </div>
         )}
       </div>
     </div>

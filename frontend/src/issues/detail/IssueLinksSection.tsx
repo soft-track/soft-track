@@ -9,8 +9,10 @@ import {
   useListIssuesTeamsTeamIdIssuesGet,
 } from '@/api/generated/endpoints/issues/issues'
 import { IssueLinkType, type IssueLinks, type IssueLinkRead } from '@/api/generated/models'
+import { errorDetail } from '@/api/errors'
 import { STATUS_META } from '@/issues/issueMeta'
 import { useTeamContext } from '@/team/TeamContext'
+import { Icon } from '@/ui/Icon'
 
 /**
  * The five buckets, in the order they matter to someone reading an issue.
@@ -82,9 +84,7 @@ export function IssueLinksSection({ issueId }: { issueId: number }) {
     } catch (err: unknown) {
       // The API refuses self-links, duplicates and contradictions with a
       // specific reason. Show it rather than a generic failure.
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data
-        ?.detail
-      setError(typeof detail === 'string' ? detail : 'Could not add that link.')
+      setError(errorDetail(err, 'Could not add that link.'))
     }
   }
 
@@ -97,10 +97,11 @@ export function IssueLinksSection({ issueId }: { issueId: number }) {
   const total = GROUPS.reduce((sum, group) => sum + (links?.[group.key]?.length ?? 0), 0)
 
   return (
-    <div className="mt-4">
+    <div className="mt-5">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-medium text-neutral-500">
-          Links {total > 0 && <span className="text-neutral-400">({total})</span>}
+        <span className="flex items-center gap-2">
+          <span className="eyebrow">Links</span>
+          {total > 0 && <span className="identifier text-[11px] text-neutral-400">{total}</span>}
         </span>
         <button
           type="button"
@@ -108,27 +109,30 @@ export function IssueLinksSection({ issueId }: { issueId: number }) {
             setAdding((open) => !open)
             setError(null)
           }}
-          className="text-xs font-medium text-neutral-400 hover:text-neutral-700"
+          className="btn btn-ghost btn-xs"
         >
-          {adding ? 'Cancel' : '+ Add link'}
+          {adding ? (
+            'Cancel'
+          ) : (
+            <>
+              <Icon name="link" size={12} /> Add
+            </>
+          )}
         </button>
       </div>
 
       {adding && (
-        <div className="mb-3 rounded-lg border border-neutral-200 p-2">
-          <div className="mb-2 flex gap-1.5">
+        <div className="well mb-3 rounded-card p-2">
+          <div className="segmented mb-2">
             {ADDABLE.map((option) => (
               <button
                 key={option.type}
                 type="button"
                 onClick={() => setType(option.type)}
-                className={`rounded-md px-2 py-1 text-[11px] font-medium transition ${
-                  type === option.type
-                    ? 'bg-brand-50 text-brand-700'
-                    : 'text-neutral-500 hover:text-neutral-700'
-                }`}
+                data-active={type === option.type}
+                className="segmented-item"
               >
-                This issue {option.label}…
+                {option.label}
               </button>
             ))}
           </div>
@@ -137,7 +141,7 @@ export function IssueLinksSection({ issueId }: { issueId: number }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by identifier or title…"
-            className="w-full rounded-md border border-neutral-200 px-2 py-1.5 text-sm focus:border-brand-400 focus:outline-none"
+            className="field field-sm"
           />
           <ul className="mt-1.5 space-y-0.5">
             {candidates.map((candidate) => (
@@ -146,27 +150,23 @@ export function IssueLinksSection({ issueId }: { issueId: number }) {
                   type="button"
                   onClick={() => add(candidate.id)}
                   disabled={createLink.isPending}
-                  className="flex w-full items-baseline gap-2 rounded px-1.5 py-1 text-left text-sm hover:bg-neutral-50 disabled:opacity-50"
+                  className="flex w-full items-baseline gap-2 rounded-control px-2 py-1 text-left text-sm transition hover:bg-neutral-900/5 disabled:opacity-50"
                 >
                   <span className="identifier text-xs text-neutral-400">
                     {candidate.identifier}
                   </span>
-                  <span className="truncate text-neutral-700">{candidate.title}</span>
+                  <span className="truncate text-neutral-800">{candidate.title}</span>
                 </button>
               </li>
             ))}
             {candidates.length === 0 && (
-              <li className="px-1.5 py-1 text-xs text-neutral-400">
+              <li className="px-2 py-1 text-xs text-neutral-400">
                 {candidatesQuery.isLoading ? 'Loading…' : 'Nothing matches.'}
               </li>
             )}
           </ul>
-          {error && <p className="mt-1.5 px-1.5 text-xs text-danger-600">{error}</p>}
+          {error && <p className="mt-1.5 px-2 text-xs text-danger-600">{error}</p>}
         </div>
-      )}
-
-      {total === 0 && !adding && (
-        <p className="text-xs text-neutral-400">No linked issues.</p>
       )}
 
       <div className="space-y-2">
@@ -175,9 +175,7 @@ export function IssueLinksSection({ issueId }: { issueId: number }) {
           if (rows.length === 0) return null
           return (
             <div key={group.key}>
-              <p className="mb-1 text-[11px] uppercase tracking-wide text-neutral-400">
-                {group.label}
-              </p>
+              <p className="mb-1 text-[11px] font-medium text-neutral-500">{group.label}</p>
               <ul className="space-y-0.5">
                 {rows.map((row) => (
                   <LinkRow
@@ -211,8 +209,8 @@ function LinkRow({
   const resolved = row.issue.status === 'done' || row.issue.status === 'cancelled'
 
   return (
-    <li className="group flex items-center gap-2 rounded px-1.5 py-1 hover:bg-neutral-50">
-      <span className={`h-2 w-2 shrink-0 rounded-full ${meta.dot}`} title={meta.label} />
+    <li className="group flex items-center gap-2 rounded-control px-2 py-1 transition hover:bg-neutral-900/4">
+      <span className="dot" style={{ ['--dot' as string]: meta.color }} title={meta.label} />
       <button
         type="button"
         onClick={onOpen}
@@ -223,7 +221,7 @@ function LinkRow({
         </span>
         <span
           className={`truncate text-sm ${
-            resolved ? 'text-neutral-400 line-through' : 'text-neutral-700'
+            resolved ? 'text-neutral-400 line-through' : 'text-neutral-800'
           }`}
         >
           {row.issue.title}
@@ -233,9 +231,9 @@ function LinkRow({
         type="button"
         onClick={onRemove}
         aria-label={`Remove link to ${row.issue.identifier}`}
-        className="shrink-0 text-neutral-300 opacity-0 transition hover:text-danger-600 group-hover:opacity-100"
+        className="btn btn-ghost btn-icon btn-xs shrink-0 text-neutral-400 opacity-0 transition hover:text-danger-600 focus-visible:opacity-100 group-hover:opacity-100"
       >
-        ✕
+        <Icon name="close" size={12} />
       </button>
     </li>
   )

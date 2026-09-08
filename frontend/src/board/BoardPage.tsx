@@ -26,6 +26,7 @@ import { useDebounced } from '@/search/useDebounced'
 import { TeamProvider } from '@/team/TeamContext'
 import { useTeamData } from '@/team/useTeamData'
 import { useTeamByKey } from '@/team/useTeams'
+import { Loading } from '@/ui/Loading'
 
 export default function BoardPage() {
   const { teamKey, issueNumber } = useParams<{ teamKey: string; issueNumber?: string }>()
@@ -36,6 +37,8 @@ export default function BoardPage() {
   const [activeProjectId, setActiveProjectId] = useState<number | 'all'>('all')
   const [filters, setFilters] = useState<IssueFilters>(NO_FILTERS)
   const [search, setSearch] = useState('')
+  // The sidebar is a drawer below the `lg` breakpoint.
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const overlays = useOverlays()
 
   const teamData = useTeamData(team)
@@ -78,8 +81,8 @@ export default function BoardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center text-sm text-neutral-400">
-        Loading…
+      <div className="h-screen">
+        <Loading />
       </div>
     )
   }
@@ -94,22 +97,54 @@ export default function BoardPage() {
   const setFilter = <K extends keyof IssueFilters>(key: K, value: IssueFilters[K]) =>
     setFilters((current) => ({ ...current, [key]: value }))
 
+  const sidebar = (
+    <Sidebar
+      activeProjectId={activeProjectId}
+      onSelectProject={(id) => {
+        setActiveProjectId(id)
+        setSidebarOpen(false)
+      }}
+      activeCycleId={filters.cycleId}
+      onSelectCycle={(cycleId) => {
+        setFilter('cycleId', cycleId)
+        setSidebarOpen(false)
+      }}
+      onNewCycle={() => {
+        setSidebarOpen(false)
+        overlays.open('newCycle')
+      }}
+      onImport={() => {
+        setSidebarOpen(false)
+        overlays.open('import')
+      }}
+    />
+  )
+
   return (
     <TeamProvider value={{ team, teams, ...teamData }}>
-      <div className="flex h-screen bg-neutral-50">
-        <Sidebar
-          activeProjectId={activeProjectId}
-          onSelectProject={setActiveProjectId}
-          activeCycleId={filters.cycleId}
-          onSelectCycle={(cycleId) => setFilter('cycleId', cycleId)}
-          onNewCycle={() => overlays.open('newCycle')}
-          onImport={() => overlays.open('import')}
-        />
-        <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex h-screen gap-3 p-2 sm:p-3">
+        <div className="hidden h-full lg:block">{sidebar}</div>
+
+        {sidebarOpen && (
+          <div
+            className="scrim fixed inset-0 z-30 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <div
+              className="slide-in-left h-full w-72 max-w-[85vw] p-2 sm:p-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {sidebar}
+            </div>
+          </div>
+        )}
+
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
           <TopBar
             view={view}
             onViewChange={setView}
             onNewIssue={openNewIssue}
+            onOpenSidebar={() => setSidebarOpen(true)}
             search={search}
             onSearchChange={setSearch}
             priorityFilter={filters.priority}
@@ -127,9 +162,7 @@ export default function BoardPage() {
                 isLoading={searchResults.isLoading}
               />
             ) : issuesQuery.isLoading ? (
-              <div className="flex h-full items-center justify-center text-sm text-neutral-400">
-                Loading issues…
-              </div>
+              <Loading label="Loading issues…" />
             ) : view === 'reports' ? (
               <ReportsView />
             ) : view === 'board' ? (

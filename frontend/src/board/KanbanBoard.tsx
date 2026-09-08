@@ -1,4 +1,4 @@
-import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 
 import {
   DndContext,
@@ -10,36 +10,47 @@ import {
 } from '@dnd-kit/core'
 
 import type { EstimateSummary, IssueRead, IssueStatus } from '@/api/generated/models'
-import { STATUS_META, STATUS_ORDER } from '@/issues/issueMeta'
 import { IssueCard } from '@/issues/IssueCard'
+import { STATUS_META, STATUS_ORDER } from '@/issues/issueMeta'
+import { Icon } from '@/ui/Icon'
+
+type Load = EstimateSummary['by_status'][IssueStatus]
+
+/** Columns start folded to a rail. Cancelled work is rarely what a board is for. */
+const COLLAPSED_BY_DEFAULT: IssueStatus[] = ['cancelled']
 
 function Column({
   status,
   issues,
   load,
+  onCollapse,
 }: {
   status: IssueStatus
   issues: IssueRead[]
-  load?: EstimateSummary['by_status'][IssueStatus]
+  load?: Load
+  onCollapse: () => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status })
   const meta = STATUS_META[status]
 
   return (
-    <div
+    <section
       ref={setNodeRef}
       data-column={status}
-      className={`flex w-72 shrink-0 flex-col rounded-lg transition-colors ${
-        isOver ? 'bg-brand-100/70' : 'bg-neutral-100/70'
+      aria-label={meta.label}
+      className={`group/column glass-subtle flex w-[82vw] shrink-0 snap-center flex-col rounded-panel transition-[box-shadow,background-color] duration-150 sm:w-80 lg:w-auto lg:min-w-[208px] lg:max-w-[400px] lg:flex-1 lg:shrink lg:snap-none ${
+        isOver ? 'bg-brand-500/10 ring-2 ring-brand-400/60' : ''
       }`}
     >
-      <div className="flex items-center gap-2 px-3 pb-2 pt-3">
-        <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
-        <span className="text-sm font-medium text-neutral-700">{meta.label}</span>
-        <span className="text-xs text-neutral-400">{issues.length}</span>
+      <header className="flex items-center gap-2 px-3 pb-2 pt-3">
+        <span className="dot" style={{ ['--dot' as string]: meta.color }} aria-hidden="true" />
+        <h2 className="text-[13px] font-semibold text-neutral-800">{meta.label}</h2>
+        <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
+          {issues.length}
+        </span>
         {load && load.points > 0 && (
           <span
-            className="identifier ml-auto text-xs text-neutral-400"
+            className="identifier ml-auto text-[11px] text-neutral-400"
             title={
               load.unestimated_count > 0
                 ? `${load.points} points, with ${load.unestimated_count} issue${
@@ -54,16 +65,70 @@ function Column({
             {load.unestimated_count > 0 && <span className="text-neutral-300"> +?</span>}
           </span>
         )}
-      </div>
-      <div className="flex-1 space-y-2 overflow-y-auto px-2 pb-3">
+        <button
+          type="button"
+          onClick={onCollapse}
+          aria-label={`Collapse ${meta.label}`}
+          title="Collapse column"
+          className={`btn btn-ghost btn-icon btn-xs text-neutral-400 opacity-0 transition group-hover/column:opacity-100 focus-visible:opacity-100 ${
+            load && load.points > 0 ? '' : 'ml-auto'
+          }`}
+        >
+          <Icon name="chevron-left" size={13} />
+        </button>
+      </header>
+
+      <div className="scroll-thin flex-1 space-y-2 overflow-y-auto px-2 pb-2">
         {issues.map((issue) => (
           <IssueCard key={issue.id} issue={issue} />
         ))}
         {issues.length === 0 && (
-          <p className="px-2 py-4 text-center text-xs text-neutral-400">No issues</p>
+          <div className="flex h-24 items-center justify-center rounded-card border border-dashed border-neutral-900/10 text-xs text-neutral-400">
+            {isOver ? 'Drop here' : 'No issues'}
+          </div>
         )}
       </div>
-    </div>
+    </section>
+  )
+}
+
+/** A folded column: a thin rail that still accepts drops and shows its count. */
+function CollapsedColumn({
+  status,
+  count,
+  onExpand,
+}: {
+  status: IssueStatus
+  count: number
+  onExpand: () => void
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: status })
+  const meta = STATUS_META[status]
+
+  return (
+    <button
+      ref={setNodeRef}
+      type="button"
+      onClick={onExpand}
+      data-column={status}
+      data-collapsed="true"
+      aria-label={`Expand ${meta.label}, ${count} issues`}
+      title={`${meta.label} · ${count}`}
+      className={`glass-subtle flex w-11 shrink-0 flex-col items-center gap-3 rounded-panel py-3 transition-[box-shadow,background-color] hover:bg-neutral-900/5 ${
+        isOver ? 'bg-brand-500/10 ring-2 ring-brand-400/60' : ''
+      }`}
+    >
+      <span className="dot" style={{ ['--dot' as string]: meta.color }} aria-hidden="true" />
+      <span
+        className="text-[12px] font-semibold text-neutral-700"
+        style={{ writingMode: 'vertical-rl' }}
+      >
+        {meta.label}
+      </span>
+      <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
+        {count}
+      </span>
+    </button>
   )
 }
 
@@ -80,6 +145,17 @@ export function KanbanBoard({
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   )
+  const [collapsed, setCollapsed] = useState<Set<IssueStatus>>(
+    () => new Set(COLLAPSED_BY_DEFAULT),
+  )
+
+  const setCollapsedFor = (status: IssueStatus, value: boolean) =>
+    setCollapsed((current) => {
+      const next = new Set(current)
+      if (value) next.add(status)
+      else next.delete(status)
+      return next
+    })
 
   /**
    * Arrow keys move focus between cards.
@@ -97,7 +173,9 @@ export function KanbanBoard({
     const active = document.activeElement
     if (!(active instanceof HTMLElement) || !active.hasAttribute('data-card')) return
 
-    const columns = [...board.querySelectorAll<HTMLElement>('[data-column]')]
+    const columns = [
+      ...board.querySelectorAll<HTMLElement>('[data-column]:not([data-collapsed])'),
+    ]
     const column = active.closest<HTMLElement>('[data-column]')
     if (!column) return
 
@@ -139,15 +217,29 @@ export function KanbanBoard({
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="flex h-full gap-3 overflow-x-auto p-4" onKeyDown={moveFocus}>
-        {STATUS_ORDER.map((status) => (
-          <Column
-            key={status}
-            status={status}
-            issues={issues.filter((issue) => issue.status === status)}
-            load={estimates?.by_status?.[status]}
-          />
-        ))}
+      <div
+        className="scroll-thin flex h-full snap-x snap-mandatory gap-3 overflow-x-auto pb-1 lg:snap-none"
+        onKeyDown={moveFocus}
+      >
+        {STATUS_ORDER.map((status) => {
+          const inColumn = issues.filter((issue) => issue.status === status)
+          return collapsed.has(status) ? (
+            <CollapsedColumn
+              key={status}
+              status={status}
+              count={inColumn.length}
+              onExpand={() => setCollapsedFor(status, false)}
+            />
+          ) : (
+            <Column
+              key={status}
+              status={status}
+              issues={inColumn}
+              load={estimates?.by_status?.[status]}
+              onCollapse={() => setCollapsedFor(status, true)}
+            />
+          )
+        })}
       </div>
     </DndContext>
   )

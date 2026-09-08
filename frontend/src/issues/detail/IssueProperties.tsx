@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import {
   type IssuePriority,
   type IssueRead,
@@ -12,8 +14,7 @@ import {
   STATUS_ORDER,
 } from '@/issues/issueMeta'
 import { useTeamContext } from '@/team/TeamContext'
-
-const SELECT = 'rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs'
+import { Select } from '@/ui/Select'
 
 /**
  * The block of selects: status, priority, estimate, cycle, assignee, labels.
@@ -35,46 +36,46 @@ export function IssueProperties({
   const { members, labels, cycles } = useTeamContext()
 
   return (
-    <div className="mt-4 space-y-3 rounded-lg border border-neutral-100 bg-neutral-50 p-3">
-      <Row label="Status">
-        <select
+    <div className="well mt-5 grid gap-x-4 gap-y-3 rounded-card p-3 sm:grid-cols-2">
+      <Row label="Status" hint="S">
+        <Select
+          dense
           data-field="status"
           value={issue.status}
           onChange={(e) => patch({ status: e.target.value as IssueStatus })}
-          className={SELECT}
         >
           {STATUS_ORDER.map((s) => (
             <option key={s} value={s}>
               {STATUS_META[s].label}
             </option>
           ))}
-        </select>
+        </Select>
       </Row>
 
-      <Row label="Priority">
-        <select
+      <Row label="Priority" hint="P">
+        <Select
+          dense
           data-field="priority"
           value={issue.priority}
           onChange={(e) => patch({ priority: e.target.value as IssuePriority })}
-          className={SELECT}
         >
           {PRIORITY_ORDER.map((p) => (
             <option key={p} value={p}>
               {PRIORITY_META[p].label}
             </option>
           ))}
-        </select>
+        </Select>
       </Row>
 
       <Row label="Estimate">
-        <select
+        <Select
+          dense
           value={issue.estimate ?? ''}
           onChange={(e) =>
             // Read the value back out of the scale rather than casting a
             // string to it, so the value is provably one the API accepts.
             patch({ estimate: ESTIMATE_SCALE.find((p) => String(p) === e.target.value) ?? null })
           }
-          className={SELECT}
         >
           <option value="">Not sized</option>
           {ESTIMATE_SCALE.map((points) => (
@@ -82,15 +83,15 @@ export function IssueProperties({
               {points} {points === 1 ? 'point' : 'points'}
             </option>
           ))}
-        </select>
+        </Select>
       </Row>
 
       <Row label="Cycle">
-        <select
+        <Select
+          dense
           data-field="cycle"
           value={issue.cycle_id ?? ''}
           onChange={(e) => patch({ cycle_id: e.target.value ? Number(e.target.value) : null })}
-          className={SELECT}
         >
           <option value="">Backlog</option>
           {cycles
@@ -102,15 +103,15 @@ export function IssueProperties({
                 {cycle.display_name}
               </option>
             ))}
-        </select>
+        </Select>
       </Row>
 
-      <Row label="Assignee">
-        <select
+      <Row label="Assignee" hint="A">
+        <Select
+          dense
           data-field="assignee"
           value={issue.assignee?.id ?? ''}
           onChange={(e) => patch({ assignee_id: e.target.value ? Number(e.target.value) : null })}
-          className={SELECT}
         >
           <option value="">Unassigned</option>
           {members.map((m) => (
@@ -118,11 +119,13 @@ export function IssueProperties({
               {m.user.full_name}
             </option>
           ))}
-        </select>
+        </Select>
       </Row>
 
-      <div>
-        <span className="mb-1.5 block text-xs text-neutral-500">Labels</span>
+      <div className="sm:col-span-2">
+        <span className="mb-1.5 flex items-center gap-1.5 text-xs text-neutral-500">
+          Labels <kbd className="kbd">L</kbd>
+        </span>
         <div className="flex flex-wrap gap-1.5">
           {labels.map((label, index) => {
             const active = currentLabelIds.has(label.id)
@@ -131,13 +134,11 @@ export function IssueProperties({
                 key={label.id}
                 type="button"
                 data-field={index === 0 ? 'labels' : undefined}
+                data-active={active}
+                aria-pressed={active}
                 onClick={() => onToggleLabel(label.id)}
-                className="rounded-full border px-2 py-0.5 text-[11px] font-medium transition"
-                style={{
-                  borderColor: active ? label.color : '#e5e7eb',
-                  backgroundColor: active ? `${label.color}20` : 'transparent',
-                  color: active ? label.color : '#6b7280',
-                }}
+                className="chip chip-toggle"
+                style={{ ['--chip' as string]: label.color }}
               >
                 {label.name}
               </button>
@@ -152,10 +153,13 @@ export function IssueProperties({
   )
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-xs text-neutral-500">{label}</span>
+    <div className="flex items-center justify-between gap-3">
+      <span className="flex items-center gap-1.5 text-xs text-neutral-500">
+        {label}
+        {hint && <kbd className="kbd hidden sm:inline-flex">{hint}</kbd>}
+      </span>
       {children}
     </div>
   )

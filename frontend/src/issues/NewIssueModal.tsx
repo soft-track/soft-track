@@ -12,6 +12,8 @@ import {
 } from '@/issues/issueMeta'
 import { MarkdownEditor } from '@/markdown/lazy'
 import { useTeamContext } from '@/team/TeamContext'
+import { Icon } from '@/ui/Icon'
+import { Select } from '@/ui/Select'
 
 export function NewIssueModal({ onClose }: { onClose: () => void }) {
   const { team, projects, labels, members, cycles } = useTeamContext()
@@ -61,23 +63,38 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-20 flex items-start justify-center bg-black/30 pt-24"
+      className="scrim fixed inset-0 z-20 flex items-start justify-center px-4 pt-[10vh]"
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-label="New issue"
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-xl border border-neutral-200 bg-white shadow-xl"
+        className="pop-in glass-strong w-full max-w-xl rounded-panel"
       >
         <form onSubmit={onSubmit}>
-          <div className="border-b border-neutral-100 px-4 py-3">
-            <p className="text-xs font-medium text-neutral-400">{team.key}</p>
+          <div className="hairline border-b px-5 pb-4 pt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="identifier rounded-full bg-neutral-900/6 px-2 py-0.5 text-[11px] font-semibold text-neutral-500">
+                {team.key}
+              </span>
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn btn-ghost btn-icon btn-xs text-neutral-400"
+                aria-label="Close"
+              >
+                <Icon name="close" size={14} />
+              </button>
+            </div>
             <input
               autoFocus
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Issue title"
-              className="w-full border-none p-0 text-base font-medium text-neutral-900 placeholder-neutral-300 focus:outline-none focus:ring-0"
+              aria-label="Issue title"
+              className="w-full border-none bg-transparent p-0 text-lg font-semibold tracking-tight text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-0"
             />
             <MarkdownEditor
               value={description}
@@ -85,43 +102,45 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
               people={members.map((m) => m.user)}
               placeholder="Add a description… Markdown works here."
               rows={4}
-              className="mt-2"
+              className="mt-3"
             />
           </div>
 
-          {error && <div className="px-4 pt-2 text-sm text-danger-600">{error}</div>}
+          {error && (
+            <div role="alert" className="px-5 pt-3 text-sm text-danger-600">
+              {error}
+            </div>
+          )}
 
-          <div className="flex flex-wrap gap-2 px-4 py-3">
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as IssueStatus)}
-              className="rounded-md border border-neutral-200 px-2 py-1 text-xs"
-            >
+          <div className="flex flex-wrap gap-2 px-5 py-3">
+            <Select dense value={status} onChange={(e) => setStatus(e.target.value as IssueStatus)} aria-label="Status">
               {STATUS_ORDER.map((s) => (
                 <option key={s} value={s}>
                   {STATUS_META[s].label}
                 </option>
               ))}
-            </select>
+            </Select>
 
-            <select
+            <Select
+              dense
               value={priority}
               onChange={(e) => setPriority(e.target.value as IssuePriority)}
-              className="rounded-md border border-neutral-200 px-2 py-1 text-xs"
+              aria-label="Priority"
             >
               {PRIORITY_ORDER.map((p) => (
                 <option key={p} value={p}>
                   {PRIORITY_META[p].label}
                 </option>
               ))}
-            </select>
+            </Select>
 
-            <select
+            <Select
+              dense
               value={estimate ?? ''}
               onChange={(e) =>
                 setEstimate(ESTIMATE_SCALE.find((p) => String(p) === e.target.value) ?? null)
               }
-              className="rounded-md border border-neutral-200 px-2 py-1 text-xs"
+              aria-label="Estimate"
             >
               <option value="">No estimate</option>
               {ESTIMATE_SCALE.map((points) => (
@@ -129,13 +148,9 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
                   {points} {points === 1 ? 'point' : 'points'}
                 </option>
               ))}
-            </select>
+            </Select>
 
-            <select
-              value={cycleId}
-              onChange={(e) => setCycleId(e.target.value)}
-              className="rounded-md border border-neutral-200 px-2 py-1 text-xs"
-            >
+            <Select dense value={cycleId} onChange={(e) => setCycleId(e.target.value)} aria-label="Cycle">
               <option value="">Backlog</option>
               {cycles
                 .filter((c) => c.state !== 'completed')
@@ -144,25 +159,22 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
                     {cycle.display_name}
                   </option>
                 ))}
-            </select>
+            </Select>
 
-            <select
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              className="rounded-md border border-neutral-200 px-2 py-1 text-xs"
-            >
+            <Select dense value={projectId} onChange={(e) => setProjectId(e.target.value)} aria-label="Project">
               <option value="">No project</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
               ))}
-            </select>
+            </Select>
 
-            <select
+            <Select
+              dense
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
-              className="rounded-md border border-neutral-200 px-2 py-1 text-xs"
+              aria-label="Assignee"
             >
               <option value="">Unassigned</option>
               {members.map((m) => (
@@ -170,11 +182,11 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
                   {m.user.full_name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           {labels.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 px-4 pb-3">
+            <div className="flex flex-wrap gap-1.5 px-5 pb-4">
               {labels.map((label) => {
                 const active = labelIds.includes(label.id)
                 return (
@@ -182,12 +194,10 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
                     key={label.id}
                     type="button"
                     onClick={() => toggleLabel(label.id)}
-                    className="rounded-full border px-2 py-0.5 text-[11px] font-medium transition"
-                    style={{
-                      borderColor: active ? label.color : '#e5e7eb',
-                      backgroundColor: active ? `${label.color}20` : 'transparent',
-                      color: active ? label.color : '#6b7280',
-                    }}
+                    data-active={active}
+                    aria-pressed={active}
+                    className="chip chip-toggle"
+                    style={{ ['--chip' as string]: label.color }}
                   >
                     {label.name}
                   </button>
@@ -196,18 +206,14 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          <div className="flex justify-end gap-2 border-t border-neutral-100 px-4 py-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-50"
-            >
+          <div className="hairline flex items-center justify-end gap-2 border-t px-5 py-3">
+            <button type="button" onClick={onClose} className="btn btn-ghost">
               Cancel
             </button>
             <button
               type="submit"
               disabled={createIssue.isPending || !title.trim()}
-              className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+              className="btn btn-primary"
             >
               {createIssue.isPending ? 'Creating…' : 'Create issue'}
             </button>

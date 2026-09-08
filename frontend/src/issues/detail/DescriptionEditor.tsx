@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Markdown, MarkdownEditor } from '@/markdown/lazy'
 import type { Mentionable } from '@/markdown/mentions'
 import { taskProgress } from '@/markdown/tasks'
+import { Icon } from '@/ui/Icon'
 
 /**
  * The description in its three states: empty, rendered, being edited.
@@ -51,7 +52,7 @@ export function DescriptionEditor({
               if (draft !== (saved ?? '')) await onSave(draft)
               setEditing(false)
             }}
-            className="rounded-md bg-brand-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand-700"
+            className="btn btn-primary btn-sm"
           >
             Save
           </button>
@@ -61,7 +62,7 @@ export function DescriptionEditor({
               setDraft(saved ?? '')
               setEditing(false)
             }}
-            className="rounded-md px-2.5 py-1 text-xs font-medium text-neutral-500 hover:text-neutral-700"
+            className="btn btn-ghost btn-sm"
           >
             Cancel
           </button>
@@ -76,9 +77,10 @@ export function DescriptionEditor({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="text-sm text-neutral-300 hover:text-neutral-500"
+          className="flex w-full items-center gap-2 rounded-card border border-dashed border-neutral-900/15 px-3 py-2.5 text-left text-sm text-neutral-500 transition hover:border-brand-400/60 hover:text-neutral-800"
         >
-          Add a description…
+          <Icon name="plus" size={14} className="opacity-70" />
+          Add a description
         </button>
       </div>
     )
@@ -90,11 +92,7 @@ export function DescriptionEditor({
         {saved}
       </Markdown>
       <div className="mt-2 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className="text-xs font-medium text-neutral-400 hover:text-neutral-700"
-        >
+        <button type="button" onClick={() => setEditing(true)} className="btn btn-ghost btn-xs">
           Edit description
         </button>
         <TaskProgress source={saved} />
@@ -109,10 +107,10 @@ function TaskProgress({ source }: { source: string }) {
   if (total === 0) return null
 
   return (
-    <span className="flex items-center gap-2 text-xs text-neutral-400">
-      <span className="h-1 w-16 overflow-hidden rounded-full bg-neutral-100">
+    <span className="flex items-center gap-2 text-xs text-neutral-500">
+      <span className="h-1 w-16 overflow-hidden rounded-full bg-neutral-900/8">
         <span
-          className="block h-full rounded-full bg-brand-500 transition-all"
+          className="block h-full rounded-full bg-linear-to-r from-brand-500 to-accent-sky transition-all"
           style={{ width: `${(done / total) * 100}%` }}
         />
       </span>

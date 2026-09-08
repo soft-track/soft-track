@@ -19,9 +19,9 @@ export function Figure({
   empty?: string
 }) {
   return (
-    <figure className="rounded-lg border border-neutral-200 bg-white p-4">
+    <figure className="glass rounded-panel p-4">
       <figcaption className="mb-3">
-        <h3 className="text-sm font-medium text-neutral-900">{title}</h3>
+        <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
         {note && <p className="mt-0.5 text-xs text-neutral-500">{note}</p>}
       </figcaption>
       {empty ? (
@@ -155,21 +155,21 @@ export function Tooltip({
   const flip = x > width * 0.6
   return (
     <div
-      className="pointer-events-none absolute top-2 z-10 min-w-32 rounded-md border border-neutral-200 bg-white px-2 py-1.5 shadow-lg"
+      className="glass-strong pointer-events-none absolute top-2 z-10 min-w-32 rounded-card px-2.5 py-2"
       style={
         flip
           ? { right: `${((width - x) / width) * 100}%`, marginRight: 8 }
           : { left: `${(x / width) * 100}%`, marginLeft: 8 }
       }
     >
-      <p className="mb-0.5 text-[11px] font-medium text-neutral-700">{title}</p>
+      <p className="mb-0.5 text-[11px] font-semibold text-neutral-800">{title}</p>
       {rows.map((row) => (
         <p key={row.label} className="flex items-center gap-1.5 text-[11px] text-neutral-500">
           {row.colour && (
             <span className="h-2 w-2 rounded-sm" style={{ background: row.colour }} />
           )}
           {row.label}
-          <span className="identifier ml-auto text-neutral-800">{row.value}</span>
+          <span className="identifier ml-auto text-neutral-900">{row.value}</span>
         </p>
       ))}
     </div>

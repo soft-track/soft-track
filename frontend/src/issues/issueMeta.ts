@@ -10,13 +10,25 @@ export const STATUS_ORDER: IssueStatus[] = [
   IssueStatus.cancelled,
 ]
 
-export const STATUS_META: Record<IssueStatus, { label: string; dot: string }> = {
-  backlog: { label: 'Backlog', dot: 'bg-status-backlog' },
-  todo: { label: 'Todo', dot: 'bg-status-todo' },
-  in_progress: { label: 'In Progress', dot: 'bg-status-progress' },
-  in_review: { label: 'In Review', dot: 'bg-status-review' },
-  done: { label: 'Done', dot: 'bg-status-done' },
-  cancelled: { label: 'Cancelled', dot: 'bg-status-cancelled' },
+/**
+ * Label, the Tailwind class for a plain dot, and the raw colour for anything
+ * that needs it as a CSS value (the glowing `.dot`, chart keys).
+ */
+export const STATUS_META: Record<IssueStatus, { label: string; dot: string; color: string }> = {
+  backlog: { label: 'Backlog', dot: 'bg-status-backlog', color: 'var(--color-status-backlog)' },
+  todo: { label: 'Todo', dot: 'bg-status-todo', color: 'var(--color-status-todo)' },
+  in_progress: {
+    label: 'In Progress',
+    dot: 'bg-status-progress',
+    color: 'var(--color-status-progress)',
+  },
+  in_review: { label: 'In Review', dot: 'bg-status-review', color: 'var(--color-status-review)' },
+  done: { label: 'Done', dot: 'bg-status-done', color: 'var(--color-status-done)' },
+  cancelled: {
+    label: 'Cancelled',
+    dot: 'bg-status-cancelled',
+    color: 'var(--color-status-cancelled)',
+  },
 }
 
 export const PRIORITY_ORDER: IssuePriority[] = [
@@ -28,11 +40,11 @@ export const PRIORITY_ORDER: IssuePriority[] = [
 ]
 
 export const PRIORITY_META: Record<IssuePriority, { label: string; color: string }> = {
-  urgent: { label: 'Urgent', color: 'text-priority-urgent' },
-  high: { label: 'High', color: 'text-priority-high' },
-  medium: { label: 'Medium', color: 'text-priority-medium' },
-  low: { label: 'Low', color: 'text-priority-low' },
-  no_priority: { label: 'No priority', color: 'text-priority-none' },
+  urgent: { label: 'Urgent', color: 'var(--color-priority-urgent)' },
+  high: { label: 'High', color: 'var(--color-priority-high)' },
+  medium: { label: 'Medium', color: 'var(--color-priority-medium)' },
+  low: { label: 'Low', color: 'var(--color-priority-low)' },
+  no_priority: { label: 'No priority', color: 'var(--color-priority-none)' },
 }
 
 /**

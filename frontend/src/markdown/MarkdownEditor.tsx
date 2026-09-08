@@ -10,6 +10,7 @@ import {
 import { Markdown } from '@/markdown/Markdown'
 import { type Mentionable, matchMentions, mentionHandles } from '@/markdown/mentions'
 import { mentionQueryAt } from '@/markdown/mentionQuery'
+import { Icon } from '@/ui/Icon'
 
 type Mode = 'write' | 'preview'
 
@@ -190,31 +191,36 @@ export function MarkdownEditor({
     }
   }
 
-  const tabClass = (active: boolean) =>
-    `rounded-md px-2 py-1 text-xs font-medium transition ${
-      active ? 'bg-white text-neutral-800 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'
-    }`
-
   return (
     <div className={className}>
-      <div className="mb-1.5 flex items-center justify-between">
-        <div className="inline-flex gap-0.5 rounded-lg bg-neutral-100 p-0.5">
-          <button type="button" onClick={() => setMode('write')} className={tabClass(mode === 'write')}>
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <div className="segmented" role="tablist" aria-label="Editor mode">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'write'}
+            data-active={mode === 'write'}
+            onClick={() => setMode('write')}
+            className="segmented-item"
+          >
             Write
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={mode === 'preview'}
+            data-active={mode === 'preview'}
             onClick={() => setMode('preview')}
-            className={tabClass(mode === 'preview')}
+            className="segmented-item"
           >
             Preview
           </button>
         </div>
         {mode === 'write' && (
-          <span className="flex items-center gap-2 text-[11px] text-neutral-400">
+          <span className="flex min-w-0 items-center gap-2 text-[11px] text-neutral-400">
             {onUploadFiles ? (
               <>
-                <span>
+                <span className="hidden truncate sm:inline">
                   Markdown · <span className="identifier">@</span> to mention · paste or
                   drop a file
                 </span>
@@ -232,13 +238,14 @@ export function MarkdownEditor({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="rounded-md px-1.5 py-0.5 font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
+                  className="btn btn-ghost btn-xs"
                 >
+                  <Icon name="paperclip" size={12} />
                   {busy ? 'Uploading…' : 'Attach'}
                 </button>
               </>
             ) : (
-              <span>
+              <span className="hidden truncate sm:inline">
                 Markdown supported · <span className="identifier">@</span> to mention
               </span>
             )}
@@ -276,10 +283,8 @@ export function MarkdownEditor({
             }}
             placeholder={placeholder}
             rows={rows}
-            className={`w-full resize-y rounded-md border px-2.5 py-2 text-sm text-neutral-700 placeholder-neutral-300 focus:outline-none ${
-              droppingOver
-                ? 'border-brand-400 bg-brand-50'
-                : 'border-neutral-200 focus:border-brand-400'
+            className={`field resize-y rounded-card leading-relaxed ${
+              droppingOver ? 'border-brand-400! bg-brand-500/8!' : ''
             }`}
           />
 
@@ -287,7 +292,7 @@ export function MarkdownEditor({
             <ul
               role="listbox"
               aria-label="Team members"
-              className="absolute left-2 top-full z-30 mt-1 w-64 overflow-hidden rounded-lg border border-neutral-200 bg-white py-1 shadow-lg"
+              className="glass-strong pop-in absolute left-2 top-full z-30 mt-1 w-64 overflow-hidden rounded-card p-1"
             >
               {suggestions.map((person, index) => (
                 <li key={person.id}>
@@ -298,11 +303,11 @@ export function MarkdownEditor({
                     onMouseEnter={() => setHighlighted(index)}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => insertMention(person)}
-                    className={`flex w-full items-baseline gap-2 px-2.5 py-1.5 text-left text-sm ${
-                      index === highlighted ? 'bg-brand-50' : ''
+                    className={`flex w-full items-baseline gap-2 rounded-control px-2.5 py-1.5 text-left text-sm ${
+                      index === highlighted ? 'bg-brand-500/12' : ''
                     }`}
                   >
-                    <span className="font-medium text-neutral-800">{person.full_name}</span>
+                    <span className="font-medium text-neutral-900">{person.full_name}</span>
                     <span className="identifier truncate text-xs text-neutral-400">
                       @{mentionHandles(people).get(person.id)}
                     </span>
@@ -313,11 +318,11 @@ export function MarkdownEditor({
           )}
         </div>
       ) : (
-        <div className="min-h-[5rem] rounded-md border border-neutral-200 px-2.5 py-2">
+        <div className="well min-h-[5rem] rounded-card px-3 py-2">
           {value.trim() ? (
             <Markdown people={people}>{value}</Markdown>
           ) : (
-            <p className="text-sm text-neutral-300">Nothing to preview yet.</p>
+            <p className="text-sm text-neutral-400">Nothing to preview yet.</p>
           )}
         </div>
       )}

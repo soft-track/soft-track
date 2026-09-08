@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom'
 
 import { useMyTeams } from '@/team/useTeams'
+import { Loading } from '@/ui/Loading'
 
 /**
  * Landing route for authenticated users: redirect to their first team's
@@ -11,8 +12,8 @@ export default function TeamsHome() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center text-sm text-neutral-400">
-        Loading…
+      <div className="h-screen">
+        <Loading />
       </div>
     )
   }

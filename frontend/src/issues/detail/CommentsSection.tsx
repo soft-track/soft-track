@@ -65,34 +65,44 @@ export function CommentsSection({
     onFilesClaimed()
   }
 
+  const total = commentsQuery.data?.total ?? 0
+
   return (
-    <div className="border-t border-neutral-100 px-4 py-4">
-      <h3 className="mb-3 text-sm font-medium text-neutral-700">
-        Comments {commentsQuery.data ? `(${commentsQuery.data.total})` : ''}
-      </h3>
-      <div className="mb-3 space-y-3">
+    <div className="hairline border-t px-5 py-4">
+      <div className="mb-3 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-neutral-800">Activity</h3>
+        {total > 0 && (
+          <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
+            {total}
+          </span>
+        )}
+      </div>
+
+      <div className="mb-4 space-y-4">
         {commentsQuery.data?.items.map((comment) => (
-          <div key={comment.id} className="flex gap-2">
-            <Avatar user={comment.author} size={24} />
+          <div key={comment.id} className="flex gap-2.5">
+            <Avatar user={comment.author} size={26} />
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline gap-2">
-                <span className="text-sm font-medium text-neutral-800">
+                <span className="text-sm font-medium text-neutral-900">
                   {comment.author.full_name}
                 </span>
-                <span className="text-xs text-neutral-400">
+                <span className="text-[11px] text-neutral-400">
                   {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                 </span>
               </div>
-              {/* Read-only checkboxes: there is no endpoint to edit a comment
-                  yet, so a toggle here could not be saved. Its attachments
-                  are read-only for the same reason. */}
-              <Markdown people={people}>{comment.body}</Markdown>
-              <AttachmentList attachments={comment.attachments ?? []} compact />
+              <div className="well mt-1 rounded-card rounded-tl-sm px-3 py-2">
+                {/* Read-only checkboxes: there is no endpoint to edit a comment
+                    yet, so a toggle here could not be saved. Its attachments
+                    are read-only for the same reason. */}
+                <Markdown people={people}>{comment.body}</Markdown>
+                <AttachmentList attachments={comment.attachments ?? []} compact />
+              </div>
             </div>
           </div>
         ))}
         {commentsQuery.data?.items.length === 0 && (
-          <p className="text-xs text-neutral-400">No comments yet.</p>
+          <p className="text-xs text-neutral-400">No comments yet. Start the conversation below.</p>
         )}
       </div>
 
@@ -111,15 +121,16 @@ export function CommentsSection({
             by taking it back out of a draft. */}
         <AttachmentList attachments={draftFiles} onRemove={removeDraftFile} />
         <div className="mt-2 flex items-center justify-end gap-3">
-          <span className="text-[11px] text-neutral-400">
-            <span className="identifier">⌘↵</span> to send
+          <span className="flex items-center gap-1 text-[11px] text-neutral-400">
+            <kbd className="kbd">⌘</kbd>
+            <kbd className="kbd">↵</kbd> to send
           </span>
           <button
             type="submit"
             disabled={!body.trim() || createComment.isPending || uploading > 0}
-            className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+            className="btn btn-primary btn-sm"
           >
-            Send
+            {createComment.isPending ? 'Sending…' : 'Send'}
           </button>
         </div>
       </form>

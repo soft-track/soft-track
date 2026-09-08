@@ -1,10 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/auth/AuthContext'
+import { CycleList } from '@/cycles/CycleList'
 import { useTeamContext } from '@/team/TeamContext'
 import { Avatar } from '@/ui/Avatar'
-import { CycleList } from '@/cycles/CycleList'
+import { Icon } from '@/ui/Icon'
 import { Logo } from '@/ui/Logo'
+import { Select } from '@/ui/Select'
+import { useTheme } from '@/ui/theme'
 
 export function Sidebar({
   activeProjectId,
@@ -24,84 +27,85 @@ export function Sidebar({
   const { user, logout } = useAuth()
   const { team, teams, projects, cycles } = useTeamContext()
   const navigate = useNavigate()
+  const { theme, toggle: toggleTheme } = useTheme()
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-neutral-200 bg-white">
-      <div className="flex items-center gap-2 px-3 pt-3 pb-1">
-        <Logo size={20} />
-        <span className="text-sm font-semibold tracking-tight text-neutral-900">SoftTrack</span>
+    <aside className="glass-strong flex h-full w-60 flex-col rounded-panel">
+      <div className="flex items-center justify-between px-3 pb-2 pt-3">
+        <Logo size={26} withWordmark />
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="btn btn-ghost btn-icon btn-sm"
+          aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
+        >
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={15} />
+        </button>
       </div>
-      <div className="border-b border-neutral-200 p-3">
-        <select
+
+      <div className="px-3 pb-3">
+        <Select
+          block
           value={team.key}
           onChange={(e) => navigate(`/${e.target.value}`)}
-          className="w-full rounded-md border border-neutral-200 bg-neutral-50 px-2 py-1.5 text-sm font-medium text-neutral-800 focus:outline-none"
+          aria-label="Team"
         >
           {teams.map((t) => (
             <option key={t.id} value={t.key}>
-              {t.name} ({t.key})
+              {t.name} · {t.key}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
-      <nav className="flex-1 space-y-4 overflow-y-auto p-3">
+      <nav className="scroll-thin flex-1 space-y-5 overflow-y-auto px-3 pb-3">
         <div>
-          <div className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
-            Views
-          </div>
+          <p className="eyebrow mb-1.5 px-2">Views</p>
           <button
+            type="button"
             onClick={() => onSelectProject('all')}
-            className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
-              activeProjectId === 'all'
-                ? 'bg-brand-50 font-medium text-brand-700'
-                : 'text-neutral-700 hover:bg-neutral-50'
-            }`}
+            className="nav-item"
+            data-active={activeProjectId === 'all'}
           >
+            <Icon name="board" size={15} className="opacity-70" />
             All issues
           </button>
         </div>
 
         <div>
-          <div className="mb-1 flex items-center justify-between px-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-              Cycles
-            </span>
+          <div className="mb-1.5 flex items-center justify-between px-2">
+            <p className="eyebrow">Cycles</p>
             <button
+              type="button"
               onClick={onNewCycle}
               aria-label="New cycle"
-              className="text-neutral-400 hover:text-neutral-700"
+              title="New cycle"
+              className="btn btn-ghost btn-icon btn-xs"
             >
-              +
+              <Icon name="plus" size={13} />
             </button>
           </div>
-          <CycleList
-            cycles={cycles}
-            activeCycleId={activeCycleId}
-            onSelect={onSelectCycle}
-          />
+          <CycleList cycles={cycles} activeCycleId={activeCycleId} onSelect={onSelectCycle} />
         </div>
 
         <div>
-          <div className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
-            Projects
-          </div>
+          <p className="eyebrow mb-1.5 px-2">Projects</p>
           {projects.length === 0 && (
-            <p className="px-2 text-sm text-neutral-400">No projects yet.</p>
+            <p className="px-2 text-xs text-neutral-400">No projects yet.</p>
           )}
           {projects.map((project) => (
             <button
               key={project.id}
+              type="button"
               onClick={() => onSelectProject(project.id)}
-              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
-                activeProjectId === project.id
-                  ? 'bg-brand-50 font-medium text-brand-700'
-                  : 'text-neutral-700 hover:bg-neutral-50'
-              }`}
+              className="nav-item"
+              data-active={activeProjectId === project.id}
             >
               <span
-                className="h-2 w-2 shrink-0 rounded-full"
-                style={{ backgroundColor: project.color }}
+                className="dot"
+                style={{ ['--dot' as string]: project.color }}
+                aria-hidden="true"
               />
               <span className="truncate">{project.name}</span>
             </button>
@@ -109,38 +113,35 @@ export function Sidebar({
         </div>
       </nav>
 
-      <div className="px-3 pb-1">
-        <button
-          onClick={onImport}
-          className="w-full rounded-md px-2 py-1.5 text-left text-sm text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700"
-        >
+      <div className="space-y-0.5 px-3 pb-2">
+        <button type="button" onClick={onImport} className="nav-item text-neutral-500">
+          <Icon name="upload" size={15} className="opacity-70" />
           Import from Jira
         </button>
+        <Link to="/new-team" className="nav-item text-neutral-500">
+          <Icon name="plus" size={15} className="opacity-70" />
+          New team
+        </Link>
       </div>
 
-      <div className="border-t border-neutral-200 p-3">
-        <Link
-          to="/new-team"
-          className="mb-2 block px-2 text-xs text-neutral-400 hover:text-neutral-600"
-        >
-          + New team
-        </Link>
-        {user && (
-          <div className="flex items-center gap-2 px-2">
-            <Avatar user={user} size={26} />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-neutral-800">{user.full_name}</p>
-            </div>
-            <button
-              onClick={logout}
-              className="text-xs text-neutral-400 hover:text-neutral-600"
-              title="Sign out"
-            >
-              Sign out
-            </button>
+      {user && (
+        <div className="hairline flex items-center gap-2.5 border-t px-3 py-3">
+          <Avatar user={user} size={30} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-neutral-900">{user.full_name}</p>
+            <p className="truncate text-[11px] text-neutral-400">{user.email}</p>
           </div>
-        )}
-      </div>
+          <button
+            type="button"
+            onClick={logout}
+            className="btn btn-ghost btn-icon btn-sm text-neutral-400"
+            title="Sign out"
+            aria-label="Sign out"
+          >
+            <Icon name="logout" size={15} />
+          </button>
+        </div>
+      )}
     </aside>
   )
 }

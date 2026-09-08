@@ -7,7 +7,9 @@ import {
   useStartCycleCyclesCycleIdStartPost,
 } from '@/api/generated/endpoints/cycles/cycles'
 import type { CycleRead } from '@/api/generated/models'
+import { errorDetail } from '@/api/errors'
 import { useTeamContext } from '@/team/TeamContext'
+import { Icon } from '@/ui/Icon'
 
 /** Shown above the board while a cycle is selected. */
 export function CycleBanner({ cycle }: { cycle: CycleRead }) {
@@ -32,21 +34,21 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
       setMessage(describe(result as never))
       refresh()
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data
-        ?.detail
-      setError(typeof detail === 'string' ? detail : 'That did not work.')
+      setError(errorDetail(err, 'That did not work.'))
     }
   }
 
   const { progress } = cycle
   const ends = new Date(cycle.ends_at)
   const overdue = cycle.state === 'active' && isPast(ends)
+  const done = progress.issues_total > 0 ? progress.issues_completed / progress.issues_total : 0
 
   return (
-    <div className="border-b border-neutral-200 bg-white px-4 py-2.5">
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="text-sm font-medium text-neutral-900">{cycle.display_name}</span>
-        <span className="text-xs text-neutral-400">
+    <div className="glass rounded-panel px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <Icon name="calendar" size={15} className="text-neutral-400" />
+        <span className="text-sm font-semibold text-neutral-900">{cycle.display_name}</span>
+        <span className="text-xs text-neutral-500">
           {format(new Date(cycle.starts_at), 'd MMM')} – {format(ends, 'd MMM')}
           {cycle.state !== 'completed' && (
             <span className={overdue ? 'text-danger-600' : undefined}>
@@ -57,9 +59,21 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
           )}
         </span>
 
-        <span className="text-xs text-neutral-500">
-          {progress.issues_completed}/{progress.issues_total} issues ·{' '}
-          {progress.points_completed}/{progress.points_total} pts
+        <span className="flex items-center gap-2 text-xs text-neutral-500">
+          <span className="hidden h-1.5 w-24 overflow-hidden rounded-full bg-neutral-900/8 sm:block">
+            <span
+              className="block h-full rounded-full bg-linear-to-r from-brand-500 to-accent-sky"
+              style={{ width: `${done * 100}%` }}
+            />
+          </span>
+          <span className="identifier">
+            {progress.issues_completed}/{progress.issues_total}
+          </span>{' '}
+          issues ·{' '}
+          <span className="identifier">
+            {progress.points_completed}/{progress.points_total}
+          </span>{' '}
+          pts
           {progress.issues_unestimated > 0 && (
             <span
               className="text-neutral-400"
@@ -82,7 +96,7 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
                   () => 'Cycle started.',
                 )
               }
-              className="rounded-md bg-brand-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+              className="btn btn-primary btn-sm"
             >
               Start cycle
             </button>
@@ -104,21 +118,26 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
                         }.`,
                 )
               }
-              className="rounded-md bg-brand-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+              className="btn btn-primary btn-sm"
             >
               Complete cycle
             </button>
           )}
           {cycle.state === 'completed' && (
-            <span className="text-xs text-neutral-400">Completed</span>
+            <span
+              className="chip"
+              style={{ ['--chip' as string]: 'var(--color-status-done)' }}
+            >
+              <Icon name="check" size={11} /> Completed
+            </span>
           )}
         </div>
       </div>
 
       {/* Say what happened to the carried-over work rather than leaving people
           to wonder where their issues went. */}
-      {message && <p className="mt-1 text-xs text-brand-700">{message}</p>}
-      {error && <p className="mt-1 text-xs text-danger-600">{error}</p>}
+      {message && <p className="mt-1.5 text-xs text-brand-700">{message}</p>}
+      {error && <p className="mt-1.5 text-xs text-danger-600">{error}</p>}
     </div>
   )
 }

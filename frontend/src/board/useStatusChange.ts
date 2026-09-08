@@ -6,6 +6,9 @@ import {
 } from '@/api/generated/endpoints/issues/issues'
 import type { IssueRead, IssueStatus, TeamRead } from '@/api/generated/models'
 
+/** The shape the list endpoint caches: a page, not a bare array. */
+type IssuePage = { items: IssueRead[]; total: number; limit: number; offset: number }
+
 /**
  * Move an issue between columns, optimistically.
  *
@@ -23,10 +26,16 @@ export function useStatusChange(
   return async (issueId: number, status: IssueStatus) => {
     if (!team) return
     const queryKey = getListIssuesTeamsTeamIdIssuesGetQueryKey(team.id, issuesParams)
-    const previous = queryClient.getQueryData<IssueRead[]>(queryKey)
-    queryClient.setQueryData<IssueRead[]>(
-      queryKey,
-      (old) => old?.map((issue) => (issue.id === issueId ? { ...issue, status } : issue)) ?? old,
+    const previous = queryClient.getQueryData<IssuePage>(queryKey)
+    queryClient.setQueryData<IssuePage>(queryKey, (old) =>
+      old
+        ? {
+            ...old,
+            items: old.items.map((issue) =>
+              issue.id === issueId ? { ...issue, status } : issue,
+            ),
+          }
+        : old,
     )
     try {
       await updateIssue.mutateAsync({ issueId, data: { status } })

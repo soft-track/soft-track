@@ -10,6 +10,7 @@ import {
 import type { IssueRead } from '@/api/generated/models'
 import { STATUS_META } from '@/issues/issueMeta'
 import { useTeamContext } from '@/team/TeamContext'
+import { Icon } from '@/ui/Icon'
 
 /**
  * The sub-issues of one issue, plus the breadcrumb when it is itself a child.
@@ -69,39 +70,45 @@ export function SubIssuesSection({ issue }: { issue: IssueRead }) {
       <button
         type="button"
         onClick={() => openIssue(issue.parent!.identifier)}
-        className="mb-2 flex max-w-full items-baseline gap-1.5 text-xs text-neutral-400 hover:text-neutral-700"
+        className="mb-2 flex max-w-full items-center gap-1.5 rounded-full bg-neutral-900/5 py-1 pl-2.5 pr-2 text-xs text-neutral-500 transition hover:bg-neutral-900/8 hover:text-neutral-900"
       >
-        <span className="identifier">{issue.parent!.identifier}</span>
+        <span className="identifier font-medium">{issue.parent!.identifier}</span>
         <span className="truncate">{issue.parent!.title}</span>
-        <span aria-hidden="true">›</span>
+        <Icon name="chevron-right" size={12} />
       </button>
     )
   }
 
   return (
-    <div className="mt-4">
+    <div className="mt-5">
       <div className="mb-2 flex items-center justify-between">
-        <span className="flex items-baseline gap-2 text-xs font-medium text-neutral-500">
-          Sub-issues
+        <span className="flex items-center gap-2">
+          <span className="eyebrow">Sub-issues</span>
           {issue.child_count > 0 && (
-            <span className="text-neutral-400">
-              {issue.completed_child_count} of {issue.child_count} done
+            <span className="identifier text-[11px] text-neutral-400">
+              {issue.completed_child_count}/{issue.child_count} done
             </span>
           )}
         </span>
         <button
           type="button"
           onClick={() => setAdding((open) => !open)}
-          className="text-xs font-medium text-neutral-400 hover:text-neutral-700"
+          className="btn btn-ghost btn-xs"
         >
-          {adding ? 'Cancel' : '+ Add sub-issue'}
+          {adding ? (
+            'Cancel'
+          ) : (
+            <>
+              <Icon name="plus" size={12} /> Add
+            </>
+          )}
         </button>
       </div>
 
       {issue.child_count > 0 && (
-        <div className="mb-2 h-1 overflow-hidden rounded-full bg-neutral-100">
+        <div className="mb-2 h-1 overflow-hidden rounded-full bg-neutral-900/8">
           <div
-            className="h-full rounded-full bg-brand-500 transition-all"
+            className="h-full rounded-full bg-linear-to-r from-brand-500 to-accent-sky transition-all"
             style={{
               width: `${(issue.completed_child_count / issue.child_count) * 100}%`,
             }}
@@ -120,27 +127,25 @@ export function SubIssuesSection({ issue }: { issue: IssueRead }) {
           }}
           onBlur={addChild}
           placeholder="Sub-issue title, then Enter"
-          className="mb-2 w-full rounded-md border border-neutral-200 px-2.5 py-1.5 text-sm focus:border-brand-400 focus:outline-none"
+          className="field field-sm mb-2"
         />
       )}
 
-      {children.length === 0 && !adding ? (
-        <p className="text-xs text-neutral-400">No sub-issues.</p>
-      ) : (
+      {children.length > 0 && (
         <ul className="space-y-0.5">
           {children.map((child) => {
             const done = child.status === 'done'
             return (
               <li
                 key={child.id}
-                className="flex items-center gap-2 rounded px-1.5 py-1 hover:bg-neutral-50"
+                className="flex items-center gap-2 rounded-control px-2 py-1 transition hover:bg-neutral-900/4"
               >
                 <input
                   type="checkbox"
                   checked={done}
                   onChange={() => toggleDone(child)}
                   aria-label={done ? `Reopen ${child.identifier}` : `Complete ${child.identifier}`}
-                  className="h-3.5 w-3.5 shrink-0 rounded border-neutral-300 accent-brand-600"
+                  className="h-3.5 w-3.5 shrink-0 rounded accent-brand-600"
                 />
                 <button
                   type="button"
@@ -152,14 +157,15 @@ export function SubIssuesSection({ issue }: { issue: IssueRead }) {
                   </span>
                   <span
                     className={`truncate text-sm ${
-                      done ? 'text-neutral-400 line-through' : 'text-neutral-700'
+                      done ? 'text-neutral-400 line-through' : 'text-neutral-800'
                     }`}
                   >
                     {child.title}
                   </span>
                 </button>
                 <span
-                  className={`h-2 w-2 shrink-0 rounded-full ${STATUS_META[child.status].dot}`}
+                  className="dot"
+                  style={{ ['--dot' as string]: STATUS_META[child.status].color }}
                   title={STATUS_META[child.status].label}
                 />
               </li>

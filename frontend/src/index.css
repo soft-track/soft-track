@@ -1,119 +1,669 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   SoftTrack design tokens
+   SoftTrack design tokens -- "liquid glass"
    ---------------------------------------------------------------------------
    Tailwind v4 is configured CSS-first: everything declared in `@theme` becomes
    both a utility class (`bg-brand-600`) and a CSS variable (`--color-brand-600`).
 
-   Three layers, in order of how often you should reach for them:
-     1. semantic  -- status.*, priority.*  : meaning, not appearance
-     2. brand     -- brand.*               : the product's identity
-     3. neutral   -- neutral.*             : surfaces, borders, text
+   The visual model is three layers:
+     1. the canvas: a soft aurora of brand colour behind everything
+     2. glass: translucent panels that blur and saturate what is behind them
+     3. ink: text and controls that sit on the glass
 
-   Prefer the semantic layer. `bg-status-progress` survives a palette change;
-   `bg-amber-500` does not.
+   Every neutral is theme-aware. The ramp is written for light and flipped for
+   dark under `[data-theme="dark"]`, so `text-neutral-700` reads correctly in
+   both without a second set of classes.
 --------------------------------------------------------------------------- */
 
 @theme {
   /* -- Brand -------------------------------------------------------------
-     A violet-leaning indigo. 600 is the primary: it is the fill of the logo
-     mark, the colour of every primary action, and the only saturated colour
-     allowed to carry brand meaning. */
-  --color-brand-50:  #f2f1fd;
-  --color-brand-100: #e6e4fb;
-  --color-brand-200: #cfcbf8;
-  --color-brand-300: #b0a8f3;
-  --color-brand-400: #8f80ec;
-  --color-brand-500: #7559e4;
+     A violet-leaning indigo, with three accents used only in the aurora and
+     in gradients. 600 remains the one saturated colour allowed to carry
+     brand meaning on its own. */
+  --color-brand-50:  #f3f1ff;
+  --color-brand-100: #e8e4ff;
+  --color-brand-200: #d3ccff;
+  --color-brand-300: #b4a6ff;
+  --color-brand-400: #937bff;
+  --color-brand-500: #7a5cf5;
   --color-brand-600: #6342db;
   --color-brand-700: #5433bd;
   --color-brand-800: #462c9a;
   --color-brand-900: #3b277b;
 
-  /* -- Neutrals ----------------------------------------------------------
-     Biased very slightly toward the brand hue rather than pure grey, so
-     surfaces sit with the accent instead of fighting it. */
-  --color-neutral-50:  #fafafb;
-  --color-neutral-100: #f4f4f7;
-  --color-neutral-200: #e9e9ef;
-  --color-neutral-300: #d8d8e1;
-  --color-neutral-400: #a9a9b8;
-  --color-neutral-500: #7d7d8d;
-  --color-neutral-600: #5b5b6a;
-  --color-neutral-700: #44444f;
-  --color-neutral-800: #2d2d36;
-  --color-neutral-900: #1a1a21;
+  --color-accent-sky:   #4f8cff;
+  --color-accent-pink:  #ff6fae;
+  --color-accent-mint:  #2fd4a7;
+  --color-accent-amber: #ffb648;
 
-  /* -- Status ------------------------------------------------------------
-     One colour per workflow state. The two unstarted states are deliberately
-     neutral so that colour on a board means "something is happening". */
-  --color-status-backlog:   #a9a9b8;
-  --color-status-todo:      #7d7d8d;
-  --color-status-progress:  #ef9d0b;
+  /* -- Neutrals (light) --------------------------------------------------
+     Tinted toward the brand hue. 400 is the lightest tone used for text
+     that has to be read; it clears 4.5:1 on white. 300 and below are for
+     placeholders, borders and fills only. */
+  --color-neutral-50:  #f7f6fb;
+  --color-neutral-100: #eeedf5;
+  --color-neutral-200: #dedcea;
+  --color-neutral-300: #b6b3c8;
+  --color-neutral-400: #7a7791;
+  --color-neutral-500: #66637c;
+  --color-neutral-600: #514e66;
+  --color-neutral-700: #3b3850;
+  --color-neutral-800: #26243a;
+  --color-neutral-900: #15131f;
+
+  /* -- Status ------------------------------------------------------------ */
+  --color-status-backlog:   #9b98b0;
+  --color-status-todo:      #6f6c86;
+  --color-status-progress:  #f29d0b;
   --color-status-review:    #8b5cf6;
   --color-status-done:      #12a474;
   --color-status-cancelled: #f2647d;
 
-  /* -- Priority ----------------------------------------------------------
-     A warm ramp: the hotter the hue, the more urgent. `none` drops out of the
-     ramp entirely so unprioritised work reads as absence, not as low. */
+  /* -- Priority ---------------------------------------------------------- */
   --color-priority-urgent: #e0424a;
   --color-priority-high:   #f2721c;
   --color-priority-medium: #ef9d0b;
   --color-priority-low:    #3f82f6;
-  --color-priority-none:   #a9a9b8;
+  --color-priority-none:   #a29fb5;
 
-  /* -- Feedback ----------------------------------------------------------
-     Danger is separate from priority.urgent on purpose: one is a destructive
-     or failed action, the other is how important a piece of work is. They
-     look similar today but must be free to diverge. */
+  /* -- Feedback ---------------------------------------------------------- */
   --color-danger-50:  #fef2f3;
   --color-danger-500: #e0424a;
   --color-danger-600: #cf3038;
   --color-danger-700: #a81d24;
 
-  /* -- Type --------------------------------------------------------------
-     System stacks on purpose: SoftTrack is self-hosted, and a webfont CDN
-     would add a third-party request to every install. Mono is not decorative
-     -- issue identifiers (ENG-42) are tabular data and must align. */
+  /* -- Type -------------------------------------------------------------- */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, "Apple Color Emoji", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
 
-  /* -- Radii -------------------------------------------------------------
-     Cards and controls share a radius so the board reads as one material. */
-  --radius-control: 0.375rem;
-  --radius-card:    0.5rem;
-  --radius-panel:   0.75rem;
+  /* -- Radii ------------------------------------------------------------- */
+  --radius-control: 0.625rem;
+  --radius-card:    0.875rem;
+  --radius-panel:   1.25rem;
 }
 
-:root {
-  color-scheme: light;
+/* ---------------------------------------------------------------------------
+   Glass and canvas variables. Not Tailwind namespaces, so they live here.
+--------------------------------------------------------------------------- */
+@layer base {
+  :root {
+    color-scheme: light;
+
+    --canvas: #eef0f8;
+    --aurora-opacity: 1;
+
+    --glass-fill:        rgba(255, 255, 255, 0.55);
+    --glass-fill-strong: rgba(255, 255, 255, 0.78);
+    --glass-fill-subtle: rgba(255, 255, 255, 0.34);
+    --glass-fill-card:   rgba(255, 255, 255, 0.82);
+    --glass-border:      rgba(255, 255, 255, 0.72);
+    --glass-edge:        rgba(60, 50, 110, 0.10);
+    --glass-highlight:   rgba(255, 255, 255, 0.95);
+    --glass-shadow:      rgba(40, 30, 90, 0.22);
+    --glass-blur:        22px;
+
+    --ink-shadow: rgba(20, 18, 40, 0.06);
+    --ring: color-mix(in oklab, var(--color-brand-500) 45%, transparent);
+    --chevron: %237a7791;
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --canvas: #0c0b15;
+    --aurora-opacity: 0.6;
+
+    --color-neutral-50:  #1b1a27;
+    --color-neutral-100: #262433;
+    --color-neutral-200: #363448;
+    --color-neutral-300: #5b586f;
+    --color-neutral-400: #9491aa;
+    --color-neutral-500: #aaa7bd;
+    --color-neutral-600: #c3c0d2;
+    --color-neutral-700: #d9d7e5;
+    --color-neutral-800: #ebeaf3;
+    --color-neutral-900: #f6f5fb;
+
+    --color-brand-50:  #221d3d;
+    --color-brand-100: #2b2450;
+
+    --color-status-backlog: #6f6c86;
+    --color-status-todo:    #9b98b0;
+    --color-priority-none:  #6f6c86;
+
+    --color-danger-50: #3a1a1f;
+    --color-danger-700: #ff8a92;
+
+    --glass-fill:        rgba(28, 26, 44, 0.55);
+    --glass-fill-strong: rgba(24, 22, 38, 0.82);
+    --glass-fill-subtle: rgba(28, 26, 44, 0.36);
+    --glass-fill-card:   rgba(38, 35, 56, 0.86);
+    --glass-border:      rgba(255, 255, 255, 0.10);
+    --glass-edge:        rgba(0, 0, 0, 0.35);
+    --glass-highlight:   rgba(255, 255, 255, 0.14);
+    --glass-shadow:      rgba(0, 0, 0, 0.55);
+
+    --ink-shadow: rgba(0, 0, 0, 0.3);
+    --chevron: %239491aa;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background-color: var(--canvas);
+    color: var(--color-neutral-900);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-brand-500) 30%, transparent);
+  }
+
+  /* One focus treatment everywhere, only for keyboard focus. */
+  :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 }
 
-html,
-body,
-#root {
-  height: 100%;
-}
+/* ---------------------------------------------------------------------------
+   Components
+--------------------------------------------------------------------------- */
+@layer components {
+  /* -- The aurora canvas ------------------------------------------------- */
+  .aurora {
+    position: fixed;
+    inset: -20%;
+    z-index: -1;
+    pointer-events: none;
+    opacity: var(--aurora-opacity);
+    background:
+      radial-gradient(38% 34% at 12% 18%, color-mix(in oklab, var(--color-brand-400) 60%, transparent) 0%, transparent 72%),
+      radial-gradient(34% 30% at 86% 12%, color-mix(in oklab, var(--color-accent-sky) 55%, transparent) 0%, transparent 72%),
+      radial-gradient(36% 36% at 78% 86%, color-mix(in oklab, var(--color-accent-pink) 48%, transparent) 0%, transparent 72%),
+      radial-gradient(30% 30% at 18% 84%, color-mix(in oklab, var(--color-accent-mint) 46%, transparent) 0%, transparent 72%),
+      radial-gradient(24% 24% at 52% 52%, color-mix(in oklab, var(--color-accent-amber) 26%, transparent) 0%, transparent 72%);
+    filter: blur(48px) saturate(125%);
+    animation: aurora-drift 48s ease-in-out infinite alternate;
+    will-change: transform;
+  }
 
-body {
-  margin: 0;
-  font-family: var(--font-sans);
-  background-color: var(--color-neutral-50);
-  color: var(--color-neutral-900);
-}
+  @keyframes aurora-drift {
+    0%   { transform: translate3d(0, 0, 0) scale(1); }
+    50%  { transform: translate3d(2%, -1.5%, 0) scale(1.04); }
+    100% { transform: translate3d(-1.5%, 2%, 0) scale(1.02); }
+  }
 
-* {
-  box-sizing: border-box;
-}
+  @media (prefers-reduced-motion: reduce) {
+    .aurora { animation: none; }
+  }
 
-/* Issue identifiers are data. Tabular figures keep ENG-9 and ENG-42 aligned
-   in a column, and the slight tracking stops the mono face from looking wide. */
-.identifier {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+  /* -- Glass surfaces ---------------------------------------------------- */
+  .glass,
+  .glass-strong,
+  .glass-subtle,
+  .glass-card {
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      inset 0 1px 0 0 var(--glass-highlight),
+      0 0 0 1px var(--glass-edge),
+      0 1px 2px var(--ink-shadow),
+      0 18px 48px -20px var(--glass-shadow);
+  }
+
+  .glass {
+    background: var(--glass-fill);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  }
+
+  .glass-strong {
+    background: var(--glass-fill-strong);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(28px) saturate(180%);
+  }
+
+  /* Columns and insets: lighter, and no blur -- there can be many on screen. */
+  .glass-subtle {
+    background: var(--glass-fill-subtle);
+    box-shadow:
+      inset 0 1px 0 0 var(--glass-highlight),
+      0 0 0 1px var(--glass-edge);
+  }
+
+  .glass-card {
+    background: var(--glass-fill-card);
+    box-shadow:
+      inset 0 1px 0 0 var(--glass-highlight),
+      0 0 0 1px var(--glass-edge),
+      0 1px 2px var(--ink-shadow),
+      0 8px 20px -14px var(--glass-shadow);
+    transition:
+      transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 160ms ease,
+      background-color 160ms ease;
+  }
+
+  .glass-card:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 0 var(--glass-highlight),
+      0 0 0 1px var(--glass-edge),
+      0 2px 4px var(--ink-shadow),
+      0 16px 32px -14px var(--glass-shadow);
+  }
+
+  /* An inset well inside a glass panel: properties, previews, empty states. */
+  .well {
+    background: color-mix(in oklab, var(--color-neutral-900) 4%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-neutral-900) 6%, transparent);
+  }
+
+  .hairline { border-color: color-mix(in oklab, var(--color-neutral-900) 9%, transparent); }
+
+  /* A specular sweep across the top edge of a surface. Opt-in: it needs
+     overflow hidden, which would clip a dropdown. */
+  .sheen {
+    position: relative;
+    overflow: hidden;
+  }
+  .sheen::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 42%;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--glass-highlight) 55%, transparent),
+      transparent
+    );
+  }
+
+  /* -- Buttons ----------------------------------------------------------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    height: 2.125rem;
+    padding: 0 0.875rem;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition:
+      background-color 140ms ease,
+      color 140ms ease,
+      box-shadow 140ms ease,
+      transform 120ms ease,
+      opacity 140ms ease;
+    user-select: none;
+  }
+  .btn:active { transform: translateY(0.5px) scale(0.99); }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+  .btn-sm { height: 1.75rem; padding: 0 0.7rem; font-size: 0.75rem; }
+  .btn-xs { height: 1.5rem; padding: 0 0.55rem; font-size: 0.7rem; }
+
+  .btn-primary {
+    color: #fff;
+    background: linear-gradient(135deg, var(--color-brand-500), var(--color-accent-sky));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 1px 2px rgba(20, 18, 40, 0.2),
+      0 10px 24px -10px color-mix(in oklab, var(--color-brand-600) 80%, transparent);
+  }
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.06) saturate(1.05);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      0 2px 4px rgba(20, 18, 40, 0.2),
+      0 14px 30px -10px color-mix(in oklab, var(--color-brand-600) 90%, transparent);
+  }
+
+  .btn-secondary {
+    color: var(--color-neutral-800);
+    background: var(--glass-fill-strong);
+    border-color: var(--glass-border);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 0 0 1px var(--glass-edge),
+      0 1px 2px var(--ink-shadow);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  .btn-secondary:hover:not(:disabled) { background: var(--glass-fill-card); }
+
+  .btn-ghost {
+    color: var(--color-neutral-600);
+    background: transparent;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    color: var(--color-neutral-900);
+    background: color-mix(in oklab, var(--color-neutral-900) 6%, transparent);
+  }
+
+  .btn-danger-ghost { color: var(--color-danger-600); background: transparent; }
+  .btn-danger-ghost:hover:not(:disabled) { background: var(--color-danger-50); }
+
+  .btn-icon {
+    width: 2.125rem;
+    padding: 0;
+  }
+  .btn-icon.btn-sm { width: 1.75rem; }
+  .btn-icon.btn-xs { width: 1.5rem; }
+
+  /* -- Fields ------------------------------------------------------------ */
+  .field {
+    width: 100%;
+    border-radius: var(--radius-control);
+    border: 1px solid color-mix(in oklab, var(--color-neutral-900) 12%, transparent);
+    background: color-mix(in oklab, var(--glass-fill-card) 85%, transparent);
+    color: var(--color-neutral-900);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.35;
+    box-shadow: inset 0 1px 0 var(--glass-highlight), 0 1px 2px var(--ink-shadow);
+    transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+  }
+  .field::placeholder { color: var(--color-neutral-400); opacity: 0.8; }
+  .field:focus {
+    outline: none;
+    border-color: color-mix(in oklab, var(--color-brand-500) 60%, transparent);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 0 0 3px color-mix(in oklab, var(--color-brand-500) 18%, transparent);
+  }
+  .field-sm { padding: 0.375rem 0.625rem; font-size: 0.8125rem; }
+
+  /* A native select dressed as a glass pill. The chevron is drawn by
+     `Select`, so the native arrow is hidden here. */
+  .select {
+    appearance: none;
+    -webkit-appearance: none;
+    height: 2rem;
+    padding: 0 1.75rem 0 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-fill-strong);
+    color: var(--color-neutral-800);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1;
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 0 0 1px var(--glass-edge),
+      0 1px 2px var(--ink-shadow);
+    cursor: pointer;
+    transition: background-color 140ms ease, box-shadow 140ms ease;
+    max-width: 100%;
+  }
+  .select:hover:not(:disabled) { background: var(--glass-fill-card); }
+  .select:disabled { opacity: 0.55; cursor: not-allowed; }
+  .select:focus {
+    outline: none;
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 0 0 3px color-mix(in oklab, var(--color-brand-500) 22%, transparent);
+  }
+  .select-sm { height: 1.75rem; font-size: 0.75rem; padding-left: 0.625rem; padding-right: 1.5rem; }
+  .select-block { width: 100%; }
+  .select-wrap { position: relative; display: inline-flex; max-width: 100%; }
+  .select-wrap > .select-chevron {
+    position: absolute;
+    right: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--color-neutral-400);
+  }
+
+  /* -- Segmented control ------------------------------------------------- */
+  .segmented {
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--color-neutral-900) 7%, transparent);
+    box-shadow: inset 0 1px 1px color-mix(in oklab, var(--color-neutral-900) 6%, transparent);
+  }
+  .segmented-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    height: 1.625rem;
+    padding: 0 0.7rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-neutral-500);
+    transition: background-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+  }
+  .segmented-item:hover { color: var(--color-neutral-800); }
+  .segmented-item[data-active="true"] {
+    color: var(--color-neutral-900);
+    background: var(--glass-fill-card);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 1px 2px var(--ink-shadow),
+      0 0 0 1px var(--glass-edge);
+  }
+
+  /* -- Navigation rows --------------------------------------------------- */
+  .nav-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-control);
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8125rem;
+    color: var(--color-neutral-700);
+    text-align: left;
+    transition: background-color 120ms ease, color 120ms ease;
+  }
+  .nav-item:hover {
+    color: var(--color-neutral-900);
+    background: color-mix(in oklab, var(--color-neutral-900) 5%, transparent);
+  }
+  .nav-item[data-active="true"] {
+    color: var(--color-brand-700);
+    font-weight: 500;
+    background: color-mix(in oklab, var(--color-brand-500) 14%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in oklab, #fff 40%, transparent);
+  }
+  :root[data-theme="dark"] .nav-item[data-active="true"] {
+    color: var(--color-brand-300);
+  }
+
+  /* -- Small type -------------------------------------------------------- */
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-neutral-400);
+  }
+
+  .identifier {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 0.35rem;
+    border-radius: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--color-neutral-500);
+    background: color-mix(in oklab, var(--color-neutral-900) 6%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-neutral-900) 10%, transparent);
+    box-shadow: inset 0 -1px 0 color-mix(in oklab, var(--color-neutral-900) 8%, transparent);
+  }
+
+  /* A coloured label chip. `--chip` is the label's own colour. */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    height: 1.25rem;
+    padding: 0 0.5rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: color-mix(in oklab, var(--chip) 78%, var(--color-neutral-900));
+    background: color-mix(in oklab, var(--chip) 16%, transparent);
+    border: 1px solid color-mix(in oklab, var(--chip) 28%, transparent);
+  }
+  :root[data-theme="dark"] .chip {
+    color: color-mix(in oklab, var(--chip) 70%, #fff);
+    background: color-mix(in oklab, var(--chip) 22%, transparent);
+  }
+  .chip-toggle {
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  }
+  .chip-toggle[data-active="false"] {
+    color: var(--color-neutral-500);
+    background: transparent;
+    border-color: color-mix(in oklab, var(--color-neutral-900) 14%, transparent);
+  }
+  .chip-toggle[data-active="false"]:hover {
+    border-color: color-mix(in oklab, var(--chip) 50%, transparent);
+    color: color-mix(in oklab, var(--chip) 70%, var(--color-neutral-900));
+  }
+
+  /* A status dot with a soft glow of its own colour. */
+  .dot {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    flex-shrink: 0;
+    background: var(--dot);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--dot) 22%, transparent);
+  }
+
+  /* -- Scrollbars -------------------------------------------------------- */
+  .scroll-thin {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--color-neutral-900) 22%, transparent) transparent;
+  }
+  .scroll-thin::-webkit-scrollbar { height: 8px; width: 8px; }
+  .scroll-thin::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--color-neutral-900) 22%, transparent);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  .scroll-thin::-webkit-scrollbar-track { background: transparent; }
+
+  /* -- Overlays ---------------------------------------------------------- */
+  .scrim {
+    background: color-mix(in oklab, var(--color-neutral-900) 22%, transparent);
+    -webkit-backdrop-filter: blur(6px) saturate(120%);
+    backdrop-filter: blur(6px) saturate(120%);
+    animation: fade-in 140ms ease-out both;
+  }
+  :root[data-theme="dark"] .scrim {
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .pop-in { animation: pop-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .slide-in-right { animation: slide-in-right 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .slide-in-left { animation: slide-in-left 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(6px) scale(0.985); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes slide-in-right {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slide-in-left {
+    from { opacity: 0; transform: translateX(-24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scrim, .pop-in, .slide-in-right, .slide-in-left { animation: none; }
+    .glass-card, .btn { transition: none; }
+  }
+
+  /* -- Inline brand text: links and @mentions, readable in both themes --- */
+  .link {
+    color: var(--color-brand-600);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: color-mix(in oklab, var(--color-brand-600) 40%, transparent);
+  }
+  .link:hover { color: var(--color-brand-700); text-decoration-color: currentColor; }
+  :root[data-theme="dark"] .link { color: var(--color-brand-300); }
+  :root[data-theme="dark"] .link:hover { color: var(--color-brand-200); }
+
+  .mention {
+    border-radius: 0.35rem;
+    padding: 0 0.3rem;
+    font-weight: 600;
+    color: var(--color-brand-700);
+    background: color-mix(in oklab, var(--color-brand-500) 14%, transparent);
+  }
+  :root[data-theme="dark"] .mention { color: var(--color-brand-300); }
+
+  /* -- Text with a brand gradient ---------------------------------------- */
+  .text-gradient {
+    background: linear-gradient(120deg, var(--color-brand-600), var(--color-accent-sky) 60%, var(--color-accent-pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  :root[data-theme="dark"] .text-gradient {
+    background: linear-gradient(120deg, var(--color-brand-300), var(--color-accent-sky) 60%, var(--color-accent-pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  /* -- Shimmer placeholder ----------------------------------------------- */
+  .skeleton {
+    border-radius: var(--radius-control);
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--color-neutral-900) 6%, transparent) 25%,
+      color-mix(in oklab, var(--color-neutral-900) 10%, transparent) 50%,
+      color-mix(in oklab, var(--color-neutral-900) 6%, transparent) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s linear infinite;
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+  }
 }
