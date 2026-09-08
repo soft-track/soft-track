@@ -4003,6 +4003,313 @@
         }
       }
     },
+    "/teams/{team_id}/automation-rules": {
+      "get": {
+        "tags": [
+          "automations"
+        ],
+        "summary": "List Rules",
+        "description": "Every rule on the team, enabled or not, in the order they run.\n\nReadable by any member even though only admins may write one: a rule acts\non your issues, so being unable to find out what the rules are is not a\nreasonable place to be.",
+        "operationId": "list_rules_teams__team_id__automation_rules_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutomationRuleRead"
+                  },
+                  "title": "Response List Rules Teams  Team Id  Automation Rules Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "automations"
+        ],
+        "summary": "Create Rule",
+        "description": "Add a rule. Team admins only, like statuses and unlike labels.",
+        "operationId": "create_rule_teams__team_id__automation_rules_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutomationRuleCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationRuleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/automation-runs": {
+      "get": {
+        "tags": [
+          "automations"
+        ],
+        "summary": "List Runs",
+        "description": "What the team's rules have actually done, newest first.\n\nFilterable by rule and by issue, which are the two forms the question\ntakes: \"what has this rule been doing\" and \"why did this issue move\".",
+        "operationId": "list_runs_teams__team_id__automation_runs_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "rule_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Rule Id"
+            }
+          },
+          {
+            "name": "issue_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Issue Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_AutomationRunRead_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/automation-rules/{rule_id}": {
+      "patch": {
+        "tags": [
+          "automations"
+        ],
+        "summary": "Update Rule",
+        "operationId": "update_rule_automation_rules__rule_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutomationRuleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationRuleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "automations"
+        ],
+        "summary": "Delete Rule",
+        "description": "Remove a rule. Its run log stays -- see automations.delete_rule.",
+        "operationId": "delete_rule_automation_rules__rule_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -4257,6 +4564,241 @@
         "title": "AuthConfig",
         "description": "What the sign-in pages need to know before anyone has authenticated."
       },
+      "AutomationRuleCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/AutomationTrigger"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled",
+            "default": true
+          },
+          "conditions": {
+            "$ref": "#/components/schemas/RuleConditions",
+            "default": {
+              "if_unassigned": false
+            }
+          },
+          "actions": {
+            "$ref": "#/components/schemas/RuleActions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "trigger",
+          "actions"
+        ],
+        "title": "AutomationRuleCreate"
+      },
+      "AutomationRuleRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/AutomationTrigger"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled"
+          },
+          "conditions": {
+            "$ref": "#/components/schemas/RuleConditions"
+          },
+          "actions": {
+            "$ref": "#/components/schemas/RuleActions"
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/UserPublic"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "name",
+          "trigger",
+          "is_enabled",
+          "conditions",
+          "actions",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AutomationRuleRead"
+      },
+      "AutomationRuleUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "trigger": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AutomationTrigger"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "is_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Enabled"
+          },
+          "conditions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleConditions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "actions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleActions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "AutomationRuleUpdate",
+        "description": "Every field optional: renaming a rule, rewriting it and switching it\noff are separate gestures and each sends only what it changed.\n\nThe trigger can be changed. It reads like a different rule afterwards, but\nrefusing would only mean people deleting and recreating -- and losing the\nrun log's link to the rule in the process."
+      },
+      "AutomationRunRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Id"
+          },
+          "rule_name": {
+            "type": "string",
+            "title": "Rule Name"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/AutomationTrigger"
+          },
+          "issue_id": {
+            "type": "integer",
+            "title": "Issue Id"
+          },
+          "issue_identifier": {
+            "type": "string",
+            "title": "Issue Identifier"
+          },
+          "issue_title": {
+            "type": "string",
+            "title": "Issue Title"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "rule_id",
+          "rule_name",
+          "trigger",
+          "issue_id",
+          "issue_identifier",
+          "issue_title",
+          "actor",
+          "summary",
+          "created_at"
+        ],
+        "title": "AutomationRunRead",
+        "description": "One line of the run log.\n\nCarries the rule's name rather than only its id, and `rule_id` is null\nonce the rule is gone -- the log outlives it on purpose. See\nAutomationRun."
+      },
+      "AutomationTrigger": {
+        "type": "string",
+        "enum": [
+          "issue_created",
+          "status_changed",
+          "issue_assigned",
+          "comment_added",
+          "cycle_completed"
+        ],
+        "title": "AutomationTrigger",
+        "description": "What makes an automation rule look at an issue.\n\nFive, and not extensible by a team. Every one of them is something\nSoftTrack already writes down as it happens, which is what keeps the\nengine to \"read the event, read the rules, apply them\" instead of a\nscheduler with a clock of its own. There is deliberately no \"every\nMonday\": a rule that fires while nobody is doing anything is a rule\nnobody remembers exists when it surprises them."
+      },
       "Body_import_jira_teams__team_id__import_jira_post": {
         "properties": {
           "file": {
@@ -4474,7 +5016,14 @@
             "title": "Body"
           },
           "author": {
-            "$ref": "#/components/schemas/UserPublic"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "attachments": {
             "items": {
@@ -5850,6 +6399,37 @@
         ],
         "title": "Page[AdminUserRead]"
       },
+      "Page_AutomationRunRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AutomationRunRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[AutomationRunRead]"
+      },
       "Page_CommentRead_": {
         "properties": {
           "items": {
@@ -6265,6 +6845,150 @@
           "created_at"
         ],
         "title": "ProjectRead"
+      },
+      "RuleActions": {
+        "properties": {
+          "set_status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Set Status Id"
+          },
+          "set_priority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssuePriority"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "set_assignee_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Set Assignee Id"
+          },
+          "add_label_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Add Label Id"
+          },
+          "set_cycle_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Set Cycle Id"
+          },
+          "move_to_active_cycle": {
+            "type": "boolean",
+            "title": "Move To Active Cycle",
+            "default": false
+          },
+          "comment_body": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment Body"
+          }
+        },
+        "type": "object",
+        "title": "RuleActions",
+        "description": "What a rule does to an issue it matched.\n\nEvery field is optional and this model asserts nothing about the\ncombination, because it is also the shape a *stored* rule is read back in\n-- and a stored rule can be left with no actions at all. Deleting a cycle\nstrips `set_cycle_id` out of the rules that filled it and switches them\noff, and a rule in that state has to survive being listed so that somebody\ncan see it and decide what it should say instead.\n\nThe two things a rule being *written* may not do -- nothing at all, and\nnaming both a cycle and the active one -- are checked on\nAutomationRuleCreate and AutomationRuleUpdate, which is where writing\nhappens."
+      },
+      "RuleConditions": {
+        "properties": {
+          "if_status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "If Status Id"
+          },
+          "if_priority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssuePriority"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "if_label_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "If Label Id"
+          },
+          "if_project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "If Project Id"
+          },
+          "if_assignee_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "If Assignee Id"
+          },
+          "if_unassigned": {
+            "type": "boolean",
+            "title": "If Unassigned",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "RuleConditions",
+        "description": "Which issues a rule acts on, out of the ones its trigger reaches.\n\nNested rather than flattened into the rule models so that \"what a rule\nmatches\" is one shape wherever it appears -- the same reason ViewFilters\nis nested, and near enough the same vocabulary. Null everywhere means\n\"every issue this trigger sees\", which is what an unconditioned rule\nshould do rather than one that matches nothing."
       },
       "SavedViewCreate": {
         "properties": {

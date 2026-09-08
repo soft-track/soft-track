@@ -12,7 +12,7 @@ export interface CommentRead {
   id: number;
   issue_id: number;
   body: string;
-  author: UserPublic;
+  author: UserPublic | null;
   attachments?: AttachmentRead[];
   created_at: string;
 }

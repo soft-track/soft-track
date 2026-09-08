@@ -160,6 +160,16 @@ def _raise(
         )
 
 
+def _own(actor: Optional[User]) -> set[int]:
+    """The actor, as a set to subtract from a recipient list.
+
+    Empty when there is no actor. Every hook below subtracts it to keep from
+    telling somebody what they just did; with nobody behind the change there
+    is nothing to keep quiet about.
+    """
+    return {actor.id} if actor is not None else set()
+
+
 def on_issue_created(session: Session, issue: Issue, actor: User) -> None:
     """Filing an issue watches it; assigning it to someone tells them.
 
@@ -203,17 +213,22 @@ def snapshot(issue: Issue) -> dict[str, object]:
 
 
 def on_issue_updated(
-    session: Session, issue: Issue, before: dict[str, object], actor: User
+    session: Session, issue: Issue, before: dict[str, object], actor: Optional[User]
 ) -> None:
     """Tell the new assignee, anyone newly named, and then the watchers.
 
     In that order, and each set subtracted from the next, so one PATCH is at
     most one notification per person.
+
+    A null `actor` means an automation rule made the change. Nobody is
+    subtracted in that case, deliberately: "nobody is notified about their own
+    action" is about a person recognising what they just did, and an issue
+    that moved on its own is the opposite of that.
     """
     assigned: set[int] = set()
     if issue.assignee_id != before.get("assignee_id") and issue.assignee_id:
         auto_watch(session, issue.id, issue.assignee_id)
-        if issue.assignee_id != actor.id:
+        if actor is None or issue.assignee_id != actor.id:
             assigned = {issue.assignee_id}
             _raise(
                 session,
@@ -232,7 +247,7 @@ def on_issue_updated(
             mentioned_user_ids(session, issue.team_id, issue.description)
             - was
             - assigned
-            - {actor.id}
+            - _own(actor)
         )
         _raise(
             session,
@@ -248,7 +263,7 @@ def on_issue_updated(
             recipients=watcher_ids(session, issue.id)
             - assigned
             - mentioned
-            - {actor.id},
+            - _own(actor),
             kind=NotificationKind.status_changed,
             issue=issue,
             actor=actor,
@@ -256,11 +271,14 @@ def on_issue_updated(
 
 
 def on_comment_created(
-    session: Session, issue: Issue, comment: Comment, actor: User
+    session: Session, issue: Issue, comment: Comment, actor: Optional[User]
 ) -> None:
-    auto_watch(session, issue.id, actor.id)
+    """A null `actor` is a comment an automation rule wrote -- see
+    `Comment.author_id`. It watches nothing and excludes nobody."""
+    if actor is not None:
+        auto_watch(session, issue.id, actor.id)
 
-    mentioned = mentioned_user_ids(session, issue.team_id, comment.body) - {actor.id}
+    mentioned = mentioned_user_ids(session, issue.team_id, comment.body) - _own(actor)
     _raise(
         session,
         recipients=mentioned,
@@ -271,7 +289,7 @@ def on_comment_created(
     )
     _raise(
         session,
-        recipients=watcher_ids(session, issue.id) - mentioned - {actor.id},
+        recipients=watcher_ids(session, issue.id) - mentioned - _own(actor),
         kind=NotificationKind.commented,
         issue=issue,
         actor=actor,

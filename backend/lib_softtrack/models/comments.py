@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 from lib_identity.models.identity import UserPublic
@@ -19,7 +21,10 @@ class CommentRead(BaseModel):
     id: int
     issue_id: int
     body: str
-    author: UserPublic
+    #: Null when an automation rule wrote it -- see `Comment.author_id`.
+    #: The client renders those as the rule that posted them rather than
+    #: as a person.
+    author: Optional[UserPublic]
     attachments: list[AttachmentRead] = []
     created_at: datetime
 

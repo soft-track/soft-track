@@ -12,6 +12,7 @@ import NotificationSettings from '@/settings/NotificationSettings'
 import ProfileSettings from '@/settings/ProfileSettings'
 import SecuritySettings from '@/settings/SecuritySettings'
 import SettingsLayout from '@/settings/SettingsLayout'
+import TeamAutomationSettings from '@/settings/TeamAutomationSettings'
 import TeamGeneralSettings from '@/settings/TeamGeneralSettings'
 import TeamMembersSettings from '@/settings/TeamMembersSettings'
 import TeamStatusSettings from '@/settings/TeamStatusSettings'
@@ -50,6 +51,10 @@ export default function App() {
             <Route path="teams/:teamKey/members" element={<TeamMembersSettings />} />
             <Route path="teams/:teamKey/general" element={<TeamGeneralSettings />} />
             <Route path="teams/:teamKey/statuses" element={<TeamStatusSettings />} />
+            <Route
+              path="teams/:teamKey/automation"
+              element={<TeamAutomationSettings />}
+            />
             <Route element={<RequireSiteAdmin />}>
               <Route path="admin/users" element={<AdminUsersPage />} />
             </Route>

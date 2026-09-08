@@ -124,6 +124,30 @@ class NotificationKind(str, enum.Enum):
     status_changed = "status_changed"
 
 
+class AutomationTrigger(str, enum.Enum):
+    """What makes an automation rule look at an issue.
+
+    Five, and not extensible by a team. Every one of them is something
+    SoftTrack already writes down as it happens, which is what keeps the
+    engine to "read the event, read the rules, apply them" instead of a
+    scheduler with a clock of its own. There is deliberately no "every
+    Monday": a rule that fires while nobody is doing anything is a rule
+    nobody remembers exists when it surprises them.
+    """
+
+    issue_created = "issue_created"
+    #: The issue moved to a different column. Conditions are read against the
+    #: status it moved *to* -- see AutomationRule.if_status_id.
+    status_changed = "status_changed"
+    #: Somebody was put on it. Not fired by an issue being *un*assigned, which
+    #: is a different event and leaves nobody to act on.
+    issue_assigned = "issue_assigned"
+    comment_added = "comment_added"
+    #: Once per issue that was in the cycle, after the unfinished work has
+    #: carried over -- see lib_softtrack/cycles.py.
+    cycle_completed = "cycle_completed"
+
+
 # ---------------------------------------------------------------------------
 # Link tables
 # ---------------------------------------------------------------------------
@@ -344,7 +368,12 @@ class IssueEvent(SQLModel, table=True):
 class Comment(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     issue_id: int = Field(foreign_key="issue.id", index=True)
-    author_id: int = Field(foreign_key="user.id")
+    #: Null when an automation rule wrote it. The alternative was to author
+    #: those as whoever happened to trip the rule, which puts words in a
+    #: person's mouth on the one kind of comment nobody wrote -- and the
+    #: comment most likely to be argued with. `Notification.actor_id` is
+    #: nullable for the same event and the same reason.
+    author_id: Optional[int] = Field(default=None, foreign_key="user.id")
     body: str
     created_at: datetime = Field(default_factory=utcnow)
 
@@ -519,3 +548,122 @@ class WorkflowStatus(SQLModel, table=True):
     position: int
     color: str = Field(default="#9b98b0")
     created_at: datetime = Field(default_factory=utcnow)
+
+
+class AutomationRule(SQLModel, table=True):
+    """One trigger, some conditions, some actions -- scoped to a team.
+
+    The shape is columns rather than a JSON blob, for the reasons SavedView
+    gives: the vocabulary is small and fixed, the API publishes it as enums,
+    and a typed frontend falls out of that where a blob would arrive in the
+    browser as `unknown`. The foreign keys also mean a rule cannot quietly
+    outlive the status or cycle it names -- deleting one of those has to
+    decide what happens to the rule, which is the conversation a blob skips.
+
+    **Conditions** are the `if_*` columns, ANDed, with null meaning "no
+    opinion". A rule with none of them set fires on every event of its
+    trigger, which is what an unconditioned rule should do. They are the same
+    vocabulary a saved view filters on, deliberately: a team that can describe
+    the issues it means in the filter bar can describe them here.
+
+    **Actions** are the rest. At least one is required -- a rule that does
+    nothing is a rule that will be read as broken -- and they are applied
+    together, in one pass.
+
+    Kept small on purpose. There is no OR, no "not", no priority ordering
+    between rules and no branching. Every one of those is a step towards a
+    workflow engine, which is the thing SoftTrack is trying not to become;
+    two rules say "or" perfectly well.
+    """
+
+    __table_args__ = (
+        UniqueConstraint("team_id", "name", name="uq_automation_rule_team_name"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    name: str
+    #: Off rather than deleted. A rule that did something surprising wants
+    #: turning off in one click while somebody works out what it should have
+    #: said, and its run log is easier to read next to the rule that wrote it.
+    is_enabled: bool = Field(default=True, index=True)
+    trigger: AutomationTrigger = Field(index=True)
+
+    # --- Conditions: all optional, ANDed, null means "no opinion" ---------
+    #: For `status_changed`, the status the issue moved *to*. For every other
+    #: trigger, the status it is in when the rule looks at it -- which is the
+    #: same column read the same way, so there is one rule to remember.
+    if_status_id: Optional[int] = Field(default=None, foreign_key="workflowstatus.id")
+    if_priority: Optional[IssuePriority] = None
+    if_label_id: Optional[int] = Field(default=None, foreign_key="label.id")
+    if_project_id: Optional[int] = Field(default=None, foreign_key="project.id")
+    if_assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    #: "Nobody is assigned", which `if_assignee_id = null` does not say -- that
+    #: means "anybody". The two are mutually exclusive; the request model
+    #: rejects setting both.
+    if_unassigned: bool = Field(default=False)
+
+    # --- Actions ---------------------------------------------------------
+    set_status_id: Optional[int] = Field(default=None, foreign_key="workflowstatus.id")
+    set_priority: Optional[IssuePriority] = None
+    set_assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    #: Added, never replacing what is there. Labels are additive everywhere
+    #: else in SoftTrack, and a rule that silently stripped the ones somebody
+    #: chose would be the worst reading of "add a label".
+    add_label_id: Optional[int] = Field(default=None, foreign_key="label.id")
+    set_cycle_id: Optional[int] = Field(default=None, foreign_key="cycle.id")
+    #: "Whichever cycle is running when this fires", as opposed to a named
+    #: one. Worth its own flag rather than leaving people to point at a cycle
+    #: by id: the useful version of "put new urgent bugs in the sprint" has to
+    #: keep meaning that a fortnight later, and a fixed id does not. Mutually
+    #: exclusive with `set_cycle_id`.
+    move_to_active_cycle: bool = Field(default=False)
+    #: Posted with no author -- see Comment.author_id.
+    comment_body: Optional[str] = None
+
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
+class AutomationRun(SQLModel, table=True):
+    """One time a rule matched an issue and changed it.
+
+    This exists so a change nobody remembers making can be traced back to the
+    rule that made it. That is the whole feature: automation without a log is
+    a tracker that edits itself and will not say why, and the first surprising
+    change costs more trust than the rules save in a year.
+
+    Only matches are recorded. A row per rule per event *considered* would
+    bury the handful of rows anybody wants under thousands nobody does.
+
+    Two things are denormalised into it, and the asymmetry is deliberate.
+    `rule_name` and the summary are copied so the log survives the rule, since
+    "which rule did this" is most often asked immediately before deleting the
+    rule that did it -- `rule_id` goes null and the row stays readable. The
+    issue is *not* denormalised: a log entry about an issue that no longer
+    exists is a link to a 404, so those rows go when the issue does, the same
+    way its notifications do.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    #: Null once the rule has been deleted. The row stays.
+    rule_id: Optional[int] = Field(
+        default=None, foreign_key="automationrule.id", index=True
+    )
+    #: The rule's name as it was when it fired, so a renamed or deleted rule
+    #: does not rewrite what the log says it did.
+    rule_name: str
+    trigger: AutomationTrigger
+    issue_id: int = Field(foreign_key="issue.id", index=True)
+    #: Who did the thing that fired the rule. Null for a cycle completing
+    #: under a scheduled process, and for anything an earlier automation
+    #: caused.
+    actor_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    #: What it actually did, one action per line, in the words the settings
+    #: page uses. Written at the time rather than derived on read: a summary
+    #: rebuilt from the rule's current columns would describe the rule as it
+    #: is now, which is exactly the question the log is not being asked.
+    summary: str
+    created_at: datetime = Field(default_factory=utcnow, index=True)

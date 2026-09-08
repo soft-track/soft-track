@@ -10,6 +10,7 @@ from app_identity.identity import router as identity_router
 from lib_identity.identity import warm_password_hasher
 from lib_softtrack.digest import digest_loop
 from app_softtrack.attachments import router as attachments_router
+from app_softtrack.automations import router as automations_router
 from app_softtrack.comments import router as comments_router
 from app_softtrack.cycles import router as cycles_router
 from app_softtrack.imports import router as imports_router
@@ -91,6 +92,7 @@ app.include_router(search_router)
 app.include_router(notifications_router)
 app.include_router(views_router)
 app.include_router(statuses_router)
+app.include_router(automations_router)
 
 
 @app.get("/health", tags=["health"])

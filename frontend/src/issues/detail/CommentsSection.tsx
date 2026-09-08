@@ -13,6 +13,7 @@ import { attachmentMarkdown } from '@/attachments/urls'
 import { Markdown, MarkdownEditor } from '@/markdown/lazy'
 import type { Mentionable } from '@/markdown/mentions'
 import { Avatar } from '@/ui/Avatar'
+import { Icon } from '@/ui/Icon'
 
 /** The comment thread and its composer. Owns the draft; nothing else needs it. */
 export function CommentsSection({
@@ -82,11 +83,15 @@ export function CommentsSection({
       <div className="mb-4 space-y-4">
         {commentsQuery.data?.items.map((comment) => (
           <div key={comment.id} className="flex gap-2.5">
-            <Avatar user={comment.author} size={26} />
+            {comment.author ? (
+              <Avatar user={comment.author} size={26} />
+            ) : (
+              <AutomationAvatar />
+            )}
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline gap-2">
                 <span className="text-sm font-medium text-neutral-900">
-                  {comment.author.full_name}
+                  {comment.author?.full_name ?? 'Automation'}
                 </span>
                 <span className="text-[11px] text-neutral-400">
                   {formatDistanceToNow(parseServerDate(comment.created_at), { addSuffix: true })}
@@ -135,6 +140,26 @@ export function CommentsSection({
           </button>
         </div>
       </form>
+    </div>
+  )
+}
+
+/**
+ * The face on a comment nobody wrote.
+ *
+ * A rule's comment has no author -- see `Comment.author_id` -- and rendering
+ * it as the person who happened to trip the rule would put words in their
+ * mouth. So it gets its own mark instead of borrowing anybody's initials, and
+ * it is deliberately not a person-shaped one.
+ */
+function AutomationAvatar() {
+  return (
+    <div
+      title="Posted by an automation rule"
+      className="flex size-[26px] shrink-0 items-center justify-center rounded-full bg-neutral-900/8 text-neutral-500"
+      style={{ boxShadow: '0 0 0 1.5px var(--glass-border)' }}
+    >
+      <Icon name="sparkle" size={13} />
     </div>
   )
 }
