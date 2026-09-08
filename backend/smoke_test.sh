@@ -6,7 +6,8 @@
 #   ./smoke_test.sh
 #
 # Exercises: register -> login -> create team -> create project ->
-# create label -> create issue -> patch issue status -> add comment ->
+# create label -> read statuses -> create issue -> patch issue status ->
+# add comment ->
 # list issues -> get issue -> attach a file -> delete the issue ->
 # edit the profile -> invite a second person -> register through the invite ->
 # change their role -> have them leave.
@@ -60,10 +61,20 @@ label_resp=$(curl -sf -X POST "$BASE_URL/teams/$TEAM_ID/labels" \
 LABEL_ID=$(echo "$label_resp" | jq -r .id)
 [ "$LABEL_ID" != "null" ] && pass "POST /teams/$TEAM_ID/labels created label $LABEL_ID" || fail "label creation failed"
 
+echo "== read the team's statuses =="
+# Statuses are rows per team now, not a fixed enum, so the columns have to be
+# looked up before anything can be filed in one. A new team is created with
+# the default workflow, which is what these names come from.
+statuses_resp=$(curl -sf "$BASE_URL/teams/$TEAM_ID/statuses" -H "$AUTH_HEADER")
+[ "$(echo "$statuses_resp" | jq 'length')" = "6" ] && pass "GET statuses returned the default workflow" || fail "expected 6 default statuses"
+TODO_ID=$(echo "$statuses_resp" | jq -r '.[] | select(.name == "Todo") | .id')
+PROGRESS_ID=$(echo "$statuses_resp" | jq -r '.[] | select(.name == "In Progress") | .id')
+[ "$(echo "$statuses_resp" | jq -r '.[] | select(.name == "In Progress") | .category')" = "started" ] && pass "In Progress is in the started category" || fail "unexpected category for In Progress"
+
 echo "== create issue =="
 issue_resp=$(curl -sf -X POST "$BASE_URL/teams/$TEAM_ID/issues" \
   -H "$AUTH_HEADER" -H "Content-Type: application/json" \
-  -d "{\"title\":\"Smoke issue\",\"description\":\"created by smoke_test.sh\",\"project_id\":$PROJECT_ID,\"status\":\"todo\",\"priority\":\"high\",\"label_ids\":[$LABEL_ID]}")
+  -d "{\"title\":\"Smoke issue\",\"description\":\"created by smoke_test.sh\",\"project_id\":$PROJECT_ID,\"status_id\":$TODO_ID,\"priority\":\"high\",\"label_ids\":[$LABEL_ID]}")
 ISSUE_ID=$(echo "$issue_resp" | jq -r .id)
 IDENTIFIER=$(echo "$issue_resp" | jq -r .identifier)
 [ "$IDENTIFIER" = "$TEAM_KEY-1" ] && pass "POST issue got identifier $IDENTIFIER" || fail "expected identifier $TEAM_KEY-1, got $IDENTIFIER"
@@ -72,8 +83,11 @@ IDENTIFIER=$(echo "$issue_resp" | jq -r .identifier)
 echo "== patch issue status =="
 patch_resp=$(curl -sf -X PATCH "$BASE_URL/issues/$ISSUE_ID" \
   -H "$AUTH_HEADER" -H "Content-Type: application/json" \
-  -d '{"status":"in_progress"}')
-[ "$(echo "$patch_resp" | jq -r .status)" = "in_progress" ] && pass "PATCH /issues/$ISSUE_ID moved to in_progress" || fail "status patch failed"
+  -d "{\"status_id\":$PROGRESS_ID}")
+# The issue carries the whole status row, not a bare string: a search hit or a
+# linked issue is drawn outside any team's board, where there is no status
+# list on hand to look an id up in.
+[ "$(echo "$patch_resp" | jq -r .status.name)" = "In Progress" ] && pass "PATCH /issues/$ISSUE_ID moved to In Progress" || fail "status patch failed"
 
 echo "== add comment =="
 comment_resp=$(curl -sf -X POST "$BASE_URL/issues/$ISSUE_ID/comments" \
@@ -82,7 +96,7 @@ comment_resp=$(curl -sf -X POST "$BASE_URL/issues/$ISSUE_ID/comments" \
 [ "$(echo "$comment_resp" | jq -r .body)" = "Looks good to me." ] && pass "POST comment stored correctly" || fail "comment body mismatch"
 
 echo "== list issues (filtered by status) =="
-list_resp=$(curl -sf "$BASE_URL/teams/$TEAM_ID/issues?status=in_progress" -H "$AUTH_HEADER")
+list_resp=$(curl -sf "$BASE_URL/teams/$TEAM_ID/issues?status_id=$PROGRESS_ID" -H "$AUTH_HEADER")
 # Collections are paginated: {"items": [...], "total": n, "limit": n, "offset": n}
 [ "$(echo "$list_resp" | jq '.items | length')" = "1" ] && pass "GET issues filtered by status returns 1 issue" || fail "status filter returned wrong count"
 [ "$(echo "$list_resp" | jq -r '.total')" = "1" ] && pass "the page reports total=1 for the filter" || fail "total did not match the filter"
