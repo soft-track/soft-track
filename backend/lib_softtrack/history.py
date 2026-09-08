@@ -52,7 +52,7 @@ def _status_category(session: Session, status_id: object) -> Optional[str]:
     return status.category.value if status else None
 
 
-def record_creation(session: Session, issue: Issue, actor: User) -> None:
+def record_creation(session: Session, issue: Issue, actor: Optional[User]) -> None:
     """Write the opening value of every tracked field.
 
     Without this an issue created straight into `in_progress` looks, to a
@@ -70,15 +70,20 @@ def record_creation(session: Session, issue: Issue, actor: User) -> None:
                 field=field,
                 old_value=None,
                 new_value=_recorded(session, attribute, value),
-                actor_id=actor.id,
+                actor_id=actor.id if actor else None,
             )
         )
 
 
 def record_changes(
-    session: Session, issue: Issue, before: dict[str, object], actor: User
+    session: Session, issue: Issue, before: dict[str, object], actor: Optional[User]
 ) -> None:
     """Write a row for each tracked field whose value actually moved.
+
+    A null `actor` means nobody did it -- an automation rule, which is the one
+    caller with no person behind it. `IssueEvent.actor_id` is nullable for
+    that case, and attributing the change to whoever tripped the rule would
+    put somebody's name on work they did not do.
 
     `before` is a snapshot taken before the update was applied. Comparing
     values rather than trusting the payload matters: a PATCH that sets status
@@ -104,7 +109,7 @@ def record_changes(
                 field=field,
                 old_value=recorded_old,
                 new_value=recorded_new,
-                actor_id=actor.id,
+                actor_id=actor.id if actor else None,
             )
         )
 

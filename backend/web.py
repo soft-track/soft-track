@@ -52,6 +52,17 @@ class Settings(BaseSettings):
     attachment_s3_region: str = ""
     attachment_s3_prefix: str = ""
 
+    # --- Integrations ---------------------------------------------------
+    #: Where *this API* is reachable from the internet, used to build the
+    #: webhook URLs shown on the integrations page. Distinct from
+    #: `app_base_url` above, which is the frontend: GitHub posts to the API
+    #: directly and never loads the browser app.
+    #:
+    #: Worth getting right rather than leaving: a webhook URL pointing at
+    #: localhost is one that silently never fires, and the failure looks like
+    #: "the integration does not work" rather than "the URL was wrong".
+    api_base_url: str = "http://localhost:8000"
+
     # --- Notifications --------------------------------------------------
     #: Where this instance is reachable, used to build the issue links in a
     #: digest email. A mail whose links point at localhost is worse than no

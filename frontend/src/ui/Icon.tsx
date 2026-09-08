@@ -34,6 +34,9 @@ export type IconName =
   | 'trash'
   | 'copy'
   | 'more'
+  | 'branch'
+  | 'pull-request'
+  | 'commit'
 
 const PATHS: Record<IconName, JSX.Element> = {
   search: (
@@ -145,6 +148,32 @@ const PATHS: Record<IconName, JSX.Element> = {
       <circle cx="5" cy="12" r="1.4" />
       <circle cx="12" cy="12" r="1.4" />
       <circle cx="19" cy="12" r="1.4" />
+    </>
+  ),
+  // The git trio, drawn on the same 24-unit grid as the rest: a node with a
+  // line through it is a commit, a line that forks is a branch, and one that
+  // rejoins is a pull request.
+  branch: (
+    <>
+      <circle cx="7" cy="6" r="2.2" />
+      <circle cx="7" cy="18" r="2.2" />
+      <circle cx="17" cy="9" r="2.2" />
+      <path d="M7 8.2v7.6M9.2 6h2.8a3 3 0 0 1 3 3" />
+    </>
+  ),
+  'pull-request': (
+    <>
+      <circle cx="7" cy="7" r="2.2" />
+      <circle cx="7" cy="18" r="2.2" />
+      <circle cx="17" cy="18" r="2.2" />
+      <path d="M7 9.2v6.6M17 15.8V11a3 3 0 0 0-3-3h-3" />
+      <path d="m13 6 -2 2 2 2" />
+    </>
+  ),
+  commit: (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M3 12h6M15 12h6" />
     </>
   ),
 }

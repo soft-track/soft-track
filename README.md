@@ -45,6 +45,8 @@ README, which show a team several cycles in.
   [saved views](#saved-views-and-shareable-filters) ·
   [search](#search) ·
   [keyboard](#keyboard-and-the-command-palette) ·
+  [automation rules](#automation-rules) ·
+  [GitHub and GitLab](#github-and-gitlab) ·
   [notifications](#notifications) ·
   [attachments](#attachments) ·
   [importing from Jira](#importing-from-jira) ·
@@ -80,6 +82,14 @@ comments. A command palette on `⌘K` and a keyboard path to most of the rest.
 task lists you can tick from the rendered view, and `@mentions` that resolve to
 teammates and notify them.
 
+**Automation.** Rules that do the repetitive bookkeeping — one trigger, any
+number of conditions, and the actions to take on an issue that matches — with a
+log of every change a rule made and what set it off.
+
+**Code.** GitHub and GitLab connect by webhook, with no access token and no
+clone. Branches, commits and pull requests attach to the issues their names
+already mention, and can drive the rules above.
+
 **People.** Email/password auth with revocable sessions, teams with admin and
 member roles, invitations by link, an optional invite-only mode, and a site
 administrator with a user directory, deactivation and password resets.
@@ -102,9 +112,8 @@ Most teams use a fraction of what Jira offers and pay for the rest in cost,
 latency, and configuration sprawl. SoftTrack aims to cover that fraction well
 and skip the rest deliberately.
 
-**Next up:** GitHub/GitLab branch and PR linking, automation rules on status
-change, sending invitations by email over SMTP, OAuth login, and a CSV export
-to match the importer.
+**Next up:** sending invitations by email over SMTP, OAuth login, and a CSV
+export to match the importer.
 
 **Later:** real-time sync so two people on the same board see each other's
 changes, granular permissions, SSO/SCIM, an audit log, and a capped set of
@@ -143,15 +152,18 @@ soft-track/
 │   ├── lib_identity/         # auth, usernames, admin + models/ (schemas)
 │   ├── app_softtrack/        # routes: teams, projects, labels, issues, comments,
 │   │                         #   attachments, cycles, reports, imports, search,
-│   │                         #   notifications, views, statuses, invites
+│   │                         #   notifications, views, statuses, invites,
+│   │                         #   automations, integrations, webhooks
 │   ├── lib_softtrack/        # one service per domain, plus:
-│   │                         #   tables.py    -- every SQLModel table
-│   │                         #   statuses.py  -- the five fixed categories
-│   │                         #   history.py   -- what a change records
-│   │                         #   storage.py   -- local or S3 attachment bytes
-│   │                         #   jira.py      -- parsing an export (no database)
-│   │                         #   importer.py  -- applying one to a team
-│   │                         #   models/      -- request/response schemas
+│   │                         #   tables.py       -- every SQLModel table
+│   │                         #   statuses.py     -- the five fixed categories
+│   │                         #   history.py      -- what a change records
+│   │                         #   storage.py      -- local or S3 attachment bytes
+│   │                         #   jira.py         -- parsing an export (no database)
+│   │                         #   importer.py     -- applying one to a team
+│   │                         #   rules.py        -- the automation engine
+│   │                         #   identifiers.py  -- finding ENG-42 in prose
+│   │                         #   models/         -- request/response schemas
 │   ├── lib_utils/            # password hashing, JWT, rate limiting, SMTP
 │   ├── alembic/              # migrations, applied on startup
 │   ├── tests/                # pytest suite (in-memory SQLite, FKs enforced)
@@ -178,8 +190,10 @@ soft-track/
     │   ├── keyboard/         # command palette, shortcut table, global handling
     │   ├── search/           # SearchResults, useDebounced
     │   ├── imports/          # ImportJiraModal
+    │   ├── automations/      # reading a rule back as the sentence it means
     │   ├── settings/         # profile, security, notifications, team roles and
-    │   │                     #   invitations, statuses, the admin user directory
+    │   │                     #   invitations, statuses, automation rules,
+    │   │                     #   repositories, the admin user directory
     │   └── ui/               # Avatar, Icon, Logo, Select, theme -- the genuinely
     │                         #   shared primitives
     └── index.css             # the design tokens and glass surfaces
@@ -339,10 +353,12 @@ which any member creates: this is the shape of everyone's board.
 default — issues are the point of the tracker, and guessing which column
 somebody's work should land in is not a decision to make on their behalf. A
 team always keeps at least one status. Saved views filtering on a deleted
-status lose that one filter rather than the whole view, and no history is
-written for the move: the work did not change state, the column under it was
-removed, and a status event per issue would put a step in every cumulative flow
-diagram on the day an admin tidied up the board.
+status lose that one filter rather than the whole view,
+[automation rules](#automation-rules) that named it follow the issues to
+whichever column those went to, and no history is written for the move: the
+work did not change state, the column under it was removed, and a status event
+per issue would put a step in every cumulative flow diagram on the day an admin
+tidied up the board.
 
 **History records categories, not statuses.** An `issueevent` row for a status
 change stores `started`, not "In Review". A chart of the past has to keep
@@ -542,6 +558,191 @@ The shortcut table lives in one array in `frontend/src/keyboard/shortcuts.ts`,
 which is both what the handlers dispatch on and what the cheatsheet renders. A
 shortcut that works but is not listed may as well not exist; a listed one that
 does not work is worse. One array makes both failures impossible.
+
+## Automation rules
+
+Repetitive bookkeeping — assigning, labelling, moving finished work — done by a
+rule instead of by hand. A rule is one **trigger**, any number of
+**conditions**, and the **actions** to take on an issue that matches. Team
+admins write them under *Settings → your team → Automation*; any member can
+read them, and the log.
+
+| Trigger | Fires when |
+| --- | --- |
+| `issue_created` | An issue is filed |
+| `status_changed` | It moves to a different column |
+| `issue_assigned` | Somebody is put on it |
+| `comment_added` | A comment is posted |
+| `cycle_completed` | A cycle finishes, once per issue that was in it |
+| `branch_created` | A branch naming it appears in a connected repository |
+| `pull_request_opened` | A pull or merge request naming it opens |
+| `pull_request_merged` | ...and merges. Closed-without-merging is not this |
+
+The last three arrive from a connected repository rather than from somebody
+using the tracker — see [GitHub and GitLab](#github-and-gitlab).
+
+Conditions are status, priority, label, project and assignee (or "nobody is
+assigned"). They are ANDed, and unset means "no opinion" — a rule with none of
+them fires on everything its trigger reaches. Actions set the status, priority,
+assignee or cycle, add a label, or post a comment; at least one is required,
+because a rule that does nothing is a rule that will be read as broken.
+
+There is deliberately no "every Monday" for rules a person triggers, no OR, no
+negation and no branching. Two rules say "or" perfectly well, and each of the
+others is a step towards the workflow engine SoftTrack is trying not to become.
+It is the same line the five status categories draw.
+
+**A rule's own changes never fire another rule.** The engine writes to the issue
+row directly rather than going back through the update endpoint, so there is no
+path from an action to a trigger — not one broken by a depth counter, one that
+does not exist. Which rules match is also decided *before* any of them run, so
+a rule cannot be set off by the rule above it in the list either. One thing
+happening is one pass; two rules that point at each other simply take turns
+being last rather than looping. Within that pass they run in the order they
+were written, and the last one to set a field wins.
+
+**Nothing is attributed to a person who did not do it.** The actor on the
+history rows, the notifications and the comments an automation writes is null,
+not whoever tripped the rule — which is why `comment.author_id` is nullable and
+why such a comment renders as *Automation* rather than borrowing somebody's
+initials. Someone dragging a card should not find their name on four changes
+they did not make. The people a rule's change concerns are still told about it:
+"nobody is notified about their own action" is about recognising what you just
+did, and an issue that moved on its own is the opposite of that.
+
+**Every automated change is logged, and the log outlives the rule.** The run
+log records what changed, on which issue, and who did the thing that set the
+rule off — and only when something actually changed, so a rule setting a status
+to the one the issue was already in writes nothing. Deleting a rule keeps its
+rows and nulls their link to it, because "which rule did this" is most often
+asked immediately before deleting the rule that did it. The log is capped per
+team and pruned as it is written; automation without a trace is a tracker that
+edits itself and will not say why, and the first surprising change costs more
+trust than the rules save in a year.
+
+Two things follow from rules being real rows rather than a blob of JSON, the
+same way they do for saved views. A rule naming another team's status is
+refused when it is saved, not left matching nothing for ever. And when
+something a rule names goes away, somebody has to decide what happens:
+**deleting a status sends the rules after the issues** to whichever column
+those moved to — clearing the reference would turn a condition into "no
+opinion" and quietly widen the rule to every issue on the team — while
+**deleting a cycle switches off the rules that filled it**, since there is
+nowhere equivalent to send them and a rule left enabled would silently do less
+than it says.
+
+## GitHub and GitLab
+
+Nothing connected an issue to the code that implements it, so the status had to
+be moved by hand — twice per issue, once when the branch went up and once when
+it merged.
+
+A team admin connects a repository under *Settings → your team →
+Repositories*. SoftTrack hands back a **payload URL** and a **secret** to paste
+into the provider's webhook form, and that is the entire setup. After that, put
+`ENG-42` in a branch name, a commit message, or a pull request's title, branch
+or description, and the branch, commit or pull request appears on issue ENG-42
+under **Development**.
+
+**Reading the link out of text people already write** is the whole trick.
+Nobody fills in a "related issue" field on a pull request; everybody types the
+identifier into the branch name, because that is how they find the issue again.
+`backend/lib_softtrack/identifiers.py` is where that scan lives, kept pure so it
+can be tested on strings — it is the piece most likely to be wrong in a way
+nothing notices, since a scanner that is slightly too eager links a pull request
+to an issue nobody meant and a rule then moves it to Done.
+
+It is deliberately eager, and `utf-8` is genuinely shaped like an identifier —
+`UTF` is a perfectly good team key, and no pattern can tell the two apart. What
+makes that harmless is that a candidate becomes a link only if a team on this
+instance is actually keyed that way *and* has an issue with that number.
+
+**Moving the issue is an automation rule, not a second settings page.** Three
+triggers arrive from a connected repository — a branch appears, a pull request
+opens, a pull request merges — and they go through the same engine as
+everything else, so they get conditions, the same actions, and the run log for
+free. A pair of settings ("which status means in review, which means shipped")
+would have been a second engine for "when X happens, change the issue", and one
+of them would have grown conditions eventually.
+
+Closed-without-merging is not the merge trigger. `closed` covers both shipping
+the work and giving up on it, and a rule moving the issue to Done on the second
+would be wrong about the one thing it is for.
+
+### What it does not do
+
+SoftTrack **never clones your code, never calls the provider's API, and holds
+no access token.** Everything it knows arrives in a webhook it can verify. That
+is the difference between an integration you set up with a URL and a shared
+secret, and one that needs an OAuth app and a `repo`-scoped token against every
+repository in the org — and it is why this is a feature a self-hosted tracker
+can reasonably have.
+
+The cost is that a commit pushed while the webhook was misconfigured is not
+backfilled later. There is nothing to backfill it *from*.
+
+### Security
+
+Two independent things have to be right for a delivery to be accepted, and
+neither is enough alone: an unguessable token in the path says *which*
+connection it is for, and a signature says the delivery is genuine. Knowing the
+URL does not let you forge a payload; knowing the secret does not tell you
+where to send one.
+
+GitHub HMACs the request body with the secret (`X-Hub-Signature-256`), so a
+payload edited in flight no longer matches. GitLab sends the secret back
+verbatim (`X-Gitlab-Token`), which is weaker — a bearer secret on the wire,
+depending entirely on TLS — and is what GitLab offers. Both are compared with
+`hmac.compare_digest`; a `==` on a signature is a timing oracle, and what it
+leaks is the ability to move somebody's issues.
+
+**A repository is connected by one team, and text arriving from it resolves
+only to that team's issues.** A commit message in one team's repository cannot
+touch another team's board, however deliberately it names it. A repository two
+teams both work in is connected twice, with a webhook each; the alternative is
+one team's CI able to reach another team's issues.
+
+The webhook secret is stored readable, and that is a real cost worth naming:
+anyone who can read the `repository` table can forge deliveries, which means
+moving issues on that team's board. It cannot be hashed — an HMAC needs the key
+itself, not a digest of it — so the honest options were this or a key
+management service SoftTrack does not have and would not be self-hostable
+without. It is scoped to one repository on one team, and rotating it is one
+button. Rotating moves the URL with the secret, so there is no half-rotated
+state to reason about.
+
+A delivery about a different repository than the connection is for is refused
+even with a valid signature, because a webhook pasted onto the wrong repository
+would otherwise link that project's commits to this team's issues. Failed
+verifications are rate-limited per address; successful ones are not, so a busy
+repository is never throttled for being busy.
+
+### Redelivery
+
+Webhooks are at-least-once, and both providers put a "redeliver" button in
+their UI that people press while debugging exactly this. So links are upserted
+on `(repository, kind, external id, issue)` and the automation triggers fire on
+**transitions** — a branch row appearing, a pull request becoming merged —
+rather than on a payload arriving. Press redeliver ten times and the second
+through tenth change nothing, so no rule runs and no comment is posted ten
+times.
+
+A pull request SoftTrack sees for the first time *already merged* — a webhook
+added after the fact — counts as the merge, not the opening. Reporting it as
+"opened" would move the issue to In Review and leave it there.
+
+### Setting it up
+
+`API_BASE_URL` is where GitHub or GitLab reaches the API, and it is what the
+payload URL on the settings page is built from. It is distinct from
+`APP_BASE_URL`, which is the browser app: the provider posts to the API
+directly and never loads the frontend. The default is right for a laptop and
+wrong for anywhere a provider has to route to — and a webhook URL pointing at
+localhost is one that silently never fires.
+
+The Repositories page shows when each connection last received a verified
+delivery, which is the one thing that tells "set up correctly" apart from "set
+up and never fired".
 
 ## Notifications
 
