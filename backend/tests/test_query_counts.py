@@ -12,6 +12,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
 from lib_softtrack.issues import list_issues
+from lib_softtrack.statuses import create_default_statuses
 from lib_softtrack.tables import (
     Issue,
     IssueLabelLink,
@@ -62,11 +63,17 @@ def _seeded_engine(issue_count: int):
         for label in labels:
             session.refresh(label)
 
+        # This fixture writes rows directly rather than going through the
+        # API, so it has to create the workflow `create_team` would have.
+        statuses = create_default_statuses(session, team.id)
+        session.commit()
+
         for i in range(issue_count):
             issue = Issue(
                 team_id=team.id,
                 number=i + 1,
                 title=f"issue {i}",
+                status_id=statuses[i % len(statuses)].id,
                 creator_id=users[i % 5].id,
                 assignee_id=users[(i + 1) % 5].id,
             )
@@ -105,6 +112,12 @@ def test_listing_issues_does_not_scale_queries_with_page_size():
     )
 
 
+#: Raised from 10 to 11 when statuses became rows (soft-track#22): a page of
+#: issues now loads the status rows it points at. One query for the page, not
+#: one per issue -- which is what the test above actually guards.
+_CEILING = 11
+
+
 @pytest.mark.parametrize("issue_count", [5, 60])
 def test_the_issue_list_stays_under_a_query_ceiling(issue_count):
-    assert _queries_to_list(issue_count) <= 10
+    assert _queries_to_list(issue_count) <= _CEILING

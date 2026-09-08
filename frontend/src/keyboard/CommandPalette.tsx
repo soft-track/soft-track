@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { IssueRead } from '@/api/generated/models'
-import { STATUS_META } from '@/issues/issueMeta'
 import { Icon } from '@/ui/Icon'
 
 export type Command = {
@@ -48,7 +47,7 @@ export function CommandPalette({
       .map((issue) => ({
         id: `issue-${issue.id}`,
         label: issue.title,
-        hint: `${issue.identifier} · ${STATUS_META[issue.status].label}`,
+        hint: `${issue.identifier} · ${issue.status.name}`,
         group: 'Issues',
         run: () => onOpenIssue(issue),
       }))

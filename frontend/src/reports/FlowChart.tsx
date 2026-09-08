@@ -1,7 +1,7 @@
 import { format, parseISO } from 'date-fns'
 
-import type { CumulativeFlow, IssueStatus } from '@/api/generated/models'
-import { STATUS_META } from '@/issues/issueMeta'
+import type { CumulativeFlow, StatusCategory } from '@/api/generated/models'
+import { CATEGORY_META } from '@/issues/issueMeta'
 import { Figure, Key, Tooltip, XAxis, YAxis } from '@/reports/Chart'
 import { PAD, useCrosshair } from '@/reports/chartGeometry'
 import { FLOW_ORDER, FLOW_RAMP, INK } from '@/reports/chartTokens'
@@ -22,7 +22,7 @@ export function FlowChart({ data }: { data: CumulativeFlow }) {
   const { index, onMove, onLeave } = useCrosshair(days.length)
 
   const totals = days.map((day) =>
-    FLOW_ORDER.reduce((sum, status) => sum + (day.counts[status as IssueStatus] ?? 0), 0),
+    FLOW_ORDER.reduce((sum, status) => sum + (day.counts[status as StatusCategory] ?? 0), 0),
   )
   const max = Math.max(1, ...totals)
   const inner = W - PAD.left - PAD.right
@@ -36,12 +36,12 @@ export function FlowChart({ data }: { data: CumulativeFlow }) {
   const bands = FLOW_ORDER.map((status, order) => {
     const below = days.map((day) =>
       FLOW_ORDER.slice(0, order).reduce(
-        (sum, s) => sum + (day.counts[s as IssueStatus] ?? 0),
+        (sum, s) => sum + (day.counts[s as StatusCategory] ?? 0),
         0,
       ),
     )
     const above = days.map(
-      (day, i) => below[i] + (day.counts[status as IssueStatus] ?? 0),
+      (day, i) => below[i] + (day.counts[status as StatusCategory] ?? 0),
     )
     const top = above.map((value, i) => `${i === 0 ? 'M' : 'L'}${x(i)},${y(value)}`)
     // Back along the lower edge, right to left, to close the band.
@@ -68,7 +68,7 @@ export function FlowChart({ data }: { data: CumulativeFlow }) {
             <Key
               key={status}
               colour={FLOW_RAMP[status]}
-              label={STATUS_META[status as IssueStatus].label}
+              label={CATEGORY_META[status as StatusCategory].label}
             />
           ))}
         </>
@@ -116,11 +116,11 @@ export function FlowChart({ data }: { data: CumulativeFlow }) {
             width={W}
             title={format(parseISO(hovered.day), 'EEE d MMM')}
             rows={FLOW_ORDER.filter(
-              (status) => (hovered.counts[status as IssueStatus] ?? 0) > 0,
+              (status) => (hovered.counts[status as StatusCategory] ?? 0) > 0,
             ).map((status) => ({
               colour: FLOW_RAMP[status],
-              label: STATUS_META[status as IssueStatus].label,
-              value: String(hovered.counts[status as IssueStatus] ?? 0),
+              label: CATEGORY_META[status as StatusCategory].label,
+              value: String(hovered.counts[status as StatusCategory] ?? 0),
             }))}
           />
         )}

@@ -73,11 +73,12 @@ def test_pagination_composes_with_filters(many_issues, client):
     team = many_issues
     client.post(
         f"/teams/{team['team']['id']}/issues",
-        json={"title": "done one", "status": "done"},
+        json={"title": "done one", "status_id": team["status_ids"]["Done"]},
         headers=team["headers"],
     )
     body = client.get(
-        f"/teams/{team['team']['id']}/issues?status=done&limit=5",
+        f"/teams/{team['team']['id']}/issues"
+        f"?status_id={team['status_ids']['Done']}&limit=5",
         headers=team["headers"],
     ).json()
     assert body["total"] == 1

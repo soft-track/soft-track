@@ -27,22 +27,28 @@ from lib_softtrack.models.reports import (
     Velocity,
     VelocityCycle,
 )
+from lib_softtrack.statuses import in_category
 from lib_softtrack.tables import (
     Cycle,
     CycleState,
     Issue,
     IssueEvent,
     IssueEventField,
-    IssueStatus,
+    StatusCategory,
     User,
 )
 from lib_softtrack.teams import get_team_or_404, require_team_member
 
-#: Statuses that take an issue off the burndown.
-RESOLVED = (IssueStatus.done, IssueStatus.cancelled)
+#: Categories that take an issue off the burndown.
+#:
+#: Every report here reads categories rather than statuses, and the history it
+#: replays stores categories too -- see `_status_category` in history.py. That
+#: is what keeps a chart of the past meaningful after a team renames a column,
+#: adds one, or deletes one and moves the work.
+RESOLVED = (StatusCategory.done, StatusCategory.cancelled)
 #: Only `done` counts as delivered. Cancelled work left the cycle without
 #: being finished, so counting it as completed would flatter every chart.
-DELIVERED = IssueStatus.done
+DELIVERED = StatusCategory.done
 
 
 def _end_of(day: date) -> datetime:
@@ -169,7 +175,7 @@ def burndown(session: Session, current_user: User, cycle_id: int) -> Burndown:
             total += estimate
             if status == DELIVERED.value:
                 completed += estimate
-            elif status not in {s.value for s in RESOLVED}:
+            elif status not in {category.value for category in RESOLVED}:
                 remaining += estimate
                 issues_remaining += 1
 
@@ -236,7 +242,15 @@ def velocity(
     rows: list[VelocityCycle] = []
     for cycle in completed_cycles:
         issues = session.exec(select(Issue).where(Issue.cycle_id == cycle.id)).all()
-        delivered = [issue for issue in issues if issue.status is DELIVERED]
+        delivered_ids = {
+            issue_id
+            for issue_id in session.exec(
+                select(Issue.id).where(
+                    Issue.cycle_id == cycle.id, in_category(DELIVERED)
+                )
+            ).all()
+        }
+        delivered = [issue for issue in issues if issue.id in delivered_ids]
 
         # Committed is the scope at the moment the cycle started, not what it
         # ended with. A team that finished everything it added late did not
@@ -310,7 +324,7 @@ def cumulative_flow(
     points: list[FlowPoint] = []
     for day in _days_between(start, today):
         moment = _end_of(day)
-        counts = {status: 0 for status in IssueStatus}
+        counts = {category: 0 for category in StatusCategory}
         for issue_id in issue_ids:
             value = status_at.value_at(issue_id, moment)
             if value is None:
@@ -318,7 +332,7 @@ def cumulative_flow(
                 # not exist yet. Counting it in `backlog` would draw work that
                 # had not been created.
                 continue
-            counts[IssueStatus(value)] += 1
+            counts[StatusCategory(value)] += 1
         points.append(FlowPoint(day=day, counts=counts))
 
     return CumulativeFlow(days=points)
@@ -346,7 +360,7 @@ def created_vs_resolved(
             open_before_window += 1
 
     resolved_on: dict[date, int] = defaultdict(int)
-    resolved_values = {status.value for status in RESOLVED}
+    resolved_values = {category.value for category in RESOLVED}
     for event in session.exec(
         select(IssueEvent).where(
             IssueEvent.team_id == team_id,

@@ -1503,20 +1503,22 @@
             }
           },
           {
-            "name": "status",
+            "name": "status_id",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/IssueStatus"
+                  "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Status"
-            }
+              "description": "Only issues in this status.",
+              "title": "Status Id"
+            },
+            "description": "Only issues in this status."
           },
           {
             "name": "priority",
@@ -3714,6 +3716,293 @@
         }
       }
     },
+    "/teams/{team_id}/statuses": {
+      "get": {
+        "tags": [
+          "statuses"
+        ],
+        "summary": "List Statuses",
+        "description": "The team's board columns, in order. Any member may read them.",
+        "operationId": "list_statuses_teams__team_id__statuses_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StatusRead"
+                  },
+                  "title": "Response List Statuses Teams  Team Id  Statuses Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "statuses"
+        ],
+        "summary": "Create Status",
+        "description": "Add a column. Team admins only.\n\nUnlike labels and projects, which any member creates: this is the shape of\neverybody's board and the vocabulary every report is written in.",
+        "operationId": "create_status_teams__team_id__statuses_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/statuses/order": {
+      "put": {
+        "tags": [
+          "statuses"
+        ],
+        "summary": "Reorder Statuses",
+        "description": "Set the board order. Takes every status at once -- see StatusOrder.\n\nDeclared above `/statuses/{status_id}` so \"order\" is never read as an id.",
+        "operationId": "reorder_statuses_teams__team_id__statuses_order_put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusOrder"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StatusRead"
+                  },
+                  "title": "Response Reorder Statuses Teams  Team Id  Statuses Order Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statuses/{status_id}": {
+      "patch": {
+        "tags": [
+          "statuses"
+        ],
+        "summary": "Update Status",
+        "operationId": "update_status_statuses__status_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Status Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "statuses"
+        ],
+        "summary": "Delete Status",
+        "description": "Remove a column, moving its issues to another one.\n\nReturns the remaining statuses, because deleting one is the only operation\nwhose result the board cannot work out for itself -- the issues moved.",
+        "operationId": "delete_status_statuses__status_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Status Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusDelete"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StatusRead"
+                  },
+                  "title": "Response Delete Status Statuses  Status Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -4534,9 +4823,6 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/StatusLoad"
             },
-            "propertyNames": {
-              "$ref": "#/components/schemas/IssueStatus"
-            },
             "type": "object",
             "title": "By Status"
           },
@@ -4570,7 +4856,7 @@
               "type": "integer"
             },
             "propertyNames": {
-              "$ref": "#/components/schemas/IssueStatus"
+              "$ref": "#/components/schemas/StatusCategory"
             },
             "type": "object",
             "title": "Counts"
@@ -4830,9 +5116,16 @@
             ],
             "title": "Project Id"
           },
-          "status": {
-            "$ref": "#/components/schemas/IssueStatus",
-            "default": "backlog"
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
           },
           "priority": {
             "$ref": "#/components/schemas/IssuePriority",
@@ -5063,7 +5356,7 @@
             "title": "Description"
           },
           "status": {
-            "$ref": "#/components/schemas/IssueStatus"
+            "$ref": "#/components/schemas/StatusRead"
           },
           "priority": {
             "$ref": "#/components/schemas/IssuePriority"
@@ -5173,18 +5466,6 @@
         ],
         "title": "IssueRead"
       },
-      "IssueStatus": {
-        "type": "string",
-        "enum": [
-          "backlog",
-          "todo",
-          "in_progress",
-          "in_review",
-          "done",
-          "cancelled"
-        ],
-        "title": "IssueStatus"
-      },
       "IssueUpdate": {
         "properties": {
           "title": {
@@ -5220,15 +5501,16 @@
             ],
             "title": "Project Id"
           },
-          "status": {
+          "status_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IssueStatus"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Status Id"
           },
           "priority": {
             "anyOf": [
@@ -5372,7 +5654,7 @@
             "title": "Title"
           },
           "status": {
-            "$ref": "#/components/schemas/IssueStatus"
+            "$ref": "#/components/schemas/StatusRead"
           },
           "priority": {
             "$ref": "#/components/schemas/IssuePriority"
@@ -5781,7 +6063,7 @@
             "title": "Description"
           },
           "status": {
-            "$ref": "#/components/schemas/IssueStatus"
+            "$ref": "#/components/schemas/StatusCategory"
           },
           "priority": {
             "$ref": "#/components/schemas/IssuePriority"
@@ -6198,7 +6480,7 @@
             "title": "Title"
           },
           "status": {
-            "$ref": "#/components/schemas/IssueStatus"
+            "$ref": "#/components/schemas/StatusRead"
           },
           "priority": {
             "$ref": "#/components/schemas/IssuePriority"
@@ -6235,6 +6517,56 @@
         ],
         "title": "SearchHit"
       },
+      "StatusCategory": {
+        "type": "string",
+        "enum": [
+          "backlog",
+          "unstarted",
+          "started",
+          "done",
+          "cancelled"
+        ],
+        "title": "StatusCategory",
+        "description": "What a status *means*, as opposed to what a team calls it.\n\nFixed on purpose, and the reason per-team statuses are safe to allow at\nall. Everything that has to reason about work -- burndown, velocity, \"is\nthis cycle finished\", \"3 of 5 sub-issues done\", whether a blocker still\nblocks -- asks the category, never the name. A team can add \"Blocked\" or\n\"QA\" without any of that having an opinion about it.\n\nUnconstrained workflow states are how Jira became Jira. These five are the\nline."
+      },
+      "StatusCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "category": {
+            "$ref": "#/components/schemas/StatusCategory"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color",
+            "default": "#9b98b0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "category"
+        ],
+        "title": "StatusCreate"
+      },
+      "StatusDelete": {
+        "properties": {
+          "move_to_id": {
+            "type": "integer",
+            "title": "Move To Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "move_to_id"
+        ],
+        "title": "StatusDelete",
+        "description": "Where the issues in the status being deleted should go.\n\nRequired rather than defaulted. Issues are the point of the tracker, and\nguessing which column somebody's work should land in is not a decision to\nmake on their behalf."
+      },
       "StatusLoad": {
         "properties": {
           "points": {
@@ -6258,6 +6590,101 @@
         ],
         "title": "StatusLoad",
         "description": "The work sitting in one board column."
+      },
+      "StatusOrder": {
+        "properties": {
+          "status_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Status Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status_ids"
+        ],
+        "title": "StatusOrder",
+        "description": "The team's statuses, in the order the board should show them.\n\nEvery id at once rather than one move at a time: two people dragging\ncolumns would otherwise interleave into an order neither of them chose."
+      },
+      "StatusRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "$ref": "#/components/schemas/StatusCategory"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "name",
+          "category",
+          "position",
+          "color"
+        ],
+        "title": "StatusRead",
+        "description": "A team's status, as everything that renders an issue receives it.\n\nEmbedded in IssueRead rather than referenced by id: a search hit and a\nlinked issue are both drawn outside any team's board, where there is no\nstatus list on hand to look the id up in."
+      },
+      "StatusUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatusCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "title": "StatusUpdate"
       },
       "TeamCreate": {
         "properties": {
@@ -6814,15 +7241,16 @@
       },
       "ViewFilters": {
         "properties": {
-          "status": {
+          "status_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IssueStatus"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Status Id"
           },
           "priority": {
             "anyOf": [

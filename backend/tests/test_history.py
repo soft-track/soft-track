@@ -28,12 +28,14 @@ def make_issue(client, team, title="Work", **fields):
 def test_creating_an_issue_records_its_opening_status(client, team, session):
     """Otherwise an issue created straight into in_progress looks, to a
     cumulative flow diagram, like it was never anywhere."""
-    issue = make_issue(client, team, status="in_progress")
+    issue = make_issue(client, team, status_id=team["status_ids"]["In Progress"])
 
     opening = events(session, issue["id"], IssueEventField.status)
     assert len(opening) == 1
     assert opening[0].old_value is None
-    assert opening[0].new_value == "in_progress"
+    # The category, not the column. History outlives the workflow that
+    # produced it -- see `_status_category` in lib_softtrack/history.py.
+    assert opening[0].new_value == "started"
 
 
 def test_creation_records_the_estimate_and_cycle_when_given(client, team, session):
@@ -59,7 +61,9 @@ def test_creation_records_nothing_for_fields_left_unset(client, team, session):
 def test_a_status_change_is_recorded_with_both_ends(client, team, session):
     issue = make_issue(client, team)
     client.patch(
-        f"/issues/{issue['id']}", json={"status": "done"}, headers=team["headers"]
+        f"/issues/{issue['id']}",
+        json={"status_id": team["status_ids"]["Done"]},
+        headers=team["headers"],
     )
 
     change = events(session, issue["id"], IssueEventField.status)[-1]
@@ -69,11 +73,13 @@ def test_a_status_change_is_recorded_with_both_ends(client, team, session):
 def test_setting_a_field_to_what_it_already_was_records_nothing(client, team, session):
     """A PATCH that changes nothing is not a change. Counting it would put a
     phantom step in every cumulative flow diagram."""
-    issue = make_issue(client, team, status="todo")
+    issue = make_issue(client, team, status_id=team["status_ids"]["Todo"])
     before = len(events(session, issue["id"]))
 
     client.patch(
-        f"/issues/{issue['id']}", json={"status": "todo"}, headers=team["headers"]
+        f"/issues/{issue['id']}",
+        json={"status_id": team["status_ids"]["Todo"]},
+        headers=team["headers"],
     )
     assert len(events(session, issue["id"])) == before
 
@@ -148,7 +154,9 @@ def test_events_carry_the_team_so_reports_can_filter_without_a_join(
 def test_deleting_an_issue_takes_its_history_with_it(client, team, session):
     issue = make_issue(client, team)
     client.patch(
-        f"/issues/{issue['id']}", json={"status": "done"}, headers=team["headers"]
+        f"/issues/{issue['id']}",
+        json={"status_id": team["status_ids"]["Done"]},
+        headers=team["headers"],
     )
     assert events(session, issue["id"])
 

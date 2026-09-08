@@ -2,13 +2,14 @@ import { useListCyclesTeamsTeamIdCyclesGet } from '@/api/generated/endpoints/cyc
 import { useGetEstimateSummaryTeamsTeamIdEstimatesGet } from '@/api/generated/endpoints/issues/issues'
 import { useListLabelsTeamsTeamIdLabelsGet } from '@/api/generated/endpoints/labels/labels'
 import { useListProjectsTeamsTeamIdProjectsGet } from '@/api/generated/endpoints/projects/projects'
+import { useListStatusesTeamsTeamIdStatusesGet } from '@/api/generated/endpoints/statuses/statuses'
 import { useListTeamMembersTeamsTeamIdMembersGet } from '@/api/generated/endpoints/teams/teams'
 import type { TeamRead } from '@/api/generated/models'
 
 /**
  * Everything the board needs to know about a team besides its issues.
  *
- * Five queries that used to sit inline at the top of the board page. They
+ * Six queries that used to sit inline at the top of the board page. They
  * are all enabled together, all keyed on the team, and all consumed through
  * TeamContext, so they belong together.
  */
@@ -20,6 +21,9 @@ export function useTeamData(team: TeamRead | undefined) {
   const labels = useListLabelsTeamsTeamIdLabelsGet(id, options)
   const members = useListTeamMembersTeamsTeamIdMembersGet(id, options)
   const cycles = useListCyclesTeamsTeamIdCyclesGet(id, options)
+  // The team's board columns. Everything that renders a status reads these
+  // rather than a fixed list -- see issue #22.
+  const statuses = useListStatusesTeamsTeamIdStatusesGet(id, options)
   // Rolled up on the server rather than summed from the issue list: that
   // list is one page, so a client-side total would be the total of whatever
   // happened to be loaded.
@@ -30,6 +34,7 @@ export function useTeamData(team: TeamRead | undefined) {
     labels: labels.data ?? [],
     members: members.data ?? [],
     cycles: cycles.data ?? [],
+    statuses: statuses.data ?? [],
     estimates: estimates.data,
   }
 }

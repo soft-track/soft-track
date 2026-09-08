@@ -3,15 +3,12 @@ import type { ReactNode } from 'react'
 import {
   type IssuePriority,
   type IssueRead,
-  type IssueStatus,
   type IssueUpdate,
 } from '@/api/generated/models'
 import {
   ESTIMATE_SCALE,
   PRIORITY_META,
   PRIORITY_ORDER,
-  STATUS_META,
-  STATUS_ORDER,
 } from '@/issues/issueMeta'
 import { activeMembers } from '@/team/members'
 import { useTeamContext } from '@/team/TeamContext'
@@ -34,7 +31,7 @@ export function IssueProperties({
   currentLabelIds: Set<number>
   onToggleLabel: (labelId: number) => void
 }) {
-  const { members, labels, cycles } = useTeamContext()
+  const { members, labels, cycles, statuses } = useTeamContext()
 
   return (
     <div className="well mt-5 grid gap-x-4 gap-y-3 rounded-card p-3 sm:grid-cols-2">
@@ -42,12 +39,12 @@ export function IssueProperties({
         <Select
           dense
           data-field="status"
-          value={issue.status}
-          onChange={(e) => patch({ status: e.target.value as IssueStatus })}
+          value={issue.status.id}
+          onChange={(e) => patch({ status_id: Number(e.target.value) })}
         >
-          {STATUS_ORDER.map((s) => (
-            <option key={s} value={s}>
-              {STATUS_META[s].label}
+          {statuses.map((status) => (
+            <option key={status.id} value={status.id}>
+              {status.name}
             </option>
           ))}
         </Select>

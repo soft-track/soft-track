@@ -14,6 +14,7 @@ from sqlmodel import Session, select
 
 from lib_softtrack.history import record_creation
 from lib_softtrack.jira import JiraParseError, parse
+from lib_softtrack import statuses as statuses_service
 from lib_softtrack.models.imports import ImportReport, ParsedIssue, UserMatch
 from lib_softtrack.tables import (
     Comment,
@@ -272,7 +273,7 @@ def _create_issue(
         number=number,
         title=parsed_issue.title[:500],
         description=parsed_issue.description,
-        status=parsed_issue.status,
+        status_id=_status_for(session, team.id, parsed_issue).id,
         priority=parsed_issue.priority,
         assignee_id=assignee.id if assignee else None,
         creator_id=creator.id,
@@ -340,8 +341,8 @@ def _warnings(report: ImportReport, parsed: list[ParsedIssue]) -> list[str]:
 
     if report.unmapped_statuses:
         warnings.append(
-            "These statuses have no equivalent and will land in Backlog: "
-            + ", ".join(report.unmapped_statuses)
+            "These statuses have no equivalent and will land in the first "
+            "column: " + ", ".join(report.unmapped_statuses)
         )
 
     without_key = sum(1 for issue in parsed if not issue.external_key)
@@ -359,3 +360,33 @@ def _warnings(report: ImportReport, parsed: list[ParsedIssue]) -> list[str]:
         )
 
     return warnings
+
+
+def _status_for(session: Session, team_id: int, parsed_issue: ParsedIssue):
+    """Which of the team's columns an imported issue lands in.
+
+    Three tries, in order of how much they preserve:
+
+    1. **A column the team already calls the same thing.** A team whose board
+       has "In Review" should get Jira's "In Review" issues in it, not merged
+       into whatever else happens to be `started`. This is what makes the
+       importer worth teaching about custom statuses at all.
+    2. **The first column meaning the same thing.** The parser mapped the Jira
+       status to a category; any column in that category is a defensible home.
+    3. **The team's first column.** An unmapped status is still an issue, and
+       losing it would be far worse than putting it in the wrong place. The
+       report names these so they can be fixed in bulk.
+    """
+    statuses = statuses_service.team_statuses(session, team_id)
+
+    if parsed_issue.raw_status:
+        wanted = parsed_issue.raw_status.strip().casefold()
+        for status in statuses:
+            if status.name.casefold() == wanted:
+                return status
+
+    for status in statuses:
+        if status.category is parsed_issue.status:
+            return status
+
+    return statuses[0]

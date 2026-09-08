@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import type { CycleRead, LabelRead, ProjectRead, TeamMemberRead } from '@/api/generated/models'
+import type {
+  CycleRead,
+  LabelRead,
+  ProjectRead,
+  StatusRead,
+  TeamMemberRead,
+} from '@/api/generated/models'
 import { describeFilters, summarise, withoutFilter } from '@/board/filterLabels'
 import { NO_FILTERS } from '@/board/filters'
 
@@ -11,12 +17,15 @@ const lookups = {
   labels: [{ id: 3, team_id: 1, name: 'Bug', color: '#f00' }] as LabelRead[],
   projects: [{ id: 2, team_id: 1, name: 'Platform' }] as unknown as ProjectRead[],
   cycles: [{ id: 5, display_name: 'Cycle 5' }] as unknown as CycleRead[],
+  statuses: [
+    { id: 9, name: 'In Review', category: 'started' },
+  ] as unknown as StatusRead[],
 }
 
 describe('describeFilters', () => {
   it('names every active filter and leaves the rest out', () => {
     const chips = describeFilters(
-      { status: 'in_review', priority: 'urgent', assignee: 7, labelId: 3, projectId: 2, cycleId: 5 },
+      { statusId: 9, priority: 'urgent', assignee: 7, labelId: 3, projectId: 2, cycleId: 5 },
       lookups,
     )
     expect(chips.map((c) => `${c.field}: ${c.value}`)).toEqual([
@@ -41,9 +50,16 @@ describe('describeFilters', () => {
   it('still renders a chip for something that has since been deleted', () => {
     // The filter is still narrowing the board, so it has to stay visible and
     // dismissible -- dropping the chip would leave a board filtered for no
-    // reason anyone can see.
-    const chips = describeFilters({ ...NO_FILTERS, labelId: 999, cycleId: 888 }, lookups)
-    expect(chips.map((c) => c.value)).toEqual(['Deleted label', 'Deleted cycle'])
+    // reason anyone can see. A status can be deleted now too.
+    const chips = describeFilters(
+      { ...NO_FILTERS, statusId: 777, labelId: 999, cycleId: 888 },
+      lookups,
+    )
+    expect(chips.map((c) => c.value)).toEqual([
+      'Deleted status',
+      'Deleted label',
+      'Deleted cycle',
+    ])
   })
 
   it('works before the team data has loaded', () => {

@@ -9,15 +9,21 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core'
 
-import type { EstimateSummary, IssueRead, IssueStatus } from '@/api/generated/models'
+import type { EstimateSummary, IssueRead, StatusRead } from '@/api/generated/models'
 import { IssueCard } from '@/issues/IssueCard'
-import { STATUS_META, STATUS_ORDER } from '@/issues/issueMeta'
+import { useTeamContext } from '@/team/TeamContext'
 import { Icon } from '@/ui/Icon'
 
-type Load = EstimateSummary['by_status'][IssueStatus]
+type Load = EstimateSummary['by_status'][string]
 
-/** Columns start folded to a rail. Cancelled work is rarely what a board is for. */
-const COLLAPSED_BY_DEFAULT: IssueStatus[] = ['cancelled']
+/**
+ * Columns in these categories start folded to a rail. Cancelled work is rarely
+ * what a board is for.
+ *
+ * By category rather than by name, because the columns are the team's own now
+ * and there is no "cancelled" to hardcode -- a team may call it "Won't do".
+ */
+const COLLAPSED_CATEGORIES: string[] = ['cancelled']
 
 function Column({
   status,
@@ -25,26 +31,25 @@ function Column({
   load,
   onCollapse,
 }: {
-  status: IssueStatus
+  status: StatusRead
   issues: IssueRead[]
   load?: Load
   onCollapse: () => void
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: status })
-  const meta = STATUS_META[status]
+  const { setNodeRef, isOver } = useDroppable({ id: status.id })
 
   return (
     <section
       ref={setNodeRef}
-      data-column={status}
-      aria-label={meta.label}
+      data-column={status.id}
+      aria-label={status.name}
       className={`group/column glass-subtle flex w-[82vw] shrink-0 snap-center flex-col rounded-panel transition-[box-shadow,background-color] duration-150 sm:w-80 lg:w-auto lg:min-w-[208px] lg:max-w-[400px] lg:flex-1 lg:shrink lg:snap-none ${
         isOver ? 'bg-brand-500/10 ring-2 ring-brand-400/60' : ''
       }`}
     >
       <header className="flex items-center gap-2 px-3 pb-2 pt-3">
-        <span className="dot" style={{ ['--dot' as string]: meta.color }} aria-hidden="true" />
-        <h2 className="text-[13px] font-semibold text-neutral-800">{meta.label}</h2>
+        <span className="dot" style={{ ['--dot' as string]: status.color }} aria-hidden="true" />
+        <h2 className="text-[13px] font-semibold text-neutral-800">{status.name}</h2>
         <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
           {issues.length}
         </span>
@@ -68,7 +73,7 @@ function Column({
         <button
           type="button"
           onClick={onCollapse}
-          aria-label={`Collapse ${meta.label}`}
+          aria-label={`Collapse ${status.name}`}
           title="Collapse column"
           className={`btn btn-ghost btn-icon btn-xs text-neutral-400 opacity-0 transition group-hover/column:opacity-100 focus-visible:opacity-100 ${
             load && load.points > 0 ? '' : 'ml-auto'
@@ -98,32 +103,31 @@ function CollapsedColumn({
   count,
   onExpand,
 }: {
-  status: IssueStatus
+  status: StatusRead
   count: number
   onExpand: () => void
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: status })
-  const meta = STATUS_META[status]
+  const { setNodeRef, isOver } = useDroppable({ id: status.id })
 
   return (
     <button
       ref={setNodeRef}
       type="button"
       onClick={onExpand}
-      data-column={status}
+      data-column={status.id}
       data-collapsed="true"
-      aria-label={`Expand ${meta.label}, ${count} issues`}
-      title={`${meta.label} · ${count}`}
+      aria-label={`Expand ${status.name}, ${count} issues`}
+      title={`${status.name} · ${count}`}
       className={`glass-subtle flex w-11 shrink-0 flex-col items-center gap-3 rounded-panel py-3 transition-[box-shadow,background-color] hover:bg-neutral-900/5 ${
         isOver ? 'bg-brand-500/10 ring-2 ring-brand-400/60' : ''
       }`}
     >
-      <span className="dot" style={{ ['--dot' as string]: meta.color }} aria-hidden="true" />
+      <span className="dot" style={{ ['--dot' as string]: status.color }} aria-hidden="true" />
       <span
         className="text-[12px] font-semibold text-neutral-700"
         style={{ writingMode: 'vertical-rl' }}
       >
-        {meta.label}
+        {status.name}
       </span>
       <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
         {count}
@@ -138,22 +142,31 @@ export function KanbanBoard({
   estimates,
 }: {
   issues: IssueRead[]
-  onStatusChange: (issueId: number, status: IssueStatus) => void
+  onStatusChange: (issueId: number, status: StatusRead) => void
   /** Server-side point rollups. Undefined while they load. */
   estimates?: EstimateSummary
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   )
-  const [collapsed, setCollapsed] = useState<Set<IssueStatus>>(
-    () => new Set(COLLAPSED_BY_DEFAULT),
-  )
+  const { statuses } = useTeamContext()
+  const [collapsed, setCollapsed] = useState<Set<number> | null>(null)
+  // Seeded from the team's own columns on first render rather than in state's
+  // initialiser: the statuses arrive with a query, so on the first pass there
+  // is nothing to fold yet.
+  const folded =
+    collapsed ??
+    new Set(
+      statuses
+        .filter((status) => COLLAPSED_CATEGORIES.includes(status.category))
+        .map((status) => status.id),
+    )
 
-  const setCollapsedFor = (status: IssueStatus, value: boolean) =>
-    setCollapsed((current) => {
-      const next = new Set(current)
-      if (value) next.add(status)
-      else next.delete(status)
+  const setCollapsedFor = (status: StatusRead, value: boolean) =>
+    setCollapsed(() => {
+      const next = new Set(folded)
+      if (value) next.add(status.id)
+      else next.delete(status.id)
       return next
     })
 
@@ -208,10 +221,10 @@ export function KanbanBoard({
     const { active, over } = event
     if (!over) return
     const issueId = Number(active.id)
-    const newStatus = over.id as IssueStatus
+    const target = statuses.find((status) => status.id === Number(over.id))
     const issue = issues.find((i) => i.id === issueId)
-    if (issue && issue.status !== newStatus) {
-      onStatusChange(issueId, newStatus)
+    if (issue && target && issue.status.id !== target.id) {
+      onStatusChange(issueId, target)
     }
   }
 
@@ -221,21 +234,21 @@ export function KanbanBoard({
         className="scroll-thin flex h-full snap-x snap-mandatory gap-3 overflow-x-auto pb-1 lg:snap-none"
         onKeyDown={moveFocus}
       >
-        {STATUS_ORDER.map((status) => {
-          const inColumn = issues.filter((issue) => issue.status === status)
-          return collapsed.has(status) ? (
+        {statuses.map((status) => {
+          const inColumn = issues.filter((issue) => issue.status.id === status.id)
+          return folded.has(status.id) ? (
             <CollapsedColumn
-              key={status}
+              key={status.id}
               status={status}
               count={inColumn.length}
               onExpand={() => setCollapsedFor(status, false)}
             />
           ) : (
             <Column
-              key={status}
+              key={status.id}
               status={status}
               issues={inColumn}
-              load={estimates?.by_status?.[status]}
+              load={estimates?.by_status?.[String(status.id)]}
               onCollapse={() => setCollapsedFor(status, true)}
             />
           )

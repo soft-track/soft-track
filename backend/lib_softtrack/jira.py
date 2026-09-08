@@ -23,34 +23,39 @@ from datetime import datetime
 from typing import Any, Iterable, Optional
 
 from lib_softtrack.models.imports import ParsedComment, ParsedIssue
-from lib_softtrack.tables import IssuePriority, IssueStatus
+from lib_softtrack.tables import IssuePriority, StatusCategory
 
-#: Jira's default workflow statuses, plus the ones teams most often add.
-#: Matched case-insensitively after stripping, so "In Progress" and
-#: "in progress" both land.
-STATUS_MAP: dict[str, IssueStatus] = {
-    "backlog": IssueStatus.backlog,
-    "to do": IssueStatus.todo,
-    "todo": IssueStatus.todo,
-    "open": IssueStatus.todo,
-    "selected for development": IssueStatus.todo,
-    "in progress": IssueStatus.in_progress,
-    "in development": IssueStatus.in_progress,
-    "in review": IssueStatus.in_review,
-    "code review": IssueStatus.in_review,
-    "in qa": IssueStatus.in_review,
-    "review": IssueStatus.in_review,
-    "done": IssueStatus.done,
-    "closed": IssueStatus.done,
-    "resolved": IssueStatus.done,
-    "complete": IssueStatus.done,
-    "completed": IssueStatus.done,
-    "cancelled": IssueStatus.cancelled,
-    "canceled": IssueStatus.cancelled,
-    "won't do": IssueStatus.cancelled,
-    "wont do": IssueStatus.cancelled,
-    "duplicate": IssueStatus.cancelled,
-    "rejected": IssueStatus.cancelled,
+#: Jira's default workflow statuses, plus the ones teams most often add,
+#: mapped to what they *mean*. Matched case-insensitively after stripping, so
+#: "In Progress" and "in progress" both land.
+#:
+#: Categories rather than statuses, because the parser has no team in front of
+#: it and therefore no board to name a column on. The importer resolves one of
+#: these to an actual column, preferring a status the team already calls by
+#: the same name -- see `_status_for` in importer.py.
+STATUS_MAP: dict[str, StatusCategory] = {
+    "backlog": StatusCategory.backlog,
+    "to do": StatusCategory.unstarted,
+    "todo": StatusCategory.unstarted,
+    "open": StatusCategory.unstarted,
+    "selected for development": StatusCategory.unstarted,
+    "in progress": StatusCategory.started,
+    "in development": StatusCategory.started,
+    "in review": StatusCategory.started,
+    "code review": StatusCategory.started,
+    "in qa": StatusCategory.started,
+    "review": StatusCategory.started,
+    "done": StatusCategory.done,
+    "closed": StatusCategory.done,
+    "resolved": StatusCategory.done,
+    "complete": StatusCategory.done,
+    "completed": StatusCategory.done,
+    "cancelled": StatusCategory.cancelled,
+    "canceled": StatusCategory.cancelled,
+    "won't do": StatusCategory.cancelled,
+    "wont do": StatusCategory.cancelled,
+    "duplicate": StatusCategory.cancelled,
+    "rejected": StatusCategory.cancelled,
 }
 
 PRIORITY_MAP: dict[str, IssuePriority] = {
@@ -71,7 +76,7 @@ PRIORITY_MAP: dict[str, IssuePriority] = {
 #: An unmapped status becomes backlog rather than being dropped. Losing an
 #: issue is far worse than putting it in the wrong column, and the report says
 #: which statuses fell back so they can be fixed in bulk afterwards.
-STATUS_FALLBACK = IssueStatus.backlog
+STATUS_FALLBACK = StatusCategory.backlog
 PRIORITY_FALLBACK = IssuePriority.no_priority
 
 _LABEL_HEADERS = {"labels", "label"}
@@ -82,7 +87,7 @@ class JiraParseError(ValueError):
     """The file could not be read as a Jira export."""
 
 
-def map_status(raw: Optional[str]) -> tuple[IssueStatus, Optional[str]]:
+def map_status(raw: Optional[str]) -> tuple[StatusCategory, Optional[str]]:
     """Return the mapped status, and the raw value if it had no mapping."""
     if not raw:
         return STATUS_FALLBACK, None

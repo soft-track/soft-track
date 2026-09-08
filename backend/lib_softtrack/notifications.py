@@ -195,7 +195,7 @@ def on_issue_created(session: Session, issue: Issue, actor: User) -> None:
 #: before an update the way `history.snapshot` is, and for the same reason:
 #: a PATCH that sets a field to what it already held changed nothing, and
 #: notifying on the payload rather than on the diff would say otherwise.
-WATCHED_FIELDS = ("assignee_id", "status", "description")
+WATCHED_FIELDS = ("assignee_id", "status_id", "description")
 
 
 def snapshot(issue: Issue) -> dict[str, object]:
@@ -242,7 +242,7 @@ def on_issue_updated(
             actor=actor,
         )
 
-    if issue.status != before.get("status"):
+    if issue.status_id != before.get("status_id"):
         _raise(
             session,
             recipients=watcher_ids(session, issue.id)

@@ -69,7 +69,10 @@ def test_status_priority_and_assignee_are_carried_over(client, team):
     upload(client, team, dry_run=False)
     issue = next(i for i in issues(client, team) if i["title"] == "Fix login")
 
-    assert issue["status"] == "in_progress"
+    # The importer prefers a column the team already calls the same
+    # thing, so "In Progress" lands in "In Progress" rather than merging
+    # into whatever else is `started`.
+    assert issue["status"]["name"] == "In Progress"
     assert issue["priority"] == "high"
     assert issue["assignee"]["email"] == "demo@softtrack.dev"
 
@@ -197,8 +200,8 @@ def test_unmapped_statuses_are_listed_so_they_can_be_fixed_in_bulk(client, team)
     report = upload(client, team, csv).json()
 
     assert report["unmapped_statuses"] == ["Awaiting Legal Sign-off"]
-    assert any("land in Backlog" in warning for warning in report["warnings"])
-    assert report["preview"][0]["status"] == "backlog"
+    assert any("land in the first column" in warning for warning in report["warnings"])
+    assert report["preview"][0]["status"] == "backlog"  # the category, pre-import
 
 
 def test_the_preview_shows_what_is_coming(client, team):

@@ -147,7 +147,9 @@ def test_unfinished_issues_carry_into_the_next_cycle(client, team):
     first = make_cycle(client, team)
     second = make_cycle(client, team, start=START + timedelta(days=14))
 
-    done = make_issue(client, team, "Done", cycle_id=first["id"], status="done")
+    done = make_issue(
+        client, team, "Done", cycle_id=first["id"], status_id=team["status_ids"]["Done"]
+    )
     unfinished = make_issue(client, team, "Not done", cycle_id=first["id"])
 
     result = client.post(
@@ -190,12 +192,18 @@ def test_carry_over_skips_completed_cycles(client, team):
     assert _cycle_of(client, team, issue) == third["id"]
 
 
-@pytest.mark.parametrize("status", ["done", "cancelled"])
+@pytest.mark.parametrize("status", ["Done", "Cancelled"])
 def test_finished_work_does_not_carry(client, team, status):
     """Cancelled counts as finished -- dragging it forward forever is wrong."""
     first = make_cycle(client, team)
     make_cycle(client, team, start=START + timedelta(days=14))
-    make_issue(client, team, "Finished", cycle_id=first["id"], status=status)
+    make_issue(
+        client,
+        team,
+        "Finished",
+        cycle_id=first["id"],
+        status_id=team["status_ids"][status],
+    )
 
     result = client.post(
         f"/cycles/{first['id']}/complete", headers=team["headers"]
@@ -222,8 +230,22 @@ def test_deleting_a_cycle_returns_its_issues_to_the_backlog(client, team):
 def test_progress_counts_issues_and_points_separately(client, team):
     """They disagree, and the disagreement is the interesting part."""
     cycle = make_cycle(client, team)
-    make_issue(client, team, "A", cycle_id=cycle["id"], estimate=1, status="done")
-    make_issue(client, team, "B", cycle_id=cycle["id"], estimate=1, status="done")
+    make_issue(
+        client,
+        team,
+        "A",
+        cycle_id=cycle["id"],
+        estimate=1,
+        status_id=team["status_ids"]["Done"],
+    )
+    make_issue(
+        client,
+        team,
+        "B",
+        cycle_id=cycle["id"],
+        estimate=1,
+        status_id=team["status_ids"]["Done"],
+    )
     make_issue(client, team, "C", cycle_id=cycle["id"], estimate=8)
 
     progress = get_cycle(client, team, cycle)["progress"]
@@ -236,7 +258,14 @@ def test_progress_counts_issues_and_points_separately(client, team):
 def test_cancelled_work_is_not_counted_as_completed(client, team):
     """It was not delivered, so counting it would flatter the burndown."""
     cycle = make_cycle(client, team)
-    make_issue(client, team, "A", cycle_id=cycle["id"], estimate=5, status="cancelled")
+    make_issue(
+        client,
+        team,
+        "A",
+        cycle_id=cycle["id"],
+        estimate=5,
+        status_id=team["status_ids"]["Cancelled"],
+    )
 
     progress = get_cycle(client, team, cycle)["progress"]
     assert progress["issues_completed"] == 0

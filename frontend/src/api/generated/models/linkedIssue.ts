@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { IssuePriority } from './issuePriority';
-import type { IssueStatus } from './issueStatus';
+import type { StatusRead } from './statusRead';
 
 /**
  * Just enough of the other issue to render a row and click through.
@@ -15,6 +15,6 @@ export interface LinkedIssue {
   id: number;
   identifier: string;
   title: string;
-  status: IssueStatus;
+  status: StatusRead;
   priority: IssuePriority;
 }

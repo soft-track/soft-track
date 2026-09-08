@@ -1,10 +1,10 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import type { IssuePriority, IssueStatus } from '@/api/generated/models'
+import type { IssuePriority } from '@/api/generated/models'
 import { describeFilters, withoutFilter } from '@/board/filterLabels'
 import { activeCount, type BoardFilters, isEmpty, NO_FILTERS } from '@/board/filters'
-import { PRIORITY_META, PRIORITY_ORDER, STATUS_META, STATUS_ORDER } from '@/issues/issueMeta'
+import { PRIORITY_META, PRIORITY_ORDER } from '@/issues/issueMeta'
 import { activeMembers } from '@/team/members'
 import { useTeamContext } from '@/team/TeamContext'
 import { Icon } from '@/ui/Icon'
@@ -29,7 +29,7 @@ export function FilterBar({
   /** False while the current filters already match a saved view. */
   canSave: boolean
 }) {
-  const { members, labels, projects, cycles } = useTeamContext()
+  const { members, labels, projects, cycles, statuses } = useTeamContext()
   const [open, setOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [anchor, setAnchor] = useState<DOMRect | null>(null)
@@ -45,7 +45,7 @@ export function FilterBar({
   }, [open])
 
   const count = activeCount(filters)
-  const chips = describeFilters(filters, { members, labels, projects, cycles })
+  const chips = describeFilters(filters, { members, labels, projects, cycles, statuses })
   const set = <K extends keyof BoardFilters>(key: K, value: BoardFilters[K]) =>
     onChange({ ...filters, [key]: value })
 
@@ -129,13 +129,15 @@ export function FilterBar({
                   <Select
                     block
                     dense
-                    value={filters.status ?? ''}
-                    onChange={(e) => set('status', (e.target.value || null) as IssueStatus | null)}
+                    value={filters.statusId ?? ''}
+                    onChange={(e) =>
+                      set('statusId', e.target.value ? Number(e.target.value) : null)
+                    }
                   >
                     <option value="">Any status</option>
-                    {STATUS_ORDER.map((status) => (
-                      <option key={status} value={status}>
-                        {STATUS_META[status].label}
+                    {statuses.map((status) => (
+                      <option key={status.id} value={status.id}>
+                        {status.name}
                       </option>
                     ))}
                   </Select>

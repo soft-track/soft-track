@@ -3,7 +3,8 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from lib_softtrack.tables import IssueLinkType, IssuePriority, IssueStatus
+from lib_softtrack.models.statuses import StatusRead
+from lib_softtrack.tables import IssueLinkType, IssuePriority
 
 
 class IssueLinkCreate(BaseModel):
@@ -17,7 +18,7 @@ class LinkedIssue(BaseModel):
     id: int
     identifier: str
     title: str
-    status: IssueStatus
+    status: StatusRead
     priority: IssuePriority
 
 

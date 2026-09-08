@@ -16,13 +16,17 @@ from fastapi import HTTPException
 from sqlalchemy import case, func
 from sqlmodel import Session, select
 
-from lib_softtrack.tables import Issue, IssueStatus
+from lib_softtrack.statuses import in_category
+from lib_softtrack.tables import Issue, StatusCategory
 
 #: A cancelled child is neither done nor outstanding, so it is left out of the
 #: count entirely. "3 of 5 done" should not become unreachable because two of
 #: the five were cancelled.
-_DONE = IssueStatus.done
-_EXCLUDED_FROM_PROGRESS = IssueStatus.cancelled
+#:
+#: Categories, not statuses: a team may have several columns that mean done,
+#: and may call them anything.
+_DONE = StatusCategory.done
+_EXCLUDED_FROM_PROGRESS = StatusCategory.cancelled
 
 
 def validate_parent(session: Session, issue: Issue, parent_id: int) -> Issue:
@@ -89,13 +93,13 @@ def child_progress(
     if not parent_ids:
         return {}
 
-    done_when = case((Issue.status == _DONE, 1), else_=0)
+    done_when = case((in_category(_DONE), 1), else_=0)
 
     rows = session.exec(
         select(Issue.parent_id, func.count(), func.coalesce(func.sum(done_when), 0))
         .where(
             Issue.parent_id.in_(parent_ids),
-            Issue.status != _EXCLUDED_FROM_PROGRESS,
+            ~in_category(_EXCLUDED_FROM_PROGRESS),
         )
         .group_by(Issue.parent_id)
     ).all()

@@ -2,13 +2,11 @@ import { useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 
 import { useCreateIssueTeamsTeamIdIssuesPost } from '@/api/generated/endpoints/issues/issues'
-import { IssuePriority, IssueStatus } from '@/api/generated/models'
+import { IssuePriority } from '@/api/generated/models'
 import {
   ESTIMATE_SCALE,
   PRIORITY_META,
   PRIORITY_ORDER,
-  STATUS_META,
-  STATUS_ORDER,
 } from '@/issues/issueMeta'
 import { MarkdownEditor } from '@/markdown/lazy'
 import { activeMembers } from '@/team/members'
@@ -17,14 +15,17 @@ import { Icon } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
 
 export function NewIssueModal({ onClose }: { onClose: () => void }) {
-  const { team, projects, labels, members, cycles } = useTeamContext()
+  const { team, projects, labels, members, cycles, statuses } = useTeamContext()
   const queryClient = useQueryClient()
   const createIssue = useCreateIssueTeamsTeamIdIssuesPost()
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [projectId, setProjectId] = useState<string>('')
-  const [status, setStatus] = useState<IssueStatus>(IssueStatus.backlog)
+  // Empty means "whatever the team's leftmost column is", which the API
+  // decides. Seeding from `statuses[0]` here would race the query that
+  // loads them.
+  const [statusId, setStatusId] = useState<string>('')
   const [priority, setPriority] = useState<IssuePriority>(IssuePriority.no_priority)
   const [estimate, setEstimate] = useState<(typeof ESTIMATE_SCALE)[number] | null>(null)
   const [cycleId, setCycleId] = useState<string>('')
@@ -47,7 +48,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
           title: title.trim(),
           description: description.trim() || undefined,
           project_id: projectId ? Number(projectId) : undefined,
-          status,
+          status_id: statusId ? Number(statusId) : undefined,
           priority,
           estimate,
           cycle_id: cycleId ? Number(cycleId) : undefined,
@@ -114,10 +115,15 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
           )}
 
           <div className="flex flex-wrap gap-2 px-5 py-3">
-            <Select dense value={status} onChange={(e) => setStatus(e.target.value as IssueStatus)} aria-label="Status">
-              {STATUS_ORDER.map((s) => (
-                <option key={s} value={s}>
-                  {STATUS_META[s].label}
+            <Select
+              dense
+              value={statusId}
+              onChange={(e) => setStatusId(e.target.value)}
+              aria-label="Status"
+            >
+              {statuses.map((status) => (
+                <option key={status.id} value={status.id}>
+                  {status.name}
                 </option>
               ))}
             </Select>

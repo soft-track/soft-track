@@ -49,6 +49,11 @@ export default function SettingsLayout() {
           icon: 'users' as IconName,
         },
         {
+          to: `/settings/teams/${team.key}/statuses`,
+          label: 'Statuses',
+          icon: 'board' as IconName,
+        },
+        {
           to: `/settings/teams/${team.key}/general`,
           label: 'General',
           icon: 'settings' as IconName,

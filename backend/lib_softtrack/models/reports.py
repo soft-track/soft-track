@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from lib_softtrack.tables import IssueStatus
+from lib_softtrack.tables import StatusCategory
 
 
 class BurndownPoint(BaseModel):
@@ -57,7 +57,11 @@ class Velocity(BaseModel):
 
 class FlowPoint(BaseModel):
     day: date
-    counts: dict[IssueStatus, int]
+    #: Keyed by category, not by status. A chart of the past has to keep
+    #: meaning something after a team renames, merges or deletes a
+    #: column, and the five categories are the only vocabulary that
+    #: survives that. See IssueEvent in tables.py.
+    counts: dict[StatusCategory, int]
 
 
 class CumulativeFlow(BaseModel):

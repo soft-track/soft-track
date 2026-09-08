@@ -15,7 +15,7 @@ from lib_softtrack.jira import (
     parse,
     parse_csv,
 )
-from lib_softtrack.tables import IssuePriority, IssueStatus
+from lib_softtrack.tables import IssuePriority, StatusCategory
 
 # --- the repeated-column trap -------------------------------------------
 
@@ -70,7 +70,7 @@ def test_core_fields_are_read():
     assert issue.external_key == "PROJ-7"
     assert issue.title == "Fix login"
     assert issue.description == "It breaks"
-    assert issue.status is IssueStatus.in_progress
+    assert issue.status is StatusCategory.started
     assert issue.priority is IssuePriority.high
     assert issue.assignee == "ada@x.com"
     assert issue.reporter == "grace@x.com"
@@ -78,7 +78,7 @@ def test_core_fields_are_read():
 
 
 def test_headers_are_matched_case_insensitively():
-    assert parse_csv("SUMMARY,STATUS\nFix,Done\n")[0].status is IssueStatus.done
+    assert parse_csv("SUMMARY,STATUS\nFix,Done\n")[0].status is StatusCategory.done
 
 
 def test_an_epic_becomes_a_project():
@@ -101,11 +101,11 @@ def test_blank_rows_are_skipped():
 @pytest.mark.parametrize(
     "raw,expected",
     [
-        ("To Do", IssueStatus.todo),
-        ("in progress", IssueStatus.in_progress),
-        ("Code Review", IssueStatus.in_review),
-        ("Done", IssueStatus.done),
-        ("Won't Do", IssueStatus.cancelled),
+        ("To Do", StatusCategory.unstarted),
+        ("in progress", StatusCategory.started),
+        ("Code Review", StatusCategory.started),
+        ("Done", StatusCategory.done),
+        ("Won't Do", StatusCategory.cancelled),
     ],
 )
 def test_known_statuses_map(raw, expected):
@@ -115,7 +115,7 @@ def test_known_statuses_map(raw, expected):
 def test_an_unknown_status_falls_back_and_is_reported():
     """Losing an issue is far worse than putting it in the wrong column."""
     status, unmapped = map_status("Awaiting Legal Sign-off")
-    assert status is IssueStatus.backlog
+    assert status is StatusCategory.backlog
     assert unmapped == "Awaiting Legal Sign-off"
 
 
@@ -162,7 +162,7 @@ def test_json_issues_are_read():
     )
     issue = parse("export.json", payload)[0]
     assert issue.external_key == "PROJ-9"
-    assert issue.status is IssueStatus.done
+    assert issue.status is StatusCategory.done
     assert issue.assignee == "ada@x.com"
     assert issue.labels == ["backend", "urgent"]
 

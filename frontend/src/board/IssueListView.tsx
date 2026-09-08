@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import type { IssueRead } from '@/api/generated/models'
 import { EstimateBadge } from '@/issues/EstimateBadge'
 import { PriorityIcon } from '@/issues/PriorityIcon'
-import { STATUS_META } from '@/issues/issueMeta'
 import { useTeamContext } from '@/team/TeamContext'
 import { Avatar } from '@/ui/Avatar'
 
@@ -23,7 +22,7 @@ export function IssueListView({ issues }: { issues: IssueRead[] }) {
     <div className="glass scroll-thin h-full overflow-y-auto rounded-panel">
       <ul className="divide-y divide-neutral-900/8">
         {issues.map((issue) => {
-          const status = STATUS_META[issue.status]
+          const status = issue.status
           return (
             <li key={issue.id}>
               <button
@@ -38,7 +37,7 @@ export function IssueListView({ issues }: { issues: IssueRead[] }) {
                 <span
                   className="dot"
                   style={{ ['--dot' as string]: status.color }}
-                  title={status.label}
+                  title={status.name}
                 />
                 <span className="min-w-0 flex-1 truncate font-medium text-neutral-900">
                   {issue.title}

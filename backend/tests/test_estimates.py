@@ -102,37 +102,36 @@ def test_an_empty_team_reports_zeroes_for_every_column(client, team):
     data = summary(client, team)
     assert data["total_points"] == 0
     assert data["total_issues"] == 0
-    # All six columns are present so the board never has to guard on a key.
+    # Every one of the team's own columns is present so the board never has
+    # to guard on a key. Keyed by status id, because the columns are rows now
+    # and two teams can both have a "Done".
     assert set(data["by_status"]) == {
-        "backlog",
-        "todo",
-        "in_progress",
-        "in_review",
-        "done",
-        "cancelled",
+        str(status_id) for status_id in team["status_ids"].values()
     }
     assert all(bucket["points"] == 0 for bucket in data["by_status"].values())
 
 
 def test_points_are_summed_per_column(client, team):
-    make_issue(client, team, estimate=3, status="todo")
-    make_issue(client, team, estimate=5, status="todo")
-    make_issue(client, team, estimate=8, status="done")
+    make_issue(client, team, estimate=3, status_id=team["status_ids"]["Todo"])
+    make_issue(client, team, estimate=5, status_id=team["status_ids"]["Todo"])
+    make_issue(client, team, estimate=8, status_id=team["status_ids"]["Done"])
 
     data = summary(client, team)
-    assert data["by_status"]["todo"]["points"] == 8
-    assert data["by_status"]["todo"]["issue_count"] == 2
-    assert data["by_status"]["done"]["points"] == 8
+    todo = str(team["status_ids"]["Todo"])
+    done = str(team["status_ids"]["Done"])
+    assert data["by_status"][todo]["points"] == 8
+    assert data["by_status"][todo]["issue_count"] == 2
+    assert data["by_status"][done]["points"] == 8
     assert data["total_points"] == 16
     assert data["total_issues"] == 3
 
 
 def test_unsized_issues_are_counted_not_treated_as_zero(client, team):
-    make_issue(client, team, estimate=5, status="todo")
-    make_issue(client, team, status="todo")
+    make_issue(client, team, estimate=5, status_id=team["status_ids"]["Todo"])
+    make_issue(client, team, status_id=team["status_ids"]["Todo"])
 
     data = summary(client, team)
-    assert data["by_status"]["todo"] == {
+    assert data["by_status"][str(team["status_ids"]["Todo"])] == {
         "points": 5,
         "issue_count": 2,
         "unestimated_count": 1,

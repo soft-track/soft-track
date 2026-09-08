@@ -213,7 +213,14 @@ def test_velocity_lists_completed_cycles_only(client, team):
 def test_velocity_counts_delivered_points(client, team):
     start = datetime.now(timezone.utc) - 20 * DAY
     cycle = make_cycle(client, team, start, days=5)
-    make_issue(client, team, "A", estimate=5, cycle_id=cycle["id"], status="done")
+    make_issue(
+        client,
+        team,
+        "A",
+        estimate=5,
+        cycle_id=cycle["id"],
+        status_id=team["status_ids"]["Done"],
+    )
     make_issue(client, team, "B", estimate=3, cycle_id=cycle["id"])
     client.post(f"/cycles/{cycle['id']}/complete", headers=team["headers"])
 
@@ -243,11 +250,13 @@ def test_cumulative_flow_counts_each_status_per_day(client, team, session):
         event.created_at = datetime.now(timezone.utc) - 3 * DAY
         session.add(event)
     session.commit()
+    # The history stores categories, so this is what a move into any column
+    # the team calls "started" looks like.
     at(
         session,
         issue,
         IssueEventField.status,
-        "in_progress",
+        "started",
         "backlog",
         datetime.now(timezone.utc) - DAY,
     )
@@ -258,7 +267,7 @@ def test_cumulative_flow_counts_each_status_per_day(client, team, session):
         headers=team["headers"],
     ).json()["days"]
     assert days[0]["counts"]["backlog"] == 1
-    assert days[-1]["counts"]["in_progress"] == 1
+    assert days[-1]["counts"]["started"] == 1
     assert days[-1]["counts"]["backlog"] == 0
 
 
@@ -281,11 +290,12 @@ def test_every_status_appears_even_when_empty(client, team):
         params={"days": 1},
         headers=team["headers"],
     ).json()["days"][0]["counts"]
+    # The five fixed categories, not the team's columns: a chart of the past
+    # has to keep meaning something after the board is rearranged.
     assert set(counts) == {
         "backlog",
-        "todo",
-        "in_progress",
-        "in_review",
+        "unstarted",
+        "started",
         "done",
         "cancelled",
     }

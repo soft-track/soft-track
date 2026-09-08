@@ -2,14 +2,15 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from lib_softtrack.tables import IssuePriority, IssueStatus
+from lib_softtrack.models.statuses import StatusRead
+from lib_softtrack.tables import IssuePriority
 
 
 class SearchHit(BaseModel):
     id: int
     identifier: str
     title: str
-    status: IssueStatus
+    status: StatusRead
     priority: IssuePriority
     team_id: int
     updated_at: datetime

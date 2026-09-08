@@ -12,6 +12,7 @@ from lib_identity.models.identity import UserPublic
 from lib_softtrack import attachments as attachments_service
 from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate, ParentRef
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
+from lib_softtrack.models.statuses import StatusRead
 from lib_softtrack.history import record_changes, record_creation, snapshot
 from lib_softtrack import notifications as notifications_service
 from lib_softtrack.links import open_blocker_counts
@@ -22,11 +23,12 @@ from lib_softtrack.tables import (
     IssueLabelLink,
     IssueLink,
     IssuePriority,
-    IssueStatus,
     Label,
     Team,
     User,
+    WorkflowStatus,
 )
+from lib_softtrack.statuses import default_status, resolve_for_team
 from lib_softtrack.storage import Storage
 from lib_softtrack.subissues import child_progress, detach_children, validate_parent
 from lib_softtrack.teams import get_team_or_404, require_team_member
@@ -66,7 +68,7 @@ def issue_to_read(issue: Issue, session: Session) -> IssueRead:
         identifier=f"{team.key}-{issue.number}",
         title=issue.title,
         description=issue.description,
-        status=issue.status,
+        status=StatusRead.model_validate(session.get(WorkflowStatus, issue.status_id)),
         priority=issue.priority,
         assignee=UserPublic.model_validate(assignee) if assignee else None,
         estimate=issue.estimate,
@@ -129,6 +131,14 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
         team.id: team
         for team in session.exec(select(Team).where(Team.id.in_(team_ids))).all()
     }
+    statuses = {
+        status.id: status
+        for status in session.exec(
+            select(WorkflowStatus).where(
+                WorkflowStatus.id.in_({issue.status_id for issue in issues})
+            )
+        ).all()
+    }
 
     return [
         IssueRead(
@@ -139,7 +149,7 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
             identifier=f"{teams[issue.team_id].key}-{issue.number}",
             title=issue.title,
             description=issue.description,
-            status=issue.status,
+            status=StatusRead.model_validate(statuses[issue.status_id]),
             priority=issue.priority,
             assignee=(
                 UserPublic.model_validate(users[issue.assignee_id])
@@ -206,7 +216,10 @@ def create_issue(
         number=number,
         title=payload.title,
         description=payload.description,
-        status=payload.status,
+        status_id=(
+            resolve_for_team(session, team_id, payload.status_id)
+            or default_status(session, team_id)
+        ).id,
         priority=payload.priority,
         assignee_id=payload.assignee_id,
         estimate=payload.estimate,
@@ -237,7 +250,7 @@ def list_issues(
     current_user: User,
     team_id: int,
     project_id: Optional[int] = None,
-    status: Optional[IssueStatus] = None,
+    status_id: Optional[int] = None,
     priority: Optional[IssuePriority] = None,
     assignee_id: Optional[int] = None,
     unassigned: bool = False,
@@ -261,8 +274,8 @@ def list_issues(
     filters = [Issue.team_id == team_id]
     if project_id is not None:
         filters.append(Issue.project_id == project_id)
-    if status is not None:
-        filters.append(Issue.status == status)
+    if status_id is not None:
+        filters.append(Issue.status_id == status_id)
     if priority is not None:
         filters.append(Issue.priority == priority)
     if unassigned:
@@ -324,6 +337,10 @@ def update_issue(
     # overlap on `status`.
     watched_before = notifications_service.snapshot(issue)
     data = payload.model_dump(exclude_unset=True, exclude={"label_ids"})
+    if data.get("status_id") is not None:
+        # Moving an issue into another team's column would take it off its own
+        # board entirely.
+        resolve_for_team(session, issue.team_id, data["status_id"])
     if data.get("parent_id") is not None:
         # Validate before assigning, so a rejected parent leaves the issue
         # exactly as it was rather than half-updated.

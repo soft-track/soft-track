@@ -12,7 +12,7 @@ from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate
 from lib_softtrack.models.links import IssueLinkCreate, IssueLinkRead, IssueLinks
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
 from lib_softtrack.storage import Storage, get_storage
-from lib_softtrack.tables import IssuePriority, IssueStatus, User
+from lib_softtrack.tables import IssuePriority, User
 from web import get_session
 
 router = APIRouter(tags=["issues"])
@@ -32,7 +32,7 @@ def create_issue(
 def list_issues(
     team_id: int,
     project_id: Optional[int] = None,
-    status: Optional[IssueStatus] = None,
+    status_id: Optional[int] = Query(None, description="Only issues in this status."),
     priority: Optional[IssuePriority] = None,
     assignee_id: Optional[int] = None,
     unassigned: bool = Query(
@@ -53,7 +53,7 @@ def list_issues(
         current_user,
         team_id,
         project_id=project_id,
-        status=status,
+        status_id=status_id,
         priority=priority,
         assignee_id=assignee_id,
         unassigned=unassigned,

@@ -4,7 +4,7 @@ import {
   getListIssuesTeamsTeamIdIssuesGetQueryKey,
   useUpdateIssueIssuesIssueIdPatch,
 } from '@/api/generated/endpoints/issues/issues'
-import type { IssueRead, IssueStatus, TeamRead } from '@/api/generated/models'
+import type { IssueRead, StatusRead, TeamRead } from '@/api/generated/models'
 
 /** The shape the list endpoint caches: a page, not a bare array. */
 type IssuePage = { items: IssueRead[]; total: number; limit: number; offset: number }
@@ -23,7 +23,7 @@ export function useStatusChange(
   const queryClient = useQueryClient()
   const updateIssue = useUpdateIssueIssuesIssueIdPatch()
 
-  return async (issueId: number, status: IssueStatus) => {
+  return async (issueId: number, status: StatusRead) => {
     if (!team) return
     const queryKey = getListIssuesTeamsTeamIdIssuesGetQueryKey(team.id, issuesParams)
     const previous = queryClient.getQueryData<IssuePage>(queryKey)
@@ -38,7 +38,7 @@ export function useStatusChange(
         : old,
     )
     try {
-      await updateIssue.mutateAsync({ issueId, data: { status } })
+      await updateIssue.mutateAsync({ issueId, data: { status_id: status.id } })
       queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}`] })
       // Moving a card moves its points between columns.
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })

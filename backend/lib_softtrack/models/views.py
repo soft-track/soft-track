@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, model_validator
 
 from lib_identity.models.identity import UserPublic
-from lib_softtrack.tables import IssuePriority, IssueStatus
+from lib_softtrack.tables import IssuePriority
 
 
 class ViewFilters(BaseModel):
@@ -17,7 +17,7 @@ class ViewFilters(BaseModel):
     Null everywhere means "all issues", which is what an empty view is.
     """
 
-    status: Optional[IssueStatus] = None
+    status_id: Optional[int] = None
     priority: Optional[IssuePriority] = None
     assignee_id: Optional[int] = None
     #: "Nobody is assigned", which `assignee_id = null` does not say -- that

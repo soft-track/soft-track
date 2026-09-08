@@ -11,7 +11,7 @@ server defaults, constraint renames, and anything involving data.
 
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, event, pool
 from sqlmodel import SQLModel
 
 from alembic import context
@@ -53,6 +53,29 @@ def run_migrations_online() -> None:
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+    if connectable.dialect.name == "sqlite":
+
+        @event.listens_for(connectable, "connect")
+        def _foreign_keys_off_for_migrations(dbapi_connection, _record):
+            """Batch mode rewrites a table by copying it, dropping the original
+            and renaming -- and dropping a table other rows point at is a
+            foreign key violation while enforcement is on. Any SQLite install
+            with issues in it would fail every migration that touches the
+            `issue` table, which is most of them.
+
+            On the connect event rather than as a statement, because SQLite
+            ignores `PRAGMA foreign_keys` inside a transaction and SQLAlchemy
+            has already opened one by the time a normal execute runs.
+
+            Scoped to this engine, so it is off for the migration and nothing
+            else: the application and the test suite both turn enforcement on
+            for their own connections, deliberately. Postgres needs none of
+            this and gets none of it.
+            """
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=OFF")
+            cursor.close()
+
     with connectable.connect() as connection:
         context.configure(
             connection=connection,

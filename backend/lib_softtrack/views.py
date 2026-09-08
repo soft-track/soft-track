@@ -36,6 +36,7 @@ from lib_softtrack.tables import (
     TeamMember,
     User,
     UserDefaultView,
+    WorkflowStatus,
 )
 from lib_softtrack.teams import (
     get_team_or_404,
@@ -52,7 +53,7 @@ def _to_read(view: SavedView, owner: User) -> SavedViewRead:
         owner=UserPublic.model_validate(owner),
         is_shared=view.is_shared,
         filters=ViewFilters(
-            status=view.status,
+            status_id=view.status_id,
             priority=view.priority,
             assignee_id=view.assignee_id,
             unassigned=view.unassigned,
@@ -66,7 +67,7 @@ def _to_read(view: SavedView, owner: User) -> SavedViewRead:
 
 
 def _apply_filters(view: SavedView, filters: ViewFilters) -> None:
-    view.status = filters.status
+    view.status_id = filters.status_id
     view.priority = filters.priority
     view.assignee_id = filters.assignee_id
     view.unassigned = filters.unassigned
@@ -82,6 +83,10 @@ def _validate_filters(session: Session, team_id: int, filters: ViewFilters) -> N
     then match nothing for ever, looking like a bug in filtering rather than a
     bad reference. Checked on write, once, rather than on every read.
     """
+    if filters.status_id is not None:
+        status = session.get(WorkflowStatus, filters.status_id)
+        if status is None or status.team_id != team_id:
+            raise HTTPException(status_code=400, detail="No such status on this team")
     if filters.label_id is not None:
         label = session.get(Label, filters.label_id)
         if label is None or label.team_id != team_id:

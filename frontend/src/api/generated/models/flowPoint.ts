@@ -5,9 +5,9 @@
  * An open-source, self-hostable issue tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
-import type { IssueStatus } from './issueStatus';
+import type { StatusCategory } from './statusCategory';
 
 export interface FlowPoint {
   day: string;
-  counts: Partial<Record<IssueStatus, number>>;
+  counts: Partial<Record<StatusCategory, number>>;
 }

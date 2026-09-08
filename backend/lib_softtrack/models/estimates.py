@@ -3,7 +3,6 @@ from typing import Optional
 from pydantic import BaseModel
 
 from lib_identity.models.identity import UserPublic
-from lib_softtrack.tables import IssueStatus
 
 
 class StatusLoad(BaseModel):
@@ -30,5 +29,8 @@ class EstimateSummary(BaseModel):
     total_points: int
     total_issues: int
     unestimated_issues: int
-    by_status: dict[IssueStatus, StatusLoad]
+    #: Keyed by status id as a string, because JSON object keys are
+    #: strings and a numeric key would arrive as one anyway. Every one of
+    #: the team's statuses is present, including the empty columns.
+    by_status: dict[str, StatusLoad]
     by_assignee: list[AssigneeLoad]

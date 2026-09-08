@@ -6,13 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AssigneeLoad } from './assigneeLoad';
-import type { IssueStatus } from './issueStatus';
-import type { StatusLoad } from './statusLoad';
+import type { EstimateSummaryByStatus } from './estimateSummaryByStatus';
 
 export interface EstimateSummary {
   total_points: number;
   total_issues: number;
   unestimated_issues: number;
-  by_status: Partial<Record<IssueStatus, StatusLoad>>;
+  by_status: EstimateSummaryByStatus;
   by_assignee: AssigneeLoad[];
 }

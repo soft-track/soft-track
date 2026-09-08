@@ -7,11 +7,11 @@ from sqlmodel import Session, select
 
 from web import engine, init_db
 from lib_utils.password import hash_password
+from lib_softtrack import statuses as statuses_service
 from lib_softtrack.tables import (
     Issue,
     IssueLabelLink,
     IssuePriority,
-    IssueStatus,
     Label,
     Project,
     Team,
@@ -52,6 +52,10 @@ def run():
         session.refresh(team)
 
         session.add(TeamMember(team_id=team.id, user_id=user.id, role=TeamRole.admin))
+        # This script writes rows directly rather than going through
+        # `create_team`, so it has to create the default workflow itself. A
+        # team with no statuses has nowhere to put an issue.
+        statuses_service.create_default_statuses(session, team.id)
         session.commit()
 
         project = Project(
@@ -73,47 +77,55 @@ def run():
         session.refresh(label_feature)
         session.refresh(label_design)
 
+        # The team's own statuses, created with it. The demo data names the
+        # columns of the default workflow rather than a fixed enum, which is
+        # what a team's board is now.
+        statuses = {
+            status.name: status
+            for status in statuses_service.team_statuses(session, team.id)
+        }
+
         demo_issues = [
             (
                 "Set up CI pipeline",
-                IssueStatus.done,
+                "Done",
                 IssuePriority.high,
                 [label_feature],
             ),
             (
                 "Design the kanban board layout",
-                IssueStatus.done,
+                "Done",
                 IssuePriority.medium,
                 [label_design],
             ),
             (
                 "Implement JWT auth",
-                IssueStatus.in_progress,
+                "In Progress",
                 IssuePriority.urgent,
                 [label_feature],
             ),
             (
                 "Drag and drop issue cards",
-                IssueStatus.in_progress,
+                "In Progress",
                 IssuePriority.high,
                 [label_feature],
             ),
             (
                 "Fix avatar color hashing bug",
-                IssueStatus.todo,
+                "Todo",
                 IssuePriority.low,
                 [label_bug],
             ),
-            ("Write onboarding docs", IssueStatus.todo, IssuePriority.medium, []),
+            ("Write onboarding docs", "Todo", IssuePriority.medium, []),
             (
                 "Add keyboard shortcuts",
-                IssueStatus.backlog,
+                "Backlog",
                 IssuePriority.no_priority,
                 [label_feature],
             ),
             (
                 "Dark mode support",
-                IssueStatus.backlog,
+                "Backlog",
                 IssuePriority.low,
                 [label_design],
             ),
@@ -129,7 +141,7 @@ def run():
                 project_id=project.id,
                 number=number,
                 title=title,
-                status=status,
+                status_id=statuses[status].id,
                 priority=priority,
                 assignee_id=user.id,
                 creator_id=user.id,

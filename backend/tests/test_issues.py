@@ -30,7 +30,10 @@ def test_the_identifier_counter_increments_per_team(client, team):
 
 
 def test_a_new_issue_defaults_to_backlog_and_no_priority(issue):
-    assert issue["status"] == "backlog"
+    # A new issue lands in the leftmost column, which is what
+    # `backlog` used to mean.
+    assert issue["status"]["name"] == "Backlog"
+    assert issue["status"]["category"] == "backlog"
     assert issue["priority"] == "no_priority"
     assert issue["assignee"] is None
     assert issue["labels"] == []
@@ -43,11 +46,11 @@ def test_the_creator_is_recorded(issue, team):
 def test_updating_the_status(client, issue, team):
     response = client.patch(
         f"/issues/{issue['id']}",
-        json={"status": "in_progress"},
+        json={"status_id": team["status_ids"]["In Progress"]},
         headers=team["headers"],
     )
     assert response.status_code == 200
-    assert response.json()["status"] == "in_progress"
+    assert response.json()["status"]["name"] == "In Progress"
 
 
 def test_a_partial_update_leaves_other_fields_alone(client, issue, team):
@@ -64,11 +67,13 @@ def test_a_partial_update_leaves_other_fields_alone(client, issue, team):
 def test_filtering_issues_by_status(client, team, issue):
     client.post(
         f"/teams/{team['team']['id']}/issues",
-        json={"title": "another", "status": "done"},
+        json={"title": "another", "status_id": team["status_ids"]["Done"]},
         headers=team["headers"],
     )
     response = client.get(
-        f"/teams/{team['team']['id']}/issues?status=done", headers=team["headers"]
+        f"/teams/{team['team']['id']}/issues"
+        f"?status_id={team['status_ids']['Done']}",
+        headers=team["headers"],
     )
     body = response.json()
     assert [i["title"] for i in body["items"]] == ["another"]

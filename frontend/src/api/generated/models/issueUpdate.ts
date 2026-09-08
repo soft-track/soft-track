@@ -6,14 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { IssuePriority } from './issuePriority';
-import type { IssueStatus } from './issueStatus';
 import type { IssueUpdateEstimate } from './issueUpdateEstimate';
 
 export interface IssueUpdate {
   title?: string | null;
   description?: string | null;
   project_id?: number | null;
-  status?: IssueStatus | null;
+  status_id?: number | null;
   priority?: IssuePriority | null;
   assignee_id?: number | null;
   /** Story points on the scale 1, 2, 3, 5, 8. Null means not sized yet, which is distinct from an estimate of zero. */

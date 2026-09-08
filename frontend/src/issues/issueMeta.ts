@@ -1,34 +1,58 @@
-import { IssuePriority, IssueStatus } from '@/api/generated/models'
-import type { IssueUpdateEstimate } from '@/api/generated/models'
-
-export const STATUS_ORDER: IssueStatus[] = [
-  IssueStatus.backlog,
-  IssueStatus.todo,
-  IssueStatus.in_progress,
-  IssueStatus.in_review,
-  IssueStatus.done,
-  IssueStatus.cancelled,
-]
+import { IssuePriority, StatusCategory } from '@/api/generated/models'
+import type { IssueUpdateEstimate, StatusRead } from '@/api/generated/models'
 
 /**
- * Label, the Tailwind class for a plain dot, and the raw colour for anything
- * that needs it as a CSS value (the glowing `.dot`, chart keys).
+ * What each status *category* means, for the few places that have a category
+ * and no status row: the cumulative flow diagram, which is drawn from history
+ * and therefore knows only categories, and the picker that asks what a new
+ * column should mean.
+ *
+ * Statuses themselves carry their own name and colour now -- they are the
+ * team's rows, not a fixed list -- so nothing here describes a column.
  */
-export const STATUS_META: Record<IssueStatus, { label: string; dot: string; color: string }> = {
-  backlog: { label: 'Backlog', dot: 'bg-status-backlog', color: 'var(--color-status-backlog)' },
-  todo: { label: 'Todo', dot: 'bg-status-todo', color: 'var(--color-status-todo)' },
-  in_progress: {
-    label: 'In Progress',
-    dot: 'bg-status-progress',
+export const CATEGORY_ORDER: StatusCategory[] = [
+  StatusCategory.backlog,
+  StatusCategory.unstarted,
+  StatusCategory.started,
+  StatusCategory.done,
+  StatusCategory.cancelled,
+]
+
+export const CATEGORY_META: Record<
+  StatusCategory,
+  { label: string; hint: string; color: string }
+> = {
+  backlog: {
+    label: 'Backlog',
+    hint: 'Not committed to yet',
+    color: 'var(--color-status-backlog)',
+  },
+  unstarted: {
+    label: 'Unstarted',
+    hint: 'Accepted, not begun',
+    color: 'var(--color-status-todo)',
+  },
+  started: {
+    label: 'Started',
+    hint: 'Work in flight',
     color: 'var(--color-status-progress)',
   },
-  in_review: { label: 'In Review', dot: 'bg-status-review', color: 'var(--color-status-review)' },
-  done: { label: 'Done', dot: 'bg-status-done', color: 'var(--color-status-done)' },
+  done: { label: 'Done', hint: 'Finished', color: 'var(--color-status-done)' },
   cancelled: {
     label: 'Cancelled',
-    dot: 'bg-status-cancelled',
+    hint: 'Closed without being delivered',
     color: 'var(--color-status-cancelled)',
   },
+}
+
+/** Work that is finished, one way or the other. Mirrors RESOLVED in lib_softtrack/statuses.py. */
+export const RESOLVED_CATEGORIES: StatusCategory[] = [
+  StatusCategory.done,
+  StatusCategory.cancelled,
+]
+
+export function isResolved(status: StatusRead): boolean {
+  return RESOLVED_CATEGORIES.includes(status.category)
 }
 
 export const PRIORITY_ORDER: IssuePriority[] = [

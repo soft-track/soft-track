@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { IssuePriority } from './issuePriority';
-import type { IssueStatus } from './issueStatus';
 
 /**
  * What a view narrows the issue list to.
@@ -18,7 +17,7 @@ import type { IssueStatus } from './issueStatus';
  * Null everywhere means "all issues", which is what an empty view is.
  */
 export interface ViewFilters {
-  status?: IssueStatus | null;
+  status_id?: number | null;
   priority?: IssuePriority | null;
   assignee_id?: number | null;
   unassigned?: boolean;

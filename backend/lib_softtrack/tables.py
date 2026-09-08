@@ -18,13 +18,39 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-class IssueStatus(str, enum.Enum):
+class StatusCategory(str, enum.Enum):
+    """What a status *means*, as opposed to what a team calls it.
+
+    Fixed on purpose, and the reason per-team statuses are safe to allow at
+    all. Everything that has to reason about work -- burndown, velocity, "is
+    this cycle finished", "3 of 5 sub-issues done", whether a blocker still
+    blocks -- asks the category, never the name. A team can add "Blocked" or
+    "QA" without any of that having an opinion about it.
+
+    Unconstrained workflow states are how Jira became Jira. These five are the
+    line.
+    """
+
     backlog = "backlog"
-    todo = "todo"
-    in_progress = "in_progress"
-    in_review = "in_review"
+    #: Accepted, not started. "Todo".
+    unstarted = "unstarted"
+    #: Work in flight, whatever the team calls the stages of it.
+    started = "started"
     done = "done"
+    #: Closed without being delivered. Not outstanding, and not an achievement.
     cancelled = "cancelled"
+
+
+#: The workflow every new team starts with, and what the fixed enum used to
+#: be. Name, category, colour -- in board order.
+DEFAULT_STATUSES: tuple[tuple[str, "StatusCategory", str], ...] = (
+    ("Backlog", StatusCategory.backlog, "#9b98b0"),
+    ("Todo", StatusCategory.unstarted, "#6f6c86"),
+    ("In Progress", StatusCategory.started, "#f29d0b"),
+    ("In Review", StatusCategory.started, "#8b5cf6"),
+    ("Done", StatusCategory.done, "#12a474"),
+    ("Cancelled", StatusCategory.cancelled, "#f2647d"),
+)
 
 
 class IssuePriority(str, enum.Enum):
@@ -227,7 +253,9 @@ class Issue(SQLModel, table=True):
     number: int
     title: str
     description: Optional[str] = None
-    status: IssueStatus = Field(default=IssueStatus.backlog, index=True)
+    #: The team's own status row, not a fixed enum. What the issue *means* --
+    #: started, done -- is the status's category; see StatusCategory.
+    status_id: int = Field(foreign_key="workflowstatus.id", index=True)
     priority: IssuePriority = Field(default=IssuePriority.no_priority)
     assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
     # One level of nesting only -- an issue with a parent may not itself be a
@@ -433,7 +461,8 @@ class SavedView(SQLModel, table=True):
     #: is a tracker where people paste URLs to each other instead.
     is_shared: bool = Field(default=False, index=True)
 
-    status: Optional[IssueStatus] = None
+    #: Cleared when the status is deleted -- see lib_softtrack/statuses.py.
+    status_id: Optional[int] = Field(default=None, foreign_key="workflowstatus.id")
     priority: Optional[IssuePriority] = None
     assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
     #: Distinct from `assignee_id is None`, which means "any assignee". The two
@@ -462,3 +491,31 @@ class UserDefaultView(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", primary_key=True)
     team_id: int = Field(foreign_key="team.id", primary_key=True)
     view_id: int = Field(foreign_key="savedview.id", index=True)
+
+
+class WorkflowStatus(SQLModel, table=True):
+    """One column on one team's board.
+
+    Replaces the fixed `IssueStatus` enum. A team can add "Blocked" or "QA"
+    and order its board how it likes; what none of them can do is invent a new
+    *meaning*, because every status maps to one of the five fixed
+    StatusCategory values and that is what the rest of the app reads.
+
+    Named `WorkflowStatus` rather than `Status` because the table would
+    otherwise collide with the Postgres enum type the old column left behind --
+    a table and a type share one namespace there.
+    """
+
+    __table_args__ = (
+        UniqueConstraint("team_id", "name", name="uq_workflow_status_team_name"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    name: str
+    category: StatusCategory = Field(index=True)
+    #: Board order, low to high. Sparse and rewritten wholesale on reorder --
+    #: gaps are harmless and contiguity is not worth a transaction to maintain.
+    position: int
+    color: str = Field(default="#9b98b0")
+    created_at: datetime = Field(default_factory=utcnow)

@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from lib_softtrack.tables import IssuePriority, IssueStatus
+from lib_softtrack.tables import IssuePriority, StatusCategory
 
 
 class ParsedComment(BaseModel):
@@ -18,7 +18,7 @@ class ParsedIssue(BaseModel):
     external_key: Optional[str] = None
     title: str
     description: Optional[str] = None
-    status: IssueStatus
+    status: StatusCategory
     priority: IssuePriority
     #: Raw values, kept so the report can say what a Jira status was called
     #: before it was mapped.

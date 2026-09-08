@@ -14,6 +14,7 @@ import SecuritySettings from '@/settings/SecuritySettings'
 import SettingsLayout from '@/settings/SettingsLayout'
 import TeamGeneralSettings from '@/settings/TeamGeneralSettings'
 import TeamMembersSettings from '@/settings/TeamMembersSettings'
+import TeamStatusSettings from '@/settings/TeamStatusSettings'
 import { RequireSiteAdmin } from '@/settings/RequireSiteAdmin'
 
 export default function App() {
@@ -48,6 +49,7 @@ export default function App() {
             />
             <Route path="teams/:teamKey/members" element={<TeamMembersSettings />} />
             <Route path="teams/:teamKey/general" element={<TeamGeneralSettings />} />
+            <Route path="teams/:teamKey/statuses" element={<TeamStatusSettings />} />
             <Route element={<RequireSiteAdmin />}>
               <Route path="admin/users" element={<AdminUsersPage />} />
             </Route>

@@ -24,25 +24,25 @@
  */
 
 /** Workflow stages, bottom to top, light to dark. */
+/**
+ * The cumulative flow bands, by status *category*.
+ *
+ * Not by the team's own columns: this chart is drawn from history, and the
+ * history records categories precisely so that a picture of last month keeps
+ * meaning something after somebody renames or deletes a column. See
+ * `_status_category` in backend/lib_softtrack/history.py.
+ */
 export const FLOW_RAMP: Record<string, string> = {
   backlog: 'var(--color-brand-200)',
-  todo: 'var(--color-brand-300)',
-  in_progress: 'var(--color-brand-400)',
-  in_review: 'var(--color-brand-500)',
+  unstarted: 'var(--color-brand-300)',
+  started: 'var(--color-brand-500)',
   done: 'var(--color-brand-700)',
   // Off the ramp on purpose: cancelled work left the workflow, it did not
   // advance through it.
   cancelled: 'var(--color-neutral-400)',
 }
 
-export const FLOW_ORDER = [
-  'backlog',
-  'todo',
-  'in_progress',
-  'in_review',
-  'done',
-  'cancelled',
-] as const
+export const FLOW_ORDER = ['backlog', 'unstarted', 'started', 'done', 'cancelled'] as const
 
 /** Measure vs reference, and the two-series pairs. */
 export const INK = {

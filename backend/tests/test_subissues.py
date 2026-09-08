@@ -143,7 +143,9 @@ def test_a_rejected_parent_leaves_the_issue_untouched(client, team):
 
 def test_a_parent_counts_its_children(client, team):
     parent = make_issue(client, team, "P")
-    make_issue(client, team, "C1", parent_id=parent["id"], status="done")
+    make_issue(
+        client, team, "C1", parent_id=parent["id"], status_id=team["status_ids"]["Done"]
+    )
     make_issue(client, team, "C2", parent_id=parent["id"])
     make_issue(client, team, "C3", parent_id=parent["id"])
 
@@ -154,8 +156,16 @@ def test_a_parent_counts_its_children(client, team):
 def test_a_cancelled_child_is_left_out_of_both_numbers(client, team):
     """Otherwise "3 of 5 done" becomes unreachable because two were cancelled."""
     parent = make_issue(client, team, "P")
-    make_issue(client, team, "C1", parent_id=parent["id"], status="done")
-    make_issue(client, team, "C2", parent_id=parent["id"], status="cancelled")
+    make_issue(
+        client, team, "C1", parent_id=parent["id"], status_id=team["status_ids"]["Done"]
+    )
+    make_issue(
+        client,
+        team,
+        "C2",
+        parent_id=parent["id"],
+        status_id=team["status_ids"]["Cancelled"],
+    )
 
     fetched = get_issue(client, team, parent)
     assert (fetched["completed_child_count"], fetched["child_count"]) == (1, 1)
@@ -169,7 +179,9 @@ def test_an_issue_with_no_children_reports_zero(client, team):
 def test_the_list_endpoint_reports_the_same_counts(client, team):
     """The list builds IssueRead by a different path than the detail route."""
     parent = make_issue(client, team, "P")
-    make_issue(client, team, "C", parent_id=parent["id"], status="done")
+    make_issue(
+        client, team, "C", parent_id=parent["id"], status_id=team["status_ids"]["Done"]
+    )
 
     items = client.get(
         f"/teams/{team['team']['id']}/issues", headers=team["headers"]
@@ -212,15 +224,17 @@ def test_deleting_a_child_leaves_the_parent_and_its_count_correct(client, team):
     assert get_issue(client, team, keep)["parent"]["id"] == parent["id"]
 
 
-@pytest.mark.parametrize("status", ["done", "cancelled"])
+@pytest.mark.parametrize("status", ["Done", "Cancelled"])
 def test_child_status_changes_move_the_count(client, team, status):
     parent = make_issue(client, team, "P")
     child = make_issue(client, team, "C", parent_id=parent["id"])
     assert get_issue(client, team, parent)["child_count"] == 1
 
     client.patch(
-        f"/issues/{child['id']}", json={"status": status}, headers=team["headers"]
+        f"/issues/{child['id']}",
+        json={"status_id": team["status_ids"][status]},
+        headers=team["headers"],
     )
     fetched = get_issue(client, team, parent)
-    expected = (1, 1) if status == "done" else (0, 0)
+    expected = (1, 1) if status == "Done" else (0, 0)
     assert (fetched["completed_child_count"], fetched["child_count"]) == expected

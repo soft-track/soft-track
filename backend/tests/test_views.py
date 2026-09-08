@@ -50,10 +50,10 @@ def test_a_view_round_trips_its_filters(client, pair):
         pair,
         pair["team"]["id"],
         name="Urgent in review",
-        status="in_review",
+        status_id=pair["status_ids"]["In Review"],
         priority="urgent",
     )
-    assert view["filters"]["status"] == "in_review"
+    assert view["filters"]["status_id"] == pair["status_ids"]["In Review"]
     assert view["filters"]["priority"] == "urgent"
     assert view["owner"]["id"] == pair["user"]["id"]
     # Everything unset stays unset rather than becoming a filter that matches

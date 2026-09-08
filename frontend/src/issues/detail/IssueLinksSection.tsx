@@ -10,7 +10,7 @@ import {
 } from '@/api/generated/endpoints/issues/issues'
 import { IssueLinkType, type IssueLinks, type IssueLinkRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
-import { STATUS_META } from '@/issues/issueMeta'
+import { isResolved } from '@/issues/issueMeta'
 import { useTeamContext } from '@/team/TeamContext'
 import { Icon } from '@/ui/Icon'
 
@@ -205,12 +205,12 @@ function LinkRow({
   onOpen: () => void
   onRemove: () => void
 }) {
-  const meta = STATUS_META[row.issue.status]
-  const resolved = row.issue.status === 'done' || row.issue.status === 'cancelled'
+  const status = row.issue.status
+  const resolved = isResolved(status)
 
   return (
     <li className="group flex items-center gap-2 rounded-control px-2 py-1 transition hover:bg-neutral-900/4">
-      <span className="dot" style={{ ['--dot' as string]: meta.color }} title={meta.label} />
+      <span className="dot" style={{ ['--dot' as string]: status.color }} title={status.name} />
       <button
         type="button"
         onClick={onOpen}

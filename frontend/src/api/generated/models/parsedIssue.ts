@@ -6,8 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { IssuePriority } from './issuePriority';
-import type { IssueStatus } from './issueStatus';
 import type { ParsedComment } from './parsedComment';
+import type { StatusCategory } from './statusCategory';
 
 /**
  * One issue as read out of an export, before anything is written.
@@ -16,7 +16,7 @@ export interface ParsedIssue {
   external_key?: string | null;
   title: string;
   description?: string | null;
-  status: IssueStatus;
+  status: StatusCategory;
   priority: IssuePriority;
   raw_status?: string | null;
   raw_priority?: string | null;

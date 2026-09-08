@@ -80,6 +80,14 @@ def create_team(session: Session, current_user: User, payload: TeamCreate) -> Te
         team_id=team.id, user_id=current_user.id, role=TeamRole.admin
     )
     session.add(membership)
+
+    # Imported here rather than at module scope: the status service imports
+    # this module for its permission guards, and at module level that is a
+    # cycle. A team without statuses would have nowhere to put its first
+    # issue, so this is not optional setup.
+    from lib_softtrack.statuses import create_default_statuses
+
+    create_default_statuses(session, team.id)
     session.commit()
 
     return team

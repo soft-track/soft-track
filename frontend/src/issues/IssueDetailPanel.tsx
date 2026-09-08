@@ -10,7 +10,6 @@ import { useIssueAttachments } from '@/issues/detail/useIssueAttachments'
 import { useIssueEditor } from '@/issues/detail/useIssueEditor'
 import { usePanelShortcuts } from '@/issues/detail/usePanelShortcuts'
 import { PriorityIcon } from '@/issues/PriorityIcon'
-import { STATUS_META } from '@/issues/issueMeta'
 import { WatchToggle } from '@/notifications/WatchToggle'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
@@ -35,8 +34,8 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
             {issue && (
               <span
                 className="dot"
-                style={{ ['--dot' as string]: STATUS_META[issue.status].color }}
-                title={STATUS_META[issue.status].label}
+                style={{ ['--dot' as string]: issue.status.color }}
+                title={issue.status.name}
               />
             )}
             <span className="identifier text-xs font-semibold text-neutral-500">

@@ -6,9 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { IssuePriority } from './issuePriority';
-import type { IssueStatus } from './issueStatus';
 import type { LabelRead } from './labelRead';
 import type { ParentRef } from './parentRef';
+import type { StatusRead } from './statusRead';
 import type { UserPublic } from './userPublic';
 
 export interface IssueRead {
@@ -19,7 +19,7 @@ export interface IssueRead {
   identifier: string;
   title: string;
   description?: string | null;
-  status: IssueStatus;
+  status: StatusRead;
   priority: IssuePriority;
   assignee?: UserPublic | null;
   estimate?: number | null;

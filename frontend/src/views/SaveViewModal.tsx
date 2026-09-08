@@ -24,7 +24,7 @@ export function SaveViewModal({
   editing?: SavedViewRead
   onClose: () => void
 }) {
-  const { team, members, labels, projects, cycles } = useTeamContext()
+  const { team, members, labels, projects, cycles, statuses } = useTeamContext()
   const views = useSavedViews(team.id)
 
   const [name, setName] = useState(editing?.name ?? '')
@@ -66,7 +66,7 @@ export function SaveViewModal({
           {editing ? 'Edit view' : 'Save this view'}
         </h2>
         <p className="mt-1 text-xs text-neutral-500">
-          {summarise(filters, { members, labels, projects, cycles })}
+          {summarise(filters, { members, labels, projects, cycles, statuses })}
         </p>
 
         {error && (

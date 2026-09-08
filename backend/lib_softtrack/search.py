@@ -30,7 +30,15 @@ from sqlmodel import Session, select
 
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.models.search import SearchHit
-from lib_softtrack.tables import Comment, Issue, Team, TeamMember, User
+from lib_softtrack.models.statuses import StatusRead
+from lib_softtrack.tables import (
+    Comment,
+    Issue,
+    Team,
+    TeamMember,
+    User,
+    WorkflowStatus,
+)
 
 #: Characters of context to show either side of a match.
 SNIPPET_RADIUS = 90
@@ -98,6 +106,16 @@ def search_issues(
             select(Team).where(Team.id.in_({issue.team_id for issue in issues}))
         ).all()
     }
+    # Search reaches across every team the caller is in, so a page of hits can
+    # carry statuses from several different workflows.
+    statuses = {
+        status.id: status
+        for status in session.exec(
+            select(WorkflowStatus).where(
+                WorkflowStatus.id.in_({issue.status_id for issue in issues})
+            )
+        ).all()
+    }
 
     items = []
     for issue in issues:
@@ -107,7 +125,7 @@ def search_issues(
                 id=issue.id,
                 identifier=f"{teams[issue.team_id].key}-{issue.number}",
                 title=issue.title,
-                status=issue.status,
+                status=StatusRead.model_validate(statuses[issue.status_id]),
                 priority=issue.priority,
                 team_id=issue.team_id,
                 updated_at=issue.updated_at,

@@ -104,7 +104,13 @@ def auth(client):
 
 @pytest.fixture
 def team(client, auth):
-    """A user who owns one team, ready for issue tests."""
+    """A user who owns one team, ready for issue tests.
+
+    Carries the team's own statuses as `status_ids`, keyed by name. Statuses
+    are rows per team rather than a fixed enum, so a test that wants an issue
+    in "Done" has to say which team's Done it means. The names here are the
+    default workflow every team is created with.
+    """
     actor = auth()
     response = client.post(
         "/teams",
@@ -112,4 +118,16 @@ def team(client, auth):
         headers=actor["headers"],
     )
     assert response.status_code == 200, response.text
-    return {**actor, "team": response.json()}
+    created = response.json()
+    return {
+        **actor,
+        "team": created,
+        "status_ids": status_ids(client, actor, created["id"]),
+    }
+
+
+def status_ids(client, actor, team_id) -> dict[str, int]:
+    """`{"Done": 5, ...}` for one team's board."""
+    response = client.get(f"/teams/{team_id}/statuses", headers=actor["headers"])
+    assert response.status_code == 200, response.text
+    return {row["name"]: row["id"] for row in response.json()}

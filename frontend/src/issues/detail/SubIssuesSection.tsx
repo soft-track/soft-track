@@ -8,7 +8,6 @@ import {
   useUpdateIssueIssuesIssueIdPatch,
 } from '@/api/generated/endpoints/issues/issues'
 import type { IssueRead } from '@/api/generated/models'
-import { STATUS_META } from '@/issues/issueMeta'
 import { useTeamContext } from '@/team/TeamContext'
 import { Icon } from '@/ui/Icon'
 
@@ -19,7 +18,7 @@ import { Icon } from '@/ui/Icon'
  * never both -- which is why this renders one or the other, never a tree.
  */
 export function SubIssuesSection({ issue }: { issue: IssueRead }) {
-  const { team } = useTeamContext()
+  const { team, statuses } = useTeamContext()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -57,10 +56,24 @@ export function SubIssuesSection({ issue }: { issue: IssueRead }) {
     refresh()
   }
 
+  // The checkbox means "finished", which is a category rather than a column.
+  // A team may have several of either, so it ticks into the first `done` one
+  // and unticks into the first that is not resolved -- the leftmost place the
+  // work can plausibly go back to.
+  const doneIn = statuses.find((status) => status.category === 'done')
+  const reopenIn = statuses.find(
+    (status) => status.category !== 'done' && status.category !== 'cancelled',
+  )
+
   const toggleDone = async (child: IssueRead) => {
+    const target = child.status.category === 'done' ? reopenIn : doneIn
+    // A team that has deleted every done column has nowhere to tick to; the
+    // checkbox is disabled below rather than sending a request that cannot
+    // mean anything.
+    if (!target) return
     await updateIssue.mutateAsync({
       issueId: child.id,
-      data: { status: child.status === 'done' ? 'todo' : 'done' },
+      data: { status_id: target.id },
     })
     refresh()
   }
@@ -134,7 +147,7 @@ export function SubIssuesSection({ issue }: { issue: IssueRead }) {
       {children.length > 0 && (
         <ul className="space-y-0.5">
           {children.map((child) => {
-            const done = child.status === 'done'
+            const done = child.status.category === 'done'
             return (
               <li
                 key={child.id}
@@ -144,6 +157,7 @@ export function SubIssuesSection({ issue }: { issue: IssueRead }) {
                   type="checkbox"
                   checked={done}
                   onChange={() => toggleDone(child)}
+                  disabled={done ? !reopenIn : !doneIn}
                   aria-label={done ? `Reopen ${child.identifier}` : `Complete ${child.identifier}`}
                   className="h-3.5 w-3.5 shrink-0 rounded accent-brand-600"
                 />
@@ -165,8 +179,8 @@ export function SubIssuesSection({ issue }: { issue: IssueRead }) {
                 </button>
                 <span
                   className="dot"
-                  style={{ ['--dot' as string]: STATUS_META[child.status].color }}
-                  title={STATUS_META[child.status].label}
+                  style={{ ['--dot' as string]: child.status.color }}
+                  title={child.status.name}
                 />
               </li>
             )

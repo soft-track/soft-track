@@ -9,12 +9,18 @@ from typing import Optional
 
 from sqlmodel import Session
 
-from lib_softtrack.tables import Issue, IssueEvent, IssueEventField, User
+from lib_softtrack.tables import (
+    Issue,
+    IssueEvent,
+    IssueEventField,
+    User,
+    WorkflowStatus,
+)
 
 #: The fields worth a history row. Everything here can be charted; title and
 #: description changes are noise for reporting and would swamp the table.
 TRACKED: dict[str, IssueEventField] = {
-    "status": IssueEventField.status,
+    "status_id": IssueEventField.status,
     "cycle_id": IssueEventField.cycle,
     "estimate": IssueEventField.estimate,
 }
@@ -24,6 +30,26 @@ def _as_text(value: object) -> Optional[str]:
     if value is None:
         return None
     return getattr(value, "value", None) or str(value)
+
+
+def _status_category(session: Session, status_id: object) -> Optional[str]:
+    """A status id, recorded as what it *means* rather than which row it was.
+
+    History outlives the workflow that produced it. A team renames a column,
+    merges two, or deletes one and moves the work -- and every chart built
+    from these rows has to keep meaning something afterwards. The five
+    categories are the only vocabulary that survives all of that, which is
+    also why `StatusCategory` is fixed.
+
+    The cost is real and worth stating: a cumulative flow diagram cannot show
+    "In Progress" and "In Review" as separate bands, because by the time it is
+    drawn both are `started`. Recording the id instead would give sharper
+    charts that break the first time somebody tidies up the board.
+    """
+    if status_id is None:
+        return None
+    status = session.get(WorkflowStatus, status_id)
+    return status.category.value if status else None
 
 
 def record_creation(session: Session, issue: Issue, actor: User) -> None:
@@ -43,7 +69,7 @@ def record_creation(session: Session, issue: Issue, actor: User) -> None:
                 team_id=issue.team_id,
                 field=field,
                 old_value=None,
-                new_value=_as_text(value),
+                new_value=_recorded(session, attribute, value),
                 actor_id=actor.id,
             )
         )
@@ -64,16 +90,30 @@ def record_changes(
         new = getattr(issue, attribute)
         if old == new:
             continue
+        recorded_old = _recorded(session, attribute, old)
+        recorded_new = _recorded(session, attribute, new)
+        # Two statuses in the same category are the same fact to every report
+        # reading this table, so moving between them writes no row. An issue
+        # dragged from "In Progress" to "In Review" has not changed state.
+        if recorded_old == recorded_new:
+            continue
         session.add(
             IssueEvent(
                 issue_id=issue.id,
                 team_id=issue.team_id,
                 field=field,
-                old_value=_as_text(old),
-                new_value=_as_text(new),
+                old_value=recorded_old,
+                new_value=recorded_new,
                 actor_id=actor.id,
             )
         )
+
+
+def _recorded(session: Session, attribute: str, value: object) -> Optional[str]:
+    """What goes in the event row for one tracked field."""
+    if attribute == "status_id":
+        return _status_category(session, value)
+    return _as_text(value)
 
 
 def snapshot(issue: Issue) -> dict[str, object]:

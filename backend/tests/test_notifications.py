@@ -289,7 +289,7 @@ def test_a_status_change_tells_the_watchers(client, pair):
     issue = make_issue(client, pair["member"], pair["team"])
     client.patch(
         f"/issues/{issue['id']}",
-        json={"status": "in_progress"},
+        json={"status_id": pair["status_ids"]["In Progress"]},
         headers=pair["headers"],
     )
 
@@ -303,7 +303,9 @@ def test_a_status_change_tells_the_watchers(client, pair):
 def test_a_status_change_tells_nobody_who_is_not_watching(client, pair):
     issue = make_issue(client, pair, pair["team"])
     client.patch(
-        f"/issues/{issue['id']}", json={"status": "done"}, headers=pair["headers"]
+        f"/issues/{issue['id']}",
+        json={"status_id": pair["status_ids"]["Done"]},
+        headers=pair["headers"],
     )
     assert inbox(client, pair["member"]) == []
 
@@ -316,7 +318,10 @@ def test_one_update_is_at_most_one_notification_per_person(client, pair):
 
     client.patch(
         f"/issues/{issue['id']}",
-        json={"assignee_id": pair["member"]["user"]["id"], "status": "in_progress"},
+        json={
+            "assignee_id": pair["member"]["user"]["id"],
+            "status_id": pair["status_ids"]["In Progress"],
+        },
         headers=pair["headers"],
     )
 
@@ -436,7 +441,7 @@ def test_read_all_only_touches_your_own(client, pair):
     comment(client, pair["member"], issue, "mine")
     client.patch(
         f"/issues/{issue['id']}",
-        json={"status": "done"},
+        json={"status_id": pair["status_ids"]["Done"]},
         headers=pair["headers"],
     )
     assert len(inbox(client, pair["member"], unread_only=True)) == 1

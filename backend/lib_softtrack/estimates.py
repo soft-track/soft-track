@@ -11,7 +11,8 @@ from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.estimates import AssigneeLoad, EstimateSummary, StatusLoad
-from lib_softtrack.tables import Issue, IssueStatus, User
+from lib_softtrack.statuses import team_statuses
+from lib_softtrack.tables import Issue, User
 from lib_softtrack.teams import require_team_member
 
 # COUNT ignores nulls, so counting the column itself counts only the sized
@@ -26,23 +27,24 @@ def estimate_summary(
 ) -> EstimateSummary:
     require_team_member(team_id, current_user, session)
 
-    by_status: dict[IssueStatus, StatusLoad] = {}
-    for status, points, total, sized in session.exec(
-        select(Issue.status, _POINTS, _TOTAL, _SIZED)
+    by_status: dict[str, StatusLoad] = {}
+    for status_id, points, total, sized in session.exec(
+        select(Issue.status_id, _POINTS, _TOTAL, _SIZED)
         .where(Issue.team_id == team_id)
-        .group_by(Issue.status)
+        .group_by(Issue.status_id)
     ).all():
-        by_status[status] = StatusLoad(
+        by_status[str(status_id)] = StatusLoad(
             points=int(points),
             issue_count=int(total),
             unestimated_count=int(total) - int(sized),
         )
 
-    # Every column, including the empty ones -- a board renders all six, and a
-    # missing key would make the client guard at every call site.
-    for status in IssueStatus:
+    # Every column, including the empty ones -- the board renders all of them,
+    # and a missing key would make the client guard at every call site. Read
+    # from the team's own statuses now rather than from a fixed enum.
+    for status in team_statuses(session, team_id):
         by_status.setdefault(
-            status, StatusLoad(points=0, issue_count=0, unestimated_count=0)
+            str(status.id), StatusLoad(points=0, issue_count=0, unestimated_count=0)
         )
 
     rows = session.exec(

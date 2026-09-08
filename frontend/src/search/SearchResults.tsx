@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 
 import type { SearchHit } from '@/api/generated/models'
 import { PriorityIcon } from '@/issues/PriorityIcon'
-import { STATUS_META } from '@/issues/issueMeta'
 import { useTeamContext } from '@/team/TeamContext'
 import { Loading } from '@/ui/Loading'
 
@@ -56,7 +55,7 @@ export function SearchResults({
 
       <ul className="divide-y divide-neutral-900/8">
         {hits.map((hit) => {
-          const meta = STATUS_META[hit.status]
+          const meta = hit.status
           return (
             <li key={hit.id}>
               <button

@@ -20,6 +20,7 @@ from app_softtrack.notifications import router as notifications_router
 from app_softtrack.projects import router as projects_router
 from app_softtrack.reports import router as reports_router
 from app_softtrack.search import router as search_router
+from app_softtrack.statuses import router as statuses_router
 from app_softtrack.teams import router as teams_router
 from app_softtrack.views import router as views_router
 from web import init_db, settings
@@ -89,6 +90,7 @@ app.include_router(imports_router)
 app.include_router(search_router)
 app.include_router(notifications_router)
 app.include_router(views_router)
+app.include_router(statuses_router)
 
 
 @app.get("/health", tags=["health"])

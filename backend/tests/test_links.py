@@ -73,13 +73,19 @@ def test_relates_to_reads_the_same_from_both_ends(client, team):
 
 def test_the_linked_issue_carries_enough_to_render_a_row(client, team):
     a = make_issue(client, team, "A")
-    b = make_issue(client, team, "B", priority="urgent", status="in_progress")
+    b = make_issue(
+        client,
+        team,
+        "B",
+        priority="urgent",
+        status_id=team["status_ids"]["In Progress"],
+    )
     link(client, team, a, b)
 
     linked = links_of(client, team, a)["blocks"][0]["issue"]
     assert linked["identifier"].startswith("ENG-")
     assert linked["title"] == "B"
-    assert linked["status"] == "in_progress"
+    assert linked["status"]["name"] == "In Progress"
     assert linked["priority"] == "urgent"
 
 
@@ -212,14 +218,16 @@ def test_an_issue_with_an_open_blocker_reports_it(client, team):
     )
 
 
-@pytest.mark.parametrize("resolved", ["done", "cancelled"])
+@pytest.mark.parametrize("resolved", ["Done", "Cancelled"])
 def test_a_finished_blocker_stops_counting(client, team, resolved):
     """An issue is blocked by outstanding work, not by work that once blocked it."""
     blocker, blocked = make_issue(client, team, "A"), make_issue(client, team, "B")
     link(client, team, blocker, blocked)
 
     client.patch(
-        f"/issues/{blocker['id']}", json={"status": resolved}, headers=team["headers"]
+        f"/issues/{blocker['id']}",
+        json={"status_id": team["status_ids"][resolved]},
+        headers=team["headers"],
     )
     fetched = client.get(f"/issues/{blocked['id']}", headers=team["headers"]).json()
     assert fetched["blocked_by_count"] == 0

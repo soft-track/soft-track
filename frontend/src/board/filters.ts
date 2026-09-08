@@ -1,6 +1,5 @@
 import type {
   IssuePriority,
-  IssueStatus,
   ListIssuesTeamsTeamIdIssuesGetParams,
   ViewFilters,
 } from '@/api/generated/models'
@@ -19,7 +18,7 @@ export type AssigneeFilter = number | 'unassigned' | null
  * question, and modelling them as two fields lets a caller ask for both.
  */
 export type BoardFilters = {
-  status: IssueStatus | null
+  statusId: number | null
   priority: IssuePriority | null
   assignee: AssigneeFilter
   labelId: number | null
@@ -28,7 +27,7 @@ export type BoardFilters = {
 }
 
 export const NO_FILTERS: BoardFilters = {
-  status: null,
+  statusId: null,
   priority: null,
   assignee: null,
   labelId: null,
@@ -44,7 +43,7 @@ export const NO_FILTERS: BoardFilters = {
  * names (`label_id`), which are an implementation detail of the request.
  */
 const KEYS = {
-  status: 'status',
+  statusId: 'status',
   priority: 'priority',
   assignee: 'assignee',
   labelId: 'label',
@@ -65,10 +64,10 @@ export function fromSearchParams(params: URLSearchParams): BoardFilters {
   const assignee = params.get(KEYS.assignee)
 
   return {
-    // The enums are not validated against their members here: an unknown
-    // status reaches the API, which rejects it with a 422 naming the field.
-    // Guessing on the client would mean two lists to keep in step.
-    status: (params.get(KEYS.status) as IssueStatus | null) ?? null,
+    // A status is a row id now, so the same "unparseable means no filter"
+    // rule covers it -- a link naming a status another team deleted shows an
+    // unfiltered board rather than an error.
+    statusId: readNumber(params.get(KEYS.statusId)),
     priority: (params.get(KEYS.priority) as IssuePriority | null) ?? null,
     assignee: assignee === 'unassigned' ? 'unassigned' : readNumber(assignee),
     labelId: readNumber(params.get(KEYS.labelId)),
@@ -85,7 +84,7 @@ export function fromSearchParams(params: URLSearchParams): BoardFilters {
  */
 export function toSearchParams(filters: BoardFilters): URLSearchParams {
   const params = new URLSearchParams()
-  if (filters.status) params.set(KEYS.status, filters.status)
+  if (filters.statusId !== null) params.set(KEYS.statusId, String(filters.statusId))
   if (filters.priority) params.set(KEYS.priority, filters.priority)
   if (filters.assignee !== null) params.set(KEYS.assignee, String(filters.assignee))
   if (filters.labelId !== null) params.set(KEYS.labelId, String(filters.labelId))
@@ -99,7 +98,7 @@ export function toQueryParams(
   filters: BoardFilters,
 ): ListIssuesTeamsTeamIdIssuesGetParams {
   return {
-    status: filters.status ?? undefined,
+    status_id: filters.statusId ?? undefined,
     priority: filters.priority ?? undefined,
     assignee_id: typeof filters.assignee === 'number' ? filters.assignee : undefined,
     unassigned: filters.assignee === 'unassigned' ? true : undefined,
@@ -112,7 +111,7 @@ export function toQueryParams(
 /** A saved view's filters, as the board holds them. */
 export function fromViewFilters(filters: ViewFilters): BoardFilters {
   return {
-    status: filters.status ?? null,
+    statusId: filters.status_id ?? null,
     priority: filters.priority ?? null,
     assignee: filters.unassigned ? 'unassigned' : (filters.assignee_id ?? null),
     labelId: filters.label_id ?? null,
@@ -124,7 +123,7 @@ export function fromViewFilters(filters: ViewFilters): BoardFilters {
 /** The board's filters, as a saved view stores them. */
 export function toViewFilters(filters: BoardFilters): ViewFilters {
   return {
-    status: filters.status,
+    status_id: filters.statusId,
     priority: filters.priority,
     assignee_id: typeof filters.assignee === 'number' ? filters.assignee : null,
     unassigned: filters.assignee === 'unassigned',
@@ -153,7 +152,7 @@ export function isEmpty(filters: BoardFilters): boolean {
  */
 export function sameFilters(a: BoardFilters, b: BoardFilters): boolean {
   return (
-    a.status === b.status &&
+    a.statusId === b.statusId &&
     a.priority === b.priority &&
     a.assignee === b.assignee &&
     a.labelId === b.labelId &&

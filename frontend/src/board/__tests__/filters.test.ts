@@ -14,7 +14,7 @@ import {
 } from '@/board/filters'
 
 const some: BoardFilters = {
-  status: 'in_review',
+  statusId: 9,
   priority: 'urgent',
   assignee: 7,
   labelId: 3,
@@ -41,7 +41,7 @@ describe('the URL round trip', () => {
   it('ignores a filter it cannot parse rather than passing it on', () => {
     // A truncated or hand-edited link should show an unfiltered board, not
     // send NaN to the API and get a 422.
-    const params = new URLSearchParams('label=abc&project=-1&cycle=')
+    const params = new URLSearchParams('status=abc&label=abc&project=-1&cycle=')
     expect(fromSearchParams(params)).toEqual(NO_FILTERS)
   })
 
@@ -54,7 +54,7 @@ describe('the URL round trip', () => {
 describe('toQueryParams', () => {
   it('maps the board onto what the issue endpoint asks for', () => {
     expect(toQueryParams(some)).toEqual({
-      status: 'in_review',
+      status_id: 9,
       priority: 'urgent',
       assignee_id: 7,
       unassigned: undefined,
@@ -114,6 +114,6 @@ describe('activeCount', () => {
     expect(activeCount(NO_FILTERS)).toBe(0)
     expect(activeCount(some)).toBe(6)
     expect(isEmpty(NO_FILTERS)).toBe(true)
-    expect(isEmpty({ ...NO_FILTERS, status: 'done' })).toBe(false)
+    expect(isEmpty({ ...NO_FILTERS, statusId: 4 })).toBe(false)
   })
 })

@@ -8,6 +8,7 @@ delete missed one of them; deriving the inverse at read time means they cannot.
 from fastapi import HTTPException, status as http_status
 from sqlmodel import Session, select
 
+from lib_softtrack.models.statuses import StatusRead
 from lib_softtrack.models.links import (
     IssueLinkCreate,
     IssueLinkRead,
@@ -19,16 +20,18 @@ from lib_softtrack.tables import (
     Issue,
     IssueLink,
     IssueLinkType,
-    IssueStatus,
     Team,
     User,
+    WorkflowStatus,
 )
+from lib_softtrack.statuses import RESOLVED, in_category
 from lib_softtrack.teams import require_team_member
 
-#: An issue in one of these states cannot block anything -- it is finished.
-#: Used to decide whether a card is *currently* blocked, as opposed to having
-#: ever had a blocker.
-RESOLVED_STATUSES = (IssueStatus.done, IssueStatus.cancelled)
+#: An issue whose status means one of these cannot block anything -- it is
+#: finished. Used to decide whether a card is *currently* blocked, as opposed
+#: to having ever had a blocker. Categories, so a team's own "Shipped" column
+#: counts without anyone having to list it here.
+RESOLVED_STATUSES = RESOLVED
 
 #: How each stored type reads from the source end and from the target end.
 _RELATION_NAMES: dict[IssueLinkType, tuple[str, str]] = {
@@ -45,12 +48,14 @@ def _issue_or_404(session: Session, issue_id: int) -> Issue:
     return issue
 
 
-def _linked_issue(issue: Issue, teams: dict[int, Team]) -> LinkedIssue:
+def _linked_issue(
+    issue: Issue, teams: dict[int, Team], statuses: dict[int, WorkflowStatus]
+) -> LinkedIssue:
     return LinkedIssue(
         id=issue.id,
         identifier=f"{teams[issue.team_id].key}-{issue.number}",
         title=issue.title,
-        status=issue.status,
+        status=StatusRead.model_validate(statuses[issue.status_id]),
         priority=issue.priority,
     )
 
@@ -107,11 +112,12 @@ def create_link(
     session.refresh(link)
 
     teams = _teams_for(session, [target])
+    statuses = _statuses_for(session, [target])
     forward, _ = _RELATION_NAMES[payload.type]
     return IssueLinkRead(
         id=link.id,
         relation=forward,
-        issue=_linked_issue(target, teams),
+        issue=_linked_issue(target, teams, statuses),
         created_at=link.created_at,
     )
 
@@ -151,6 +157,7 @@ def list_links(session: Session, current_user: User, issue_id: int) -> IssueLink
         for other in session.exec(select(Issue).where(Issue.id.in_(other_ids))).all()
     }
     teams = _teams_for(session, issues.values())
+    statuses = _statuses_for(session, issues.values())
 
     links = IssueLinks()
     for link, other_id, end in [
@@ -165,7 +172,7 @@ def list_links(session: Session, current_user: User, issue_id: int) -> IssueLink
             IssueLinkRead(
                 id=link.id,
                 relation=relation,
-                issue=_linked_issue(other, teams),
+                issue=_linked_issue(other, teams, statuses),
                 created_at=link.created_at,
             )
         )
@@ -190,7 +197,7 @@ def open_blocker_counts(session: Session, issue_ids: list[int]) -> dict[int, int
         .where(
             IssueLink.type == IssueLinkType.blocks,
             IssueLink.target_id.in_(issue_ids),
-            Issue.status.not_in(RESOLVED_STATUSES),
+            ~in_category(*RESOLVED_STATUSES),
         )
     ).all()
 
@@ -222,4 +229,21 @@ def _teams_for(session: Session, issues) -> dict[int, Team]:
     return {
         team.id: team
         for team in session.exec(select(Team).where(Team.id.in_(team_ids))).all()
+    }
+
+
+def _statuses_for(session: Session, issues) -> dict[int, WorkflowStatus]:
+    """The status rows a set of issues points at, in one query.
+
+    Links reach across teams, so these can come from several workflows -- and
+    the panel renders each one with its own team's colour and name.
+    """
+    status_ids = {issue.status_id for issue in issues}
+    if not status_ids:
+        return {}
+    return {
+        status.id: status
+        for status in session.exec(
+            select(WorkflowStatus).where(WorkflowStatus.id.in_(status_ids))
+        ).all()
     }

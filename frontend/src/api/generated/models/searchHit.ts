@@ -6,13 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { IssuePriority } from './issuePriority';
-import type { IssueStatus } from './issueStatus';
+import type { StatusRead } from './statusRead';
 
 export interface SearchHit {
   id: number;
   identifier: string;
   title: string;
-  status: IssueStatus;
+  status: StatusRead;
   priority: IssuePriority;
   team_id: number;
   updated_at: string;

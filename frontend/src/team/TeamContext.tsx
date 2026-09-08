@@ -4,6 +4,7 @@ import type {
   CycleRead,
   LabelRead,
   ProjectRead,
+  StatusRead,
   TeamMemberRead,
   TeamRead,
 } from '@/api/generated/models'
@@ -15,6 +16,8 @@ export interface TeamContextValue {
   labels: LabelRead[]
   members: TeamMemberRead[]
   cycles: CycleRead[]
+  /** The team's board columns, in order. */
+  statuses: StatusRead[]
 }
 
 const TeamContext = createContext<TeamContextValue | undefined>(undefined)

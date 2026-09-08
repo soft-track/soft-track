@@ -29,17 +29,18 @@ from lib_softtrack.models.cycles import (
     CycleRead,
     CycleUpdate,
 )
-from lib_softtrack.tables import Cycle, CycleState, Issue, IssueStatus, User
+from lib_softtrack.statuses import in_category
+from lib_softtrack.tables import Cycle, CycleState, Issue, StatusCategory, User
 from lib_softtrack.teams import get_team_or_404, require_team_member
 
 #: Statuses that count as finished for cycle progress and for deciding what
 #: carries over. Cancelled counts as finished: it is not outstanding work, and
 #: dragging it into the next cycle forever would be wrong.
-DONE_STATUSES = (IssueStatus.done, IssueStatus.cancelled)
+DONE_STATUSES = (StatusCategory.done, StatusCategory.cancelled)
 
 #: Only `done` counts as *completed* in the progress numbers -- cancelled work
 #: was not delivered, so counting it would flatter the burndown.
-_COMPLETED = IssueStatus.done
+_COMPLETED = StatusCategory.done
 
 
 def get_cycle_or_404(session: Session, cycle_id: int) -> Cycle:
@@ -54,7 +55,7 @@ def cycle_progress(session: Session, cycle_ids: list[int]) -> dict[int, CyclePro
     if not cycle_ids:
         return {}
 
-    completed = case((Issue.status == _COMPLETED, 1), else_=0)
+    completed = case((in_category(_COMPLETED), 1), else_=0)
     rows = session.exec(
         select(
             Issue.cycle_id,
@@ -62,7 +63,7 @@ def cycle_progress(session: Session, cycle_ids: list[int]) -> dict[int, CyclePro
             func.coalesce(func.sum(completed), 0),
             func.coalesce(func.sum(Issue.estimate), 0),
             func.coalesce(
-                func.sum(case((Issue.status == _COMPLETED, Issue.estimate), else_=0)), 0
+                func.sum(case((in_category(_COMPLETED), Issue.estimate), else_=0)), 0
             ),
             func.count(Issue.estimate),
         )
@@ -220,9 +221,7 @@ def complete_cycle(
         raise HTTPException(status_code=409, detail="That cycle is already completed.")
 
     unfinished = session.exec(
-        select(Issue).where(
-            Issue.cycle_id == cycle.id, Issue.status.not_in(DONE_STATUSES)
-        )
+        select(Issue).where(Issue.cycle_id == cycle.id, ~in_category(*DONE_STATUSES))
     ).all()
 
     # The next cycle by number that has not been completed. Carrying into an

@@ -1,7 +1,13 @@
-import type { CycleRead, LabelRead, ProjectRead, TeamMemberRead } from '@/api/generated/models'
+import type {
+  CycleRead,
+  LabelRead,
+  ProjectRead,
+  StatusRead,
+  TeamMemberRead,
+} from '@/api/generated/models'
 import type { BoardFilters } from '@/board/filters'
 import { NO_FILTERS } from '@/board/filters'
-import { PRIORITY_META, STATUS_META } from '@/issues/issueMeta'
+import { PRIORITY_META } from '@/issues/issueMeta'
 
 /** What the filter bar needs in order to name an id. */
 export type FilterLookups = {
@@ -9,6 +15,7 @@ export type FilterLookups = {
   labels: LabelRead[]
   projects: ProjectRead[]
   cycles: CycleRead[]
+  statuses: StatusRead[]
 }
 
 export type FilterChip = {
@@ -25,6 +32,7 @@ export const EMPTY_LOOKUPS: FilterLookups = {
   labels: [],
   projects: [],
   cycles: [],
+  statuses: [],
 }
 
 /**
@@ -42,8 +50,14 @@ export function describeFilters(
 ): FilterChip[] {
   const chips: FilterChip[] = []
 
-  if (filters.status) {
-    chips.push({ key: 'status', field: 'Status', value: STATUS_META[filters.status].label })
+  if (filters.statusId !== null) {
+    chips.push({
+      key: 'statusId',
+      field: 'Status',
+      value:
+        lookups.statuses.find((status) => status.id === filters.statusId)?.name ??
+        'Deleted status',
+    })
   }
   if (filters.priority) {
     chips.push({

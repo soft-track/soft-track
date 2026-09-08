@@ -131,11 +131,18 @@ def test_a_snippet_is_a_window_not_the_whole_description(client, team):
 
 
 def test_the_hit_carries_what_a_result_row_needs(client, team):
-    make_issue(client, team, "Avatar", "x", priority="urgent", status="in_review")
+    make_issue(
+        client,
+        team,
+        "Avatar",
+        "x",
+        priority="urgent",
+        status_id=team["status_ids"]["In Review"],
+    )
     hit = find(client, team, "Avatar")["items"][0]
 
     assert hit["identifier"].startswith("ENG-")
-    assert hit["status"] == "in_review"
+    assert hit["status"]["name"] == "In Review"
     assert hit["priority"] == "urgent"
 
 
