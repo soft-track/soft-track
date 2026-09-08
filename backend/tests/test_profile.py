@@ -71,6 +71,20 @@ def test_keeping_your_own_username_is_not_a_collision(client, auth):
     assert response.status_code == 200
 
 
+def test_a_blank_name_is_refused(client, auth):
+    actor = auth()
+    response = client.patch(
+        "/auth/me", json={"full_name": "   "}, headers=actor["headers"]
+    )
+    assert response.status_code == 400
+
+
+def test_a_one_character_local_part_still_makes_a_usable_handle(client, auth):
+    """`a@x.dev` would derive `a`, a character short of what the pattern takes."""
+    actor = auth(email="a@softtrack.dev")
+    assert actor["user"]["username"] == "a-user"
+
+
 def test_an_invalid_colour_is_refused(client, auth):
     actor = auth()
     response = client.patch(

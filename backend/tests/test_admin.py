@@ -213,6 +213,17 @@ def test_an_admin_can_rename_someone(client, auth):
     assert response.json()["full_name"] == "Ada Lovelace"
 
 
+def test_an_admin_cannot_blank_someones_name(client, auth):
+    admin = auth(email="admin@softtrack.dev")
+    ada = auth(email="ada@softtrack.dev")
+    response = client.patch(
+        f"/admin/users/{ada['user']['id']}",
+        json={"full_name": "  "},
+        headers=admin["headers"],
+    )
+    assert response.status_code == 400
+
+
 def test_updating_an_unknown_user_is_a_404(client, auth):
     admin = auth(email="admin@softtrack.dev")
     response = client.patch(

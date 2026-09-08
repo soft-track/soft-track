@@ -115,6 +115,11 @@ def update_user(
             status_code=400, detail="You cannot remove your own site admin access"
         )
 
+    # Unreachable as the rules stand, and kept anyway: the actor is
+    # necessarily an active site admin, so any *other* active site admin makes
+    # two, and the target being the actor is caught above. It is the net under
+    # those two self-checks -- relax either of them and this is what stops the
+    # instance being left with nobody who can administer it.
     losing_the_last_admin = (
         user.is_site_admin
         and user.is_active
