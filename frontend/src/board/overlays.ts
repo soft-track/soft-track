@@ -20,6 +20,7 @@ export type Overlay =
   | 'newCycle'
   | 'import'
   | 'notifications'
+  | 'saveView'
 
 /** Bottom first; the last entry is on top. */
 export type OverlayStack = readonly Overlay[]

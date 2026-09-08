@@ -1,11 +1,18 @@
-import { useCallback, useMemo, useState } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { useListIssuesTeamsTeamIdIssuesGet } from '@/api/generated/endpoints/issues/issues'
 import { useSearchSearchGet } from '@/api/generated/endpoints/search/search'
-import type { IssueRead } from '@/api/generated/models'
+import type { IssueRead, SavedViewRead } from '@/api/generated/models'
 import { useAuth } from '@/auth/AuthContext'
-import { filterIssues, type IssueFilters, NO_FILTERS } from '@/board/filterIssues'
+import {
+  type BoardFilters,
+  fromSearchParams,
+  fromViewFilters,
+  sameFilters,
+  toQueryParams,
+  toSearchParams,
+} from '@/board/filters'
 import { IssueListView } from '@/board/IssueListView'
 import { KanbanBoard } from '@/board/KanbanBoard'
 import { Sidebar } from '@/board/Sidebar'
@@ -28,6 +35,8 @@ import { TeamProvider } from '@/team/TeamContext'
 import { useTeamData } from '@/team/useTeamData'
 import { useTeamByKey } from '@/team/useTeams'
 import { Loading } from '@/ui/Loading'
+import { SaveViewModal } from '@/views/SaveViewModal'
+import { useSavedViews } from '@/views/useSavedViews'
 
 export default function BoardPage() {
   const { teamKey, issueNumber } = useParams<{ teamKey: string; issueNumber?: string }>()
@@ -36,24 +45,67 @@ export default function BoardPage() {
   const { user } = useAuth()
 
   const [view, setView] = useState<BoardView>('board')
-  const [activeProjectId, setActiveProjectId] = useState<number | 'all'>('all')
-  const [filters, setFilters] = useState<IssueFilters>(NO_FILTERS)
   const [search, setSearch] = useState('')
   // The sidebar is a drawer below the `lg` breakpoint.
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const overlays = useOverlays()
+  const [editingView, setEditingView] = useState<SavedViewRead | null>(null)
+
+  // The URL is the filter state, not a copy of it. That is what makes any
+  // board someone is looking at a link they can paste, and it gets working
+  // back and forward buttons for free.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filters = useMemo(() => fromSearchParams(searchParams), [searchParams])
+  const setFilters = useCallback(
+    (next: BoardFilters) => setSearchParams(toSearchParams(next)),
+    [setSearchParams],
+  )
 
   const teamData = useTeamData(team)
-  const issuesParams = { project_id: activeProjectId === 'all' ? undefined : activeProjectId }
+  const savedViews = useSavedViews(team?.id ?? 0)
+
+  // Landing on the default view, at most once per mount.
+  //
+  // A ref rather than state because nothing renders differently for having
+  // landed -- it only stops the redirect happening a second time, which
+  // matters when somebody clears the filters and the URL goes bare again.
+  const urlIsBare = searchParams.toString() === ''
+  const hasLanded = useRef(false)
+  useEffect(() => {
+    if (hasLanded.current) return
+    // Arriving with filters already in the URL -- a pasted link, or a reload
+    // -- means the question has been asked and the default does not apply.
+    if (!urlIsBare) {
+      hasLanded.current = true
+      return
+    }
+    if (!team || savedViews.isLoading) return
+
+    hasLanded.current = true
+    const landing = savedViews.views.find(
+      (candidate) => candidate.id === savedViews.effectiveDefaultId,
+    )
+    if (landing) {
+      setSearchParams(toSearchParams(fromViewFilters(landing.filters)), { replace: true })
+    }
+  }, [urlIsBare, team, savedViews, setSearchParams])
+
+  // Hold the issue query until the URL cannot still be rewritten from under
+  // it. When a team default exists this still costs one superseded request on
+  // first load -- the redirect happens in the effect above, after this render
+  // -- which is a fair price for not duplicating the precedence rule here.
+  const filtersAreSettled = !urlIsBare || !savedViews.isLoading
+
+  const issuesParams = useMemo(() => toQueryParams(filters), [filters])
   const issuesQuery = useListIssuesTeamsTeamIdIssuesGet(team?.id ?? 0, issuesParams, {
-    query: { enabled: Boolean(team) },
+    query: { enabled: Boolean(team) && filtersAreSettled },
   })
   const changeStatus = useStatusChange(team, issuesParams)
 
-  // Memoised on the query result, not rebuilt each render: `?? []` would be
-  // a fresh array every time and defeat the filter memo below it.
+  // Every filter is applied by the server now, so this page is already what
+  // the board should show. Filtering it again here would only ever narrow the
+  // page that was loaded, which is the bug that moved filtering server-side.
   const issues = useMemo(() => issuesQuery.data?.items ?? [], [issuesQuery.data])
-  const visibleIssues = useMemo(() => filterIssues(issues, filters), [issues, filters])
 
   // Search runs on the server. The old client-side filter could only see the
   // page that was already loaded, and only matched titles.
@@ -104,21 +156,26 @@ export default function BoardPage() {
 
   const openIssue = issueNumber ? issues.find((i) => String(i.number) === issueNumber) : undefined
   const selectedCycle = teamData.cycles.find((cycle) => cycle.id === filters.cycleId) ?? null
-  const setFilter = <K extends keyof IssueFilters>(key: K, value: IssueFilters[K]) =>
-    setFilters((current) => ({ ...current, [key]: value }))
+  const isTeamAdmin =
+    teamData.members.find((member) => member.user.id === user?.id)?.role === 'admin'
+  // Nothing to save while these filters are already a view somebody named.
+  const matchesSavedView = savedViews.views.some((candidate) =>
+    sameFilters(filters, fromViewFilters(candidate.filters)),
+  )
 
   const sidebar = (
     <Sidebar
-      activeProjectId={activeProjectId}
-      onSelectProject={(id) => {
-        setActiveProjectId(id)
+      filters={filters}
+      onFiltersChange={(next) => {
+        setFilters(next)
         setSidebarOpen(false)
       }}
-      activeCycleId={filters.cycleId}
-      onSelectCycle={(cycleId) => {
-        setFilter('cycleId', cycleId)
+      onEditView={(target) => {
         setSidebarOpen(false)
+        setEditingView(target)
+        overlays.open('saveView')
       }}
+      isAdmin={isTeamAdmin}
       onNewCycle={() => {
         setSidebarOpen(false)
         overlays.open('newCycle')
@@ -157,10 +214,13 @@ export default function BoardPage() {
             onOpenSidebar={() => setSidebarOpen(true)}
             search={search}
             onSearchChange={setSearch}
-            priorityFilter={filters.priority}
-            onPriorityFilterChange={(value) => setFilter('priority', value)}
-            assigneeFilter={filters.assignee}
-            onAssigneeFilterChange={(value) => setFilter('assignee', value)}
+            filters={filters}
+            onFiltersChange={setFilters}
+            onSaveView={() => {
+              setEditingView(null)
+              overlays.open('saveView')
+            }}
+            canSaveView={!matchesSavedView}
             notificationsOpen={overlays.isOpen('notifications')}
             onToggleNotifications={() => overlays.toggle('notifications')}
             onCloseNotifications={() => overlays.close('notifications')}
@@ -174,18 +234,18 @@ export default function BoardPage() {
                 total={searchResults.data?.total ?? 0}
                 isLoading={searchResults.isLoading}
               />
-            ) : issuesQuery.isLoading ? (
+            ) : !filtersAreSettled || issuesQuery.isLoading ? (
               <Loading label="Loading issues…" />
             ) : view === 'reports' ? (
               <ReportsView />
             ) : view === 'board' ? (
               <KanbanBoard
-                issues={visibleIssues}
+                issues={issues}
                 onStatusChange={changeStatus}
                 estimates={teamData.estimates}
               />
             ) : (
-              <IssueListView issues={visibleIssues} />
+              <IssueListView issues={issues} />
             )}
           </div>
         </div>
@@ -205,6 +265,16 @@ export default function BoardPage() {
       {overlays.isOpen('newIssue') && <NewIssueModal onClose={() => overlays.close('newIssue')} />}
       {overlays.isOpen('newCycle') && <NewCycleModal onClose={() => overlays.close('newCycle')} />}
       {overlays.isOpen('import') && <ImportJiraModal onClose={() => overlays.close('import')} />}
+      {overlays.isOpen('saveView') && (
+        <SaveViewModal
+          filters={editingView ? fromViewFilters(editingView.filters) : filters}
+          editing={editingView ?? undefined}
+          onClose={() => {
+            overlays.close('saveView')
+            setEditingView(null)
+          }}
+        />
+      )}
       {issueNumber && openIssue && (
         <IssueDetailPanel issueId={openIssue.id} onClose={() => navigate(`/${team.key}`)} />
       )}

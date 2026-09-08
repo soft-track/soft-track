@@ -20,6 +20,7 @@ from fastapi import HTTPException
 from sqlalchemy import case, func
 from sqlmodel import Session, select
 
+from lib_softtrack import views as views_service
 from lib_softtrack.history import record_changes, snapshot
 from lib_softtrack.models.cycles import (
     CycleCompletion,
@@ -277,6 +278,10 @@ def delete_cycle(session: Session, current_user: User, cycle_id: int) -> None:
         issue.cycle_id = None
         session.add(issue)
         record_changes(session, issue, before, current_user)
+
+    # Saved views hold one too. A view left filtering on a cycle that no
+    # longer exists matches nothing, which reads as broken rather than empty.
+    views_service.clear_cycle(session, cycle_id)
     session.flush()
 
     session.delete(cycle)

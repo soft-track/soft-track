@@ -191,6 +191,14 @@ class Team(SQLModel, table=True):
     description: Optional[str] = None
     next_issue_number: int = Field(default=1)
     next_cycle_number: int = Field(default=1)
+    #: The view everyone on this team lands on, unless they have chosen their
+    #: own -- see UserDefaultView. Only a shared view may hold it, since a
+    #: private one would be invisible to everybody it was defaulted for.
+    #:
+    #: A column here rather than a flag on SavedView so that "at most one
+    #: default" is a fact about the schema instead of an invariant the service
+    #: has to keep re-establishing.
+    default_view_id: Optional[int] = Field(default=None, foreign_key="savedview.id")
     created_at: datetime = Field(default_factory=utcnow)
 
 
@@ -398,3 +406,59 @@ class Notification(SQLModel, table=True):
     #: digest loop cannot both send the same notification.
     emailed_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=utcnow, index=True)
+
+
+class SavedView(SQLModel, table=True):
+    """A named set of filters over one team's issues.
+
+    The filters are columns rather than a JSON blob. The set is small, fixed
+    and already described by enums the API publishes, so columns get typed
+    request and response models -- and therefore a typed frontend client --
+    where a blob would reach the browser as `unknown`. Foreign keys also mean
+    a view cannot outlive the label or cycle it filters on without somebody
+    having to decide what happens, which is the conversation a blob quietly
+    skips.
+
+    Every field is nullable and null means "no opinion", so a view with
+    nothing set is "all issues" rather than a contradiction that matches
+    nothing.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    name: str
+    owner_id: int = Field(foreign_key="user.id", index=True)
+    #: Visible to the whole team rather than only its owner. Any member may
+    #: share one: a tracker where a useful filter needs an admin to publish it
+    #: is a tracker where people paste URLs to each other instead.
+    is_shared: bool = Field(default=False, index=True)
+
+    status: Optional[IssueStatus] = None
+    priority: Optional[IssuePriority] = None
+    assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    #: Distinct from `assignee_id is None`, which means "any assignee". The two
+    #: are mutually exclusive and the request model rejects setting both.
+    unassigned: bool = Field(default=False)
+    label_id: Optional[int] = Field(default=None, foreign_key="label.id")
+    project_id: Optional[int] = Field(default=None, foreign_key="project.id")
+    #: Cleared when the cycle is deleted -- see lib_softtrack/cycles.py. A view
+    #: pointing at a cycle that no longer exists would match nothing and look
+    #: broken rather than empty.
+    cycle_id: Optional[int] = Field(default=None, foreign_key="cycle.id")
+
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
+class UserDefaultView(SQLModel, table=True):
+    """One person's landing view for one team, overriding the team's default.
+
+    A row exists only for someone who has chosen; everyone else falls through
+    to `Team.default_view_id`. Storing the absence of a choice as no row is
+    what keeps "the admin changed the team default" from silently skipping
+    the people who never expressed a preference.
+    """
+
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    team_id: int = Field(foreign_key="team.id", primary_key=True)
+    view_id: int = Field(foreign_key="savedview.id", index=True)

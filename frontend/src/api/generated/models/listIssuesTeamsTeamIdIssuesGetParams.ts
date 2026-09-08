@@ -14,6 +14,14 @@ status?: IssueStatus | null;
 priority?: IssuePriority | null;
 assignee_id?: number | null;
 /**
+ * Only issues with nobody assigned. Overrides assignee_id.
+ */
+unassigned?: boolean;
+/**
+ * Only issues with this label.
+ */
+label_id?: number | null;
+/**
  * Only sub-issues of this issue.
  */
 parent_id?: number | null;

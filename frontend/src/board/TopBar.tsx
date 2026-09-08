@@ -1,11 +1,9 @@
-import type { IssuePriority } from '@/api/generated/models'
-import type { AssigneeFilter } from '@/board/filterIssues'
-import { PRIORITY_META, PRIORITY_ORDER } from '@/issues/issueMeta'
+import { FilterBar } from '@/board/FilterBar'
+import type { BoardFilters } from '@/board/filters'
 import type { BoardView } from '@/keyboard/useCommands'
 import { NotificationsBell } from '@/notifications/NotificationsBell'
 import { useTeamContext } from '@/team/TeamContext'
 import { Icon, type IconName } from '@/ui/Icon'
-import { Select } from '@/ui/Select'
 
 const VIEWS: Array<{ id: BoardView; label: string; icon: IconName }> = [
   { id: 'board', label: 'Board', icon: 'board' },
@@ -20,10 +18,10 @@ export function TopBar({
   onOpenSidebar,
   search,
   onSearchChange,
-  priorityFilter,
-  onPriorityFilterChange,
-  assigneeFilter,
-  onAssigneeFilterChange,
+  filters,
+  onFiltersChange,
+  onSaveView,
+  canSaveView,
   notificationsOpen,
   onToggleNotifications,
   onCloseNotifications,
@@ -34,15 +32,16 @@ export function TopBar({
   onOpenSidebar: () => void
   search: string
   onSearchChange: (value: string) => void
-  priorityFilter: IssuePriority | 'all'
-  onPriorityFilterChange: (value: IssuePriority | 'all') => void
-  assigneeFilter: AssigneeFilter
-  onAssigneeFilterChange: (value: AssigneeFilter) => void
+  filters: BoardFilters
+  onFiltersChange: (filters: BoardFilters) => void
+  onSaveView: () => void
+  /** False while these filters already match a saved view. */
+  canSaveView: boolean
   notificationsOpen: boolean
   onToggleNotifications: () => void
   onCloseNotifications: () => void
 }) {
-  const { team, members } = useTeamContext()
+  const { team } = useTeamContext()
 
   return (
     <header className="glass flex flex-wrap items-center gap-2 rounded-panel px-3 py-2">
@@ -76,42 +75,12 @@ export function TopBar({
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
-        <Select
-          dense
-          value={priorityFilter}
-          onChange={(e) => onPriorityFilterChange(e.target.value as IssuePriority | 'all')}
-          aria-label="Filter by priority"
-        >
-          <option value="all">All priorities</option>
-          {PRIORITY_ORDER.map((p) => (
-            <option key={p} value={p}>
-              {PRIORITY_META[p].label}
-            </option>
-          ))}
-        </Select>
-
-        <Select
-          dense
-          value={String(assigneeFilter)}
-          onChange={(e) => {
-            const v = e.target.value
-            onAssigneeFilterChange(v === 'all' || v === 'unassigned' ? v : Number(v))
-          }}
-          aria-label="Filter by assignee"
-        >
-          <option value="all">Everyone</option>
-          <option value="unassigned">Unassigned</option>
-          {/* Everyone, including deactivated accounts: their issues are
-              still on the board and still have to be filterable. */}
-          {members.map((m) => (
-            <option key={m.user.id} value={m.user.id}>
-              {m.user.full_name}
-              {m.user.is_active ? '' : ' (deactivated)'}
-            </option>
-          ))}
-        </Select>
-      </div>
+      <FilterBar
+        filters={filters}
+        onChange={onFiltersChange}
+        onSave={onSaveView}
+        canSave={canSaveView}
+      />
 
       <div className="ml-auto flex items-center gap-2">
         <label className="relative block">

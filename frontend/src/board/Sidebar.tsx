@@ -1,6 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom'
 
+import type { SavedViewRead } from '@/api/generated/models'
 import { useAuth } from '@/auth/AuthContext'
+import type { BoardFilters } from '@/board/filters'
 import { CycleList } from '@/cycles/CycleList'
 import { InvitesBanner } from '@/team/InvitesBanner'
 import { useTeamContext } from '@/team/TeamContext'
@@ -9,19 +11,21 @@ import { Icon } from '@/ui/Icon'
 import { Logo } from '@/ui/Logo'
 import { Select } from '@/ui/Select'
 import { useTheme } from '@/ui/theme'
+import { ViewList } from '@/views/ViewList'
 
 export function Sidebar({
-  activeProjectId,
-  onSelectProject,
-  activeCycleId,
-  onSelectCycle,
+  filters,
+  onFiltersChange,
+  onEditView,
+  isAdmin,
   onNewCycle,
   onImport,
 }: {
-  activeProjectId: number | 'all'
-  onSelectProject: (projectId: number | 'all') => void
-  activeCycleId: number | null
-  onSelectCycle: (cycleId: number | null) => void
+  filters: BoardFilters
+  onFiltersChange: (filters: BoardFilters) => void
+  onEditView: (view: SavedViewRead) => void
+  /** Team admins can set the team default and tidy up others' shared views. */
+  isAdmin: boolean
   onNewCycle: () => void
   onImport: () => void
 }) {
@@ -63,19 +67,15 @@ export function Sidebar({
       <nav className="scroll-thin flex-1 space-y-5 overflow-y-auto px-3 pb-3">
         <div>
           <p className="eyebrow mb-1.5 px-2">Views</p>
-          <button
-            type="button"
-            onClick={() => onSelectProject('all')}
-            className="nav-item"
-            data-active={activeProjectId === 'all'}
-          >
-            <Icon name="board" size={15} className="opacity-70" />
-            All issues
-          </button>
-          <Link to={`/settings/teams/${team.key}/members`} className="nav-item">
-            <Icon name="users" size={15} className="opacity-70" />
-            Members
-          </Link>
+          {/* Members deliberately does not live here any more. It is a link
+              to a settings page, not a filter, and sitting under the
+              "Private" heading it read as somebody's saved view. */}
+          <ViewList
+            filters={filters}
+            onApply={onFiltersChange}
+            onEdit={onEditView}
+            isAdmin={isAdmin}
+          />
         </div>
 
         <div>
@@ -91,7 +91,11 @@ export function Sidebar({
               <Icon name="plus" size={13} />
             </button>
           </div>
-          <CycleList cycles={cycles} activeCycleId={activeCycleId} onSelect={onSelectCycle} />
+          <CycleList
+            cycles={cycles}
+            activeCycleId={filters.cycleId}
+            onSelect={(cycleId) => onFiltersChange({ ...filters, cycleId })}
+          />
         </div>
 
         <div>
@@ -103,9 +107,16 @@ export function Sidebar({
             <button
               key={project.id}
               type="button"
-              onClick={() => onSelectProject(project.id)}
+              // A project is a filter like any other now, so picking one
+              // composes with whatever else is set rather than replacing it.
+              onClick={() =>
+                onFiltersChange({
+                  ...filters,
+                  projectId: filters.projectId === project.id ? null : project.id,
+                })
+              }
               className="nav-item"
-              data-active={activeProjectId === project.id}
+              data-active={filters.projectId === project.id}
             >
               <span
                 className="dot"
@@ -123,6 +134,13 @@ export function Sidebar({
       </div>
 
       <div className="space-y-0.5 px-3 pb-2">
+        <Link
+          to={`/settings/teams/${team.key}/members`}
+          className="nav-item text-neutral-500"
+        >
+          <Icon name="users" size={15} className="opacity-70" />
+          Members
+        </Link>
         <button type="button" onClick={onImport} className="nav-item text-neutral-500">
           <Icon name="upload" size={15} className="opacity-70" />
           Import from Jira

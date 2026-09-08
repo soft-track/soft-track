@@ -35,6 +35,10 @@ def list_issues(
     status: Optional[IssueStatus] = None,
     priority: Optional[IssuePriority] = None,
     assignee_id: Optional[int] = None,
+    unassigned: bool = Query(
+        False, description="Only issues with nobody assigned. Overrides assignee_id."
+    ),
+    label_id: Optional[int] = Query(None, description="Only issues with this label."),
     parent_id: Optional[int] = Query(
         None, description="Only sub-issues of this issue."
     ),
@@ -52,6 +56,8 @@ def list_issues(
         status=status,
         priority=priority,
         assignee_id=assignee_id,
+        unassigned=unassigned,
+        label_id=label_id,
         parent_id=parent_id,
         cycle_id=cycle_id,
         limit=limit,
