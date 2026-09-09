@@ -38,6 +38,21 @@ class Settings(BaseSettings):
     #: holiday, short enough that a link found in an old inbox is dead.
     invite_expire_days: int = 7
 
+    # --- The signed-out front door --------------------------------------
+    #: False sends a signed-out visitor from / straight to /login, which is
+    #: what SoftTrack did before there was a landing page at all.
+    #:
+    #: True by default, for the same reason `open_registration` is: the
+    #: defaults here are "open, then lock down", and an instance nobody has
+    #: configured yet is the one most likely to be opened by someone who does
+    #: not know what SoftTrack is. It is also what makes / worth linking to --
+    #: the Open Graph tags in index.html unfurl a page, not a login form.
+    #:
+    #: Turn it off on a company instance behind a VPN, where everyone opening
+    #: it already knows what it is and the page is one extra click every
+    #: morning for all of them.
+    landing_page: bool = True
+
     # --- Attachments ---------------------------------------------------
     #: "local" (files under attachment_dir) or "s3" (any S3-compatible
     #: store). See lib_softtrack/storage.py.
@@ -127,6 +142,21 @@ class Settings(BaseSettings):
     @property
     def email_delivery_configured(self) -> bool:
         return bool(self.smtp_host)
+
+    @property
+    def demo_credentials_are_public(self) -> bool:
+        """Whether the sign-in page may print the seeded account's password.
+
+        True on the public demo and on a development machine: both are seeded
+        by `seed.py` with the same credentials, which are published in
+        CONTRIBUTING anyway, and a contributor who has just run
+        `docker compose up` is exactly who the hint is for.
+
+        Anywhere else is somebody's real instance. There the hint is a working
+        password advertised above the fold, and the prefilled address is one
+        every employee clears out before typing their own.
+        """
+        return self.environment in ("demo", "development")
 
 
 settings = Settings()

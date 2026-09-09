@@ -38,10 +38,15 @@ def auth_config():
 
     Public by necessity: the register page has to know whether to show a form
     or an "ask an admin for a link" notice, and it asks before authenticating.
-    It reveals only that this instance is invite-only, which its sign-up page
-    would say out loud anyway.
+    It reveals only that this instance is invite-only, whether it has a landing
+    page, and whether it is the demo -- all three of which the signed-out pages
+    say out loud anyway.
     """
-    return AuthConfig(open_registration=settings.open_registration)
+    return AuthConfig(
+        open_registration=settings.open_registration,
+        landing_page=settings.landing_page,
+        demo_credentials=settings.demo_credentials_are_public,
+    )
 
 
 @router.post("/register", response_model=Token)

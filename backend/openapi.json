@@ -12,7 +12,7 @@
           "auth"
         ],
         "summary": "Auth Config",
-        "description": "What the sign-in and sign-up pages need before anyone has a token.\n\nPublic by necessity: the register page has to know whether to show a form\nor an \"ask an admin for a link\" notice, and it asks before authenticating.\nIt reveals only that this instance is invite-only, which its sign-up page\nwould say out loud anyway.",
+        "description": "What the sign-in and sign-up pages need before anyone has a token.\n\nPublic by necessity: the register page has to know whether to show a form\nor an \"ask an admin for a link\" notice, and it asks before authenticating.\nIt reveals only that this instance is invite-only, whether it has a landing\npage, and whether it is the demo -- all three of which the signed-out pages\nsay out loud anyway.",
         "operationId": "auth_config_auth_config_get",
         "responses": {
           "200": {
@@ -4886,11 +4886,21 @@
           "open_registration": {
             "type": "boolean",
             "title": "Open Registration"
+          },
+          "landing_page": {
+            "type": "boolean",
+            "title": "Landing Page"
+          },
+          "demo_credentials": {
+            "type": "boolean",
+            "title": "Demo Credentials"
           }
         },
         "type": "object",
         "required": [
-          "open_registration"
+          "open_registration",
+          "landing_page",
+          "demo_credentials"
         ],
         "title": "AuthConfig",
         "description": "What the sign-in pages need to know before anyone has authenticated."

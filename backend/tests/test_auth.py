@@ -115,3 +115,43 @@ def test_a_token_without_a_version_still_works(client, auth):
     )
     response = client.get("/auth/me", headers={"Authorization": f"Bearer {legacy}"})
     assert response.status_code == 200
+
+
+def test_auth_config_is_exactly_what_the_signed_out_pages_need(client):
+    """The whole payload, not one key.
+
+    /auth/config is unauthenticated by necessity, so what it carries is worth
+    pinning: a field added here is served to anyone who can reach the host.
+    """
+    assert client.get("/auth/config").json() == {
+        "open_registration": True,
+        "landing_page": True,
+        "demo_credentials": True,
+    }
+
+
+def test_auth_config_reports_the_landing_page_switched_off(client, monkeypatch):
+    from web import settings
+
+    monkeypatch.setattr(settings, "landing_page", False)
+    assert client.get("/auth/config").json()["landing_page"] is False
+
+
+def test_the_demo_hint_is_not_offered_outside_the_demo(client, monkeypatch):
+    """The bug this endpoint field exists to fix.
+
+    Before it, LoginPage printed `demo@softtrack.dev / password123` under the
+    button on every instance -- a working password on the front page of a
+    company's own tracker.
+    """
+    from web import settings
+
+    monkeypatch.setattr(settings, "environment", "production")
+    assert client.get("/auth/config").json()["demo_credentials"] is False
+
+
+def test_the_demo_hint_is_offered_on_the_demo(client, monkeypatch):
+    from web import settings
+
+    monkeypatch.setattr(settings, "environment", "demo")
+    assert client.get("/auth/config").json()["demo_credentials"] is True
