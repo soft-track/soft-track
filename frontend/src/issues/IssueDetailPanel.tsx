@@ -23,7 +23,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
   const { issue } = editor
 
   return (
-    <div className="scrim fixed inset-0 z-20 flex justify-end" aria-hidden="true" onClick={onClose} >
+    <div className="scrim fixed inset-0 z-20 flex justify-end" onClick={onClose}>
       <div
         role="dialog"
         aria-label={issue ? `${issue.identifier} ${issue.title}` : 'Issue'}
