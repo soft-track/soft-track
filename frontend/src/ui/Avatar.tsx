@@ -20,6 +20,7 @@ export function Avatar({
   size?: number
   /** Fade a deactivated account on a roster, without hiding who it is. */
   inactive?: boolean
+  /** Hide the avatar from assistive tech when the name is already shown nearby. */
   decorative?: boolean
 }) {
   return (

@@ -127,7 +127,7 @@ function NotificationRow({
       >
         <span className="mt-0.5 shrink-0">
           {notification.actor ? (
-            <Avatar user={notification.actor} size={24} />
+            <Avatar user={notification.actor} size={24} decorative />
           ) : (
             <Icon name={meta.icon} size={16} className="text-neutral-400" />
           )}
