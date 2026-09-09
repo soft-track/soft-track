@@ -23,7 +23,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
   const { issue } = editor
 
   return (
-    <div className="scrim fixed inset-0 z-20 flex justify-end" onClick={onClose}>
+    <div className="scrim fixed inset-0 z-20 flex justify-end" aria-hidden="true" onClick={onClose} >
       <div
         role="dialog"
         aria-label={issue ? `${issue.identifier} ${issue.title}` : 'Issue'}
@@ -119,7 +119,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
 
               <div className="mt-5 flex items-center gap-2 text-xs text-neutral-400">
                 <PriorityIcon priority={issue.priority} size={12} />
-                <Avatar user={issue.creator} size={16} />
+                <Avatar user={issue.creator} size={16} decorative />
                 <span>
                   Created by {issue.creator.full_name}{' '}
                   {formatDistanceToNow(parseServerDate(issue.created_at), { addSuffix: true })}

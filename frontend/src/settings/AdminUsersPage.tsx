@@ -119,7 +119,7 @@ export default function AdminUsersPage() {
               const isSelf = row.id === user?.id
               return (
                 <li key={row.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
-                  <Avatar user={row} size={34} inactive={!row.is_active} />
+                  <Avatar user={row} size={34} inactive={!row.is_active} decorative />
                   <div className="min-w-[15rem] flex-1">
                     <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-neutral-900">
                       {row.full_name}

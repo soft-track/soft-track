@@ -14,15 +14,20 @@ export function Avatar({
   user,
   size = 24,
   inactive = false,
+  decorative = false,
 }: {
   user: Pick<UserPublic, 'full_name' | 'avatar_color'>
   size?: number
   /** Fade a deactivated account on a roster, without hiding who it is. */
   inactive?: boolean
+  decorative?: boolean
 }) {
   return (
     <div
       title={user.full_name}
+      role={decorative ? undefined : 'img'}
+      aria-label={decorative ? undefined : user.full_name}
+      aria-hidden={decorative ? true : undefined}
       className="flex shrink-0 items-center justify-center rounded-full font-semibold text-white"
       style={{
         width: size,

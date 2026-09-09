@@ -364,7 +364,7 @@ function RunLog({
                 <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-neutral-400">
                   {entry.actor ? (
                     <>
-                      <Avatar user={entry.actor} size={14} />
+                      <Avatar user={entry.actor} size={14} decorative />
                       after {entry.actor.full_name}
                     </>
                   ) : (

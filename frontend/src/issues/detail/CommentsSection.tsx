@@ -84,7 +84,7 @@ export function CommentsSection({
         {commentsQuery.data?.items.map((comment) => (
           <div key={comment.id} className="flex gap-2.5">
             {comment.author ? (
-              <Avatar user={comment.author} size={26} />
+              <Avatar user={comment.author} size={26} decorative />
             ) : (
               <AutomationAvatar />
             )}
