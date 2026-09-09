@@ -51,6 +51,7 @@ README, which show a team several cycles in.
   [attachments](#attachments) ·
   [importing from Jira](#importing-from-jira) ·
   [users and teams](#user-management) ·
+  [the signed-out front door](#the-signed-out-front-door) ·
   [rate limiting](#sign-in-rate-limiting)
 - [Contributing](#contributing) · [Contributors](#contributors) ·
   [License](#license)
@@ -93,6 +94,10 @@ already mention, and can drive the rules above.
 **People.** Email/password auth with revocable sessions, teams with admin and
 member roles, invitations by link, an optional invite-only mode, and a site
 administrator with a user directory, deactivation and password resets.
+
+**A front door.** A landing page at `/` for signed-out visitors, which an
+instance whose users all know what it is can switch off, and Open Graph tags
+so a link to it unfurls with a preview rather than as a bare URL.
 
 **Notifications.** An in-app inbox for assignments, mentions, comments and
 status changes on issues you watch, plus an optional batched email digest.
@@ -778,7 +783,7 @@ person gets one email gathering up what they have not already read:
 | `SMTP_USERNAME` / `SMTP_PASSWORD` | *(blank)* | Omit for an unauthenticated relay |
 | `SMTP_USE_TLS` | `true` | STARTTLS; negotiated before any credentials are sent |
 | `EMAIL_FROM` | `softtrack@localhost` | |
-| `APP_BASE_URL` | `http://localhost:5173` | Where the links in the mail point |
+| `APP_BASE_URL` | `http://localhost:5173` | Where the links in the mail point — also the Open Graph tags, see [the signed-out front door](#the-signed-out-front-door) |
 | `DIGEST_INTERVAL_MINUTES` | `15` | How often the loop wakes up |
 | `DIGEST_DELAY_MINUTES` | `10` | How long a notification waits first |
 
@@ -933,6 +938,42 @@ Set `OPEN_REGISTRATION=false` and `/auth/register` only accepts a registration
 whose email already has a live invitation waiting. The sign-up page says so
 rather than failing on submit. The first-account rule is unchanged, so bring an
 instance up, register yourself, then close it.
+
+### The signed-out front door
+
+`/` shows a landing page to a visitor who is not signed in: what the tracker
+is, what is in it, and a way in. Signed in, `/` is your board exactly as
+before. Deep links are unaffected — open `/ENG/issue/42` signed out and you
+are asked to sign in, then taken to the issue.
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `LANDING_PAGE` | `true` | `false` sends `/` straight to `/login` |
+
+Most instances belong to one company, sit behind a VPN, and are opened by
+people who already know what the tool is. A marketing page in front of the
+sign-in form is friction there — an extra click every morning, for everyone —
+so `LANDING_PAGE=false` restores the old behaviour exactly. The default is on
+for the same reason `OPEN_REGISTRATION` defaults open: the instance nobody has
+configured yet is the one most likely to be opened by a stranger.
+
+The sign-up call to action follows `OPEN_REGISTRATION`, so an invite-only
+instance never links to a form that will refuse.
+
+**The demo credentials are not shown on your instance.** The sign-in page
+prefills `demo@softtrack.dev` and prints its password only where `ENVIRONMENT`
+is `development` or `demo` — the two that `seed.py` actually seeds with that
+account. Anywhere else the field starts empty, so a password manager can fill
+it, and nothing is advertised. That is deliberate: it is a working password,
+and it belongs on the public demo only.
+
+**Links unfurl.** `index.html` carries a description, Open Graph and Twitter
+card tags, and a preview image, so an instance pasted into Slack shows the
+board rather than a bare URL. The absolute URLs in those tags come from
+`APP_BASE_URL`, which the frontend takes as a build argument — `docker
+compose` passes the same value to both halves. One limit worth knowing: this
+is a client-rendered app, so unfurlers that read the static HTML get the tags,
+while a crawler that does not run scripts still finds an empty shell.
 
 ### Deactivate, not delete
 
