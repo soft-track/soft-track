@@ -170,12 +170,28 @@ webhook_by_address = Throttle(
     max_delay=5 * 60.0,
     forget_after=15 * 60.0,
 )
+totp_by_user = Throttle(
+    name="failed two-factor attempts for this account",
+    free_attempts=5,
+    base_delay=1.0,
+    max_delay=60.0,
+    forget_after=5 * 60.0,
+)
+totp_by_address = Throttle(
+    name="failed two-factor attempts from this address",
+    free_attempts=20,
+    base_delay=1.0,
+    max_delay=5 * 60.0,
+    forget_after=15 * 60.0,
+)
 
 _ALL = (
     login_by_address,
     login_by_account,
     registration_by_address,
     webhook_by_address,
+    totp_by_user,
+    totp_by_address,
 )
 
 

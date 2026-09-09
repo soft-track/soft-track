@@ -74,6 +74,7 @@ def test_me_returns_the_current_user(client, auth):
         "is_active",
         "is_site_admin",
         "created_at",
+        "totp_enabled",
     }
 
 

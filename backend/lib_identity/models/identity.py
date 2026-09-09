@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -44,6 +44,7 @@ class UserMe(UserPublic):
 
     is_site_admin: bool
     created_at: datetime
+    totp_enabled: bool
 
 
 class UserUpdate(BaseModel):
@@ -78,3 +79,33 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserMe
+
+
+class TotpLoginPending(BaseModel):
+    pending_token: str
+    totp_required: Literal[True] = True
+
+
+class TotpVerifyRequest(BaseModel):
+    pending_token: str
+    code: str
+
+
+class TotpEnrolmentStart(BaseModel):
+    provisioning_uri: str
+    manual_key: str
+
+
+class TotpEnrolmentConfirm(BaseModel):
+    code: str
+
+
+class TotpEnrolmentResult(BaseModel):
+    recovery_codes: list[str]
+    token: Token
+
+
+class TotpDisable(BaseModel):
+    code: str
+
+

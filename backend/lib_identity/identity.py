@@ -9,7 +9,27 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, func, select
 
-from lib_identity.models.identity import Token, UserMe, UserUpdate
+from lib_identity.models.identity import (
+    Token,
+    TotpDisable,
+    TotpEnrolmentResult,
+    TotpEnrolmentStart,
+    TotpLoginPending,
+    UserMe,
+    UserUpdate,
+)
+from lib_identity.totp import (
+    check_recovery_code,
+    decode_recovery_codes,
+    decrypt_secret,
+    encode_recovery_codes,
+    encrypt_secret,
+    generate_recovery_codes,
+    generate_secret,
+    provisioning_uri,
+    verify_code,
+    verify_code_with_step,
+)
 from lib_identity.usernames import (
     assert_username_free,
     derive_username,
@@ -17,7 +37,12 @@ from lib_identity.usernames import (
 )
 from lib_softtrack.tables import User, utcnow
 from lib_utils.password import hash_password, verify_password
-from lib_utils.token import create_access_token, decode_access_token
+from lib_utils.token import (
+    create_access_token,
+    create_totp_pending_token,
+    decode_access_token,
+    decode_totp_pending_token,
+)
 from web import get_session, settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -71,6 +96,10 @@ def get_current_user(
     )
     payload = decode_access_token(token)
     if payload is None or payload.get("sub") is None:
+        raise credentials_exception
+    # A totp_pending token carries scope="totp_pending" and must never be
+    # accepted as a real session bearer.
+    if payload.get("scope") == "totp_pending":
         raise credentials_exception
     user = session.get(User, int(payload["sub"]))
     if user is None or not user.is_active:
@@ -167,7 +196,19 @@ def warm_password_hasher() -> None:
     _unmatchable_hash()
 
 
-def login_user(session: Session, email: str, password: str) -> Token:
+def login_user(
+    session: Session, email: str, password: str
+) -> Token | TotpLoginPending:
+    """Phase 1 of login: verify the password.
+
+    Returns a full `Token` for users without 2FA, or a `TotpLoginPending` for
+    users who have TOTP enabled -- the client must complete the second step at
+    POST /auth/totp/verify.
+
+    The timing-oracle mitigation is preserved: both branches always run one
+    bcrypt verify, so an unknown address and a known one with the wrong
+    password take the same time.
+    """
     user = find_user_by_email(session, email)
 
     # Verify against a hash that cannot match rather than returning early, so
@@ -188,10 +229,138 @@ def login_user(session: Session, email: str, password: str) -> Token:
     if not user.is_active:
         raise HTTPException(status_code=403, detail="This account has been deactivated")
 
+    if user.totp_enabled:
+        return TotpLoginPending(
+            pending_token=create_totp_pending_token(user.id, user.token_version)
+        )
+
     user.last_login_at = utcnow()
     session.add(user)
     session.commit()
     session.refresh(user)
+    return _issue_token(user)
+
+
+def verify_totp_login(
+    session: Session, pending_token: str, code: str
+) -> Token:
+    invalid = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired two-factor code",
+    )
+
+    decoded = decode_totp_pending_token(pending_token)
+    if decoded is None:
+        raise invalid
+    user_id, token_version = decoded
+
+    user = session.get(User, user_id)
+    if user is None or not user.is_active or not user.totp_enabled:
+        raise invalid
+    if user.token_version != token_version:
+        raise invalid
+
+    matched_step: Optional[int] = None
+    if user.totp_secret:
+        secret = decrypt_secret(user.totp_secret)
+        valid, step = verify_code_with_step(
+            secret, code, last_time_step=user.totp_last_step
+        )
+        if valid:
+            matched_step = step
+
+    if matched_step is not None:
+        user.totp_last_step = matched_step
+    else:
+        hashed_codes = decode_recovery_codes(user.totp_recovery_codes)
+        matched, remaining = check_recovery_code(code, hashed_codes)
+        if not matched:
+            raise invalid
+        user.totp_recovery_codes = encode_recovery_codes(remaining)
+
+    user.last_login_at = utcnow()
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return _issue_token(user)
+
+
+def begin_totp_enrolment_db(
+    session: Session, user: User
+) -> TotpEnrolmentStart:
+    secret = generate_secret()
+    # Save into pending_secret; NEVER disable active 2FA before confirm
+    user.totp_pending_secret = encrypt_secret(secret)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    uri = provisioning_uri(secret, user.email)
+    return TotpEnrolmentStart(provisioning_uri=uri, manual_key=secret)
+
+
+def confirm_totp_enrolment(
+    session: Session, user: User, code: str
+) -> TotpEnrolmentResult:
+    candidate_secret_enc = user.totp_pending_secret or user.totp_secret
+    if not candidate_secret_enc:
+        raise HTTPException(
+            status_code=400,
+            detail="No enrolment in progress. Call POST /auth/totp/enrol first.",
+        )
+    raw_secret = decrypt_secret(candidate_secret_enc)
+    valid, step = verify_code_with_step(raw_secret, code)
+    if not valid:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid code. Check your authenticator and try again.",
+        )
+
+    plain_codes, hashed_codes = generate_recovery_codes()
+    user.totp_secret = encrypt_secret(raw_secret)
+    user.totp_pending_secret = None
+    user.totp_enabled = True
+    user.totp_recovery_codes = encode_recovery_codes(hashed_codes)
+    user.totp_last_step = None
+    user.token_version += 1
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    fresh_token = _issue_token(user)
+    return TotpEnrolmentResult(recovery_codes=plain_codes, token=fresh_token)
+
+
+def disable_totp(session: Session, user: User, code: str) -> Token:
+    if not user.totp_enabled:
+        raise HTTPException(status_code=400, detail="Two-factor is not enabled.")
+
+    code_valid = False
+    if user.totp_secret:
+        secret = decrypt_secret(user.totp_secret)
+        valid, _ = verify_code_with_step(secret, code)
+        code_valid = valid
+
+    if not code_valid:
+        hashed_codes = decode_recovery_codes(user.totp_recovery_codes)
+        matched, _ = check_recovery_code(code, hashed_codes)
+        code_valid = matched
+
+    if not code_valid:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid code. Enter a code from your authenticator or a recovery code.",
+        )
+
+    user.totp_secret = None
+    user.totp_pending_secret = None
+    user.totp_enabled = False
+    user.totp_recovery_codes = None
+    user.totp_last_step = None
+    user.token_version += 1
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
     return _issue_token(user)
 
 

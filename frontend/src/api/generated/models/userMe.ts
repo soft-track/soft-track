@@ -22,4 +22,5 @@ export interface UserMe {
   is_active: boolean;
   is_site_admin: boolean;
   created_at: string;
+  totp_enabled: boolean;
 }

@@ -75,12 +75,53 @@
           "auth"
         ],
         "summary": "Login",
+        "description": "Password step of login.\n\nReturns a full `Token` (200) for users without TOTP, or a\n`TotpLoginPending` (202) when TOTP is enabled -- the client must then call\nPOST /auth/totp/verify to complete the login.",
         "operationId": "login_auth_login_post",
         "requestBody": {
           "content": {
             "application/x-www-form-urlencoded": {
               "schema": {
                 "$ref": "#/components/schemas/Body_login_auth_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/totp/verify": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Totp Verify",
+        "description": "TOTP code step: exchange a pending token + code for a full session token.\n\nRate-limited per user id (extracted from the pending token) with a tight\nbudget: five attempts before a 60-second lockout. The 6-digit code space\n(~1 000 000 values) combined with \u00b11 drift still makes brute force\nimpractical within the lockout window.",
+        "operationId": "totp_verify_auth_totp_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TotpVerifyRequest"
               }
             }
           },
@@ -108,6 +149,120 @@
             }
           }
         }
+      }
+    },
+    "/auth/totp/enrol": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Totp Enrol",
+        "description": "Begin TOTP enrolment: generate a secret and return the QR provisioning URI.\n\nThe secret is persisted immediately (with totp_enabled=False) so that the\nconfirm step can retrieve it from the database.  Until POST /auth/totp/confirm\nsucceeds, 2FA is not active.",
+        "operationId": "totp_enrol_auth_totp_enrol_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpEnrolmentStart"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/auth/totp/confirm": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Totp Confirm",
+        "description": "Complete TOTP enrolment by proving a valid code.\n\nOn success: activates 2FA, generates recovery codes (shown once), and\nbumps token_version so all other sessions are invalidated.",
+        "operationId": "totp_confirm_auth_totp_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TotpEnrolmentConfirm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpEnrolmentResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/auth/totp/disable": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Totp Disable",
+        "description": "Disable TOTP two-factor for the current user.\n\nRequires a live TOTP code or a single-use recovery code. Bumps\ntoken_version so all existing sessions are revoked.",
+        "operationId": "totp_disable_auth_totp_disable_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TotpDisable"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/auth/me": {
@@ -452,6 +607,47 @@
             }
           }
         },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{user_id}/clear-totp": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Clear Totp",
+        "description": "Site-admin escape hatch: clear TOTP for a user who is locked out.\n\nNo TOTP code is required from the actor \u2014 the admin's session is the\ncredential, just as it is for password resets. Token version is bumped\nso any sessions the target account held are revoked simultaneously.",
+        "operationId": "clear_totp_admin_users__user_id__clear_totp_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": "Successful Response"
@@ -4712,6 +4908,10 @@
             "format": "date-time",
             "title": "Created At"
           },
+          "totp_enabled": {
+            "type": "boolean",
+            "title": "Totp Enabled"
+          },
           "last_login_at": {
             "anyOf": [
               {
@@ -4739,6 +4939,7 @@
           "is_active",
           "is_site_admin",
           "created_at",
+          "totp_enabled",
           "team_count"
         ],
         "title": "AdminUserRead",
@@ -8177,6 +8378,89 @@
         ],
         "title": "Token"
       },
+      "TotpDisable": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "TotpDisable",
+        "description": "Body for DELETE /auth/totp.\n\nAccepts either a live TOTP code or a single-use recovery code so that a\nuser who has lost their phone can still disable 2FA if they kept their\nrecovery sheet."
+      },
+      "TotpEnrolmentConfirm": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "TotpEnrolmentConfirm",
+        "description": "Body for POST /auth/totp/confirm."
+      },
+      "TotpEnrolmentResult": {
+        "properties": {
+          "recovery_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recovery Codes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recovery_codes"
+        ],
+        "title": "TotpEnrolmentResult",
+        "description": "Returned by POST /auth/totp/confirm when enrolment succeeds.\n\n`recovery_codes` is the only time these codes are shown in plaintext.\nThe client must prompt the user to save them before dismissing the modal."
+      },
+      "TotpEnrolmentStart": {
+        "properties": {
+          "provisioning_uri": {
+            "type": "string",
+            "title": "Provisioning Uri"
+          },
+          "manual_key": {
+            "type": "string",
+            "title": "Manual Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provisioning_uri",
+          "manual_key"
+        ],
+        "title": "TotpEnrolmentStart",
+        "description": "Returned by POST /auth/totp/enrol.\n\nThe client renders `provisioning_uri` as a QR code (e.g. with qrcode.react)\nand also shows `manual_key` for users who cannot scan."
+      },
+      "TotpVerifyRequest": {
+        "properties": {
+          "pending_token": {
+            "type": "string",
+            "title": "Pending Token"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pending_token",
+          "code"
+        ],
+        "title": "TotpVerifyRequest",
+        "description": "Body for POST /auth/totp/verify."
+      },
       "UnreadCount": {
         "properties": {
           "unread": {
@@ -8319,6 +8603,10 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "totp_enabled": {
+            "type": "boolean",
+            "title": "Totp Enabled"
           }
         },
         "type": "object",
@@ -8330,7 +8618,8 @@
           "avatar_color",
           "is_active",
           "is_site_admin",
-          "created_at"
+          "created_at",
+          "totp_enabled"
         ],
         "title": "UserMe",
         "description": "The signed-in user's own record.\n\nA superset of UserPublic rather than a separate model: what the account\ncan do instance-wide is the user's business, and nobody else's, so it is\nonly ever returned for `me`."

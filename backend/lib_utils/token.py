@@ -32,3 +32,35 @@ def decode_access_token(token: str) -> dict | None:
         return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
     except JWTError:
         return None
+
+
+_TOTP_PENDING_SCOPE = "totp_pending"
+_TOTP_PENDING_MINUTES = 5
+
+
+def create_totp_pending_token(user_id: int, version: int = 0) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=_TOTP_PENDING_MINUTES)
+    payload = {
+        "sub": str(user_id),
+        "ver": version,
+        "scope": _TOTP_PENDING_SCOPE,
+        "exp": expire,
+    }
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+
+
+def decode_totp_pending_token(token: str) -> tuple[int, int] | None:
+    try:
+        payload = jwt.decode(
+            token, settings.secret_key, algorithms=[settings.algorithm]
+        )
+        if payload.get("scope") != _TOTP_PENDING_SCOPE:
+            return None
+        sub = payload.get("sub")
+        if sub is None:
+            return None
+        ver = payload.get("ver", 0)
+        return int(sub), int(ver)
+    except (JWTError, ValueError, TypeError):
+        return None
+

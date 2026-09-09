@@ -248,6 +248,12 @@ class User(SQLModel, table=True):
     last_login_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=utcnow)
 
+    totp_secret: Optional[str] = Field(default=None)
+    totp_pending_secret: Optional[str] = Field(default=None)
+    totp_enabled: bool = Field(default=False)
+    totp_recovery_codes: Optional[str] = Field(default=None)
+    totp_last_step: Optional[int] = Field(default=None)
+
 
 class TeamInvite(SQLModel, table=True):
     """A pending invitation to join a team, addressed to an email.

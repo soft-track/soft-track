@@ -173,3 +173,18 @@ def reset_password(
     user.token_version += 1
     session.add(user)
     session.commit()
+
+
+def admin_clear_totp(session: Session, actor: User, user_id: int) -> None:
+    user = _get_user_or_404(session, user_id)
+    if not user.totp_enabled:
+        return
+    user.totp_secret = None
+    user.totp_pending_secret = None
+    user.totp_enabled = False
+    user.totp_recovery_codes = None
+    user.totp_last_step = None
+    user.token_version += 1
+    session.add(user)
+    session.commit()
+
