@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+
+import { useTeamContext } from '@/team/TeamContext'
 
 import { Markdown, MarkdownEditor } from '@/markdown/lazy'
 import type { Mentionable } from '@/markdown/mentions'
@@ -32,6 +34,11 @@ export function DescriptionEditor({
   onUploadFiles?: (files: File[]) => Promise<Array<{ markdown: string }>>
 }) {
   const [editing, setEditing] = useState(false)
+  const { team, teams } = useTeamContext()
+  const teamKeys = useMemo(
+    () => Array.from(new Set([team.key, ...teams.map((t) => t.key)])),
+    [team, teams],
+  )
 
   if (editing) {
     return (
@@ -40,6 +47,7 @@ export function DescriptionEditor({
           value={draft}
           onChange={setDraft}
           people={people}
+          teamKeys={teamKeys}
           placeholder="Add a description… Markdown works here."
           rows={8}
           autoFocus
@@ -88,7 +96,7 @@ export function DescriptionEditor({
 
   return (
     <div className="mt-3">
-      <Markdown people={people} onToggleTask={onToggleTask}>
+      <Markdown people={people} onToggleTask={onToggleTask} teamKeys={teamKeys}>
         {saved}
       </Markdown>
       <div className="mt-2 flex items-center gap-3">

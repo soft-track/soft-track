@@ -25,6 +25,7 @@ export function MarkdownEditor({
   onBlur,
   onUploadFiles,
   className = '',
+  teamKeys,
 }: {
   value: string
   onChange: (next: string) => void
@@ -44,6 +45,7 @@ export function MarkdownEditor({
    */
   onUploadFiles?: (files: File[]) => Promise<Array<{ markdown: string }>>
   className?: string
+  teamKeys?: string[]
 }) {
   const [mode, setMode] = useState<Mode>('write')
   const [mention, setMention] = useState<{ query: string; start: number } | null>(null)
@@ -320,7 +322,7 @@ export function MarkdownEditor({
       ) : (
         <div className="well min-h-[5rem] rounded-card px-3 py-2">
           {value.trim() ? (
-            <Markdown people={people}>{value}</Markdown>
+            <Markdown people={people} teamKeys={teamKeys}>{value}</Markdown>
           ) : (
             <p className="text-sm text-neutral-400">Nothing to preview yet.</p>
           )}

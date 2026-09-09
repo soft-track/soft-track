@@ -7,6 +7,7 @@ import { AttachmentImage } from '@/attachments/AttachmentImage'
 import { isAttachmentUrl } from '@/attachments/urls'
 import type { Mentionable } from '@/markdown/mentions'
 import { remarkMentions } from '@/markdown/remarkMentions'
+import { remarkIssueKeys } from '@/markdown/remarkIssueKeys'
 
 /**
  * Rendered markdown.
@@ -22,6 +23,7 @@ export function Markdown({
   people = [],
   onToggleTask,
   className = '',
+  teamKeys = [],
 }: {
   children: string
   people?: Mentionable[]
@@ -32,10 +34,11 @@ export function Markdown({
    */
   onToggleTask?: (offset: number) => void
   className?: string
+  teamKeys?: string[]
 }) {
   const plugins = useMemo(
-    () => [remarkGfm, [remarkMentions, { people }]] as PluggableList,
-    [people],
+    () => [remarkGfm, [remarkMentions, { people }], [remarkIssueKeys, { teamKeys }]] as PluggableList,
+    [people, teamKeys],
   )
 
   const components: Components = {
