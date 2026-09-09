@@ -68,6 +68,10 @@ services:
         # The browser resolves this, so it is the host's published backend
         # port -- not the compose service name.
         VITE_API_BASE_URL: http://localhost:8000
+        # And where this app itself is reachable, for the Open Graph tags. The
+        # same value the backend gets, so a link pasted into Slack unfurls
+        # with an image that resolves from wherever it was pasted.
+        APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
     ports:
       # Host port 5173 matches the backend's default cors_origins, so the API
       # accepts requests from this origin without extra configuration.
