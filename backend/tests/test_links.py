@@ -84,9 +84,31 @@ def test_the_linked_issue_carries_enough_to_render_a_row(client, team):
 
     linked = links_of(client, team, a)["blocks"][0]["issue"]
     assert linked["identifier"].startswith("ENG-")
+    assert linked["team_key"] == "ENG"
+    assert linked["number"] == b["number"]
     assert linked["title"] == "B"
     assert linked["status"]["name"] == "In Progress"
     assert linked["priority"] == "urgent"
+
+
+def test_a_cross_team_link_carries_the_other_issues_team_key(client, team):
+    """Rows need their own team key so click-through does not invent ENG-7."""
+    eng = make_issue(client, team, "ENG work")
+    ops_team = client.post(
+        "/teams", json={"name": "Operations", "key": "OPS"}, headers=team["headers"]
+    ).json()
+    ops = client.post(
+        f"/teams/{ops_team['id']}/issues",
+        json={"title": "OPS work"},
+        headers=team["headers"],
+    ).json()
+
+    assert link(client, team, eng, ops, "relates_to").status_code == 200
+
+    linked = links_of(client, team, eng)["relates_to"][0]["issue"]
+    assert linked["identifier"] == f"OPS-{ops['number']}"
+    assert linked["team_key"] == "OPS"
+    assert linked["number"] == ops["number"]
 
 
 # --- what is refused ---------------------------------------------------

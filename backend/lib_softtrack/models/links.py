@@ -16,6 +16,8 @@ class LinkedIssue(BaseModel):
     """Just enough of the other issue to render a row and click through."""
 
     id: int
+    team_key: str
+    number: int
     identifier: str
     title: str
     status: StatusRead

@@ -6341,6 +6341,10 @@
             "type": "integer",
             "title": "Team Id"
           },
+          "team_key": {
+            "type": "string",
+            "title": "Team Key"
+          },
           "project_id": {
             "anyOf": [
               {
@@ -6472,6 +6476,7 @@
         "required": [
           "id",
           "team_id",
+          "team_key",
           "number",
           "identifier",
           "title",
@@ -6665,6 +6670,14 @@
             "type": "integer",
             "title": "Id"
           },
+          "team_key": {
+            "type": "string",
+            "title": "Team Key"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
           "identifier": {
             "type": "string",
             "title": "Identifier"
@@ -6683,6 +6696,8 @@
         "type": "object",
         "required": [
           "id",
+          "team_key",
+          "number",
           "identifier",
           "title",
           "status",
@@ -7031,6 +7046,14 @@
             "type": "integer",
             "title": "Id"
           },
+          "team_key": {
+            "type": "string",
+            "title": "Team Key"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
           "identifier": {
             "type": "string",
             "title": "Identifier"
@@ -7043,6 +7066,8 @@
         "type": "object",
         "required": [
           "id",
+          "team_key",
+          "number",
           "identifier",
           "title"
         ],
@@ -7797,6 +7822,14 @@
             "type": "integer",
             "title": "Team Id"
           },
+          "team_key": {
+            "type": "string",
+            "title": "Team Key"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
@@ -7819,6 +7852,8 @@
           "status",
           "priority",
           "team_id",
+          "team_key",
+          "number",
           "updated_at",
           "matched_in",
           "snippet"

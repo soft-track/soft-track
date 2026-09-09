@@ -13,6 +13,8 @@ class SearchHit(BaseModel):
     status: StatusRead
     priority: IssuePriority
     team_id: int
+    team_key: str
+    number: int
     updated_at: datetime
     #: Where the match was found: "title", "description" or "comment". Shown
     #: next to the result so a hit with no visible match in the title does not

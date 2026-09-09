@@ -41,8 +41,8 @@ export function SubIssuesSection({ issue }: { issue: IssueRead }) {
     queryClient.invalidateQueries({ queryKey: [`/issues/${issue.id}`] })
   }
 
-  const openIssue = (identifier: string) =>
-    navigate(`/${team.key}/issue/${identifier.split('-')[1]}`)
+  const openIssue = ({ team_key, number }: Pick<IssueRead, 'team_key' | 'number'>) =>
+    navigate(`/${team_key}/issue/${number}`)
 
   const addChild = async () => {
     const trimmed = title.trim()
@@ -82,7 +82,7 @@ export function SubIssuesSection({ issue }: { issue: IssueRead }) {
     return (
       <button
         type="button"
-        onClick={() => openIssue(issue.parent!.identifier)}
+        onClick={() => openIssue(issue.parent!)}
         className="mb-2 flex max-w-full items-center gap-1.5 rounded-full bg-neutral-900/5 py-1 pl-2.5 pr-2 text-xs text-neutral-500 transition hover:bg-neutral-900/8 hover:text-neutral-900"
       >
         <span className="identifier font-medium">{issue.parent!.identifier}</span>
@@ -163,7 +163,7 @@ export function SubIssuesSection({ issue }: { issue: IssueRead }) {
                 />
                 <button
                   type="button"
-                  onClick={() => openIssue(child.identifier)}
+                  onClick={() => openIssue(child)}
                   className="flex min-w-0 flex-1 items-baseline gap-2 text-left"
                 >
                   <span className="identifier shrink-0 text-xs text-neutral-400">

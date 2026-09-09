@@ -47,6 +47,8 @@ def _parent_ref(issue: Issue, session: Session) -> Optional[ParentRef]:
     team = session.get(Team, parent.team_id)
     return ParentRef(
         id=parent.id,
+        team_key=team.key,
+        number=parent.number,
         identifier=f"{team.key}-{parent.number}",
         title=parent.title,
     )
@@ -66,6 +68,7 @@ def issue_to_read(issue: Issue, session: Session) -> IssueRead:
     return IssueRead(
         id=issue.id,
         team_id=issue.team_id,
+        team_key=team.key,
         project_id=issue.project_id,
         number=issue.number,
         identifier=f"{team.key}-{issue.number}",
@@ -147,6 +150,7 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
         IssueRead(
             id=issue.id,
             team_id=issue.team_id,
+            team_key=teams[issue.team_id].key,
             project_id=issue.project_id,
             number=issue.number,
             identifier=f"{teams[issue.team_id].key}-{issue.number}",
@@ -180,6 +184,8 @@ def _parent_ref_from(parent: Optional[Issue], teams: dict) -> Optional[ParentRef
         return None
     return ParentRef(
         id=parent.id,
+        team_key=teams[parent.team_id].key,
+        number=parent.number,
         identifier=f"{teams[parent.team_id].key}-{parent.number}",
         title=parent.title,
     )
