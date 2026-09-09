@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { useAuthConfigAuthConfigGet } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/AuthContext'
+import { DEMO_EMAIL, DEMO_PASSWORD } from '@/auth/demo'
 import { Logo } from '@/ui/Logo'
 
 export default function LoginPage() {
@@ -13,7 +14,20 @@ export default function LoginPage() {
   const [params] = useSearchParams()
   const config = useAuthConfigAuthConfigGet()
 
-  const [email, setEmail] = useState('demo@softtrack.dev')
+  // Only the instance that is actually seeded with the demo account may
+  // advertise it. Undefined while /auth/config is in flight, which reads as
+  // "no" -- an empty field is the right thing to show either way.
+  const demoCredentials = config.data?.demo_credentials === true
+
+  // `null` means nobody has touched the field yet, which is not the same as
+  // having emptied it. The prefill cannot be initial state -- it depends on a
+  // response that has not arrived at first render -- and deriving it rather
+  // than writing it back in an effect is what keeps that race harmless:
+  // whatever was typed while the request was in flight simply wins, and
+  // clearing the field does not snap the address back.
+  const [typedEmail, setTypedEmail] = useState<string | null>(null)
+  const email = typedEmail ?? (demoCredentials ? DEMO_EMAIL : '')
+
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -78,7 +92,7 @@ export default function LoginPage() {
               required
               autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setTypedEmail(e.target.value)}
               className="field"
               placeholder="you@example.com"
             />
@@ -104,9 +118,11 @@ export default function LoginPage() {
             {submitting ? 'Signing in…' : 'Sign in'}
           </button>
 
-          <p className="text-center text-xs text-neutral-400">
-            Demo login: demo@softtrack.dev / password123
-          </p>
+          {demoCredentials && (
+            <p className="text-center text-xs text-neutral-400">
+              Demo login: {DEMO_EMAIL} / {DEMO_PASSWORD}
+            </p>
+          )}
         </form>
 
         {config.data?.open_registration !== false && (
