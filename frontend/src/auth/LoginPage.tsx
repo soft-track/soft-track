@@ -5,6 +5,7 @@ import { useAuthConfigAuthConfigGet } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/AuthContext'
 import { DEMO_EMAIL, DEMO_PASSWORD } from '@/auth/demo'
+import { signInDestination } from '@/auth/redirect'
 import { Logo } from '@/ui/Logo'
 
 export default function LoginPage() {
@@ -32,11 +33,12 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  // `?next=` as well as the router's own state: an invitation link sends
-  // people here with a query string, and there is no navigation state to
-  // carry when the link was pasted into a fresh tab.
-  const from =
-    params.get('next') ?? (location.state as { from?: Location })?.from?.pathname ?? '/'
+  // `?next=` as well as the router's own state -- see signInDestination for
+  // why there are two sources and why only one shape of value is honoured.
+  const from = signInDestination(
+    params.get('next'),
+    (location.state as { from?: { pathname?: string } } | null)?.from,
+  )
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault()
