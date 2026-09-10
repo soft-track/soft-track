@@ -1,4 +1,7 @@
-# SoftTrack
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/logo-dark.svg">
+  <img src="docs/logo.svg" alt="SoftTrack" width="245">
+</picture>
 
 An open-source, self-hostable issue tracker inspired by Linear. Teams and
 projects, a kanban board with drag-and-drop, cycles and estimates, sub-issues
