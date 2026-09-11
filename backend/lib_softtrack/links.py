@@ -53,6 +53,8 @@ def _linked_issue(
 ) -> LinkedIssue:
     return LinkedIssue(
         id=issue.id,
+        team_key=teams[issue.team_id].key,
+        number=issue.number,
         identifier=f"{teams[issue.team_id].key}-{issue.number}",
         title=issue.title,
         status=StatusRead.model_validate(statuses[issue.status_id]),

@@ -279,14 +279,14 @@ def test_registering_with_a_stale_invite_token_still_creates_the_account(
 
 
 def test_auth_config_reports_open_registration(client):
-    assert client.get("/auth/config").json() == {"open_registration": True}
+    assert client.get("/auth/config").json()["open_registration"] is True
 
 
 def test_a_closed_instance_refuses_an_uninvited_signup(client, invited, monkeypatch):
     from web import settings
 
     monkeypatch.setattr(settings, "open_registration", False)
-    assert client.get("/auth/config").json() == {"open_registration": False}
+    assert client.get("/auth/config").json()["open_registration"] is False
 
     refused = client.post(
         "/auth/register",

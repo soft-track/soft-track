@@ -11,4 +11,6 @@
  */
 export interface AuthConfig {
   open_registration: boolean;
+  landing_page: boolean;
+  demo_credentials: boolean;
 }

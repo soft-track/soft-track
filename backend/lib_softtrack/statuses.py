@@ -13,6 +13,7 @@ from typing import Iterable, Optional
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
+from lib_softtrack import automations as automations_service
 from lib_softtrack.models.statuses import (
     StatusCreate,
     StatusDelete,
@@ -269,6 +270,11 @@ def delete_status(
     ).all():
         view.status_id = None
         session.add(view)
+
+    # Automation rules follow the issues instead of losing the reference. A
+    # rule's condition read as "no opinion" when cleared, which would widen it
+    # to every issue on the team -- see automations.move_status.
+    automations_service.move_status(session, status.id, target.id)
 
     session.flush()
     session.delete(status)

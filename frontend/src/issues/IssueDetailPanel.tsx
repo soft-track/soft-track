@@ -3,6 +3,7 @@ import { parseServerDate } from '@/api/dates'
 import { AttachmentList } from '@/attachments/AttachmentList'
 import { CommentsSection } from '@/issues/detail/CommentsSection'
 import { DescriptionEditor } from '@/issues/detail/DescriptionEditor'
+import { DevelopmentSection } from '@/issues/detail/DevelopmentSection'
 import { IssueLinksSection } from '@/issues/detail/IssueLinksSection'
 import { IssueProperties } from '@/issues/detail/IssueProperties'
 import { SubIssuesSection } from '@/issues/detail/SubIssuesSection'
@@ -114,10 +115,11 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
 
               {!issue.parent && <SubIssuesSection issue={issue} />}
               <IssueLinksSection issueId={issue.id} />
+              <DevelopmentSection issueId={issue.id} />
 
               <div className="mt-5 flex items-center gap-2 text-xs text-neutral-400">
                 <PriorityIcon priority={issue.priority} size={12} />
-                <Avatar user={issue.creator} size={16} />
+                <Avatar user={issue.creator} size={16} decorative />
                 <span>
                   Created by {issue.creator.full_name}{' '}
                   {formatDistanceToNow(parseServerDate(issue.created_at), { addSuffix: true })}

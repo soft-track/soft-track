@@ -20,6 +20,8 @@ from fastapi import HTTPException
 from sqlalchemy import case, func
 from sqlmodel import Session, select
 
+from lib_softtrack import automations as automations_service
+from lib_softtrack import rules as rules_service
 from lib_softtrack import views as views_service
 from lib_softtrack.history import record_changes, snapshot
 from lib_softtrack.models.cycles import (
@@ -220,6 +222,11 @@ def complete_cycle(
     if cycle.state is CycleState.completed:
         raise HTTPException(status_code=409, detail="That cycle is already completed.")
 
+    # Read before anything moves: a `cycle_completed` rule is about the work
+    # that was in this cycle, which after the carry-over below is no longer a
+    # question the issue rows can answer.
+    members = list(session.exec(select(Issue).where(Issue.cycle_id == cycle.id)).all())
+
     unfinished = session.exec(
         select(Issue).where(Issue.cycle_id == cycle.id, ~in_category(*DONE_STATUSES))
     ).all()
@@ -250,6 +257,11 @@ def complete_cycle(
     cycle.state = CycleState.completed
     cycle.completed_at = datetime.now(timezone.utc)
     session.add(cycle)
+
+    # After the carry-over, so a rule can act on the issues that came out of
+    # the cycle unfinished as well as the ones that stayed.
+    rules_service.on_cycle_completed(session, cycle, members, current_user)
+
     session.commit()
     session.refresh(cycle)
 
@@ -281,6 +293,9 @@ def delete_cycle(session: Session, current_user: User, cycle_id: int) -> None:
     # Saved views hold one too. A view left filtering on a cycle that no
     # longer exists matches nothing, which reads as broken rather than empty.
     views_service.clear_cycle(session, cycle_id)
+    # And any rule that moved work into it, which is switched off rather than
+    # left enabled doing less than it says -- see automations.clear_cycle.
+    automations_service.clear_cycle(session, cycle_id)
     session.flush()
 
     session.delete(cycle)

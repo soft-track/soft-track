@@ -35,3 +35,4 @@ dist-ssr/
 .coverage
 coverage.xml
 htmlcov/
+commit.message

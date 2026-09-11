@@ -11,7 +11,7 @@ backend, React/Vite/TypeScript frontend with a fully typed API client generated 
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-![SoftTrack board](docs/screenshot.png)
+![The SoftTrack board](docs/board.png)
 
 Try it in about a minute:
 
@@ -20,7 +20,36 @@ git clone https://github.com/soft-track/soft-track.git
 cd soft-track && docker compose up --build
 ```
 
-Then open <http://localhost:5173> and sign in as `demo@softtrack.dev` / `password123`.
+Then open <http://localhost:5173> and sign in as `demo@softtrack.dev` /
+`password123`. The seeded instance starts smaller than the screenshots in this
+README, which show a team several cycles in.
+
+## Contents
+
+- [Features](#features) · [Roadmap](#roadmap) · [Tech stack](#tech-stack) ·
+  [Project structure](#project-structure)
+- Running it: [Docker](#run-with-docker) ·
+  [without Docker](#quickstart-without-docker) ·
+  [migrations](#database-migrations) · [the checks](#running-the-checks)
+- How it works:
+  [statuses](#statuses-and-categories) ·
+  [cycles and estimates](#cycles-and-estimates) ·
+  [reports](#reports) ·
+  [sub-issues and links](#sub-issues-and-links) ·
+  [markdown and mentions](#markdown-mentions-and-task-lists) ·
+  [saved views](#saved-views-and-shareable-filters) ·
+  [search](#search) ·
+  [keyboard](#keyboard-and-the-command-palette) ·
+  [automation rules](#automation-rules) ·
+  [GitHub and GitLab](#github-and-gitlab) ·
+  [notifications](#notifications) ·
+  [attachments](#attachments) ·
+  [importing from Jira](#importing-from-jira) ·
+  [users and teams](#user-management) ·
+  [the signed-out front door](#the-signed-out-front-door) ·
+  [rate limiting](#sign-in-rate-limiting)
+- [Contributing](#contributing) · [Contributors](#contributors) ·
+  [License](#license)
 
 ## Documentation
 

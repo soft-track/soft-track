@@ -44,6 +44,8 @@ class ParentRef(BaseModel):
     """Just enough of the parent to render a breadcrumb."""
 
     id: int
+    team_key: str
+    number: int
     identifier: str
     title: str
 
@@ -84,6 +86,7 @@ class IssueUpdate(BaseModel):
 class IssueRead(BaseModel):
     id: int
     team_id: int
+    team_key: str
     project_id: Optional[int] = None
     number: int
     identifier: str

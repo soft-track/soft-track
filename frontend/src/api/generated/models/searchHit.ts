@@ -15,6 +15,8 @@ export interface SearchHit {
   status: StatusRead;
   priority: IssuePriority;
   team_id: number;
+  team_key: string;
+  number: number;
   updated_at: string;
   matched_in: string;
   snippet: string;

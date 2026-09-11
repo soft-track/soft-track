@@ -153,7 +153,7 @@ export function Sidebar({
 
       {user && (
         <div className="hairline flex items-center gap-2.5 border-t px-3 py-3">
-          <Avatar user={user} size={30} />
+          <Avatar user={user} size={30} decorative />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-neutral-900">{user.full_name}</p>
             <p className="truncate text-[11px] text-neutral-400">{user.email}</p>

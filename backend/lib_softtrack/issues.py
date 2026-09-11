@@ -15,6 +15,9 @@ from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.models.statuses import StatusRead
 from lib_softtrack.history import record_changes, record_creation, snapshot
 from lib_softtrack import notifications as notifications_service
+from lib_softtrack import automations as automations_service
+from lib_softtrack import integrations as integrations_service
+from lib_softtrack import rules as rules_service
 from lib_softtrack.links import open_blocker_counts
 from lib_softtrack.tables import (
     Comment,
@@ -44,6 +47,8 @@ def _parent_ref(issue: Issue, session: Session) -> Optional[ParentRef]:
     team = session.get(Team, parent.team_id)
     return ParentRef(
         id=parent.id,
+        team_key=team.key,
+        number=parent.number,
         identifier=f"{team.key}-{parent.number}",
         title=parent.title,
     )
@@ -63,6 +68,7 @@ def issue_to_read(issue: Issue, session: Session) -> IssueRead:
     return IssueRead(
         id=issue.id,
         team_id=issue.team_id,
+        team_key=team.key,
         project_id=issue.project_id,
         number=issue.number,
         identifier=f"{team.key}-{issue.number}",
@@ -144,6 +150,7 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
         IssueRead(
             id=issue.id,
             team_id=issue.team_id,
+            team_key=teams[issue.team_id].key,
             project_id=issue.project_id,
             number=issue.number,
             identifier=f"{teams[issue.team_id].key}-{issue.number}",
@@ -177,6 +184,8 @@ def _parent_ref_from(parent: Optional[Issue], teams: dict) -> Optional[ParentRef
         return None
     return ParentRef(
         id=parent.id,
+        team_key=teams[parent.team_id].key,
+        number=parent.number,
         identifier=f"{teams[parent.team_id].key}-{parent.number}",
         title=parent.title,
     )
@@ -241,6 +250,14 @@ def create_issue(
     if payload.label_ids:
         set_labels(issue.id, payload.label_ids, session)
         session.commit()
+
+    # After the labels rather than with the notifications above: a rule can
+    # match on a label, and one that fired before the labels were attached
+    # would be reading an issue that does not exist yet as far as the person
+    # filing it is concerned.
+    rules_service.on_issue_created(session, issue, current_user)
+    session.commit()
+    session.refresh(issue)
 
     return issue_to_read(issue, session)
 
@@ -332,10 +349,13 @@ def update_issue(
     require_team_member(issue.team_id, current_user, session)
 
     before = snapshot(issue)
-    # A second snapshot: history tracks what can be charted, notifications
-    # track what somebody would want to be told about, and the two lists only
-    # overlap on `status`.
+    # Three snapshots of the same row, and three different questions about it.
+    # History tracks what can be charted, notifications track what somebody
+    # would want to be told about, and automation tracks what a rule can fire
+    # on. They overlap without being the same list, and folding them together
+    # would mean every field added to one answer being added to all three.
     watched_before = notifications_service.snapshot(issue)
+    rule_before = rules_service.snapshot(issue)
     data = payload.model_dump(exclude_unset=True, exclude={"label_ids"})
     if data.get("status_id") is not None:
         # Moving an issue into another team's column would take it off its own
@@ -355,6 +375,10 @@ def update_issue(
 
     record_changes(session, issue, before, current_user)
     notifications_service.on_issue_updated(session, issue, watched_before, current_user)
+    # Last, so a rule reads the issue as the update left it -- and so its own
+    # changes are recorded as a separate step in the history rather than
+    # folded into the one the person made.
+    rules_service.on_issue_updated(session, issue, rule_before, current_user)
 
     session.commit()
     session.refresh(issue)
@@ -389,6 +413,13 @@ def delete_issue(
     # what makes "notifications first" true of the SQL and not just of the
     # Python -- the distinction that let soft-track#1 through.
     notifications_service.delete_for_issue(session, issue_id)
+    # Same reasoning, same place: a run-log row about an issue that no longer
+    # exists is a link to a 404, and it holds a foreign key to this row.
+    automations_service.delete_runs_for_issue(session, issue_id)
+    # And the branches, commits and pull requests linked to it. Same reason
+    # again: the rows hold a foreign key here, and a link to the code for an
+    # issue that no longer exists is not worth keeping.
+    integrations_service.delete_links_for_issue(session, issue_id)
     session.flush()
 
     # Attachments before comments: a comment attachment holds a foreign key to

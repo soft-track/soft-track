@@ -66,6 +66,12 @@ class AuthConfig(BaseModel):
     """What the sign-in pages need to know before anyone has authenticated."""
 
     open_registration: bool
+    #: Whether / shows the landing page to a signed-out visitor, or redirects
+    #: to the sign-in form the way it did before there was one.
+    landing_page: bool
+    #: Whether this instance is seeded with the published demo account, and so
+    #: may prefill its address and print its password under the sign-in button.
+    demo_credentials: bool
 
 
 class Token(BaseModel):
