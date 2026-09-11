@@ -1,0 +1,195 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2560 1000" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <rect width="2560" height="1000" fill="#eef0f8"/>
+
+  <!-- Title block -->
+  <text x="60" y="44" font-size="30" font-weight="700" fill="#15131f">Login: server link, username, password</text>
+  <text x="60" y="72" font-size="18" fill="#66637c">SoftTrack Mobile · design mockup</text>
+
+  <!-- Frame labels -->
+  <text x="60" y="88" font-size="22" font-weight="600" fill="#514e66">Phone · compact (&lt;600dp)</text>
+  <text x="530" y="88" font-size="22" font-weight="600" fill="#514e66">Foldable · medium (600–839dp)</text>
+  <text x="1350" y="88" font-size="22" font-weight="600" fill="#514e66">Tablet · expanded (≥840dp)</text>
+
+  <!-- ============================== PHONE ============================== -->
+  <rect x="66" y="118" width="390" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+  <rect x="60" y="110" width="390" height="780" rx="28" fill="#ffffff" stroke="#dedcea" stroke-width="2"/>
+  <!-- status bar -->
+  <text x="88" y="133" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+  <rect x="344" y="129" width="3" height="4" fill="#514e66"/>
+  <rect x="349" y="126" width="3" height="7" fill="#514e66"/>
+  <rect x="354" y="123" width="3" height="10" fill="#514e66"/>
+  <rect x="359" y="120" width="3" height="13" fill="#514e66"/>
+  <path d="M372 121 h14 l-7 9 z" fill="#514e66"/>
+  <rect x="396" y="121" width="20" height="11" rx="3" fill="none" stroke="#514e66" stroke-width="1.5"/>
+  <rect x="398.5" y="123.5" width="12" height="6" fill="#514e66"/>
+  <rect x="417" y="124" width="2.5" height="5" fill="#514e66"/>
+
+  <!-- wordmark -->
+  <rect x="193" y="192" width="24" height="24" rx="7" fill="#6342db"/>
+  <text x="225" y="210" font-size="20" font-weight="700" fill="#15131f">SoftTrack</text>
+
+  <text x="255" y="272" font-size="22" font-weight="700" fill="#15131f" text-anchor="middle">Welcome back</text>
+  <text x="255" y="296" font-size="14" fill="#7a7791" text-anchor="middle">Sign in to your workspace</text>
+
+  <!-- Server link -->
+  <text x="92" y="340" font-size="13" fill="#514e66">Server link</text>
+  <rect x="92" y="348" width="326" height="48" rx="10" fill="#ffffff" stroke="#dedcea"/>
+  <text x="106" y="378" font-size="15" fill="#b6b3c8">https://track.yourcompany.com</text>
+  <!-- Username -->
+  <text x="92" y="428" font-size="13" fill="#514e66">Username</text>
+  <rect x="92" y="436" width="326" height="48" rx="10" fill="#ffffff" stroke="#dedcea"/>
+  <text x="106" y="466" font-size="15" fill="#b6b3c8">amina</text>
+  <!-- Password -->
+  <text x="92" y="516" font-size="13" fill="#514e66">Password</text>
+  <rect x="92" y="524" width="326" height="48" rx="10" fill="#ffffff" stroke="#dedcea"/>
+  <text x="106" y="554" font-size="15" fill="#514e66">••••••••</text>
+
+  <rect x="92" y="600" width="326" height="44" rx="10" fill="#6342db"/>
+  <text x="255" y="628" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle">Sign in</text>
+  <text x="255" y="684" font-size="14" font-weight="600" fill="#6342db" text-anchor="middle">Create an account</text>
+  <text x="255" y="724" font-size="12" fill="#b6b3c8" text-anchor="middle">Self-hosted? Point the server link at your instance.</text>
+
+  <!-- bottom nav -->
+  <line x1="62" y1="826" x2="448" y2="826" stroke="#eeedf5" stroke-width="2"/>
+  <rect x="88" y="836" width="22" height="22" rx="7" fill="#7a7791" fill-opacity="0.15" stroke="#7a7791" stroke-width="1.5"/>
+  <text x="99" y="874" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+  <rect x="166" y="836" width="22" height="22" rx="7" fill="#7a7791" fill-opacity="0.15" stroke="#7a7791" stroke-width="1.5"/>
+  <text x="177" y="874" font-size="11" fill="#7a7791" text-anchor="middle">Board</text>
+  <rect x="244" y="836" width="22" height="22" rx="7" fill="#7a7791" fill-opacity="0.15" stroke="#7a7791" stroke-width="1.5"/>
+  <text x="255" y="874" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+  <rect x="322" y="836" width="22" height="22" rx="7" fill="#7a7791" fill-opacity="0.15" stroke="#7a7791" stroke-width="1.5"/>
+  <text x="333" y="874" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+  <rect x="400" y="836" width="22" height="22" rx="7" fill="#6342db" fill-opacity="0.18" stroke="#6342db" stroke-width="1.5"/>
+  <text x="411" y="874" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">You</text>
+
+  <!-- ============================== FOLDABLE ============================== -->
+  <rect x="536" y="118" width="740" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+  <rect x="530" y="110" width="740" height="780" rx="28" fill="#ffffff" stroke="#dedcea" stroke-width="2"/>
+  <!-- welcome panel (left of hinge) -->
+  <rect x="607" y="112" width="293" height="776" fill="#f3f1ff"/>
+  <!-- hinge -->
+  <line x1="900" y1="112" x2="900" y2="888" stroke="#b6b3c8" stroke-dasharray="4 6" opacity="0.6"/>
+  <!-- nav rail -->
+  <rect x="531" y="111" width="75" height="778" rx="27" fill="#f7f6fb"/>
+  <rect x="568" y="111" width="38" height="778" fill="#f7f6fb"/>
+  <line x1="606" y1="111" x2="606" y2="889" stroke="#eeedf5" stroke-width="2"/>
+  <rect x="556" y="150" width="24" height="24" rx="7" fill="#6342db"/>
+  <rect x="557" y="210" width="22" height="22" rx="7" fill="#7a7791" fill-opacity="0.15" stroke="#7a7791" stroke-width="1.5"/>
+  <text x="568" y="246" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+  <rect x="557" y="278" width="22" height="22" rx="7" fill="#7a7791" fill-opacity="0.15" stroke="#7a7791" stroke-width="1.5"/>
+  <text x="568" y="314" font-size="11" fill="#7a7791" text-anchor="middle">Board</text>
+  <rect x="557" y="346" width="22" height="22" rx="7" fill="#7a7791" fill-opacity="0.15" stroke="#7a7791" stroke-width="1.5"/>
+  <text x="568" y="382" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+  <rect x="557" y="414" width="22" height="22" rx="7" fill="#7a7791" fill-opacity="0.15" stroke="#7a7791" stroke-width="1.5"/>
+  <text x="568" y="450" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+  <rect x="557" y="482" width="22" height="22" rx="7" fill="#6342db" fill-opacity="0.18" stroke="#6342db" stroke-width="1.5"/>
+  <text x="568" y="518" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">You</text>
+  <!-- status bar -->
+  <text x="620" y="133" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+  <rect x="1164" y="129" width="3" height="4" fill="#514e66"/>
+  <rect x="1169" y="126" width="3" height="7" fill="#514e66"/>
+  <rect x="1174" y="123" width="3" height="10" fill="#514e66"/>
+  <rect x="1179" y="120" width="3" height="13" fill="#514e66"/>
+  <path d="M1192 121 h14 l-7 9 z" fill="#514e66"/>
+  <rect x="1216" y="121" width="20" height="11" rx="3" fill="none" stroke="#514e66" stroke-width="1.5"/>
+  <rect x="1218.5" y="123.5" width="12" height="6" fill="#514e66"/>
+  <rect x="1237" y="124" width="2.5" height="5" fill="#514e66"/>
+
+  <!-- left pane: brand / welcome -->
+  <rect x="648" y="266" width="48" height="48" rx="12" fill="#6342db"/>
+  <text x="708" y="299" font-size="26" font-weight="700" fill="#15131f">SoftTrack</text>
+  <text x="648" y="356" font-size="15" fill="#514e66">Track issues. Ship faster.</text>
+  <!-- decorative low-fi issue cards -->
+  <rect x="648" y="404" width="204" height="64" rx="12" fill="#ffffff" stroke="#dedcea"/>
+  <rect x="662" y="420" width="60" height="8" rx="4" fill="#dedcea"/>
+  <rect x="662" y="440" width="140" height="10" rx="5" fill="#eeedf5"/>
+  <circle cx="832" cy="446" r="9" fill="#4f8cff"/>
+  <rect x="668" y="484" width="204" height="64" rx="12" fill="#ffffff" stroke="#dedcea" opacity="0.75"/>
+  <rect x="682" y="500" width="60" height="8" rx="4" fill="#dedcea"/>
+  <rect x="682" y="520" width="128" height="10" rx="5" fill="#eeedf5"/>
+  <circle cx="852" cy="526" r="9" fill="#2fd4a7"/>
+
+  <!-- right pane: form (entirely right of hinge) -->
+  <text x="938" y="240" font-size="20" font-weight="700" fill="#15131f">Sign in</text>
+  <text x="938" y="264" font-size="13" fill="#7a7791">Connect to your workspace</text>
+
+  <text x="938" y="300" font-size="13" fill="#514e66">Server link</text>
+  <rect x="938" y="308" width="296" height="48" rx="10" fill="#ffffff" stroke="#dedcea"/>
+  <text x="952" y="338" font-size="15" fill="#b6b3c8">https://track.yourcompany.com</text>
+  <text x="938" y="388" font-size="13" fill="#514e66">Username</text>
+  <rect x="938" y="396" width="296" height="48" rx="10" fill="#ffffff" stroke="#dedcea"/>
+  <text x="952" y="426" font-size="15" fill="#b6b3c8">amina</text>
+  <text x="938" y="476" font-size="13" fill="#514e66">Password</text>
+  <rect x="938" y="484" width="296" height="48" rx="10" fill="#ffffff" stroke="#dedcea"/>
+  <text x="952" y="514" font-size="15" fill="#514e66">••••••••</text>
+
+  <rect x="938" y="560" width="296" height="44" rx="10" fill="#6342db"/>
+  <text x="1086" y="588" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle">Sign in</text>
+  <text x="1086" y="644" font-size="14" font-weight="600" fill="#6342db" text-anchor="middle">Create an account</text>
+
+  <!-- ============================== TABLET ============================== -->
+  <rect x="1356" y="118" width="1150" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+  <rect x="1350" y="110" width="1150" height="780" rx="28" fill="#ffffff" stroke="#dedcea" stroke-width="2"/>
+  <!-- welcome panel -->
+  <rect x="1427" y="112" width="543" height="776" fill="#f3f1ff"/>
+  <!-- nav rail -->
+  <rect x="1351" y="111" width="75" height="778" rx="27" fill="#f7f6fb"/>
+  <rect x="1388" y="111" width="38" height="778" fill="#f7f6fb"/>
+  <line x1="1426" y1="111" x2="1426" y2="889" stroke="#eeedf5" stroke-width="2"/>
+  <rect x="1376" y="150" width="24" height="24" rx="7" fill="#6342db"/>
+  <rect x="1377" y="210" width="22" height="22" rx="7" fill="#7a7791" fill-opacity="0.15" stroke="#7a7791" stroke-width="1.5"/>
+  <text x="1388" y="246" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+  <rect x="1377" y="278" width="22" height="22" rx="7" fill="#7a7791" fill-opacity="0.15" stroke="#7a7791" stroke-width="1.5"/>
+  <text x="1388" y="314" font-size="11" fill="#7a7791" text-anchor="middle">Board</text>
+  <rect x="1377" y="346" width="22" height="22" rx="7" fill="#7a7791" fill-opacity="0.15" stroke="#7a7791" stroke-width="1.5"/>
+  <text x="1388" y="382" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+  <rect x="1377" y="414" width="22" height="22" rx="7" fill="#7a7791" fill-opacity="0.15" stroke="#7a7791" stroke-width="1.5"/>
+  <text x="1388" y="450" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+  <rect x="1377" y="482" width="22" height="22" rx="7" fill="#6342db" fill-opacity="0.18" stroke="#6342db" stroke-width="1.5"/>
+  <text x="1388" y="518" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">You</text>
+  <!-- status bar -->
+  <text x="1440" y="133" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+  <rect x="2394" y="129" width="3" height="4" fill="#514e66"/>
+  <rect x="2399" y="126" width="3" height="7" fill="#514e66"/>
+  <rect x="2404" y="123" width="3" height="10" fill="#514e66"/>
+  <rect x="2409" y="120" width="3" height="13" fill="#514e66"/>
+  <path d="M2422 121 h14 l-7 9 z" fill="#514e66"/>
+  <rect x="2446" y="121" width="20" height="11" rx="3" fill="none" stroke="#514e66" stroke-width="1.5"/>
+  <rect x="2448.5" y="123.5" width="12" height="6" fill="#514e66"/>
+  <rect x="2467" y="124" width="2.5" height="5" fill="#514e66"/>
+
+  <!-- welcome panel content -->
+  <rect x="1490" y="242" width="56" height="56" rx="14" fill="#6342db"/>
+  <text x="1562" y="280" font-size="30" font-weight="700" fill="#15131f">SoftTrack</text>
+  <text x="1490" y="348" font-size="16" fill="#514e66">Track issues. Ship faster.</text>
+
+  <circle cx="1502" cy="415" r="11" fill="#6342db" fill-opacity="0.15"/>
+  <text x="1502" y="420" font-size="12" fill="#6342db" text-anchor="middle">✓</text>
+  <text x="1524" y="420" font-size="14" fill="#514e66">Offline-first sync across devices</text>
+  <circle cx="1502" cy="463" r="11" fill="#6342db" fill-opacity="0.15"/>
+  <text x="1502" y="468" font-size="12" fill="#6342db" text-anchor="middle">✓</text>
+  <text x="1524" y="468" font-size="14" fill="#514e66">Boards, cycles, and triage in one place</text>
+  <circle cx="1502" cy="511" r="11" fill="#6342db" fill-opacity="0.15"/>
+  <text x="1502" y="516" font-size="12" fill="#6342db" text-anchor="middle">✓</text>
+  <text x="1524" y="516" font-size="14" fill="#514e66">Self-host on your own server</text>
+
+  <!-- right panel: form -->
+  <text x="2045" y="270" font-size="22" font-weight="700" fill="#15131f">Sign in to your workspace</text>
+
+  <text x="2045" y="316" font-size="13" fill="#514e66">Server link</text>
+  <rect x="2045" y="324" width="380" height="48" rx="10" fill="#ffffff" stroke="#dedcea"/>
+  <text x="2059" y="354" font-size="15" fill="#b6b3c8">https://track.yourcompany.com</text>
+  <text x="2045" y="404" font-size="13" fill="#514e66">Username</text>
+  <rect x="2045" y="412" width="380" height="48" rx="10" fill="#ffffff" stroke="#dedcea"/>
+  <text x="2059" y="442" font-size="15" fill="#b6b3c8">amina</text>
+  <text x="2045" y="492" font-size="13" fill="#514e66">Password</text>
+  <rect x="2045" y="500" width="380" height="48" rx="10" fill="#ffffff" stroke="#dedcea"/>
+  <text x="2059" y="530" font-size="15" fill="#514e66">••••••••</text>
+
+  <rect x="2045" y="576" width="380" height="44" rx="10" fill="#6342db"/>
+  <text x="2235" y="604" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle">Sign in</text>
+  <text x="2235" y="660" font-size="14" font-weight="600" fill="#6342db" text-anchor="middle">Create an account</text>
+
+  <!-- Footer caption -->
+  <text x="1280" y="960" font-size="16" fill="#7a7791" text-anchor="middle">The sign-in form is a single column at every size class; medium and expanded add a brand welcome panel beside it instead of reflowing the three fields.</text>
+</svg>

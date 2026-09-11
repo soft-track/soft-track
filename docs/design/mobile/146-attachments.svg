@@ -1,0 +1,317 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2560 1000" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<rect width="2560" height="1000" fill="#eef0f8"/>
+<defs>
+<clipPath id="cp"><rect x="60" y="110" width="390" height="780" rx="28"/></clipPath>
+<clipPath id="cf"><rect x="530" y="110" width="740" height="780" rx="28"/></clipPath>
+<clipPath id="ct"><rect x="1350" y="110" width="1150" height="780" rx="28"/></clipPath>
+</defs>
+
+<!-- Title block -->
+<text x="60" y="44" font-size="30" font-weight="700" fill="#15131f">Attachments: camera, library, files</text>
+<text x="60" y="72" font-size="18" fill="#66637c">SoftTrack Mobile · design mockup</text>
+
+<!-- Frame labels -->
+<text x="60" y="88" font-size="22" font-weight="600" fill="#514e66">Phone · compact (&lt;600dp)</text>
+<text x="530" y="88" font-size="22" font-weight="600" fill="#514e66">Foldable · medium (600–839dp)</text>
+<text x="1350" y="88" font-size="22" font-weight="600" fill="#514e66">Tablet · expanded (≥840dp)</text>
+
+<!-- Frame shadows + fills -->
+<rect x="60" y="115" width="390" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+<rect x="530" y="115" width="740" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+<rect x="1350" y="115" width="1150" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+<rect x="60" y="110" width="390" height="780" rx="28" fill="#ffffff"/>
+<rect x="530" y="110" width="740" height="780" rx="28" fill="#ffffff"/>
+<rect x="1350" y="110" width="1150" height="780" rx="28" fill="#ffffff"/>
+
+<!-- ============ PHONE ============ -->
+<g clip-path="url(#cp)">
+  <!-- status bar -->
+  <text x="84" y="129" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+  <rect x="368" y="124" width="3" height="4" fill="#514e66"/><rect x="373" y="122" width="3" height="6" fill="#514e66"/><rect x="378" y="120" width="3" height="8" fill="#514e66"/><rect x="383" y="118" width="3" height="10" fill="#514e66"/>
+  <polygon points="392,128 404,128 398,119" fill="#514e66"/>
+  <rect x="406" y="118" width="20" height="10" rx="3" fill="#514e66"/><rect x="427" y="121" width="3" height="5" rx="1" fill="#514e66"/>
+
+  <!-- header -->
+  <text x="80" y="172" font-size="20" fill="#514e66">‹</text>
+  <text x="102" y="170" font-size="12" font-weight="600" fill="#7a7791">ENG-142 · Fix drag ghost offset on Safari</text>
+  <text x="80" y="210" font-size="20" font-weight="700" fill="#15131f">Attachments</text>
+  <text x="222" y="208" font-size="13" fill="#7a7791">4 files</text>
+
+  <!-- inline image thumbnails -->
+  <rect x="80" y="232" width="170" height="116" rx="12" fill="#eeedf5"/>
+  <polygon points="96,332 140,262 166,300 190,266 234,332" fill="#b6b3c8"/>
+  <circle cx="118" cy="264" r="8" fill="#b6b3c8"/>
+  <rect x="260" y="232" width="170" height="116" rx="12" fill="#eeedf5"/>
+  <circle cx="345" cy="290" r="30" stroke="#b6b3c8" stroke-width="3" fill="none"/>
+  <text x="80" y="368" font-size="11" fill="#7a7791">board-before.png</text>
+  <text x="260" y="368" font-size="11" fill="#7a7791">drag-ghost-repro.png</text>
+
+  <!-- file row -->
+  <rect x="80" y="388" width="38" height="48" rx="6" fill="#ffffff" stroke="#dedcea"/>
+  <polygon points="106,388 118,388 118,400" fill="#eeedf5"/>
+  <text x="99" y="426" font-size="10" font-weight="700" fill="#e0424a" text-anchor="middle">PDF</text>
+  <text x="130" y="408" font-size="14" fill="#15131f">design-spec.pdf</text>
+  <text x="235" y="408" font-size="14" fill="#7a7791">· 1.2 MB</text>
+  <text x="130" y="428" font-size="12" fill="#7a7791">Added 2d ago by Sara R.</text>
+  <text x="424" y="416" font-size="18" fill="#b6b3c8" text-anchor="middle">›</text>
+  <line x1="80" y1="452" x2="430" y2="452" stroke="#eeedf5"/>
+
+  <!-- upload in progress row -->
+  <rect x="80" y="466" width="38" height="48" rx="6" fill="#f7f6fb" stroke="#dedcea"/>
+  <text x="99" y="496" font-size="10" font-weight="700" fill="#7a7791" text-anchor="middle">MOV</text>
+  <text x="130" y="486" font-size="14" fill="#15131f">screen-capture.mov</text>
+  <text x="130" y="506" font-size="12" fill="#7a7791">Uploading…</text>
+  <rect x="130" y="516" width="240" height="6" rx="3" fill="#eeedf5"/>
+  <rect x="130" y="516" width="144" height="6" rx="3" fill="#6342db"/>
+  <text x="382" y="522" font-size="11" fill="#7a7791">60%</text>
+
+  <!-- bottom nav (under scrim) -->
+  <line x1="60" y1="826" x2="450" y2="826" stroke="#eeedf5" stroke-width="2"/>
+  <rect x="88" y="838" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="99" y="876" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+  <rect x="166" y="838" width="22" height="22" rx="6" fill="#6342db"/>
+  <text x="177" y="876" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">Board</text>
+  <rect x="244" y="838" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="255" y="876" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+  <rect x="322" y="838" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="333" y="876" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+  <circle cx="411" cy="849" r="11" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="411" y="876" font-size="11" fill="#7a7791" text-anchor="middle">You</text>
+
+  <!-- scrim + bottom sheet -->
+  <rect x="60" y="110" width="390" height="780" fill="#15131f" opacity="0.3"/>
+  <rect x="60" y="612" width="390" height="278" rx="18" fill="#ffffff"/>
+  <rect x="237" y="626" width="36" height="5" rx="2.5" fill="#dedcea"/>
+  <text x="80" y="660" font-size="15" font-weight="700" fill="#15131f">Add attachment</text>
+
+  <!-- take photo -->
+  <rect x="82" y="692" width="30" height="22" rx="5" stroke="#514e66" stroke-width="2" fill="none"/>
+  <rect x="90" y="686" width="10" height="5" rx="2" fill="#514e66"/>
+  <circle cx="97" cy="703" r="6" stroke="#514e66" stroke-width="2" fill="none"/>
+  <text x="126" y="709" font-size="15" fill="#15131f">Take photo</text>
+  <line x1="80" y1="736" x2="430" y2="736" stroke="#eeedf5"/>
+
+  <!-- photo library -->
+  <rect x="82" y="750" width="26" height="26" rx="5" stroke="#514e66" stroke-width="2" fill="none"/>
+  <polygon points="86,772 94,762 99,767 103,760 105,772" fill="#514e66"/>
+  <circle cx="90" cy="757" r="2.5" fill="#514e66"/>
+  <text x="126" y="769" font-size="15" fill="#15131f">Photo library</text>
+  <line x1="80" y1="796" x2="430" y2="796" stroke="#eeedf5"/>
+
+  <!-- browse files -->
+  <rect x="82" y="814" width="28" height="18" rx="3" stroke="#514e66" stroke-width="2" fill="none"/>
+  <rect x="82" y="809" width="12" height="6" rx="2" fill="#514e66"/>
+  <text x="126" y="829" font-size="15" fill="#15131f">Browse files</text>
+</g>
+
+<!-- ============ FOLDABLE ============ -->
+<g clip-path="url(#cf)">
+  <!-- status bar -->
+  <text x="554" y="129" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+  <rect x="1188" y="124" width="3" height="4" fill="#514e66"/><rect x="1193" y="122" width="3" height="6" fill="#514e66"/><rect x="1198" y="120" width="3" height="8" fill="#514e66"/><rect x="1203" y="118" width="3" height="10" fill="#514e66"/>
+  <polygon points="1212,128 1224,128 1218,119" fill="#514e66"/>
+  <rect x="1226" y="118" width="20" height="10" rx="3" fill="#514e66"/><rect x="1247" y="121" width="3" height="5" rx="1" fill="#514e66"/>
+
+  <!-- nav rail -->
+  <rect x="530" y="138" width="76" height="752" fill="#f7f6fb"/>
+  <line x1="606" y1="138" x2="606" y2="890" stroke="#eeedf5" stroke-width="2"/>
+  <rect x="556" y="158" width="24" height="24" rx="7" fill="#6342db"/>
+  <rect x="557" y="212" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="568" y="250" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+  <rect x="557" y="290" width="22" height="22" rx="6" fill="#6342db"/>
+  <text x="568" y="328" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">Board</text>
+  <rect x="557" y="368" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="568" y="406" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+  <rect x="557" y="446" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="568" y="484" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+  <circle cx="568" cy="535" r="11" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="568" y="562" font-size="11" fill="#7a7791" text-anchor="middle">You</text>
+
+  <!-- hinge -->
+  <line x1="900" y1="112" x2="900" y2="888" stroke="#b6b3c8" stroke-dasharray="4 6" opacity="0.6"/>
+
+  <!-- left pane: issue with attachment list -->
+  <text x="622" y="172" font-size="12" font-weight="600" fill="#7a7791">ENG-142</text>
+  <text x="622" y="198" font-size="17" font-weight="700" fill="#15131f">Fix drag ghost offset</text>
+  <text x="622" y="220" font-size="17" font-weight="700" fill="#15131f">on Safari</text>
+  <rect x="622" y="240" width="100" height="24" rx="12" fill="#f29d0b" fill-opacity="0.15"/>
+  <circle cx="636" cy="252" r="3.5" fill="#f29d0b"/>
+  <text x="645" y="256" font-size="11" font-weight="600" fill="#f29d0b">In Progress</text>
+  <rect x="730" y="240" width="54" height="24" rx="12" fill="#f2721c" fill-opacity="0.15"/>
+  <text x="744" y="256" font-size="11" font-weight="600" fill="#f2721c">High</text>
+  <circle cx="806" cy="252" r="11" fill="#4f8cff"/>
+  <text x="806" y="256" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+  <line x1="622" y1="284" x2="884" y2="284" stroke="#eeedf5"/>
+  <text x="622" y="310" font-size="13" font-weight="600" fill="#15131f">Attachments · 4</text>
+
+  <rect x="622" y="326" width="64" height="44" rx="8" fill="#eeedf5"/>
+  <polygon points="629,364 645,340 653,350 660,340 679,364" fill="#b6b3c8"/>
+  <text x="698" y="344" font-size="12" fill="#15131f">board-before.png</text>
+  <text x="698" y="362" font-size="11" fill="#7a7791">1.8 MB</text>
+
+  <rect x="606" y="388" width="294" height="62" fill="#6342db" fill-opacity="0.08"/>
+  <rect x="606" y="388" width="4" height="62" fill="#6342db"/>
+  <rect x="622" y="396" width="64" height="44" rx="8" fill="#eeedf5"/>
+  <circle cx="654" cy="418" r="14" stroke="#b6b3c8" stroke-width="3" fill="none"/>
+  <text x="698" y="414" font-size="12" font-weight="600" fill="#15131f">drag-ghost-repro.png</text>
+  <text x="698" y="432" font-size="11" fill="#7a7791">2.1 MB · viewing</text>
+
+  <rect x="622" y="466" width="34" height="44" rx="6" fill="#ffffff" stroke="#dedcea"/>
+  <text x="639" y="494" font-size="10" font-weight="700" fill="#e0424a" text-anchor="middle">PDF</text>
+  <text x="672" y="484" font-size="12" fill="#15131f">design-spec.pdf</text>
+  <text x="672" y="502" font-size="11" fill="#7a7791">1.2 MB</text>
+
+  <rect x="622" y="536" width="34" height="44" rx="6" fill="#f7f6fb" stroke="#dedcea"/>
+  <text x="639" y="564" font-size="10" font-weight="700" fill="#7a7791" text-anchor="middle">MOV</text>
+  <text x="672" y="554" font-size="12" fill="#15131f">screen-capture.mov</text>
+  <rect x="672" y="564" width="160" height="5" rx="2.5" fill="#eeedf5"/>
+  <rect x="672" y="564" width="96" height="5" rx="2.5" fill="#6342db"/>
+  <text x="842" y="570" font-size="11" fill="#7a7791">60%</text>
+
+  <line x1="622" y1="610" x2="884" y2="610" stroke="#eeedf5"/>
+  <text x="622" y="640" font-size="12" font-weight="600" fill="#7a7791">Description</text>
+  <rect x="622" y="654" width="240" height="7" rx="3.5" fill="#eeedf5"/>
+  <rect x="622" y="670" width="190" height="7" rx="3.5" fill="#eeedf5"/>
+  <rect x="622" y="686" width="210" height="7" rx="3.5" fill="#eeedf5"/>
+  <text x="622" y="734" font-size="12" font-weight="600" fill="#7a7791">Activity</text>
+  <rect x="622" y="748" width="230" height="7" rx="3.5" fill="#eeedf5"/>
+  <rect x="622" y="764" width="170" height="7" rx="3.5" fill="#eeedf5"/>
+
+  <!-- right pane: full-screen image viewer -->
+  <rect x="900" y="138" width="370" height="752" fill="#15131f"/>
+  <text x="1236" y="178" font-size="22" fill="#eef0f8" text-anchor="middle">×</text>
+  <rect x="966" y="330" width="240" height="170" rx="10" fill="#26243a" stroke="#514e66"/>
+  <polygon points="992,478 1042,400 1068,438 1096,404 1180,478" fill="#7a7791"/>
+  <circle cx="1010" cy="372" r="9" fill="#7a7791"/>
+  <text x="930" y="424" font-size="26" fill="#7a7791" text-anchor="middle">‹</text>
+  <text x="1242" y="424" font-size="26" fill="#7a7791" text-anchor="middle">›</text>
+  <text x="1086" y="838" font-size="13" fill="#eef0f8" text-anchor="middle">drag-ghost-repro.png</text>
+  <text x="1086" y="858" font-size="11" fill="#7a7791" text-anchor="middle">2 of 4 · 2.1 MB</text>
+</g>
+
+<!-- ============ TABLET ============ -->
+<g clip-path="url(#ct)">
+  <!-- status bar -->
+  <text x="1374" y="129" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+  <rect x="2418" y="124" width="3" height="4" fill="#514e66"/><rect x="2423" y="122" width="3" height="6" fill="#514e66"/><rect x="2428" y="120" width="3" height="8" fill="#514e66"/><rect x="2433" y="118" width="3" height="10" fill="#514e66"/>
+  <polygon points="2442,128 2454,128 2448,119" fill="#514e66"/>
+  <rect x="2456" y="118" width="20" height="10" rx="3" fill="#514e66"/><rect x="2477" y="121" width="3" height="5" rx="1" fill="#514e66"/>
+
+  <!-- nav rail -->
+  <rect x="1350" y="138" width="76" height="752" fill="#f7f6fb"/>
+  <line x1="1426" y1="138" x2="1426" y2="890" stroke="#eeedf5" stroke-width="2"/>
+  <rect x="1376" y="158" width="24" height="24" rx="7" fill="#6342db"/>
+  <rect x="1377" y="212" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="1388" y="250" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+  <rect x="1377" y="290" width="22" height="22" rx="6" fill="#6342db"/>
+  <text x="1388" y="328" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">Board</text>
+  <rect x="1377" y="368" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="1388" y="406" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+  <rect x="1377" y="446" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="1388" y="484" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+  <circle cx="1388" cy="535" r="11" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="1388" y="562" font-size="11" fill="#7a7791" text-anchor="middle">You</text>
+
+  <!-- left region: issue list -->
+  <text x="1446" y="175" font-size="15" font-weight="700" fill="#15131f">ENG · Active issues</text>
+  <text x="1446" y="193" font-size="12" fill="#7a7791">Cycle 14 · 12 issues</text>
+  <text x="1446" y="236" font-size="11" font-weight="600" fill="#7a7791">ENG-138</text>
+  <text x="1446" y="256" font-size="13" fill="#15131f">Board swimlanes for cycles</text>
+  <circle cx="1808" cy="242" r="5" fill="#8b5cf6"/>
+  <line x1="1446" y1="282" x2="1816" y2="282" stroke="#eeedf5"/>
+  <text x="1446" y="308" font-size="11" font-weight="600" fill="#7a7791">ENG-140</text>
+  <text x="1446" y="328" font-size="13" fill="#15131f">Offline queue for mutations</text>
+  <circle cx="1808" cy="314" r="5" fill="#f29d0b"/>
+  <line x1="1446" y1="354" x2="1816" y2="354" stroke="#eeedf5"/>
+  <rect x="1426" y="354" width="410" height="72" fill="#6342db" fill-opacity="0.08"/>
+  <rect x="1426" y="354" width="4" height="72" fill="#6342db"/>
+  <text x="1446" y="380" font-size="11" font-weight="600" fill="#7a7791">ENG-142</text>
+  <text x="1446" y="400" font-size="13" font-weight="600" fill="#15131f">Fix drag ghost offset on Safari</text>
+  <circle cx="1808" cy="386" r="5" fill="#f29d0b"/>
+  <line x1="1446" y1="426" x2="1816" y2="426" stroke="#eeedf5"/>
+  <text x="1446" y="452" font-size="11" font-weight="600" fill="#7a7791">ENG-143</text>
+  <text x="1446" y="472" font-size="13" fill="#15131f">Keyboard shortcuts palette</text>
+  <circle cx="1808" cy="458" r="5" fill="#6f6c86"/>
+  <line x1="1446" y1="498" x2="1816" y2="498" stroke="#eeedf5"/>
+  <text x="1446" y="524" font-size="11" font-weight="600" fill="#7a7791">ENG-131</text>
+  <text x="1446" y="544" font-size="13" fill="#15131f">Safari transform regression</text>
+  <circle cx="1808" cy="530" r="5" fill="#6f6c86"/>
+  <line x1="1446" y1="570" x2="1816" y2="570" stroke="#eeedf5"/>
+  <text x="1446" y="596" font-size="11" font-weight="600" fill="#7a7791">ENG-145</text>
+  <text x="1446" y="616" font-size="13" fill="#15131f">Sub-issue reorder jank on iPad</text>
+  <circle cx="1808" cy="602" r="5" fill="#9b98b0"/>
+  <line x1="1446" y1="642" x2="1816" y2="642" stroke="#eeedf5"/>
+  <text x="1446" y="668" font-size="11" font-weight="600" fill="#7a7791">ENG-147</text>
+  <text x="1446" y="688" font-size="13" fill="#15131f">Empty state illustrations</text>
+  <circle cx="1808" cy="674" r="5" fill="#9b98b0"/>
+  <line x1="1446" y1="714" x2="1816" y2="714" stroke="#eeedf5"/>
+  <text x="1446" y="740" font-size="11" font-weight="600" fill="#7a7791">ENG-149</text>
+  <text x="1446" y="760" font-size="13" fill="#15131f">Pointer capture on drag start</text>
+  <circle cx="1808" cy="746" r="5" fill="#12a474"/>
+  <line x1="1446" y1="786" x2="1816" y2="786" stroke="#eeedf5"/>
+  <text x="1446" y="812" font-size="11" font-weight="600" fill="#7a7791">ENG-150</text>
+  <text x="1446" y="832" font-size="13" fill="#15131f">Regression test on Safari</text>
+  <circle cx="1808" cy="818" r="5" fill="#6f6c86"/>
+
+  <!-- detail panel -->
+  <line x1="1836" y1="110" x2="1836" y2="890" stroke="#eeedf5" stroke-width="2"/>
+  <text x="1860" y="172" font-size="13" font-weight="600" fill="#7a7791">ENG-142</text>
+  <rect x="2404" y="156" width="46" height="24" rx="12" fill="#6342db"/>
+  <circle cx="2438" cy="168" r="9" fill="#ffffff"/>
+  <text x="1860" y="206" font-size="20" font-weight="700" fill="#15131f">Fix drag ghost offset on Safari</text>
+  <rect x="1860" y="226" width="110" height="26" rx="13" fill="#f29d0b" fill-opacity="0.15"/>
+  <circle cx="1876" cy="239" r="4" fill="#f29d0b"/>
+  <text x="1886" y="243" font-size="12" font-weight="600" fill="#f29d0b">In Progress</text>
+  <rect x="1978" y="226" width="64" height="26" rx="13" fill="#f2721c" fill-opacity="0.15"/>
+  <text x="1994" y="243" font-size="12" font-weight="600" fill="#f2721c">High</text>
+  <circle cx="2070" cy="239" r="12" fill="#4f8cff"/>
+  <text x="2070" y="243" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+  <text x="2090" y="243" font-size="13" fill="#15131f">Amina K.</text>
+  <line x1="1860" y1="272" x2="2476" y2="272" stroke="#eeedf5"/>
+
+  <text x="1860" y="304" font-size="15" font-weight="700" fill="#15131f">Attachments</text>
+  <text x="2476" y="304" font-size="12" fill="#7a7791" text-anchor="end">4 files · 25 MB max per file</text>
+
+  <!-- grid row 1 -->
+  <rect x="1860" y="318" width="190" height="116" rx="12" fill="#eeedf5"/>
+  <polygon points="1878,420 1928,354 1954,388 1978,358 2032,420" fill="#b6b3c8"/>
+  <circle cx="1902" cy="350" r="8" fill="#b6b3c8"/>
+  <rect x="2072" y="318" width="190" height="116" rx="12" fill="#eeedf5"/>
+  <circle cx="2167" cy="376" r="30" stroke="#b6b3c8" stroke-width="3" fill="none"/>
+  <rect x="2284" y="318" width="190" height="116" rx="12" fill="#eeedf5"/>
+  <rect x="2354" y="340" width="50" height="64" rx="6" fill="#ffffff" stroke="#dedcea"/>
+  <text x="2379" y="378" font-size="11" font-weight="700" fill="#e0424a" text-anchor="middle">PDF</text>
+  <text x="1860" y="454" font-size="11" fill="#7a7791">board-before.png</text>
+  <text x="2072" y="454" font-size="11" fill="#7a7791">drag-ghost-repro.png</text>
+  <text x="2284" y="454" font-size="11" fill="#7a7791">design-spec.pdf</text>
+
+  <!-- grid row 2: video thumb + add tile -->
+  <rect x="1860" y="470" width="190" height="116" rx="12" fill="#eeedf5"/>
+  <circle cx="1955" cy="528" r="22" fill="#ffffff" stroke="#dedcea"/>
+  <polygon points="1948,517 1968,528 1948,539" fill="#514e66"/>
+  <rect x="2072" y="470" width="190" height="116" rx="12" fill="#ffffff" stroke="#b6b3c8" stroke-width="2" stroke-dasharray="6 6"/>
+  <text x="2167" y="528" font-size="26" fill="#7a7791" text-anchor="middle">+</text>
+  <text x="2167" y="554" font-size="12" fill="#7a7791" text-anchor="middle">Add file</text>
+  <text x="1860" y="606" font-size="11" fill="#7a7791">screen-capture.mov</text>
+
+  <line x1="1860" y1="632" x2="2476" y2="632" stroke="#eeedf5"/>
+  <text x="1860" y="666" font-size="12" fill="#b6b3c8">Drag files here or paste from clipboard — 25 MB max per file</text>
+
+  <!-- toast bottom-right -->
+  <rect x="2160" y="806" width="316" height="60" rx="12" fill="#26243a" opacity="0.08"/>
+  <rect x="2156" y="800" width="316" height="60" rx="12" fill="#ffffff" stroke="#dedcea"/>
+  <circle cx="2184" cy="830" r="12" fill="#e0424a"/>
+  <text x="2184" y="835" font-size="13" font-weight="700" fill="#ffffff" text-anchor="middle">!</text>
+  <text x="2206" y="826" font-size="14" font-weight="600" fill="#15131f">Upload failed</text>
+  <text x="2206" y="846" font-size="11" fill="#7a7791">screen-capture.mov</text>
+  <text x="2440" y="836" font-size="14" font-weight="600" fill="#6342db" text-anchor="middle">Retry</text>
+</g>
+
+<!-- Frame borders on top -->
+<rect x="60" y="110" width="390" height="780" rx="28" fill="none" stroke="#dedcea" stroke-width="2"/>
+<rect x="530" y="110" width="740" height="780" rx="28" fill="none" stroke="#dedcea" stroke-width="2"/>
+<rect x="1350" y="110" width="1150" height="780" rx="28" fill="none" stroke="#dedcea" stroke-width="2"/>
+
+<!-- Footer -->
+<text x="1280" y="960" font-size="16" fill="#7a7791" text-anchor="middle">Attachments cap at 25 MB per file; images load inline over the authenticated session, with camera, library, and file-picker capture everywhere.</text>
+</svg>
