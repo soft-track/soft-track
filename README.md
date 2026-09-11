@@ -11,7 +11,7 @@ backend, React/Vite/TypeScript frontend with a fully typed API client generated 
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-![SoftTrack board](docs/screenshot.png)
+![SoftTrack board](docs/board.png)
 
 Try it in about a minute:
 
@@ -42,6 +42,7 @@ Then open <http://localhost:5173> and sign in as `demo@softtrack.dev` / `passwor
 - [User management](docs/features/users.md)
 - [Sign-in rate limiting](docs/features/rate-limiting.md)
 - [Jira import](docs/features/jira-import.md)
+- [Contributors](docs/contributors.md)
 
 ## Development and contributing
 
