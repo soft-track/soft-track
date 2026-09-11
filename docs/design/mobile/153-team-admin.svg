@@ -1,0 +1,333 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2560 1000" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <rect width="2560" height="1000" fill="#eef0f8"/>
+  <defs>
+    <clipPath id="cp"><rect x="60" y="110" width="390" height="780" rx="28"/></clipPath>
+    <clipPath id="cf"><rect x="530" y="110" width="740" height="780" rx="28"/></clipPath>
+    <clipPath id="ct"><rect x="1350" y="110" width="1150" height="780" rx="28"/></clipPath>
+  </defs>
+
+  <!-- Title block -->
+  <text x="60" y="44" font-size="30" font-weight="700" fill="#15131f">Team administration</text>
+  <text x="60" y="72" font-size="18" fill="#66637c">SoftTrack Mobile · design mockup</text>
+
+  <!-- Frame labels -->
+  <text x="60" y="88" font-size="22" font-weight="600" fill="#514e66">Phone · compact (&lt;600dp)</text>
+  <text x="530" y="88" font-size="22" font-weight="600" fill="#514e66">Foldable · medium (600–839dp)</text>
+  <text x="1350" y="88" font-size="22" font-weight="600" fill="#514e66">Tablet · expanded (≥840dp)</text>
+
+  <!-- ============ PHONE ============ -->
+  <rect x="66" y="118" width="390" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+  <rect x="60" y="110" width="390" height="780" rx="28" fill="#ffffff" stroke="#dedcea" stroke-width="2"/>
+  <g clip-path="url(#cp)">
+    <!-- status bar -->
+    <text x="84" y="130" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+    <rect x="376" y="127" width="3" height="6" fill="#514e66"/><rect x="381" y="124" width="3" height="9" fill="#514e66"/><rect x="386" y="121" width="3" height="12" fill="#514e66"/>
+    <circle cx="400" cy="127" r="4.5" fill="#514e66"/>
+    <rect x="410" y="121" width="18" height="10" rx="2" fill="none" stroke="#514e66" stroke-width="1.5"/><rect x="412.5" y="123.5" width="10" height="5" fill="#514e66"/>
+
+    <!-- header -->
+    <text x="82" y="178" font-size="22" fill="#514e66">‹</text>
+    <text x="106" y="178" font-size="20" font-weight="700" fill="#15131f">Team settings</text>
+    <text x="106" y="200" font-size="13" fill="#7a7791">ENG — Engineering</text>
+
+    <!-- menu rows -->
+    <!-- row 1 General c=245 -->
+    <rect x="84" y="232" width="26" height="26" rx="8" fill="#f7f6fb" stroke="#eeedf5"/>
+    <circle cx="97" cy="245" r="5" fill="none" stroke="#7a7791" stroke-width="2"/>
+    <text x="122" y="250" font-size="15" fill="#15131f">General</text>
+    <text x="428" y="251" font-size="18" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="84" y1="272" x2="434" y2="272" stroke="#eeedf5" stroke-width="1.5"/>
+    <!-- row 2 Members c=299 -->
+    <rect x="84" y="286" width="26" height="26" rx="8" fill="#f7f6fb" stroke="#eeedf5"/>
+    <circle cx="93" cy="296" r="3.5" fill="#7a7791"/><circle cx="102" cy="301" r="3.5" fill="#7a7791"/>
+    <text x="122" y="304" font-size="15" fill="#15131f">Members</text>
+    <text x="410" y="304" font-size="13" fill="#7a7791" text-anchor="end">8</text>
+    <text x="428" y="305" font-size="18" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="84" y1="326" x2="434" y2="326" stroke="#eeedf5" stroke-width="1.5"/>
+    <!-- row 3 Invitations c=353 -->
+    <rect x="84" y="340" width="26" height="26" rx="8" fill="#f7f6fb" stroke="#eeedf5"/>
+    <rect x="90" y="348" width="14" height="10" rx="2" fill="none" stroke="#7a7791" stroke-width="1.8"/>
+    <text x="122" y="358" font-size="15" fill="#15131f">Invitations</text>
+    <text x="410" y="358" font-size="13" fill="#7a7791" text-anchor="end">1 pending</text>
+    <text x="428" y="359" font-size="18" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="84" y1="380" x2="434" y2="380" stroke="#eeedf5" stroke-width="1.5"/>
+    <!-- row 4 Statuses c=407 -->
+    <rect x="84" y="394" width="26" height="26" rx="8" fill="#f7f6fb" stroke="#eeedf5"/>
+    <rect x="90" y="401" width="4" height="12" rx="1.5" fill="#7a7791"/><rect x="96" y="404" width="4" height="9" rx="1.5" fill="#7a7791"/><rect x="102" y="399" width="4" height="14" rx="1.5" fill="#7a7791"/>
+    <text x="122" y="412" font-size="15" fill="#15131f">Statuses</text>
+    <text x="410" y="412" font-size="13" fill="#7a7791" text-anchor="end">5</text>
+    <text x="428" y="413" font-size="18" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="84" y1="434" x2="434" y2="434" stroke="#eeedf5" stroke-width="1.5"/>
+    <!-- row 5 Automation c=461 -->
+    <rect x="84" y="448" width="26" height="26" rx="8" fill="#f7f6fb" stroke="#eeedf5"/>
+    <polygon points="99,452 92,463 97,463 95,470 102,459 97,459" fill="#7a7791"/>
+    <text x="122" y="466" font-size="15" fill="#15131f">Automation</text>
+    <text x="410" y="466" font-size="13" fill="#7a7791" text-anchor="end">3 rules</text>
+    <text x="428" y="467" font-size="18" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="84" y1="488" x2="434" y2="488" stroke="#eeedf5" stroke-width="1.5"/>
+    <!-- row 6 Repositories c=515 -->
+    <rect x="84" y="502" width="26" height="26" rx="8" fill="#f7f6fb" stroke="#eeedf5"/>
+    <circle cx="92" cy="510" r="3" fill="none" stroke="#7a7791" stroke-width="1.8"/><circle cx="102" cy="521" r="3" fill="none" stroke="#7a7791" stroke-width="1.8"/><line x1="93" y1="513" x2="101" y2="519" stroke="#7a7791" stroke-width="1.8"/>
+    <text x="122" y="520" font-size="15" fill="#15131f">Repositories</text>
+    <text x="410" y="520" font-size="13" fill="#7a7791" text-anchor="end">2</text>
+    <text x="428" y="521" font-size="18" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="84" y1="542" x2="434" y2="542" stroke="#eeedf5" stroke-width="1.5"/>
+
+    <!-- members preview card -->
+    <rect x="76" y="562" width="358" height="232" rx="14" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="94" y="592" font-size="15" font-weight="700" fill="#15131f">Members</text>
+    <text x="416" y="592" font-size="13" font-weight="600" fill="#6342db" text-anchor="end">View all ›</text>
+    <!-- member 1 c=626 -->
+    <circle cx="112" cy="626" r="16" fill="#4f8cff"/><text x="112" y="630" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+    <text x="138" y="624" font-size="15" fill="#15131f">Amina K.</text>
+    <text x="138" y="642" font-size="12" fill="#7a7791">@amina</text>
+    <rect x="348" y="615" width="56" height="22" rx="11" fill="#6342db" fill-opacity="0.15"/><text x="376" y="630" font-size="12" font-weight="600" fill="#6342db" text-anchor="middle">Admin</text>
+    <circle cx="414" cy="626" r="1.8" fill="#7a7791"/><circle cx="420" cy="626" r="1.8" fill="#7a7791"/><circle cx="426" cy="626" r="1.8" fill="#7a7791"/>
+    <line x1="94" y1="655" x2="416" y2="655" stroke="#eeedf5" stroke-width="1.5"/>
+    <!-- member 2 c=684 -->
+    <circle cx="112" cy="684" r="16" fill="#2fd4a7"/><text x="112" y="688" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">DP</text>
+    <text x="138" y="682" font-size="15" fill="#15131f">Dev P.</text>
+    <text x="138" y="700" font-size="12" fill="#7a7791">@devp</text>
+    <rect x="338" y="673" width="66" height="22" rx="11" fill="#7a7791" fill-opacity="0.15"/><text x="371" y="688" font-size="12" font-weight="600" fill="#7a7791" text-anchor="middle">Member</text>
+    <circle cx="414" cy="684" r="1.8" fill="#7a7791"/><circle cx="420" cy="684" r="1.8" fill="#7a7791"/><circle cx="426" cy="684" r="1.8" fill="#7a7791"/>
+    <line x1="94" y1="713" x2="416" y2="713" stroke="#eeedf5" stroke-width="1.5"/>
+    <!-- member 3 c=742 -->
+    <circle cx="112" cy="742" r="16" fill="#ff6fae"/><text x="112" y="746" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">SL</text>
+    <text x="138" y="740" font-size="15" fill="#15131f">Sara L.</text>
+    <text x="138" y="758" font-size="12" fill="#7a7791">@sara</text>
+    <rect x="338" y="731" width="66" height="22" rx="11" fill="#7a7791" fill-opacity="0.15"/><text x="371" y="746" font-size="12" font-weight="600" fill="#7a7791" text-anchor="middle">Member</text>
+    <circle cx="414" cy="742" r="1.8" fill="#7a7791"/><circle cx="420" cy="742" r="1.8" fill="#7a7791"/><circle cx="426" cy="742" r="1.8" fill="#7a7791"/>
+
+    <!-- bottom nav -->
+    <line x1="60" y1="826" x2="450" y2="826" stroke="#eeedf5" stroke-width="2"/>
+    <rect x="88" y="836" width="22" height="22" rx="6" fill="none" stroke="#7a7791" stroke-width="1.5"/><text x="99" y="879" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+    <rect x="166" y="836" width="22" height="22" rx="6" fill="none" stroke="#7a7791" stroke-width="1.5"/><text x="177" y="879" font-size="11" fill="#7a7791" text-anchor="middle">Board</text>
+    <rect x="244" y="836" width="22" height="22" rx="6" fill="none" stroke="#7a7791" stroke-width="1.5"/><text x="255" y="879" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+    <rect x="322" y="836" width="22" height="22" rx="6" fill="none" stroke="#7a7791" stroke-width="1.5"/><text x="333" y="879" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+    <rect x="400" y="836" width="22" height="22" rx="6" fill="#6342db"/><text x="411" y="879" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">You</text>
+  </g>
+  <rect x="60" y="110" width="390" height="780" rx="28" fill="none" stroke="#dedcea" stroke-width="2"/>
+
+  <!-- ============ FOLDABLE ============ -->
+  <rect x="536" y="118" width="740" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+  <rect x="530" y="110" width="740" height="780" rx="28" fill="#ffffff" stroke="#dedcea" stroke-width="2"/>
+  <g clip-path="url(#cf)">
+    <!-- hinge -->
+    <line x1="900" y1="112" x2="900" y2="888" stroke="#b6b3c8" stroke-width="2" stroke-dasharray="4 6" opacity="0.6"/>
+    <!-- status bar -->
+    <text x="554" y="130" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+    <rect x="1196" y="127" width="3" height="6" fill="#514e66"/><rect x="1201" y="124" width="3" height="9" fill="#514e66"/><rect x="1206" y="121" width="3" height="12" fill="#514e66"/>
+    <circle cx="1220" cy="127" r="4.5" fill="#514e66"/>
+    <rect x="1230" y="121" width="18" height="10" rx="2" fill="none" stroke="#514e66" stroke-width="1.5"/><rect x="1232.5" y="123.5" width="10" height="5" fill="#514e66"/>
+    <!-- nav rail -->
+    <rect x="530" y="138" width="76" height="752" fill="#f7f6fb"/>
+    <line x1="606" y1="138" x2="606" y2="890" stroke="#eeedf5" stroke-width="2"/>
+    <rect x="556" y="152" width="24" height="24" rx="7" fill="#6342db"/>
+    <rect x="557" y="206" width="22" height="22" rx="6" fill="none" stroke="#7a7791" stroke-width="1.5"/><text x="568" y="241" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+    <rect x="557" y="268" width="22" height="22" rx="6" fill="none" stroke="#7a7791" stroke-width="1.5"/><text x="568" y="303" font-size="11" fill="#7a7791" text-anchor="middle">Board</text>
+    <rect x="557" y="330" width="22" height="22" rx="6" fill="none" stroke="#7a7791" stroke-width="1.5"/><text x="568" y="365" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+    <rect x="557" y="392" width="22" height="22" rx="6" fill="none" stroke="#7a7791" stroke-width="1.5"/><text x="568" y="427" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+    <rect x="557" y="454" width="22" height="22" rx="6" fill="#6342db"/><text x="568" y="489" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">You</text>
+
+    <!-- LEFT PANE: admin menu -->
+    <text x="626" y="180" font-size="17" font-weight="700" fill="#15131f">ENG · Team settings</text>
+    <!-- rows h=52 from y=204 -->
+    <rect x="622" y="219" width="22" height="22" rx="7" fill="#f7f6fb" stroke="#eeedf5"/><circle cx="633" cy="230" r="4.5" fill="none" stroke="#7a7791" stroke-width="1.8"/>
+    <text x="654" y="235" font-size="14" fill="#15131f">General</text>
+    <text x="874" y="236" font-size="16" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="622" y1="256" x2="884" y2="256" stroke="#eeedf5"/>
+    <rect x="622" y="271" width="22" height="22" rx="7" fill="#f7f6fb" stroke="#eeedf5"/><circle cx="630" cy="279" r="3" fill="#7a7791"/><circle cx="637" cy="285" r="3" fill="#7a7791"/>
+    <text x="654" y="287" font-size="14" fill="#15131f">Members</text>
+    <text x="858" y="287" font-size="12" fill="#7a7791" text-anchor="end">8</text>
+    <text x="874" y="288" font-size="16" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="622" y1="308" x2="884" y2="308" stroke="#eeedf5"/>
+    <rect x="622" y="323" width="22" height="22" rx="7" fill="#f7f6fb" stroke="#eeedf5"/><rect x="627" y="330" width="12" height="8" rx="2" fill="none" stroke="#7a7791" stroke-width="1.6"/>
+    <text x="654" y="339" font-size="14" fill="#15131f">Invitations</text>
+    <text x="858" y="339" font-size="12" fill="#7a7791" text-anchor="end">1 pending</text>
+    <text x="874" y="340" font-size="16" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="622" y1="360" x2="884" y2="360" stroke="#eeedf5"/>
+    <!-- selected: Statuses -->
+    <rect x="614" y="362" width="274" height="48" rx="10" fill="#6342db" fill-opacity="0.08"/>
+    <rect x="614" y="368" width="3" height="36" rx="1.5" fill="#6342db"/>
+    <rect x="622" y="375" width="22" height="22" rx="7" fill="#ffffff" stroke="#eeedf5"/><rect x="627" y="381" width="3.5" height="10" rx="1.5" fill="#6342db"/><rect x="632" y="384" width="3.5" height="7" rx="1.5" fill="#6342db"/><rect x="637" y="379" width="3.5" height="12" rx="1.5" fill="#6342db"/>
+    <text x="654" y="391" font-size="14" font-weight="600" fill="#6342db">Statuses</text>
+    <text x="858" y="391" font-size="12" fill="#6342db" text-anchor="end">5</text>
+    <text x="874" y="392" font-size="16" fill="#6342db" text-anchor="middle">›</text>
+    <line x1="622" y1="412" x2="884" y2="412" stroke="#eeedf5"/>
+    <rect x="622" y="427" width="22" height="22" rx="7" fill="#f7f6fb" stroke="#eeedf5"/><polygon points="635,430 629,440 633,440 631,446 637,436 633,436" fill="#7a7791"/>
+    <text x="654" y="443" font-size="14" fill="#15131f">Automation</text>
+    <text x="858" y="443" font-size="12" fill="#7a7791" text-anchor="end">3 rules</text>
+    <text x="874" y="444" font-size="16" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="622" y1="464" x2="884" y2="464" stroke="#eeedf5"/>
+    <rect x="622" y="479" width="22" height="22" rx="7" fill="#f7f6fb" stroke="#eeedf5"/><circle cx="629" cy="486" r="2.6" fill="none" stroke="#7a7791" stroke-width="1.6"/><circle cx="638" cy="495" r="2.6" fill="none" stroke="#7a7791" stroke-width="1.6"/><line x1="630" y1="488" x2="637" y2="493" stroke="#7a7791" stroke-width="1.6"/>
+    <text x="654" y="495" font-size="14" fill="#15131f">Repositories</text>
+    <text x="858" y="495" font-size="12" fill="#7a7791" text-anchor="end">2</text>
+    <text x="874" y="496" font-size="16" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="622" y1="516" x2="884" y2="516" stroke="#eeedf5"/>
+    <!-- low-fi members preview -->
+    <text x="626" y="556" font-size="13" font-weight="700" fill="#514e66">Members</text>
+    <circle cx="636" cy="584" r="12" fill="#4f8cff"/><text x="636" y="588" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+    <rect x="658" y="576" width="130" height="8" rx="4" fill="#eeedf5"/><rect x="658" y="589" width="84" height="6" rx="3" fill="#eeedf5"/>
+    <circle cx="636" cy="622" r="12" fill="#2fd4a7"/><text x="636" y="626" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">DP</text>
+    <rect x="658" y="614" width="110" height="8" rx="4" fill="#eeedf5"/><rect x="658" y="627" width="70" height="6" rx="3" fill="#eeedf5"/>
+    <circle cx="636" cy="660" r="12" fill="#ff6fae"/><text x="636" y="664" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">SL</text>
+    <rect x="658" y="652" width="120" height="8" rx="4" fill="#eeedf5"/><rect x="658" y="665" width="78" height="6" rx="3" fill="#eeedf5"/>
+
+    <!-- RIGHT PANE: statuses editor -->
+    <text x="916" y="180" font-size="17" font-weight="700" fill="#15131f">Statuses</text>
+    <text x="916" y="200" font-size="12" fill="#7a7791">Drag to reorder board columns</text>
+    <!-- status rows -->
+    <rect x="916" y="216" width="338" height="54" rx="10" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="934" y="249" font-size="15" fill="#b6b3c8">☰</text>
+    <circle cx="968" cy="243" r="6" fill="#9b98b0"/>
+    <text x="984" y="248" font-size="15" fill="#15131f">Backlog</text>
+    <rect x="1178" y="233" width="62" height="20" rx="10" fill="#9b98b0" fill-opacity="0.15"/><text x="1209" y="247" font-size="11" font-weight="600" fill="#9b98b0" text-anchor="middle">Backlog</text>
+    <rect x="916" y="278" width="338" height="54" rx="10" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="934" y="311" font-size="15" fill="#b6b3c8">☰</text>
+    <circle cx="968" cy="305" r="6" fill="#6f6c86"/>
+    <text x="984" y="310" font-size="15" fill="#15131f">Todo</text>
+    <rect x="1168" y="295" width="72" height="20" rx="10" fill="#6f6c86" fill-opacity="0.15"/><text x="1204" y="309" font-size="11" font-weight="600" fill="#6f6c86" text-anchor="middle">Unstarted</text>
+    <rect x="916" y="340" width="338" height="54" rx="10" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="934" y="373" font-size="15" fill="#b6b3c8">☰</text>
+    <circle cx="968" cy="367" r="6" fill="#f29d0b"/>
+    <text x="984" y="372" font-size="15" fill="#15131f">In Progress</text>
+    <rect x="1178" y="357" width="62" height="20" rx="10" fill="#f29d0b" fill-opacity="0.15"/><text x="1209" y="371" font-size="11" font-weight="600" fill="#f29d0b" text-anchor="middle">Started</text>
+    <rect x="916" y="402" width="338" height="54" rx="10" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="934" y="435" font-size="15" fill="#b6b3c8">☰</text>
+    <circle cx="968" cy="429" r="6" fill="#8b5cf6"/>
+    <text x="984" y="434" font-size="15" fill="#15131f">In Review</text>
+    <rect x="1178" y="419" width="62" height="20" rx="10" fill="#8b5cf6" fill-opacity="0.15"/><text x="1209" y="433" font-size="11" font-weight="600" fill="#8b5cf6" text-anchor="middle">Started</text>
+    <rect x="916" y="464" width="338" height="54" rx="10" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="934" y="497" font-size="15" fill="#b6b3c8">☰</text>
+    <circle cx="968" cy="491" r="6" fill="#12a474"/>
+    <text x="984" y="496" font-size="15" fill="#15131f">Done</text>
+    <rect x="1162" y="481" width="78" height="20" rx="10" fill="#12a474" fill-opacity="0.15"/><text x="1201" y="495" font-size="11" font-weight="600" fill="#12a474" text-anchor="middle">Completed</text>
+    <!-- add status -->
+    <rect x="916" y="548" width="150" height="44" rx="10" fill="#6342db"/>
+    <text x="991" y="576" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle">+ Add status</text>
+    <text x="916" y="634" font-size="12" fill="#7a7791">Reordering updates the board column order for everyone.</text>
+  </g>
+  <rect x="530" y="110" width="740" height="780" rx="28" fill="none" stroke="#dedcea" stroke-width="2"/>
+
+  <!-- ============ TABLET ============ -->
+  <rect x="1356" y="118" width="1150" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+  <rect x="1350" y="110" width="1150" height="780" rx="28" fill="#ffffff" stroke="#dedcea" stroke-width="2"/>
+  <g clip-path="url(#ct)">
+    <!-- status bar -->
+    <text x="1374" y="130" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+    <rect x="2406" y="127" width="3" height="6" fill="#514e66"/><rect x="2411" y="124" width="3" height="9" fill="#514e66"/><rect x="2416" y="121" width="3" height="12" fill="#514e66"/>
+    <circle cx="2430" cy="127" r="4.5" fill="#514e66"/>
+    <rect x="2440" y="121" width="18" height="10" rx="2" fill="none" stroke="#514e66" stroke-width="1.5"/><rect x="2442.5" y="123.5" width="10" height="5" fill="#514e66"/>
+    <!-- nav rail -->
+    <rect x="1350" y="138" width="76" height="752" fill="#f7f6fb"/>
+    <line x1="1426" y1="138" x2="1426" y2="890" stroke="#eeedf5" stroke-width="2"/>
+    <rect x="1376" y="152" width="24" height="24" rx="7" fill="#6342db"/>
+    <rect x="1377" y="206" width="22" height="22" rx="6" fill="none" stroke="#7a7791" stroke-width="1.5"/><text x="1388" y="241" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+    <rect x="1377" y="268" width="22" height="22" rx="6" fill="none" stroke="#7a7791" stroke-width="1.5"/><text x="1388" y="303" font-size="11" fill="#7a7791" text-anchor="middle">Board</text>
+    <rect x="1377" y="330" width="22" height="22" rx="6" fill="none" stroke="#7a7791" stroke-width="1.5"/><text x="1388" y="365" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+    <rect x="1377" y="392" width="22" height="22" rx="6" fill="none" stroke="#7a7791" stroke-width="1.5"/><text x="1388" y="427" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+    <rect x="1377" y="454" width="22" height="22" rx="6" fill="#6342db"/><text x="1388" y="489" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">You</text>
+
+    <!-- MENU PANE -->
+    <line x1="1710" y1="138" x2="1710" y2="890" stroke="#eeedf5" stroke-width="2"/>
+    <text x="1450" y="182" font-size="17" font-weight="700" fill="#15131f">ENG · Team settings</text>
+    <rect x="1446" y="221" width="22" height="22" rx="7" fill="#f7f6fb" stroke="#eeedf5"/><circle cx="1457" cy="232" r="4.5" fill="none" stroke="#7a7791" stroke-width="1.8"/>
+    <text x="1478" y="237" font-size="14" fill="#15131f">General</text>
+    <text x="1694" y="238" font-size="16" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="1446" y1="258" x2="1686" y2="258" stroke="#eeedf5"/>
+    <rect x="1446" y="273" width="22" height="22" rx="7" fill="#f7f6fb" stroke="#eeedf5"/><circle cx="1454" cy="281" r="3" fill="#7a7791"/><circle cx="1461" cy="287" r="3" fill="#7a7791"/>
+    <text x="1478" y="289" font-size="14" fill="#15131f">Members</text>
+    <text x="1678" y="289" font-size="12" fill="#7a7791" text-anchor="end">8</text>
+    <text x="1694" y="290" font-size="16" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="1446" y1="310" x2="1686" y2="310" stroke="#eeedf5"/>
+    <rect x="1446" y="325" width="22" height="22" rx="7" fill="#f7f6fb" stroke="#eeedf5"/><rect x="1451" y="332" width="12" height="8" rx="2" fill="none" stroke="#7a7791" stroke-width="1.6"/>
+    <text x="1478" y="341" font-size="14" fill="#15131f">Invitations</text>
+    <text x="1678" y="341" font-size="12" fill="#7a7791" text-anchor="end">1 pending</text>
+    <text x="1694" y="342" font-size="16" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="1446" y1="362" x2="1686" y2="362" stroke="#eeedf5"/>
+    <rect x="1446" y="377" width="22" height="22" rx="7" fill="#f7f6fb" stroke="#eeedf5"/><rect x="1451" y="383" width="3.5" height="10" rx="1.5" fill="#7a7791"/><rect x="1456" y="386" width="3.5" height="7" rx="1.5" fill="#7a7791"/><rect x="1461" y="381" width="3.5" height="12" rx="1.5" fill="#7a7791"/>
+    <text x="1478" y="393" font-size="14" fill="#15131f">Statuses</text>
+    <text x="1678" y="393" font-size="12" fill="#7a7791" text-anchor="end">5</text>
+    <text x="1694" y="394" font-size="16" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="1446" y1="414" x2="1686" y2="414" stroke="#eeedf5"/>
+    <!-- selected: Automation -->
+    <rect x="1438" y="416" width="264" height="48" rx="10" fill="#6342db" fill-opacity="0.08"/>
+    <rect x="1438" y="422" width="3" height="36" rx="1.5" fill="#6342db"/>
+    <rect x="1446" y="429" width="22" height="22" rx="7" fill="#ffffff" stroke="#eeedf5"/><polygon points="1459,432 1453,442 1457,442 1455,448 1461,438 1457,438" fill="#6342db"/>
+    <text x="1478" y="445" font-size="14" font-weight="600" fill="#6342db">Automation</text>
+    <text x="1678" y="445" font-size="12" fill="#6342db" text-anchor="end">3 rules</text>
+    <text x="1694" y="446" font-size="16" fill="#6342db" text-anchor="middle">›</text>
+    <line x1="1446" y1="466" x2="1686" y2="466" stroke="#eeedf5"/>
+    <rect x="1446" y="481" width="22" height="22" rx="7" fill="#f7f6fb" stroke="#eeedf5"/><circle cx="1453" cy="488" r="2.6" fill="none" stroke="#7a7791" stroke-width="1.6"/><circle cx="1462" cy="497" r="2.6" fill="none" stroke="#7a7791" stroke-width="1.6"/><line x1="1454" y1="490" x2="1461" y2="495" stroke="#7a7791" stroke-width="1.6"/>
+    <text x="1478" y="497" font-size="14" fill="#15131f">Repositories</text>
+    <text x="1678" y="497" font-size="12" fill="#7a7791" text-anchor="end">2</text>
+    <text x="1694" y="498" font-size="16" fill="#b6b3c8" text-anchor="middle">›</text>
+    <line x1="1446" y1="518" x2="1686" y2="518" stroke="#eeedf5"/>
+    <!-- low-fi members -->
+    <text x="1450" y="558" font-size="13" font-weight="700" fill="#514e66">Members</text>
+    <circle cx="1460" cy="586" r="12" fill="#4f8cff"/><text x="1460" y="590" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+    <rect x="1482" y="578" width="130" height="8" rx="4" fill="#eeedf5"/><rect x="1482" y="591" width="84" height="6" rx="3" fill="#eeedf5"/>
+    <circle cx="1460" cy="624" r="12" fill="#2fd4a7"/><text x="1460" y="628" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">DP</text>
+    <rect x="1482" y="616" width="110" height="8" rx="4" fill="#eeedf5"/><rect x="1482" y="629" width="70" height="6" rx="3" fill="#eeedf5"/>
+    <circle cx="1460" cy="662" r="12" fill="#ffb648"/><text x="1460" y="666" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">MT</text>
+    <rect x="1482" y="654" width="120" height="8" rx="4" fill="#eeedf5"/><rect x="1482" y="667" width="78" height="6" rx="3" fill="#eeedf5"/>
+
+    <!-- CENTER: automation -->
+    <text x="1734" y="182" font-size="17" font-weight="700" fill="#15131f">Automation</text>
+    <text x="2136" y="182" font-size="12" fill="#7a7791" text-anchor="end">2 of 3 rules active</text>
+    <!-- rule card 1 -->
+    <rect x="1734" y="204" width="402" height="118" rx="14" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <rect x="2076" y="222" width="40" height="22" rx="11" fill="#6342db"/><circle cx="2106" cy="233" r="8" fill="#ffffff"/>
+    <text x="1754" y="240" font-size="14" fill="#15131f">When a pull request is merged</text>
+    <text x="1754" y="266" font-size="14" fill="#15131f">and label is</text>
+    <rect x="1844" y="252" width="46" height="20" rx="6" fill="#f7f6fb" stroke="#dedcea"/><text x="1867" y="266" font-size="12" font-weight="600" fill="#514e66" text-anchor="middle">bug</text>
+    <text x="1754" y="296" font-size="14" fill="#15131f">→  set status to</text>
+    <rect x="1868" y="282" width="52" height="20" rx="10" fill="#12a474" fill-opacity="0.15"/><text x="1894" y="296" font-size="11" font-weight="600" fill="#12a474" text-anchor="middle">Done</text>
+    <text x="1932" y="296" font-size="14" fill="#15131f">and comment</text>
+    <!-- rule card 2 -->
+    <rect x="1734" y="338" width="402" height="118" rx="14" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <rect x="2076" y="356" width="40" height="22" rx="11" fill="#6342db"/><circle cx="2106" cy="367" r="8" fill="#ffffff"/>
+    <text x="1754" y="374" font-size="14" fill="#15131f">When an issue is created</text>
+    <text x="1754" y="400" font-size="14" fill="#15131f">and priority is</text>
+    <rect x="1858" y="386" width="58" height="20" rx="10" fill="#e0424a" fill-opacity="0.15"/><text x="1887" y="400" font-size="11" font-weight="600" fill="#e0424a" text-anchor="middle">Urgent</text>
+    <text x="1754" y="430" font-size="14" fill="#15131f">→  assign to</text>
+    <rect x="1842" y="416" width="76" height="20" rx="10" fill="#f7f6fb" stroke="#dedcea"/><text x="1880" y="430" font-size="11" font-weight="600" fill="#514e66" text-anchor="middle">Amina K.</text>
+    <text x="1930" y="430" font-size="14" fill="#15131f">and notify #eng</text>
+    <text x="1734" y="496" font-size="13" font-weight="600" fill="#6342db">View all 3 rules ›</text>
+    <!-- low-fi run history -->
+    <text x="1734" y="548" font-size="13" font-weight="700" fill="#514e66">Recent runs</text>
+    <circle cx="1742" cy="572" r="6" fill="#12a474" fill-opacity="0.35"/><rect x="1760" y="567" width="240" height="9" rx="4" fill="#eeedf5"/>
+    <circle cx="1742" cy="598" r="6" fill="#12a474" fill-opacity="0.35"/><rect x="1760" y="593" width="200" height="9" rx="4" fill="#eeedf5"/>
+    <circle cx="1742" cy="624" r="6" fill="#12a474" fill-opacity="0.35"/><rect x="1760" y="619" width="224" height="9" rx="4" fill="#eeedf5"/>
+
+    <!-- SIDE SHEET: invitations -->
+    <rect x="2152" y="138" width="8" height="752" fill="#26243a" opacity="0.04"/>
+    <rect x="2160" y="138" width="340" height="752" fill="#ffffff"/>
+    <line x1="2160" y1="138" x2="2160" y2="890" stroke="#dedcea" stroke-width="2"/>
+    <text x="2184" y="184" font-size="17" font-weight="700" fill="#15131f">Invitations</text>
+    <text x="2472" y="184" font-size="18" fill="#7a7791" text-anchor="middle">×</text>
+    <text x="2184" y="204" font-size="12" fill="#7a7791">Invite people to ENG</text>
+    <text x="2184" y="238" font-size="13" fill="#514e66">Email address</text>
+    <rect x="2184" y="248" width="292" height="48" rx="10" fill="#ffffff" stroke="#dedcea" stroke-width="1.5"/>
+    <text x="2198" y="277" font-size="15" fill="#b6b3c8">teammate@company.com</text>
+    <rect x="2184" y="312" width="292" height="44" rx="10" fill="#6342db"/>
+    <text x="2330" y="340" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle">Create invite link</text>
+    <line x1="2184" y1="384" x2="2476" y2="384" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="2184" y="410" font-size="13" font-weight="700" fill="#514e66">Active invite links</text>
+    <rect x="2184" y="424" width="292" height="88" rx="12" fill="#f7f6fb" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="2200" y="452" font-size="14" font-weight="600" fill="#15131f">softtrack.app/i/eng-8f2c</text>
+    <text x="2200" y="472" font-size="12" fill="#7a7791">Expires in 7 days · 1 pending join</text>
+    <rect x="2200" y="486" width="9" height="11" rx="2" fill="none" stroke="#6342db" stroke-width="1.4"/>
+    <rect x="2204" y="482" width="9" height="11" rx="2" fill="#f7f6fb" stroke="#6342db" stroke-width="1.4"/>
+    <text x="2220" y="496" font-size="12" font-weight="600" fill="#6342db">Copy</text>
+    <circle cx="2286" cy="492" r="6" fill="none" stroke="#6342db" stroke-width="1.4"/>
+    <line x1="2286" y1="496" x2="2286" y2="486" stroke="#6342db" stroke-width="1.4"/>
+    <polyline points="2283,489 2286,485.5 2289,489" fill="none" stroke="#6342db" stroke-width="1.4"/>
+    <text x="2300" y="496" font-size="12" font-weight="600" fill="#6342db">Share</text>
+    <text x="2184" y="550" font-size="12" fill="#7a7791">Only admins can create or revoke invite links.</text>
+  </g>
+  <rect x="1350" y="110" width="1150" height="780" rx="28" fill="none" stroke="#dedcea" stroke-width="2"/>
+
+  <!-- Footer -->
+  <text x="1280" y="960" font-size="16" fill="#7a7791" text-anchor="middle">Every admin surface is reachable on phone as a stacked settings flow; medium and expanded widths keep the admin menu persistent as a master pane with detail editors and side sheets alongside.</text>
+</svg>
