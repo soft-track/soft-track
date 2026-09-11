@@ -32,6 +32,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [pendingToken, setPendingToken] = useState<string | null>(null)
+  const [totpCode, setTotpCode] = useState('')
+  const { totpVerify } = useAuth()
 
   // `?next=` as well as the router's own state -- see signInDestination for
   // why there are two sources and why only one shape of value is honoured.
@@ -45,8 +48,12 @@ export default function LoginPage() {
     setError(null)
     setSubmitting(true)
     try {
-      await login(email, password)
-      navigate(from, { replace: true })
+      const result = await login(email, password)
+      if (result) {
+        setPendingToken(result.pending_token)
+      } else {
+        navigate(from, { replace: true })
+      }
     } catch (err: unknown) {
       // Surface what the API said rather than always blaming the password.
       // Sign-in is rate limited, and a throttled person told "incorrect
@@ -58,6 +65,22 @@ export default function LoginPage() {
       setSubmitting(false)
     }
   }
+
+  const onTotpSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!pendingToken) return
+    setError(null)
+    setSubmitting(true)
+    try {
+      await totpVerify(pendingToken, totpCode.trim())
+      navigate(from, { replace: true })
+    } catch (err: unknown) {
+      setError(errorDetail(err, 'Invalid two-factor code.'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
@@ -74,58 +97,118 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={onSubmit} className="glass-strong sheen space-y-4 rounded-panel p-6">
-          {error && (
-            <div
-              role="alert"
-              className="rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
-            >
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-neutral-700">
-              Email
-            </label>
-            <input
-              id="login-email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setTypedEmail(e.target.value)}
-              className="field"
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="login-password" className="mb-1.5 block text-sm font-medium text-neutral-700">
-              Password
-            </label>
-            <input
-              id="login-password"
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="field"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button type="submit" disabled={submitting} className="btn btn-primary h-10 w-full text-sm">
-            {submitting ? 'Signing in…' : 'Sign in'}
-          </button>
-
-          {demoCredentials && (
-            <p className="text-center text-xs text-neutral-400">
-              Demo login: {DEMO_EMAIL} / {DEMO_PASSWORD}
+        {pendingToken ? (
+          <form onSubmit={onTotpSubmit} className="glass-strong sheen space-y-4 rounded-panel p-6">
+            <h2 className="text-base font-semibold text-neutral-900 text-center">
+              Two-factor authentication
+            </h2>
+            <p className="text-xs text-neutral-500 text-center">
+              Enter the 6-digit code from your authenticator app, or a recovery code.
             </p>
-          )}
-        </form>
+
+            {error && (
+              <div
+                role="alert"
+                className="rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+              >
+                {error}
+              </div>
+            )}
+
+            <div>
+              <label
+                htmlFor="login-totp-code"
+                className="mb-1.5 block text-sm font-medium text-neutral-700"
+              >
+                Authentication code
+              </label>
+              <input
+                id="login-totp-code"
+                type="text"
+                required
+                autoFocus
+                autoComplete="one-time-code"
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value)}
+                className="field text-center font-mono tracking-widest text-lg"
+                placeholder="000000"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="btn btn-primary h-10 w-full text-sm"
+            >
+              {submitting ? 'Verifying…' : 'Verify code'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setPendingToken(null)
+                setTotpCode('')
+                setError(null)
+              }}
+              className="btn btn-ghost h-9 w-full text-xs text-neutral-500"
+            >
+              ← Back to password sign-in
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={onSubmit} className="glass-strong sheen space-y-4 rounded-panel p-6">
+            {error && (
+              <div
+                role="alert"
+                className="rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+              >
+                {error}
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-neutral-700">
+                Email
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setTypedEmail(e.target.value)}
+                className="field"
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="login-password" className="mb-1.5 block text-sm font-medium text-neutral-700">
+                Password
+              </label>
+              <input
+                id="login-password"
+                type="password"
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="field"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <button type="submit" disabled={submitting} className="btn btn-primary h-10 w-full text-sm">
+              {submitting ? 'Signing in…' : 'Sign in'}
+            </button>
+
+            {demoCredentials && (
+              <p className="text-center text-xs text-neutral-400">
+                Demo login: {DEMO_EMAIL} / {DEMO_PASSWORD}
+              </p>
+            )}
+          </form>
+        )}
 
         {config.data?.open_registration !== false && (
           <p className="mt-5 text-center text-sm text-neutral-500">

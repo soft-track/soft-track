@@ -13,6 +13,7 @@ class AdminUserRead(UserMe):
     #: How many teams the account belongs to. Enough to tell an active
     #: colleague from a stale invite-era account without opening every team.
     team_count: int
+    totp_enabled: bool
 
 
 class AdminUserUpdate(BaseModel):
@@ -23,3 +24,4 @@ class AdminUserUpdate(BaseModel):
 
 class AdminPasswordReset(BaseModel):
     new_password: str = Field(min_length=8)
+

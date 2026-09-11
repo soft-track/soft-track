@@ -31,6 +31,11 @@ import type {
   InviteRead,
   PasswordChange,
   Token,
+  TotpDisable,
+  TotpEnrolmentConfirm,
+  TotpEnrolmentResult,
+  TotpEnrolmentStart,
+  TotpVerifyRequest,
   UserCreate,
   UserMe,
   UserUpdate
@@ -223,6 +228,11 @@ export const useRegisterAuthRegisterPost = <TError = HTTPValidationError,
       return useMutation(getRegisterAuthRegisterPostMutationOptions(options), queryClient);
     }
     /**
+ * Password step of login.
+ *
+ * Returns a full `Token` (200) for users without TOTP, or a
+ * `TotpLoginPending` (202) when TOTP is enabled -- the client must then call
+ * POST /auth/totp/verify to complete the login.
  * @summary Login
  */
 export const loginAuthLoginPost = (
@@ -246,7 +256,7 @@ if(bodyLoginAuthLoginPost.client_secret !== undefined && bodyLoginAuthLoginPost.
  formUrlEncoded.append(`client_secret`, bodyLoginAuthLoginPost.client_secret);
  }
 
-      return apiClient<Token>(
+      return apiClient<unknown>(
       {url: `/auth/login`, method: 'POST',
       headers: {'Content-Type': 'application/x-www-form-urlencoded', },
        data: formUrlEncoded, signal
@@ -303,6 +313,291 @@ export const useLoginAuthLoginPost = <TError = HTTPValidationError,
         TContext
       > => {
       return useMutation(getLoginAuthLoginPostMutationOptions(options), queryClient);
+    }
+    /**
+ * TOTP code step: exchange a pending token + code for a full session token.
+ *
+ * Rate-limited per user id (extracted from the pending token) with a tight
+ * budget: five attempts before a 60-second lockout. The 6-digit code space
+ * (~1 000 000 values) combined with ±1 drift still makes brute force
+ * impractical within the lockout window.
+ * @summary Totp Verify
+ */
+export const totpVerifyAuthTotpVerifyPost = (
+    totpVerifyRequest: TotpVerifyRequest,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<Token>(
+      {url: `/auth/totp/verify`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: totpVerifyRequest, signal
+    },
+      );
+    }
+
+
+
+
+export const getTotpVerifyAuthTotpVerifyPostMutationKey = () => ['totpVerifyAuthTotpVerifyPost'] as const;
+
+export const getTotpVerifyAuthTotpVerifyPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpVerifyAuthTotpVerifyPost>>, TError,TotpVerifyAuthTotpVerifyPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof totpVerifyAuthTotpVerifyPost>>, TError,TotpVerifyAuthTotpVerifyPostMutationVariables, TContext> => {
+
+const mutationKey = getTotpVerifyAuthTotpVerifyPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof totpVerifyAuthTotpVerifyPost>>, TotpVerifyAuthTotpVerifyPostMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  totpVerifyAuthTotpVerifyPost(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TotpVerifyAuthTotpVerifyPostMutationResult = NonNullable<Awaited<ReturnType<typeof totpVerifyAuthTotpVerifyPost>>>
+    export type TotpVerifyAuthTotpVerifyPostMutationBody = TotpVerifyRequest
+    export type TotpVerifyAuthTotpVerifyPostMutationError = HTTPValidationError
+    export type TotpVerifyAuthTotpVerifyPostMutationVariables = {data: TotpVerifyRequest}
+
+    /**
+ * @summary Totp Verify
+ */
+export const useTotpVerifyAuthTotpVerifyPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpVerifyAuthTotpVerifyPost>>, TError,TotpVerifyAuthTotpVerifyPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof totpVerifyAuthTotpVerifyPost>>,
+        TError,
+        TotpVerifyAuthTotpVerifyPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getTotpVerifyAuthTotpVerifyPostMutationOptions(options), queryClient);
+    }
+    /**
+ * Begin TOTP enrolment: generate a secret and return the QR provisioning URI.
+ *
+ * The secret is persisted immediately (with totp_enabled=False) so that the
+ * confirm step can retrieve it from the database.  Until POST /auth/totp/confirm
+ * succeeds, 2FA is not active.
+ * @summary Totp Enrol
+ */
+export const totpEnrolAuthTotpEnrolPost = (
+
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TotpEnrolmentStart>(
+      {url: `/auth/totp/enrol`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+
+export const getTotpEnrolAuthTotpEnrolPostMutationKey = () => ['totpEnrolAuthTotpEnrolPost'] as const;
+
+export const getTotpEnrolAuthTotpEnrolPostMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpEnrolAuthTotpEnrolPost>>, TError,void, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof totpEnrolAuthTotpEnrolPost>>, TError,void, TContext> => {
+
+const mutationKey = getTotpEnrolAuthTotpEnrolPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof totpEnrolAuthTotpEnrolPost>>, void> = () => {
+
+
+          return  totpEnrolAuthTotpEnrolPost()
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TotpEnrolAuthTotpEnrolPostMutationResult = NonNullable<Awaited<ReturnType<typeof totpEnrolAuthTotpEnrolPost>>>
+
+    export type TotpEnrolAuthTotpEnrolPostMutationError = unknown
+
+
+    /**
+ * @summary Totp Enrol
+ */
+export const useTotpEnrolAuthTotpEnrolPost = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpEnrolAuthTotpEnrolPost>>, TError,void, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof totpEnrolAuthTotpEnrolPost>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getTotpEnrolAuthTotpEnrolPostMutationOptions(options), queryClient);
+    }
+    /**
+ * Complete TOTP enrolment by proving a valid code.
+ *
+ * On success: activates 2FA, generates recovery codes (shown once), and
+ * bumps token_version so all other sessions are invalidated.
+ * @summary Totp Confirm
+ */
+export const totpConfirmAuthTotpConfirmPost = (
+    totpEnrolmentConfirm: TotpEnrolmentConfirm,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TotpEnrolmentResult>(
+      {url: `/auth/totp/confirm`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: totpEnrolmentConfirm, signal
+    },
+      );
+    }
+
+
+
+
+export const getTotpConfirmAuthTotpConfirmPostMutationKey = () => ['totpConfirmAuthTotpConfirmPost'] as const;
+
+export const getTotpConfirmAuthTotpConfirmPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpConfirmAuthTotpConfirmPost>>, TError,TotpConfirmAuthTotpConfirmPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof totpConfirmAuthTotpConfirmPost>>, TError,TotpConfirmAuthTotpConfirmPostMutationVariables, TContext> => {
+
+const mutationKey = getTotpConfirmAuthTotpConfirmPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof totpConfirmAuthTotpConfirmPost>>, TotpConfirmAuthTotpConfirmPostMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  totpConfirmAuthTotpConfirmPost(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TotpConfirmAuthTotpConfirmPostMutationResult = NonNullable<Awaited<ReturnType<typeof totpConfirmAuthTotpConfirmPost>>>
+    export type TotpConfirmAuthTotpConfirmPostMutationBody = TotpEnrolmentConfirm
+    export type TotpConfirmAuthTotpConfirmPostMutationError = HTTPValidationError
+    export type TotpConfirmAuthTotpConfirmPostMutationVariables = {data: TotpEnrolmentConfirm}
+
+    /**
+ * @summary Totp Confirm
+ */
+export const useTotpConfirmAuthTotpConfirmPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpConfirmAuthTotpConfirmPost>>, TError,TotpConfirmAuthTotpConfirmPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof totpConfirmAuthTotpConfirmPost>>,
+        TError,
+        TotpConfirmAuthTotpConfirmPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getTotpConfirmAuthTotpConfirmPostMutationOptions(options), queryClient);
+    }
+    /**
+ * Disable TOTP two-factor for the current user.
+ *
+ * Requires a live TOTP code or a single-use recovery code. Bumps
+ * token_version so all existing sessions are revoked.
+ * @summary Totp Disable
+ */
+export const totpDisableAuthTotpDisablePost = (
+    totpDisable: TotpDisable,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/auth/totp/disable`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: totpDisable, signal
+    },
+      );
+    }
+
+
+
+
+export const getTotpDisableAuthTotpDisablePostMutationKey = () => ['totpDisableAuthTotpDisablePost'] as const;
+
+export const getTotpDisableAuthTotpDisablePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpDisableAuthTotpDisablePost>>, TError,TotpDisableAuthTotpDisablePostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof totpDisableAuthTotpDisablePost>>, TError,TotpDisableAuthTotpDisablePostMutationVariables, TContext> => {
+
+const mutationKey = getTotpDisableAuthTotpDisablePostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof totpDisableAuthTotpDisablePost>>, TotpDisableAuthTotpDisablePostMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  totpDisableAuthTotpDisablePost(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TotpDisableAuthTotpDisablePostMutationResult = NonNullable<Awaited<ReturnType<typeof totpDisableAuthTotpDisablePost>>>
+    export type TotpDisableAuthTotpDisablePostMutationBody = TotpDisable
+    export type TotpDisableAuthTotpDisablePostMutationError = HTTPValidationError
+    export type TotpDisableAuthTotpDisablePostMutationVariables = {data: TotpDisable}
+
+    /**
+ * @summary Totp Disable
+ */
+export const useTotpDisableAuthTotpDisablePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpDisableAuthTotpDisablePost>>, TError,TotpDisableAuthTotpDisablePostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof totpDisableAuthTotpDisablePost>>,
+        TError,
+        TotpDisableAuthTotpDisablePostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getTotpDisableAuthTotpDisablePostMutationOptions(options), queryClient);
     }
     /**
  * @summary Me

@@ -7,20 +7,25 @@ import {
 } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { AUTH_TOKEN_STORAGE_KEY } from '@/api/client'
+import { AUTH_TOKEN_STORAGE_KEY, AXIOS_INSTANCE } from '@/api/client'
 import {
   getMeAuthMeGetQueryKey,
-  useLoginAuthLoginPost,
-  useMeAuthMeGet,
   useRegisterAuthRegisterPost,
+  useMeAuthMeGet,
 } from '@/api/generated/endpoints/auth/auth'
 import type { UserMe } from '@/api/generated/models'
+
+export interface TotpPending {
+  pending_token: string
+  totp_required: true
+}
 
 interface AuthContextValue {
   user: UserMe | null
   isLoading: boolean
   isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<TotpPending | null>
+  totpVerify: (pendingToken: string, code: string) => Promise<void>
   register: (
     email: string,
     password: string,
@@ -51,7 +56,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     query: { enabled: Boolean(token), retry: false },
   })
 
-  const loginMutation = useLoginAuthLoginPost()
   const registerMutation = useRegisterAuthRegisterPost()
 
   const setSession = (newToken: string, user: UserMe) => {
@@ -60,11 +64,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryClient.setQueryData(getMeAuthMeGetQueryKey(), user)
   }
 
-  const login = async (email: string, password: string) => {
-    const result = await loginMutation.mutateAsync({
-      data: { username: email, password },
+  const login = async (email: string, password: string): Promise<TotpPending | null> => {
+    const form = new URLSearchParams()
+    form.append('username', email)
+    form.append('password', password)
+    const response = await AXIOS_INSTANCE.post('/auth/login', form, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      validateStatus: (s) => s < 400,
     })
-    setSession(result.access_token, result.user)
+
+    if (response.status === 202) {
+      return response.data as TotpPending
+    }
+
+    const { access_token, user } = response.data
+    setSession(access_token, user)
+    return null
+  }
+
+  const totpVerify = async (pendingToken: string, code: string): Promise<void> => {
+    const response = await AXIOS_INSTANCE.post('/auth/totp/verify', {
+      pending_token: pendingToken,
+      code,
+    })
+    const { access_token, user } = response.data
+    setSession(access_token, user)
   }
 
   const register = async (
@@ -97,6 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: Boolean(token) && meQuery.isPending,
       isAuthenticated: Boolean(token) && Boolean(meQuery.data),
       login,
+      totpVerify,
       register,
       setSession,
       logout,

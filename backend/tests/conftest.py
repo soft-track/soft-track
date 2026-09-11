@@ -97,6 +97,7 @@ def auth(client):
         return {
             "user": body["user"],
             "headers": {"Authorization": f"Bearer {body['access_token']}"},
+            "token": body["access_token"],
         }
 
     return _register
