@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom'
 
 import { useListIssuesTeamsTeamIdIssuesGet } from '@/api/generated/endpoints/issues/issues'
 import { useSearchSearchGet } from '@/api/generated/endpoints/search/search'
@@ -41,6 +41,7 @@ import { useSavedViews } from '@/views/useSavedViews'
 export default function BoardPage() {
   const { teamKey, issueNumber } = useParams<{ teamKey: string; issueNumber?: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const { team, isLoading, teams } = useTeamByKey(teamKey)
   const { user } = useAuth()
 
@@ -121,7 +122,13 @@ export default function BoardPage() {
 
   useGlobalShortcuts({
     togglePalette,
-    closeTop: overlays.closeTop,
+    closeTop: () => {
+      if (issueNumber) {
+        navigate(`/${teamKey}`)
+        return
+      }
+    overlays.closeTop()
+    },
     openNewIssue,
     openShortcuts,
     suppressed: overlays.isOpen('palette') || overlays.isOpen('shortcuts'),
@@ -155,6 +162,8 @@ export default function BoardPage() {
   }
 
   const openIssue = issueNumber ? issues.find((i) => String(i.number) === issueNumber) : undefined
+  const issueIdFromState = location.state?.issueId as number | undefined
+  const openIssueId = openIssue?.id ?? issueIdFromState
   const selectedCycle = teamData.cycles.find((cycle) => cycle.id === filters.cycleId) ?? null
   const isTeamAdmin =
     teamData.members.find((member) => member.user.id === user?.id)?.role === 'admin'
@@ -262,7 +271,7 @@ export default function BoardPage() {
       {overlays.isOpen('shortcuts') && (
         <ShortcutsCheatsheet onClose={() => overlays.close('shortcuts')} />
       )}
-      {overlays.isOpen('newIssue') && <NewIssueModal onClose={() => overlays.close('newIssue')} />}
+      {overlays.isOpen('newIssue') && <NewIssueModal onClose={() => overlays.close('newIssue')} issuePanelOpen={Boolean(issueNumber)} />}
       {overlays.isOpen('newCycle') && <NewCycleModal onClose={() => overlays.close('newCycle')} />}
       {overlays.isOpen('import') && <ImportJiraModal onClose={() => overlays.close('import')} />}
       {overlays.isOpen('saveView') && (
@@ -275,8 +284,8 @@ export default function BoardPage() {
           }}
         />
       )}
-      {issueNumber && openIssue && (
-        <IssueDetailPanel issueId={openIssue.id} onClose={() => navigate(`/${team.key}`)} />
+      {issueNumber && openIssueId && (
+        <IssueDetailPanel issueId={openIssueId} onClose={() => navigate(`/${team.key}`)} />
       )}
     </TeamProvider>
   )
