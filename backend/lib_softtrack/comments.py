@@ -11,6 +11,7 @@ from lib_softtrack.models.attachments import AttachmentRead
 from lib_softtrack.models.comments import CommentCreate, CommentRead
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.issues import get_issue_or_404
+from lib_softtrack.metrics import COMMENTS_CREATED
 from lib_softtrack.tables import Comment, User
 from lib_softtrack.teams import require_team_member
 
@@ -55,6 +56,7 @@ def create_comment(
         raise
     session.refresh(comment)
 
+    COMMENTS_CREATED.inc()
     return _comment_to_read(
         comment,
         current_user,

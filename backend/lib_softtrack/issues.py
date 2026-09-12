@@ -17,6 +17,7 @@ from lib_softtrack.history import record_changes, record_creation, snapshot
 from lib_softtrack import notifications as notifications_service
 from lib_softtrack import automations as automations_service
 from lib_softtrack import integrations as integrations_service
+from lib_softtrack.metrics import ISSUES_CREATED
 from lib_softtrack import rules as rules_service
 from lib_softtrack.links import open_blocker_counts
 from lib_softtrack.tables import (
@@ -259,6 +260,7 @@ def create_issue(
     session.commit()
     session.refresh(issue)
 
+    ISSUES_CREATED.inc()
     return issue_to_read(issue, session)
 
 

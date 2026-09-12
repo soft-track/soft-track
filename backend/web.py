@@ -99,6 +99,9 @@ class Settings(BaseSettings):
     #: makes it a digest rather than a mail per event: someone triaging a
     #: dozen issues generates one mail, not twelve.
     digest_delay_minutes: int = 10
+    #: Blank hides /metrics entirely. Set a high-entropy token and scrape with
+    #: `Authorization: Bearer <token>` to expose Prometheus metrics.
+    metrics_token: str = ""
 
     class Config:
         env_file = ".env"
