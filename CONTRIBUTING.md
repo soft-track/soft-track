@@ -45,6 +45,7 @@ pytest --cov --cov-fail-under=85           # tests and the coverage floor
 cd frontend
 npx oxlint src/                            # lint
 npx tsc -b --noEmit                        # typecheck
+npm test                                   # vitest
 npm run build                              # the build must succeed
 ```
 
@@ -101,6 +102,15 @@ the unfixed code once, watch it fail, then fix the code.
 Tests run against in-memory SQLite with foreign keys switched on, so they
 behave like the Postgres the stack actually uses. `backend/tests/conftest.py`
 explains why, and which bug got through when they did not.
+
+Frontend component tests use React Testing Library under jsdom, opted into
+per file with `// @vitest-environment jsdom` so the pure-logic suites keep
+running in node. Mock the generated API hooks at the module boundary with
+`vi.mock('@/api/generated/endpoints/...')` rather than a network layer, render
+the component inside the providers it reads from, and drive it with
+`@testing-library/user-event`. `frontend/src/issues/__tests__/NewIssueModal.test.tsx`
+and `frontend/src/keyboard/__tests__/CommandPalette.test.tsx` are the pattern
+to copy.
 
 ## Opening the pull request
 
