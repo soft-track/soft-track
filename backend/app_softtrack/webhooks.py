@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlmodel import Session
 
 from lib_softtrack import integrations as integrations_service
+from lib_softtrack.metrics import WEBHOOK_DELIVERIES_IN, WEBHOOK_DELIVERIES_OUT
 from lib_softtrack.models.integrations import WebhookReceipt
 from lib_softtrack.tables import GitProvider
 from lib_softtrack.webhooks import WebhookError
@@ -35,6 +36,10 @@ async def _receive(
     session: Session,
 ) -> WebhookReceipt:
     """Shared body for both providers. Only the header names differ."""
+    provider_name = provider.value
+    WEBHOOK_DELIVERIES_IN.labels(
+        provider=provider_name, event=event_name or "unknown"
+    ).inc()
     address = address_of(request)
     # Only *failed* verifications are counted, and a good one forgives the
     # address -- the same arrangement as the sign-in throttle. Charging every
@@ -50,6 +55,11 @@ async def _receive(
             session, provider, hook_token, event_name, body, headers
         )
     except WebhookError as error:
+        WEBHOOK_DELIVERIES_OUT.labels(
+            provider=provider_name,
+            event=event_name or "unknown",
+            result=str(error.status),
+        ).inc()
         webhook_by_address.record_attempt(address)
         # Returned rather than raised as an HTTPException so the provider gets
         # the reason in a shape it will render, and so a bad delivery is never
@@ -59,6 +69,11 @@ async def _receive(
         return WebhookReceipt(events=0, links=0, issues=[error.detail])
 
     webhook_by_address.forgive(address)
+    WEBHOOK_DELIVERIES_OUT.labels(
+        provider=provider_name,
+        event=event_name or "unknown",
+        result="success",
+    ).inc()
     return receipt
 
 

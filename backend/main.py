@@ -1,14 +1,16 @@
 import asyncio
 import logging
+import secrets
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app_identity.admin import router as admin_router
 from app_identity.identity import router as identity_router
 from lib_identity.identity import warm_password_hasher
 from lib_softtrack.digest import digest_loop
+from lib_softtrack.metrics import PrometheusMiddleware, metrics_response
 from app_softtrack.attachments import router as attachments_router
 from app_softtrack.automations import router as automations_router
 from app_softtrack.comments import router as comments_router
@@ -76,6 +78,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(PrometheusMiddleware)
 
 
 app.include_router(identity_router)
@@ -102,3 +105,13 @@ app.include_router(webhooks_router)
 @app.get("/health", tags=["health"])
 def health():
     return {"status": "ok"}
+
+
+@app.get("/metrics", include_in_schema=False)
+async def metrics(authorization: str | None = Header(default=None)):
+    if not settings.metrics_token:
+        raise HTTPException(status_code=404, detail="Not found")
+    expected = f"Bearer {settings.metrics_token}"
+    if authorization is None or not secrets.compare_digest(authorization, expected):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return metrics_response()
