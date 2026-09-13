@@ -8,6 +8,7 @@ recorder writes -- see test_history.py, which covers the recorder itself.
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from sqlmodel import select
 
 from lib_softtrack.tables import IssueEvent, IssueEventField
 
@@ -77,7 +78,7 @@ def test_burndown_falls_as_work_is_finished(client, team, session):
 
     # The recorder wrote the opening events at "now"; place them in the past
     # and finish the issue yesterday.
-    for event in session.query(IssueEvent).all():
+    for event in session.exec(select(IssueEvent)).all():
         event.created_at = start
         session.add(event)
     session.commit()
@@ -105,7 +106,7 @@ def test_cancelled_work_leaves_the_burndown_without_counting_as_done(
     start = datetime.now(timezone.utc) - 2 * DAY
     cycle = make_cycle(client, team, start, days=10)
     issue = make_issue(client, team, "Work", estimate=5, cycle_id=cycle["id"])
-    for event in session.query(IssueEvent).all():
+    for event in session.exec(select(IssueEvent)).all():
         event.created_at = start
         session.add(event)
     session.commit()
@@ -124,7 +125,7 @@ def test_the_ideal_line_runs_from_opening_scope_to_zero(client, team, session):
     start = datetime.now(timezone.utc) - 2 * DAY
     cycle = make_cycle(client, team, start, days=4)
     issue = make_issue(client, team, "Work", estimate=8, cycle_id=cycle["id"])
-    for event in session.query(IssueEvent).all():
+    for event in session.exec(select(IssueEvent)).all():
         event.created_at = start
         session.add(event)
     session.commit()
@@ -142,7 +143,7 @@ def test_scope_added_mid_cycle_is_reported(client, team, session):
     start = datetime.now(timezone.utc) - 2 * DAY
     cycle = make_cycle(client, team, start, days=10)
     first = make_issue(client, team, "Planned", estimate=3, cycle_id=cycle["id"])
-    for event in session.query(IssueEvent).all():
+    for event in session.exec(select(IssueEvent)).all():
         event.created_at = start
         session.add(event)
     session.commit()
@@ -174,7 +175,7 @@ def test_work_removed_from_a_cycle_stops_counting_from_that_day(client, team, se
     start = datetime.now(timezone.utc) - 2 * DAY
     cycle = make_cycle(client, team, start, days=10)
     issue = make_issue(client, team, "Pulled out", estimate=5, cycle_id=cycle["id"])
-    for event in session.query(IssueEvent).all():
+    for event in session.exec(select(IssueEvent)).all():
         event.created_at = start
         session.add(event)
     session.commit()
@@ -246,7 +247,7 @@ def test_velocity_average_is_null_with_no_history(client, team):
 
 def test_cumulative_flow_counts_each_status_per_day(client, team, session):
     issue = make_issue(client, team, "Work")
-    for event in session.query(IssueEvent).all():
+    for event in session.exec(select(IssueEvent)).all():
         event.created_at = datetime.now(timezone.utc) - 3 * DAY
         session.add(event)
     session.commit()
@@ -336,7 +337,7 @@ def test_the_backlog_line_starts_where_the_backlog_actually_was(client, team, se
     """Issues created before the window still count as open, or the line
     starts at zero and the chart lies about the backlog."""
     old = make_issue(client, team, "Old")
-    for event in session.query(IssueEvent).all():
+    for event in session.exec(select(IssueEvent)).all():
         event.created_at = datetime.now(timezone.utc) - 30 * DAY
         session.add(event)
     from lib_softtrack.tables import Issue

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.tables import TeamRole
@@ -20,8 +20,7 @@ class TeamRead(BaseModel):
     description: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TeamUpdate(BaseModel):
