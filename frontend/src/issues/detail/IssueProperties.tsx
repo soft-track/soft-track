@@ -11,7 +11,7 @@ import {
   PRIORITY_ORDER,
 } from '@/issues/issueMeta'
 import { activeMembers } from '@/team/members'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Select } from '@/ui/Select'
 
 /**

@@ -10,7 +10,7 @@ import {
 } from '@/api/generated/endpoints/cycles/cycles'
 import type { CycleRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 
 /** Shown above the board while a cycle is selected. */

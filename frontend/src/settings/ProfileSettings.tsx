@@ -6,7 +6,7 @@ import {
   useUpdateMeAuthMePatch,
 } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 

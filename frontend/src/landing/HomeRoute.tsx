@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom'
 
 import { useAuthConfigAuthConfigGet } from '@/api/generated/endpoints/auth/auth'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import { homeView } from '@/landing/homeView'
 import LandingPage from '@/landing/LandingPage'
 import TeamsHome from '@/team/TeamsHome'

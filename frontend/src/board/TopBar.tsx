@@ -2,7 +2,7 @@ import { FilterBar } from '@/board/FilterBar'
 import type { BoardFilters } from '@/board/filters'
 import type { BoardView } from '@/keyboard/useCommands'
 import { NotificationsBell } from '@/notifications/NotificationsBell'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Icon, type IconName } from '@/ui/Icon'
 
 const VIEWS: Array<{ id: BoardView; label: string; icon: IconName }> = [

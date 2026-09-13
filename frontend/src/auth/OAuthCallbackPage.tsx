@@ -5,7 +5,7 @@ import {
   useApplyLinkAuthOauthLinkPost,
   useExchangeTicketAuthOauthExchangePost,
 } from '@/api/generated/endpoints/auth/auth'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import { parseCallbackHash, storedHandshake } from '@/auth/oauth'
 import { signInDestination } from '@/auth/redirect'
 import { Loading } from '@/ui/Loading'

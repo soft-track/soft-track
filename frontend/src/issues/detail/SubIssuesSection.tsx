@@ -8,7 +8,7 @@ import {
   useUpdateIssueIssuesIssueIdPatch,
 } from '@/api/generated/endpoints/issues/issues'
 import type { IssueRead } from '@/api/generated/models'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 
 /**

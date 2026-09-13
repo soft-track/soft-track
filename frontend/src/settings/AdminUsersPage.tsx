@@ -10,7 +10,7 @@ import {
 import type { AdminUserRead } from '@/api/generated/models'
 import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import { useDebounced } from '@/search/useDebounced'
 import { DeactivatedChip } from '@/settings/RoleChip'
 import { Avatar } from '@/ui/Avatar'

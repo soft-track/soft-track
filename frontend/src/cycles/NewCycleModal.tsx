@@ -4,7 +4,7 @@ import { type FormEvent, useState } from 'react'
 
 import { useCreateCycleTeamsTeamIdCyclesPost } from '@/api/generated/endpoints/cycles/cycles'
 import { errorDetail } from '@/api/errors'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 
 /** A day, as the value an <input type="date"> wants. */
 const asDateInput = (date: Date) => format(date, 'yyyy-MM-dd')

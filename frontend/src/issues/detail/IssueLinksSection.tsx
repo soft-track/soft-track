@@ -11,7 +11,7 @@ import {
 import { IssueLinkType, type IssueLinks, type IssueLinkRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { isResolved } from '@/issues/issueMeta'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 
 /**

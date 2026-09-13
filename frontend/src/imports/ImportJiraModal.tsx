@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { AXIOS_INSTANCE } from '@/api/client'
 import { errorDetail } from '@/api/errors'
 import type { ImportReport } from '@/api/generated/models'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 
 /**

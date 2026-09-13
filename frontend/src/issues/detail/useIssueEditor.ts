@@ -8,7 +8,7 @@ import {
 import type { IssueRead, IssueUpdate } from '@/api/generated/models'
 import { toggleTaskAtOffset } from '@/markdown/tasks'
 import { activeMembers } from '@/team/members'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 
 /**
  * Loading and editing one issue: the query, the patch, and the draft state

@@ -8,7 +8,7 @@ import {
 } from '@/api/generated/endpoints/teams/teams'
 import type { TeamRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import { useTeamByKey } from '@/team/useTeams'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
