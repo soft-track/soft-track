@@ -14,6 +14,13 @@ demote *themselves*, and the last active site administrator cannot be switched
 off by anyone. Both exist because the failure is unrecoverable without database
 access.
 
+An account can also be created by [signing in with Google or GitHub](oauth.md),
+and such an account has no password until somebody sets one from **Settings →
+Security**. The first-account rule does not care which way the first person
+arrived. An account that *does* have a password is never joined to a provider
+automatically — its owner connects one from Settings, where being signed in is
+the proof. The reasoning is worth reading before changing it.
+
 ### Team roles
 
 Every membership is `admin` or `member`. Admins rename the team, invite people,

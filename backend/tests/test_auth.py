@@ -73,8 +73,12 @@ def test_me_returns_the_current_user(client, auth):
         "avatar_color",
         "is_active",
         "is_site_admin",
+        "has_password",
         "created_at",
     }
+    # Registered with one, so it has one. False is reserved for an account
+    # created by signing in with Google or GitHub -- see test_oauth.py.
+    assert body["has_password"] is True
 
 
 def test_me_requires_a_token(client):
@@ -127,6 +131,9 @@ def test_auth_config_is_exactly_what_the_signed_out_pages_need(client):
         "open_registration": True,
         "landing_page": True,
         "demo_credentials": True,
+        # Names only, and only for providers with credentials configured. The
+        # default install has none, so the sign-in page shows no buttons.
+        "oauth_providers": [],
     }
 
 

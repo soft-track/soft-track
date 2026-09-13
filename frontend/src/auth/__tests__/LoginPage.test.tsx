@@ -40,9 +40,10 @@ const DEFAULT_CONFIG: AuthConfig = {
   open_registration: true,
   landing_page: true,
   demo_credentials: true,
+  oauth_providers: [],
 }
 
-function render(config: Partial<AuthConfig> = {}) {
+function render(config: Partial<AuthConfig> = {}, at = '/login') {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
@@ -53,7 +54,7 @@ function render(config: Partial<AuthConfig> = {}) {
 
   return renderToStaticMarkup(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/login']}>
+      <MemoryRouter initialEntries={[at]}>
         <AuthProvider>
           <LoginPage />
         </AuthProvider>
@@ -90,5 +91,38 @@ describe('LoginPage', () => {
   it('still hides the sign-up link on an invite-only instance', () => {
     expect(render({ open_registration: false })).not.toContain('Create one')
     expect(render({ open_registration: true })).toContain('Create one')
+  })
+
+  it('offers no provider buttons on an instance that configured none', () => {
+    // The default, and what keeps a self-hosted SoftTrack free of any
+    // external dependency: no buttons, no divider, no missing feature.
+    const html = render({ oauth_providers: [] })
+    expect(html).not.toContain('Continue with')
+    expect(html).not.toContain('>or<')
+  })
+
+  it('offers a button per configured provider', () => {
+    const html = render({ oauth_providers: ['google', 'github'] })
+    expect(html).toContain('Continue with Google')
+    expect(html).toContain('Continue with GitHub')
+  })
+
+  it('renders them as buttons, not links', () => {
+    // Pressing one has to write this tab's handshake into sessionStorage
+    // first, and a sign-in opened in a second tab would not have it.
+    const html = render({ oauth_providers: ['google'] })
+    expect(html).not.toContain('/auth/oauth/google/start')
+  })
+
+  it('ignores a provider name this build does not know', () => {
+    const html = render({ oauth_providers: ['gitlab'] })
+    expect(html).not.toContain('gitlab')
+    expect(html).not.toContain('>or<')
+  })
+
+  it('words a failed provider sign-in instead of showing its code', () => {
+    const html = render({}, '/login?error=email_unverified')
+    expect(html).toContain('has not verified that email address')
+    expect(html).not.toContain('email_unverified')
   })
 })

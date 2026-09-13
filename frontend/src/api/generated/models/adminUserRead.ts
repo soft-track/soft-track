@@ -17,6 +17,7 @@ export interface AdminUserRead {
   avatar_color: string;
   is_active: boolean;
   is_site_admin: boolean;
+  has_password: boolean;
   created_at: string;
   last_login_at?: string | null;
   team_count: number;

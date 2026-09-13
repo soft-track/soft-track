@@ -38,6 +38,24 @@ class Settings(BaseSettings):
     #: holiday, short enough that a link found in an old inbox is dead.
     invite_expire_days: int = 7
 
+    # --- Signing in with Google or GitHub -------------------------------
+    #: Both halves or neither: a provider is offered only when it has an id
+    #: *and* a secret, because a button that cannot complete a sign-in is
+    #: worse than no button. Blank by default, so a self-hosted install that
+    #: wants no external dependency gets email and password and nothing else.
+    #:
+    #: The redirect URI to register with the provider is built from
+    #: `api_base_url`:  {api_base_url}/auth/oauth/{provider}/callback
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    github_client_id: str = ""
+    github_client_secret: str = ""
+    #: How long the browser has to come back from the provider before the
+    #: half-finished sign-in expires. Ten minutes covers reading a consent
+    #: screen, finding a phone and typing a code; it does not cover a tab left
+    #: open until tomorrow.
+    oauth_state_expire_minutes: int = 10
+
     # --- The signed-out front door --------------------------------------
     #: False sends a signed-out visitor from / straight to /login, which is
     #: what SoftTrack did before there was a landing page at all.

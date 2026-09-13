@@ -8,6 +8,20 @@ an attacker time. The budgets live in `backend/lib_utils/rate_limit.py`:
 | Failed sign-ins per address | 10 | doubles from 1s | 15 min |
 | Failed sign-ins per account | 5 | doubles from 1s | 1 min |
 | Registrations per address | 10 | doubles from 15s | 1 hour |
+| Provider sign-ins started per address | 20 | doubles from 1s | 5 min |
+| Provider sign-ins completed per address | 20 | doubles from 1s | 5 min |
+
+The last two count every press of **Continue with Google** and every return
+from one, successes included — an abandoned consent screen and a completed one
+look the same from here. They are separate buckets so an honest round trip is
+not charged twice, which behind NAT would halve an office's budget.
+
+The returning half needs a limit of its own because the state authorising it is
+stateless: whoever started the sign-in holds both the cookie and the nonce, and
+"please drop this cookie" is only a request a browser may honour. Each replay
+costs an outbound call to the provider under this instance's own client id, and
+the authorization code turns out to be spent only afterwards. See
+[signing in with Google and GitHub](oauth.md).
 
 A successful sign-in clears the counters, and any key that goes quiet for the
 forget window is dropped entirely, so a bad afternoon never follows you into

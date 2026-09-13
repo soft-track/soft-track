@@ -6,8 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface PasswordChange {
-  current_password?: string | null;
-  /** @minLength 8 */
-  new_password: string;
+/**
+ * Permission for one signed-in person to *begin* attaching one provider.
+ */
+export interface OAuthLinkTicket {
+  ticket: string;
 }

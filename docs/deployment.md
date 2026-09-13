@@ -75,6 +75,7 @@ The generated API client under `src/api/generated/` is checked in and up to date
 - `SECRET_KEY` in `backend/.env.example` is a placeholder; generate a real secret before running beyond local development.
 - CORS origins for local dev are set in `backend/web.py` (`cors_origins`); add the deployed frontend origin there for production.
 - SMTP is optional. With no `SMTP_HOST`, the inbox is the only notification channel.
+- Signing in with Google or GitHub is optional and off until both halves of a provider's credentials are set. `API_BASE_URL` has to be right for it, because the redirect URI is built from it.
 
 ## User management and security
 
@@ -96,7 +97,17 @@ Set `OPEN_REGISTRATION=false` to require an invitation before registration is al
 
 ### Deactivate, not delete
 
-Accounts are never deleted; deactivation signs the user out immediately and prevents sign-in while preserving their issues and history.
+Accounts are never deleted; deactivation signs the user out immediately and prevents sign-in while preserving their issues and history. A deactivated account is refused however it signs in, including through a provider.
+
+### Signing in with Google or GitHub
+
+Set `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` or `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` and the buttons appear; leave them blank and the instance keeps email and password with no external dependency. Register the redirect URI `{API_BASE_URL}/auth/oauth/{provider}/callback` with the provider — it has to match character for character, and a wrong `API_BASE_URL` is the failure people hit first.
+
+A provider identity is matched on the provider's own id, not on the address. It joins an *existing* account automatically only when some provider already vouches for that same address on that account — SoftTrack itself has never verified an address, so joining on the address alone would let whoever claimed it first keep a key. Everyone else connects the provider from **Settings → Security**, where the session is the proof. [Signing in with Google and GitHub](features/oauth.md) has the whole flow and the reasoning.
+
+The state cookie set during the round trip is `Secure` whenever `API_BASE_URL` is `https://`, and `SameSite=Lax` so the provider's redirect back carries it. Serving the API and the browser app from the same site is what keeps that true.
+
+If you put both behind one domain, keep the SPA's paths disjoint from the API's: `/auth` is the API's, and the browser app's OAuth landing page is `/oauth/callback` for exactly that reason.
 
 ## Sign-in rate limiting
 
@@ -107,6 +118,8 @@ Accounts are never deleted; deactivation signs the user out immediately and prev
 | Failed sign-ins per address | 10 | doubles from 1s | 15 min |
 | Failed sign-ins per account | 5 | doubles from 1s | 1 min |
 | Registrations per address | 10 | doubles from 15s | 1 hour |
+| Provider sign-ins started per address | 20 | doubles from 1s | 5 min |
+| Provider sign-ins completed per address | 20 | doubles from 1s | 5 min |
 
 A successful sign-in clears the counters, and refusals return `429` with a `Retry-After` header.
 

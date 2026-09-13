@@ -9,6 +9,7 @@ import {
 } from '@/api/generated/endpoints/invites/invites'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/AuthContext'
+import { ProviderButtons } from '@/auth/ProviderButtons'
 import { RoleChip } from '@/settings/RoleChip'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
@@ -128,6 +129,13 @@ export default function InvitePage() {
 
       {!isAuthenticated && (
         <div className="mt-6 space-y-2">
+          {/* The invitation travels with the sign-in, so accepting one through
+              Google lands in the team exactly as the form below does. */}
+          <ProviderButtons
+            invite={token}
+            next={`/${invite.team_key}`}
+            verb="Accept"
+          />
           <Link
             to={`/register?invite=${encodeURIComponent(token)}`}
             className="btn btn-primary h-10 w-full text-sm"

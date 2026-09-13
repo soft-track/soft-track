@@ -5,6 +5,7 @@ import BoardPage from '@/board/BoardPage'
 import HomeRoute from '@/landing/HomeRoute'
 import InvitePage from '@/auth/InvitePage'
 import LoginPage from '@/auth/LoginPage'
+import OAuthCallbackPage from '@/auth/OAuthCallbackPage'
 import NewTeamPage from '@/team/NewTeamPage'
 import RegisterPage from '@/auth/RegisterPage'
 import AdminUsersPage from '@/settings/AdminUsersPage'
@@ -28,6 +29,16 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        {/* Where a sign-in with Google or GitHub comes back to. Outside
+            RequireAuth by necessity: the ticket it is carrying is what the
+            person is about to become authenticated with, and it has not been
+            redeemed yet when this route matches.
+
+            Not /auth/callback, though the API's identity router is the only
+            thing that answers /auth: a single-domain deployment proxies /auth
+            to FastAPI, and this page would 404 on every sign-in. The SPA's
+            first path segments have to stay disjoint from the API's. */}
+        <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
         {/* Outside RequireAuth: most people opening an invitation link do not
             have an account yet, and the page has to say what they were
             invited to before asking them to sign in. */}

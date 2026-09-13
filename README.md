@@ -72,6 +72,7 @@ README, which show a team several cycles in.
 - [Notifications](docs/features/notifications.md)
 - [Attachments](docs/features/attachments.md)
 - [User management](docs/features/users.md)
+- [Signing in with Google and GitHub](docs/features/oauth.md)
 - [Sign-in rate limiting](docs/features/rate-limiting.md)
 - [Jira import](docs/features/jira-import.md)
 

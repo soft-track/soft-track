@@ -12,7 +12,7 @@
           "auth"
         ],
         "summary": "Auth Config",
-        "description": "What the sign-in and sign-up pages need before anyone has a token.\n\nPublic by necessity: the register page has to know whether to show a form\nor an \"ask an admin for a link\" notice, and it asks before authenticating.\nIt reveals only that this instance is invite-only, whether it has a landing\npage, and whether it is the demo -- all three of which the signed-out pages\nsay out loud anyway.",
+        "description": "What the sign-in and sign-up pages need before anyone has a token.\n\nPublic by necessity: the register page has to know whether to show a form\nor an \"ask an admin for a link\" notice, and it asks before authenticating.\nIt reveals only that this instance is invite-only, whether it has a landing\npage, whether it is the demo, and which sign-in providers are set up -- all\nfour of which the signed-out pages say out loud anyway. Note the last one\nis provider *names*, never their client ids: the id is public in an\nauthorization URL, but it does not have to be published to anyone who can\nreach the host.",
         "operationId": "auth_config_auth_config_get",
         "responses": {
           "200": {
@@ -281,6 +281,213 @@
             "OAuth2PasswordBearer": []
           }
         ]
+      }
+    },
+    "/auth/oauth/exchange": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Exchange Ticket",
+        "description": "Redeem a finished sign-in for a session.\n\nDeliberately unauthenticated and deliberately a POST: the ticket and the\nhandshake together are the credential, and neither belongs in a URL.",
+        "operationId": "exchange_ticket_auth_oauth_exchange_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthExchange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/oauth/{provider}/link-ticket": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Mint Link Ticket",
+        "description": "Permission to *begin* attaching `provider` to the account asking.\n\nConnecting is not a sign-in and must never behave like one: without this,\n\"Connect\" would run the ordinary flow and could sign somebody into a\n*different* account, or create a third, with nothing on screen to say so.\n\nThis half only opens the round trip. The write needs `/auth/oauth/link`\nbelow, which needs a session -- so this ticket travelling in a URL cannot\non its own attach anything to anybody.",
+        "operationId": "mint_link_ticket_auth_oauth__provider__link_ticket_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Provider"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthLinkTicket"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/oauth/link": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Apply Link",
+        "description": "Attach the provider account a finished connect round trip identified.",
+        "operationId": "apply_link_auth_oauth_link_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthLink"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthLinked"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/auth/me/identities": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "My Identities",
+        "operationId": "my_identities_auth_me_identities_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConnectedIdentity"
+                  },
+                  "type": "array",
+                  "title": "Response My Identities Auth Me Identities Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/auth/me/identities/{provider}": {
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Disconnect Identity",
+        "operationId": "disconnect_identity_auth_me_identities__provider__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Provider"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/admin/users": {
@@ -4707,6 +4914,10 @@
             "type": "boolean",
             "title": "Is Site Admin"
           },
+          "has_password": {
+            "type": "boolean",
+            "title": "Has Password"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -4738,6 +4949,7 @@
           "avatar_color",
           "is_active",
           "is_site_admin",
+          "has_password",
           "created_at",
           "team_count"
         ],
@@ -4894,13 +5106,21 @@
           "demo_credentials": {
             "type": "boolean",
             "title": "Demo Credentials"
+          },
+          "oauth_providers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Oauth Providers"
           }
         },
         "type": "object",
         "required": [
           "open_registration",
           "landing_page",
-          "demo_credentials"
+          "demo_credentials",
+          "oauth_providers"
         ],
         "title": "AuthConfig",
         "description": "What the sign-in pages need to know before anyone has authenticated."
@@ -5511,6 +5731,48 @@
           "created_at"
         ],
         "title": "CommentRead"
+      },
+      "ConnectedIdentity": {
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/OAuthProvider"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "connected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Connected At"
+          },
+          "last_login_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Login At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "connected_at"
+        ],
+        "title": "ConnectedIdentity",
+        "description": "One provider account that can sign in as the current user.\n\nOnly ever returned for yourself. Which third parties hold a key to an\naccount is the account holder's business, and listing somebody else's\nwould say which services they use."
       },
       "CreatedResolvedPoint": {
         "properties": {
@@ -6854,6 +7116,81 @@
         "title": "NotificationUpdate",
         "description": "Marking one notification read, or putting it back."
       },
+      "OAuthExchange": {
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Ticket"
+          },
+          "handshake": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Handshake"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket",
+          "handshake"
+        ],
+        "title": "OAuthExchange",
+        "description": "Redeeming a finished sign-in for a session.\n\nTwo halves that travelled separately: the ticket came back in a URL\nfragment, and the handshake never left the tab that started the sign-in.\nEither one alone is worth nothing, which is what stops a link somebody was\nsent from signing them into the sender's account."
+      },
+      "OAuthLink": {
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Ticket"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket"
+        ],
+        "title": "OAuthLink",
+        "description": "Finishing a connect: the result the callback handed back.\n\nSpent with a bearer token for the same account, which is what keeps the\nticket that opened the round trip from being a credential of its own."
+      },
+      "OAuthLinkTicket": {
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "title": "Ticket"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket"
+        ],
+        "title": "OAuthLinkTicket",
+        "description": "Permission for one signed-in person to *begin* attaching one provider."
+      },
+      "OAuthLinked": {
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/OAuthProvider"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider"
+        ],
+        "title": "OAuthLinked",
+        "description": "Which provider was just attached, so the page can say so."
+      },
+      "OAuthProvider": {
+        "type": "string",
+        "enum": [
+          "google",
+          "github"
+        ],
+        "title": "OAuthProvider",
+        "description": "An identity provider somebody can sign in with.\n\nTwo, and closed on purpose. Each one is a different set of quirks rather\nthan a row of configuration -- see `lib_identity/oauth_providers.py` -- and\na self-hosted instance that configures neither keeps email and password\nwith no external dependency at all. Unrelated to `GitProvider`: that is a\nrepository SoftTrack is told about, this is a way into an account."
+      },
       "Page_AdminUserRead_": {
         "properties": {
           "items": {
@@ -7252,7 +7589,14 @@
       "PasswordChange": {
         "properties": {
           "current_password": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Current Password"
           },
           "new_password": {
@@ -7263,7 +7607,6 @@
         },
         "type": "object",
         "required": [
-          "current_password",
           "new_password"
         ],
         "title": "PasswordChange"
@@ -8350,6 +8693,10 @@
             "type": "boolean",
             "title": "Is Site Admin"
           },
+          "has_password": {
+            "type": "boolean",
+            "title": "Has Password"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -8365,6 +8712,7 @@
           "avatar_color",
           "is_active",
           "is_site_admin",
+          "has_password",
           "created_at"
         ],
         "title": "UserMe",

@@ -13,6 +13,8 @@ from typing import Optional
 from sqlalchemy import UniqueConstraint
 from sqlmodel import SQLModel, Field
 
+from lib_utils.password import is_usable_password
+
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -170,6 +172,20 @@ class GitProvider(str, enum.Enum):
     gitlab = "gitlab"
 
 
+class OAuthProvider(str, enum.Enum):
+    """An identity provider somebody can sign in with.
+
+    Two, and closed on purpose. Each one is a different set of quirks rather
+    than a row of configuration -- see `lib_identity/oauth_providers.py` -- and
+    a self-hosted instance that configures neither keeps email and password
+    with no external dependency at all. Unrelated to `GitProvider`: that is a
+    repository SoftTrack is told about, this is a way into an account.
+    """
+
+    google = "google"
+    github = "github"
+
+
 class CodeLinkKind(str, enum.Enum):
     """What kind of thing in a repository is linked to an issue."""
 
@@ -247,6 +263,58 @@ class User(SQLModel, table=True):
     token_version: int = Field(default=0)
     last_login_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=utcnow)
+
+    @property
+    def has_password(self) -> bool:
+        """Whether this account can be signed into with a password.
+
+        False for one created by signing in with Google or GitHub, which is
+        stored with an unusable hash rather than a nullable column -- see
+        `lib_utils/password.py`. A property rather than a column because it is
+        a reading of `hashed_password`, and a second copy of the same fact is
+        a second thing to keep true.
+        """
+        return is_usable_password(self.hashed_password)
+
+
+class UserIdentity(SQLModel, table=True):
+    """A Google or GitHub account that may sign in as this user.
+
+    A row rather than a pair of columns on `User`, because the same person can
+    have both -- and because the interesting question is always "whose account
+    is this provider identity?", which is an index on `(provider, subject)`
+    and not a scan of two nullable columns.
+
+    `subject` is the provider's own id for the account, never the address. An
+    address changes, gets reassigned inside a company, and on GitHub can be
+    made private; the numeric id does none of those. Matching on the address
+    would mean that somebody who inherits a departed colleague's mailbox
+    inherits their SoftTrack account with it.
+    """
+
+    __table_args__ = (
+        # One provider account signs in as exactly one user...
+        UniqueConstraint("provider", "subject", name="uq_user_identity_subject"),
+        # ...and one user has at most one account per provider. Without this,
+        # connecting twice with two different Google accounts leaves two keys
+        # to the same door, `DELETE /auth/me/identities/{provider}` has no way
+        # to say which it removed, and the "would this leave you locked out"
+        # check miscounts.
+        UniqueConstraint("user_id", "provider", name="uq_user_identity_provider"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    provider: OAuthProvider
+    #: The provider's immutable id for the account. Text rather than an
+    #: integer: GitHub's is numeric and Google's is not.
+    subject: str = Field(index=True)
+    #: The address the provider reported when the link was made, kept for the
+    #: connected-accounts list so somebody with two Google accounts can tell
+    #: which one this is. Never used to resolve a sign-in.
+    email: Optional[str] = None
+    created_at: datetime = Field(default_factory=utcnow)
+    last_login_at: Optional[datetime] = None
 
 
 class TeamInvite(SQLModel, table=True):

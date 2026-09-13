@@ -155,6 +155,39 @@ registration_by_address = Throttle(
     forget_after=60 * 60.0,
 )
 
+# Per address, starting a sign-in with a provider. Every attempt counts,
+# because the thing being limited is somebody using the redirect as a way to
+# make this instance talk to a third party -- which succeeds and fails alike.
+# Generous, because a provider that is having a bad morning means real people
+# pressing the button several times before it works.
+#
+oauth_by_address = Throttle(
+    name="sign-in attempts from this address",
+    free_attempts=20,
+    base_delay=1.0,
+    max_delay=5 * 60.0,
+    forget_after=15 * 60.0,
+)
+
+# Per address, coming back from a provider. A separate bucket rather than more
+# of the one above, so an honest round trip is not charged twice -- behind NAT
+# that would halve an office's budget.
+#
+# This half needs its own limit because the state that authorises it is
+# stateless: whoever called /start holds both the cookie and the nonce, and
+# "delete this cookie" is only a request a browser may honour. A script that
+# keeps replaying one callback costs an outbound HTTPS call with a ten-second
+# timeout every time, holding a worker thread and spending our own client_id's
+# standing at the provider. The authorization code being wrong is discovered
+# only *after* all of that.
+oauth_callback_by_address = Throttle(
+    name="sign-in completions from this address",
+    free_attempts=20,
+    base_delay=1.0,
+    max_delay=5 * 60.0,
+    forget_after=15 * 60.0,
+)
+
 # Per address, webhook deliveries that failed verification. Only failures are
 # counted and a good delivery forgives the address, so a busy repository is
 # never throttled for being busy -- what this catches is somebody who has
@@ -175,6 +208,8 @@ _ALL = (
     login_by_address,
     login_by_account,
     registration_by_address,
+    oauth_by_address,
+    oauth_callback_by_address,
     webhook_by_address,
 )
 

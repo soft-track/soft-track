@@ -43,6 +43,11 @@ class UserMe(UserPublic):
     """
 
     is_site_admin: bool
+    #: False for an account created by signing in with Google or GitHub and
+    #: never given one. What the Security page reads to offer "Set a password"
+    #: instead of "Change password", and what stops the app asking for a
+    #: password that does not exist.
+    has_password: bool
     created_at: datetime
 
 
@@ -51,14 +56,18 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     avatar_color: Optional[str] = None
     email: Optional[EmailStr] = None
-    #: Required only when `email` changes. An address is the identity a
-    #: password reset would one day be sent to, so changing it is re-verified
-    #: even though the session is already authenticated.
+    #: Required only when `email` changes, and only for an account that has a
+    #: password. An address is the identity a password reset would one day be
+    #: sent to, so changing it is re-verified even though the session is
+    #: already authenticated.
     current_password: Optional[str] = None
 
 
 class PasswordChange(BaseModel):
-    current_password: str
+    #: Optional only for an account that has no password yet -- one created by
+    #: signing in with a provider. Anywhere else an absent value simply fails
+    #: the check, the same way a wrong one does.
+    current_password: Optional[str] = None
     new_password: str = Field(min_length=8)
 
 
@@ -72,6 +81,10 @@ class AuthConfig(BaseModel):
     #: Whether this instance is seeded with the published demo account, and so
     #: may prefill its address and print its password under the sign-in button.
     demo_credentials: bool
+    #: The providers this instance can sign somebody in with, in the order the
+    #: buttons should appear. Empty on an install that has configured neither,
+    #: which is the default and keeps SoftTrack dependency-free.
+    oauth_providers: list[str]
 
 
 class Token(BaseModel):

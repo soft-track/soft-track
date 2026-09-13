@@ -37,6 +37,7 @@ const DEFAULT_CONFIG: AuthConfig = {
   open_registration: true,
   landing_page: true,
   demo_credentials: false,
+  oauth_providers: [],
 }
 
 /** Renders `/` through the real route, so what it resolves to is the result. */

@@ -5,6 +5,8 @@ import { useAuthConfigAuthConfigGet } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/AuthContext'
 import { DEMO_EMAIL, DEMO_PASSWORD } from '@/auth/demo'
+import { oauthErrorMessage } from '@/auth/oauth'
+import { ProviderButtons } from '@/auth/ProviderButtons'
 import { signInDestination } from '@/auth/redirect'
 import { Logo } from '@/ui/Logo'
 
@@ -39,6 +41,11 @@ export default function LoginPage() {
     params.get('next'),
     (location.state as { from?: { pathname?: string } } | null)?.from,
   )
+
+  // A sign-in with a provider cannot render its own failure -- it ends in a
+  // redirect -- so it comes back here with a code. Anything typed into the
+  // form afterwards wins, because that is the newer answer.
+  const message = error ?? oauthErrorMessage(params.get('error'))
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -75,14 +82,16 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={onSubmit} className="glass-strong sheen space-y-4 rounded-panel p-6">
-          {error && (
+          {message && (
             <div
               role="alert"
               className="rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
             >
-              {error}
+              {message}
             </div>
           )}
+
+          <ProviderButtons next={from} />
 
           <div>
             <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-neutral-700">

@@ -36,6 +36,15 @@ interface AuthContextValue {
    * rather than private because the settings pages are where that happens.
    */
   setSession: (token: string, user: UserMe) => void
+  /**
+   * Start a session that may belong to somebody else.
+   *
+   * What signing in with Google or GitHub ends in. Distinct from `setSession`
+   * because the cached queries are dropped first: the person arriving is not
+   * necessarily the person who was signed in a moment ago, and a stale `me`
+   * would otherwise show the wrong name until it refetched.
+   */
+  adoptSession: (token: string, user: UserMe) => void
   logout: () => void
 }
 
@@ -58,6 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, newToken)
     setToken(newToken)
     queryClient.setQueryData(getMeAuthMeGetQueryKey(), user)
+  }
+
+  const adoptSession = (newToken: string, user: UserMe) => {
+    queryClient.clear()
+    setSession(newToken, user)
   }
 
   const login = async (email: string, password: string) => {
@@ -99,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       setSession,
+      adoptSession,
       logout,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps

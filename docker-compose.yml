@@ -42,6 +42,15 @@ services:
       # team's Repositories page. The default is right for a laptop and wrong
       # for anywhere a provider has to route to.
       API_BASE_URL: ${API_BASE_URL:-http://localhost:8000}
+      # Signing in with Google or GitHub. Blank leaves the buttons off and
+      # the instance dependency-free; both halves of a pair are needed before
+      # one appears. The redirect URI to register with the provider is
+      # {API_BASE_URL}/auth/oauth/{google,github}/callback -- see
+      # docs/features/oauth.md.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USERNAME: ${SMTP_USERNAME:-}

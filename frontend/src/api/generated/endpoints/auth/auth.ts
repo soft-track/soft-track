@@ -27,8 +27,13 @@ import type {
 import type {
   AuthConfig,
   BodyLoginAuthLoginPost,
+  ConnectedIdentity,
   HTTPValidationError,
   InviteRead,
+  OAuthExchange,
+  OAuthLink,
+  OAuthLinkTicket,
+  OAuthLinked,
   PasswordChange,
   Token,
   UserCreate,
@@ -62,8 +67,11 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
  * Public by necessity: the register page has to know whether to show a form
  * or an "ask an admin for a link" notice, and it asks before authenticating.
  * It reveals only that this instance is invite-only, whether it has a landing
- * page, and whether it is the demo -- all three of which the signed-out pages
- * say out loud anyway.
+ * page, whether it is the demo, and which sign-in providers are set up -- all
+ * four of which the signed-out pages say out loud anyway. Note the last one
+ * is provider *names*, never their client ids: the id is public in an
+ * authorization URL, but it does not have to be published to anyone who can
+ * reach the host.
  * @summary Auth Config
  */
 export const authConfigAuthConfigGet = (
@@ -688,3 +696,373 @@ export function useMyInvitesAuthMeInvitesGet<TData = Awaited<ReturnType<typeof m
 
 
 
+/**
+ * Redeem a finished sign-in for a session.
+ *
+ * Deliberately unauthenticated and deliberately a POST: the ticket and the
+ * handshake together are the credential, and neither belongs in a URL.
+ * @summary Exchange Ticket
+ */
+export const exchangeTicketAuthOauthExchangePost = (
+    oAuthExchange: OAuthExchange,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<Token>(
+      {url: `/auth/oauth/exchange`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: oAuthExchange, signal
+    },
+      );
+    }
+
+
+
+
+export const getExchangeTicketAuthOauthExchangePostMutationKey = () => ['exchangeTicketAuthOauthExchangePost'] as const;
+
+export const getExchangeTicketAuthOauthExchangePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof exchangeTicketAuthOauthExchangePost>>, TError,ExchangeTicketAuthOauthExchangePostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof exchangeTicketAuthOauthExchangePost>>, TError,ExchangeTicketAuthOauthExchangePostMutationVariables, TContext> => {
+
+const mutationKey = getExchangeTicketAuthOauthExchangePostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof exchangeTicketAuthOauthExchangePost>>, ExchangeTicketAuthOauthExchangePostMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  exchangeTicketAuthOauthExchangePost(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ExchangeTicketAuthOauthExchangePostMutationResult = NonNullable<Awaited<ReturnType<typeof exchangeTicketAuthOauthExchangePost>>>
+    export type ExchangeTicketAuthOauthExchangePostMutationBody = OAuthExchange
+    export type ExchangeTicketAuthOauthExchangePostMutationError = HTTPValidationError
+    export type ExchangeTicketAuthOauthExchangePostMutationVariables = {data: OAuthExchange}
+
+    /**
+ * @summary Exchange Ticket
+ */
+export const useExchangeTicketAuthOauthExchangePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof exchangeTicketAuthOauthExchangePost>>, TError,ExchangeTicketAuthOauthExchangePostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof exchangeTicketAuthOauthExchangePost>>,
+        TError,
+        ExchangeTicketAuthOauthExchangePostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getExchangeTicketAuthOauthExchangePostMutationOptions(options), queryClient);
+    }
+    /**
+ * Permission to *begin* attaching `provider` to the account asking.
+ *
+ * Connecting is not a sign-in and must never behave like one: without this,
+ * "Connect" would run the ordinary flow and could sign somebody into a
+ * *different* account, or create a third, with nothing on screen to say so.
+ *
+ * This half only opens the round trip. The write needs `/auth/oauth/link`
+ * below, which needs a session -- so this ticket travelling in a URL cannot
+ * on its own attach anything to anybody.
+ * @summary Mint Link Ticket
+ */
+export const mintLinkTicketAuthOauthProviderLinkTicketPost = (
+    provider: string,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<OAuthLinkTicket>(
+      {url: `/auth/oauth/${provider}/link-ticket`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+
+export const getMintLinkTicketAuthOauthProviderLinkTicketPostMutationKey = () => ['mintLinkTicketAuthOauthProviderLinkTicketPost'] as const;
+
+export const getMintLinkTicketAuthOauthProviderLinkTicketPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mintLinkTicketAuthOauthProviderLinkTicketPost>>, TError,MintLinkTicketAuthOauthProviderLinkTicketPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof mintLinkTicketAuthOauthProviderLinkTicketPost>>, TError,MintLinkTicketAuthOauthProviderLinkTicketPostMutationVariables, TContext> => {
+
+const mutationKey = getMintLinkTicketAuthOauthProviderLinkTicketPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof mintLinkTicketAuthOauthProviderLinkTicketPost>>, MintLinkTicketAuthOauthProviderLinkTicketPostMutationVariables> = (props) => {
+          const {provider} = props ?? {};
+
+          return  mintLinkTicketAuthOauthProviderLinkTicketPost(provider,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MintLinkTicketAuthOauthProviderLinkTicketPostMutationResult = NonNullable<Awaited<ReturnType<typeof mintLinkTicketAuthOauthProviderLinkTicketPost>>>
+
+    export type MintLinkTicketAuthOauthProviderLinkTicketPostMutationError = HTTPValidationError
+    export type MintLinkTicketAuthOauthProviderLinkTicketPostMutationVariables = {provider: string}
+
+    /**
+ * @summary Mint Link Ticket
+ */
+export const useMintLinkTicketAuthOauthProviderLinkTicketPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mintLinkTicketAuthOauthProviderLinkTicketPost>>, TError,MintLinkTicketAuthOauthProviderLinkTicketPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof mintLinkTicketAuthOauthProviderLinkTicketPost>>,
+        TError,
+        MintLinkTicketAuthOauthProviderLinkTicketPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMintLinkTicketAuthOauthProviderLinkTicketPostMutationOptions(options), queryClient);
+    }
+    /**
+ * Attach the provider account a finished connect round trip identified.
+ * @summary Apply Link
+ */
+export const applyLinkAuthOauthLinkPost = (
+    oAuthLink: OAuthLink,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<OAuthLinked>(
+      {url: `/auth/oauth/link`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: oAuthLink, signal
+    },
+      );
+    }
+
+
+
+
+export const getApplyLinkAuthOauthLinkPostMutationKey = () => ['applyLinkAuthOauthLinkPost'] as const;
+
+export const getApplyLinkAuthOauthLinkPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyLinkAuthOauthLinkPost>>, TError,ApplyLinkAuthOauthLinkPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof applyLinkAuthOauthLinkPost>>, TError,ApplyLinkAuthOauthLinkPostMutationVariables, TContext> => {
+
+const mutationKey = getApplyLinkAuthOauthLinkPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof applyLinkAuthOauthLinkPost>>, ApplyLinkAuthOauthLinkPostMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  applyLinkAuthOauthLinkPost(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApplyLinkAuthOauthLinkPostMutationResult = NonNullable<Awaited<ReturnType<typeof applyLinkAuthOauthLinkPost>>>
+    export type ApplyLinkAuthOauthLinkPostMutationBody = OAuthLink
+    export type ApplyLinkAuthOauthLinkPostMutationError = HTTPValidationError
+    export type ApplyLinkAuthOauthLinkPostMutationVariables = {data: OAuthLink}
+
+    /**
+ * @summary Apply Link
+ */
+export const useApplyLinkAuthOauthLinkPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyLinkAuthOauthLinkPost>>, TError,ApplyLinkAuthOauthLinkPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof applyLinkAuthOauthLinkPost>>,
+        TError,
+        ApplyLinkAuthOauthLinkPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getApplyLinkAuthOauthLinkPostMutationOptions(options), queryClient);
+    }
+    /**
+ * @summary My Identities
+ */
+export const myIdentitiesAuthMeIdentitiesGet = (
+
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<ConnectedIdentity[]>(
+      {url: `/auth/me/identities`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getMyIdentitiesAuthMeIdentitiesGetQueryKey = () => {
+    return [
+    `/auth/me/identities`
+    ] as const;
+    }
+
+
+export const getMyIdentitiesAuthMeIdentitiesGetQueryOptions = <TData = Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getMyIdentitiesAuthMeIdentitiesGetQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>> = ({ signal }) => myIdentitiesAuthMeIdentitiesGet(signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type MyIdentitiesAuthMeIdentitiesGetQueryResult = NonNullable<Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>>
+export type MyIdentitiesAuthMeIdentitiesGetQueryError = unknown
+
+
+export function useMyIdentitiesAuthMeIdentitiesGet<TData = Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>,
+          TError,
+          Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useMyIdentitiesAuthMeIdentitiesGet<TData = Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>,
+          TError,
+          Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useMyIdentitiesAuthMeIdentitiesGet<TData = Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary My Identities
+ */
+
+export function useMyIdentitiesAuthMeIdentitiesGet<TData = Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof myIdentitiesAuthMeIdentitiesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getMyIdentitiesAuthMeIdentitiesGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * @summary Disconnect Identity
+ */
+export const disconnectIdentityAuthMeIdentitiesProviderDelete = (
+    provider: string,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/auth/me/identities/${provider}`, method: 'DELETE', signal
+    },
+      );
+    }
+
+
+
+
+export const getDisconnectIdentityAuthMeIdentitiesProviderDeleteMutationKey = () => ['disconnectIdentityAuthMeIdentitiesProviderDelete'] as const;
+
+export const getDisconnectIdentityAuthMeIdentitiesProviderDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectIdentityAuthMeIdentitiesProviderDelete>>, TError,DisconnectIdentityAuthMeIdentitiesProviderDeleteMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof disconnectIdentityAuthMeIdentitiesProviderDelete>>, TError,DisconnectIdentityAuthMeIdentitiesProviderDeleteMutationVariables, TContext> => {
+
+const mutationKey = getDisconnectIdentityAuthMeIdentitiesProviderDeleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disconnectIdentityAuthMeIdentitiesProviderDelete>>, DisconnectIdentityAuthMeIdentitiesProviderDeleteMutationVariables> = (props) => {
+          const {provider} = props ?? {};
+
+          return  disconnectIdentityAuthMeIdentitiesProviderDelete(provider,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DisconnectIdentityAuthMeIdentitiesProviderDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof disconnectIdentityAuthMeIdentitiesProviderDelete>>>
+
+    export type DisconnectIdentityAuthMeIdentitiesProviderDeleteMutationError = HTTPValidationError
+    export type DisconnectIdentityAuthMeIdentitiesProviderDeleteMutationVariables = {provider: string}
+
+    /**
+ * @summary Disconnect Identity
+ */
+export const useDisconnectIdentityAuthMeIdentitiesProviderDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectIdentityAuthMeIdentitiesProviderDelete>>, TError,DisconnectIdentityAuthMeIdentitiesProviderDeleteMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof disconnectIdentityAuthMeIdentitiesProviderDelete>>,
+        TError,
+        DisconnectIdentityAuthMeIdentitiesProviderDeleteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDisconnectIdentityAuthMeIdentitiesProviderDeleteMutationOptions(options), queryClient);
+    }

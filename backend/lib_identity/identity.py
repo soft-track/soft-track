@@ -16,8 +16,8 @@ from lib_identity.usernames import (
     normalise_username,
 )
 from lib_softtrack.tables import User, utcnow
-from lib_utils.password import hash_password, verify_password
-from lib_utils.token import create_access_token, decode_access_token
+from lib_utils.password import hash_password, is_usable_password, verify_password
+from lib_utils.token import create_access_token, decode_access_token, is_access_token
 from web import get_session, settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -72,6 +72,12 @@ def get_current_user(
     payload = decode_access_token(token)
     if payload is None or payload.get("sub") is None:
         raise credentials_exception
+    # Signed by this instance is not the same as "is a session". The OAuth
+    # exchange ticket travels in a URL fragment and is deliberately worth
+    # nothing on its own; without this check its shape -- a subject and a
+    # version -- would make it a bearer token for the two minutes it lives.
+    if not is_access_token(payload):
+        raise credentials_exception
     user = session.get(User, int(payload["sub"]))
     if user is None or not user.is_active:
         raise credentials_exception
@@ -83,13 +89,60 @@ def get_current_user(
     return user
 
 
-def _issue_token(user: User) -> Token:
+def issue_token(user: User) -> Token:
+    """A signed-in session for `user`: the bearer token plus their own record.
+
+    Public because signing in with Google or GitHub ends the same way an
+    email and password sign-in does -- see `lib_identity/oauth.py`.
+    """
     return Token(
         access_token=create_access_token(
             subject=str(user.id), version=user.token_version
         ),
         user=UserMe.model_validate(user),
     )
+
+
+def create_user(
+    session: Session,
+    *,
+    email: str,
+    full_name: str,
+    hashed_password: str,
+    username: str | None = None,
+) -> User:
+    """The row every new account starts as, however it was created.
+
+    Shared by `/auth/register` and by a first sign-in with Google or GitHub,
+    so the two cannot drift on the parts that are not about credentials: the
+    handle, the avatar colour, and who ends up owning a fresh instance.
+    """
+    if username is not None:
+        handle = normalise_username(username)
+        assert_username_free(session, handle)
+    else:
+        handle = derive_username(session, email)
+
+    # The first account to exist owns the instance. Nobody else can grant it,
+    # so it has to be automatic or a fresh install has no administrator.
+    is_first = session.exec(select(func.count()).select_from(User)).one() == 0
+
+    user = User(
+        email=email,
+        username=handle,
+        hashed_password=hashed_password,
+        full_name=full_name,
+        avatar_color=avatar_color_for(email),
+        is_site_admin=is_first,
+        # Creating an account hands out a token, so it *is* a sign-in. Leaving
+        # this null would show someone who signed up a minute ago as "never
+        # signed in" in the admin directory.
+        last_login_at=utcnow(),
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
 
 
 def register_user(
@@ -115,31 +168,13 @@ def register_user(
             detail="Registration on this SoftTrack is by invitation",
         )
 
-    if username is not None:
-        handle = normalise_username(username)
-        assert_username_free(session, handle)
-    else:
-        handle = derive_username(session, email)
-
-    # The first account to exist owns the instance. Nobody else can grant it,
-    # so it has to be automatic or a fresh install has no administrator.
-    is_first = session.exec(select(func.count()).select_from(User)).one() == 0
-
-    user = User(
+    user = create_user(
+        session,
         email=email,
-        username=handle,
-        hashed_password=hash_password(password),
         full_name=full_name,
-        avatar_color=avatar_color_for(email),
-        is_site_admin=is_first,
-        # Registering hands out a token, so it *is* a sign-in. Leaving this
-        # null would show someone who signed up a minute ago as "never signed
-        # in" in the admin directory.
-        last_login_at=utcnow(),
+        hashed_password=hash_password(password),
+        username=username,
     )
-    session.add(user)
-    session.commit()
-    session.refresh(user)
 
     if invite_token:
         # Best effort: a bad or expired token should not undo an account that
@@ -149,7 +184,7 @@ def register_user(
         except HTTPException:
             pass
 
-    return _issue_token(user)
+    return issue_token(user)
 
 
 @lru_cache(maxsize=1)
@@ -175,7 +210,14 @@ def login_user(session: Session, email: str, password: str) -> Token:
     # the wrong password. The early return was a clean timing oracle: the two
     # answers are worded identically, but one came back in microseconds, which
     # told an attacker exactly which addresses have accounts here.
-    hashed = user.hashed_password if user else _unmatchable_hash()
+    # ...and the same for an account that signs in with Google or GitHub and
+    # has no password at all. Its stored hash cannot match anything, but
+    # *saying so* without paying for bcrypt would answer "this address exists
+    # and uses a provider" in microseconds.
+    if user and is_usable_password(user.hashed_password):
+        hashed = user.hashed_password
+    else:
+        hashed = _unmatchable_hash()
     password_matches = verify_password(password, hashed)
 
     if not user or not password_matches:
@@ -192,7 +234,7 @@ def login_user(session: Session, email: str, password: str) -> Token:
     session.add(user)
     session.commit()
     session.refresh(user)
-    return _issue_token(user)
+    return issue_token(user)
 
 
 def update_profile(session: Session, user: User, payload: UserUpdate) -> User:
@@ -215,8 +257,15 @@ def update_profile(session: Session, user: User, payload: UserUpdate) -> User:
     if payload.email is not None:
         email = payload.email.strip().lower()
         if email != user.email.lower():
-            if not payload.current_password or not verify_password(
-                payload.current_password, user.hashed_password
+            # An account with no password -- one created by signing in with
+            # Google or GitHub -- has nothing to re-verify against, and asking
+            # for a password it does not have would make the address the one
+            # field such an account can never change. The session is already
+            # authenticated, and anyone holding it could set a password first
+            # and then pass this check anyway.
+            if is_usable_password(user.hashed_password) and (
+                not payload.current_password
+                or not verify_password(payload.current_password, user.hashed_password)
             ):
                 raise HTTPException(
                     status_code=400,
@@ -233,8 +282,20 @@ def update_profile(session: Session, user: User, payload: UserUpdate) -> User:
     return user
 
 
-def change_password(session: Session, user: User, current: str, new: str) -> Token:
-    if not verify_password(current, user.hashed_password):
+def change_password(
+    session: Session, user: User, current: str | None, new: str
+) -> Token:
+    """Change the password -- or set the first one, for an account without.
+
+    An account created by signing in with Google or GitHub has no password to
+    confirm, and refusing until it has one would be a loop. Being able to add
+    one matters beyond convenience: it is what lets somebody keep their
+    account when the operator turns a provider off, and what the email change
+    above asks for once it exists.
+    """
+    if is_usable_password(user.hashed_password) and not verify_password(
+        current or "", user.hashed_password
+    ):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
 
     user.hashed_password = hash_password(new)
@@ -246,7 +307,7 @@ def change_password(session: Session, user: User, current: str, new: str) -> Tok
     session.refresh(user)
     # A fresh token for the tab that made the change, so the person who just
     # secured their account is not the one thrown out of it.
-    return _issue_token(user)
+    return issue_token(user)
 
 
 def sign_out_everywhere(session: Session, user: User) -> Token:
@@ -254,7 +315,7 @@ def sign_out_everywhere(session: Session, user: User) -> Token:
     session.add(user)
     session.commit()
     session.refresh(user)
-    return _issue_token(user)
+    return issue_token(user)
 
 
 def list_my_invites(session: Session, user: User):

@@ -37,6 +37,12 @@ export default function ProfileSettings() {
   if (!user) return null
 
   const emailChanged = email.trim().toLowerCase() !== user.email.toLowerCase()
+  // An account created by signing in with Google or GitHub has no password to
+  // confirm with. The API waives the check for exactly that case, so asking
+  // here would make the address the one field such an account can never
+  // change -- and the `required` attribute would block the form before the
+  // request was even made.
+  const confirmWithPassword = emailChanged && user.has_password
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -51,7 +57,8 @@ export default function ProfileSettings() {
           // Only sent when it actually changed: the API asks for a password
           // whenever `email` is present and different, and sending the
           // unchanged address would be a pointless prompt.
-          ...(emailChanged ? { email, current_password: currentPassword } : {}),
+          ...(emailChanged ? { email } : {}),
+          ...(confirmWithPassword ? { current_password: currentPassword } : {}),
         },
       })
       queryClient.setQueryData(getMeAuthMeGetQueryKey(), updated)
@@ -159,7 +166,7 @@ export default function ProfileSettings() {
           />
         </label>
 
-        {emailChanged && (
+        {confirmWithPassword && (
           <label className="well block rounded-control p-3">
             <span className="mb-1.5 block text-sm font-medium text-neutral-700">
               Current password
