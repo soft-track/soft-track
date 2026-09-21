@@ -7,7 +7,7 @@
  */
 
 export interface PasswordChange {
-  current_password: string;
+  current_password?: string | null;
   /** @minLength 8 */
   new_password: string;
 }

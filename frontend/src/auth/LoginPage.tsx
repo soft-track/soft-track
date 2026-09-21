@@ -4,6 +4,10 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { useAuthConfigAuthConfigGet } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/AuthContext'
+import { DEMO_EMAIL, DEMO_PASSWORD } from '@/auth/demo'
+import { oauthErrorMessage } from '@/auth/oauth'
+import { ProviderButtons } from '@/auth/ProviderButtons'
+import { signInDestination } from '@/auth/redirect'
 import { Logo } from '@/ui/Logo'
 
 export default function LoginPage() {
@@ -13,16 +17,35 @@ export default function LoginPage() {
   const [params] = useSearchParams()
   const config = useAuthConfigAuthConfigGet()
 
-  const [email, setEmail] = useState('demo@softtrack.dev')
+  // Only the instance that is actually seeded with the demo account may
+  // advertise it. Undefined while /auth/config is in flight, which reads as
+  // "no" -- an empty field is the right thing to show either way.
+  const demoCredentials = config.data?.demo_credentials === true
+
+  // `null` means nobody has touched the field yet, which is not the same as
+  // having emptied it. The prefill cannot be initial state -- it depends on a
+  // response that has not arrived at first render -- and deriving it rather
+  // than writing it back in an effect is what keeps that race harmless:
+  // whatever was typed while the request was in flight simply wins, and
+  // clearing the field does not snap the address back.
+  const [typedEmail, setTypedEmail] = useState<string | null>(null)
+  const email = typedEmail ?? (demoCredentials ? DEMO_EMAIL : '')
+
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  // `?next=` as well as the router's own state: an invitation link sends
-  // people here with a query string, and there is no navigation state to
-  // carry when the link was pasted into a fresh tab.
-  const from =
-    params.get('next') ?? (location.state as { from?: Location })?.from?.pathname ?? '/'
+  // `?next=` as well as the router's own state -- see signInDestination for
+  // why there are two sources and why only one shape of value is honoured.
+  const from = signInDestination(
+    params.get('next'),
+    (location.state as { from?: { pathname?: string } } | null)?.from,
+  )
+
+  // A sign-in with a provider cannot render its own failure -- it ends in a
+  // redirect -- so it comes back here with a code. Anything typed into the
+  // form afterwards wins, because that is the newer answer.
+  const message = error ?? oauthErrorMessage(params.get('error'))
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -59,14 +82,16 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={onSubmit} className="glass-strong sheen space-y-4 rounded-panel p-6">
-          {error && (
+          {message && (
             <div
               role="alert"
               className="rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
             >
-              {error}
+              {message}
             </div>
           )}
+
+          <ProviderButtons next={from} />
 
           <div>
             <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-neutral-700">
@@ -78,7 +103,7 @@ export default function LoginPage() {
               required
               autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setTypedEmail(e.target.value)}
               className="field"
               placeholder="you@example.com"
             />
@@ -104,9 +129,11 @@ export default function LoginPage() {
             {submitting ? 'Signing in…' : 'Sign in'}
           </button>
 
-          <p className="text-center text-xs text-neutral-400">
-            Demo login: demo@softtrack.dev / password123
-          </p>
+          {demoCredentials && (
+            <p className="text-center text-xs text-neutral-400">
+              Demo login: {DEMO_EMAIL} / {DEMO_PASSWORD}
+            </p>
+          )}
         </form>
 
         {config.data?.open_registration !== false && (

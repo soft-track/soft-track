@@ -2,11 +2,12 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { RequireAuth } from '@/auth/RequireAuth'
 import BoardPage from '@/board/BoardPage'
+import HomeRoute from '@/landing/HomeRoute'
 import InvitePage from '@/auth/InvitePage'
 import LoginPage from '@/auth/LoginPage'
+import OAuthCallbackPage from '@/auth/OAuthCallbackPage'
 import NewTeamPage from '@/team/NewTeamPage'
 import RegisterPage from '@/auth/RegisterPage'
-import TeamsHome from '@/team/TeamsHome'
 import AdminUsersPage from '@/settings/AdminUsersPage'
 import NotificationSettings from '@/settings/NotificationSettings'
 import ProfileSettings from '@/settings/ProfileSettings'
@@ -28,13 +29,27 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        {/* Where a sign-in with Google or GitHub comes back to. Outside
+            RequireAuth by necessity: the ticket it is carrying is what the
+            person is about to become authenticated with, and it has not been
+            redeemed yet when this route matches.
+
+            Not /auth/callback, though the API's identity router is the only
+            thing that answers /auth: a single-domain deployment proxies /auth
+            to FastAPI, and this page would 404 on every sign-in. The SPA's
+            first path segments have to stay disjoint from the API's. */}
+        <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
         {/* Outside RequireAuth: most people opening an invitation link do not
             have an account yet, and the page has to say what they were
             invited to before asking them to sign in. */}
         <Route path="/invite/:token" element={<InvitePage />} />
+        {/* The one route that answers differently depending on who is
+            asking: signed out it is the landing page, signed in it is
+            TeamsHome exactly as when this lived inside RequireAuth below.
+            HomeRoute makes that call. */}
+        <Route path="/" element={<HomeRoute />} />
 
         <Route element={<RequireAuth />}>
-          <Route path="/" element={<TeamsHome />} />
           <Route path="/new-team" element={<NewTeamPage />} />
 
           {/* Above /:teamKey in the ranking React Router gives static
@@ -69,6 +84,13 @@ export default function App() {
           <Route path="/:teamKey/issue/:issueNumber" element={<BoardPage />} />
         </Route>
 
+        {/* Still "/", which no longer means "go to login" for a signed-out
+            visitor. That is the right destination all the same: this route
+            catches stale and truncated links, and a page saying what SoftTrack
+            is with a way in recovers better than a dead end. Signed in it is
+            unchanged -- their board, as always. Note that a deep link to a
+            real issue never reaches here; it matches /:teamKey/issue/... and
+            is handled by RequireAuth. */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

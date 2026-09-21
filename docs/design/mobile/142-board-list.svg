@@ -1,0 +1,526 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2560 1000" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <rect width="2560" height="1000" fill="#eef0f8"/>
+  <defs>
+    <clipPath id="cpP"><rect x="60" y="110" width="390" height="780" rx="28"/></clipPath>
+    <clipPath id="cpF"><rect x="530" y="110" width="740" height="780" rx="28"/></clipPath>
+    <clipPath id="cpT"><rect x="1350" y="110" width="1150" height="780" rx="28"/></clipPath>
+  </defs>
+
+  <!-- Title block -->
+  <text x="60" y="44" font-size="30" font-weight="700" fill="#15131f">Board &amp; list views with filters</text>
+  <text x="60" y="72" font-size="18" fill="#66637c">SoftTrack Mobile · design mockup</text>
+
+  <!-- Frame labels -->
+  <text x="60" y="88" font-size="22" font-weight="600" fill="#514e66">Phone · compact (&lt;600dp)</text>
+  <text x="530" y="88" font-size="22" font-weight="600" fill="#514e66">Foldable · medium (600–839dp)</text>
+  <text x="1350" y="88" font-size="22" font-weight="600" fill="#514e66">Tablet · expanded (≥840dp)</text>
+
+  <!-- ============ PHONE FRAME ============ -->
+  <rect x="64" y="118" width="390" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+  <rect x="60" y="110" width="390" height="780" rx="28" fill="#ffffff" stroke="#dedcea" stroke-width="2"/>
+  <g clip-path="url(#cpP)">
+    <!-- status bar -->
+    <text x="84" y="132" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+    <rect x="396" y="127" width="3" height="7" fill="#514e66"/>
+    <rect x="401" y="125" width="3" height="9" fill="#514e66"/>
+    <rect x="406" y="123" width="3" height="11" fill="#514e66"/>
+    <circle cx="417" cy="128" r="4" fill="#514e66"/>
+    <rect x="424" y="122" width="16" height="9" rx="2" fill="#514e66"/>
+    <rect x="440" y="124" width="2" height="5" fill="#514e66"/>
+
+    <!-- header -->
+    <text x="76" y="180" font-size="20" font-weight="700" fill="#15131f">ENG · Board</text>
+    <circle cx="412" cy="170" r="8" stroke="#514e66" stroke-width="2" fill="none"/>
+    <line x1="418" y1="176" x2="424" y2="182" stroke="#514e66" stroke-width="2"/>
+
+    <!-- filter chips -->
+    <rect x="76" y="196" width="132" height="30" rx="15" fill="#e0424a" fill-opacity="0.12"/>
+    <text x="142" y="215" font-size="12" font-weight="600" fill="#e0424a" text-anchor="middle">Priority: Urgent  ×</text>
+    <rect x="218" y="196" width="100" height="30" rx="15" fill="#f2647d" fill-opacity="0.12"/>
+    <text x="268" y="215" font-size="12" font-weight="600" fill="#f2647d" text-anchor="middle">Label: bug  ×</text>
+    <rect x="328" y="196" width="78" height="30" rx="15" fill="#ffffff" stroke="#dedcea" stroke-width="1.5"/>
+    <text x="367" y="215" font-size="12" font-weight="600" fill="#514e66" text-anchor="middle">+ Filter</text>
+
+    <!-- neighbor column slivers (swipe affordance) -->
+    <rect x="28" y="244" width="56" height="560" rx="12" fill="#f7f6fb"/>
+    <rect x="426" y="244" width="56" height="560" rx="12" fill="#f7f6fb"/>
+
+    <!-- main column: In Progress -->
+    <rect x="92" y="244" width="326" height="560" rx="12" fill="#f7f6fb"/>
+    <circle cx="110" cy="270" r="5" fill="#f29d0b"/>
+    <text x="122" y="275" font-size="15" font-weight="600" fill="#15131f">In Progress</text>
+    <text x="402" y="275" font-size="12" fill="#7a7791" text-anchor="end">4 · 13 pts</text>
+
+    <!-- card 1 -->
+    <rect x="104" y="292" width="302" height="100" rx="14" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="118" y="316" font-size="12" font-weight="600" fill="#7a7791">ENG-138</text>
+    <text x="118" y="338" font-size="14" fill="#15131f">Debounce board search input</text>
+    <rect x="118" y="374" width="4" height="6" fill="#ef9d0b"/>
+    <rect x="124" y="370" width="4" height="10" fill="#ef9d0b"/>
+    <rect x="130" y="366" width="4" height="14" fill="#ef9d0b"/>
+    <rect x="142" y="360" width="30" height="20" rx="10" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="157" y="374" font-size="11" fill="#514e66" text-anchor="middle">2</text>
+    <rect x="180" y="360" width="64" height="20" rx="10" fill="#3f82f6" fill-opacity="0.14"/>
+    <text x="212" y="374" font-size="11" fill="#3f82f6" text-anchor="middle">frontend</text>
+    <circle cx="382" cy="370" r="12" fill="#2fd4a7"/>
+    <text x="382" y="374" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">DP</text>
+
+    <!-- card 2: dragged / lifted -->
+    <g transform="rotate(-3 255 460)">
+      <rect x="108" y="412" width="302" height="112" rx="14" fill="#26243a" opacity="0.16"/>
+      <rect x="104" y="404" width="302" height="112" rx="14" fill="#ffffff" stroke="#dedcea" stroke-width="1.5"/>
+      <text x="118" y="430" font-size="12" font-weight="600" fill="#7a7791">ENG-142</text>
+      <text x="118" y="452" font-size="14" fill="#15131f">Fix drag ghost offset</text>
+      <text x="118" y="470" font-size="14" fill="#15131f">on Safari</text>
+      <rect x="118" y="496" width="4" height="6" fill="#f2721c"/>
+      <rect x="124" y="492" width="4" height="10" fill="#f2721c"/>
+      <rect x="130" y="488" width="4" height="14" fill="#f2721c"/>
+      <rect x="142" y="482" width="30" height="20" rx="10" fill="#f7f6fb" stroke="#eeedf5"/>
+      <text x="157" y="496" font-size="11" fill="#514e66" text-anchor="middle">3</text>
+      <rect x="180" y="482" width="42" height="20" rx="10" fill="#f2647d" fill-opacity="0.14"/>
+      <text x="201" y="496" font-size="11" fill="#f2647d" text-anchor="middle">bug</text>
+      <circle cx="382" cy="492" r="12" fill="#4f8cff"/>
+      <text x="382" y="496" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+    </g>
+
+    <!-- card 3 -->
+    <rect x="104" y="532" width="302" height="100" rx="14" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="118" y="556" font-size="12" font-weight="600" fill="#7a7791">ENG-131</text>
+    <text x="118" y="578" font-size="14" fill="#15131f">Sync conflict toast on reconnect</text>
+    <rect x="118" y="614" width="4" height="6" fill="#e0424a"/>
+    <rect x="124" y="610" width="4" height="10" fill="#e0424a"/>
+    <rect x="130" y="606" width="4" height="14" fill="#e0424a"/>
+    <rect x="142" y="600" width="30" height="20" rx="10" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="157" y="614" font-size="11" fill="#514e66" text-anchor="middle">5</text>
+    <rect x="180" y="600" width="62" height="20" rx="10" fill="#12a474" fill-opacity="0.14"/>
+    <text x="211" y="614" font-size="11" fill="#12a474" text-anchor="middle">backend</text>
+    <circle cx="382" cy="610" r="12" fill="#ffb648"/>
+    <text x="382" y="614" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">LR</text>
+
+    <!-- card 4 -->
+    <rect x="104" y="644" width="302" height="100" rx="14" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="118" y="668" font-size="12" font-weight="600" fill="#7a7791">ENG-127</text>
+    <text x="118" y="690" font-size="14" fill="#15131f">Offline cache for issue list</text>
+    <rect x="118" y="726" width="4" height="6" fill="#3f82f6"/>
+    <rect x="124" y="722" width="4" height="10" fill="#3f82f6"/>
+    <rect x="130" y="718" width="4" height="14" fill="#3f82f6"/>
+    <rect x="142" y="712" width="30" height="20" rx="10" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="157" y="726" font-size="11" fill="#514e66" text-anchor="middle">3</text>
+    <rect x="180" y="712" width="54" height="20" rx="10" fill="#6342db" fill-opacity="0.14"/>
+    <text x="207" y="726" font-size="11" fill="#6342db" text-anchor="middle">mobile</text>
+    <circle cx="382" cy="722" r="12" fill="#ff6fae"/>
+    <text x="382" y="726" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">SB</text>
+
+    <!-- FAB -->
+    <circle cx="405" cy="782" r="28" fill="#26243a" opacity="0.12"/>
+    <circle cx="402" cy="778" r="28" fill="#6342db"/>
+    <text x="402" y="787" font-size="26" fill="#ffffff" text-anchor="middle">+</text>
+
+    <!-- bottom nav -->
+    <rect x="60" y="826" width="390" height="64" fill="#ffffff"/>
+    <line x1="60" y1="826" x2="450" y2="826" stroke="#eeedf5" stroke-width="2"/>
+    <rect x="88" y="838" width="22" height="22" rx="6" fill="#7a7791"/>
+    <text x="99" y="878" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+    <rect x="166" y="838" width="6" height="20" fill="#6342db"/>
+    <rect x="174" y="842" width="6" height="16" fill="#6342db"/>
+    <rect x="182" y="845" width="6" height="13" fill="#6342db"/>
+    <text x="177" y="878" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">Board</text>
+    <circle cx="253" cy="847" r="8" stroke="#7a7791" stroke-width="2.5" fill="none"/>
+    <line x1="259" y1="853" x2="264" y2="858" stroke="#7a7791" stroke-width="2.5"/>
+    <text x="255" y="878" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+    <rect x="322" y="838" width="22" height="22" rx="6" fill="#7a7791"/>
+    <text x="333" y="878" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+    <circle cx="411" cy="849" r="11" fill="#7a7791"/>
+    <text x="411" y="878" font-size="11" fill="#7a7791" text-anchor="middle">You</text>
+  </g>
+  <rect x="60" y="110" width="390" height="780" rx="28" fill="none" stroke="#dedcea" stroke-width="2"/>
+
+  <!-- ============ FOLDABLE FRAME ============ -->
+  <rect x="534" y="118" width="740" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+  <rect x="530" y="110" width="740" height="780" rx="28" fill="#ffffff" stroke="#dedcea" stroke-width="2"/>
+  <g clip-path="url(#cpF)">
+    <!-- status bar -->
+    <text x="554" y="132" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+    <rect x="1216" y="127" width="3" height="7" fill="#514e66"/>
+    <rect x="1221" y="125" width="3" height="9" fill="#514e66"/>
+    <rect x="1226" y="123" width="3" height="11" fill="#514e66"/>
+    <circle cx="1237" cy="128" r="4" fill="#514e66"/>
+    <rect x="1244" y="122" width="16" height="9" rx="2" fill="#514e66"/>
+    <rect x="1260" y="124" width="2" height="5" fill="#514e66"/>
+
+    <!-- nav rail -->
+    <rect x="530" y="138" width="76" height="752" fill="#f7f6fb"/>
+    <line x1="606" y1="138" x2="606" y2="890" stroke="#eeedf5" stroke-width="2"/>
+    <rect x="556" y="154" width="24" height="24" rx="7" fill="#6342db"/>
+    <rect x="557" y="210" width="22" height="22" rx="6" fill="#7a7791"/>
+    <text x="568" y="246" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+    <rect x="557" y="282" width="6" height="20" fill="#6342db"/>
+    <rect x="565" y="286" width="6" height="16" fill="#6342db"/>
+    <rect x="573" y="289" width="6" height="13" fill="#6342db"/>
+    <text x="568" y="316" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">Board</text>
+    <circle cx="566" cy="360" r="8" stroke="#7a7791" stroke-width="2.5" fill="none"/>
+    <line x1="572" y1="366" x2="577" y2="371" stroke="#7a7791" stroke-width="2.5"/>
+    <text x="568" y="386" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+    <rect x="557" y="420" width="22" height="22" rx="6" fill="#7a7791"/>
+    <text x="568" y="456" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+    <circle cx="568" cy="501" r="11" fill="#7a7791"/>
+    <text x="568" y="526" font-size="11" fill="#7a7791" text-anchor="middle">You</text>
+
+    <!-- hinge as column gutter -->
+    <line x1="900" y1="112" x2="900" y2="888" stroke="#b6b3c8" stroke-width="2" stroke-dasharray="4 6" opacity="0.6"/>
+
+    <!-- header -->
+    <text x="626" y="182" font-size="20" font-weight="700" fill="#15131f">ENG · Board</text>
+    <rect x="916" y="156" width="132" height="30" rx="15" fill="#e0424a" fill-opacity="0.12"/>
+    <text x="982" y="175" font-size="12" font-weight="600" fill="#e0424a" text-anchor="middle">Priority: Urgent  ×</text>
+    <rect x="1058" y="156" width="78" height="30" rx="15" fill="#ffffff" stroke="#dedcea" stroke-width="1.5"/>
+    <text x="1097" y="175" font-size="12" font-weight="600" fill="#514e66" text-anchor="middle">+ Filter</text>
+
+    <!-- left column: Todo -->
+    <rect x="618" y="210" width="266" height="650" rx="12" fill="#f7f6fb"/>
+    <circle cx="636" cy="238" r="5" fill="#6f6c86"/>
+    <text x="648" y="243" font-size="15" font-weight="600" fill="#15131f">Todo</text>
+    <text x="868" y="243" font-size="12" fill="#7a7791" text-anchor="end">6 · 21 pts</text>
+
+    <rect x="630" y="262" width="242" height="96" rx="14" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="644" y="286" font-size="12" font-weight="600" fill="#7a7791">ENG-145</text>
+    <text x="644" y="307" font-size="13" fill="#15131f">Empty state for filtered board</text>
+    <rect x="644" y="340" width="4" height="6" fill="#ef9d0b"/>
+    <rect x="650" y="336" width="4" height="10" fill="#ef9d0b"/>
+    <rect x="656" y="332" width="4" height="14" fill="#ef9d0b"/>
+    <rect x="668" y="327" width="28" height="19" rx="9.5" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="682" y="340" font-size="11" fill="#514e66" text-anchor="middle">2</text>
+    <rect x="704" y="327" width="54" height="19" rx="9.5" fill="#ff6fae" fill-opacity="0.14"/>
+    <text x="731" y="340" font-size="11" fill="#ff6fae" text-anchor="middle">design</text>
+    <circle cx="846" cy="336" r="12" fill="#2fd4a7"/>
+    <text x="846" y="340" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">DP</text>
+
+    <rect x="630" y="370" width="242" height="96" rx="14" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="644" y="394" font-size="12" font-weight="600" fill="#7a7791">ENG-121</text>
+    <text x="644" y="415" font-size="13" fill="#15131f">Keyboard nav for column focus</text>
+    <rect x="644" y="448" width="4" height="6" fill="#3f82f6"/>
+    <rect x="650" y="444" width="4" height="10" fill="#3f82f6"/>
+    <rect x="656" y="440" width="4" height="14" fill="#3f82f6"/>
+    <rect x="668" y="435" width="28" height="19" rx="9.5" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="682" y="448" font-size="11" fill="#514e66" text-anchor="middle">3</text>
+    <rect x="704" y="435" width="46" height="19" rx="9.5" fill="#8b5cf6" fill-opacity="0.14"/>
+    <text x="727" y="448" font-size="11" fill="#8b5cf6" text-anchor="middle">a11y</text>
+    <circle cx="846" cy="444" r="12" fill="#ffb648"/>
+    <text x="846" y="448" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">LR</text>
+
+    <rect x="630" y="478" width="242" height="96" rx="14" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="644" y="502" font-size="12" font-weight="600" fill="#7a7791">ENG-150</text>
+    <text x="644" y="523" font-size="13" fill="#15131f">Team switcher deep link</text>
+    <rect x="644" y="556" width="4" height="6" fill="#f2721c"/>
+    <rect x="650" y="552" width="4" height="10" fill="#f2721c"/>
+    <rect x="656" y="548" width="4" height="14" fill="#f2721c"/>
+    <rect x="668" y="543" width="28" height="19" rx="9.5" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="682" y="556" font-size="11" fill="#514e66" text-anchor="middle">1</text>
+    <rect x="704" y="543" width="54" height="19" rx="9.5" fill="#6342db" fill-opacity="0.14"/>
+    <text x="731" y="556" font-size="11" fill="#6342db" text-anchor="middle">mobile</text>
+    <circle cx="846" cy="552" r="12" fill="#ff6fae"/>
+    <text x="846" y="556" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">SB</text>
+
+    <rect x="630" y="586" width="242" height="96" rx="14" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <rect x="644" y="606" width="90" height="10" rx="5" fill="#eeedf5"/>
+    <rect x="644" y="626" width="180" height="10" rx="5" fill="#eeedf5"/>
+    <rect x="644" y="654" width="120" height="10" rx="5" fill="#eeedf5"/>
+    <text x="644" y="712" font-size="12" fill="#7a7791">+ 2 more</text>
+
+    <!-- right column: In Progress -->
+    <rect x="916" y="210" width="338" height="650" rx="12" fill="#f7f6fb"/>
+    <circle cx="934" cy="238" r="5" fill="#f29d0b"/>
+    <text x="946" y="243" font-size="15" font-weight="600" fill="#15131f">In Progress</text>
+    <text x="1238" y="243" font-size="12" fill="#7a7791" text-anchor="end">4 · 13 pts</text>
+
+    <rect x="928" y="262" width="314" height="96" rx="14" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="942" y="286" font-size="12" font-weight="600" fill="#7a7791">ENG-138</text>
+    <text x="942" y="307" font-size="13" fill="#15131f">Debounce board search input</text>
+    <rect x="942" y="340" width="4" height="6" fill="#ef9d0b"/>
+    <rect x="948" y="336" width="4" height="10" fill="#ef9d0b"/>
+    <rect x="954" y="332" width="4" height="14" fill="#ef9d0b"/>
+    <rect x="966" y="327" width="28" height="19" rx="9.5" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="980" y="340" font-size="11" fill="#514e66" text-anchor="middle">2</text>
+    <rect x="1002" y="327" width="64" height="19" rx="9.5" fill="#3f82f6" fill-opacity="0.14"/>
+    <text x="1034" y="340" font-size="11" fill="#3f82f6" text-anchor="middle">frontend</text>
+    <circle cx="1216" cy="336" r="12" fill="#2fd4a7"/>
+    <text x="1216" y="340" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">DP</text>
+
+    <rect x="928" y="370" width="314" height="96" rx="14" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="942" y="394" font-size="12" font-weight="600" fill="#7a7791">ENG-142</text>
+    <text x="942" y="415" font-size="13" fill="#15131f">Fix drag ghost offset on Safari</text>
+    <rect x="942" y="448" width="4" height="6" fill="#f2721c"/>
+    <rect x="948" y="444" width="4" height="10" fill="#f2721c"/>
+    <rect x="954" y="440" width="4" height="14" fill="#f2721c"/>
+    <rect x="966" y="435" width="28" height="19" rx="9.5" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="980" y="448" font-size="11" fill="#514e66" text-anchor="middle">3</text>
+    <rect x="1002" y="435" width="42" height="19" rx="9.5" fill="#f2647d" fill-opacity="0.14"/>
+    <text x="1023" y="448" font-size="11" fill="#f2647d" text-anchor="middle">bug</text>
+    <circle cx="1216" cy="444" r="12" fill="#4f8cff"/>
+    <text x="1216" y="448" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+
+    <rect x="928" y="478" width="314" height="96" rx="14" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="942" y="502" font-size="12" font-weight="600" fill="#7a7791">ENG-131</text>
+    <text x="942" y="523" font-size="13" fill="#15131f">Sync conflict toast on reconnect</text>
+    <rect x="942" y="556" width="4" height="6" fill="#e0424a"/>
+    <rect x="948" y="552" width="4" height="10" fill="#e0424a"/>
+    <rect x="954" y="548" width="4" height="14" fill="#e0424a"/>
+    <rect x="966" y="543" width="28" height="19" rx="9.5" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="980" y="556" font-size="11" fill="#514e66" text-anchor="middle">5</text>
+    <rect x="1002" y="543" width="62" height="19" rx="9.5" fill="#12a474" fill-opacity="0.14"/>
+    <text x="1033" y="556" font-size="11" fill="#12a474" text-anchor="middle">backend</text>
+    <circle cx="1216" cy="552" r="12" fill="#ffb648"/>
+    <text x="1216" y="556" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">LR</text>
+
+    <rect x="928" y="586" width="314" height="96" rx="14" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="942" y="610" font-size="12" font-weight="600" fill="#7a7791">ENG-127</text>
+    <text x="942" y="631" font-size="13" fill="#15131f">Offline cache for issue list</text>
+    <rect x="942" y="664" width="4" height="6" fill="#3f82f6"/>
+    <rect x="948" y="660" width="4" height="10" fill="#3f82f6"/>
+    <rect x="954" y="656" width="4" height="14" fill="#3f82f6"/>
+    <rect x="966" y="651" width="28" height="19" rx="9.5" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="980" y="664" font-size="11" fill="#514e66" text-anchor="middle">3</text>
+    <rect x="1002" y="651" width="54" height="19" rx="9.5" fill="#6342db" fill-opacity="0.14"/>
+    <text x="1029" y="664" font-size="11" fill="#6342db" text-anchor="middle">mobile</text>
+    <circle cx="1216" cy="660" r="12" fill="#ff6fae"/>
+    <text x="1216" y="664" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">SB</text>
+  </g>
+  <rect x="530" y="110" width="740" height="780" rx="28" fill="none" stroke="#dedcea" stroke-width="2"/>
+
+  <!-- ============ TABLET FRAME ============ -->
+  <rect x="1354" y="118" width="1150" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+  <rect x="1350" y="110" width="1150" height="780" rx="28" fill="#ffffff" stroke="#dedcea" stroke-width="2"/>
+  <g clip-path="url(#cpT)">
+    <!-- status bar -->
+    <text x="1374" y="132" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+    <rect x="2446" y="127" width="3" height="7" fill="#514e66"/>
+    <rect x="2451" y="125" width="3" height="9" fill="#514e66"/>
+    <rect x="2456" y="123" width="3" height="11" fill="#514e66"/>
+    <circle cx="2467" cy="128" r="4" fill="#514e66"/>
+    <rect x="2474" y="122" width="16" height="9" rx="2" fill="#514e66"/>
+    <rect x="2490" y="124" width="2" height="5" fill="#514e66"/>
+
+    <!-- nav rail -->
+    <rect x="1350" y="138" width="76" height="752" fill="#f7f6fb"/>
+    <line x1="1426" y1="138" x2="1426" y2="890" stroke="#eeedf5" stroke-width="2"/>
+    <rect x="1376" y="154" width="24" height="24" rx="7" fill="#6342db"/>
+    <rect x="1377" y="210" width="22" height="22" rx="6" fill="#7a7791"/>
+    <text x="1388" y="246" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+    <rect x="1377" y="282" width="6" height="20" fill="#6342db"/>
+    <rect x="1385" y="286" width="6" height="16" fill="#6342db"/>
+    <rect x="1393" y="289" width="6" height="13" fill="#6342db"/>
+    <text x="1388" y="316" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">Board</text>
+    <circle cx="1386" cy="360" r="8" stroke="#7a7791" stroke-width="2.5" fill="none"/>
+    <line x1="1392" y1="366" x2="1397" y2="371" stroke="#7a7791" stroke-width="2.5"/>
+    <text x="1388" y="386" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+    <rect x="1377" y="420" width="22" height="22" rx="6" fill="#7a7791"/>
+    <text x="1388" y="456" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+    <circle cx="1388" cy="501" r="11" fill="#7a7791"/>
+    <text x="1388" y="526" font-size="11" fill="#7a7791" text-anchor="middle">You</text>
+
+    <!-- top bar -->
+    <text x="1462" y="182" font-size="20" font-weight="700" fill="#15131f">ENG · Engineering</text>
+    <rect x="2028" y="154" width="300" height="40" rx="10" fill="#f7f6fb" stroke="#eeedf5" stroke-width="1.5"/>
+    <rect x="2032" y="158" width="96" height="32" rx="8" fill="#ffffff" stroke="#dedcea" stroke-width="1.5"/>
+    <text x="2080" y="179" font-size="13" font-weight="600" fill="#6342db" text-anchor="middle">Board</text>
+    <text x="2178" y="179" font-size="13" fill="#7a7791" text-anchor="middle">List</text>
+    <text x="2278" y="179" font-size="13" fill="#7a7791" text-anchor="middle">Reports</text>
+    <rect x="2348" y="154" width="104" height="40" rx="10" fill="#ffffff" stroke="#dedcea" stroke-width="1.5"/>
+    <rect x="2366" y="167" width="16" height="2.5" fill="#514e66"/>
+    <rect x="2370" y="173" width="8" height="2.5" fill="#514e66"/>
+    <rect x="2373" y="179" width="3" height="2.5" fill="#514e66"/>
+    <text x="2392" y="179" font-size="13" font-weight="600" fill="#514e66">Filter</text>
+
+    <!-- column 1: Backlog -->
+    <rect x="1446" y="216" width="246" height="650" rx="12" fill="#f7f6fb"/>
+    <circle cx="1464" cy="244" r="5" fill="#9b98b0"/>
+    <text x="1476" y="249" font-size="14" font-weight="600" fill="#15131f">Backlog</text>
+    <text x="1678" y="249" font-size="12" fill="#7a7791" text-anchor="end">5 · 11 pts</text>
+
+    <rect x="1458" y="264" width="222" height="92" rx="12" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="1470" y="286" font-size="11" font-weight="600" fill="#7a7791">ENG-152</text>
+    <text x="1470" y="306" font-size="13" fill="#15131f">Audit chart color contrast</text>
+    <rect x="1470" y="338" width="4" height="5" fill="#a29fb5"/>
+    <rect x="1476" y="335" width="4" height="8" fill="#a29fb5"/>
+    <rect x="1482" y="332" width="4" height="11" fill="#a29fb5"/>
+    <rect x="1492" y="328" width="26" height="18" rx="9" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="1505" y="341" font-size="11" fill="#514e66" text-anchor="middle">1</text>
+    <rect x="1524" y="328" width="52" height="18" rx="9" fill="#ff6fae" fill-opacity="0.14"/>
+    <text x="1550" y="341" font-size="11" fill="#ff6fae" text-anchor="middle">design</text>
+    <circle cx="1660" cy="337" r="10" fill="#ff6fae"/>
+    <text x="1660" y="341" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">SB</text>
+
+    <rect x="1458" y="366" width="222" height="92" rx="12" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="1470" y="388" font-size="11" font-weight="600" fill="#7a7791">ENG-149</text>
+    <text x="1470" y="408" font-size="13" fill="#15131f">Spike: sync benchmarks</text>
+    <rect x="1470" y="440" width="4" height="5" fill="#3f82f6"/>
+    <rect x="1476" y="437" width="4" height="8" fill="#3f82f6"/>
+    <rect x="1482" y="434" width="4" height="11" fill="#3f82f6"/>
+    <rect x="1492" y="430" width="26" height="18" rx="9" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="1505" y="443" font-size="11" fill="#514e66" text-anchor="middle">5</text>
+    <rect x="1524" y="430" width="46" height="18" rx="9" fill="#8b5cf6" fill-opacity="0.14"/>
+    <text x="1547" y="443" font-size="11" fill="#8b5cf6" text-anchor="middle">spike</text>
+    <circle cx="1660" cy="439" r="10" fill="#4f8cff"/>
+    <text x="1660" y="443" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+
+    <rect x="1458" y="468" width="222" height="92" rx="12" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="1470" y="490" font-size="11" font-weight="600" fill="#7a7791">ENG-147</text>
+    <text x="1470" y="510" font-size="13" fill="#15131f">Refactor avatar cache</text>
+    <rect x="1470" y="542" width="4" height="5" fill="#ef9d0b"/>
+    <rect x="1476" y="539" width="4" height="8" fill="#ef9d0b"/>
+    <rect x="1482" y="536" width="4" height="11" fill="#ef9d0b"/>
+    <rect x="1492" y="532" width="26" height="18" rx="9" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="1505" y="545" font-size="11" fill="#514e66" text-anchor="middle">2</text>
+    <rect x="1524" y="532" width="50" height="18" rx="9" fill="#9b98b0" fill-opacity="0.18"/>
+    <text x="1549" y="545" font-size="11" fill="#6f6c86" text-anchor="middle">chore</text>
+    <circle cx="1660" cy="541" r="10" fill="#2fd4a7"/>
+    <text x="1660" y="545" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">DP</text>
+
+    <text x="1470" y="592" font-size="12" fill="#7a7791">+ 2 more</text>
+
+    <!-- column 2: Todo -->
+    <rect x="1708" y="216" width="246" height="650" rx="12" fill="#f7f6fb"/>
+    <circle cx="1726" cy="244" r="5" fill="#6f6c86"/>
+    <text x="1738" y="249" font-size="14" font-weight="600" fill="#15131f">Todo</text>
+    <text x="1940" y="249" font-size="12" fill="#7a7791" text-anchor="end">6 · 21 pts</text>
+
+    <rect x="1720" y="264" width="222" height="92" rx="12" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="1732" y="286" font-size="11" font-weight="600" fill="#7a7791">ENG-145</text>
+    <text x="1732" y="306" font-size="13" fill="#15131f">Empty state for filters</text>
+    <rect x="1732" y="338" width="4" height="5" fill="#ef9d0b"/>
+    <rect x="1738" y="335" width="4" height="8" fill="#ef9d0b"/>
+    <rect x="1744" y="332" width="4" height="11" fill="#ef9d0b"/>
+    <rect x="1754" y="328" width="26" height="18" rx="9" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="1767" y="341" font-size="11" fill="#514e66" text-anchor="middle">2</text>
+    <rect x="1786" y="328" width="52" height="18" rx="9" fill="#ff6fae" fill-opacity="0.14"/>
+    <text x="1812" y="341" font-size="11" fill="#ff6fae" text-anchor="middle">design</text>
+    <circle cx="1922" cy="337" r="10" fill="#2fd4a7"/>
+    <text x="1922" y="341" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">DP</text>
+
+    <rect x="1720" y="366" width="222" height="92" rx="12" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="1732" y="388" font-size="11" font-weight="600" fill="#7a7791">ENG-121</text>
+    <text x="1732" y="408" font-size="13" fill="#15131f">Keyboard column nav</text>
+    <rect x="1732" y="440" width="4" height="5" fill="#3f82f6"/>
+    <rect x="1738" y="437" width="4" height="8" fill="#3f82f6"/>
+    <rect x="1744" y="434" width="4" height="11" fill="#3f82f6"/>
+    <rect x="1754" y="430" width="26" height="18" rx="9" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="1767" y="443" font-size="11" fill="#514e66" text-anchor="middle">3</text>
+    <rect x="1786" y="430" width="44" height="18" rx="9" fill="#8b5cf6" fill-opacity="0.14"/>
+    <text x="1808" y="443" font-size="11" fill="#8b5cf6" text-anchor="middle">a11y</text>
+    <circle cx="1922" cy="439" r="10" fill="#ffb648"/>
+    <text x="1922" y="443" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">LR</text>
+
+    <rect x="1720" y="468" width="222" height="92" rx="12" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="1732" y="490" font-size="11" font-weight="600" fill="#7a7791">ENG-150</text>
+    <text x="1732" y="510" font-size="13" fill="#15131f">Team switcher deep link</text>
+    <rect x="1732" y="542" width="4" height="5" fill="#f2721c"/>
+    <rect x="1738" y="539" width="4" height="8" fill="#f2721c"/>
+    <rect x="1744" y="536" width="4" height="11" fill="#f2721c"/>
+    <rect x="1754" y="532" width="26" height="18" rx="9" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="1767" y="545" font-size="11" fill="#514e66" text-anchor="middle">1</text>
+    <rect x="1786" y="532" width="52" height="18" rx="9" fill="#6342db" fill-opacity="0.14"/>
+    <text x="1812" y="545" font-size="11" fill="#6342db" text-anchor="middle">mobile</text>
+    <circle cx="1922" cy="541" r="10" fill="#ff6fae"/>
+    <text x="1922" y="545" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">SB</text>
+
+    <text x="1732" y="592" font-size="12" fill="#7a7791">+ 3 more</text>
+
+    <!-- column 3: In Progress -->
+    <rect x="1970" y="216" width="246" height="650" rx="12" fill="#f7f6fb"/>
+    <circle cx="1988" cy="244" r="5" fill="#f29d0b"/>
+    <text x="2000" y="249" font-size="14" font-weight="600" fill="#15131f">In Progress</text>
+    <text x="2202" y="249" font-size="12" fill="#7a7791" text-anchor="end">4 · 13 pts</text>
+
+    <rect x="1982" y="264" width="222" height="92" rx="12" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="1994" y="286" font-size="11" font-weight="600" fill="#7a7791">ENG-138</text>
+    <text x="1994" y="306" font-size="13" fill="#15131f">Debounce board search</text>
+    <rect x="1994" y="338" width="4" height="5" fill="#ef9d0b"/>
+    <rect x="2000" y="335" width="4" height="8" fill="#ef9d0b"/>
+    <rect x="2006" y="332" width="4" height="11" fill="#ef9d0b"/>
+    <rect x="2016" y="328" width="26" height="18" rx="9" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="2029" y="341" font-size="11" fill="#514e66" text-anchor="middle">2</text>
+    <rect x="2048" y="328" width="62" height="18" rx="9" fill="#3f82f6" fill-opacity="0.14"/>
+    <text x="2079" y="341" font-size="11" fill="#3f82f6" text-anchor="middle">frontend</text>
+    <circle cx="2184" cy="337" r="10" fill="#2fd4a7"/>
+    <text x="2184" y="341" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">DP</text>
+
+    <rect x="1982" y="366" width="222" height="92" rx="12" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="1994" y="388" font-size="11" font-weight="600" fill="#7a7791">ENG-142</text>
+    <text x="1994" y="408" font-size="13" fill="#15131f">Fix drag ghost on Safari</text>
+    <rect x="1994" y="440" width="4" height="5" fill="#f2721c"/>
+    <rect x="2000" y="437" width="4" height="8" fill="#f2721c"/>
+    <rect x="2006" y="434" width="4" height="11" fill="#f2721c"/>
+    <rect x="2016" y="430" width="26" height="18" rx="9" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="2029" y="443" font-size="11" fill="#514e66" text-anchor="middle">3</text>
+    <rect x="2048" y="430" width="40" height="18" rx="9" fill="#f2647d" fill-opacity="0.14"/>
+    <text x="2068" y="443" font-size="11" fill="#f2647d" text-anchor="middle">bug</text>
+    <circle cx="2184" cy="439" r="10" fill="#4f8cff"/>
+    <text x="2184" y="443" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+
+    <rect x="1982" y="468" width="222" height="92" rx="12" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="1994" y="490" font-size="11" font-weight="600" fill="#7a7791">ENG-131</text>
+    <text x="1994" y="510" font-size="13" fill="#15131f">Sync conflict toast</text>
+    <rect x="1994" y="542" width="4" height="5" fill="#e0424a"/>
+    <rect x="2000" y="539" width="4" height="8" fill="#e0424a"/>
+    <rect x="2006" y="536" width="4" height="11" fill="#e0424a"/>
+    <rect x="2016" y="532" width="26" height="18" rx="9" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="2029" y="545" font-size="11" fill="#514e66" text-anchor="middle">5</text>
+    <rect x="2048" y="532" width="60" height="18" rx="9" fill="#12a474" fill-opacity="0.14"/>
+    <text x="2078" y="545" font-size="11" fill="#12a474" text-anchor="middle">backend</text>
+    <circle cx="2184" cy="541" r="10" fill="#ffb648"/>
+    <text x="2184" y="545" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">LR</text>
+
+    <text x="1994" y="592" font-size="12" fill="#7a7791">+ 1 more</text>
+
+    <!-- column 4: Done -->
+    <rect x="2232" y="216" width="246" height="650" rx="12" fill="#f7f6fb"/>
+    <circle cx="2250" cy="244" r="5" fill="#12a474"/>
+    <text x="2262" y="249" font-size="14" font-weight="600" fill="#15131f">Done</text>
+    <text x="2464" y="249" font-size="12" fill="#7a7791" text-anchor="end">8 · 26 pts</text>
+
+    <rect x="2244" y="264" width="222" height="92" rx="12" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="2256" y="286" font-size="11" font-weight="600" fill="#7a7791">ENG-112</text>
+    <text x="2256" y="306" font-size="13" fill="#15131f">Avatar a11y labels</text>
+    <rect x="2256" y="338" width="4" height="5" fill="#f2721c"/>
+    <rect x="2262" y="335" width="4" height="8" fill="#f2721c"/>
+    <rect x="2268" y="332" width="4" height="11" fill="#f2721c"/>
+    <rect x="2278" y="328" width="26" height="18" rx="9" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="2291" y="341" font-size="11" fill="#514e66" text-anchor="middle">2</text>
+    <rect x="2310" y="328" width="44" height="18" rx="9" fill="#8b5cf6" fill-opacity="0.14"/>
+    <text x="2332" y="341" font-size="11" fill="#8b5cf6" text-anchor="middle">a11y</text>
+    <circle cx="2446" cy="337" r="10" fill="#6342db"/>
+    <text x="2446" y="341" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">NR</text>
+
+    <rect x="2244" y="366" width="222" height="92" rx="12" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="2256" y="388" font-size="11" font-weight="600" fill="#7a7791">ENG-109</text>
+    <text x="2256" y="408" font-size="13" fill="#15131f">Auto-link issue IDs</text>
+    <rect x="2256" y="440" width="4" height="5" fill="#ef9d0b"/>
+    <rect x="2262" y="437" width="4" height="8" fill="#ef9d0b"/>
+    <rect x="2268" y="434" width="4" height="11" fill="#ef9d0b"/>
+    <rect x="2278" y="430" width="26" height="18" rx="9" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="2291" y="443" font-size="11" fill="#514e66" text-anchor="middle">3</text>
+    <rect x="2310" y="430" width="50" height="18" rx="9" fill="#3f82f6" fill-opacity="0.14"/>
+    <text x="2335" y="443" font-size="11" fill="#3f82f6" text-anchor="middle">editor</text>
+    <circle cx="2446" cy="439" r="10" fill="#4f8cff"/>
+    <text x="2446" y="443" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+
+    <rect x="2244" y="468" width="222" height="92" rx="12" fill="#ffffff" stroke="#eeedf5" stroke-width="1.5"/>
+    <text x="2256" y="490" font-size="11" font-weight="600" fill="#7a7791">ENG-104</text>
+    <text x="2256" y="510" font-size="13" fill="#15131f">Cross-team issue links</text>
+    <rect x="2256" y="542" width="4" height="5" fill="#f2721c"/>
+    <rect x="2262" y="539" width="4" height="8" fill="#f2721c"/>
+    <rect x="2268" y="536" width="4" height="11" fill="#f2721c"/>
+    <rect x="2278" y="532" width="26" height="18" rx="9" fill="#f7f6fb" stroke="#eeedf5"/>
+    <text x="2291" y="545" font-size="11" fill="#514e66" text-anchor="middle">5</text>
+    <rect x="2310" y="532" width="42" height="18" rx="9" fill="#12a474" fill-opacity="0.14"/>
+    <text x="2331" y="545" font-size="11" fill="#12a474" text-anchor="middle">core</text>
+    <circle cx="2446" cy="541" r="10" fill="#2fd4a7"/>
+    <text x="2446" y="545" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">DP</text>
+
+    <text x="2256" y="592" font-size="12" fill="#7a7791">+ 5 more</text>
+  </g>
+  <rect x="1350" y="110" width="1150" height="780" rx="28" fill="none" stroke="#dedcea" stroke-width="2"/>
+
+  <!-- footer -->
+  <text x="1280" y="960" font-size="16" fill="#7a7791" text-anchor="middle">Columns per viewport: 1 on phone (horizontal swipe between columns), 2 on foldable with the hinge as the column gutter, 4+ on tablet with persistent view and filter controls.</text>
+</svg>

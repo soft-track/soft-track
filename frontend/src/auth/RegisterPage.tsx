@@ -5,6 +5,7 @@ import { useAuthConfigAuthConfigGet } from '@/api/generated/endpoints/auth/auth'
 import { usePreviewInviteInvitesTokenGet } from '@/api/generated/endpoints/invites/invites'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/AuthContext'
+import { ProviderButtons } from '@/auth/ProviderButtons'
 import { Logo } from '@/ui/Logo'
 
 export default function RegisterPage() {
@@ -90,6 +91,15 @@ export default function RegisterPage() {
                 {error}
               </div>
             )}
+
+            {/* The invitation travels with the sign-in, so accepting one by
+                signing up with Google lands in the team exactly as filling
+                this form in would. */}
+            <ProviderButtons
+              verb="Sign up"
+              invite={inviteToken || undefined}
+              next={invite.data ? `/${invite.data.team_key}` : undefined}
+            />
 
             <div>
               <label

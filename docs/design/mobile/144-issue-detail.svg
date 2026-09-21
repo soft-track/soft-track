@@ -1,0 +1,423 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2560 1000" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<rect width="2560" height="1000" fill="#eef0f8"/>
+<defs>
+<clipPath id="cp"><rect x="60" y="110" width="390" height="780" rx="28"/></clipPath>
+<clipPath id="cf"><rect x="530" y="110" width="740" height="780" rx="28"/></clipPath>
+<clipPath id="ct"><rect x="1350" y="110" width="1150" height="780" rx="28"/></clipPath>
+</defs>
+
+<!-- Title block -->
+<text x="60" y="44" font-size="30" font-weight="700" fill="#15131f">Issue detail: sub-issues, links, development</text>
+<text x="60" y="72" font-size="18" fill="#66637c">SoftTrack Mobile · design mockup</text>
+
+<!-- Frame labels -->
+<text x="60" y="88" font-size="22" font-weight="600" fill="#514e66">Phone · compact (&lt;600dp)</text>
+<text x="530" y="88" font-size="22" font-weight="600" fill="#514e66">Foldable · medium (600–839dp)</text>
+<text x="1350" y="88" font-size="22" font-weight="600" fill="#514e66">Tablet · expanded (≥840dp)</text>
+
+<!-- Frame shadows + fills -->
+<rect x="60" y="115" width="390" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+<rect x="530" y="115" width="740" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+<rect x="1350" y="115" width="1150" height="780" rx="28" fill="#26243a" opacity="0.06"/>
+<rect x="60" y="110" width="390" height="780" rx="28" fill="#ffffff"/>
+<rect x="530" y="110" width="740" height="780" rx="28" fill="#ffffff"/>
+<rect x="1350" y="110" width="1150" height="780" rx="28" fill="#ffffff"/>
+
+<!-- ============ PHONE ============ -->
+<g clip-path="url(#cp)">
+  <!-- status bar -->
+  <text x="84" y="129" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+  <rect x="368" y="124" width="3" height="4" fill="#514e66"/><rect x="373" y="122" width="3" height="6" fill="#514e66"/><rect x="378" y="120" width="3" height="8" fill="#514e66"/><rect x="383" y="118" width="3" height="10" fill="#514e66"/>
+  <polygon points="392,128 404,128 398,119" fill="#514e66"/>
+  <rect x="406" y="118" width="20" height="10" rx="3" fill="#514e66"/><rect x="427" y="121" width="3" height="5" rx="1" fill="#514e66"/>
+
+  <!-- header -->
+  <text x="80" y="172" font-size="20" fill="#514e66">‹</text>
+  <text x="102" y="170" font-size="13" font-weight="600" fill="#7a7791">ENG-142</text>
+  <circle cx="414" cy="166" r="2" fill="#514e66"/><circle cx="421" cy="166" r="2" fill="#514e66"/><circle cx="428" cy="166" r="2" fill="#514e66"/>
+  <text x="80" y="208" font-size="20" font-weight="700" fill="#15131f">Fix drag ghost offset on Safari</text>
+
+  <!-- property chips -->
+  <rect x="80" y="228" width="110" height="26" rx="13" fill="#f29d0b" fill-opacity="0.15"/>
+  <circle cx="96" cy="241" r="4" fill="#f29d0b"/>
+  <text x="106" y="245" font-size="12" font-weight="600" fill="#f29d0b">In Progress</text>
+  <rect x="198" y="228" width="72" height="26" rx="13" fill="#f2721c" fill-opacity="0.15"/>
+  <rect x="210" y="238" width="3" height="7" fill="#f2721c"/><rect x="215" y="235" width="3" height="10" fill="#f2721c"/><rect x="220" y="232" width="3" height="13" fill="#f2721c"/>
+  <text x="230" y="245" font-size="12" font-weight="600" fill="#f2721c">High</text>
+  <circle cx="294" cy="241" r="13" fill="#4f8cff"/>
+  <text x="294" y="245" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+  <rect x="316" y="228" width="64" height="26" rx="13" fill="#f7f6fb" stroke="#eeedf5"/>
+  <text x="330" y="245" font-size="12" font-weight="600" fill="#514e66">3 pts</text>
+
+  <line x1="60" y1="274" x2="450" y2="274" stroke="#eeedf5" stroke-width="2"/>
+
+  <!-- Description row -->
+  <text x="80" y="302" font-size="15" font-weight="600" fill="#15131f">Description</text>
+  <rect x="80" y="314" width="300" height="8" rx="4" fill="#eeedf5"/>
+  <rect x="80" y="328" width="220" height="8" rx="4" fill="#eeedf5"/>
+  <text x="424" y="316" font-size="18" fill="#b6b3c8" text-anchor="middle">›</text>
+  <line x1="60" y1="344" x2="450" y2="344" stroke="#eeedf5"/>
+
+  <!-- Sub-issues row -->
+  <text x="80" y="372" font-size="15" font-weight="600" fill="#15131f">Sub-issues</text>
+  <text x="262" y="372" font-size="12" fill="#7a7791">2 of 4 done</text>
+  <rect x="80" y="384" width="160" height="6" rx="3" fill="#eeedf5"/>
+  <rect x="80" y="384" width="80" height="6" rx="3" fill="#6342db"/>
+  <text x="424" y="382" font-size="18" fill="#b6b3c8" text-anchor="middle">›</text>
+  <line x1="60" y1="410" x2="450" y2="410" stroke="#eeedf5"/>
+
+  <!-- Links row -->
+  <text x="80" y="436" font-size="15" font-weight="600" fill="#15131f">Links</text>
+  <circle cx="90" cy="456" r="8" stroke="#e0424a" stroke-width="2" fill="none"/>
+  <line x1="84.4" y1="450.4" x2="95.6" y2="461.6" stroke="#e0424a" stroke-width="2"/>
+  <text x="106" y="460" font-size="13" fill="#514e66">Blocked by</text>
+  <text x="180" y="460" font-size="13" font-weight="600" fill="#6342db">ENG-131</text>
+  <circle cx="256" cy="456" r="4" fill="#6f6c86"/>
+  <text x="266" y="460" font-size="12" fill="#7a7791">Todo</text>
+  <text x="424" y="454" font-size="18" fill="#b6b3c8" text-anchor="middle">›</text>
+  <line x1="60" y1="476" x2="450" y2="476" stroke="#eeedf5"/>
+
+  <!-- Development row -->
+  <text x="80" y="502" font-size="15" font-weight="600" fill="#15131f">Development</text>
+  <rect x="80" y="512" width="196" height="28" rx="8" fill="#f7f6fb" stroke="#eeedf5"/>
+  <circle cx="94" cy="526" r="3.5" stroke="#7a7791" stroke-width="1.5" fill="none"/>
+  <text x="104" y="530" font-size="12" font-family="ui-monospace, 'SF Mono', Menlo, monospace" fill="#514e66">eng-142-drag-ghost</text>
+  <rect x="286" y="512" width="86" height="28" rx="8" fill="#12a474" fill-opacity="0.15"/>
+  <circle cx="300" cy="526" r="4" fill="#12a474"/>
+  <text x="310" y="530" font-size="12" font-weight="600" fill="#12a474">PR #87</text>
+  <text x="424" y="530" font-size="18" fill="#b6b3c8" text-anchor="middle">›</text>
+  <line x1="60" y1="552" x2="450" y2="552" stroke="#eeedf5"/>
+
+  <!-- Attachments row -->
+  <text x="80" y="588" font-size="15" font-weight="600" fill="#15131f">Attachments</text>
+  <rect x="184" y="572" width="26" height="20" rx="10" fill="#f7f6fb" stroke="#eeedf5"/>
+  <text x="197" y="586" font-size="12" font-weight="600" fill="#514e66" text-anchor="middle">2</text>
+  <text x="424" y="588" font-size="18" fill="#b6b3c8" text-anchor="middle">›</text>
+  <line x1="60" y1="614" x2="450" y2="614" stroke="#eeedf5"/>
+
+  <!-- Watch row -->
+  <text x="80" y="642" font-size="15" font-weight="600" fill="#15131f">Watch</text>
+  <text x="80" y="662" font-size="12" fill="#7a7791">Notify me on all activity</text>
+  <rect x="376" y="634" width="46" height="26" rx="13" fill="#6342db"/>
+  <circle cx="409" cy="647" r="10" fill="#ffffff"/>
+  <line x1="60" y1="678" x2="450" y2="678" stroke="#eeedf5"/>
+
+  <!-- Activity preview (low-fi) -->
+  <text x="80" y="706" font-size="13" font-weight="600" fill="#7a7791">Activity</text>
+  <circle cx="92" cy="736" r="11" fill="#2fd4a7"/>
+  <text x="92" y="740" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">DP</text>
+  <rect x="112" y="726" width="240" height="8" rx="4" fill="#eeedf5"/>
+  <rect x="112" y="740" width="170" height="8" rx="4" fill="#eeedf5"/>
+  <circle cx="92" cy="782" r="11" fill="#ffb648"/>
+  <text x="92" y="786" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">SR</text>
+  <rect x="112" y="772" width="260" height="8" rx="4" fill="#eeedf5"/>
+  <rect x="112" y="786" width="140" height="8" rx="4" fill="#eeedf5"/>
+
+  <!-- bottom nav -->
+  <line x1="60" y1="826" x2="450" y2="826" stroke="#eeedf5" stroke-width="2"/>
+  <rect x="88" y="838" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="99" y="876" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+  <rect x="166" y="838" width="22" height="22" rx="6" fill="#6342db"/>
+  <text x="177" y="876" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">Board</text>
+  <rect x="244" y="838" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="255" y="876" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+  <rect x="322" y="838" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="333" y="876" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+  <circle cx="411" cy="849" r="11" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="411" y="876" font-size="11" fill="#7a7791" text-anchor="middle">You</text>
+</g>
+
+<!-- ============ FOLDABLE ============ -->
+<g clip-path="url(#cf)">
+  <!-- status bar -->
+  <text x="554" y="129" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+  <rect x="1188" y="124" width="3" height="4" fill="#514e66"/><rect x="1193" y="122" width="3" height="6" fill="#514e66"/><rect x="1198" y="120" width="3" height="8" fill="#514e66"/><rect x="1203" y="118" width="3" height="10" fill="#514e66"/>
+  <polygon points="1212,128 1224,128 1218,119" fill="#514e66"/>
+  <rect x="1226" y="118" width="20" height="10" rx="3" fill="#514e66"/><rect x="1247" y="121" width="3" height="5" rx="1" fill="#514e66"/>
+
+  <!-- nav rail -->
+  <rect x="530" y="138" width="76" height="752" fill="#f7f6fb"/>
+  <line x1="606" y1="138" x2="606" y2="890" stroke="#eeedf5" stroke-width="2"/>
+  <rect x="556" y="158" width="24" height="24" rx="7" fill="#6342db"/>
+  <rect x="557" y="212" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="568" y="250" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+  <rect x="557" y="290" width="22" height="22" rx="6" fill="#6342db"/>
+  <text x="568" y="328" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">Board</text>
+  <rect x="557" y="368" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="568" y="406" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+  <rect x="557" y="446" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="568" y="484" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+  <circle cx="568" cy="535" r="11" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="568" y="562" font-size="11" fill="#7a7791" text-anchor="middle">You</text>
+
+  <!-- hinge -->
+  <line x1="900" y1="112" x2="900" y2="888" stroke="#b6b3c8" stroke-dasharray="4 6" opacity="0.6"/>
+
+  <!-- left pane: board list -->
+  <text x="622" y="175" font-size="15" font-weight="700" fill="#15131f">ENG · Active issues</text>
+  <text x="622" y="193" font-size="12" fill="#7a7791">Cycle 14 · 12 issues</text>
+
+  <text x="622" y="236" font-size="11" font-weight="600" fill="#7a7791">ENG-138</text>
+  <text x="622" y="256" font-size="13" fill="#15131f">Board swimlanes for cycles</text>
+  <circle cx="878" cy="242" r="5" fill="#8b5cf6"/>
+  <line x1="622" y1="282" x2="892" y2="282" stroke="#eeedf5"/>
+  <text x="622" y="308" font-size="11" font-weight="600" fill="#7a7791">ENG-140</text>
+  <text x="622" y="328" font-size="13" fill="#15131f">Offline queue for mutations</text>
+  <circle cx="878" cy="314" r="5" fill="#f29d0b"/>
+  <line x1="622" y1="354" x2="892" y2="354" stroke="#eeedf5"/>
+  <rect x="606" y="354" width="294" height="72" fill="#6342db" fill-opacity="0.08"/>
+  <rect x="606" y="354" width="4" height="72" fill="#6342db"/>
+  <text x="622" y="380" font-size="11" font-weight="600" fill="#7a7791">ENG-142</text>
+  <text x="622" y="400" font-size="13" font-weight="600" fill="#15131f">Fix drag ghost offset on Safari</text>
+  <circle cx="878" cy="386" r="5" fill="#f29d0b"/>
+  <line x1="622" y1="426" x2="892" y2="426" stroke="#eeedf5"/>
+  <text x="622" y="452" font-size="11" font-weight="600" fill="#7a7791">ENG-143</text>
+  <text x="622" y="472" font-size="13" fill="#15131f">Keyboard shortcuts palette</text>
+  <circle cx="878" cy="458" r="5" fill="#6f6c86"/>
+  <line x1="622" y1="498" x2="892" y2="498" stroke="#eeedf5"/>
+  <text x="622" y="524" font-size="11" font-weight="600" fill="#7a7791">ENG-131</text>
+  <text x="622" y="544" font-size="13" fill="#15131f">Safari transform regression</text>
+  <circle cx="878" cy="530" r="5" fill="#6f6c86"/>
+  <line x1="622" y1="570" x2="892" y2="570" stroke="#eeedf5"/>
+  <text x="622" y="596" font-size="11" font-weight="600" fill="#7a7791">ENG-145</text>
+  <text x="622" y="616" font-size="13" fill="#15131f">Sub-issue reorder jank on iPad</text>
+  <circle cx="878" cy="602" r="5" fill="#9b98b0"/>
+  <line x1="622" y1="642" x2="892" y2="642" stroke="#eeedf5"/>
+  <text x="622" y="668" font-size="11" font-weight="600" fill="#7a7791">ENG-147</text>
+  <text x="622" y="688" font-size="13" fill="#15131f">Empty state illustrations</text>
+  <circle cx="878" cy="674" r="5" fill="#9b98b0"/>
+  <line x1="622" y1="714" x2="892" y2="714" stroke="#eeedf5"/>
+  <text x="622" y="740" font-size="11" font-weight="600" fill="#7a7791">ENG-149</text>
+  <text x="622" y="760" font-size="13" fill="#15131f">Pointer capture on drag start</text>
+  <circle cx="878" cy="746" r="5" fill="#12a474"/>
+  <line x1="622" y1="786" x2="892" y2="786" stroke="#eeedf5"/>
+  <text x="622" y="812" font-size="11" font-weight="600" fill="#7a7791">ENG-150</text>
+  <text x="622" y="832" font-size="13" fill="#15131f">Regression test on Safari</text>
+  <circle cx="878" cy="818" r="5" fill="#6f6c86"/>
+
+  <!-- right pane: detail -->
+  <text x="916" y="172" font-size="12" font-weight="600" fill="#7a7791">ENG-142</text>
+  <rect x="1204" y="158" width="40" height="22" rx="11" fill="#6342db"/>
+  <circle cx="1233" cy="169" r="8" fill="#ffffff"/>
+  <text x="916" y="200" font-size="17" font-weight="700" fill="#15131f">Fix drag ghost offset on Safari</text>
+  <rect x="916" y="216" width="104" height="24" rx="12" fill="#f29d0b" fill-opacity="0.15"/>
+  <circle cx="930" cy="228" r="3.5" fill="#f29d0b"/>
+  <text x="939" y="232" font-size="11" font-weight="600" fill="#f29d0b">In Progress</text>
+  <rect x="1028" y="216" width="58" height="24" rx="12" fill="#f2721c" fill-opacity="0.15"/>
+  <text x="1044" y="232" font-size="11" font-weight="600" fill="#f2721c">High</text>
+  <circle cx="1112" cy="228" r="11" fill="#4f8cff"/>
+  <text x="1112" y="232" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+  <rect x="1134" y="216" width="56" height="24" rx="12" fill="#f7f6fb" stroke="#eeedf5"/>
+  <text x="1146" y="232" font-size="11" font-weight="600" fill="#514e66">3 pts</text>
+
+  <line x1="900" y1="256" x2="1270" y2="256" stroke="#eeedf5"/>
+  <text x="916" y="284" font-size="14" font-weight="600" fill="#15131f">Description</text>
+  <rect x="916" y="296" width="250" height="7" rx="3.5" fill="#eeedf5"/>
+  <rect x="916" y="308" width="180" height="7" rx="3.5" fill="#eeedf5"/>
+  <text x="1240" y="296" font-size="16" fill="#b6b3c8" text-anchor="middle">›</text>
+  <line x1="916" y1="326" x2="1254" y2="326" stroke="#eeedf5"/>
+
+  <text x="916" y="352" font-size="14" font-weight="600" fill="#15131f">Sub-issues</text>
+  <text x="1150" y="352" font-size="11" fill="#7a7791">2 of 4 done</text>
+  <rect x="916" y="362" width="150" height="6" rx="3" fill="#eeedf5"/>
+  <rect x="916" y="362" width="75" height="6" rx="3" fill="#6342db"/>
+  <text x="1240" y="356" font-size="16" fill="#b6b3c8" text-anchor="middle">›</text>
+  <line x1="916" y1="384" x2="1254" y2="384" stroke="#eeedf5"/>
+
+  <text x="916" y="410" font-size="14" font-weight="600" fill="#15131f">Links</text>
+  <circle cx="925" cy="430" r="7" stroke="#e0424a" stroke-width="2" fill="none"/>
+  <line x1="920" y1="425" x2="930" y2="435" stroke="#e0424a" stroke-width="2"/>
+  <text x="940" y="434" font-size="12" fill="#514e66">Blocked by</text>
+  <text x="1010" y="434" font-size="12" font-weight="600" fill="#6342db">ENG-131</text>
+  <text x="1240" y="426" font-size="16" fill="#b6b3c8" text-anchor="middle">›</text>
+  <line x1="916" y1="450" x2="1254" y2="450" stroke="#eeedf5"/>
+
+  <text x="916" y="476" font-size="14" font-weight="600" fill="#15131f">Development</text>
+  <rect x="916" y="486" width="172" height="26" rx="8" fill="#f7f6fb" stroke="#eeedf5"/>
+  <circle cx="928" cy="499" r="3" stroke="#7a7791" stroke-width="1.5" fill="none"/>
+  <text x="936" y="503" font-size="11" font-family="ui-monospace, 'SF Mono', Menlo, monospace" fill="#514e66">eng-142-drag-ghost</text>
+  <rect x="1096" y="486" width="78" height="26" rx="8" fill="#12a474" fill-opacity="0.15"/>
+  <circle cx="1109" cy="499" r="3.5" fill="#12a474"/>
+  <text x="1118" y="503" font-size="11" font-weight="600" fill="#12a474">PR #87</text>
+  <line x1="916" y1="524" x2="1254" y2="524" stroke="#eeedf5"/>
+
+  <text x="916" y="550" font-size="14" font-weight="600" fill="#15131f">Attachments</text>
+  <rect x="1016" y="536" width="24" height="18" rx="9" fill="#f7f6fb" stroke="#eeedf5"/>
+  <text x="1028" y="549" font-size="11" font-weight="600" fill="#514e66" text-anchor="middle">2</text>
+  <text x="1240" y="550" font-size="16" fill="#b6b3c8" text-anchor="middle">›</text>
+  <line x1="916" y1="566" x2="1254" y2="566" stroke="#eeedf5"/>
+
+  <text x="916" y="596" font-size="12" font-weight="600" fill="#7a7791">Activity</text>
+  <circle cx="928" cy="626" r="10" fill="#2fd4a7"/>
+  <text x="928" y="630" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">DP</text>
+  <rect x="946" y="616" width="220" height="7" rx="3.5" fill="#eeedf5"/>
+  <rect x="946" y="629" width="150" height="7" rx="3.5" fill="#eeedf5"/>
+  <circle cx="928" cy="668" r="10" fill="#ffb648"/>
+  <text x="928" y="672" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">SR</text>
+  <rect x="946" y="658" width="240" height="7" rx="3.5" fill="#eeedf5"/>
+  <rect x="946" y="671" width="120" height="7" rx="3.5" fill="#eeedf5"/>
+  <circle cx="928" cy="710" r="10" fill="#4f8cff"/>
+  <text x="928" y="714" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+  <rect x="946" y="700" width="200" height="7" rx="3.5" fill="#eeedf5"/>
+  <rect x="946" y="713" width="170" height="7" rx="3.5" fill="#eeedf5"/>
+
+  <rect x="916" y="820" width="338" height="48" rx="10" fill="#ffffff" stroke="#dedcea"/>
+  <text x="932" y="849" font-size="14" fill="#b6b3c8">Leave a comment…</text>
+</g>
+
+<!-- ============ TABLET ============ -->
+<g clip-path="url(#ct)">
+  <!-- status bar -->
+  <text x="1374" y="129" font-size="14" font-weight="600" fill="#514e66">9:41</text>
+  <rect x="2418" y="124" width="3" height="4" fill="#514e66"/><rect x="2423" y="122" width="3" height="6" fill="#514e66"/><rect x="2428" y="120" width="3" height="8" fill="#514e66"/><rect x="2433" y="118" width="3" height="10" fill="#514e66"/>
+  <polygon points="2442,128 2454,128 2448,119" fill="#514e66"/>
+  <rect x="2456" y="118" width="20" height="10" rx="3" fill="#514e66"/><rect x="2477" y="121" width="3" height="5" rx="1" fill="#514e66"/>
+
+  <!-- nav rail -->
+  <rect x="1350" y="138" width="76" height="752" fill="#f7f6fb"/>
+  <line x1="1426" y1="138" x2="1426" y2="890" stroke="#eeedf5" stroke-width="2"/>
+  <rect x="1376" y="158" width="24" height="24" rx="7" fill="#6342db"/>
+  <rect x="1377" y="212" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="1388" y="250" font-size="11" fill="#7a7791" text-anchor="middle">Home</text>
+  <rect x="1377" y="290" width="22" height="22" rx="6" fill="#6342db"/>
+  <text x="1388" y="328" font-size="11" font-weight="600" fill="#6342db" text-anchor="middle">Board</text>
+  <rect x="1377" y="368" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="1388" y="406" font-size="11" fill="#7a7791" text-anchor="middle">Search</text>
+  <rect x="1377" y="446" width="22" height="22" rx="6" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="1388" y="484" font-size="11" fill="#7a7791" text-anchor="middle">Inbox</text>
+  <circle cx="1388" cy="535" r="11" fill="#eeedf5" stroke="#7a7791"/>
+  <text x="1388" y="562" font-size="11" fill="#7a7791" text-anchor="middle">You</text>
+
+  <!-- board region -->
+  <text x="1446" y="175" font-size="16" font-weight="700" fill="#15131f">ENG · Board</text>
+  <text x="1446" y="194" font-size="12" fill="#7a7791">Cycle 14 · 12 issues</text>
+
+  <rect x="1446" y="212" width="214" height="610" rx="12" fill="#f7f6fb"/>
+  <circle cx="1462" cy="234" r="4" fill="#f29d0b"/>
+  <text x="1472" y="238" font-size="13" font-weight="600" fill="#514e66">In Progress · 3</text>
+  <rect x="1458" y="254" width="190" height="76" rx="10" fill="#ffffff" stroke="#eeedf5"/>
+  <text x="1470" y="276" font-size="11" font-weight="600" fill="#7a7791">ENG-140</text>
+  <text x="1470" y="296" font-size="12" fill="#15131f">Offline mutation queue</text>
+  <circle cx="1630" cy="310" r="9" fill="#2fd4a7"/>
+  <text x="1630" y="314" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">DP</text>
+  <rect x="1458" y="342" width="190" height="76" rx="10" fill="#ffffff" stroke="#6342db" stroke-width="2"/>
+  <text x="1470" y="364" font-size="11" font-weight="600" fill="#7a7791">ENG-142</text>
+  <text x="1470" y="384" font-size="12" font-weight="600" fill="#15131f">Fix drag ghost offset</text>
+  <text x="1470" y="400" font-size="12" font-weight="600" fill="#15131f">on Safari</text>
+  <circle cx="1630" cy="398" r="9" fill="#4f8cff"/>
+  <text x="1630" y="402" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+  <rect x="1458" y="430" width="190" height="76" rx="10" fill="#ffffff" stroke="#eeedf5"/>
+  <text x="1470" y="452" font-size="11" font-weight="600" fill="#7a7791">ENG-152</text>
+  <text x="1470" y="472" font-size="12" fill="#15131f">Cycle burndown widget</text>
+  <circle cx="1630" cy="486" r="9" fill="#ffb648"/>
+  <text x="1630" y="490" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">SR</text>
+  <rect x="1458" y="518" width="190" height="76" rx="10" fill="#ffffff" stroke="#eeedf5"/>
+  <rect x="1470" y="538" width="60" height="7" rx="3.5" fill="#eeedf5"/>
+  <rect x="1470" y="556" width="150" height="8" rx="4" fill="#eeedf5"/>
+  <rect x="1470" y="572" width="110" height="8" rx="4" fill="#eeedf5"/>
+
+  <rect x="1676" y="212" width="214" height="610" rx="12" fill="#f7f6fb"/>
+  <circle cx="1692" cy="234" r="4" fill="#8b5cf6"/>
+  <text x="1702" y="238" font-size="13" font-weight="600" fill="#514e66">In Review · 2</text>
+  <rect x="1688" y="254" width="190" height="76" rx="10" fill="#ffffff" stroke="#eeedf5"/>
+  <text x="1700" y="276" font-size="11" font-weight="600" fill="#7a7791">ENG-138</text>
+  <text x="1700" y="296" font-size="12" fill="#15131f">Board swimlanes for</text>
+  <text x="1700" y="312" font-size="12" fill="#15131f">cycles</text>
+  <circle cx="1860" cy="310" r="9" fill="#ff6fae"/>
+  <text x="1860" y="314" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">MB</text>
+  <rect x="1688" y="342" width="190" height="76" rx="10" fill="#ffffff" stroke="#eeedf5"/>
+  <text x="1700" y="364" font-size="11" font-weight="600" fill="#7a7791">ENG-133</text>
+  <text x="1700" y="384" font-size="12" fill="#15131f">Avatar upload crop</text>
+  <circle cx="1860" cy="398" r="9" fill="#2fd4a7"/>
+  <text x="1860" y="402" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">DP</text>
+  <rect x="1688" y="430" width="190" height="76" rx="10" fill="#ffffff" stroke="#eeedf5"/>
+  <rect x="1700" y="450" width="60" height="7" rx="3.5" fill="#eeedf5"/>
+  <rect x="1700" y="468" width="150" height="8" rx="4" fill="#eeedf5"/>
+  <rect x="1700" y="484" width="100" height="8" rx="4" fill="#eeedf5"/>
+
+  <!-- detail panel -->
+  <line x1="1910" y1="110" x2="1910" y2="890" stroke="#eeedf5" stroke-width="2"/>
+  <text x="1934" y="172" font-size="13" font-weight="600" fill="#7a7791">ENG-142</text>
+  <text x="2322" y="172" font-size="12" font-weight="600" fill="#6342db" text-anchor="end">Watching</text>
+  <rect x="2330" y="156" width="46" height="24" rx="12" fill="#6342db"/>
+  <circle cx="2364" cy="168" r="9" fill="#ffffff"/>
+  <circle cx="2444" cy="168" r="2" fill="#514e66"/><circle cx="2452" cy="168" r="2" fill="#514e66"/><circle cx="2460" cy="168" r="2" fill="#514e66"/>
+  <text x="1934" y="206" font-size="21" font-weight="700" fill="#15131f">Fix drag ghost offset on Safari</text>
+
+  <!-- properties: two-column grid -->
+  <text x="1934" y="248" font-size="12" fill="#7a7791">Status</text>
+  <rect x="1934" y="258" width="110" height="26" rx="13" fill="#f29d0b" fill-opacity="0.15"/>
+  <circle cx="1950" cy="271" r="4" fill="#f29d0b"/>
+  <text x="1960" y="275" font-size="12" font-weight="600" fill="#f29d0b">In Progress</text>
+  <text x="2210" y="248" font-size="12" fill="#7a7791">Priority</text>
+  <rect x="2210" y="258" width="70" height="26" rx="13" fill="#f2721c" fill-opacity="0.15"/>
+  <rect x="2222" y="268" width="3" height="7" fill="#f2721c"/><rect x="2227" y="265" width="3" height="10" fill="#f2721c"/><rect x="2232" y="262" width="3" height="13" fill="#f2721c"/>
+  <text x="2240" y="275" font-size="12" font-weight="600" fill="#f2721c">High</text>
+  <text x="1934" y="316" font-size="12" fill="#7a7791">Assignee</text>
+  <circle cx="1947" cy="335" r="12" fill="#4f8cff"/>
+  <text x="1947" y="339" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">AK</text>
+  <text x="1966" y="340" font-size="13" fill="#15131f">Amina K.</text>
+  <text x="2210" y="316" font-size="12" fill="#7a7791">Estimate</text>
+  <rect x="2210" y="324" width="76" height="24" rx="12" fill="#f7f6fb" stroke="#eeedf5"/>
+  <text x="2222" y="340" font-size="12" font-weight="600" fill="#514e66">3 points</text>
+
+  <line x1="1934" y1="366" x2="2476" y2="366" stroke="#eeedf5"/>
+
+  <!-- description expanded -->
+  <text x="1934" y="392" font-size="14" font-weight="600" fill="#15131f">Description</text>
+  <text x="1934" y="414" font-size="13" fill="#514e66">Dragging a card in board view on Safari 17 offsets the drag</text>
+  <text x="1934" y="434" font-size="13" fill="#514e66">ghost by the container scroll position. Repro with two or</text>
+  <text x="1934" y="454" font-size="13" fill="#514e66">more columns scrolled horizontally.</text>
+
+  <!-- sub-issues expanded -->
+  <text x="1934" y="486" font-size="14" font-weight="600" fill="#15131f">Sub-issues</text>
+  <rect x="2246" y="478" width="140" height="6" rx="3" fill="#eeedf5"/>
+  <rect x="2246" y="478" width="70" height="6" rx="3" fill="#6342db"/>
+  <text x="2476" y="486" font-size="12" fill="#7a7791" text-anchor="end">2 of 4 done</text>
+  <rect x="1944" y="500" width="16" height="16" rx="4" fill="#12a474"/>
+  <text x="1952" y="512" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">✓</text>
+  <text x="1970" y="513" font-size="13" fill="#7a7791">ENG-148 · Correct ghost offset math</text>
+  <rect x="1944" y="532" width="16" height="16" rx="4" fill="#12a474"/>
+  <text x="1952" y="544" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">✓</text>
+  <text x="1970" y="545" font-size="13" fill="#7a7791">ENG-149 · Pointer capture on drag start</text>
+  <rect x="1944" y="564" width="16" height="16" rx="4" fill="#ffffff" stroke="#dedcea" stroke-width="1.5"/>
+  <text x="1970" y="577" font-size="13" fill="#514e66">ENG-150 · Regression test on Safari</text>
+  <rect x="1944" y="596" width="16" height="16" rx="4" fill="#ffffff" stroke="#dedcea" stroke-width="1.5"/>
+  <text x="1970" y="609" font-size="13" fill="#514e66">ENG-151 · QA pass on iPad split view</text>
+
+  <!-- links -->
+  <text x="1934" y="648" font-size="14" font-weight="600" fill="#15131f">Links</text>
+  <circle cx="1943" cy="668" r="8" stroke="#e0424a" stroke-width="2" fill="none"/>
+  <line x1="1937.4" y1="662.4" x2="1948.6" y2="673.6" stroke="#e0424a" stroke-width="2"/>
+  <text x="1960" y="672" font-size="13" fill="#514e66">Blocked by</text>
+  <text x="2034" y="672" font-size="13" font-weight="600" fill="#6342db">ENG-131</text>
+  <circle cx="2108" cy="668" r="4" fill="#6f6c86"/>
+  <text x="2118" y="672" font-size="12" fill="#7a7791">Todo</text>
+
+  <!-- development -->
+  <text x="1934" y="704" font-size="14" font-weight="600" fill="#15131f">Development</text>
+  <rect x="1934" y="714" width="190" height="28" rx="8" fill="#f7f6fb" stroke="#eeedf5"/>
+  <circle cx="1948" cy="728" r="3.5" stroke="#7a7791" stroke-width="1.5" fill="none"/>
+  <text x="1958" y="732" font-size="12" font-family="ui-monospace, 'SF Mono', Menlo, monospace" fill="#514e66">eng-142-drag-ghost</text>
+  <rect x="2134" y="714" width="88" height="28" rx="8" fill="#12a474" fill-opacity="0.15"/>
+  <circle cx="2148" cy="728" r="4" fill="#12a474"/>
+  <text x="2158" y="732" font-size="12" font-weight="600" fill="#12a474">PR #87</text>
+  <text x="2236" y="732" font-size="12" fill="#7a7791">2 commits · updated 1h ago</text>
+
+  <!-- attachments -->
+  <text x="1934" y="776" font-size="14" font-weight="600" fill="#15131f">Attachments (2)</text>
+  <rect x="1934" y="788" width="96" height="64" rx="8" fill="#eeedf5"/>
+  <polygon points="1946,842 1964,814 1974,828 1984,812 2018,842" fill="#b6b3c8"/>
+  <circle cx="1956" cy="804" r="5" fill="#b6b3c8"/>
+  <rect x="2042" y="788" width="96" height="64" rx="8" fill="#eeedf5"/>
+  <circle cx="2090" cy="820" r="18" stroke="#b6b3c8" stroke-width="3" fill="none"/>
+</g>
+
+<!-- Frame borders on top -->
+<rect x="60" y="110" width="390" height="780" rx="28" fill="none" stroke="#dedcea" stroke-width="2"/>
+<rect x="530" y="110" width="740" height="780" rx="28" fill="none" stroke="#dedcea" stroke-width="2"/>
+<rect x="1350" y="110" width="1150" height="780" rx="28" fill="none" stroke="#dedcea" stroke-width="2"/>
+
+<!-- Footer -->
+<text x="1280" y="960" font-size="16" fill="#7a7791" text-anchor="middle">Issue detail pushes as a full screen on phone; on foldable and tablet it docks as a persistent split pane beside the board list.</text>
+</svg>

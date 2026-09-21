@@ -14,6 +14,13 @@ COPY . .
 ARG VITE_API_BASE_URL=http://localhost:8000
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
+# Where the browser app is reachable, baked into the Open Graph tags in
+# index.html so a link to this instance unfurls with an absolute image and
+# URL. Same value as the backend's APP_BASE_URL, and build time for the same
+# reason as above: there is no server here to fill it in per request.
+ARG APP_BASE_URL=http://localhost:5173
+ENV APP_BASE_URL=$APP_BASE_URL
+
 RUN npm run build
 
 # ---- serve ----

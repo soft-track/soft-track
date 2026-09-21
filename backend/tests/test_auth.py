@@ -73,8 +73,12 @@ def test_me_returns_the_current_user(client, auth):
         "avatar_color",
         "is_active",
         "is_site_admin",
+        "has_password",
         "created_at",
     }
+    # Registered with one, so it has one. False is reserved for an account
+    # created by signing in with Google or GitHub -- see test_oauth.py.
+    assert body["has_password"] is True
 
 
 def test_me_requires_a_token(client):
@@ -115,3 +119,46 @@ def test_a_token_without_a_version_still_works(client, auth):
     )
     response = client.get("/auth/me", headers={"Authorization": f"Bearer {legacy}"})
     assert response.status_code == 200
+
+
+def test_auth_config_is_exactly_what_the_signed_out_pages_need(client):
+    """The whole payload, not one key.
+
+    /auth/config is unauthenticated by necessity, so what it carries is worth
+    pinning: a field added here is served to anyone who can reach the host.
+    """
+    assert client.get("/auth/config").json() == {
+        "open_registration": True,
+        "landing_page": True,
+        "demo_credentials": True,
+        # Names only, and only for providers with credentials configured. The
+        # default install has none, so the sign-in page shows no buttons.
+        "oauth_providers": [],
+    }
+
+
+def test_auth_config_reports_the_landing_page_switched_off(client, monkeypatch):
+    from web import settings
+
+    monkeypatch.setattr(settings, "landing_page", False)
+    assert client.get("/auth/config").json()["landing_page"] is False
+
+
+def test_the_demo_hint_is_not_offered_outside_the_demo(client, monkeypatch):
+    """The bug this endpoint field exists to fix.
+
+    Before it, LoginPage printed `demo@softtrack.dev / password123` under the
+    button on every instance -- a working password on the front page of a
+    company's own tracker.
+    """
+    from web import settings
+
+    monkeypatch.setattr(settings, "environment", "production")
+    assert client.get("/auth/config").json()["demo_credentials"] is False
+
+
+def test_the_demo_hint_is_offered_on_the_demo(client, monkeypatch):
+    from web import settings
+
+    monkeypatch.setattr(settings, "environment", "demo")
+    assert client.get("/auth/config").json()["demo_credentials"] is True

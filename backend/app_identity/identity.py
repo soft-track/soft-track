@@ -19,6 +19,7 @@ from lib_identity.models.identity import (
     UserMe,
     UserUpdate,
 )
+from lib_identity.oauth_providers import configured_providers
 from lib_softtrack.models.invites import InviteRead
 from lib_softtrack.tables import User
 from lib_utils.rate_limit import (
@@ -38,10 +39,19 @@ def auth_config():
 
     Public by necessity: the register page has to know whether to show a form
     or an "ask an admin for a link" notice, and it asks before authenticating.
-    It reveals only that this instance is invite-only, which its sign-up page
-    would say out loud anyway.
+    It reveals only that this instance is invite-only, whether it has a landing
+    page, whether it is the demo, and which sign-in providers are set up -- all
+    four of which the signed-out pages say out loud anyway. Note the last one
+    is provider *names*, never their client ids: the id is public in an
+    authorization URL, but it does not have to be published to anyone who can
+    reach the host.
     """
-    return AuthConfig(open_registration=settings.open_registration)
+    return AuthConfig(
+        open_registration=settings.open_registration,
+        landing_page=settings.landing_page,
+        demo_credentials=settings.demo_credentials_are_public,
+        oauth_providers=configured_providers(),
+    )
 
 
 @router.post("/register", response_model=Token)

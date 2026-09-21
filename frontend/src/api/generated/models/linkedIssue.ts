@@ -13,6 +13,8 @@ import type { StatusRead } from './statusRead';
  */
 export interface LinkedIssue {
   id: number;
+  team_key: string;
+  number: number;
   identifier: string;
   title: string;
   status: StatusRead;

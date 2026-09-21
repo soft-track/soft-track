@@ -181,9 +181,7 @@ export function IssueLinksSection({ issueId }: { issueId: number }) {
                   <LinkRow
                     key={row.id}
                     row={row}
-                    onOpen={() =>
-                      navigate(`/${team.key}/issue/${row.issue.identifier.split('-')[1]}`)
-                    }
+                    onOpen={() => navigate(`/${row.issue.team_key}/issue/${row.issue.number}`)}
                     onRemove={() => remove(row.id)}
                   />
                 ))}

@@ -47,6 +47,8 @@ def _parent_ref(issue: Issue, session: Session) -> Optional[ParentRef]:
     team = session.get(Team, parent.team_id)
     return ParentRef(
         id=parent.id,
+        team_key=team.key,
+        number=parent.number,
         identifier=f"{team.key}-{parent.number}",
         title=parent.title,
     )
@@ -66,6 +68,7 @@ def issue_to_read(issue: Issue, session: Session) -> IssueRead:
     return IssueRead(
         id=issue.id,
         team_id=issue.team_id,
+        team_key=team.key,
         project_id=issue.project_id,
         number=issue.number,
         identifier=f"{team.key}-{issue.number}",
@@ -147,6 +150,7 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
         IssueRead(
             id=issue.id,
             team_id=issue.team_id,
+            team_key=teams[issue.team_id].key,
             project_id=issue.project_id,
             number=issue.number,
             identifier=f"{teams[issue.team_id].key}-{issue.number}",
@@ -180,6 +184,8 @@ def _parent_ref_from(parent: Optional[Issue], teams: dict) -> Optional[ParentRef
         return None
     return ParentRef(
         id=parent.id,
+        team_key=teams[parent.team_id].key,
+        number=parent.number,
         identifier=f"{teams[parent.team_id].key}-{parent.number}",
         title=parent.title,
     )
@@ -401,6 +407,19 @@ def export_issues(
 def get_issue(session: Session, current_user: User, issue_id: int) -> IssueRead:
     issue = get_issue_or_404(session, issue_id)
     require_team_member(issue.team_id, current_user, session)
+    return issue_to_read(issue, session)
+
+
+def get_issue_by_number(
+    session: Session, current_user: User, team_id: int, number: int
+) -> IssueRead:
+    get_team_or_404(team_id, session)
+    require_team_member(team_id, current_user, session)
+    issue = session.exec(
+        select(Issue).where(Issue.team_id == team_id, Issue.number == number)
+    ).one_or_none()
+    if not issue:
+        raise HTTPException(status_code=404, detail="Issue not found")
     return issue_to_read(issue, session)
 
 

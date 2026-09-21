@@ -33,6 +33,8 @@ def test_a_child_can_be_created_under_a_parent(client, team):
     assert child["parent"]["id"] == parent["id"]
     assert child["parent"]["title"] == "Ship the release"
     assert child["parent"]["identifier"].startswith("ENG-")
+    assert child["parent"]["team_key"] == "ENG"
+    assert child["parent"]["number"] == parent["number"]
 
 
 def test_an_existing_issue_can_be_nested_later(client, team):
@@ -188,6 +190,7 @@ def test_the_list_endpoint_reports_the_same_counts(client, team):
     ).json()["items"]
     by_title = {item["title"]: item for item in items}
 
+    assert by_title["C"]["team_key"] == "ENG"
     assert by_title["P"]["child_count"] == 1
     assert by_title["P"]["completed_child_count"] == 1
     assert by_title["C"]["parent"]["id"] == parent["id"]

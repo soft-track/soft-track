@@ -4,7 +4,6 @@ import { parseServerDate } from '@/api/dates'
 
 import type { SearchHit } from '@/api/generated/models'
 import { PriorityIcon } from '@/issues/PriorityIcon'
-import { useTeamContext } from '@/team/TeamContext'
 import { Loading } from '@/ui/Loading'
 
 /** Where the match was found, said plainly. */
@@ -26,7 +25,6 @@ export function SearchResults({
   isLoading: boolean
 }) {
   const navigate = useNavigate()
-  const { team } = useTeamContext()
 
   if (isLoading) {
     return <Loading label="Searching…" />
@@ -61,7 +59,7 @@ export function SearchResults({
             <li key={hit.id}>
               <button
                 type="button"
-                onClick={() => navigate(`/${team.key}/issue/${hit.identifier.split('-')[1]}`)}
+                onClick={() => navigate(`/${hit.team_key}/issue/${hit.number}`)}
                 className="w-full px-4 py-3 text-left transition-colors hover:bg-neutral-900/4 focus:outline-none focus-visible:bg-brand-500/10"
               >
                 <div className="flex items-center gap-2.5">

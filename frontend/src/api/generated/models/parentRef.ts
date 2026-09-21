@@ -11,6 +11,8 @@
  */
 export interface ParentRef {
   id: number;
+  team_key: string;
+  number: number;
   identifier: string;
   title: string;
 }

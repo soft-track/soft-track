@@ -12,6 +12,7 @@ The properties most of these guard, in the order they would hurt if they broke:
 """
 
 import pytest
+from sqlmodel import select
 
 from lib_softtrack.tables import IssueEvent
 
@@ -873,7 +874,9 @@ def test_an_automated_change_is_recorded_with_no_actor(client, pair, session):
     )
 
     events = sorted(
-        session.query(IssueEvent).filter(IssueEvent.issue_id == issue["id"]).all(),
+        session.exec(
+            select(IssueEvent).where(IssueEvent.issue_id == issue["id"])
+        ).all(),
         key=lambda row: row.id,
     )
     opening = [row for row in events if row.new_value == "backlog"]

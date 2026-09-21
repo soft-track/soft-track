@@ -14,6 +14,7 @@ import type { UserPublic } from './userPublic';
 export interface IssueRead {
   id: number;
   team_id: number;
+  team_key: string;
   project_id?: number | null;
   number: number;
   identifier: string;

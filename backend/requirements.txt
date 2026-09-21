@@ -5,6 +5,10 @@ bcrypt==5.0.0
 dnspython==2.8.0
 email-validator==2.3.0
 fastapi==0.141.1
+# The outbound client for the OAuth token and profile calls. Was dev-only (it
+# is what TestClient drives); signing in with Google or GitHub is the first
+# thing SoftTrack does that has to reach a third party at runtime.
+httpx==0.28.1
 pydantic-settings==2.15.0
 pydantic==2.13.5
 pydantic_core==2.46.5

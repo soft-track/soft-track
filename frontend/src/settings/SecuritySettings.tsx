@@ -6,10 +6,11 @@ import {
 } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/AuthContext'
+import { ConnectedAccounts } from '@/settings/ConnectedAccounts'
 import { Icon } from '@/ui/Icon'
 
 export default function SecuritySettings() {
-  const { setSession } = useAuth()
+  const { user, setSession } = useAuth()
   const changePassword = useChangeMyPasswordAuthMePasswordPost()
   const signOutEverywhere = useSignOutEverywhereRouteAuthMeSignOutEverywherePost()
 
@@ -18,6 +19,12 @@ export default function SecuritySettings() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+
+  // An account created by signing in with Google or GitHub has no password to
+  // confirm, so this form sets the first one instead of changing one. Assume
+  // there is a password until /auth/me says otherwise: the field appearing a
+  // moment late is worse than it disappearing a moment late.
+  const settingFirstPassword = user?.has_password === false
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -31,7 +38,10 @@ export default function SecuritySettings() {
 
     try {
       const token = await changePassword.mutateAsync({
-        data: { current_password: current, new_password: next },
+        data: {
+          current_password: settingFirstPassword ? undefined : current,
+          new_password: next,
+        },
       })
       // The change invalidated every token including this tab's, so adopt the
       // fresh one the API returned rather than being bounced to /login.
@@ -39,7 +49,11 @@ export default function SecuritySettings() {
       setCurrent('')
       setNext('')
       setConfirm('')
-      setNotice('Password changed. Every other session has been signed out.')
+      setNotice(
+        settingFirstPassword
+          ? 'Password set. You can now sign in with your email address too.'
+          : 'Password changed. Every other session has been signed out.',
+      )
     } catch (err: unknown) {
       setError(errorDetail(err, 'Could not change your password.'))
     }
@@ -67,9 +81,13 @@ export default function SecuritySettings() {
   return (
     <div className="space-y-4">
       <form onSubmit={onSubmit} className="glass-strong sheen rounded-panel p-6">
+        {/* The page's heading, not the card's: Connected accounts and Sign
+            out everywhere sit under it too. */}
         <h1 className="text-lg font-semibold tracking-tight text-neutral-900">Security</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          Changing your password signs out every other session.
+        <p className="mt-1 max-w-prose text-sm text-neutral-500">
+          {settingFirstPassword
+            ? 'This account signs in with a provider and has no password. Setting one adds email and password as a second way in — useful if that provider is ever switched off here.'
+            : 'Changing your password signs out every other session.'}
         </p>
 
         {error && (
@@ -88,19 +106,21 @@ export default function SecuritySettings() {
         )}
 
         <div className="mt-6 max-w-sm space-y-4">
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-neutral-700">
-              Current password
-            </span>
-            <input
-              type="password"
-              required
-              autoComplete="current-password"
-              value={current}
-              onChange={(e) => setCurrent(e.target.value)}
-              className="field"
-            />
-          </label>
+          {!settingFirstPassword && (
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+                Current password
+              </span>
+              <input
+                type="password"
+                required
+                autoComplete="current-password"
+                value={current}
+                onChange={(e) => setCurrent(e.target.value)}
+                className="field"
+              />
+            </label>
+          )}
 
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-neutral-700">
@@ -136,10 +156,16 @@ export default function SecuritySettings() {
 
         <div className="mt-6 flex justify-end">
           <button type="submit" disabled={changePassword.isPending} className="btn btn-primary">
-            {changePassword.isPending ? 'Changing…' : 'Change password'}
+            {changePassword.isPending
+              ? 'Saving…'
+              : settingFirstPassword
+                ? 'Set password'
+                : 'Change password'}
           </button>
         </div>
       </form>
+
+      <ConnectedAccounts />
 
       <section className="glass-strong rounded-panel p-6">
         <h2 className="text-base font-semibold tracking-tight text-neutral-900">

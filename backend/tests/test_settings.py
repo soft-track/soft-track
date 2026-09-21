@@ -38,3 +38,16 @@ def test_the_guard_only_rejects_the_published_default():
         environment="production", secret_key=DEV_SECRET_KEY + "-but-changed"
     )
     assert settings.secret_key != DEV_SECRET_KEY
+
+
+@pytest.mark.parametrize("environment", ["demo", "development"])
+def test_the_seeded_demo_password_may_be_shown_where_it_is_seeded(environment):
+    """Both environments are seeded by seed.py with the same account."""
+    settings = Settings(environment=environment, secret_key="a-real-secret-value")
+    assert settings.demo_credentials_are_public is True
+
+
+@pytest.mark.parametrize("environment", ["production", "staging"])
+def test_the_seeded_demo_password_is_not_shown_on_a_real_instance(environment):
+    settings = Settings(environment=environment, secret_key="a-real-secret-value")
+    assert settings.demo_credentials_are_public is False

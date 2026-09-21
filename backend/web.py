@@ -7,7 +7,7 @@ neither routing (`app_*`) nor business logic (`lib_*`) lives here.
 from pathlib import Path
 
 from pydantic import model_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import inspect
 from sqlmodel import Session, create_engine
 
@@ -37,6 +37,39 @@ class Settings(BaseSettings):
     #: How long an invitation link stays usable. Long enough to survive a
     #: holiday, short enough that a link found in an old inbox is dead.
     invite_expire_days: int = 7
+
+    # --- Signing in with Google or GitHub -------------------------------
+    #: Both halves or neither: a provider is offered only when it has an id
+    #: *and* a secret, because a button that cannot complete a sign-in is
+    #: worse than no button. Blank by default, so a self-hosted install that
+    #: wants no external dependency gets email and password and nothing else.
+    #:
+    #: The redirect URI to register with the provider is built from
+    #: `api_base_url`:  {api_base_url}/auth/oauth/{provider}/callback
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    github_client_id: str = ""
+    github_client_secret: str = ""
+    #: How long the browser has to come back from the provider before the
+    #: half-finished sign-in expires. Ten minutes covers reading a consent
+    #: screen, finding a phone and typing a code; it does not cover a tab left
+    #: open until tomorrow.
+    oauth_state_expire_minutes: int = 10
+
+    # --- The signed-out front door --------------------------------------
+    #: False sends a signed-out visitor from / straight to /login, which is
+    #: what SoftTrack did before there was a landing page at all.
+    #:
+    #: True by default, for the same reason `open_registration` is: the
+    #: defaults here are "open, then lock down", and an instance nobody has
+    #: configured yet is the one most likely to be opened by someone who does
+    #: not know what SoftTrack is. It is also what makes / worth linking to --
+    #: the Open Graph tags in index.html unfurl a page, not a login form.
+    #:
+    #: Turn it off on a company instance behind a VPN, where everyone opening
+    #: it already knows what it is and the page is one extra click every
+    #: morning for all of them.
+    landing_page: bool = True
 
     # --- Attachments ---------------------------------------------------
     #: "local" (files under attachment_dir) or "s3" (any S3-compatible
@@ -85,8 +118,7 @@ class Settings(BaseSettings):
     #: dozen issues generates one mail, not twelve.
     digest_delay_minutes: int = 10
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file=".env")
 
     @model_validator(mode="after")
     def _refuse_the_published_secret_in_production(self) -> "Settings":
@@ -127,6 +159,21 @@ class Settings(BaseSettings):
     @property
     def email_delivery_configured(self) -> bool:
         return bool(self.smtp_host)
+
+    @property
+    def demo_credentials_are_public(self) -> bool:
+        """Whether the sign-in page may print the seeded account's password.
+
+        True on the public demo and on a development machine: both are seeded
+        by `seed.py` with the same credentials, which are published in
+        CONTRIBUTING anyway, and a contributor who has just run
+        `docker compose up` is exactly who the hint is for.
+
+        Anywhere else is somebody's real instance. There the hint is a working
+        password advertised above the fold, and the prefilled address is one
+        every employee clears out before typing their own.
+        """
+        return self.environment in ("demo", "development")
 
 
 settings = Settings()

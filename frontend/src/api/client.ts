@@ -20,7 +20,12 @@ AXIOS_INSTANCE.interceptors.response.use(
   (error) => {
     if (error?.response?.status === 401) {
       localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
-      if (!window.location.pathname.startsWith('/login')) {
+      // /oauth/callback is the other route that exists to run without a valid
+      // session, and it owns its own failure path. A hard navigation from here
+      // would tear it down mid-exchange and replace the message it was about
+      // to show with a bare /login.
+      const path = window.location.pathname
+      if (!path.startsWith('/login') && !path.startsWith('/oauth/callback')) {
         window.location.href = '/login'
       }
     }

@@ -119,6 +119,54 @@ def test_a_missing_issue_is_a_404(client, team):
     assert client.get("/issues/99999", headers=team["headers"]).status_code == 404
 
 
+def test_an_issue_can_be_read_by_team_number(client, issue, team):
+    response = client.get(
+        f"/teams/{team['team']['id']}/issues/by-number/{issue['number']}",
+        headers=team["headers"],
+    )
+    assert response.status_code == 200
+    assert response.json() == issue
+
+
+def test_reading_a_number_in_the_wrong_team_is_a_404(client, issue, auth):
+    other_user = auth(email="other@softtrack.dev")
+    created_team = client.post(
+        "/teams",
+        json={"name": "Product", "key": "PROD"},
+        headers=other_user["headers"],
+    ).json()
+    response = client.get(
+        f"/teams/{created_team['id']}/issues/by-number/{issue['number']}",
+        headers=other_user["headers"],
+    )
+    assert response.status_code == 404
+
+
+def test_reading_an_issue_from_a_missing_team_is_a_404(client, team):
+    response = client.get(
+        "/teams/99999/issues/by-number/1",
+        headers=team["headers"],
+    )
+    assert response.status_code == 404
+
+
+def test_a_non_member_cannot_read_an_issue_by_team_number(client, issue, team, auth):
+    outsider = auth(email="number-outsider@softtrack.dev")
+    response = client.get(
+        f"/teams/{team['team']['id']}/issues/by-number/{issue['number']}",
+        headers=outsider["headers"],
+    )
+    assert response.status_code == 403
+
+
+def test_a_missing_issue_number_is_a_404(client, team):
+    response = client.get(
+        f"/teams/{team['team']['id']}/issues/by-number/99999",
+        headers=team["headers"],
+    )
+    assert response.status_code == 404
+
+
 def test_a_non_member_cannot_read_an_issue(client, issue, auth):
     outsider = auth(email="outsider@softtrack.dev")
     response = client.get(f"/issues/{issue['id']}", headers=outsider["headers"])

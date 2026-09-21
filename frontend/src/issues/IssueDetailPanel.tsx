@@ -119,7 +119,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
 
               <div className="mt-5 flex items-center gap-2 text-xs text-neutral-400">
                 <PriorityIcon priority={issue.priority} size={12} />
-                <Avatar user={issue.creator} size={16} />
+                <Avatar user={issue.creator} size={16} decorative />
                 <span>
                   Created by {issue.creator.full_name}{' '}
                   {formatDistanceToNow(parseServerDate(issue.created_at), { addSuffix: true })}

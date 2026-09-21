@@ -220,7 +220,7 @@ export default function TeamMembersSettings() {
         <ul className="divide-y divide-neutral-900/8">
           {(members.data ?? []).map((member) => (
             <li key={member.user.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
-              <Avatar user={member.user} size={34} inactive={!member.user.is_active} />
+              <Avatar user={member.user} size={34} inactive={!member.user.is_active} decorative />
               <div className="min-w-[14rem] flex-1">
                 <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-neutral-900">
                   {member.user.full_name}

@@ -128,6 +128,8 @@ def search_issues(
                 status=StatusRead.model_validate(statuses[issue.status_id]),
                 priority=issue.priority,
                 team_id=issue.team_id,
+                team_key=teams[issue.team_id].key,
+                number=issue.number,
                 updated_at=issue.updated_at,
                 matched_in=matched_in,
                 snippet=snippet,
