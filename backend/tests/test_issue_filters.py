@@ -6,6 +6,9 @@ already held, which quietly meant "urgent issues among the fifty most recent"
 `total` says so.
 """
 
+import csv
+import io
+
 import pytest
 
 
@@ -135,7 +138,12 @@ def test_a_filter_sees_past_the_first_page(client, board):
 
 
 def test_export_respects_filters_and_is_unpaginated(client, board):
-    # Create a matching issue and many filler issues so the match falls off
+    """The reason the export has no `limit`.
+
+    The one match is pushed off the first page by sixty issues filed after
+    it, so an export that paginated like the list would hand back a
+    spreadsheet that does not contain the thing it was filtered for.
+    """
     match = client.post(
         f"/teams/{board['team_id']}/issues",
         json={"title": "needle for export", "priority": "urgent"},
@@ -153,10 +161,34 @@ def test_export_respects_filters_and_is_unpaginated(client, board):
         headers=board["headers"],
     )
     assert response.status_code == 200
-    import io, csv
+    rows = list(csv.reader(io.StringIO(response.content.decode("utf-8-sig"))))
 
-    text = response.content.decode("utf-8-sig")
-    rows = list(csv.reader(io.StringIO(text)))
-    # One header row + one matching issue
+    # The header and the one match, and nothing else.
     assert len(rows) == 2
+    assert rows[1][0] == match["identifier"]
     assert rows[1][1] == "needle for export"
+
+
+def test_export_counts_a_labelled_issue_once(client, board):
+    """The label filter is a subquery for the same reason the list's is: a
+    join would repeat the row once per matching link."""
+    second = client.post(
+        f"/teams/{board['team_id']}/labels",
+        json={"name": "Urgent"},
+        headers=board["headers"],
+    ).json()
+    both = client.post(
+        f"/teams/{board['team_id']}/issues",
+        json={"title": "two labels", "label_ids": [board["bug"]["id"], second["id"]]},
+        headers=board["headers"],
+    ).json()
+
+    response = client.get(
+        f"/teams/{board['team_id']}/issues/export?label_id={board['bug']['id']}",
+        headers=board["headers"],
+    )
+    rows = list(csv.reader(io.StringIO(response.content.decode("utf-8-sig"))))
+    keys = [row[0] for row in rows[1:]]
+
+    assert keys.count(both["identifier"]) == 1
+    assert sorted(keys) == sorted([both["identifier"], "ENG-1", "ENG-2"])

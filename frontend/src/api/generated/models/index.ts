@@ -40,6 +40,7 @@ export * from './cycleUpdate';
 export * from './defaultViewUpdate';
 export * from './estimateSummary';
 export * from './estimateSummaryByStatus';
+export * from './exportIssuesCsvTeamsTeamIdIssuesExportGetParams';
 export * from './flowPoint';
 export * from './gitProvider';
 export * from './hTTPValidationError';

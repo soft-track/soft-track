@@ -98,13 +98,24 @@ def cycle_progress(session: Session, cycle_ids: list[int]) -> dict[int, CyclePro
     return progress
 
 
+def display_name(cycle: Cycle) -> str:
+    """What to call a cycle anywhere a person will read it.
+
+    Naming a cycle is optional -- most teams never bother -- so an unnamed one
+    goes by its number instead. Everything that shows a cycle to somebody
+    (the API payload, reports, rule descriptions, the CSV export) has to make
+    the same substitution, so it is made here once.
+    """
+    return cycle.name or f"Cycle {cycle.number}"
+
+
 def cycle_to_read(cycle: Cycle, progress: CycleProgress) -> CycleRead:
     return CycleRead(
         id=cycle.id,
         team_id=cycle.team_id,
         number=cycle.number,
         name=cycle.name,
-        display_name=cycle.name or f"Cycle {cycle.number}",
+        display_name=display_name(cycle),
         starts_at=cycle.starts_at,
         ends_at=cycle.ends_at,
         state=cycle.state,

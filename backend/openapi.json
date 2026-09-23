@@ -1879,7 +1879,7 @@
           "issues"
         ],
         "summary": "Export Issues Csv",
-        "description": "Stream matching issues as a CSV file.",
+        "description": "Stream matching issues as a CSV file.\n\nThe same filters as the issue list, and deliberately no `limit`: an export\nof the first page would be a worse spreadsheet than the board it came\nfrom. The service hands back batches rather than rows so that stays\naffordable -- nothing here, or under it, holds the whole team's issues.",
         "operationId": "export_issues_csv_teams__team_id__issues_export_get",
         "security": [
           {
@@ -2031,10 +2031,13 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "The matching issues as a CSV file.",
             "content": {
-              "application/json": {
-                "schema": {}
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           },

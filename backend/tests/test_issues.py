@@ -1,4 +1,13 @@
+import csv
+import io
+
 import pytest
+from sqlmodel import Session
+
+from lib_softtrack import issues as issues_service
+from lib_softtrack.tables import Issue
+from main import app
+from web import get_session
 
 
 @pytest.fixture
@@ -183,30 +192,74 @@ def test_deleting_a_bare_issue(client, issue, team):
     )
 
 
-def test_export_issues_csv_basic(client, team):
-    # Create an issue with commas, quotes and newlines to test CSV escaping
-    special = client.post(
-        f"/teams/{team['team']['id']}/issues",
-        json={
-            "title": 'Title, with comma "quote" and \n newline',
-            "description": 'Desc with "quote", comma, and\nnew line',
-        },
-        headers=team["headers"],
-    ).json()
+@pytest.fixture
+def export_board(client, team):
+    """A team with something in every column an export has.
 
-    response = client.get(
-        f"/teams/{team['team']['id']}/issues/export", headers=team["headers"]
+    A project, a cycle, two labels, an assignee, an estimate and a parent, so
+    the one row this returns exercises every mapping rather than the handful
+    a bare issue happens to fill in.
+    """
+    team_id = team["team"]["id"]
+
+    def post(path, payload):
+        response = client.post(path, json=payload, headers=team["headers"])
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    project = post(f"/teams/{team_id}/projects", {"name": "Platform"})
+    # Unnamed on purpose: a cycle without a name is shown by its number, and
+    # that substitution is part of what the export has to get right.
+    cycle = post(
+        f"/teams/{team_id}/cycles",
+        {"starts_at": "2026-01-05T09:00:00", "ends_at": "2026-01-19T09:00:00"},
     )
-    assert response.status_code == 200
-    assert response.headers.get("content-type", "").split(";")[0] == "text/csv"
+    bug = post(f"/teams/{team_id}/labels", {"name": "Bug"})
+    chore = post(f"/teams/{team_id}/labels", {"name": "Chore"})
+    parent = post(f"/teams/{team_id}/issues", {"title": "Parent issue"})
+    child = post(
+        f"/teams/{team_id}/issues",
+        {
+            # Commas, quotes and a newline, so the row also pins the escaping.
+            "title": 'Title, with comma "quote" and\na newline',
+            "description": 'Desc with "quote", comma, and\nnew line',
+            "project_id": project["id"],
+            "cycle_id": cycle["id"],
+            "label_ids": [bug["id"], chore["id"]],
+            "assignee_id": team["user"]["id"],
+            "estimate": 5,
+            "parent_id": parent["id"],
+            "priority": "urgent",
+            "status_id": team["status_ids"]["In Progress"],
+        },
+    )
+    return {
+        **team,
+        "team_id": team_id,
+        "project": project,
+        "cycle": cycle,
+        "parent": parent,
+        "child": child,
+    }
 
-    # Ensure BOM present and CSV headers
+
+def export_rows(client, board, query=""):
+    """The parsed CSV, header row included."""
+    response = client.get(
+        f"/teams/{board['team_id']}/issues/export?{query}", headers=board["headers"]
+    )
+    assert response.status_code == 200, response.text
+    assert response.headers["content-type"].split(";")[0] == "text/csv"
+    assert response.headers["content-disposition"] == "attachment; filename=issues.csv"
+    # Excel reads a BOM-less file as the machine's local codepage.
     assert response.content.startswith(b"\xef\xbb\xbf")
     text = response.content.decode("utf-8-sig")
-    import io, csv
+    assert text.endswith("\r\n")
+    return list(csv.reader(io.StringIO(text)))
 
-    rows = list(csv.reader(io.StringIO(text)))
-    assert rows[0] == [
+
+def test_the_export_header_names_every_column(client, export_board):
+    assert export_rows(client, export_board)[0] == [
         "key",
         "title",
         "description",
@@ -223,45 +276,55 @@ def test_export_issues_csv_basic(client, team):
         "parent_key",
     ]
 
-    # Find our special issue row by title
-    titles = [r[1] for r in rows[1:]]
-    assert any('Title, with comma "quote"' in t for t in titles)
 
-    # `created` and `updated` read as plain spreadsheet dates: no `T`, no
-    # microseconds.
-    import re
+def test_every_column_carries_its_value(client, export_board, session):
+    """The whole row, field by field.
 
-    for row in rows[1:]:
-        created, updated = row[11], row[12]
-        assert re.fullmatch(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", created), created
-        assert re.fullmatch(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", updated), updated
+    Asserted as one list rather than a substring per column: a mapping that is
+    dropped, or moved one place along, has to fail here.
+    """
+    child = export_board["child"]
+    stored = session.get(Issue, child["id"])
+    rows = export_rows(client, export_board)
+    row = next(r for r in rows[1:] if r[0] == child["identifier"])
+
+    assert row == [
+        "ENG-2",
+        'Title, with comma "quote" and\na newline',
+        'Desc with "quote", comma, and\nnew line',
+        "In Progress",
+        "urgent",
+        export_board["user"]["username"],
+        "Bug;Chore",
+        "Platform",
+        "Cycle 1",
+        "5",
+        export_board["user"]["username"],
+        stored.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        stored.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+        export_board["parent"]["identifier"],
+    ]
 
 
-def test_non_member_cannot_export(client, issue, auth):
-    outsider = auth(email="outsider2@softtrack.dev")
-    response = client.get(
-        f"/teams/{issue['team_id']}/issues/export", headers=outsider["headers"]
-    )
-    assert response.status_code == 403
+def test_an_issue_with_nothing_set_leaves_those_cells_empty(client, export_board):
+    """The other half of the mapping: absent is an empty cell, not "None"."""
+    parent = export_board["parent"]
+    rows = export_rows(client, export_board)
+    row = next(r for r in rows[1:] if r[0] == parent["identifier"])
+
+    # assignee, labels, project, cycle, estimate, parent_key.
+    assert [row[5], row[6], row[7], row[8], row[9], row[13]] == ["", "", "", "", "", ""]
+    assert row[1] == "Parent issue"
+    assert row[4] == "no_priority"
 
 
 def test_export_timestamps_are_formatted_without_losing_the_stored_value(
-    client, issue, team, session
+    client, export_board, session
 ):
     """The CSV is reformatted; the row behind it keeps its full precision."""
-    import csv
-    import io
-
-    from lib_softtrack.tables import Issue
-
-    stored = session.get(Issue, issue["id"])
-    response = client.get(
-        f"/teams/{issue['team_id']}/issues/export", headers=team["headers"]
-    )
-    assert response.status_code == 200
-
-    rows = list(csv.reader(io.StringIO(response.content.decode("utf-8-sig"))))
-    row = next(r for r in rows[1:] if r[0] == issue["identifier"])
+    stored = session.get(Issue, export_board["child"]["id"])
+    rows = export_rows(client, export_board)
+    row = next(r for r in rows[1:] if r[0] == export_board["child"]["identifier"])
 
     assert row[11] == stored.created_at.strftime("%Y-%m-%d %H:%M:%S")
     assert row[12] == stored.updated_at.strftime("%Y-%m-%d %H:%M:%S")
@@ -270,7 +333,75 @@ def test_export_timestamps_are_formatted_without_losing_the_stored_value(
     assert stored.created_at.isoformat() != row[11]
 
 
-def test_export_timestamp_helper_handles_a_missing_value():
-    from app_softtrack.issues import _csv_timestamp
+def test_the_export_streams_past_one_batch(client, export_board, monkeypatch):
+    """Every matching issue comes out exactly once, over several batches.
 
-    assert _csv_timestamp(None) == ""
+    The batch size is turned down rather than the issue count up: what is
+    worth testing is the cursor between batches, and a boundary bug drops or
+    repeats a row whether the batch holds two issues or five hundred.
+    """
+    monkeypatch.setattr(issues_service, "EXPORT_BATCH_SIZE", 2)
+    for n in range(5):
+        client.post(
+            f"/teams/{export_board['team_id']}/issues",
+            json={"title": f"filler {n}"},
+            headers=export_board["headers"],
+        )
+
+    keys = [row[0] for row in export_rows(client, export_board)[1:]]
+
+    assert keys == [f"ENG-{n}" for n in range(7, 0, -1)]
+
+
+#: Tables the export must never read on the request's own session. Whether
+#: FastAPI closes a `yield` dependency before or after a streaming body has
+#: moved between versions, so the export does not depend on the answer: it
+#: checks who is asking on the request's session and then reads every row on
+#: one it opens and closes itself.
+_REQUEST_SESSION_MUST_NOT_READ = ("issue", "project", "cycle", "label")
+
+
+def test_the_rows_are_read_on_the_export_s_own_session(client, export_board, session):
+    """The request's session authorises the export and nothing more.
+
+    The `client` fixture hands out a single session that is never closed,
+    which would hide a generator still using the request's one, so this puts
+    a real per-request session back and watches what it is asked for.
+    """
+    statements = []
+    fetched = []
+
+    class Tripwire(Session):
+        def exec(self, statement, *args, **kwargs):
+            statements.append(str(statement).lower())
+            return super().exec(statement, *args, **kwargs)
+
+        def get(self, entity, *args, **kwargs):
+            fetched.append(entity.__name__.lower())
+            return super().get(entity, *args, **kwargs)
+
+    def request_scoped_session():
+        with Tripwire(session.get_bind()) as scoped:
+            yield scoped
+
+    app.dependency_overrides[get_session] = request_scoped_session
+    try:
+        rows = export_rows(client, export_board)
+    finally:
+        app.dependency_overrides[get_session] = lambda: session
+
+    assert statements, "the tripwire session was never used, so this proves nothing"
+    for table in _REQUEST_SESSION_MUST_NOT_READ:
+        assert table not in fetched
+        assert not any(f" {table} " in text for text in statements), table
+
+    # And the export still came out whole, off the session it opened itself.
+    assert [row[0] for row in rows[1:]] == ["ENG-2", "ENG-1"]
+
+
+def test_non_member_cannot_export(client, issue, auth):
+    outsider = auth(email="outsider2@softtrack.dev")
+    response = client.get(
+        f"/teams/{issue['team_id']}/issues/export", headers=outsider["headers"]
+    )
+    assert response.status_code == 403

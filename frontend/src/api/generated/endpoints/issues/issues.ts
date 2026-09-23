@@ -26,6 +26,7 @@ import type {
 
 import type {
   EstimateSummary,
+  ExportIssuesCsvTeamsTeamIdIssuesExportGetParams,
   HTTPValidationError,
   IssueCreate,
   IssueLinkCreate,
@@ -214,6 +215,113 @@ export function useListIssuesTeamsTeamIdIssuesGet<TData = Awaited<ReturnType<typ
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getListIssuesTeamsTeamIdIssuesGetQueryOptions(teamId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Stream matching issues as a CSV file.
+ *
+ * The same filters as the issue list, and deliberately no `limit`: an export
+ * of the first page would be a worse spreadsheet than the board it came
+ * from. The service hands back batches rather than rows so that stays
+ * affordable -- nothing here, or under it, holds the whole team's issues.
+ * @summary Export Issues Csv
+ */
+export const exportIssuesCsvTeamsTeamIdIssuesExportGet = (
+    teamId: number,
+    params?: ExportIssuesCsvTeamsTeamIdIssuesExportGetParams,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<Blob>(
+      {url: `/teams/${teamId}/issues/export`, method: 'GET',
+        params,
+        responseType: 'blob', signal
+    },
+      );
+    }
+
+
+
+
+export const getExportIssuesCsvTeamsTeamIdIssuesExportGetQueryKey = (teamId: number,
+    params?: ExportIssuesCsvTeamsTeamIdIssuesExportGetParams,) => {
+    return [
+    `/teams/${teamId}/issues/export`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getExportIssuesCsvTeamsTeamIdIssuesExportGetQueryOptions = <TData = Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>, TError = HTTPValidationError>(teamId: number,
+    params?: ExportIssuesCsvTeamsTeamIdIssuesExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportIssuesCsvTeamsTeamIdIssuesExportGetQueryKey(teamId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>> = ({ signal }) => exportIssuesCsvTeamsTeamIdIssuesExportGet(teamId,params, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: teamId !== null && teamId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ExportIssuesCsvTeamsTeamIdIssuesExportGetQueryResult = NonNullable<Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>>
+export type ExportIssuesCsvTeamsTeamIdIssuesExportGetQueryError = HTTPValidationError
+
+
+export function useExportIssuesCsvTeamsTeamIdIssuesExportGet<TData = Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    params: undefined |  ExportIssuesCsvTeamsTeamIdIssuesExportGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>,
+          TError,
+          Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useExportIssuesCsvTeamsTeamIdIssuesExportGet<TData = Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    params?: ExportIssuesCsvTeamsTeamIdIssuesExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>,
+          TError,
+          Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useExportIssuesCsvTeamsTeamIdIssuesExportGet<TData = Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    params?: ExportIssuesCsvTeamsTeamIdIssuesExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Export Issues Csv
+ */
+
+export function useExportIssuesCsvTeamsTeamIdIssuesExportGet<TData = Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    params?: ExportIssuesCsvTeamsTeamIdIssuesExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportIssuesCsvTeamsTeamIdIssuesExportGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getExportIssuesCsvTeamsTeamIdIssuesExportGetQueryOptions(teamId,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
