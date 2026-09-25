@@ -1,4 +1,6 @@
 import { AXIOS_INSTANCE } from '@/api/client'
+import { i18n } from '@/i18n'
+import { formatNumber } from '@/i18n/format'
 
 /**
  * The shape the API hands back in `AttachmentRead.url` and the shape that ends
@@ -57,9 +59,20 @@ export async function downloadAttachment(url: string, filename: string): Promise
 
 /** "512 kB", "1.4 MB" -- one decimal only where it says something. */
 export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} kB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  // No grouping: sizes read "1023 kB", not "1,023 kB".
+  if (bytes < 1024) {
+    return i18n.t('attachments:sizes.bytes', { size: formatNumber(bytes, { useGrouping: false }) })
+  }
+  if (bytes < 1024 * 1024) {
+    const size = formatNumber(Math.round(bytes / 1024), { useGrouping: false })
+    return i18n.t('attachments:sizes.kilobytes', { size })
+  }
+  const size = formatNumber(bytes / (1024 * 1024), {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+    useGrouping: false,
+  })
+  return i18n.t('attachments:sizes.megabytes', { size })
 }
 
 /**

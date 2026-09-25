@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm'
 
 import { AttachmentImage } from '@/attachments/AttachmentImage'
 import { isAttachmentUrl } from '@/attachments/urls'
+import { useTranslation } from '@/i18n'
 import type { Mentionable } from '@/markdown/mentions'
 import { remarkMentions } from '@/markdown/remarkMentions'
 import { remarkIssueKeys } from '@/markdown/remarkIssueKeys'
@@ -36,6 +37,7 @@ export function Markdown({
   className?: string
   teamKeys?: string[]
 }) {
+  const { t } = useTranslation('markdown')
   const plugins = useMemo(
     () => [remarkGfm, [remarkMentions, { people }], [remarkIssueKeys, { teamKeys }]] as PluggableList,
     [people, teamKeys],
@@ -83,7 +85,7 @@ export function Markdown({
             disabled={!onToggleTask}
             onChange={() => onToggleTask?.(offset)}
             className="mt-1 h-3.5 w-3.5 shrink-0 rounded border-neutral-300 accent-brand-600 disabled:opacity-60"
-            aria-label={checked ? 'Mark task as not done' : 'Mark task as done'}
+            aria-label={checked ? t('render.markNotDone') : t('render.markDone')}
           />
           <span className={checked ? 'text-neutral-400 line-through' : undefined}>{rest}</span>
         </li>

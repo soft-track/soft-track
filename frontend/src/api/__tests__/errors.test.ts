@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { ERROR_MESSAGES, errorCode, errorDetail } from '@/api/errors'
+import { errorCode, errorDetail, errorMessage } from '@/api/errors'
 
 const failed = (data: unknown) => ({ response: { data } })
 
 describe('errorDetail', () => {
   it('prefers the frontend message for a code it knows', () => {
     const err = failed({ detail: 'Only team admins can do that', code: 'not_team_admin' })
-    expect(errorDetail(err, 'fallback')).toBe(ERROR_MESSAGES.not_team_admin)
+    expect(errorDetail(err, 'fallback')).toBe(errorMessage('not_team_admin'))
   })
 
   it("falls back to the server's sentence for a code it does not know", () => {
@@ -39,5 +39,12 @@ describe('errorCode', () => {
     expect(errorCode(failed({ code: 'issue_not_found' }))).toBe('issue_not_found')
     expect(errorCode(failed({ code: 42 }))).toBeNull()
     expect(errorCode(undefined)).toBeNull()
+  })
+
+  it('reads its own words from the catalog, and has none for most codes (#106)', () => {
+    expect(errorMessage('not_team_admin')).toBe('Only an admin of this team can do that.')
+    expect(errorMessage('issue_not_found')).toBeUndefined()
+    const err = { response: { data: { code: 'issue_not_found', detail: 'Issue not found' } } }
+    expect(errorDetail(err, 'fallback')).toBe('Issue not found')
   })
 })

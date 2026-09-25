@@ -4,6 +4,7 @@ import type { AttachmentRead } from '@/api/generated/models'
 import { AttachmentImage } from '@/attachments/AttachmentImage'
 import { AttachmentPreviewDialog } from '@/attachments/AttachmentPreviewDialog'
 import { downloadAttachment, formatBytes } from '@/attachments/urls'
+import { useTranslation } from '@/i18n'
 import { Icon } from '@/ui/Icon'
 
 /**
@@ -25,6 +26,7 @@ export function AttachmentList({
   onRemove?: (attachment: AttachmentRead) => void
   compact?: boolean
 }) {
+  const { t } = useTranslation('attachments')
   const [previewing, setPreviewing] = useState<AttachmentRead | null>(null)
 
   if (attachments.length === 0) return null
@@ -41,7 +43,10 @@ export function AttachmentList({
           <button
             type="button"
             onClick={() => open(attachment)}
-            title={`${attachment.filename} · ${formatBytes(attachment.size_bytes)}`}
+            title={t('list.fileTitle', {
+              filename: attachment.filename,
+              size: formatBytes(attachment.size_bytes),
+            })}
             aria-haspopup={
               attachment.preview === 'pdf' || attachment.preview === 'text' ? 'dialog' : undefined
             }
@@ -74,7 +79,7 @@ export function AttachmentList({
             <button
               type="button"
               onClick={() => onRemove(attachment)}
-              aria-label={`Remove ${attachment.filename}`}
+              aria-label={t('list.remove', { filename: attachment.filename })}
               className="glass-strong absolute -right-1.5 -top-1.5 hidden h-5 w-5 items-center justify-center rounded-full text-neutral-500 hover:text-danger-600 focus:flex group-hover:flex"
             >
               <Icon name="close" size={11} strokeWidth={2.2} />

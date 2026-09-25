@@ -1,3 +1,5 @@
+import { useTranslation } from '@/i18n'
+
 /**
  * The SoftTrack mark: three staggered board columns caught mid-wave, the
  * active one brightest. The tile carries the brand gradient with a glass
@@ -13,13 +15,14 @@ export function Logo({
   size?: number
   withWordmark?: boolean
 }) {
+  const { t } = useTranslation('ui')
   const mark = (
     <svg
       viewBox="0 0 32 32"
       width={size}
       height={size}
       role="img"
-      aria-label={withWordmark ? undefined : 'SoftTrack'}
+      aria-label={withWordmark ? undefined : t('logo.name')}
       aria-hidden={withWordmark || undefined}
       style={{ filter: 'drop-shadow(0 4px 10px color-mix(in oklab, var(--color-brand-600) 45%, transparent))' }}
     >
@@ -51,7 +54,7 @@ export function Logo({
         className="font-semibold tracking-tight text-neutral-900"
         style={{ fontSize: size * 0.68 }}
       >
-        SoftTrack
+        {t('logo.name')}
       </span>
     </span>
   )
