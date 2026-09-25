@@ -778,6 +778,10 @@ class Comment(SQLModel, table=True):
     author_id: Optional[int] = Field(default=None, foreign_key="user.id")
     body: str
     created_at: datetime = Field(default_factory=utcnow)
+    #: When the body last changed (#93), or null if it never has. Only the
+    #: latest edit is kept -- enough for an "(edited)" marker, and no promise
+    #: of a history that nothing reads.
+    edited_at: Optional[datetime] = None
 
 
 class Worklog(SQLModel, table=True):

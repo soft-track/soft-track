@@ -32,6 +32,7 @@ export * from './codeLinkRead';
 export * from './codeLinks';
 export * from './commentCreate';
 export * from './commentRead';
+export * from './commentUpdate';
 export * from './connectedIdentity';
 export * from './createdResolvedPoint';
 export * from './createdVsResolved';

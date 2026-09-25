@@ -79,6 +79,7 @@ README, which show a team several cycles in.
 - [Notifications](docs/features/notifications.md)
 - [Live updates](docs/features/live-updates.md)
 - [Reactions](docs/features/reactions.md)
+- [Editing and deleting comments](docs/features/comments.md)
 - [Attachments](docs/features/attachments.md)
 - [User management](docs/features/users.md)
 - [Signing in with Google and GitHub](docs/features/oauth.md)

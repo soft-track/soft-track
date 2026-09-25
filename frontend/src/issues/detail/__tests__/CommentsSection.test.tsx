@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 /**
  * The Activity feed shows an issue's history among its comments (#81),
- * quieter than a comment: one line, who and what and when.
+ * quieter than a comment: one line, who and what and when. Your own comments
+ * can be edited and deleted, and a team admin's can delete anybody's (#93).
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CommentsSection } from '@/issues/detail/CommentsSection'
@@ -14,6 +16,8 @@ const mocks = vi.hoisted(() => ({
   events: { data: undefined as unknown },
   add: vi.fn(),
   remove: vi.fn(),
+  update: vi.fn(),
+  destroy: vi.fn(),
 }))
 
 vi.mock('@/auth/useAuth', async (importOriginal) => ({
@@ -28,6 +32,8 @@ vi.mock('@/api/generated/endpoints/comments/comments', async (importOriginal) =>
   removeReactionCommentsCommentIdReactionsEmojiDelete: (...args: unknown[]) =>
     mocks.remove(...args),
   useCreateCommentIssuesIssueIdCommentsPost: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useUpdateCommentCommentsCommentIdPatch: () => ({ mutateAsync: mocks.update, isPending: false }),
+  useDeleteCommentCommentsCommentIdDelete: () => ({ mutateAsync: mocks.destroy, isPending: false }),
 }))
 
 vi.mock('@/api/generated/endpoints/issues/issues', async (importOriginal) => ({
@@ -38,7 +44,9 @@ vi.mock('@/api/generated/endpoints/issues/issues', async (importOriginal) => ({
 // The editor and renderer load lazily and are not what is under test.
 vi.mock('@/markdown/lazy', () => ({
   Markdown: ({ children }: { children: string }) => <p>{children}</p>,
-  MarkdownEditor: () => <textarea aria-label="Comment" />,
+  MarkdownEditor: ({ value, onChange }: { value: string; onChange: (next: string) => void }) => (
+    <textarea aria-label="Comment" value={value} onChange={(e) => onChange(e.target.value)} />
+  ),
 }))
 
 const MAYA = {
@@ -50,7 +58,9 @@ const MAYA = {
   is_active: true,
 }
 
-function renderFeed({ canComment = true } = {}) {
+const OLIVIA = { ...MAYA, id: 1, email: 'olivia@example.com', username: 'olivia', full_name: 'Olivia Owner' }
+
+function renderFeed({ canComment = true, canModerate = false } = {}) {
   render(
     <QueryClientProvider client={new QueryClient()}>
       <CommentsSection
@@ -61,6 +71,7 @@ function renderFeed({ canComment = true } = {}) {
         uploading={0}
         onFilesClaimed={vi.fn()}
         canComment={canComment}
+        canModerate={canModerate}
       />
     </QueryClientProvider>,
   )
@@ -69,6 +80,8 @@ function renderFeed({ canComment = true } = {}) {
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  mocks.update.mockReset()
+  mocks.destroy.mockReset()
 })
 
 describe('the Activity feed', () => {
@@ -155,5 +168,120 @@ describe('the Activity feed', () => {
     mocks.events.data = []
     renderFeed()
     expect(screen.getByRole('textbox', { name: 'Comment' })).toBeTruthy()
+  })
+})
+
+function comment(id: number, author: typeof MAYA, body: string, extra = {}) {
+  return { id, body, author, attachments: [], created_at: '2026-09-25T09:00:00', ...extra }
+}
+
+function thread(...items: ReturnType<typeof comment>[]) {
+  mocks.comments.data = { items, total: items.length }
+  mocks.events.data = []
+}
+
+/** The row a comment is drawn in, found by its text. */
+function row(text: string) {
+  return screen.getByText(text).closest('li') as HTMLElement
+}
+
+async function openMenu(text: string) {
+  await userEvent.click(within(row(text)).getByRole('button', { name: 'More actions on this comment' }))
+  return screen.getByRole('menu', { name: 'Comment actions' })
+}
+
+describe('editing and deleting a comment (#93)', () => {
+  it('offers Edit and Delete on your own comment and nothing on anybody else\'s', async () => {
+    thread(comment(1, OLIVIA, 'Mine.'), comment(2, MAYA, 'Hers.'))
+    renderFeed()
+
+    expect(within(row('Hers.')).queryByRole('button', { name: /More actions/ })).toBeNull()
+    const menu = await openMenu('Mine.')
+    expect(within(menu).getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Edit',
+      'Delete…',
+    ])
+  })
+
+  it('lets a team admin delete somebody else\'s comment, and never edit it', async () => {
+    thread(comment(2, MAYA, 'Off topic.'))
+    renderFeed({ canModerate: true })
+
+    const menu = await openMenu('Off topic.')
+    expect(within(menu).getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Delete…',
+    ])
+  })
+
+  it('offers a guest nothing, even on a comment of theirs', () => {
+    thread(comment(1, OLIVIA, 'From before I was a guest.'))
+    renderFeed({ canComment: false, canModerate: true })
+    expect(screen.queryByRole('button', { name: /More actions/ })).toBeNull()
+  })
+
+  it('swaps the comment for an editor and saves the new body', async () => {
+    thread(comment(1, OLIVIA, 'Fixed by bakcing off.'))
+    mocks.update.mockResolvedValue(comment(1, OLIVIA, 'Fixed by backing off.'))
+    renderFeed()
+
+    await userEvent.click(within(await openMenu('Fixed by bakcing off.')).getByRole('menuitem', { name: 'Edit' }))
+    // The edit box is in the thread, above the composer.
+    const [editor] = screen.getAllByRole('textbox', { name: 'Comment' })
+    expect((editor as HTMLTextAreaElement).value).toBe('Fixed by bakcing off.')
+
+    await userEvent.clear(editor)
+    await userEvent.type(editor, 'Fixed by backing off.')
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(mocks.update).toHaveBeenCalledWith({
+      commentId: 1,
+      data: { body: 'Fixed by backing off.' },
+    })
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull()
+  })
+
+  it('cancels the edit on Escape without saving it or closing the panel', async () => {
+    thread(comment(1, OLIVIA, 'Draft.'))
+    renderFeed()
+    const panelHeard = vi.fn()
+    window.addEventListener('keydown', panelHeard)
+
+    await userEvent.click(within(await openMenu('Draft.')).getByRole('menuitem', { name: 'Edit' }))
+    const editor = screen.getAllByRole('textbox', { name: 'Comment' })[0]
+    await userEvent.type(editor, ' More.{Escape}')
+
+    window.removeEventListener('keydown', panelHeard)
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull()
+    expect(mocks.update).not.toHaveBeenCalled()
+    expect(panelHeard.mock.calls.some(([event]) => event.key === 'Escape')).toBe(false)
+  })
+
+  it('deletes only once the question is answered yes, and says what goes with it', async () => {
+    const file = { id: 9, filename: 'shot.png' }
+    thread(comment(1, OLIVIA, 'Wrong issue.', { attachments: [file] }))
+    mocks.destroy.mockResolvedValue(undefined)
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
+    renderFeed()
+
+    await userEvent.click(within(await openMenu('Wrong issue.')).getByRole('menuitem', { name: 'Delete…' }))
+    expect(confirm).toHaveBeenLastCalledWith(
+      'Delete this comment and its attached file? This cannot be undone.',
+    )
+    expect(mocks.destroy).not.toHaveBeenCalled()
+
+    await userEvent.click(within(await openMenu('Wrong issue.')).getByRole('menuitem', { name: 'Delete…' }))
+    expect(mocks.destroy).toHaveBeenCalledWith({ commentId: 1 })
+  })
+
+  it('marks an edited comment, with when in the tooltip', () => {
+    thread(
+      comment(1, MAYA, 'Changed.', { edited_at: '2026-09-25T14:03:00' }),
+      comment(2, MAYA, 'Untouched.'),
+    )
+    renderFeed()
+
+    const marker = within(row('Changed.')).getByText('(edited)')
+    expect(marker.getAttribute('title')).toMatch(/^Edited 25 Sep 2026, \d\d:03$/)
+    expect(within(row('Untouched.')).queryByText('(edited)')).toBeNull()
   })
 })

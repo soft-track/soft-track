@@ -6,14 +6,31 @@ import { Icon } from '@/ui/Icon'
 export interface IssueAction {
   label: string
   onSelect: () => void
+  /** Drawn in the danger colour: the action destroys something. */
+  destructive?: boolean
 }
 
 /**
  * The issue panel's ⋯ menu: actions rare enough not to deserve a button of
- * their own. Moving to another team (#98) is the first.
+ * their own. Moving to another team (#98) is the first. A comment's Edit and
+ * Delete (#93) use it too, with their own labels and a smaller button.
  */
-export function IssueActionsMenu({ actions }: { actions: IssueAction[] }) {
+export function IssueActionsMenu({
+  actions,
+  label,
+  menuLabel,
+  compact = false,
+}: {
+  actions: IssueAction[]
+  /** The ⋯ button's name. Defaults to the issue panel's. */
+  label?: string
+  /** The open menu's name. Defaults to the issue panel's. */
+  menuLabel?: string
+  /** An extra-small button, for a menu on a row rather than on the panel. */
+  compact?: boolean
+}) {
   const { t } = useTranslation('issues')
+  const buttonLabel = label ?? t('panel.actions.more')
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const toggle = useRef<HTMLButtonElement>(null)
@@ -53,16 +70,16 @@ export function IssueActionsMenu({ actions }: { actions: IssueAction[] }) {
         onClick={() => setOpen((value) => !value)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={t('panel.actions.more')}
-        title={t('panel.actions.more')}
-        className="btn btn-ghost btn-icon btn-sm text-neutral-500"
+        aria-label={buttonLabel}
+        title={buttonLabel}
+        className={`btn btn-ghost btn-icon ${compact ? 'btn-xs' : 'btn-sm'} text-neutral-500`}
       >
-        <Icon name="more" size={15} />
+        <Icon name="more" size={compact ? 13 : 15} />
       </button>
       {open && (
         <div
           role="menu"
-          aria-label={t('panel.actions.menu')}
+          aria-label={menuLabel ?? t('panel.actions.menu')}
           className="glass-strong absolute right-0 top-full z-10 mt-1 min-w-48 rounded-card p-1 shadow-lg"
         >
           {actions.map((action) => (
@@ -74,7 +91,7 @@ export function IssueActionsMenu({ actions }: { actions: IssueAction[] }) {
                 setOpen(false)
                 action.onSelect()
               }}
-              className="nav-item w-full text-left text-sm"
+              className={`nav-item w-full text-left text-sm ${action.destructive ? 'text-danger-600' : ''}`}
             >
               {action.label}
             </button>

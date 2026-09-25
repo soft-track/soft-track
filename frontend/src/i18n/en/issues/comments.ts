@@ -11,6 +11,23 @@ export const comments = {
   sending: 'Sending…',
   automation: 'Automation',
   automationTitle: 'Posted by an automation rule',
+  // Editing and deleting a comment (#93).
+  actions: 'Comment actions',
+  more: 'More actions on this comment',
+  delete: 'Delete…',
+  edited: '(edited)',
+  // A date-fns pattern for the "(edited)" tooltip: "25 Sep 2026, 14:03".
+  editedPattern: 'd MMM yyyy, HH:mm',
+  editedAt: 'Edited {{when}}',
+  editing: 'Edit comment',
+  // ⌘ and ↵ are drawn in code; Esc is a word, so it is the sentence's.
+  toSave: '<mod /><enter /> to save · <esc>Esc</esc> to cancel',
+  confirmDelete: 'Delete this comment? This cannot be undone.',
+  confirmDeleteWithFiles_one: 'Delete this comment and its attached file? This cannot be undone.',
+  confirmDeleteWithFiles_other:
+    'Delete this comment and its {{count}} attached files? This cannot be undone.',
+  saveFailed: 'Could not save your edit.',
+  deleteFailed: 'Could not delete that comment.',
   reactions: {
     name: {
       thumbs_up: 'thumbs up',

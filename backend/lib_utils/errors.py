@@ -114,6 +114,9 @@ class ErrorCode(str, enum.Enum):
     status_move_to_same = "status_move_to_same"
     #: Only the person who logged time can change or delete the entry (#102).
     not_your_worklog = "not_your_worklog"
+    #: Only a comment's author can edit it; its author or a team admin can
+    #: delete it (#93).
+    not_your_comment = "not_your_comment"
     #: A date worked that has not happened yet.
     worklog_in_future = "worklog_in_future"
     #: Moving an issue to the team it is already on (#98).

@@ -18,6 +18,13 @@ class CommentCreate(BaseModel):
     attachment_ids: list[int] = []
 
 
+class CommentUpdate(BaseModel):
+    """A new body for a comment (#93). The body is the only thing that changes:
+    its files stay as they were posted, and removing one is done on the file."""
+
+    body: str = Field(min_length=1)
+
+
 class ReactionSummary(BaseModel):
     """One emoji on one comment, and who gave it (#96).
 
@@ -46,5 +53,7 @@ class CommentRead(BaseModel):
     #: Only the emoji somebody used, in the fixed order of `ReactionEmoji`.
     reactions: list[ReactionSummary] = []
     created_at: datetime
+    #: When the body was last edited, or null if it never was (#93).
+    edited_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

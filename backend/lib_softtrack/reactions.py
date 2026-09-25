@@ -112,6 +112,13 @@ def remove_reaction(
     return summaries_for(session, [comment_id], current_user.id).get(comment_id, [])
 
 
+def delete_for_comment(session: Session, comment_id: int) -> None:
+    """Remove every reaction on one comment, ahead of the comment (#93)."""
+    session.exec(
+        delete(CommentReaction).where(CommentReaction.comment_id == comment_id)
+    )
+
+
 def delete_for_issue(session: Session, issue_id: int) -> None:
     """Remove every reaction on an issue's comments, ahead of the comments."""
     session.exec(

@@ -27,6 +27,7 @@ import type {
 import type {
   CommentCreate,
   CommentRead,
+  CommentUpdate,
   HTTPValidationError,
   ListCommentsIssuesIssueIdCommentsGetParams,
   PageCommentRead,
@@ -223,6 +224,143 @@ export function useListCommentsIssuesIssueIdCommentsGet<TData = Awaited<ReturnTy
 
 
 /**
+ * Edit your own comment's body. Nobody else's, a team admin's included.
+ * @summary Update Comment
+ */
+export const updateCommentCommentsCommentIdPatch = (
+    commentId: number,
+    commentUpdate: CommentUpdate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<CommentRead>(
+      {url: `/comments/${commentId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: commentUpdate, signal
+    },
+      );
+    }
+
+
+
+
+export const getUpdateCommentCommentsCommentIdPatchMutationKey = () => ['updateCommentCommentsCommentIdPatch'] as const;
+
+export const getUpdateCommentCommentsCommentIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCommentCommentsCommentIdPatch>>, TError,UpdateCommentCommentsCommentIdPatchMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateCommentCommentsCommentIdPatch>>, TError,UpdateCommentCommentsCommentIdPatchMutationVariables, TContext> => {
+
+const mutationKey = getUpdateCommentCommentsCommentIdPatchMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCommentCommentsCommentIdPatch>>, UpdateCommentCommentsCommentIdPatchMutationVariables> = (props) => {
+          const {commentId,data} = props ?? {};
+
+          return  updateCommentCommentsCommentIdPatch(commentId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCommentCommentsCommentIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateCommentCommentsCommentIdPatch>>>
+    export type UpdateCommentCommentsCommentIdPatchMutationBody = CommentUpdate
+    export type UpdateCommentCommentsCommentIdPatchMutationError = HTTPValidationError
+    export type UpdateCommentCommentsCommentIdPatchMutationVariables = {commentId: number;data: CommentUpdate}
+
+    /**
+ * @summary Update Comment
+ */
+export const useUpdateCommentCommentsCommentIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCommentCommentsCommentIdPatch>>, TError,UpdateCommentCommentsCommentIdPatchMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateCommentCommentsCommentIdPatch>>,
+        TError,
+        UpdateCommentCommentsCommentIdPatchMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateCommentCommentsCommentIdPatchMutationOptions(options), queryClient);
+    }
+    /**
+ * Delete your own comment, or -- as a team admin -- anybody's.
+ *
+ * Its attachments are deleted with it.
+ * @summary Delete Comment
+ */
+export const deleteCommentCommentsCommentIdDelete = (
+    commentId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/comments/${commentId}`, method: 'DELETE', signal
+    },
+      );
+    }
+
+
+
+
+export const getDeleteCommentCommentsCommentIdDeleteMutationKey = () => ['deleteCommentCommentsCommentIdDelete'] as const;
+
+export const getDeleteCommentCommentsCommentIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCommentCommentsCommentIdDelete>>, TError,DeleteCommentCommentsCommentIdDeleteMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCommentCommentsCommentIdDelete>>, TError,DeleteCommentCommentsCommentIdDeleteMutationVariables, TContext> => {
+
+const mutationKey = getDeleteCommentCommentsCommentIdDeleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCommentCommentsCommentIdDelete>>, DeleteCommentCommentsCommentIdDeleteMutationVariables> = (props) => {
+          const {commentId} = props ?? {};
+
+          return  deleteCommentCommentsCommentIdDelete(commentId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCommentCommentsCommentIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCommentCommentsCommentIdDelete>>>
+
+    export type DeleteCommentCommentsCommentIdDeleteMutationError = HTTPValidationError
+    export type DeleteCommentCommentsCommentIdDeleteMutationVariables = {commentId: number}
+
+    /**
+ * @summary Delete Comment
+ */
+export const useDeleteCommentCommentsCommentIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCommentCommentsCommentIdDelete>>, TError,DeleteCommentCommentsCommentIdDeleteMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCommentCommentsCommentIdDelete>>,
+        TError,
+        DeleteCommentCommentsCommentIdDeleteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteCommentCommentsCommentIdDeleteMutationOptions(options), queryClient);
+    }
+    /**
  * React to a comment. Idempotent: reacting twice is reacting once.
  *
  * Returns the comment's reactions as they now stand, so the client can

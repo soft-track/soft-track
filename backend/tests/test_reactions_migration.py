@@ -64,6 +64,11 @@ def test_the_table_takes_a_reaction_and_comes_off_cleanly(tmp_path):
     command.upgrade(config, BEFORE)
     _seed(db_path)
     command.upgrade(config, AFTER)
+    # The rest of the way before writing through the models: a flush reads the
+    # comment a reaction is on, with every column today's `Comment` has
+    # (`edited_at`, #93) -- columns this revision predates. Nothing after it
+    # touches `commentreaction`, so the table checked is still this one's.
+    command.upgrade(config, "head")
 
     # Written through the model, so a column the migration named differently
     # from the table class would fail here rather than in production.

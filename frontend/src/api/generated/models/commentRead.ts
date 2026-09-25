@@ -17,4 +17,5 @@ export interface CommentRead {
   attachments?: AttachmentRead[];
   reactions?: ReactionSummary[];
   created_at: string;
+  edited_at?: string | null;
 }

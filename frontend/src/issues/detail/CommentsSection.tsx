@@ -4,18 +4,29 @@ import { type FormEvent, useState } from 'react'
 
 import {
   useCreateCommentIssuesIssueIdCommentsPost,
+  useDeleteCommentCommentsCommentIdDelete,
   useListCommentsIssuesIssueIdCommentsGet,
+  useUpdateCommentCommentsCommentIdPatch,
 } from '@/api/generated/endpoints/comments/comments'
 import { useListIssueEventsIssuesIssueIdEventsGet } from '@/api/generated/endpoints/issues/issues'
-import type { AttachmentRead, CommentRead, IssueEventRead } from '@/api/generated/models'
+import type {
+  AttachmentRead,
+  CommentRead,
+  IssueEventRead,
+  PageCommentRead,
+} from '@/api/generated/models'
+import { errorDetail } from '@/api/errors'
 import { AttachmentList } from '@/attachments/AttachmentList'
 import { attachmentMarkdown } from '@/attachments/urls'
+import { useAuth } from '@/auth/useAuth'
 import { Markdown, MarkdownEditor } from '@/markdown/lazy'
 import { actorName, describeEvent, interleave } from '@/issues/detail/history'
 import { Trans, userText, useTranslation } from '@/i18n'
-import { formatRelative } from '@/i18n/format'
+import { formatDate, formatRelative } from '@/i18n/format'
+import { IssueActionsMenu } from '@/issues/detail/IssueActionsMenu'
 import { ReactionBar } from '@/issues/detail/ReactionBar'
 import type { Mentionable } from '@/markdown/mentions'
+import { toggleTaskAtOffset } from '@/markdown/tasks'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 
@@ -32,6 +43,7 @@ export function CommentsSection({
   uploading,
   onFilesClaimed,
   canComment = true,
+  canModerate = false,
 }: {
   issueId: number
   people: Mentionable[]
@@ -43,6 +55,8 @@ export function CommentsSection({
   onFilesClaimed: () => void
   /** False for a guest (#104), who reads the conversation but cannot join it. */
   canComment?: boolean
+  /** A team admin, who may delete anybody's comment -- never edit it (#93). */
+  canModerate?: boolean
 }) {
   const { t } = useTranslation('issues')
   const queryClient = useQueryClient()
@@ -104,6 +118,7 @@ export function CommentsSection({
               comment={item.comment}
               people={people}
               canReact={canComment}
+              canModerate={canComment && canModerate}
             />
           ),
         )}
@@ -183,13 +198,96 @@ function CommentItem({
   comment,
   people,
   canReact,
+  canModerate,
 }: {
   issueId: number
   comment: CommentRead
   people: Mentionable[]
   canReact: boolean
+  canModerate: boolean
 }) {
-  const { t } = useTranslation('issues')
+  const { t } = useTranslation(['issues', 'common'])
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  const update = useUpdateCommentCommentsCommentIdPatch()
+  const remove = useDeleteCommentCommentsCommentIdDelete()
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(comment.body)
+  const [error, setError] = useState<string | null>(null)
+
+  // Your own words are yours to change; an admin may take anybody's down but
+  // never rewrite them. A rule's comment has no author, so it is nobody's.
+  const isMine = canReact && !!user && comment.author?.id === user.id
+  const canDelete = isMine || canModerate
+
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}/comments`] })
+
+  /** Put the server's copy of this comment into the thread without refetching it. */
+  const write = (next: CommentRead) =>
+    queryClient.setQueriesData<PageCommentRead>(
+      { queryKey: [`/issues/${issueId}/comments`] },
+      (page) =>
+        page && {
+          ...page,
+          items: page.items.map((item) => (item.id === next.id ? next : item)),
+        },
+    )
+
+  const save = async (body: string) => {
+    setError(null)
+    try {
+      write(await update.mutateAsync({ commentId: comment.id, data: { body } }))
+      return true
+    } catch (err: unknown) {
+      setError(errorDetail(err, t('comments.saveFailed')))
+      return false
+    }
+  }
+
+  const startEditing = () => {
+    setDraft(comment.body)
+    setError(null)
+    setEditing(true)
+  }
+
+  const submitEdit = async () => {
+    const body = draft.trim()
+    if (!body) return
+    // Saving what is already there is not an edit; the server agrees.
+    if (body === comment.body || (await save(body))) setEditing(false)
+  }
+
+  const destroy = async () => {
+    const files = comment.attachments?.length ?? 0
+    const question = files
+      ? t('comments.confirmDeleteWithFiles', { count: files })
+      : t('comments.confirmDelete')
+    if (!window.confirm(question)) return
+    setError(null)
+    try {
+      await remove.mutateAsync({ commentId: comment.id })
+      // Its files went with it, and the issue's own list is unaffected.
+      refresh()
+    } catch (err: unknown) {
+      setError(errorDetail(err, t('comments.deleteFailed')))
+    }
+  }
+
+  const toggleTask = async (offset: number) => {
+    const next = toggleTaskAtOffset(comment.body, offset)
+    if (next === null) return
+    write({ ...comment, body: next })
+    if (!(await save(next))) write(comment)
+  }
+
+  const actions = [
+    ...(isMine ? [{ label: t('common:edit'), onSelect: startEditing }] : []),
+    ...(canDelete
+      ? [{ label: t('comments.delete'), onSelect: () => void destroy(), destructive: true }]
+      : []),
+  ]
+
   return (
     <li className="group/comment flex gap-2.5">
       {comment.author ? (
@@ -205,14 +303,100 @@ function CommentItem({
           <span className="text-[11px] text-neutral-400">
             {formatRelative(parseServerDate(comment.created_at))}
           </span>
+          {comment.edited_at && (
+            <span
+              className="text-[11px] text-neutral-400"
+              title={t('comments.editedAt', {
+                when: formatDate(
+                  parseServerDate(comment.edited_at),
+                  t('comments.editedPattern'),
+                ),
+              })}
+            >
+              {t('comments.edited')}
+            </span>
+          )}
+          {actions.length > 0 && !editing && (
+            <span className="ml-auto self-center opacity-0 transition focus-within:opacity-100 group-hover/comment:opacity-100">
+              <IssueActionsMenu
+                actions={actions}
+                label={t('comments.more')}
+                menuLabel={t('comments.actions')}
+                compact
+              />
+            </span>
+          )}
         </div>
-        <div className="well mt-1 rounded-card rounded-tl-sm px-3 py-2">
-          {/* Read-only checkboxes: there is no endpoint to edit a comment
-              yet, so a toggle here could not be saved. Its attachments
-              are read-only for the same reason. */}
-          <Markdown people={people}>{comment.body}</Markdown>
-          <AttachmentList attachments={comment.attachments ?? []} compact />
-        </div>
+        {editing ? (
+          <div
+            className="mt-1"
+            onKeyDown={(event) => {
+              // The edit first, then the panel, on the next press. The mention
+              // menu consumes its own Escape before this sees it.
+              if (event.key === 'Escape') {
+                event.stopPropagation()
+                setEditing(false)
+                setError(null)
+              }
+            }}
+          >
+            <MarkdownEditor
+              value={draft}
+              onChange={setDraft}
+              people={people}
+              placeholder={t('comments.placeholder')}
+              rows={3}
+              autoFocus
+              onSubmit={() => void submitEdit()}
+            />
+            <div className="mt-2 flex items-center justify-end gap-3">
+              <span className="flex items-center gap-1 text-[11px] text-neutral-400">
+                <Trans
+                  t={t}
+                  i18nKey="comments.toSave"
+                  components={{
+                    mod: <kbd className="kbd">⌘</kbd>,
+                    enter: <kbd className="kbd">↵</kbd>,
+                    esc: <kbd className="kbd" />,
+                  }}
+                />
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(false)
+                  setError(null)
+                }}
+                className="btn btn-ghost btn-sm"
+              >
+                {t('common:cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => void submitEdit()}
+                disabled={!draft.trim() || update.isPending}
+                className="btn btn-primary btn-sm"
+              >
+                {update.isPending ? t('common:saving') : t('common:save')}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="well mt-1 rounded-card rounded-tl-sm px-3 py-2">
+            {/* Checkboxes toggle on your own comments, which saves an edit;
+                everyone else's are read-only. Attachments are removed with
+                the comment rather than one at a time. */}
+            <Markdown people={people} onToggleTask={isMine ? toggleTask : undefined}>
+              {comment.body}
+            </Markdown>
+            <AttachmentList attachments={comment.attachments ?? []} compact />
+          </div>
+        )}
+        {error && (
+          <p role="alert" className="mt-1 text-xs text-danger-600">
+            {error}
+          </p>
+        )}
         <ReactionBar issueId={issueId} comment={comment} canReact={canReact} />
       </div>
     </li>

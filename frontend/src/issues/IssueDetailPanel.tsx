@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { parseServerDate } from '@/api/dates'
 import { AttachmentList } from '@/attachments/AttachmentList'
+import { useAuth } from '@/auth/useAuth'
 import { useTranslation } from '@/i18n'
 import { formatRelative } from '@/i18n/format'
 import { CommentsSection } from '@/issues/detail/CommentsSection'
@@ -34,7 +35,11 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
   // A guest (#104) sees the whole issue and can change none of it -- except
   // whether they are watching it, which is theirs.
   const readOnly = !useCanWrite()
-  const { teams } = useTeamContext()
+  const { teams, members } = useTeamContext()
+  const { user } = useAuth()
+  // Team admins may delete anybody's comment (#93). The server decides; this
+  // only decides whether to offer it.
+  const isTeamAdmin = members.find((member) => member.user.id === user?.id)?.role === 'admin'
   const [moving, setMoving] = useState(false)
   // Teams it could go to. Whether the user may write to each is the
   // server's call, and the move dialog says so if not.
@@ -174,6 +179,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
               uploading={files.uploading}
               onFilesClaimed={files.invalidate}
               canComment={!readOnly}
+              canModerate={isTeamAdmin}
             />
           </div>
         )}

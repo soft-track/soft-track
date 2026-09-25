@@ -437,6 +437,21 @@ def take_keys_for_issue(session: Session, issue_id: int) -> list[str]:
     return keys
 
 
+def take_keys_for_comment(session: Session, comment_id: int) -> list[str]:
+    """Delete a comment's attachment rows, returning the keys still to purge.
+
+    Called while deleting a comment (#93), for the reasons and in the order
+    `take_keys_for_issue` gives: rows now, bytes after the commit.
+    """
+    attachments = session.exec(
+        select(Attachment).where(Attachment.comment_id == comment_id)
+    ).all()
+    keys = [attachment.storage_key for attachment in attachments]
+    for attachment in attachments:
+        session.delete(attachment)
+    return keys
+
+
 def purge(storage: Storage, keys: list[str]) -> None:
     """Remove bytes whose rows are already gone.
 

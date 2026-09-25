@@ -73,6 +73,7 @@ export const ErrorCode = {
   template_order_incomplete: 'template_order_incomplete',
   status_move_to_same: 'status_move_to_same',
   not_your_worklog: 'not_your_worklog',
+  not_your_comment: 'not_your_comment',
   worklog_in_future: 'worklog_in_future',
   transfer_same_team: 'transfer_same_team',
   view_other_team: 'view_other_team',

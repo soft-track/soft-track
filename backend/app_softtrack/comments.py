@@ -5,8 +5,14 @@ from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import comments as comments_service
 from lib_softtrack import reactions as reactions_service
-from lib_softtrack.models.comments import CommentCreate, CommentRead, ReactionSummary
+from lib_softtrack.models.comments import (
+    CommentCreate,
+    CommentRead,
+    CommentUpdate,
+    ReactionSummary,
+)
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
+from lib_softtrack.storage import Storage, get_storage
 from lib_softtrack.tables import ReactionEmoji, User
 from web import get_session
 
@@ -38,6 +44,39 @@ def list_comments(
     return comments_service.list_comments(
         session, current_user, issue_id, limit=limit, offset=offset
     )
+
+
+@router.patch(
+    "/comments/{comment_id}",
+    response_model=CommentRead,
+    dependencies=[team_writer],
+)
+def update_comment(
+    comment_id: int,
+    payload: CommentUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Edit your own comment's body. Nobody else's, a team admin's included."""
+    return comments_service.update_comment(session, current_user, comment_id, payload)
+
+
+@router.delete(
+    "/comments/{comment_id}",
+    status_code=204,
+    dependencies=[team_writer],
+)
+def delete_comment(
+    comment_id: int,
+    session: Session = Depends(get_session),
+    storage: Storage = Depends(get_storage),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete your own comment, or -- as a team admin -- anybody's.
+
+    Its attachments are deleted with it.
+    """
+    comments_service.delete_comment(session, storage, current_user, comment_id)
 
 
 @router.put(

@@ -297,6 +297,40 @@ def on_comment_created(
     )
 
 
+def on_comment_edited(
+    session: Session, issue: Issue, comment: Comment, before: str, actor: User
+) -> None:
+    """Tell anyone the edit newly names (#93), and nobody else.
+
+    Only handles that were not in the old body, as for a description: fixing
+    a typo should not re-ping everyone the comment mentions, and watchers
+    heard about the comment when it was posted.
+    """
+    was = mentioned_user_ids(session, issue.team_id, before)
+    _raise(
+        session,
+        recipients=mentioned_user_ids(session, issue.team_id, comment.body)
+        - was
+        - _own(actor),
+        kind=NotificationKind.mentioned,
+        issue=issue,
+        actor=actor,
+        comment=comment,
+    )
+
+
+def delete_for_comment(session: Session, comment_id: int) -> None:
+    """Drop the notifications about a comment being deleted (#93).
+
+    They hold a foreign key to it, and an inbox row quoting words their
+    author took back is the one thing a delete should not leave behind.
+    """
+    for row in session.exec(
+        select(Notification).where(Notification.comment_id == comment_id)
+    ).all():
+        session.delete(row)
+
+
 def delete_for_issue(session: Session, issue_id: int) -> None:
     """Drop the watches and notifications pointing at an issue being deleted.
 
