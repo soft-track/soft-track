@@ -1,31 +1,14 @@
 #!/usr/bin/env node
-// Keep converted areas converted (#106): fail on literal user-facing text in
-// JSX under any folder listed here. A folder joins the list in the PR that
-// extracts its strings, and from then on new text has to go in the catalog.
+// Keep the interface in the catalog (#106): fail on literal user-facing text
+// in JSX anywhere under src/. Every folder has been converted, so this is the
+// whole tree -- new text has to go in src/i18n/en/ from the start.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { findLiterals } from './i18n-literals.mjs'
 
-const CONVERTED = [
-  'src/settings',
-  'src/issues',
-  'src/board',
-  'src/auth',
-  'src/team',
-  'src/landing',
-  'src/projects',
-  'src/views',
-  'src/reports',
-  'src/cycles',
-  'src/automations',
-  'src/imports',
-  'src/search',
-  'src/keyboard',
-  'src/notifications',
-  'src/calendar',
-]
+const CONVERTED = ['src']
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 
@@ -33,7 +16,7 @@ function* sources(dir) {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name)
     if (statSync(path).isDirectory()) {
-      if (name !== '__tests__') yield* sources(path)
+      if (name !== '__tests__' && name !== 'generated') yield* sources(path)
     } else if (name.endsWith('.tsx')) {
       yield path
     }

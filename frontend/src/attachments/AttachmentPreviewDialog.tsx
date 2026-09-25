@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { AXIOS_INSTANCE } from '@/api/client'
 import type { AttachmentRead } from '@/api/generated/models'
 import { downloadAttachment, formatBytes } from '@/attachments/urls'
+import { Trans, userText, useTranslation } from '@/i18n'
 import { Icon } from '@/ui/Icon'
 import { useFocusTrap } from '@/ui/useFocusTrap'
 
@@ -40,6 +41,7 @@ export function AttachmentPreviewDialog({
   attachment: AttachmentRead
   onClose: () => void
 }) {
+  const { t } = useTranslation(['attachments', 'common'])
   const dialogRef = useFocusTrap<HTMLDivElement>()
   const titleId = useId()
   const [loaded, setLoaded] = useState<Loaded>({ state: 'loading' })
@@ -118,13 +120,13 @@ export function AttachmentPreviewDialog({
           </div>
           <button type="button" onClick={download} className="btn btn-secondary btn-sm">
             <Icon name="download" size={13} />
-            Download
+            {t('preview.download')}
           </button>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
-            title="Close (Esc)"
+            aria-label={t('common:close')}
+            title={t('preview.closeHint')}
             className="btn btn-ghost btn-icon btn-sm text-neutral-500"
           >
             <Icon name="close" size={15} />
@@ -134,7 +136,7 @@ export function AttachmentPreviewDialog({
         <div className="min-h-0 flex-1">
           {loaded.state === 'loading' && (
             <div className="flex h-full items-center justify-center text-sm text-neutral-400">
-              Loading {attachment.filename}…
+              {t('preview.loading', { filename: attachment.filename })}
             </div>
           )}
           {loaded.state === 'failed' && (
@@ -142,9 +144,9 @@ export function AttachmentPreviewDialog({
               role="alert"
               className="flex h-full flex-col items-center justify-center gap-3 text-sm text-neutral-500"
             >
-              This file could not be shown here.
+              {t('preview.failed')}
               <button type="button" onClick={download} className="btn btn-secondary btn-sm">
-                Download it instead
+                {t('preview.downloadInstead')}
               </button>
             </div>
           )}
@@ -159,17 +161,25 @@ export function AttachmentPreviewDialog({
             <div className="flex h-full flex-col">
               {loaded.truncated && (
                 <p className="hairline border-b bg-neutral-900/4 px-4 py-2 text-xs text-neutral-600">
-                  Showing the first {formatBytes(TEXT_PREVIEW_BYTES)} of{' '}
-                  {formatBytes(attachment.size_bytes)} — truncated.{' '}
-                  <button type="button" onClick={download} className="font-medium underline">
-                    Download for the rest
-                  </button>
-                  .
+                  <Trans
+                    t={t}
+                    i18nKey="preview.truncated"
+                    values={{
+                      shown: formatBytes(TEXT_PREVIEW_BYTES),
+                      total: formatBytes(attachment.size_bytes),
+                    }}
+                    components={{
+                      download: (
+                        <button type="button" onClick={download} className="font-medium underline" />
+                      ),
+                    }}
+                    {...userText}
+                  />
                 </p>
               )}
               <pre
                 tabIndex={0}
-                aria-label={`Contents of ${attachment.filename}`}
+                aria-label={t('preview.contents', { filename: attachment.filename })}
                 className="scroll-thin identifier min-h-0 flex-1 overflow-auto whitespace-pre px-4 py-3 text-xs leading-relaxed text-neutral-800"
               >
                 {loaded.text}

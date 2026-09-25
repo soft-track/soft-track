@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react'
 import { useUploadAttachmentIssuesIssueIdAttachmentsPost } from '@/api/generated/endpoints/attachments/attachments'
 import type { AttachmentRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
+import { useTranslation } from '@/i18n'
 
 /**
  * Uploading files against an issue.
@@ -13,6 +14,7 @@ import { errorDetail } from '@/api/errors'
  * arriving alongside three other results.
  */
 export function useAttachmentUpload(issueId: number) {
+  const { t } = useTranslation('attachments')
   const upload = useUploadAttachmentIssuesIssueIdAttachmentsPost()
   const [uploading, setUploading] = useState(0)
   const [error, setError] = useState<string | null>(null)
@@ -30,14 +32,14 @@ export function useAttachmentUpload(issueId: number) {
           setUploading((n) => n - 1)
         }
       } catch (err) {
-        setError(errorDetail(err, 'That file could not be attached.'))
+        setError(errorDetail(err, t('upload.failed')))
         // Drop only what is left of *this* batch. Subtracting to zero would
         // also clear a second batch that is still in flight.
         setUploading((n) => Math.max(0, n - (files.length - uploaded.length)))
       }
       return uploaded
     },
-    [issueId, upload],
+    [issueId, upload, t],
   )
 
   return { uploadFiles, uploading, error, clearError: () => setError(null) }

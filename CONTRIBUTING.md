@@ -108,11 +108,9 @@ the typecheck. English is the only language until the catalog is complete;
 the point for now is that new text goes into a catalog, so adding a language
 later is a new folder rather than a pass over every component.
 
-Folders are converted one at a time, and a converted folder is listed in
-`frontend/scripts/check-i18n.mjs`, which fails CI on literal text in JSX there.
-`settings/`, `issues/` and `board/` are converted; the other folders follow one
-at a time, the same way. In a converted
-folder:
+Every folder is converted, and `frontend/scripts/check-i18n.mjs` fails CI on
+literal text in JSX anywhere under `src/`, so new text goes into the catalog
+from the start:
 
 ```tsx
 import { Trans, useTranslation } from '@/i18n'

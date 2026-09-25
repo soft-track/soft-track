@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { attachmentObjectUrl } from '@/attachments/urls'
+import { useTranslation } from '@/i18n'
 
 /**
  * An `<img>` for a file the server will only hand over to an authenticated
@@ -19,6 +20,7 @@ export function AttachmentImage({
   alt?: string
   className?: string
 }) {
+  const { t } = useTranslation('attachments')
   // The state carries the src it describes, so a change of src falls back to
   // the placeholder during render rather than needing an effect to clear it --
   // which would otherwise leave the previous screenshot on screen for a frame.
@@ -45,7 +47,7 @@ export function AttachmentImage({
     return (
       <span className="well my-2 inline-flex items-center gap-1.5 rounded-control px-2 py-1 text-xs text-neutral-500">
         <span aria-hidden>🖼</span>
-        {alt || 'This image could not be loaded'}
+        {alt || t('image.failed')}
       </span>
     )
   }
@@ -54,7 +56,7 @@ export function AttachmentImage({
     return (
       <span
         role="img"
-        aria-label={alt ? `Loading ${alt}` : 'Loading image'}
+        aria-label={alt ? t('image.loadingNamed', { name: alt }) : t('image.loading')}
         className={`skeleton my-2 block h-32 w-full max-w-xs rounded-card ${className}`}
       />
     )

@@ -1,38 +1,20 @@
 import type { ErrorCode } from '@/api/generated/models'
+import { i18n } from '@/i18n'
 
 type ApiErrorResponse = { response?: { data?: { detail?: unknown; code?: unknown } } }
 
 /**
- * The frontend's own words for errors it knows by code (#86).
- *
- * Preferred over the server's `detail` when a code is here, so the copy the
- * user reads belongs to the UI rather than to a backend string -- and so it
- * can be translated one day without touching the API. Anything not listed
- * falls back to `detail`, which is always a readable sentence.
+ * The frontend's own words for errors it knows by code (#86), in the catalog
+ * under `errors` (#106) -- preferred over the server's `detail` when a code is
+ * there, so the copy belongs to the interface and is translated with it.
+ * Anything not listed falls back to `detail`, which is always a sentence.
  *
  * Deliberately partial, and grown a group at a time: signing in first, then
  * team permissions. Wording that only restates `detail` is not worth a row.
  */
-export const ERROR_MESSAGES: Partial<Record<ErrorCode, string>> = {
-  // Signing in and staying signed in.
-  bad_credentials: 'That email and password do not match an account.',
-  not_authenticated: 'Your session has ended. Sign in again to carry on.',
-  account_deactivated: 'This account has been deactivated. Ask a site admin to turn it back on.',
-  invite_only: 'This SoftTrack is invite-only. Ask a team admin for an invitation link.',
-  email_taken: 'An account already uses that email address. Try signing in instead.',
-  current_password_incorrect: 'That is not your current password.',
-  reset_link_invalid:
-    'This reset link is invalid or has expired. Ask for a new one below.',
-
-  // What a team lets you do.
-  not_team_member: 'You are not a member of this team.',
-  not_team_admin: 'Only an admin of this team can do that.',
-  team_read_only: 'You are a guest on this team: you can see its work but not change it.',
-  not_site_admin: 'Only a site administrator can do that.',
-  last_team_admin: 'A team needs at least one admin. Make someone else an admin first.',
-  last_site_admin: 'This instance needs at least one active site administrator.',
-  cannot_deactivate_self: 'You cannot deactivate your own account.',
-  cannot_demote_self: 'You cannot remove your own site admin access.',
+export function errorMessage(code: ErrorCode): string | undefined {
+  const key = `errors:${code}` as const
+  return i18n.exists(key) ? i18n.t(key as 'errors:not_team_admin') : undefined
 }
 
 /** The API's error code, when the response has one. */
@@ -50,7 +32,7 @@ export function errorCode(err: unknown): ErrorCode | null {
  */
 export function errorDetail(err: unknown, fallback: string): string {
   const code = errorCode(err)
-  const known = code ? ERROR_MESSAGES[code] : undefined
+  const known = code ? errorMessage(code) : undefined
   if (known) return known
   const detail = (err as ApiErrorResponse)?.response?.data?.detail
   return typeof detail === 'string' && detail.length > 0 ? detail : fallback

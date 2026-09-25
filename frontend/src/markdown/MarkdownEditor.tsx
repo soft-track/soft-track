@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react'
 
+import { Trans, useTranslation } from '@/i18n'
 import { Markdown } from '@/markdown/Markdown'
 import { type Mentionable, matchMentions, mentionHandles } from '@/markdown/mentions'
 import { mentionQueryAt } from '@/markdown/mentionQuery'
@@ -47,6 +48,7 @@ export function MarkdownEditor({
   className?: string
   teamKeys?: string[]
 }) {
+  const { t } = useTranslation('markdown')
   const [mode, setMode] = useState<Mode>('write')
   const [mention, setMention] = useState<{ query: string; start: number } | null>(null)
   // Carrying the query alongside the index means a new query resets the
@@ -196,7 +198,7 @@ export function MarkdownEditor({
   return (
     <div className={className}>
       <div className="mb-1.5 flex items-center justify-between gap-2">
-        <div className="segmented" role="tablist" aria-label="Editor mode">
+        <div className="segmented" role="tablist" aria-label={t('editor.mode')}>
           <button
             type="button"
             role="tab"
@@ -205,7 +207,7 @@ export function MarkdownEditor({
             onClick={() => setMode('write')}
             className="segmented-item"
           >
-            Write
+            {t('editor.write')}
           </button>
           <button
             type="button"
@@ -215,7 +217,7 @@ export function MarkdownEditor({
             onClick={() => setMode('preview')}
             className="segmented-item"
           >
-            Preview
+            {t('editor.preview')}
           </button>
         </div>
         {mode === 'write' && (
@@ -223,8 +225,11 @@ export function MarkdownEditor({
             {onUploadFiles ? (
               <>
                 <span className="hidden truncate sm:inline">
-                  Markdown · <span className="identifier">@</span> to mention · paste or
-                  drop a file
+                  <Trans
+                    t={t}
+                    i18nKey="editor.hintWithFiles"
+                    components={{ handle: <span className="identifier" /> }}
+                  />
                 </span>
                 <input
                   ref={fileInputRef}
@@ -243,12 +248,16 @@ export function MarkdownEditor({
                   className="btn btn-ghost btn-xs"
                 >
                   <Icon name="paperclip" size={12} />
-                  {busy ? 'Uploading…' : 'Attach'}
+                  {busy ? t('editor.uploading') : t('editor.attach')}
                 </button>
               </>
             ) : (
               <span className="hidden truncate sm:inline">
-                Markdown supported · <span className="identifier">@</span> to mention
+                <Trans
+                  t={t}
+                  i18nKey="editor.hint"
+                  components={{ handle: <span className="identifier" /> }}
+                />
               </span>
             )}
           </span>
@@ -293,7 +302,7 @@ export function MarkdownEditor({
           {mention && suggestions.length > 0 && (
             <ul
               role="listbox"
-              aria-label="Team members"
+              aria-label={t('editor.people')}
               className="glass-strong pop-in absolute left-2 top-full z-30 mt-1 w-64 overflow-hidden rounded-card p-1"
             >
               {suggestions.map((person, index) => (
@@ -324,7 +333,7 @@ export function MarkdownEditor({
           {value.trim() ? (
             <Markdown people={people} teamKeys={teamKeys}>{value}</Markdown>
           ) : (
-            <p className="text-sm text-neutral-400">Nothing to preview yet.</p>
+            <p className="text-sm text-neutral-400">{t('editor.emptyPreview')}</p>
           )}
         </div>
       )}
