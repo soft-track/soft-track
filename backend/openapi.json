@@ -5431,6 +5431,50 @@
         }
       }
     },
+    "/teams/{team_id}/events": {
+      "get": {
+        "tags": [
+          "realtime"
+        ],
+        "summary": "Team Events",
+        "description": "A server-sent event stream of what changes on the team (#103).\n\nEvents are invalidations -- `issue_changed {\"id\"}`, `comment_added\n{\"issue_id\"}`, `notification {}` for the caller's own inbox, and `resync`\nwhen the stream fell behind -- and never data: the client refetches\nthrough the ordinary endpoints. `close` means the stream is over and must\nnot be reopened as it was: the caller was signed out, deactivated or\nremoved from the team. A `: ping` comment every 25 seconds keeps proxies\nfrom dropping it.\n\nAuthenticated with the usual bearer header, which is why the browser\nreads this with `fetch` rather than `EventSource`: EventSource cannot send\none, and a token in the URL is exactly what this API refuses to do.",
+        "operationId": "team_events_teams__team_id__events_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/event-stream": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/teams/{team_id}/statuses": {
       "get": {
         "tags": [
