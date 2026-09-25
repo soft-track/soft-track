@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useId, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 import {
@@ -41,6 +41,7 @@ import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 import { Select } from '@/ui/Select'
+import { useFocusTrap } from '@/ui/useFocusTrap'
 
 /** How much of the log the page shows. Older runs are in the table, not here. */
 const RECENT_RUNS = 20
@@ -423,6 +424,8 @@ function RuleEditor({
     actions: RuleActions
   }) => Promise<void>
 }) {
+  const dialogRef = useFocusTrap<HTMLFormElement>()
+  const titleId = useId()
   const [name, setName] = useState(rule?.name ?? '')
   const [trigger, setTrigger] = useState<AutomationTrigger>(
     rule?.trigger ?? AutomationTrigger.issue_created,
@@ -472,12 +475,15 @@ function RuleEditor({
     >
       <form
         role="dialog"
-        aria-label={rule ? `Edit ${rule.name}` : 'New automation rule'}
+        ref={dialogRef}
+        aria-modal="true"
+        tabIndex={-1}
+        aria-labelledby={titleId}
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
         className="pop-in glass-strong w-full max-w-lg rounded-panel p-5"
       >
-        <h2 className="text-base font-semibold tracking-tight text-neutral-900">
+        <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
           {rule ? `Edit “${rule.name}”` : 'New rule'}
         </h2>
 

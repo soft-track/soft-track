@@ -19,3 +19,14 @@ The shortcut table lives in one array in `frontend/src/keyboard/shortcuts.ts`,
 which is both what the handlers dispatch on and what the cheatsheet renders. A
 shortcut that works but is not listed may as well not exist; a listed one that
 does not work is worse. One array makes both failures impossible.
+
+**Dialogs keep keyboard focus inside them while they're open.** This applies
+to every dialog that dims the page behind it: the new-issue and new-cycle
+forms, the issue panel, the command palette, the cheatsheet, and so on.
+Opening one moves focus into it. Tab and Shift+Tab cycle through its controls
+and wrap at the ends, so they never reach the page behind it. Closing it puts
+focus back on whatever opened it. Each of these dialogs is marked
+`aria-modal="true"`, so a screen reader treats the rest of the page as inert.
+All of this is one hook, `frontend/src/ui/useFocusTrap.ts`, so a new dialog
+gets it by adding one line. The filter and notification dropdowns don't dim
+the page and are deliberately left non-modal.

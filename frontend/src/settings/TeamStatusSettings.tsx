@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useId, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 import {
@@ -19,6 +19,7 @@ import { useTeamByKey } from '@/team/useTeams'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 import { Select } from '@/ui/Select'
+import { useFocusTrap } from '@/ui/useFocusTrap'
 
 export default function TeamStatusSettings() {
   const { teamKey } = useParams()
@@ -330,6 +331,8 @@ function DeleteStatusModal({
   onClose: () => void
   onConfirm: (moveToId: number) => Promise<void>
 }) {
+  const dialogRef = useFocusTrap<HTMLFormElement>()
+  const titleId = useId()
   const options = statuses.filter((other) => other.id !== status.id)
   const [moveToId, setMoveToId] = useState(String(options[0]?.id ?? ''))
 
@@ -340,7 +343,10 @@ function DeleteStatusModal({
     >
       <form
         role="dialog"
-        aria-label={`Delete ${status.name}`}
+        ref={dialogRef}
+        aria-modal="true"
+        tabIndex={-1}
+        aria-labelledby={titleId}
         onClick={(e) => e.stopPropagation()}
         onSubmit={(e) => {
           e.preventDefault()
@@ -348,7 +354,7 @@ function DeleteStatusModal({
         }}
         className="pop-in glass-strong w-full max-w-sm rounded-panel p-5"
       >
-        <h2 className="text-base font-semibold tracking-tight text-neutral-900">
+        <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
           Delete “{status.name}”
         </h2>
         <p className="mt-1 text-sm text-neutral-500">

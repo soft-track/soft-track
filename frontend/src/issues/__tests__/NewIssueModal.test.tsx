@@ -185,6 +185,27 @@ describe('NewIssueModal', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
+  it('is announced as a modal dialog, named by its heading', () => {
+    renderModal()
+    const dialog = screen.getByRole('dialog', { name: 'New issue' })
+    expect(dialog.getAttribute('aria-modal')).toBe('true')
+    expect(dialog.getAttribute('aria-labelledby')).toBeTruthy()
+  })
+
+  it('keeps Tab inside the dialog (#75)', async () => {
+    const { user } = renderModal()
+    const dialog = screen.getByRole('dialog', { name: 'New issue' })
+    // Far more presses than there are controls: every one lands inside.
+    for (let i = 0; i < 25; i++) {
+      await user.tab()
+      expect(dialog.contains(document.activeElement)).toBe(true)
+    }
+    for (let i = 0; i < 25; i++) {
+      await user.tab({ shift: true })
+      expect(dialog.contains(document.activeElement)).toBe(true)
+    }
+  })
+
   it('closes on Escape without creating anything', async () => {
     const { onClose, user } = renderModal()
 

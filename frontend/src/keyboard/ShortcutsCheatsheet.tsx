@@ -1,7 +1,12 @@
+import { useId } from 'react'
+
 import { MOD_KEY, SHORTCUT_GROUPS } from '@/keyboard/shortcuts'
 import { Icon } from '@/ui/Icon'
+import { useFocusTrap } from '@/ui/useFocusTrap'
 
 export function ShortcutsCheatsheet({ onClose }: { onClose: () => void }) {
+  const dialogRef = useFocusTrap<HTMLDivElement>()
+  const titleId = useId()
   return (
     <div
       className="scrim fixed inset-0 z-40 flex items-center justify-center px-4"
@@ -9,12 +14,15 @@ export function ShortcutsCheatsheet({ onClose }: { onClose: () => void }) {
     >
       <div
         role="dialog"
-        aria-label="Keyboard shortcuts"
+        ref={dialogRef}
+        aria-modal="true"
+        tabIndex={-1}
+        aria-labelledby={titleId}
         onClick={(e) => e.stopPropagation()}
         className="pop-in glass-strong w-full max-w-md rounded-panel p-5"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-semibold tracking-tight text-neutral-900">
+          <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
             Keyboard shortcuts
           </h2>
           <button

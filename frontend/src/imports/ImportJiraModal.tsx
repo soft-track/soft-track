@@ -1,11 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 
 import { AXIOS_INSTANCE } from '@/api/client'
 import { errorDetail } from '@/api/errors'
 import type { ImportReport } from '@/api/generated/models'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
+import { useFocusTrap } from '@/ui/useFocusTrap'
 
 /**
  * Import a Jira export.
@@ -15,6 +16,8 @@ import { Icon } from '@/ui/Icon'
  * shown here is the one that then happens rather than an estimate.
  */
 export function ImportJiraModal({ onClose }: { onClose: () => void }) {
+  const dialogRef = useFocusTrap<HTMLDivElement>()
+  const titleId = useId()
   const { team } = useTeamContext()
   const queryClient = useQueryClient()
 
@@ -60,12 +63,15 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
     >
       <div
         role="dialog"
-        aria-label="Import from Jira"
+        ref={dialogRef}
+        aria-modal="true"
+        tabIndex={-1}
+        aria-labelledby={titleId}
         onClick={(e) => e.stopPropagation()}
         className="pop-in glass-strong flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-panel"
       >
         <div className="hairline border-b px-5 py-4">
-          <h2 className="text-base font-semibold tracking-tight text-neutral-900">Import from Jira</h2>
+          <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">Import from Jira</h2>
           <p className="mt-0.5 text-xs text-neutral-500">
             A Jira CSV or JSON export. Export with the <em>Issue key</em> column so the
             import can be re-run safely.

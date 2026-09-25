@@ -14,9 +14,11 @@ import { PriorityIcon } from '@/issues/PriorityIcon'
 import { WatchToggle } from '@/notifications/WatchToggle'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
+import { useFocusTrap } from '@/ui/useFocusTrap'
 
 /** The slide-over for one issue. Composes the sections; owns none of them. */
 export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClose: () => void }) {
+  const dialogRef = useFocusTrap<HTMLDivElement>()
   const editor = useIssueEditor(issueId)
   const files = useIssueAttachments(issueId)
   usePanelShortcuts(onClose)
@@ -26,6 +28,9 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
     <div className="scrim fixed inset-0 z-20 flex justify-end" onClick={onClose}>
       <div
         role="dialog"
+        ref={dialogRef}
+        aria-modal="true"
+        tabIndex={-1}
         aria-label={issue ? `${issue.identifier} ${issue.title}` : 'Issue'}
         onClick={(e) => e.stopPropagation()}
         className="slide-in-right glass-strong m-2 flex w-full max-w-xl flex-col overflow-hidden rounded-panel sm:m-3"

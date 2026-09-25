@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { format, formatDistanceToNow } from 'date-fns'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useId, useState } from 'react'
 
 import {
   useListUsersAdminUsersGet,
@@ -16,6 +16,7 @@ import { DeactivatedChip } from '@/settings/RoleChip'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
+import { useFocusTrap } from '@/ui/useFocusTrap'
 
 const PAGE_SIZE = 25
 
@@ -236,6 +237,9 @@ function ResetPasswordModal({
   onClose: () => void
   onDone: () => void
 }) {
+  const dialogRef = useFocusTrap<HTMLFormElement>()
+  const titleId = useId()
+  const nameId = useId()
   const resetPassword = useResetPasswordAdminUsersUserIdResetPasswordPost()
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -262,16 +266,19 @@ function ResetPasswordModal({
     >
       <form
         role="dialog"
-        aria-label={`Reset password for ${target.full_name}`}
+        ref={dialogRef}
+        aria-modal="true"
+        tabIndex={-1}
+        aria-labelledby={`${titleId} ${nameId}`}
         onSubmit={onSubmit}
         onClick={(e) => e.stopPropagation()}
         className="pop-in glass-strong w-full max-w-sm rounded-panel p-5"
       >
-        <h2 className="text-base font-semibold tracking-tight text-neutral-900">
+        <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
           Reset password
         </h2>
         <p className="mt-1 text-xs text-neutral-500">
-          Sets a new password for <strong>{target.full_name}</strong> and signs out every
+          Sets a new password for <strong id={nameId}>{target.full_name}</strong> and signs out every
           session they have. There is no email — hand it over yourself.
         </p>
 

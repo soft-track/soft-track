@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { IssueRead } from '@/api/generated/models'
 import { Icon } from '@/ui/Icon'
+import { useFocusTrap } from '@/ui/useFocusTrap'
 
 export type Command = {
   id: string
@@ -29,6 +30,7 @@ export function CommandPalette({
   issues: IssueRead[]
   onOpenIssue: (issue: IssueRead) => void
 }) {
+  const dialogRef = useFocusTrap<HTMLDivElement>()
   const [query, setQuery] = useState('')
   const [rawHighlighted, setHighlighted] = useState(0)
   const listRef = useRef<HTMLUListElement>(null)
@@ -105,6 +107,9 @@ export function CommandPalette({
     >
       <div
         role="dialog"
+        ref={dialogRef}
+        aria-modal="true"
+        tabIndex={-1}
         aria-label="Command palette"
         onClick={(e) => e.stopPropagation()}
         className="pop-in glass-strong w-full max-w-lg overflow-hidden rounded-panel"

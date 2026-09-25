@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useId, useState } from 'react'
 
 import { useCreateIssueTeamsTeamIdIssuesPost } from '@/api/generated/endpoints/issues/issues'
 import { IssuePriority } from '@/api/generated/models'
@@ -14,8 +14,11 @@ import { invalidateProjects, pickableProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
+import { useFocusTrap } from '@/ui/useFocusTrap'
 
 export function NewIssueModal({ onClose }: { onClose: () => void }) {
+  const dialogRef = useFocusTrap<HTMLDivElement>()
+  const titleId = useId()
   const { team, projects, labels, members, cycles, statuses } = useTeamContext()
   const queryClient = useQueryClient()
   const createIssue = useCreateIssueTeamsTeamIdIssuesPost()
@@ -72,11 +75,17 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
     >
       <div
         role="dialog"
-        aria-label="New issue"
+        ref={dialogRef}
+        aria-modal="true"
+        tabIndex={-1}
+        aria-labelledby={titleId}
         onClick={(e) => e.stopPropagation()}
         className="pop-in glass-strong w-full max-w-xl rounded-panel"
       >
         <form onSubmit={onSubmit}>
+          <h2 id={titleId} className="sr-only">
+            New issue
+          </h2>
           <div className="hairline border-b px-5 pb-4 pt-4">
             <div className="mb-2 flex items-center justify-between">
               <span className="identifier rounded-full bg-neutral-900/6 px-2 py-0.5 text-[11px] font-semibold text-neutral-500">

@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useId, useState } from 'react'
 
 import type { SavedViewRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
@@ -8,6 +8,7 @@ import { toViewFilters } from '@/board/filters'
 import type { BoardGrouping } from '@/board/grouping'
 import { useTeamContext } from '@/team/useTeamContext'
 import { useSavedViews } from '@/views/useSavedViews'
+import { useFocusTrap } from '@/ui/useFocusTrap'
 
 /**
  * Naming a set of filters, or renaming one that already has a name.
@@ -28,6 +29,8 @@ export function SaveViewModal({
   editing?: SavedViewRead
   onClose: () => void
 }) {
+  const dialogRef = useFocusTrap<HTMLFormElement>()
+  const titleId = useId()
   const { team, members, labels, projects, cycles, statuses } = useTeamContext()
   const views = useSavedViews(team.id)
 
@@ -62,12 +65,15 @@ export function SaveViewModal({
     >
       <form
         role="dialog"
-        aria-label={editing ? 'Edit view' : 'Save view'}
+        ref={dialogRef}
+        aria-modal="true"
+        tabIndex={-1}
+        aria-labelledby={titleId}
         onSubmit={onSubmit}
         onClick={(e) => e.stopPropagation()}
         className="pop-in glass-strong w-full max-w-sm rounded-panel p-5"
       >
-        <h2 className="text-base font-semibold tracking-tight text-neutral-900">
+        <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
           {editing ? 'Edit view' : 'Save this view'}
         </h2>
         <p className="mt-1 text-xs text-neutral-500">

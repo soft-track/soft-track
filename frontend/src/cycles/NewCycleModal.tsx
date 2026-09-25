@@ -1,15 +1,18 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { addDays, format } from 'date-fns'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useId, useState } from 'react'
 
 import { useCreateCycleTeamsTeamIdCyclesPost } from '@/api/generated/endpoints/cycles/cycles'
 import { errorDetail } from '@/api/errors'
 import { useTeamContext } from '@/team/useTeamContext'
+import { useFocusTrap } from '@/ui/useFocusTrap'
 
 /** A day, as the value an <input type="date"> wants. */
 const asDateInput = (date: Date) => format(date, 'yyyy-MM-dd')
 
 export function NewCycleModal({ onClose }: { onClose: () => void }) {
+  const dialogRef = useFocusTrap<HTMLFormElement>()
+  const titleId = useId()
   const { team } = useTeamContext()
   const queryClient = useQueryClient()
   const createCycle = useCreateCycleTeamsTeamIdCyclesPost()
@@ -46,12 +49,15 @@ export function NewCycleModal({ onClose }: { onClose: () => void }) {
     >
       <form
         role="dialog"
-        aria-label="New cycle"
+        ref={dialogRef}
+        aria-modal="true"
+        tabIndex={-1}
+        aria-labelledby={titleId}
         onSubmit={onSubmit}
         onClick={(e) => e.stopPropagation()}
         className="pop-in glass-strong w-full max-w-sm rounded-panel p-5"
       >
-        <h2 className="mb-4 text-base font-semibold tracking-tight text-neutral-900">New cycle</h2>
+        <h2 id={titleId} className="mb-4 text-base font-semibold tracking-tight text-neutral-900">New cycle</h2>
 
         <label className="mb-3 block">
           <span className="mb-1.5 block text-xs font-medium text-neutral-500">Name (optional)</span>

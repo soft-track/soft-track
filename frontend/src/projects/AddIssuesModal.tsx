@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useId, useState } from 'react'
 
 import { errorDetail } from '@/api/errors'
 import { useBulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost } from '@/api/generated/endpoints/issues/issues'
@@ -9,6 +9,7 @@ import { useDebounced } from '@/search/useDebounced'
 import { invalidateProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
+import { useFocusTrap } from '@/ui/useFocusTrap'
 
 /**
  * Filing existing issues into a project.
@@ -28,6 +29,8 @@ export function AddIssuesModal({
   alreadyIn: ReadonlySet<number>
   onClose: () => void
 }) {
+  const dialogRef = useFocusTrap<HTMLFormElement>()
+  const titleId = useId()
   const { team } = useTeamContext()
   const queryClient = useQueryClient()
   const bulkUpdate = useBulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost()
@@ -75,12 +78,15 @@ export function AddIssuesModal({
     >
       <form
         role="dialog"
-        aria-label={`Add issues to ${project.name}`}
+        ref={dialogRef}
+        aria-modal="true"
+        tabIndex={-1}
+        aria-labelledby={titleId}
         onSubmit={onSubmit}
         onClick={(e) => e.stopPropagation()}
         className="pop-in glass-strong flex max-h-[70vh] w-full max-w-lg flex-col rounded-panel p-5"
       >
-        <h2 className="text-base font-semibold tracking-tight text-neutral-900">
+        <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
           Add issues to {project.name}
         </h2>
         <p className="mt-1 text-xs text-neutral-500">
