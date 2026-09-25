@@ -50,7 +50,8 @@ export function useGlobalShortcuts({
       } else if (event.key === '/') {
         event.preventDefault()
         document
-          .querySelector<HTMLInputElement>('input[type="search"], input[placeholder*="Search"]')
+          // By attribute rather than by its placeholder, which is translated (#106).
+          .querySelector<HTMLInputElement>('[data-global-search]')
           ?.focus()
       }
     }

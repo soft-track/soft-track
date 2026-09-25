@@ -1,10 +1,12 @@
 import { useId } from 'react'
 
+import { useTranslation } from '@/i18n'
 import { MOD_KEY, SHORTCUT_GROUPS } from '@/keyboard/shortcuts'
 import { Icon } from '@/ui/Icon'
 import { useFocusTrap } from '@/ui/useFocusTrap'
 
 export function ShortcutsCheatsheet({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation(['keyboard', 'common'])
   const dialogRef = useFocusTrap<HTMLDivElement>()
   const titleId = useId()
   return (
@@ -23,12 +25,12 @@ export function ShortcutsCheatsheet({ onClose }: { onClose: () => void }) {
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
-            Keyboard shortcuts
+            {t('shortcuts.title')}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common:close')}
             className="btn btn-ghost btn-icon btn-sm text-neutral-400"
           >
             <Icon name="close" size={15} />

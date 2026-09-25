@@ -9,7 +9,7 @@ import {
 } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useQueryClient } from '@tanstack/react-query'
-import { format, isSameMonth, startOfMonth } from 'date-fns'
+import { isSameMonth, startOfMonth } from 'date-fns'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -19,7 +19,9 @@ import {
   useUpdateIssueIssuesIssueIdPatch,
 } from '@/api/generated/endpoints/issues/issues'
 import type { IssueRead, ListIssuesTeamsTeamIdIssuesGetParams } from '@/api/generated/models'
-import { dayKey, monthGrid, monthParam, moveDay, parseMonth, WEEKDAYS } from '@/calendar/month'
+import { dayKey, monthGrid, monthParam, moveDay, parseMonth } from '@/calendar/month'
+import { useTranslation } from '@/i18n'
+import { formatDate } from '@/i18n/format'
 import { localToday } from '@/issues/dueDate'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
@@ -49,6 +51,7 @@ export function CalendarView({
   canWrite: boolean
 }) {
   const { team, statuses } = useTeamContext()
+  const { t } = useTranslation('calendar')
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const titleId = useId()
@@ -142,11 +145,11 @@ export function CalendarView({
     <div className="glass flex h-full flex-col overflow-hidden rounded-panel">
       <div className="hairline flex flex-wrap items-center gap-2 border-b px-4 py-2.5">
         <h2 id={titleId} className="mr-auto text-sm font-semibold text-neutral-900">
-          {format(month, 'MMMM yyyy')}
+          {formatDate(month, 'MMMM yyyy')}
         </h2>
         {hidden > 0 && (
           <span className="text-xs text-neutral-500">
-            Showing {issues.length} of {query.data?.total} — narrow the filters to see the rest.
+            {t('month.showing', { shown: issues.length, total: query.data?.total ?? 0 })}
           </span>
         )}
         <button
@@ -157,12 +160,12 @@ export function CalendarView({
           }}
           className="btn btn-secondary btn-sm"
         >
-          Today
+          {t('month.today')}
         </button>
         <button
           type="button"
           onClick={() => setMonth(moveDay(month, 'PageUp')!)}
-          aria-label="Previous month"
+          aria-label={t('month.previousMonth')}
           className="btn btn-ghost btn-icon btn-sm"
         >
           <Icon name="chevron-left" size={15} />
@@ -170,7 +173,7 @@ export function CalendarView({
         <button
           type="button"
           onClick={() => setMonth(moveDay(month, 'PageDown')!)}
-          aria-label="Next month"
+          aria-label={t('month.nextMonth')}
           className="btn btn-ghost btn-icon btn-sm"
         >
           <Icon name="chevron-right" size={15} />
@@ -178,7 +181,7 @@ export function CalendarView({
       </div>
 
       {query.isLoading ? (
-        <Loading label="Loading the month…" />
+        <Loading label={t('month.loading')} />
       ) : (
         <DndContext sensors={sensors} onDragEnd={onDragEnd}>
           <div
@@ -201,13 +204,15 @@ export function CalendarView({
             }}
           >
             <div role="row" className="grid grid-cols-7 border-b border-neutral-900/8">
-              {WEEKDAYS.map((name) => (
+              {/* Named from the grid's first week, so the language's own short names
+                  come out in the grid's order. */}
+              {weeks[0].map((day) => (
                 <div
-                  key={name}
+                  key={dayKey(day)}
                   role="columnheader"
                   className="px-2 py-1.5 text-[11px] font-medium uppercase tracking-wide text-neutral-400"
                 >
-                  {name}
+                  {formatDate(day, 'EEE')}
                 </div>
               ))}
             </div>
@@ -288,12 +293,14 @@ function DayCell({
   onOpenDay: () => void
   onOpenIssue: (issue: IssueRead) => void
 }) {
+  const { t } = useTranslation('calendar')
   const { setNodeRef, isOver } = useDroppable({ id: key, disabled: !canWrite })
   const shown = issues.slice(0, CHIPS_PER_DAY)
   const more = issues.length - shown.length
-  const label = `${format(day, 'EEEE d MMMM')}${
-    issues.length ? `, ${issues.length} due` : ''
-  }`
+  const label = t('month.dayLabel', {
+    day: formatDate(day, 'EEEE d MMMM'),
+    count: issues.length,
+  })
 
   return (
     <div
@@ -319,7 +326,7 @@ function DayCell({
                 : 'text-neutral-300'
           }`}
         >
-          {format(day, 'd')}
+          {formatDate(day, 'd')}
         </span>
       </div>
       <ul className="space-y-1">
@@ -342,7 +349,7 @@ function DayCell({
           onClick={onOpenDay}
           className="mt-1 w-full rounded-control px-1.5 text-left text-[11px] font-medium text-neutral-500 hover:bg-neutral-900/5"
         >
-          +{more} more
+          {t('month.more', { count: more })}
         </button>
       )}
     </div>
@@ -362,6 +369,7 @@ function Chip({
   tabbable: boolean
   onOpen: () => void
 }) {
+  const { t } = useTranslation('calendar')
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: issue.id,
     disabled: !draggable,
@@ -373,7 +381,11 @@ function Chip({
       {...(draggable ? { ...listeners, ...attributes } : {})}
       tabIndex={tabbable ? 0 : -1}
       onClick={onOpen}
-      title={`${issue.identifier} ${issue.title} · ${issue.status.name}`}
+      title={t('month.chipTitle', {
+        identifier: issue.identifier,
+        title: issue.title,
+        status: issue.status.name,
+      })}
       style={{
         transform: CSS.Translate.toString(transform),
         zIndex: isDragging ? 20 : undefined,
@@ -402,6 +414,7 @@ function DayDialog({
   onClose: () => void
   onOpenIssue: (issue: IssueRead) => void
 }) {
+  const { t } = useTranslation(['calendar', 'common'])
   const dialogRef = useFocusTrap<HTMLDivElement>()
   const titleId = useId()
   return createPortal(
@@ -425,10 +438,10 @@ function DayDialog({
         className="pop-in glass-strong w-full max-w-md rounded-panel p-4"
       >
         <h2 id={titleId} className="text-sm font-semibold text-neutral-900">
-          Due {format(new Date(`${day}T12:00:00`), 'EEEE d MMMM')}
+          {t('month.dueOn', { day: formatDate(new Date(`${day}T12:00:00`), 'EEEE d MMMM') })}
         </h2>
         {issues.length === 0 ? (
-          <p className="mt-3 text-sm text-neutral-400">Nothing is due that day.</p>
+          <p className="mt-3 text-sm text-neutral-400">{t('month.nothingDue')}</p>
         ) : (
           <ul className="mt-3 space-y-1">
             {issues.map((issue) => (
@@ -452,7 +465,7 @@ function DayDialog({
         )}
         <div className="mt-3 flex justify-end">
           <button type="button" onClick={onClose} className="btn btn-secondary btn-sm">
-            Close
+            {t('common:close')}
           </button>
         </div>
       </div>

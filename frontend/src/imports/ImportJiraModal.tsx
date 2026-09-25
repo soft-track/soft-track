@@ -4,6 +4,7 @@ import { useId, useState } from 'react'
 import { AXIOS_INSTANCE } from '@/api/client'
 import { errorDetail } from '@/api/errors'
 import type { ImportReport } from '@/api/generated/models'
+import { Trans, useTranslation } from '@/i18n'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { useFocusTrap } from '@/ui/useFocusTrap'
@@ -16,6 +17,7 @@ import { useFocusTrap } from '@/ui/useFocusTrap'
  * shown here is the one that then happens rather than an estimate.
  */
 export function ImportJiraModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation(['imports', 'common'])
   const dialogRef = useFocusTrap<HTMLDivElement>()
   const titleId = useId()
   const { team } = useTeamContext()
@@ -47,7 +49,7 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
         queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/projects`] })
       }
     } catch (err: unknown) {
-      setError(errorDetail(err, 'That import could not be read.'))
+      setError(errorDetail(err, t('jira.errors.read')))
       setReport(null)
     } finally {
       setBusy(false)
@@ -71,10 +73,11 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
         className="pop-in glass-strong flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-panel"
       >
         <div className="hairline border-b px-5 py-4">
-          <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">Import from Jira</h2>
+          <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
+            {t('jira.title')}
+          </h2>
           <p className="mt-0.5 text-xs text-neutral-500">
-            A Jira CSV or JSON export. Export with the <em>Issue key</em> column so the
-            import can be re-run safely.
+            <Trans t={t} i18nKey="jira.intro" components={{ em: <em /> }} />
           </p>
         </div>
 
@@ -85,13 +88,15 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-medium text-neutral-800">
-                {file ? file.name : 'Choose a Jira export'}
+                {file ? file.name : t('jira.chooseFile')}
               </span>
               <span className="block text-xs text-neutral-400">
-                {file ? `${Math.max(1, Math.round(file.size / 1024))} KB` : '.csv or .json, up to 20 MB'}
+                {file
+                  ? t('jira.fileSize', { size: Math.max(1, Math.round(file.size / 1024)) })
+                  : t('jira.fileHint')}
               </span>
             </span>
-            <span className="btn btn-secondary btn-sm">Browse</span>
+            <span className="btn btn-secondary btn-sm">{t('jira.browse')}</span>
             <input
               type="file"
               accept=".csv,.json,text/csv,application/json"
@@ -111,44 +116,36 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
             <div className="mt-4 space-y-3">
               <div className="well rounded-card p-3">
                 <p className="text-sm font-medium text-neutral-900">
-                  {done ? 'Imported' : 'This import would create'}
+                  {done ? t('jira.imported') : t('jira.wouldCreate')}
                 </p>
                 <ul className="mt-1 space-y-0.5 text-sm text-neutral-600">
                   <li>
-                    <Count n={report.issues_created} one="issue" many="issues" />
+                    <Count i18nKey="jira.issues" n={report.issues_created} />
                     {report.issues_skipped_existing > 0 && (
                       <span className="text-neutral-400">
                         {' '}
-                        · {report.issues_skipped_existing} already imported, left alone
+                        {t('jira.skipped', { count: report.issues_skipped_existing })}
                       </span>
                     )}
                   </li>
                   <li>
-                    <Count n={report.comments_created} one="comment" many="comments" />
+                    <Count i18nKey="jira.comments" n={report.comments_created} />
                   </li>
                   {report.labels_created.length > 0 && (
                     <li>
-                      <Count
-                        n={report.labels_created.length}
-                        one="new label"
-                        many="new labels"
-                      />
+                      <Count i18nKey="jira.labels" n={report.labels_created.length} />
                       <span className="text-neutral-400">
                         {' '}
-                        — {report.labels_created.join(', ')}
+                        {t('jira.names', { names: report.labels_created.join(', ') })}
                       </span>
                     </li>
                   )}
                   {report.projects_created.length > 0 && (
                     <li>
-                      <Count
-                        n={report.projects_created.length}
-                        one="project from an epic"
-                        many="projects from epics"
-                      />
+                      <Count i18nKey="jira.projects" n={report.projects_created.length} />
                       <span className="text-neutral-400">
                         {' '}
-                        — {report.projects_created.join(', ')}
+                        {t('jira.names', { names: report.projects_created.join(', ') })}
                       </span>
                     </li>
                   )}
@@ -171,7 +168,7 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
 
               {unmatched.length > 0 && !done && (
                 <div>
-                  <p className="eyebrow mb-1">Not members of this team</p>
+                  <p className="eyebrow mb-1">{t('jira.unmatchedTitle')}</p>
                   <ul className="space-y-0.5">
                     {unmatched.map((user) => (
                       <li key={user.source} className="text-xs text-neutral-600">
@@ -181,7 +178,7 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
                   </ul>
                   <p className="mt-1 text-xs text-neutral-400">
                     {/* The fix is outside this dialog, so say what it is. */}
-                    Add them to the team first and re-run to attribute their work.
+                    {t('jira.unmatchedHint')}
                   </p>
                 </div>
               )}
@@ -189,7 +186,10 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
               {report.preview.length > 0 && !done && (
                 <div>
                   <p className="eyebrow mb-1">
-                    First {report.preview.length} of {report.issues_found}
+                    {t('jira.previewTitle', {
+                      shown: report.preview.length,
+                      total: report.issues_found,
+                    })}
                   </p>
                   <ul className="space-y-0.5">
                     {report.preview.map((issue, i) => (
@@ -215,7 +215,7 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
 
         <div className="hairline flex items-center justify-end gap-2 border-t px-5 py-3">
           <button type="button" onClick={onClose} className="btn btn-ghost">
-            {done ? 'Close' : 'Cancel'}
+            {done ? t('common:close') : t('common:cancel')}
           </button>
           {!done && (
             <button
@@ -225,10 +225,10 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
               className="btn btn-primary"
             >
               {busy
-                ? 'Working…'
+                ? t('jira.working')
                 : report
-                  ? `Import ${report.issues_created} issues`
-                  : 'Check the file'}
+                  ? t('jira.confirm', { count: report.issues_created })
+                  : t('jira.check')}
             </button>
           )}
         </div>
@@ -237,11 +237,21 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-function Count({ n, one, many }: { n: number; one: string; many: string }) {
+/** A line of the report: the number set apart, then what it counts. */
+function Count({
+  i18nKey,
+  n,
+}: {
+  i18nKey: 'jira.issues' | 'jira.comments' | 'jira.labels' | 'jira.projects'
+  n: number
+}) {
+  const { t } = useTranslation('imports')
   return (
-    <>
-      <span className="identifier font-medium text-neutral-900">{n}</span>{' '}
-      {n === 1 ? one : many}
-    </>
+    <Trans
+      t={t}
+      i18nKey={i18nKey}
+      count={n}
+      components={{ n: <span className="identifier font-medium text-neutral-900" /> }}
+    />
   )
 }

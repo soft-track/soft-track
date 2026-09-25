@@ -10,7 +10,8 @@ import type {
   StatusRead,
   TeamMemberRead,
 } from '@/api/generated/models'
-import { PRIORITY_META } from '@/issues/issueMeta'
+import { i18n } from '@/i18n'
+import { formatList } from '@/i18n/format'
 
 /**
  * Turning a stored rule back into the sentence somebody meant by it.
@@ -22,17 +23,41 @@ import { PRIORITY_META } from '@/issues/issueMeta'
  *
  * Pure and in its own module so it can be tested without a DOM, and so the
  * list row and the run log cannot describe the same rule differently.
+ *
+ * The words are in the `automations` catalog (#106). What this module hands
+ * out are clauses, not sentences -- "it is in Todo", "assign it to Maya" --
+ * each one a whole catalog phrase with the name inside it, and the settings
+ * page slots them into its sentence templates (`settings:automation.sentence`),
+ * so word order around them belongs to the sentence, not to this file.
  */
 
+// Getters over the catalog, so every caller keeps reading
+// `TRIGGER_LABELS[trigger]` and gets the current language's words.
 export const TRIGGER_LABELS: Record<AutomationTrigger, string> = {
-  issue_created: 'an issue is created',
-  status_changed: 'an issue changes status',
-  issue_assigned: 'an issue is assigned',
-  comment_added: 'a comment is added',
-  cycle_completed: 'a cycle is completed',
-  branch_created: 'a branch for it appears',
-  pull_request_opened: 'a pull request for it opens',
-  pull_request_merged: 'a pull request for it merges',
+  get issue_created() {
+    return i18n.t('automations:trigger.issue_created')
+  },
+  get status_changed() {
+    return i18n.t('automations:trigger.status_changed')
+  },
+  get issue_assigned() {
+    return i18n.t('automations:trigger.issue_assigned')
+  },
+  get comment_added() {
+    return i18n.t('automations:trigger.comment_added')
+  },
+  get cycle_completed() {
+    return i18n.t('automations:trigger.cycle_completed')
+  },
+  get branch_created() {
+    return i18n.t('automations:trigger.branch_created')
+  },
+  get pull_request_opened() {
+    return i18n.t('automations:trigger.pull_request_opened')
+  },
+  get pull_request_merged() {
+    return i18n.t('automations:trigger.pull_request_merged')
+  },
 }
 
 /** Everything the sentences need to turn an id into a name. */
@@ -45,30 +70,43 @@ export type RuleVocabulary = {
 }
 
 function statusName(vocabulary: RuleVocabulary, id: number): string {
-  return vocabulary.statuses.find((s) => s.id === id)?.name ?? 'a deleted status'
+  return (
+    vocabulary.statuses.find((s) => s.id === id)?.name ??
+    i18n.t('automations:missing.status')
+  )
 }
 
 function labelName(vocabulary: RuleVocabulary, id: number): string {
-  return vocabulary.labels.find((l) => l.id === id)?.name ?? 'a deleted label'
+  return (
+    vocabulary.labels.find((l) => l.id === id)?.name ??
+    i18n.t('automations:missing.label')
+  )
 }
 
 function projectName(vocabulary: RuleVocabulary, id: number): string {
-  return vocabulary.projects.find((p) => p.id === id)?.name ?? 'a deleted project'
+  return (
+    vocabulary.projects.find((p) => p.id === id)?.name ??
+    i18n.t('automations:missing.project')
+  )
 }
 
 function personName(vocabulary: RuleVocabulary, id: number): string {
   return (
     vocabulary.members.find((m) => m.user.id === id)?.user.full_name ??
-    'someone who has left'
+    i18n.t('automations:missing.person')
   )
 }
 
 function cycleName(vocabulary: RuleVocabulary, id: number): string {
-  return vocabulary.cycles.find((c) => c.id === id)?.display_name ?? 'a deleted cycle'
+  return (
+    vocabulary.cycles.find((c) => c.id === id)?.display_name ??
+    i18n.t('automations:missing.cycle')
+  )
 }
 
+// Mid-clause: "its priority is urgent" -- the catalog's clause words.
 function priorityName(priority: IssuePriority): string {
-  return PRIORITY_META[priority].label.toLowerCase()
+  return i18n.t(`automations:priorityInClause.${priority}`)
 }
 
 /**
@@ -82,22 +120,40 @@ export function describeConditions(
 ): string[] {
   const clauses: string[] = []
   if (conditions.if_status_id != null) {
-    clauses.push(`it is in ${statusName(vocabulary, conditions.if_status_id)}`)
+    clauses.push(
+      i18n.t('automations:condition.inStatus', {
+        status: statusName(vocabulary, conditions.if_status_id),
+      }),
+    )
   }
   if (conditions.if_priority != null) {
-    clauses.push(`its priority is ${priorityName(conditions.if_priority)}`)
+    clauses.push(
+      i18n.t('automations:condition.priority', {
+        priority: priorityName(conditions.if_priority),
+      }),
+    )
   }
   if (conditions.if_label_id != null) {
-    clauses.push(`it has the label ${labelName(vocabulary, conditions.if_label_id)}`)
+    clauses.push(
+      i18n.t('automations:condition.hasLabel', {
+        label: labelName(vocabulary, conditions.if_label_id),
+      }),
+    )
   }
   if (conditions.if_project_id != null) {
-    clauses.push(`it is in ${projectName(vocabulary, conditions.if_project_id)}`)
+    clauses.push(
+      i18n.t('automations:condition.inProject', {
+        project: projectName(vocabulary, conditions.if_project_id),
+      }),
+    )
   }
   if (conditions.if_unassigned) {
-    clauses.push('nobody is assigned')
+    clauses.push(i18n.t('automations:condition.unassigned'))
   } else if (conditions.if_assignee_id != null) {
     clauses.push(
-      `it is assigned to ${personName(vocabulary, conditions.if_assignee_id)}`,
+      i18n.t('automations:condition.assignedTo', {
+        name: personName(vocabulary, conditions.if_assignee_id),
+      }),
     )
   }
   return clauses
@@ -110,32 +166,49 @@ export function describeActions(
 ): string[] {
   const clauses: string[] = []
   if (actions.set_status_id != null) {
-    clauses.push(`set its status to ${statusName(vocabulary, actions.set_status_id)}`)
+    clauses.push(
+      i18n.t('automations:action.setStatus', {
+        status: statusName(vocabulary, actions.set_status_id),
+      }),
+    )
   }
   if (actions.set_priority != null) {
-    clauses.push(`set its priority to ${priorityName(actions.set_priority)}`)
+    clauses.push(
+      i18n.t('automations:action.setPriority', { priority: priorityName(actions.set_priority) }),
+    )
   }
   if (actions.set_assignee_id != null) {
-    clauses.push(`assign it to ${personName(vocabulary, actions.set_assignee_id)}`)
+    clauses.push(
+      i18n.t('automations:action.assignTo', {
+        name: personName(vocabulary, actions.set_assignee_id),
+      }),
+    )
   }
   if (actions.add_label_id != null) {
-    clauses.push(`add the label ${labelName(vocabulary, actions.add_label_id)}`)
+    clauses.push(
+      i18n.t('automations:action.addLabel', {
+        label: labelName(vocabulary, actions.add_label_id),
+      }),
+    )
   }
   if (actions.move_to_active_cycle) {
-    clauses.push('move it to the active cycle')
+    clauses.push(i18n.t('automations:action.moveToActiveCycle'))
   } else if (actions.set_cycle_id != null) {
-    clauses.push(`move it to ${cycleName(vocabulary, actions.set_cycle_id)}`)
+    clauses.push(
+      i18n.t('automations:action.moveToCycle', {
+        cycle: cycleName(vocabulary, actions.set_cycle_id),
+      }),
+    )
   }
   if (actions.comment_body?.trim()) {
-    clauses.push('post a comment')
+    clauses.push(i18n.t('automations:action.postComment'))
   }
   return clauses
 }
 
 /** `["it is urgent", "it has the label bug"]` → `"it is urgent and it has the label bug"`. */
 export function joinClauses(clauses: string[]): string {
-  if (clauses.length <= 1) return clauses[0] ?? ''
-  return `${clauses.slice(0, -1).join(', ')} and ${clauses[clauses.length - 1]}`
+  return formatList(clauses)
 }
 
 /** The whole rule as one sentence, for a list row and for a screen reader. */
@@ -145,11 +218,20 @@ export function describeRule(
 ): string {
   const conditions = describeConditions(rule.conditions, vocabulary)
   const actions = describeActions(rule.actions, vocabulary)
-  const when = `When ${TRIGGER_LABELS[rule.trigger]}`
-  const If = conditions.length > 0 ? `, if ${joinClauses(conditions)}` : ''
+  const values = {
+    trigger: TRIGGER_LABELS[rule.trigger],
+    conditions: joinClauses(conditions),
+    actions: joinClauses(actions),
+  }
+  const hasConditions = conditions.length > 0
   // A rule can be left with no actions when the cycle it filled is deleted;
   // it is switched off at the same time. Saying so beats an empty sentence.
-  const then =
-    actions.length > 0 ? `, ${joinClauses(actions)}.` : ', do nothing — this rule is empty.'
-  return `${when}${If}${then}`
+  if (actions.length === 0) {
+    return hasConditions
+      ? i18n.t('automations:rule.ifEmpty', values)
+      : i18n.t('automations:rule.empty', values)
+  }
+  return hasConditions
+    ? i18n.t('automations:rule.ifThen', values)
+    : i18n.t('automations:rule.then', values)
 }

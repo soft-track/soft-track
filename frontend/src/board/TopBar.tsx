@@ -156,6 +156,7 @@ export function TopBar({
           />
           <input
             type="search"
+            data-global-search
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={t('topBar.searchPlaceholder')}

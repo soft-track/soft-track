@@ -5,6 +5,7 @@ import {
   useGetWatchStateIssuesIssueIdWatchGet,
   useSetWatchStateIssuesIssueIdWatchPut,
 } from '@/api/generated/endpoints/notifications/notifications'
+import { useTranslation } from '@/i18n'
 import { Icon } from '@/ui/Icon'
 
 /**
@@ -16,12 +17,13 @@ import { Icon } from '@/ui/Icon'
  * only what it currently is.
  */
 export function WatchToggle({ issueId }: { issueId: number }) {
+  const { t } = useTranslation('notifications')
   const queryClient = useQueryClient()
   const watchQuery = useGetWatchStateIssuesIssueIdWatchGet(issueId)
   const setWatch = useSetWatchStateIssuesIssueIdWatchPut()
 
   const watching = watchQuery.data?.watching ?? false
-  const label = watching ? 'Watching' : 'Watch'
+  const label = watching ? t('watch.watching') : t('watch.watch')
 
   const toggle = async () => {
     await setWatch.mutateAsync({ issueId, data: { watching: !watching } })
@@ -36,11 +38,7 @@ export function WatchToggle({ issueId }: { issueId: number }) {
       onClick={toggle}
       disabled={watchQuery.isLoading || setWatch.isPending}
       data-active={watching}
-      title={
-        watching
-          ? 'Stop being notified about this issue'
-          : 'Be notified about comments and status changes'
-      }
+      title={watching ? t('watch.stopHint') : t('watch.startHint')}
       className="btn btn-ghost btn-sm text-neutral-500 data-[active=true]:text-neutral-900"
     >
       <Icon name={watching ? 'bell' : 'bell-off'} size={14} />

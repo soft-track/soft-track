@@ -1,11 +1,17 @@
 import { auth } from '@/i18n/en/auth'
+import { automations } from '@/i18n/en/automations'
 import { board } from '@/i18n/en/board'
+import { calendar } from '@/i18n/en/calendar'
 import { common } from '@/i18n/en/common'
 import { cycles } from '@/i18n/en/cycles'
+import { imports } from '@/i18n/en/imports'
 import { issues } from '@/i18n/en/issues'
+import { keyboard } from '@/i18n/en/keyboard'
 import { landing } from '@/i18n/en/landing'
+import { notifications } from '@/i18n/en/notifications'
 import { projects } from '@/i18n/en/projects'
 import { reports } from '@/i18n/en/reports'
+import { search } from '@/i18n/en/search'
 import { settings } from '@/i18n/en/settings'
 import { team } from '@/i18n/en/team'
 import { views } from '@/i18n/en/views'
@@ -24,5 +30,11 @@ export const resources = {
     views,
     reports,
     cycles,
+    automations,
+    imports,
+    search,
+    keyboard,
+    notifications,
+    calendar,
   },
 } as const

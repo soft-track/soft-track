@@ -19,6 +19,12 @@ const CONVERTED = [
   'src/views',
   'src/reports',
   'src/cycles',
+  'src/automations',
+  'src/imports',
+  'src/search',
+  'src/keyboard',
+  'src/notifications',
+  'src/calendar',
 ]
 
 const root = fileURLToPath(new URL('..', import.meta.url))

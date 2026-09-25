@@ -1,0 +1,30 @@
+/** The keyboard shortcuts cheatsheet: its title, group headings and what each key does. */
+export const shortcuts = {
+  title: 'Keyboard shortcuts',
+  groups: {
+    anywhere: 'Anywhere',
+    board: 'On the board',
+    issue: 'On an open issue',
+  },
+  descriptions: {
+    openPalette: 'Open the command palette',
+    createIssue: 'Create an issue',
+    focusSearch: 'Focus search',
+    showList: 'Show this list',
+    closeTop: 'Close whatever is open',
+    moveColumns: 'Move between columns',
+    moveCards: 'Move between cards',
+    openFocused: 'Open the focused issue',
+    pickUp: 'Pick up the focused card, or drop it',
+    carryAcross: 'Carry a picked-up card to another column',
+    carryWithin: 'Move a picked-up card up or down its column',
+    putBack: 'Put a picked-up card back',
+    toggleSelected: 'Add or remove an issue from the selection',
+    selectRange: 'Select a range of issues',
+    clearSelection: 'Clear the selection',
+    changeStatus: 'Change status',
+    changePriority: 'Change priority',
+    changeAssignee: 'Change assignee',
+    jumpToLabels: 'Jump to labels',
+  },
+} as const

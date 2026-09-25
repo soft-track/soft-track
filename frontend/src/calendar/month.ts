@@ -74,5 +74,3 @@ export function moveDay(day: Date, key: string): Date | null {
       return null
   }
 }
-
-export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
