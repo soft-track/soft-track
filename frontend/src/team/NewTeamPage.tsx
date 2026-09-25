@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { useCreateTeamTeamsPost } from '@/api/generated/endpoints/teams/teams'
 import { errorDetail } from '@/api/errors'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import { Logo } from '@/ui/Logo'
 
 export default function NewTeamPage() {

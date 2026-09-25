@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 
 import { Markdown, MarkdownEditor } from '@/markdown/lazy'
 import type { Mentionable } from '@/markdown/mentions'

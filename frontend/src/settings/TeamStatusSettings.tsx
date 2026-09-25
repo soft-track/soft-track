@@ -13,7 +13,7 @@ import {
 import { useListTeamMembersTeamsTeamIdMembersGet } from '@/api/generated/endpoints/teams/teams'
 import { StatusCategory, type StatusRead, type TeamRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import { CATEGORY_META, CATEGORY_ORDER } from '@/issues/issueMeta'
 import { useTeamByKey } from '@/team/useTeams'
 import { Icon } from '@/ui/Icon'

@@ -16,7 +16,7 @@ import {
 import type { InviteRead, TeamRole } from '@/api/generated/models'
 import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import { DeactivatedChip, RoleChip } from '@/settings/RoleChip'
 import { copyInviteLink, inviteUrl } from '@/settings/inviteLink'
 import { useTeamByKey } from '@/team/useTeams'

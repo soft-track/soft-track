@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import type { SavedViewRead } from '@/api/generated/models'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import {
   type BoardFilters,
   fromViewFilters,
@@ -10,7 +10,7 @@ import {
   NO_FILTERS,
   sameFilters,
 } from '@/board/filters'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { useSavedViews } from '@/views/useSavedViews'
 

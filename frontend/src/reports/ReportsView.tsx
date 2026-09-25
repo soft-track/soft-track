@@ -10,7 +10,7 @@ import { BurndownChart } from '@/reports/BurndownChart'
 import { CreatedResolvedChart } from '@/reports/CreatedResolvedChart'
 import { FlowChart } from '@/reports/FlowChart'
 import { VelocityChart } from '@/reports/VelocityChart'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Select } from '@/ui/Select'
 
 const WINDOWS = [14, 30, 90] as const

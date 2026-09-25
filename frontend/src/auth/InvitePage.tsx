@@ -8,7 +8,7 @@ import {
   usePreviewInviteInvitesTokenGet,
 } from '@/api/generated/endpoints/invites/invites'
 import { errorDetail } from '@/api/errors'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import { ProviderButtons } from '@/auth/ProviderButtons'
 import { RoleChip } from '@/settings/RoleChip'
 import { Icon } from '@/ui/Icon'

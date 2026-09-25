@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 
 import { useAuthConfigAuthConfigGet } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import { DEMO_EMAIL, DEMO_PASSWORD } from '@/auth/demo'
 import { oauthErrorMessage } from '@/auth/oauth'
 import { ProviderButtons } from '@/auth/ProviderButtons'

@@ -5,7 +5,7 @@ import { errorDetail } from '@/api/errors'
 import { summarise } from '@/board/filterLabels'
 import type { BoardFilters } from '@/board/filters'
 import { toViewFilters } from '@/board/filters'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 import { useSavedViews } from '@/views/useSavedViews'
 
 /**

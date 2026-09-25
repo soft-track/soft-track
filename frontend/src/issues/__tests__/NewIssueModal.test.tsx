@@ -19,7 +19,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { StatusRead, TeamMemberRead } from '@/api/generated/models'
 import { NewIssueModal } from '@/issues/NewIssueModal'
 import { useGlobalShortcuts } from '@/keyboard/useGlobalShortcuts'
-import { TeamProvider, type TeamContextValue } from '@/team/TeamContext'
+import { TeamProvider } from '@/team/TeamContext'
+import type { TeamContextValue } from '@/team/useTeamContext'
 
 // One object the hook hands back on every render, so a test can set
 // `mutation.isPending` before rendering and see what the form does with it.

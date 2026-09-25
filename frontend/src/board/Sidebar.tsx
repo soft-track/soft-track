@@ -1,11 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 
 import type { SavedViewRead } from '@/api/generated/models'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import type { BoardFilters } from '@/board/filters'
 import { CycleList } from '@/cycles/CycleList'
 import { InvitesBanner } from '@/team/InvitesBanner'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 import { Logo } from '@/ui/Logo'

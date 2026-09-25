@@ -11,7 +11,7 @@ import {
 
 import type { EstimateSummary, IssueRead, StatusRead } from '@/api/generated/models'
 import { IssueCard } from '@/issues/IssueCard'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 
 type Load = EstimateSummary['by_status'][string]

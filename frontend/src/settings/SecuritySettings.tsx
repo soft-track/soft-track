@@ -5,7 +5,7 @@ import {
   useSignOutEverywhereRouteAuthMeSignOutEverywherePost,
 } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import { ConnectedAccounts } from '@/settings/ConnectedAccounts'
 import { Icon } from '@/ui/Icon'
 

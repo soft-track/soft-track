@@ -4,7 +4,7 @@ import type { IssueRead } from '@/api/generated/models'
 import { selectionGesture } from '@/board/selection'
 import { EstimateBadge } from '@/issues/EstimateBadge'
 import { PriorityIcon } from '@/issues/PriorityIcon'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
 
 export function IssueListView({
