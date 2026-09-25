@@ -75,6 +75,8 @@ The generated API client under `src/api/generated/` is checked in and up to date
 - `SECRET_KEY` in `backend/.env.example` is a placeholder; generate a real secret before running beyond local development.
 - CORS origins for local dev are set in `backend/web.py` (`cors_origins`); add the deployed frontend origin there for production.
 - SMTP is optional. With no `SMTP_HOST`, the inbox is the only notification channel.
+- `METRICS_TOKEN` enables the authenticated `/metrics` endpoint; leave it blank to keep the endpoint hidden.
+- Metrics are per process. With multiple workers or replicas, each scrape reaches one process and counters are not automatically combined.
 - Signing in with Google or GitHub is optional and off until both halves of a provider's credentials are set. `API_BASE_URL` has to be right for it, because the redirect URI is built from it.
 
 ## User management and security

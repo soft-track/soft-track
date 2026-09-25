@@ -15,6 +15,7 @@ from sqlmodel import Session, select
 from lib_softtrack.history import record_creation
 from lib_softtrack.jira import JiraParseError, parse
 from lib_softtrack import statuses as statuses_service
+from lib_softtrack.metrics import COMMENTS_CREATED, ISSUES_CREATED
 from lib_softtrack.models.imports import ImportReport, ParsedIssue, UserMatch
 from lib_softtrack.tables import (
     Comment,
@@ -238,6 +239,8 @@ def import_export(
         session.rollback()
     else:
         session.commit()
+        ISSUES_CREATED.inc(report.issues_created)
+        COMMENTS_CREATED.inc(report.comments_created)
 
     return report
 

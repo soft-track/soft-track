@@ -1,7 +1,9 @@
 """Importing a Jira export into a team (issue #11)."""
 
-import io
 import json
+import io
+
+from prometheus_client import REGISTRY
 
 CSV = (
     "Issue key,Summary,Description,Status,Priority,Assignee,Reporter,Labels,Labels,"
@@ -27,6 +29,10 @@ def issues(client, team):
     return client.get(
         f"/teams/{team['team']['id']}/issues", headers=team["headers"]
     ).json()["items"]
+
+
+def metric_value(name: str) -> float:
+    return REGISTRY.get_sample_value(name) or 0.0
 
 
 # --- the dry run --------------------------------------------------------
@@ -60,6 +66,19 @@ def test_a_real_run_creates_the_issues(client, team):
     upload(client, team, dry_run=False)
     titles = sorted(issue["title"] for issue in issues(client, team))
     assert titles == ["Add logout", "Fix login"]
+
+
+def test_import_metrics_count_only_committed_rows(client, team):
+    issues_before = metric_value("softtrack_issues_created_total")
+    comments_before = metric_value("softtrack_comments_created_total")
+
+    upload(client, team)
+    assert metric_value("softtrack_issues_created_total") == issues_before
+    assert metric_value("softtrack_comments_created_total") == comments_before
+
+    upload(client, team, dry_run=False)
+    assert metric_value("softtrack_issues_created_total") == issues_before + 2
+    assert metric_value("softtrack_comments_created_total") == comments_before + 1
 
 
 # --- what gets mapped ---------------------------------------------------

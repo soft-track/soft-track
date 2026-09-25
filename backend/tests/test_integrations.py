@@ -16,6 +16,7 @@ import hmac
 import json
 
 import pytest
+from prometheus_client import REGISTRY
 
 from lib_softtrack.tables import Repository
 
@@ -192,6 +193,22 @@ def test_an_unsigned_delivery_is_refused(client, connected):
         headers={"X-GitHub-Event": "push"},
     )
     assert response.status_code == 401
+
+
+def test_an_unknown_event_uses_the_other_metric_bucket(client, connected):
+    labels = {"provider": "github", "event": "other"}
+    before = (
+        REGISTRY.get_sample_value("softtrack_webhook_deliveries_in_total", labels)
+        or 0.0
+    )
+
+    response = deliver(client, connected["repo"], "attack123", push())
+
+    assert response.status_code == 200
+    assert (
+        REGISTRY.get_sample_value("softtrack_webhook_deliveries_in_total", labels)
+        == before + 1
+    )
 
 
 def test_an_unknown_webhook_token_is_a_404(client, connected):

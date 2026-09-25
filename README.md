@@ -75,6 +75,7 @@ README, which show a team several cycles in.
 - [Signing in with Google and GitHub](docs/features/oauth.md)
 - [Sign-in rate limiting](docs/features/rate-limiting.md)
 - [Jira import](docs/features/jira-import.md)
+- [Prometheus metrics](docs/features/metrics.md)
 
 ## Development and contributing
 
