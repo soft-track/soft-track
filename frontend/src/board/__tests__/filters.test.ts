@@ -20,6 +20,7 @@ const some: BoardFilters = {
   labelId: 3,
   projectId: 2,
   cycleId: 5,
+  due: 'overdue',
 }
 
 describe('the URL round trip', () => {
@@ -53,7 +54,7 @@ describe('the URL round trip', () => {
 
 describe('toQueryParams', () => {
   it('maps the board onto what the issue endpoint asks for', () => {
-    expect(toQueryParams(some)).toEqual({
+    expect(toQueryParams(some, '2026-09-23')).toEqual({
       status_id: 9,
       priority: 'urgent',
       assignee_id: 7,
@@ -61,7 +62,20 @@ describe('toQueryParams', () => {
       label_id: 3,
       project_id: 2,
       cycle_id: 5,
+      due: 'overdue',
+      today: '2026-09-23',
     })
+  })
+
+  it("sends the viewer's own today with a due filter, and not without one (#87)", () => {
+    expect(toQueryParams({ ...NO_FILTERS, due: 'this_week' }, '2026-09-27').today).toBe(
+      '2026-09-27',
+    )
+    expect(toQueryParams({ ...NO_FILTERS, statusId: 4 }, '2026-09-27').today).toBeUndefined()
+  })
+
+  it('reads an unknown due value in a link as no filter', () => {
+    expect(fromSearchParams(new URLSearchParams('due=someday')).due).toBeNull()
   })
 
   it('sends unassigned as its own flag, not as an assignee', () => {
@@ -112,7 +126,7 @@ describe('sameFilters', () => {
 describe('activeCount', () => {
   it('counts the chips the filter bar will show', () => {
     expect(activeCount(NO_FILTERS)).toBe(0)
-    expect(activeCount(some)).toBe(6)
+    expect(activeCount(some)).toBe(7)
     expect(isEmpty(NO_FILTERS)).toBe(true)
     expect(isEmpty({ ...NO_FILTERS, statusId: 4 })).toBe(false)
   })

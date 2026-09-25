@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Optional
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
@@ -62,6 +62,7 @@ class IssueCreate(BaseModel):
     estimate: Estimate = None
     parent_id: Optional[int] = None
     cycle_id: Optional[int] = None
+    due_date: Optional[date] = None
     label_ids: list[int] = []
 
 
@@ -80,6 +81,8 @@ class IssueUpdate(BaseModel):
     parent_id: Optional[int] = None
     #: An explicit null moves the issue out of its cycle, back to the backlog.
     cycle_id: Optional[int] = None
+    #: An explicit null clears the due date.
+    due_date: Optional[date] = None
     label_ids: Optional[list[int]] = None
 
 
@@ -100,6 +103,7 @@ class IssueRead(BaseModel):
     #: to start; the board marks anything above zero.
     blocked_by_count: int
     cycle_id: Optional[int] = None
+    due_date: Optional[date] = None
     #: The key this issue had before it was imported, e.g. "PROJ-142".
     external_key: Optional[str] = None
     parent: Optional[ParentRef] = None

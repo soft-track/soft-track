@@ -25,7 +25,15 @@ const lookups = {
 describe('describeFilters', () => {
   it('names every active filter and leaves the rest out', () => {
     const chips = describeFilters(
-      { statusId: 9, priority: 'urgent', assignee: 7, labelId: 3, projectId: 2, cycleId: 5 },
+      {
+        statusId: 9,
+        priority: 'urgent',
+        assignee: 7,
+        labelId: 3,
+        projectId: 2,
+        cycleId: 5,
+        due: 'overdue',
+      },
       lookups,
     )
     expect(chips.map((c) => `${c.field}: ${c.value}`)).toEqual([
@@ -35,6 +43,7 @@ describe('describeFilters', () => {
       'Label: Bug',
       'Project: Platform',
       'Cycle: Cycle 5',
+      'Due: Overdue',
     ])
   })
 

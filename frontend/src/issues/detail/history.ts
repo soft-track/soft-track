@@ -5,6 +5,7 @@ import type {
   IssuePriority,
   StatusCategory,
 } from '@/api/generated/models'
+import { shortDue } from '@/issues/dueDate'
 import { CATEGORY_META, PRIORITY_META } from '@/issues/issueMeta'
 
 /**
@@ -51,6 +52,11 @@ export function describeEvent(event: IssueEventRead): string {
       if (!from) return `added this to ${after}`
       return `moved this from ${before} to ${after}`
     }
+
+    case 'due_date':
+      if (!to) return `removed the due date (was ${shortDue(from ?? '')})`
+      if (!from) return `set the due date to ${shortDue(to)}`
+      return `moved the due date from ${shortDue(from)} to ${shortDue(to)}`
 
     case 'project': {
       const before = named(event.old_label, 'a deleted project')

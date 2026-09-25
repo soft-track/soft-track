@@ -1,7 +1,7 @@
 """Issue services, including the assembly of the denormalised IssueRead payload."""
 
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy import func, or_
@@ -29,6 +29,7 @@ from lib_softtrack.links import open_blocker_counts
 from lib_softtrack.tables import (
     Comment,
     Cycle,
+    DueFilter,
     Issue,
     IssueEvent,
     IssueLabelLink,
@@ -40,7 +41,12 @@ from lib_softtrack.tables import (
     User,
     WorkflowStatus,
 )
-from lib_softtrack.statuses import default_status, resolve_for_team
+from lib_softtrack.statuses import (
+    RESOLVED,
+    default_status,
+    in_category,
+    resolve_for_team,
+)
 from lib_softtrack.storage import Storage
 from lib_softtrack.subissues import child_progress, detach_children, validate_parent
 from lib_softtrack.teams import get_team_or_404, is_team_member, require_team_member
@@ -90,6 +96,7 @@ def issue_to_read(issue: Issue, session: Session) -> IssueRead:
         estimate=issue.estimate,
         blocked_by_count=open_blocker_counts(session, [issue.id]).get(issue.id, 0),
         cycle_id=issue.cycle_id,
+        due_date=issue.due_date,
         external_key=issue.external_key,
         parent=_parent_ref(issue, session),
         completed_child_count=done,
@@ -176,6 +183,7 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
             estimate=issue.estimate,
             blocked_by_count=blocker_counts.get(issue.id, 0),
             cycle_id=issue.cycle_id,
+            due_date=issue.due_date,
             external_key=issue.external_key,
             creator=UserPublic.model_validate(users[issue.creator_id]),
             labels=labels_by_issue.get(issue.id, []),
@@ -246,6 +254,7 @@ def create_issue(
         assignee_id=payload.assignee_id,
         estimate=payload.estimate,
         cycle_id=payload.cycle_id,
+        due_date=payload.due_date,
         creator_id=current_user.id,
     )
 
@@ -287,6 +296,8 @@ def list_issues(
     label_id: Optional[int] = None,
     parent_id: Optional[int] = None,
     cycle_id: Optional[int] = None,
+    due: Optional[DueFilter] = None,
+    today: Optional[date] = None,
     limit: int = DEFAULT_LIMIT,
     offset: int = 0,
 ) -> Page[IssueRead]:
@@ -328,6 +339,8 @@ def list_issues(
         filters.append(Issue.parent_id == parent_id)
     if cycle_id is not None:
         filters.append(Issue.cycle_id == cycle_id)
+    if due is not None:
+        filters.append(_due_filter(due, today or datetime.now(timezone.utc).date()))
 
     # `total` counts everything matching the filters, not the page, so the UI
     # can show "50 of 1,204" without a second request.
@@ -437,6 +450,19 @@ def _apply_update(
     # changes are recorded as a separate step in the history rather than
     # folded into the one the person made.
     rules_service.on_issue_updated(session, issue, rule_before, current_user)
+
+
+def _due_filter(due: DueFilter, today: date):
+    """One of the three due-date questions, as a condition on Issue (#87)."""
+    if due == DueFilter.none:
+        return Issue.due_date == None  # noqa: E711 -- SQL IS NULL
+    if due == DueFilter.overdue:
+        # Late only while it is still open: finished work is not overdue,
+        # however late it was finished.
+        return (Issue.due_date < today) & ~in_category(*RESOLVED)
+    # Monday is 0, so this is the coming Sunday -- or today, on a Sunday.
+    end_of_week = today + timedelta(days=6 - today.weekday())
+    return (Issue.due_date >= today) & (Issue.due_date <= end_of_week)
 
 
 def delete_issue(

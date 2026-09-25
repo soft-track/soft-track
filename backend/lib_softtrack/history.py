@@ -34,6 +34,7 @@ TRACKED: dict[str, IssueEventField] = {
     "project_id": IssueEventField.project,
     "assignee_id": IssueEventField.assignee,
     "priority": IssueEventField.priority,
+    "due_date": IssueEventField.due_date,
 }
 
 

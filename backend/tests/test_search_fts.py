@@ -278,6 +278,17 @@ def test_every_trigger_survives_every_migration(tmp_path):
     assert set(_schema(db_path)) == set(OBJECTS)
 
 
+def test_every_trigger_survives_stepping_back_down_to_the_index(tmp_path):
+    """The same trap on the way down: a downgrade that drops a column from
+    `issue` or `comment` rebuilds the table on SQLite, and must put the
+    triggers back."""
+    db_path = tmp_path / "down.db"
+    config = _config(db_path)
+    command.upgrade(config, "head")
+    command.downgrade(config, AFTER)
+    assert set(_schema(db_path)) == set(OBJECTS)
+
+
 def test_the_migration_and_create_all_build_the_same_index(tmp_path, upgraded):
     """The suite builds its schema with create_all; real databases with the
     migration. If the two drift, the suite tests an index nobody runs."""

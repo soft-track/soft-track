@@ -29,3 +29,22 @@ than by summing the issue list in the browser. The list is paginated, so a
 client-side total would quietly be "the total of whatever page happened to be
 loaded" — a different and much less useful number, with nothing on screen to
 say so.
+
+## Due dates
+
+An issue can have a due date, which is a day rather than a time, set from the
+new-issue form or the issue panel. Cards and list rows show it compactly
+("Sep 12"). Once the date has passed on an issue that's still open, it turns
+red and reads as overdue in words too, so colour isn't the only signal. Finished
+or cancelled work is never overdue, however late it was finished.
+
+The board and list can be filtered to **overdue**, **due this week** (from
+today to Sunday) or **no due date**, alongside the other filters. The filter
+goes in links as `?due=overdue` and saved views keep it. "Today" is the
+viewer's own date, which the browser sends along with the filter, so "this
+week" means their week and not the server's.
+
+Due-date changes appear in the issue's Activity feed. Deliberately not
+included yet: reminders, a calendar view, recurring dates, and automation on a
+date passing. SoftTrack has no scheduler, and "a date passed" is the one kind
+of event that needs one.

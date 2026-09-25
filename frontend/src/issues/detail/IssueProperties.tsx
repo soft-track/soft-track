@@ -106,6 +106,16 @@ export function IssueProperties({
         </Select>
       </Row>
 
+      <Row label="Due date">
+        <input
+          type="date"
+          data-field="due"
+          value={issue.due_date ?? ''}
+          onChange={(e) => patch({ due_date: e.target.value || null })}
+          className="field field-sm"
+        />
+      </Row>
+
       <Row label="Project">
         <Select
           dense

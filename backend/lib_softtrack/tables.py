@@ -142,6 +142,25 @@ class IssueEventField(str, enum.Enum):
     #: "who gave me this?", "who made it urgent?".
     assignee = "assignee"
     priority = "priority"
+    #: When the issue is due (#87).
+    due_date = "due_date"
+
+
+class DueFilter(str, enum.Enum):
+    """The due-date questions the board can be narrowed to (#87).
+
+    Three questions rather than a date range: they are what a standup asks,
+    and "this week" means the viewer's week -- the client sends its own
+    today, so a filter saved on a Sunday evening in Sydney does not quietly
+    mean London's Sunday.
+    """
+
+    #: Past its due date and not yet done or cancelled.
+    overdue = "overdue"
+    #: Due from today to the end of this week (Sunday), done or not.
+    this_week = "this_week"
+    #: No due date at all.
+    none = "none"
 
 
 class TeamRole(str, enum.Enum):
@@ -495,6 +514,10 @@ class Issue(SQLModel, table=True):
     # Story points. Null means "not sized yet", which is a different thing
     # from zero -- a burndown has to be able to tell them apart.
     estimate: Optional[int] = Field(default=None)
+    #: When it is due (#87). A date rather than a datetime, like a project's
+    #: target: "due Friday" is a day, and a timestamp would move it across
+    #: midnight for anybody in another timezone.
+    due_date: Optional[date] = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
 
@@ -709,6 +732,7 @@ class SavedView(SQLModel, table=True):
     #: pointing at a cycle that no longer exists would match nothing and look
     #: broken rather than empty.
     cycle_id: Optional[int] = Field(default=None, foreign_key="cycle.id")
+    due: Optional[DueFilter] = None
 
     #: Not a filter -- it narrows nothing -- but part of what a view *is*: the
     #: same issues read very differently by column and by project.

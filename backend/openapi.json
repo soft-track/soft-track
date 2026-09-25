@@ -1992,6 +1992,43 @@
             "description": "Only issues in this cycle."
           },
           {
+            "name": "due",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DueFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Overdue, due this week, or with no due date.",
+              "title": "Due"
+            },
+            "description": "Overdue, due this week, or with no due date."
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The caller's own date, which `due` is measured from. Defaults to today in UTC; a client should send its local date, so that 'this week' is its week.",
+              "title": "Today"
+            },
+            "description": "The caller's own date, which `due` is measured from. Defaults to today in UTC; a client should send its local date, so that 'this week' is its week."
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -6519,6 +6556,16 @@
         "title": "DefaultViewUpdate",
         "description": "Null clears the default rather than setting one."
       },
+      "DueFilter": {
+        "type": "string",
+        "enum": [
+          "overdue",
+          "this_week",
+          "none"
+        ],
+        "title": "DueFilter",
+        "description": "The due-date questions the board can be narrowed to (#87).\n\nThree questions rather than a date range: they are what a standup asks,\nand \"this week\" means the viewer's week -- the client sends its own\ntoday, so a filter saved on a Sunday evening in Sydney does not quietly\nmean London's Sunday."
+      },
       "EstimateSummary": {
         "properties": {
           "total_points": {
@@ -7056,6 +7103,18 @@
             ],
             "title": "Cycle Id"
           },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
           "label_ids": {
             "items": {
               "type": "integer"
@@ -7079,7 +7138,8 @@
           "estimate",
           "project",
           "assignee",
-          "priority"
+          "priority",
+          "due_date"
         ],
         "title": "IssueEventField",
         "description": "Which field an IssueEvent records a change to."
@@ -7373,6 +7433,18 @@
             ],
             "title": "Cycle Id"
           },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
           "external_key": {
             "anyOf": [
               {
@@ -7551,6 +7623,18 @@
               }
             ],
             "title": "Cycle Id"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
           },
           "label_ids": {
             "anyOf": [
@@ -9974,6 +10058,16 @@
               }
             ],
             "title": "Cycle Id"
+          },
+          "due": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DueFilter"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",

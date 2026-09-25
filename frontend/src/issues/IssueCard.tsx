@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router-dom'
 
 import type { IssueRead } from '@/api/generated/models'
 import { selectionGesture } from '@/board/selection'
+import { DueBadge } from '@/issues/DueBadge'
 import { EstimateBadge } from '@/issues/EstimateBadge'
+import { isResolved } from '@/issues/issueMeta'
 import { PriorityIcon } from '@/issues/PriorityIcon'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
@@ -138,14 +140,19 @@ export function IssueCard({
             </span>
           ))}
         </div>
-        {issue.assignee ? (
-          <Avatar user={issue.assignee} size={22} />
-        ) : (
-          <span
-            className="h-[22px] w-[22px] shrink-0 rounded-full border border-dashed border-neutral-900/20"
-            title="Unassigned"
-          />
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {issue.due_date && (
+            <DueBadge dueDate={issue.due_date} resolved={isResolved(issue.status)} />
+          )}
+          {issue.assignee ? (
+            <Avatar user={issue.assignee} size={22} />
+          ) : (
+            <span
+              className="h-[22px] w-[22px] shrink-0 rounded-full border border-dashed border-neutral-900/20"
+              title="Unassigned"
+            />
+          )}
+        </div>
       </div>
     </div>
   )

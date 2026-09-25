@@ -5,6 +5,7 @@
  * An open-source, self-hostable issue tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { DueFilter } from './dueFilter';
 import type { IssuePriority } from './issuePriority';
 
 export type ListIssuesTeamsTeamIdIssuesGetParams = {
@@ -31,6 +32,14 @@ parent_id?: number | null;
  * Only issues in this cycle.
  */
 cycle_id?: number | null;
+/**
+ * Overdue, due this week, or with no due date.
+ */
+due?: DueFilter | null;
+/**
+ * The caller's own date, which `due` is measured from. Defaults to today in UTC; a client should send its local date, so that 'this week' is its week.
+ */
+today?: string | null;
 /**
  * @minimum 1
  * @maximum 200

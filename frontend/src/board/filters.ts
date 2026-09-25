@@ -1,8 +1,10 @@
 import type {
+  DueFilter,
   IssuePriority,
   ListIssuesTeamsTeamIdIssuesGetParams,
   ViewFilters,
 } from '@/api/generated/models'
+import { localToday } from '@/issues/dueDate'
 
 /** Someone in particular, nobody at all, or no opinion. */
 export type AssigneeFilter = number | 'unassigned' | null
@@ -24,6 +26,8 @@ export type BoardFilters = {
   labelId: number | null
   projectId: number | null
   cycleId: number | null
+  /** Overdue, due this week, or no due date (#87). */
+  due: DueFilter | null
 }
 
 export const NO_FILTERS: BoardFilters = {
@@ -33,6 +37,7 @@ export const NO_FILTERS: BoardFilters = {
   labelId: null,
   projectId: null,
   cycleId: null,
+  due: null,
 }
 
 /**
@@ -49,7 +54,10 @@ const KEYS = {
   labelId: 'label',
   projectId: 'project',
   cycleId: 'cycle',
+  due: 'due',
 } as const
+
+const DUE_VALUES: readonly string[] = ['overdue', 'this_week', 'none']
 
 function readNumber(raw: string | null): number | null {
   if (raw === null) return null
@@ -73,6 +81,9 @@ export function fromSearchParams(params: URLSearchParams): BoardFilters {
     labelId: readNumber(params.get(KEYS.labelId)),
     projectId: readNumber(params.get(KEYS.projectId)),
     cycleId: readNumber(params.get(KEYS.cycleId)),
+    due: DUE_VALUES.includes(params.get(KEYS.due) ?? '')
+      ? (params.get(KEYS.due) as DueFilter)
+      : null,
   }
 }
 
@@ -90,12 +101,19 @@ export function toSearchParams(filters: BoardFilters): URLSearchParams {
   if (filters.labelId !== null) params.set(KEYS.labelId, String(filters.labelId))
   if (filters.projectId !== null) params.set(KEYS.projectId, String(filters.projectId))
   if (filters.cycleId !== null) params.set(KEYS.cycleId, String(filters.cycleId))
+  if (filters.due) params.set(KEYS.due, filters.due)
   return params
 }
 
-/** The same filters as the issue list endpoint wants them. */
+/**
+ * The same filters as the issue list endpoint wants them.
+ *
+ * `today` goes with a due filter so "this week" is the viewer's week, not
+ * the server's.
+ */
 export function toQueryParams(
   filters: BoardFilters,
+  today = localToday(),
 ): ListIssuesTeamsTeamIdIssuesGetParams {
   return {
     status_id: filters.statusId ?? undefined,
@@ -105,6 +123,8 @@ export function toQueryParams(
     label_id: filters.labelId ?? undefined,
     project_id: filters.projectId ?? undefined,
     cycle_id: filters.cycleId ?? undefined,
+    due: filters.due ?? undefined,
+    today: filters.due ? today : undefined,
   }
 }
 
@@ -117,6 +137,7 @@ export function fromViewFilters(filters: ViewFilters): BoardFilters {
     labelId: filters.label_id ?? null,
     projectId: filters.project_id ?? null,
     cycleId: filters.cycle_id ?? null,
+    due: filters.due ?? null,
   }
 }
 
@@ -130,6 +151,7 @@ export function toViewFilters(filters: BoardFilters): ViewFilters {
     label_id: filters.labelId,
     project_id: filters.projectId,
     cycle_id: filters.cycleId,
+    due: filters.due,
   }
 }
 
@@ -157,6 +179,7 @@ export function sameFilters(a: BoardFilters, b: BoardFilters): boolean {
     a.assignee === b.assignee &&
     a.labelId === b.labelId &&
     a.projectId === b.projectId &&
-    a.cycleId === b.cycleId
+    a.cycleId === b.cycleId &&
+    a.due === b.due
   )
 }

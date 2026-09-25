@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, model_validator
 
 from lib_identity.models.identity import UserPublic
-from lib_softtrack.tables import IssueGrouping, IssuePriority
+from lib_softtrack.tables import DueFilter, IssueGrouping, IssuePriority
 
 
 class ViewFilters(BaseModel):
@@ -26,6 +26,9 @@ class ViewFilters(BaseModel):
     label_id: Optional[int] = None
     project_id: Optional[int] = None
     cycle_id: Optional[int] = None
+    #: Overdue, due this week, or no due date (#87). Measured from the
+    #: viewer's own today when the view is applied, not from when it was saved.
+    due: Optional[DueFilter] = None
 
     @model_validator(mode="after")
     def _one_assignee_question_at_a_time(self) -> "ViewFilters":

@@ -1,9 +1,10 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import type { IssuePriority } from '@/api/generated/models'
+import type { DueFilter, IssuePriority } from '@/api/generated/models'
 import { describeFilters, withoutFilter } from '@/board/filterLabels'
 import { activeCount, type BoardFilters, isEmpty, NO_FILTERS } from '@/board/filters'
+import { DUE_FILTER_LABEL } from '@/issues/dueDate'
 import { PRIORITY_META, PRIORITY_ORDER } from '@/issues/issueMeta'
 import { activeMembers } from '@/team/members'
 import { pickableProjects } from '@/team/projects'
@@ -230,6 +231,22 @@ export function FilterBar({
                     {cycles.map((cycle) => (
                       <option key={cycle.id} value={cycle.id}>
                         {cycle.display_name}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+
+                <Field label="Due">
+                  <Select
+                    block
+                    dense
+                    value={filters.due ?? ''}
+                    onChange={(e) => set('due', (e.target.value || null) as DueFilter | null)}
+                  >
+                    <option value="">Any due date</option>
+                    {(Object.keys(DUE_FILTER_LABEL) as DueFilter[]).map((due) => (
+                      <option key={due} value={due}>
+                        {DUE_FILTER_LABEL[due]}
                       </option>
                     ))}
                   </Select>

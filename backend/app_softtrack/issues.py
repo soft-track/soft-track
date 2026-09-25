@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
@@ -20,7 +21,7 @@ from lib_softtrack.models.issues import (
 from lib_softtrack.models.links import IssueLinkCreate, IssueLinkRead, IssueLinks
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
 from lib_softtrack.storage import Storage, get_storage
-from lib_softtrack.tables import IssuePriority, User
+from lib_softtrack.tables import DueFilter, IssuePriority, User
 from web import get_session
 
 router = APIRouter(tags=["issues"])
@@ -51,6 +52,17 @@ def list_issues(
         None, description="Only sub-issues of this issue."
     ),
     cycle_id: Optional[int] = Query(None, description="Only issues in this cycle."),
+    due: Optional[DueFilter] = Query(
+        None, description="Overdue, due this week, or with no due date."
+    ),
+    today: Optional[date] = Query(
+        None,
+        description=(
+            "The caller's own date, which `due` is measured from. Defaults to "
+            "today in UTC; a client should send its local date, so that "
+            "'this week' is its week."
+        ),
+    ),
     limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(0, ge=0),
     session: Session = Depends(get_session),
@@ -68,6 +80,8 @@ def list_issues(
         label_id=label_id,
         parent_id=parent_id,
         cycle_id=cycle_id,
+        due=due,
+        today=today,
         limit=limit,
         offset=offset,
     )

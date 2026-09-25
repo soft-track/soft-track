@@ -19,5 +19,6 @@ export interface IssueCreate {
   estimate?: IssueCreateEstimate;
   parent_id?: number | null;
   cycle_id?: number | null;
+  due_date?: string | null;
   label_ids?: number[];
 }

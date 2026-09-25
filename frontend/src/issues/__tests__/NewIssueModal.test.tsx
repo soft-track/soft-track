@@ -206,6 +206,17 @@ describe('NewIssueModal', () => {
     }
   })
 
+  it('sends a due date when one is picked (#87)', async () => {
+    const { user } = renderModal()
+    await user.type(screen.getByPlaceholderText('Issue title'), 'Ship it')
+    const due = screen.getByLabelText('Due date')
+    await user.type(due, '2026-10-01')
+    await user.click(screen.getByRole('button', { name: /create issue/i }))
+    expect(mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ due_date: '2026-10-01' }) }),
+    )
+  })
+
   it('closes on Escape without creating anything', async () => {
     const { onClose, user } = renderModal()
 

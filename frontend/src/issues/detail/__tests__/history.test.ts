@@ -51,6 +51,18 @@ describe('describeEvent', () => {
     expect(describeEvent(event('estimate', '8', null))).toBe('cleared the estimate (was 8 points)')
   })
 
+  it('reads due-date changes as dates (#87)', () => {
+    expect(describeEvent(event('due_date', null, '2026-09-12'))).toBe(
+      'set the due date to Sep 12',
+    )
+    expect(describeEvent(event('due_date', '2026-09-12', '2026-09-19'))).toBe(
+      'moved the due date from Sep 12 to Sep 19',
+    )
+    expect(describeEvent(event('due_date', '2026-09-19', null))).toBe(
+      'removed the due date (was Sep 19)',
+    )
+  })
+
   it('says where a cycle or project move went, and names deleted ones as such', () => {
     expect(describeEvent(event('cycle', null, '7', { new_label: 'Sprint 7' }))).toBe(
       'added this to Sprint 7',

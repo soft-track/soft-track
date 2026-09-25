@@ -7,6 +7,7 @@ import type {
 } from '@/api/generated/models'
 import type { BoardFilters } from '@/board/filters'
 import { NO_FILTERS } from '@/board/filters'
+import { DUE_FILTER_LABEL } from '@/issues/dueDate'
 import { PRIORITY_META } from '@/issues/issueMeta'
 
 /** What the filter bar needs in order to name an id. */
@@ -96,6 +97,10 @@ export function describeFilters(
       field: 'Cycle',
       value: cycle?.display_name ?? 'Deleted cycle',
     })
+  }
+
+  if (filters.due !== null) {
+    chips.push({ key: 'due', field: 'Due', value: DUE_FILTER_LABEL[filters.due] })
   }
 
   return chips

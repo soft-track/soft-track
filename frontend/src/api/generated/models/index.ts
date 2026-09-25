@@ -39,6 +39,7 @@ export * from './cycleRead';
 export * from './cycleState';
 export * from './cycleUpdate';
 export * from './defaultViewUpdate';
+export * from './dueFilter';
 export * from './errorCode';
 export * from './estimateSummary';
 export * from './estimateSummaryByStatus';
