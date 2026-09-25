@@ -9,6 +9,7 @@ import {
 import type { TeamRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
+import { Trans, userText, useTranslation } from '@/i18n'
 import { Logo } from '@/ui/Logo'
 
 export default function NewTeamPage() {
@@ -16,6 +17,7 @@ export default function NewTeamPage() {
   const { user, logout } = useAuth()
   const createTeam = useCreateTeamTeamsPost()
   const queryClient = useQueryClient()
+  const { t } = useTranslation(['team', 'common'])
 
   const [name, setName] = useState('')
   const [key, setKey] = useState('')
@@ -39,7 +41,7 @@ export default function NewTeamPage() {
       void queryClient.invalidateQueries({ queryKey: getListMyTeamsTeamsGetQueryKey() })
       navigate(`/${team.key}`, { replace: true })
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not create the team.'))
+      setError(errorDetail(err, t('newTeam.error')))
     }
   }
 
@@ -52,15 +54,19 @@ export default function NewTeamPage() {
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
             {user ? (
-              <>
-                Welcome, <span className="text-gradient">{user.full_name.split(' ')[0]}</span>
-              </>
+              <Trans
+                t={t}
+                i18nKey="newTeam.welcome"
+                values={{ name: user.full_name.split(' ')[0] }}
+                {...userText}
+                components={{ highlight: <span className="text-gradient" /> }}
+              />
             ) : (
-              'Create a team'
+              t('newTeam.title')
             )}
           </h1>
           <p className="mt-1.5 text-sm text-neutral-500">
-            Teams group your projects and issues, e.g. "Engineering" with key ENG.
+            {t('newTeam.intro')}
           </p>
         </div>
 
@@ -76,7 +82,7 @@ export default function NewTeamPage() {
 
           <div>
             <label htmlFor="team-name" className="mb-1.5 block text-sm font-medium text-neutral-700">
-              Team name
+              {t('newTeam.nameLabel')}
             </label>
             <input
               id="team-name"
@@ -84,13 +90,17 @@ export default function NewTeamPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="field"
-              placeholder="Engineering"
+              placeholder={t('newTeam.namePlaceholder')}
             />
           </div>
 
           <div>
             <label htmlFor="team-key" className="mb-1.5 block text-sm font-medium text-neutral-700">
-              Key <span className="font-normal text-neutral-400">· 2 to 6 letters, the issue prefix</span>
+              <Trans
+                t={t}
+                i18nKey="newTeam.keyLabel"
+                components={{ hint: <span className="font-normal text-neutral-400" /> }}
+              />
             </label>
             <input
               id="team-key"
@@ -100,7 +110,7 @@ export default function NewTeamPage() {
               value={key}
               onChange={(e) => setKey(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
               className="field identifier uppercase tracking-wide"
-              placeholder="ENG"
+              placeholder={t('newTeam.keyPlaceholder')}
             />
           </div>
 
@@ -109,7 +119,7 @@ export default function NewTeamPage() {
             disabled={createTeam.isPending}
             className="btn btn-primary h-10 w-full text-sm"
           >
-            {createTeam.isPending ? 'Creating…' : 'Create team'}
+            {createTeam.isPending ? t('newTeam.creating') : t('newTeam.create')}
           </button>
         </form>
 
@@ -118,7 +128,7 @@ export default function NewTeamPage() {
           onClick={logout}
           className="mt-5 w-full text-center text-sm text-neutral-400 hover:text-neutral-700"
         >
-          Sign out
+          {t('newTeam.signOut')}
         </button>
       </div>
     </div>

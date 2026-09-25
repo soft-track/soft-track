@@ -7,6 +7,7 @@ import {
   startProviderFlow,
   type ProviderName,
 } from '@/auth/oauth'
+import { useTranslation } from '@/i18n'
 
 /**
  * The brand marks, inline.
@@ -57,12 +58,14 @@ const MARKS: Record<ProviderName, ReactNode> = {
 export function ProviderButtons({
   next,
   invite,
-  verb = 'Continue',
+  action = 'continue',
 }: {
   next?: string
   invite?: string
-  verb?: string
+  /** Which sentence the buttons say: "Continue with", "Sign up with" or "Accept with". */
+  action?: 'continue' | 'signUp' | 'accept'
 }) {
+  const { t } = useTranslation(['auth', 'common'])
   const config = useAuthConfigAuthConfigGet()
   const providers = knownProviders(config.data?.oauth_providers)
 
@@ -82,14 +85,14 @@ export function ProviderButtons({
             className="btn btn-secondary h-10 w-full text-sm"
           >
             {MARKS[provider]}
-            {verb} with {PROVIDERS[provider]}
+            {t(`providers.${action}`, { provider: PROVIDERS[provider] })}
           </button>
         ))}
       </div>
 
       <div className="mt-4 flex items-center gap-3" aria-hidden="true">
         <span className="h-px flex-1 bg-neutral-200" />
-        <span className="text-xs text-neutral-400">or</span>
+        <span className="text-xs text-neutral-400">{t('providers.or')}</span>
         <span className="h-px flex-1 bg-neutral-200" />
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { Link, Navigate } from 'react-router-dom'
 
 import { useMyInvitesAuthMeInvitesGet } from '@/api/generated/endpoints/auth/auth'
+import { Trans, useTranslation } from '@/i18n'
 import { InvitesBanner } from '@/team/InvitesBanner'
 import { useMyTeams } from '@/team/useTeams'
 import { Loading } from '@/ui/Loading'
@@ -16,6 +17,7 @@ import { Logo } from '@/ui/Logo'
 export default function TeamsHome() {
   const { data: teams, isLoading } = useMyTeams()
   const invites = useMyInvitesAuthMeInvitesGet()
+  const { t } = useTranslation(['team', 'common'])
 
   if (isLoading || invites.isPending) {
     return (
@@ -41,17 +43,21 @@ export default function TeamsHome() {
             <Logo size={52} />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
-            You've been <span className="text-gradient">invited</span>
+            <Trans
+              t={t}
+              i18nKey="home.title"
+              components={{ highlight: <span className="text-gradient" /> }}
+            />
           </h1>
           <p className="mt-1.5 text-sm text-neutral-500">
-            Accept one to get started, or start a team of your own.
+            {t('home.intro')}
           </p>
         </div>
 
         <div className="glass-strong sheen rounded-panel p-5">
           <InvitesBanner />
           <Link to="/new-team" className="btn btn-secondary mt-4 h-10 w-full text-sm">
-            Create a team instead
+            {t('home.createInstead')}
           </Link>
         </div>
       </div>

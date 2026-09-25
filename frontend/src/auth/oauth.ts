@@ -18,6 +18,7 @@
  */
 
 import { AXIOS_INSTANCE } from '@/api/client'
+import { i18n } from '@/i18n'
 
 /**
  * The providers the backend knows how to talk to.
@@ -152,43 +153,29 @@ export function parseCallbackHash(hash: string): CallbackResult | null {
  * and looking the code up in a fixed table is also what stops a crafted
  * `?error=` putting arbitrary text on the sign-in form.
  */
-const MESSAGES: Record<string, string> = {
-  cancelled: 'Sign-in was cancelled.',
-  state:
-    'That sign-in expired or could not be verified. Check that cookies are ' +
-    'enabled, then try again.',
-  account_exists:
-    'An account already exists for that email address. Sign in with your ' +
-    'password, then connect the provider from Settings → Security.',
-  email_unverified:
-    'Your provider has not verified that email address, so it cannot be used ' +
-    'to sign in here. Verify it with them and try again.',
-  no_email:
-    'Your provider did not share an email address. Add a verified one to that ' +
-    'account, or sign in with a password.',
-  closed:
-    'This SoftTrack is invite-only, and there is no invitation waiting for ' +
-    'that address.',
-  deactivated: 'This account has been deactivated.',
-  connect_required:
-    'An account here already uses that email address, and it signs in a ' +
-    'different way. Sign in the way it was set up, then connect this from ' +
-    'Settings → Security.',
-  throttled: 'Too many attempts from here. Wait a minute and try again.',
-  unavailable: 'That sign-in provider is not enabled on this SoftTrack.',
-  storage:
-    'This browser is not letting SoftTrack store anything, which the sign-in ' +
-    'needs. Check that cookies and site data are enabled, then try again.',
-  already_connected:
-    'That provider account already signs in to a different SoftTrack account.',
-  link_expired: 'That request expired. Try connecting again.',
-  exchange_failed: 'The provider refused the sign-in. Please try again.',
-  profile_failed: 'The provider did not say who you are. Please try again.',
+// Getters over the catalog (#106), so the table stays fixed while the words
+// follow the current language.
+const MESSAGES: Record<string, () => string> = {
+  cancelled: () => i18n.t('auth:oauthErrors.cancelled'),
+  state: () => i18n.t('auth:oauthErrors.state'),
+  account_exists: () => i18n.t('auth:oauthErrors.account_exists'),
+  email_unverified: () => i18n.t('auth:oauthErrors.email_unverified'),
+  no_email: () => i18n.t('auth:oauthErrors.no_email'),
+  closed: () => i18n.t('auth:oauthErrors.closed'),
+  deactivated: () => i18n.t('auth:oauthErrors.deactivated'),
+  connect_required: () => i18n.t('auth:oauthErrors.connect_required'),
+  throttled: () => i18n.t('auth:oauthErrors.throttled'),
+  unavailable: () => i18n.t('auth:oauthErrors.unavailable'),
+  storage: () => i18n.t('auth:oauthErrors.storage'),
+  already_connected: () => i18n.t('auth:oauthErrors.already_connected'),
+  link_expired: () => i18n.t('auth:oauthErrors.link_expired'),
+  exchange_failed: () => i18n.t('auth:oauthErrors.exchange_failed'),
+  profile_failed: () => i18n.t('auth:oauthErrors.profile_failed'),
 }
-
-const FALLBACK = 'Could not finish signing in. Please try again.'
 
 export function oauthErrorMessage(code: string | null | undefined): string | null {
   if (!code) return null
-  return MESSAGES[code] ?? FALLBACK
+  // An own property only: `?error=constructor` must not reach Object's.
+  const message = Object.prototype.hasOwnProperty.call(MESSAGES, code) ? MESSAGES[code] : null
+  return message ? message() : i18n.t('auth:oauthErrors.fallback')
 }

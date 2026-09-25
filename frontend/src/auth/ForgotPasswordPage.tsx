@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { errorDetail } from '@/api/errors'
 import { useForgotPasswordAuthForgotPasswordPost } from '@/api/generated/endpoints/auth/auth'
+import { Trans, userText, useTranslation } from '@/i18n'
 import { Logo } from '@/ui/Logo'
 
 /**
@@ -13,6 +14,7 @@ import { Logo } from '@/ui/Logo'
  * that address" would hand anybody a way to check who uses this instance.
  */
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation(['auth', 'common'])
   const request = useForgotPasswordAuthForgotPasswordPost()
   const [email, setEmail] = useState('')
   const [sentTo, setSentTo] = useState<string | null>(null)
@@ -26,7 +28,7 @@ export default function ForgotPasswordPage() {
       setSentTo(email.trim())
     } catch (err: unknown) {
       // In practice a 429: somebody has asked too often for this address.
-      setError(errorDetail(err, 'Could not send a reset link. Try again shortly.'))
+      setError(errorDetail(err, t('forgotPassword.errors.failed')))
     }
   }
 
@@ -38,10 +40,10 @@ export default function ForgotPasswordPage() {
             <Logo size={52} />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
-            Reset your password
+            {t('forgotPassword.title')}
           </h1>
           <p className="mt-1.5 text-sm text-neutral-500">
-            We'll email you a link to choose a new one.
+            {t('forgotPassword.intro')}
           </p>
         </div>
 
@@ -49,11 +51,16 @@ export default function ForgotPasswordPage() {
           {sentTo ? (
             <div role="status" className="space-y-2 text-sm text-neutral-700">
               <p>
-                If <strong>{sentTo}</strong> has an account here, a reset link is on its
-                way. It works once, for the next hour.
+                <Trans
+                  t={t}
+                  i18nKey="forgotPassword.sent"
+                  values={{ email: sentTo }}
+                  components={{ strong: <strong /> }}
+                  {...userText}
+                />
               </p>
               <p className="text-neutral-500">
-                Nothing arrived? Check your spam folder, or ask again in a few minutes.
+                {t('forgotPassword.nothingArrived')}
               </p>
             </div>
           ) : (
@@ -71,7 +78,7 @@ export default function ForgotPasswordPage() {
                   htmlFor="forgot-email"
                   className="mb-1.5 block text-sm font-medium text-neutral-700"
                 >
-                  Email
+                  {t('fields.email')}
                 </label>
                 <input
                   id="forgot-email"
@@ -82,7 +89,7 @@ export default function ForgotPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="field"
-                  placeholder="you@example.com"
+                  placeholder={t('fields.emailPlaceholder')}
                 />
               </div>
               <button
@@ -90,7 +97,7 @@ export default function ForgotPasswordPage() {
                 disabled={request.isPending}
                 className="btn btn-primary h-10 w-full text-sm"
               >
-                {request.isPending ? 'Sending…' : 'Send reset link'}
+                {request.isPending ? t('forgotPassword.submitting') : t('forgotPassword.submit')}
               </button>
             </form>
           )}
@@ -98,7 +105,7 @@ export default function ForgotPasswordPage() {
 
         <p className="mt-5 text-center text-sm text-neutral-500">
           <Link to="/login" className="font-medium text-brand-600 hover:text-brand-700">
-            Back to sign in
+            {t('forgotPassword.backToSignIn')}
           </Link>
         </p>
       </div>

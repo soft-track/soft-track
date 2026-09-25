@@ -10,6 +10,7 @@ import {
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { ProviderButtons } from '@/auth/ProviderButtons'
+import { Trans, userText, useTranslation } from '@/i18n'
 import { RoleChip } from '@/settings/RoleChip'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
@@ -25,6 +26,7 @@ import { Logo } from '@/ui/Logo'
 export default function InvitePage() {
   const { token = '' } = useParams()
   const { isAuthenticated, user, logout } = useAuth()
+  const { t } = useTranslation(['auth', 'common'])
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -36,7 +38,7 @@ export default function InvitePage() {
   if (preview.isPending) {
     return (
       <div className="h-screen">
-        <Loading label="Checking your invitation…" />
+        <Loading label={t('invite.checking')} />
       </div>
     )
   }
@@ -56,14 +58,13 @@ export default function InvitePage() {
     return shell(
       <div className="text-center">
         <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
-          This invitation is no longer valid
+          {t('invite.invalid.title')}
         </h1>
         <p className="mt-2 text-sm text-neutral-500">
-          It may have been used, revoked, or simply run out. Ask whoever invited you to
-          send a fresh link.
+          {t('invite.invalid.body')}
         </p>
         <Link to="/login" className="btn btn-secondary mt-5">
-          Go to sign in
+          {t('invite.invalid.signIn')}
         </Link>
       </div>,
     )
@@ -86,7 +87,7 @@ export default function InvitePage() {
       })
       navigate(`/${team.key}`, { replace: true })
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not accept this invitation.'))
+      setError(errorDetail(err, t('invite.errors.accept')))
     }
   }
 
@@ -96,32 +97,50 @@ export default function InvitePage() {
       await decline.mutateAsync({ token })
       navigate('/', { replace: true })
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not decline this invitation.'))
+      setError(errorDetail(err, t('invite.errors.decline')))
     }
   }
 
   return shell(
     <>
-      <p className="eyebrow mb-2">Invitation</p>
+      <p className="eyebrow mb-2">{t('invite.eyebrow')}</p>
       <h1 className="text-lg font-semibold leading-snug tracking-tight text-neutral-900">
-        {invite.invited_by_name} invited you to join{' '}
-        <span className="text-gradient">{invite.team_name}</span>
+        <Trans
+          t={t}
+          i18nKey="invite.title"
+          values={{ inviter: invite.invited_by_name, team: invite.team_name }}
+          components={{ team: <span className="text-gradient" /> }}
+          {...userText}
+        />
       </h1>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
-        <span className="identifier well rounded-control px-2 py-1 text-xs">
-          {invite.team_key}
-        </span>
-        <span>as</span>
-        <RoleChip role={invite.role} />
+        {/* One sentence, so a language can reorder it; the tags keep the
+            key, the word and the chip as the row's three flex items. */}
+        <Trans
+          t={t}
+          i18nKey="invite.teamAs"
+          values={{ teamKey: invite.team_key }}
+          components={{
+            chip: <span className="identifier well rounded-control px-2 py-1 text-xs" />,
+            as: <span />,
+            role: <RoleChip role={invite.role} />,
+          }}
+          {...userText}
+        />
       </div>
       {invite.role === 'guest' && (
         <p className="mt-2 text-sm text-neutral-500">
-          A guest can see the team&rsquo;s issues, comments, cycles and reports, and change none of
-          them.
+          {t('invite.guest')}
         </p>
       )}
       <p className="mt-3 text-sm text-neutral-500">
-        Sent to <strong className="text-neutral-700">{invite.email}</strong>.
+        <Trans
+          t={t}
+          i18nKey="invite.sentTo"
+          values={{ email: invite.email }}
+          components={{ strong: <strong className="text-neutral-700" /> }}
+          {...userText}
+        />
       </p>
 
       {error && (
@@ -140,19 +159,19 @@ export default function InvitePage() {
           <ProviderButtons
             invite={token}
             next={`/${invite.team_key}`}
-            verb="Accept"
+            action="accept"
           />
           <Link
             to={`/register?invite=${encodeURIComponent(token)}`}
             className="btn btn-primary h-10 w-full text-sm"
           >
-            Create an account
+            {t('invite.createAccount')}
           </Link>
           <Link
             to={`/login?next=${encodeURIComponent(`/invite/${token}`)}`}
             className="btn btn-secondary h-10 w-full text-sm"
           >
-            Sign in to accept
+            {t('invite.signInToAccept')}
           </Link>
         </div>
       )}
@@ -160,13 +179,17 @@ export default function InvitePage() {
       {wrongAccount && (
         <div className="well mt-6 rounded-control p-3">
           <p className="text-sm text-neutral-700">
-            You are signed in as <strong>{user?.email}</strong>, and this invitation was
-            sent to <strong>{invite.email}</strong>. An invitation only admits the address
-            it was addressed to.
+            <Trans
+              t={t}
+              i18nKey="invite.wrongAccount"
+              values={{ current: user?.email, invited: invite.email }}
+              components={{ strong: <strong /> }}
+              {...userText}
+            />
           </p>
           <button type="button" onClick={logout} className="btn btn-secondary btn-sm mt-3">
             <Icon name="logout" size={14} />
-            Sign out and use the other account
+            {t('invite.switchAccount')}
           </button>
         </div>
       )}
@@ -179,7 +202,9 @@ export default function InvitePage() {
             disabled={accept.isPending}
             className="btn btn-primary h-10 flex-1 text-sm"
           >
-            {accept.isPending ? 'Joining…' : `Join ${invite.team_name}`}
+            {accept.isPending
+              ? t('invite.joining')
+              : t('invite.join', { team: invite.team_name })}
           </button>
           <button
             type="button"
@@ -187,7 +212,7 @@ export default function InvitePage() {
             disabled={decline.isPending}
             className="btn btn-ghost h-10 text-sm"
           >
-            Decline
+            {t('invite.decline')}
           </button>
         </div>
       )}

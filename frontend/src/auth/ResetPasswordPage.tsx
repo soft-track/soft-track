@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 
 import { errorDetail } from '@/api/errors'
 import { useResetPasswordAuthResetPasswordPost } from '@/api/generated/endpoints/auth/auth'
+import { Trans, useTranslation } from '@/i18n'
 import { Logo } from '@/ui/Logo'
 
 /** The server's own minimum, repeated so the form can say so before sending. */
@@ -16,6 +17,7 @@ const MIN_LENGTH = 8
  * history, screenshots and other sites' `Referer` headers.
  */
 export default function ResetPasswordPage() {
+  const { t } = useTranslation(['auth', 'common'])
   const [params, setParams] = useSearchParams()
   const [token] = useState(() => params.get('token') ?? '')
   const reset = useResetPasswordAuthResetPasswordPost()
@@ -33,14 +35,14 @@ export default function ResetPasswordPage() {
     event.preventDefault()
     setError(null)
     if (password !== confirm) {
-      setError('The two passwords do not match.')
+      setError(t('resetPassword.errors.mismatch'))
       return
     }
     try {
       await reset.mutateAsync({ data: { token, new_password: password } })
       setDone(true)
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not reset your password.'))
+      setError(errorDetail(err, t('resetPassword.errors.failed')))
     }
   }
 
@@ -52,7 +54,7 @@ export default function ResetPasswordPage() {
             <Logo size={52} />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
-            Choose a new password
+            {t('resetPassword.title')}
           </h1>
         </div>
 
@@ -60,20 +62,21 @@ export default function ResetPasswordPage() {
           {done ? (
             <div role="status" className="space-y-4 text-sm text-neutral-700">
               <p>
-                Your password has been changed, and you've been signed out everywhere
-                you were signed in.
+                {t('resetPassword.done')}
               </p>
               <Link to="/login" className="btn btn-primary h-10 w-full text-sm">
-                Sign in
+                {t('resetPassword.signIn')}
               </Link>
             </div>
           ) : !token ? (
             <p role="alert" className="text-sm text-neutral-700">
-              This page needs the link from your reset email.{' '}
-              <Link to="/forgot-password" className="font-medium text-brand-600">
-                Ask for one
-              </Link>
-              .
+              <Trans
+                t={t}
+                i18nKey="resetPassword.noToken"
+                components={{
+                  ask: <Link to="/forgot-password" className="font-medium text-brand-600" />,
+                }}
+              />
             </p>
           ) : (
             <form onSubmit={onSubmit} className="space-y-4">
@@ -84,7 +87,7 @@ export default function ResetPasswordPage() {
                 >
                   {error}{' '}
                   <Link to="/forgot-password" className="font-medium underline">
-                    Ask for a new link
+                    {t('resetPassword.askForNewLink')}
                   </Link>
                 </div>
               )}
@@ -93,7 +96,7 @@ export default function ResetPasswordPage() {
                   htmlFor="reset-password"
                   className="mb-1.5 block text-sm font-medium text-neutral-700"
                 >
-                  New password
+                  {t('resetPassword.newPassword')}
                 </label>
                 <input
                   id="reset-password"
@@ -106,14 +109,16 @@ export default function ResetPasswordPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="field"
                 />
-                <p className="mt-1 text-xs text-neutral-400">At least {MIN_LENGTH} characters.</p>
+                <p className="mt-1 text-xs text-neutral-400">
+                  {t('resetPassword.minLength', { count: MIN_LENGTH })}
+                </p>
               </div>
               <div>
                 <label
                   htmlFor="reset-confirm"
                   className="mb-1.5 block text-sm font-medium text-neutral-700"
                 >
-                  Confirm new password
+                  {t('resetPassword.confirmPassword')}
                 </label>
                 <input
                   id="reset-confirm"
@@ -131,7 +136,7 @@ export default function ResetPasswordPage() {
                 disabled={reset.isPending}
                 className="btn btn-primary h-10 w-full text-sm"
               >
-                {reset.isPending ? 'Saving…' : 'Set new password'}
+                {reset.isPending ? t('common:saving') : t('resetPassword.submit')}
               </button>
             </form>
           )}

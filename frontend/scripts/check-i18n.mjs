@@ -8,7 +8,14 @@ import { fileURLToPath } from 'node:url'
 
 import { findLiterals } from './i18n-literals.mjs'
 
-const CONVERTED = ['src/settings', 'src/issues', 'src/board']
+const CONVERTED = [
+  'src/settings',
+  'src/issues',
+  'src/board',
+  'src/auth',
+  'src/team',
+  'src/landing',
+]
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 

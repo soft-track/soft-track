@@ -6,6 +6,7 @@ import type {
   ProjectState,
   StatusRead,
 } from '@/api/generated/models'
+import { i18n } from '@/i18n'
 
 /**
  * The projects a picker should offer.
@@ -25,11 +26,23 @@ export function pickableProjects(
 
 /** How each state reads, in the order a project moves through them. */
 export const PROJECT_STATES: Array<{ id: ProjectState; label: string; colour: string }> = [
-  { id: 'planned', label: 'Planned', colour: 'var(--color-neutral-400)' },
-  { id: 'in_progress', label: 'In progress', colour: 'var(--color-status-progress)' },
-  { id: 'completed', label: 'Completed', colour: 'var(--color-status-done)' },
-  { id: 'cancelled', label: 'Cancelled', colour: 'var(--color-status-cancelled)' },
+  projectState('planned', 'var(--color-neutral-400)'),
+  projectState('in_progress', 'var(--color-status-progress)'),
+  projectState('completed', 'var(--color-status-done)'),
+  projectState('cancelled', 'var(--color-status-cancelled)'),
 ]
+
+// The label is a getter over the catalog (#106), so callers keep reading
+// `stateMeta(state).label` and get the current language's word.
+function projectState(id: ProjectState, colour: string) {
+  return {
+    id,
+    colour,
+    get label() {
+      return i18n.t(`team:projects.states.${id}`)
+    },
+  }
+}
 
 export function stateMeta(state: ProjectState) {
   return PROJECT_STATES.find((candidate) => candidate.id === state) ?? PROJECT_STATES[0]
@@ -43,7 +56,10 @@ export function stateMeta(state: ProjectState) {
  */
 export function progressLabel(project: ProjectRead): string | null {
   if (project.issue_count === 0) return null
-  return `${project.completed_issue_count} of ${project.issue_count} done`
+  return i18n.t('team:projects.progress', {
+    completed: project.completed_issue_count,
+    total: project.issue_count,
+  })
 }
 
 export function progressRatio(project: ProjectRead): number {

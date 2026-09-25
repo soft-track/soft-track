@@ -6,6 +6,8 @@ import {
   useAcceptInviteInvitesTokenAcceptPost,
   useDeclineInviteInvitesTokenDeclinePost,
 } from '@/api/generated/endpoints/invites/invites'
+import { Trans, userText, useTranslation } from '@/i18n'
+import { ROLE_LABELS } from '@/settings/roles'
 import { Icon } from '@/ui/Icon'
 
 /**
@@ -21,6 +23,7 @@ export function InvitesBanner({ compact = false }: { compact?: boolean }) {
   const decline = useDeclineInviteInvitesTokenDeclinePost()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { t } = useTranslation(['team', 'common'])
 
   const pending = invites.data ?? []
   if (pending.length === 0) return null
@@ -48,7 +51,7 @@ export function InvitesBanner({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className={compact ? 'space-y-1.5' : 'space-y-2'}>
-      {!compact && <p className="eyebrow">Invitations</p>}
+      {!compact && <p className="eyebrow">{t('invites.heading')}</p>}
       {pending.map((invite) => (
         <div
           key={invite.id}
@@ -65,9 +68,20 @@ export function InvitesBanner({ compact = false }: { compact?: boolean }) {
               className="mt-0.5 shrink-0 text-neutral-400"
             />
             <span>
-              <strong>{invite.invited_by.full_name}</strong> invited you to{' '}
-              <strong>{invite.team_name}</strong>
-              {compact ? '' : ` (${invite.team_key}) as ${invite.role}`}
+              <Trans
+                t={t}
+                i18nKey={
+                  compact ? ('invites.invitedCompact' as const) : ('invites.invited' as const)
+                }
+                values={{
+                  inviter: invite.invited_by.full_name,
+                  team: invite.team_name,
+                  key: invite.team_key,
+                  role: ROLE_LABELS[invite.role],
+                }}
+                {...userText}
+                components={{ strong: <strong /> }}
+              />
             </span>
           </p>
           <div className="mt-2 flex gap-1.5">
@@ -77,7 +91,7 @@ export function InvitesBanner({ compact = false }: { compact?: boolean }) {
               disabled={accept.isPending}
               className="btn btn-primary btn-sm"
             >
-              Accept
+              {t('invites.accept')}
             </button>
             <button
               type="button"
@@ -85,7 +99,7 @@ export function InvitesBanner({ compact = false }: { compact?: boolean }) {
               disabled={decline.isPending}
               className="btn btn-ghost btn-sm"
             >
-              Decline
+              {t('invites.decline')}
             </button>
           </div>
         </div>

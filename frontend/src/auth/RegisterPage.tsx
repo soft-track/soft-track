@@ -6,10 +6,12 @@ import { usePreviewInviteInvitesTokenGet } from '@/api/generated/endpoints/invit
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { ProviderButtons } from '@/auth/ProviderButtons'
+import { Trans, useTranslation } from '@/i18n'
 import { Logo } from '@/ui/Logo'
 
 export default function RegisterPage() {
   const { register } = useAuth()
+  const { t } = useTranslation(['auth', 'common'])
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const inviteToken = params.get('invite') ?? ''
@@ -46,7 +48,7 @@ export default function RegisterPage() {
       })
       navigate(invite.data ? `/${invite.data.team_key}` : '/', { replace: true })
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not create your account.'))
+      setError(errorDetail(err, t('register.errors.failed')))
     } finally {
       setSubmitting(false)
     }
@@ -60,25 +62,31 @@ export default function RegisterPage() {
             <Logo size={52} />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
-            Create your <span className="text-gradient">account</span>
+            <Trans
+              t={t}
+              i18nKey="register.title"
+              components={{ accent: <span className="text-gradient" /> }}
+            />
           </h1>
           <p className="mt-1.5 text-sm text-neutral-500">
             {invite.data
-              ? `${invite.data.invited_by_name} invited you to ${invite.data.team_name}.`
+              ? t('register.invited', {
+                  inviter: invite.data.invited_by_name,
+                  team: invite.data.team_name,
+                })
               : locked
-                ? 'This instance is closed to open sign-ups.'
-                : 'Free, self-hosted, no credit card.'}
+                ? t('register.closedTagline')
+                : t('register.tagline')}
           </p>
         </div>
 
         {locked ? (
           <div className="glass-strong sheen rounded-panel p-6 text-center">
             <h2 className="text-base font-semibold tracking-tight text-neutral-900">
-              This SoftTrack is invite-only
+              {t('register.locked.title')}
             </h2>
             <p className="mt-2 text-sm text-neutral-500">
-              New accounts can only be created from an invitation link. Ask an
-              administrator to send you one.
+              {t('register.locked.body')}
             </p>
           </div>
         ) : (
@@ -96,7 +104,7 @@ export default function RegisterPage() {
                 signing up with Google lands in the team exactly as filling
                 this form in would. */}
             <ProviderButtons
-              verb="Sign up"
+              action="signUp"
               invite={inviteToken || undefined}
               next={invite.data ? `/${invite.data.team_key}` : undefined}
             />
@@ -106,7 +114,7 @@ export default function RegisterPage() {
                 htmlFor="register-name"
                 className="mb-1.5 block text-sm font-medium text-neutral-700"
               >
-                Full name
+                {t('register.fullName')}
               </label>
               <input
                 id="register-name"
@@ -115,7 +123,7 @@ export default function RegisterPage() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="field"
-                placeholder="Ada Lovelace"
+                placeholder={t('register.fullNamePlaceholder')}
               />
             </div>
 
@@ -124,7 +132,7 @@ export default function RegisterPage() {
                 htmlFor="register-email"
                 className="mb-1.5 block text-sm font-medium text-neutral-700"
               >
-                Email
+                {t('fields.email')}
               </label>
               <input
                 id="register-email"
@@ -135,11 +143,11 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setTypedEmail(e.target.value)}
                 className="field"
-                placeholder="you@example.com"
+                placeholder={t('fields.emailPlaceholder')}
               />
               {invitedIn && (
                 <p className="mt-1.5 text-xs text-neutral-400">
-                  The address this invitation was sent to.
+                  {t('register.invitedEmailHint')}
                 </p>
               )}
             </div>
@@ -149,7 +157,11 @@ export default function RegisterPage() {
                 htmlFor="register-username"
                 className="mb-1.5 block text-sm font-medium text-neutral-700"
               >
-                Username <span className="font-normal text-neutral-400">(optional)</span>
+                <Trans
+                  t={t}
+                  i18nKey="register.username"
+                  components={{ optional: <span className="font-normal text-neutral-400" /> }}
+                />
               </label>
               <input
                 id="register-username"
@@ -159,7 +171,7 @@ export default function RegisterPage() {
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
-                placeholder="Leave blank for the part before the @"
+                placeholder={t('register.usernamePlaceholder')}
               />
             </div>
 
@@ -168,7 +180,7 @@ export default function RegisterPage() {
                 htmlFor="register-password"
                 className="mb-1.5 block text-sm font-medium text-neutral-700"
               >
-                Password
+                {t('fields.password')}
               </label>
               <input
                 id="register-password"
@@ -179,7 +191,7 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="field"
-                placeholder="At least 8 characters"
+                placeholder={t('register.passwordPlaceholder')}
               />
             </div>
 
@@ -188,16 +200,21 @@ export default function RegisterPage() {
               disabled={submitting}
               className="btn btn-primary h-10 w-full text-sm"
             >
-              {submitting ? 'Creating account…' : 'Create account'}
+              {submitting ? t('register.submitting') : t('register.submit')}
             </button>
           </form>
         )}
 
         <p className="mt-5 text-center text-sm text-neutral-500">
-          Already have an account?{' '}
-          <Link to="/login" className="font-medium text-brand-600 hover:text-brand-700">
-            Sign in
-          </Link>
+          <Trans
+            t={t}
+            i18nKey="register.haveAccount"
+            components={{
+              signin: (
+                <Link to="/login" className="font-medium text-brand-600 hover:text-brand-700" />
+              ),
+            }}
+          />
         </p>
       </div>
     </div>
