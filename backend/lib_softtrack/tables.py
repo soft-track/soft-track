@@ -218,6 +218,25 @@ class TeamRole(str, enum.Enum):
     guest = "guest"
 
 
+class ReactionEmoji(str, enum.Enum):
+    """The reactions a comment can get (#96) -- GitHub's eight, and only those.
+
+    A fixed set rather than any emoji: no picker to build, no emoji data to
+    ship, and a count that means the same thing on every comment. Stored by
+    name rather than as the character, so the value is plain ASCII in every
+    database and every client, and the glyph is the frontend's business.
+    """
+
+    thumbs_up = "thumbs_up"
+    thumbs_down = "thumbs_down"
+    laugh = "laugh"
+    hooray = "hooray"
+    confused = "confused"
+    heart = "heart"
+    rocket = "rocket"
+    eyes = "eyes"
+
+
 class NotificationKind(str, enum.Enum):
     """Why a notification was raised.
 
@@ -754,6 +773,21 @@ class Comment(SQLModel, table=True):
     #: nullable for the same event and the same reason.
     author_id: Optional[int] = Field(default=None, foreign_key="user.id")
     body: str
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class CommentReaction(SQLModel, table=True):
+    """One person's one reaction to one comment (#96).
+
+    The primary key is the whole row, the way `IssueLabelLink` is: the same
+    person can give a comment several different reactions, and never the same
+    one twice. That is also what makes adding one idempotent -- a double click
+    is a second insert of a row that exists.
+    """
+
+    comment_id: int = Field(foreign_key="comment.id", primary_key=True)
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    emoji: ReactionEmoji = Field(primary_key=True)
     created_at: datetime = Field(default_factory=utcnow)
 
 

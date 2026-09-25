@@ -29,7 +29,9 @@ import type {
   CommentRead,
   HTTPValidationError,
   ListCommentsIssuesIssueIdCommentsGetParams,
-  PageCommentRead
+  PageCommentRead,
+  ReactionEmoji,
+  ReactionSummary
 } from '../../models';
 
 import { apiClient } from '../../../client';
@@ -220,3 +222,140 @@ export function useListCommentsIssuesIssueIdCommentsGet<TData = Awaited<ReturnTy
 
 
 
+/**
+ * React to a comment. Idempotent: reacting twice is reacting once.
+ *
+ * Returns the comment's reactions as they now stand, so the client can
+ * redraw the chips without fetching the thread again.
+ * @summary Add Reaction
+ */
+export const addReactionCommentsCommentIdReactionsEmojiPut = (
+    commentId: number,
+    emoji: ReactionEmoji,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<ReactionSummary[]>(
+      {url: `/comments/${commentId}/reactions/${emoji}`, method: 'PUT', signal
+    },
+      );
+    }
+
+
+
+
+export const getAddReactionCommentsCommentIdReactionsEmojiPutMutationKey = () => ['addReactionCommentsCommentIdReactionsEmojiPut'] as const;
+
+export const getAddReactionCommentsCommentIdReactionsEmojiPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addReactionCommentsCommentIdReactionsEmojiPut>>, TError,AddReactionCommentsCommentIdReactionsEmojiPutMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof addReactionCommentsCommentIdReactionsEmojiPut>>, TError,AddReactionCommentsCommentIdReactionsEmojiPutMutationVariables, TContext> => {
+
+const mutationKey = getAddReactionCommentsCommentIdReactionsEmojiPutMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addReactionCommentsCommentIdReactionsEmojiPut>>, AddReactionCommentsCommentIdReactionsEmojiPutMutationVariables> = (props) => {
+          const {commentId,emoji} = props ?? {};
+
+          return  addReactionCommentsCommentIdReactionsEmojiPut(commentId,emoji,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddReactionCommentsCommentIdReactionsEmojiPutMutationResult = NonNullable<Awaited<ReturnType<typeof addReactionCommentsCommentIdReactionsEmojiPut>>>
+
+    export type AddReactionCommentsCommentIdReactionsEmojiPutMutationError = HTTPValidationError
+    export type AddReactionCommentsCommentIdReactionsEmojiPutMutationVariables = {commentId: number;emoji: ReactionEmoji}
+
+    /**
+ * @summary Add Reaction
+ */
+export const useAddReactionCommentsCommentIdReactionsEmojiPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addReactionCommentsCommentIdReactionsEmojiPut>>, TError,AddReactionCommentsCommentIdReactionsEmojiPutMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof addReactionCommentsCommentIdReactionsEmojiPut>>,
+        TError,
+        AddReactionCommentsCommentIdReactionsEmojiPutMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddReactionCommentsCommentIdReactionsEmojiPutMutationOptions(options), queryClient);
+    }
+    /**
+ * Take your own reaction back. Removing one you never gave is a no-op.
+ * @summary Remove Reaction
+ */
+export const removeReactionCommentsCommentIdReactionsEmojiDelete = (
+    commentId: number,
+    emoji: ReactionEmoji,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<ReactionSummary[]>(
+      {url: `/comments/${commentId}/reactions/${emoji}`, method: 'DELETE', signal
+    },
+      );
+    }
+
+
+
+
+export const getRemoveReactionCommentsCommentIdReactionsEmojiDeleteMutationKey = () => ['removeReactionCommentsCommentIdReactionsEmojiDelete'] as const;
+
+export const getRemoveReactionCommentsCommentIdReactionsEmojiDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeReactionCommentsCommentIdReactionsEmojiDelete>>, TError,RemoveReactionCommentsCommentIdReactionsEmojiDeleteMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof removeReactionCommentsCommentIdReactionsEmojiDelete>>, TError,RemoveReactionCommentsCommentIdReactionsEmojiDeleteMutationVariables, TContext> => {
+
+const mutationKey = getRemoveReactionCommentsCommentIdReactionsEmojiDeleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeReactionCommentsCommentIdReactionsEmojiDelete>>, RemoveReactionCommentsCommentIdReactionsEmojiDeleteMutationVariables> = (props) => {
+          const {commentId,emoji} = props ?? {};
+
+          return  removeReactionCommentsCommentIdReactionsEmojiDelete(commentId,emoji,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveReactionCommentsCommentIdReactionsEmojiDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof removeReactionCommentsCommentIdReactionsEmojiDelete>>>
+
+    export type RemoveReactionCommentsCommentIdReactionsEmojiDeleteMutationError = HTTPValidationError
+    export type RemoveReactionCommentsCommentIdReactionsEmojiDeleteMutationVariables = {commentId: number;emoji: ReactionEmoji}
+
+    /**
+ * @summary Remove Reaction
+ */
+export const useRemoveReactionCommentsCommentIdReactionsEmojiDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeReactionCommentsCommentIdReactionsEmojiDelete>>, TError,RemoveReactionCommentsCommentIdReactionsEmojiDeleteMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof removeReactionCommentsCommentIdReactionsEmojiDelete>>,
+        TError,
+        RemoveReactionCommentsCommentIdReactionsEmojiDeleteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemoveReactionCommentsCommentIdReactionsEmojiDeleteMutationOptions(options), queryClient);
+    }

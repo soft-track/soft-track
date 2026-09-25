@@ -26,6 +26,7 @@ from lib_softtrack.history import record_changes, record_creation, snapshot
 from lib_softtrack import notifications as notifications_service
 from lib_softtrack import automations as automations_service
 from lib_softtrack import integrations as integrations_service
+from lib_softtrack import reactions as reactions_service
 from lib_softtrack import rules as rules_service
 from lib_softtrack.links import open_blocker_counts
 from lib_softtrack.tables import (
@@ -627,6 +628,11 @@ def _delete_rows(session: Session, issue: Issue) -> list[str]:
     # rejects. The bytes are purged after the commit below -- an orphaned file
     # costs disk, an orphaned row costs a broken image on somebody's issue.
     storage_keys = attachments_service.take_keys_for_issue(session, issue_id)
+
+    # Reactions hold a foreign key to the comment, so they go first -- and are
+    # flushed first, for the reason given for notifications above.
+    reactions_service.delete_for_issue(session, issue_id)
+    session.flush()
 
     comments = session.exec(select(Comment).where(Comment.issue_id == issue_id)).all()
     for comment in comments:

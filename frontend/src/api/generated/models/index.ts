@@ -114,6 +114,8 @@ export * from './projectRead';
 export * from './projectState';
 export * from './projectUpdate';
 export * from './pullRequestState';
+export * from './reactionEmoji';
+export * from './reactionSummary';
 export * from './repositoryCreate';
 export * from './repositoryLinkedItem';
 export * from './repositoryRead';

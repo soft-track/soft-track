@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AttachmentRead } from './attachmentRead';
+import type { ReactionSummary } from './reactionSummary';
 import type { UserPublic } from './userPublic';
 
 export interface CommentRead {
@@ -14,5 +15,6 @@ export interface CommentRead {
   body: string;
   author: UserPublic | null;
   attachments?: AttachmentRead[];
+  reactions?: ReactionSummary[];
   created_at: string;
 }

@@ -7,9 +7,14 @@ from lib_identity.models.identity import UserPublic
 from lib_softtrack import outbound
 from lib_softtrack import attachments as attachments_service
 from lib_softtrack import notifications as notifications_service
+from lib_softtrack import reactions as reactions_service
 from lib_softtrack import rules as rules_service
 from lib_softtrack.models.attachments import AttachmentRead
-from lib_softtrack.models.comments import CommentCreate, CommentRead
+from lib_softtrack.models.comments import (
+    CommentCreate,
+    CommentRead,
+    ReactionSummary,
+)
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.issues import get_issue_or_404
 from lib_softtrack.tables import Comment, User, WebhookEvent
@@ -20,6 +25,7 @@ def _comment_to_read(
     comment: Comment,
     author: User | None,
     attachments: list[AttachmentRead] | None = None,
+    reactions: list[ReactionSummary] | None = None,
 ) -> CommentRead:
     return CommentRead(
         id=comment.id,
@@ -27,6 +33,7 @@ def _comment_to_read(
         body=comment.body,
         author=UserPublic.model_validate(author) if author else None,
         attachments=attachments or [],
+        reactions=reactions or [],
         created_at=comment.created_at,
     )
 
@@ -104,9 +111,11 @@ def list_comments(
     ).all()
 
     # One query for the whole page's attachments rather than one per comment.
-    by_comment = attachments_service.for_comments(
-        session, [comment.id for comment in comments]
-    )
+    comment_ids = [comment.id for comment in comments]
+    by_comment = attachments_service.for_comments(session, comment_ids)
+    # Embedded rather than fetched per comment by the client (#96): the chips
+    # render with the comment, and one query covers the whole page.
+    reactions = reactions_service.summaries_for(session, comment_ids, current_user.id)
 
     return Page(
         items=[
@@ -114,6 +123,7 @@ def list_comments(
                 comment,
                 session.get(User, comment.author_id) if comment.author_id else None,
                 by_comment.get(comment.id, []),
+                reactions.get(comment.id, []),
             )
             for comment in comments
         ],

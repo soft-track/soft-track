@@ -41,6 +41,7 @@ export type IconName =
   | 'bug'
   | 'task'
   | 'story'
+  | 'smile'
 
 const PATHS: Record<IconName, JSX.Element> = {
   search: (
@@ -197,6 +198,12 @@ const PATHS: Record<IconName, JSX.Element> = {
     </>
   ),
   story: <path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1Z" />,
+  smile: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 14.5s1.3 1.8 3.5 1.8 3.5-1.8 3.5-1.8M9 9.5h.01M15 9.5h.01" />
+    </>
+  ),
 }
 
 /** Stroked line icons on a 24-unit grid. Colour comes from `currentColor`. */

@@ -12,11 +12,21 @@ import { CommentsSection } from '@/issues/detail/CommentsSection'
 const mocks = vi.hoisted(() => ({
   comments: { data: undefined as unknown },
   events: { data: undefined as unknown },
+  add: vi.fn(),
+  remove: vi.fn(),
+}))
+
+vi.mock('@/auth/useAuth', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/auth/useAuth')>()),
+  useAuth: () => ({ user: { id: 1, full_name: 'Olivia Owner' } }),
 }))
 
 vi.mock('@/api/generated/endpoints/comments/comments', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/generated/endpoints/comments/comments')>()),
   useListCommentsIssuesIssueIdCommentsGet: () => mocks.comments,
+  addReactionCommentsCommentIdReactionsEmojiPut: (...args: unknown[]) => mocks.add(...args),
+  removeReactionCommentsCommentIdReactionsEmojiDelete: (...args: unknown[]) =>
+    mocks.remove(...args),
   useCreateCommentIssuesIssueIdCommentsPost: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }))
 

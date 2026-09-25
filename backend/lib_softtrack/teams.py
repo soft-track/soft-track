@@ -15,6 +15,7 @@ from lib_softtrack.models.teams import (
 from lib_softtrack.tables import (
     Attachment,
     AutomationRule,
+    Comment,
     Cycle,
     Issue,
     OutboundWebhook,
@@ -152,6 +153,16 @@ def team_id_for_path(session: Session, path_params: Mapping[str, str]) -> int:
                 detail="Attachment not found",
             )
         ids = {"issue_id": attachment.issue_id}
+
+    if "comment_id" in ids:
+        comment = session.get(Comment, ids["comment_id"])
+        if comment is None:
+            raise api_error(
+                status_code=404,
+                code=ErrorCode.comment_not_found,
+                detail="Comment not found",
+            )
+        ids = {"issue_id": comment.issue_id}
 
     for name, table, code, detail in _TEAM_OWNED_BY_PATH:
         if name in ids:

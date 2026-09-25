@@ -13,6 +13,7 @@ import { AttachmentList } from '@/attachments/AttachmentList'
 import { attachmentMarkdown } from '@/attachments/urls'
 import { Markdown, MarkdownEditor } from '@/markdown/lazy'
 import { describeEvent, interleave } from '@/issues/detail/history'
+import { ReactionBar } from '@/issues/detail/ReactionBar'
 import type { Mentionable } from '@/markdown/mentions'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
@@ -95,7 +96,13 @@ export function CommentsSection({
           item.kind === 'event' ? (
             <EventLine key={`event-${item.event.id}`} event={item.event} />
           ) : (
-            <CommentItem key={`comment-${item.comment.id}`} comment={item.comment} people={people} />
+            <CommentItem
+              key={`comment-${item.comment.id}`}
+              issueId={issueId}
+              comment={item.comment}
+              people={people}
+              canReact={canComment}
+            />
           ),
         )}
         {commentsQuery.data?.items.length === 0 && (
@@ -164,9 +171,19 @@ function AutomationAvatar() {
   )
 }
 
-function CommentItem({ comment, people }: { comment: CommentRead; people: Mentionable[] }) {
+function CommentItem({
+  issueId,
+  comment,
+  people,
+  canReact,
+}: {
+  issueId: number
+  comment: CommentRead
+  people: Mentionable[]
+  canReact: boolean
+}) {
   return (
-    <li className="flex gap-2.5">
+    <li className="group/comment flex gap-2.5">
       {comment.author ? (
         <Avatar user={comment.author} size={26} decorative />
       ) : (
@@ -188,6 +205,7 @@ function CommentItem({ comment, people }: { comment: CommentRead; people: Mentio
           <Markdown people={people}>{comment.body}</Markdown>
           <AttachmentList attachments={comment.attachments ?? []} compact />
         </div>
+        <ReactionBar issueId={issueId} comment={comment} canReact={canReact} />
       </div>
     </li>
   )

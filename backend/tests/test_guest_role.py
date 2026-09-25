@@ -162,6 +162,7 @@ def world(client, team, guest):
         f"/teams/{team_id}/invites",
         json={"email": "later@example.com", "role": "member"},
     )
+    comment = post(f"/issues/{issue['id']}/comments", json={"body": "Looks right"})
     return {
         "team_id": team_id,
         "issue_id": issue["id"],
@@ -175,6 +176,8 @@ def world(client, team, guest):
         "repository_id": repository["id"],
         "webhook_id": webhook["id"],
         "invite_id": invite["id"],
+        "comment_id": comment["id"],
+        "emoji": "thumbs_up",
         # Somebody else on the team: changing *their* role is the write.
         "user_id": team["user"]["id"],
     }

@@ -62,6 +62,7 @@ class ErrorCode(str, enum.Enum):
     rule_not_found = "rule_not_found"
     link_not_found = "link_not_found"
     attachment_not_found = "attachment_not_found"
+    comment_not_found = "comment_not_found"
     notification_not_found = "notification_not_found"
     repository_not_found = "repository_not_found"
     invite_not_found = "invite_not_found"

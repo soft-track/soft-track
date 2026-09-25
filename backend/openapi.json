@@ -2978,6 +2978,124 @@
         }
       }
     },
+    "/comments/{comment_id}/reactions/{emoji}": {
+      "put": {
+        "tags": [
+          "comments"
+        ],
+        "summary": "Add Reaction",
+        "description": "React to a comment. Idempotent: reacting twice is reacting once.\n\nReturns the comment's reactions as they now stand, so the client can\nredraw the chips without fetching the thread again.",
+        "operationId": "add_reaction_comments__comment_id__reactions__emoji__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "comment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Comment Id"
+            }
+          },
+          {
+            "name": "emoji",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ReactionEmoji"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReactionSummary"
+                  },
+                  "title": "Response Add Reaction Comments  Comment Id  Reactions  Emoji  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "comments"
+        ],
+        "summary": "Remove Reaction",
+        "description": "Take your own reaction back. Removing one you never gave is a no-op.",
+        "operationId": "remove_reaction_comments__comment_id__reactions__emoji__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "comment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Comment Id"
+            }
+          },
+          {
+            "name": "emoji",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ReactionEmoji"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReactionSummary"
+                  },
+                  "title": "Response Remove Reaction Comments  Comment Id  Reactions  Emoji  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/issues/{issue_id}/attachments": {
       "post": {
         "tags": [
@@ -6849,6 +6967,14 @@
             "title": "Attachments",
             "default": []
           },
+          "reactions": {
+            "items": {
+              "$ref": "#/components/schemas/ReactionSummary"
+            },
+            "type": "array",
+            "title": "Reactions",
+            "default": []
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -9671,6 +9797,52 @@
         "title": "PullRequestState",
         "description": "Where a pull request is. Only meaningful for `CodeLinkKind.pull_request`.\n\n`merged` and `closed` are separate states rather than one \"not open\",\nbecause the whole point of the distinction is that one of them shipped\nthe work and the other did not."
       },
+      "ReactionEmoji": {
+        "type": "string",
+        "enum": [
+          "thumbs_up",
+          "thumbs_down",
+          "laugh",
+          "hooray",
+          "confused",
+          "heart",
+          "rocket",
+          "eyes"
+        ],
+        "title": "ReactionEmoji",
+        "description": "The reactions a comment can get (#96) -- GitHub's eight, and only those.\n\nA fixed set rather than any emoji: no picker to build, no emoji data to\nship, and a count that means the same thing on every comment. Stored by\nname rather than as the character, so the value is plain ASCII in every\ndatabase and every client, and the glyph is the frontend's business."
+      },
+      "ReactionSummary": {
+        "properties": {
+          "emoji": {
+            "$ref": "#/components/schemas/ReactionEmoji"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "reacted": {
+            "type": "boolean",
+            "title": "Reacted"
+          },
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/UserPublic"
+            },
+            "type": "array",
+            "title": "Users"
+          }
+        },
+        "type": "object",
+        "required": [
+          "emoji",
+          "count",
+          "reacted",
+          "users"
+        ],
+        "title": "ReactionSummary",
+        "description": "One emoji on one comment, and who gave it (#96).\n\nSummarised rather than one row per reaction: a chip needs the count, the\nnames for its tooltip, and whether it is yours to take back -- never the\nindividual rows."
+      },
       "RepositoryCreate": {
         "properties": {
           "provider": {
@@ -11289,6 +11461,7 @@
           "rule_not_found",
           "link_not_found",
           "attachment_not_found",
+          "comment_not_found",
           "notification_not_found",
           "repository_not_found",
           "invite_not_found",
