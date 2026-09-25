@@ -1508,6 +1508,101 @@
             }
           }
         }
+      },
+      "patch": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Update Project",
+        "description": "Rename, re-date, re-lead or move a project through its states.\n\nSetting `archived` retires it from pickers without touching the issues\nalready in it.",
+        "operationId": "update_project_projects__project_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Delete Project",
+        "description": "Delete a project. Its issues are kept and left with no project.\n\nSaved views that filtered on it stop filtering on it, and automation rules\nconditioned on it are switched off rather than widened to every issue.",
+        "operationId": "delete_project_projects__project_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/teams/{team_id}/labels": {
@@ -7671,6 +7766,7 @@
         "properties": {
           "name": {
             "type": "string",
+            "minLength": 1,
             "title": "Name"
           },
           "description": {
@@ -7688,6 +7784,33 @@
             "type": "string",
             "title": "Color",
             "default": "#6366f1"
+          },
+          "lead_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lead Id"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ProjectState",
+            "default": "planned"
           }
         },
         "type": "object",
@@ -7725,6 +7848,36 @@
             "type": "string",
             "title": "Color"
           },
+          "lead_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lead Id"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ProjectState"
+          },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -7737,9 +7890,107 @@
           "team_id",
           "name",
           "color",
+          "state",
+          "archived",
           "created_at"
         ],
         "title": "ProjectRead"
+      },
+      "ProjectState": {
+        "type": "string",
+        "enum": [
+          "planned",
+          "in_progress",
+          "completed",
+          "cancelled"
+        ],
+        "title": "ProjectState",
+        "description": "Where a project -- which is what SoftTrack calls an epic -- is in its life.\n\nSet by hand, like CycleState and for the same reason: \"every issue is\ndone\" is evidence a project is finished, not a decision that it is. A\nproject can be complete with a stray follow-up still open, or have every\nissue closed and still be waiting on a launch."
+      },
+      "ProjectUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "lead_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lead Id"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
+          }
+        },
+        "type": "object",
+        "title": "ProjectUpdate",
+        "description": "Every field optional: renaming, retiring and re-dating are separate\ngestures and each sends only what it changed. Send `lead_id` or\n`target_date` as null to clear it."
       },
       "PullRequestState": {
         "type": "string",

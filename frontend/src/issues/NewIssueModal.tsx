@@ -10,6 +10,7 @@ import {
 } from '@/issues/issueMeta'
 import { MarkdownEditor } from '@/markdown/lazy'
 import { activeMembers } from '@/team/members'
+import { pickableProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
@@ -170,7 +171,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
 
             <Select dense value={projectId} onChange={(e) => setProjectId(e.target.value)} aria-label="Project">
               <option value="">No project</option>
-              {projects.map((p) => (
+              {pickableProjects(projects).map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>

@@ -1,13 +1,32 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+from lib_softtrack.tables import ProjectState
 
 
 class ProjectCreate(BaseModel):
-    name: str
+    name: str = Field(min_length=1)
     description: Optional[str] = None
     color: str = "#6366f1"
+    lead_id: Optional[int] = None
+    target_date: Optional[date] = None
+    state: ProjectState = ProjectState.planned
+
+
+class ProjectUpdate(BaseModel):
+    """Every field optional: renaming, retiring and re-dating are separate
+    gestures and each sends only what it changed. Send `lead_id` or
+    `target_date` as null to clear it."""
+
+    name: Optional[str] = Field(default=None, min_length=1)
+    description: Optional[str] = None
+    color: Optional[str] = None
+    lead_id: Optional[int] = None
+    target_date: Optional[date] = None
+    state: Optional[ProjectState] = None
+    archived: Optional[bool] = None
 
 
 class ProjectRead(BaseModel):
@@ -16,6 +35,10 @@ class ProjectRead(BaseModel):
     name: str
     description: Optional[str] = None
     color: str
+    lead_id: Optional[int] = None
+    target_date: Optional[date] = None
+    state: ProjectState
+    archived: bool
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

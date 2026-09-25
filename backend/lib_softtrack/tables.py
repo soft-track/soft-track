@@ -7,7 +7,7 @@ service layers.
 """
 
 import enum
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Optional
 
 from sqlalchemy import Index, UniqueConstraint
@@ -53,6 +53,23 @@ DEFAULT_STATUSES: tuple[tuple[str, "StatusCategory", str], ...] = (
     ("Done", StatusCategory.done, "#12a474"),
     ("Cancelled", StatusCategory.cancelled, "#f2647d"),
 )
+
+
+class ProjectState(str, enum.Enum):
+    """Where a project -- which is what SoftTrack calls an epic -- is in its life.
+
+    Set by hand, like CycleState and for the same reason: "every issue is
+    done" is evidence a project is finished, not a decision that it is. A
+    project can be complete with a stray follow-up still open, or have every
+    issue closed and still be waiting on a launch.
+    """
+
+    planned = "planned"
+    in_progress = "in_progress"
+    completed = "completed"
+    #: Stopped without being delivered. Distinct from archived, which is about
+    #: whether the project is still offered in pickers, not how it ended.
+    cancelled = "cancelled"
 
 
 class IssuePriority(str, enum.Enum):
@@ -368,11 +385,28 @@ class Team(SQLModel, table=True):
 
 
 class Project(SQLModel, table=True):
+    """A group of issues working towards one outcome. An epic, in Jira terms.
+
+    The Jira importer maps `Epic Link` here, and there is deliberately no
+    separate Epic entity: projects, `parent_id` and cycles already group
+    issues three ways, and a fourth that overlapped them would be sprawl.
+    """
+
     id: Optional[int] = Field(default=None, primary_key=True)
     team_id: int = Field(foreign_key="team.id", index=True)
     name: str
     description: Optional[str] = None
     color: str = Field(default="#6366f1")
+    #: The one person answerable for it. A team member, checked on write.
+    lead_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
+    #: A date rather than a datetime: a target is a day, and a timestamp would
+    #: shift it across midnight for anybody in another timezone.
+    target_date: Optional[date] = None
+    state: ProjectState = Field(default=ProjectState.planned)
+    #: Retired from the pickers, not deleted. Issues that already point here
+    #: keep pointing here, and the project still reads back by id and in the
+    #: team's list, so nothing that references it goes blank.
+    archived: bool = Field(default=False)
     created_at: datetime = Field(default_factory=utcnow)
 
 

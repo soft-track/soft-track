@@ -16,7 +16,7 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { StatusRead, TeamMemberRead } from '@/api/generated/models'
+import type { ProjectRead, StatusRead, TeamMemberRead } from '@/api/generated/models'
 import { NewIssueModal } from '@/issues/NewIssueModal'
 import { useGlobalShortcuts } from '@/keyboard/useGlobalShortcuts'
 import { TeamProvider } from '@/team/TeamContext'
@@ -76,10 +76,22 @@ function member(id: number, full_name: string, is_active = true): TeamMemberRead
   }
 }
 
+function project(id: number, name: string, archived = false): ProjectRead {
+  return {
+    id,
+    team_id: 7,
+    name,
+    color: '#6366f1',
+    state: 'planned',
+    archived,
+    created_at: '2026-01-01T00:00:00Z',
+  }
+}
+
 const TEAM: TeamContextValue = {
   team: { id: 7, name: 'Engineering', key: 'ENG', created_at: '2026-01-01T00:00:00Z' },
   teams: [],
-  projects: [],
+  projects: [project(20, 'Platform'), project(21, 'Retired Epic', true)],
   labels: [],
   members: [member(10, 'Ada Lovelace'), member(11, 'Grace Hopper'), member(12, 'Left Already', false)],
   cycles: [],
@@ -135,6 +147,11 @@ describe('NewIssueModal', () => {
     expect(screen.getByText('ENG')).toBeTruthy()
     expect(optionsOf('Status')).toEqual(['Todo', 'In Progress'])
     expect(optionsOf('Assignee')).toEqual(['Unassigned', 'Ada Lovelace', 'Grace Hopper'])
+  })
+
+  it('offers only the projects that are not archived', () => {
+    renderModal()
+    expect(optionsOf('Project')).toEqual(['No project', 'Platform'])
   })
 
   it('submits the entered values to the create mutation, then closes', async () => {

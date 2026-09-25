@@ -89,6 +89,8 @@ export * from './parsedIssue';
 export * from './passwordChange';
 export * from './projectCreate';
 export * from './projectRead';
+export * from './projectState';
+export * from './projectUpdate';
 export * from './pullRequestState';
 export * from './repositoryCreate';
 export * from './repositoryLinkedItem';

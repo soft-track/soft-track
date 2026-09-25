@@ -339,3 +339,15 @@ def clear_cycle(session: Session, cycle_id: int) -> None:
     ).all():
         view.cycle_id = None
         session.add(view)
+
+
+def clear_project(session: Session, project_id: int) -> None:
+    """Drop a deleted project from every view that filtered on it.
+
+    Called from the project service, for the reason `clear_cycle` gives.
+    """
+    for view in session.exec(
+        select(SavedView).where(SavedView.project_id == project_id)
+    ).all():
+        view.project_id = None
+        session.add(view)

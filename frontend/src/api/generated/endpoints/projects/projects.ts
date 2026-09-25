@@ -27,7 +27,8 @@ import type {
 import type {
   HTTPValidationError,
   ProjectCreate,
-  ProjectRead
+  ProjectRead,
+  ProjectUpdate
 } from '../../models';
 
 import { apiClient } from '../../../client';
@@ -302,3 +303,144 @@ export function useGetProjectProjectsProjectIdGet<TData = Awaited<ReturnType<typ
 
 
 
+/**
+ * Rename, re-date, re-lead or move a project through its states.
+ *
+ * Setting `archived` retires it from pickers without touching the issues
+ * already in it.
+ * @summary Update Project
+ */
+export const updateProjectProjectsProjectIdPatch = (
+    projectId: number,
+    projectUpdate: ProjectUpdate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<ProjectRead>(
+      {url: `/projects/${projectId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: projectUpdate, signal
+    },
+      );
+    }
+
+
+
+
+export const getUpdateProjectProjectsProjectIdPatchMutationKey = () => ['updateProjectProjectsProjectIdPatch'] as const;
+
+export const getUpdateProjectProjectsProjectIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateProjectProjectsProjectIdPatch>>, TError,UpdateProjectProjectsProjectIdPatchMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateProjectProjectsProjectIdPatch>>, TError,UpdateProjectProjectsProjectIdPatchMutationVariables, TContext> => {
+
+const mutationKey = getUpdateProjectProjectsProjectIdPatchMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateProjectProjectsProjectIdPatch>>, UpdateProjectProjectsProjectIdPatchMutationVariables> = (props) => {
+          const {projectId,data} = props ?? {};
+
+          return  updateProjectProjectsProjectIdPatch(projectId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateProjectProjectsProjectIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateProjectProjectsProjectIdPatch>>>
+    export type UpdateProjectProjectsProjectIdPatchMutationBody = ProjectUpdate
+    export type UpdateProjectProjectsProjectIdPatchMutationError = HTTPValidationError
+    export type UpdateProjectProjectsProjectIdPatchMutationVariables = {projectId: number;data: ProjectUpdate}
+
+    /**
+ * @summary Update Project
+ */
+export const useUpdateProjectProjectsProjectIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateProjectProjectsProjectIdPatch>>, TError,UpdateProjectProjectsProjectIdPatchMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateProjectProjectsProjectIdPatch>>,
+        TError,
+        UpdateProjectProjectsProjectIdPatchMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateProjectProjectsProjectIdPatchMutationOptions(options), queryClient);
+    }
+    /**
+ * Delete a project. Its issues are kept and left with no project.
+ *
+ * Saved views that filtered on it stop filtering on it, and automation rules
+ * conditioned on it are switched off rather than widened to every issue.
+ * @summary Delete Project
+ */
+export const deleteProjectProjectsProjectIdDelete = (
+    projectId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/projects/${projectId}`, method: 'DELETE', signal
+    },
+      );
+    }
+
+
+
+
+export const getDeleteProjectProjectsProjectIdDeleteMutationKey = () => ['deleteProjectProjectsProjectIdDelete'] as const;
+
+export const getDeleteProjectProjectsProjectIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProjectProjectsProjectIdDelete>>, TError,DeleteProjectProjectsProjectIdDeleteMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteProjectProjectsProjectIdDelete>>, TError,DeleteProjectProjectsProjectIdDeleteMutationVariables, TContext> => {
+
+const mutationKey = getDeleteProjectProjectsProjectIdDeleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteProjectProjectsProjectIdDelete>>, DeleteProjectProjectsProjectIdDeleteMutationVariables> = (props) => {
+          const {projectId} = props ?? {};
+
+          return  deleteProjectProjectsProjectIdDelete(projectId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteProjectProjectsProjectIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteProjectProjectsProjectIdDelete>>>
+
+    export type DeleteProjectProjectsProjectIdDeleteMutationError = HTTPValidationError
+    export type DeleteProjectProjectsProjectIdDeleteMutationVariables = {projectId: number}
+
+    /**
+ * @summary Delete Project
+ */
+export const useDeleteProjectProjectsProjectIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProjectProjectsProjectIdDelete>>, TError,DeleteProjectProjectsProjectIdDeleteMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteProjectProjectsProjectIdDelete>>,
+        TError,
+        DeleteProjectProjectsProjectIdDeleteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteProjectProjectsProjectIdDeleteMutationOptions(options), queryClient);
+    }

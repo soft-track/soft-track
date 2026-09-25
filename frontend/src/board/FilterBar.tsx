@@ -6,6 +6,7 @@ import { describeFilters, withoutFilter } from '@/board/filterLabels'
 import { activeCount, type BoardFilters, isEmpty, NO_FILTERS } from '@/board/filters'
 import { PRIORITY_META, PRIORITY_ORDER } from '@/issues/issueMeta'
 import { activeMembers } from '@/team/members'
+import { pickableProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
@@ -210,7 +211,7 @@ export function FilterBar({
                     }
                   >
                     <option value="">Any project</option>
-                    {projects.map((project) => (
+                    {pickableProjects(projects, filters.projectId).map((project) => (
                       <option key={project.id} value={project.id}>
                         {project.name}
                       </option>

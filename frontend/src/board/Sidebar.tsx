@@ -5,6 +5,7 @@ import { useAuth } from '@/auth/useAuth'
 import type { BoardFilters } from '@/board/filters'
 import { CycleList } from '@/cycles/CycleList'
 import { InvitesBanner } from '@/team/InvitesBanner'
+import { pickableProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
@@ -30,7 +31,10 @@ export function Sidebar({
   onImport: () => void
 }) {
   const { user, logout } = useAuth()
-  const { team, teams, projects, cycles } = useTeamContext()
+  const { team, teams, projects: allProjects, cycles } = useTeamContext()
+  // Archived projects leave the sidebar, unless one is the filter in force --
+  // the board is showing its issues, so the row that toggles it off stays.
+  const projects = pickableProjects(allProjects, filters.projectId)
   const navigate = useNavigate()
   const { theme, toggle: toggleTheme } = useTheme()
 

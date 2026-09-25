@@ -5,9 +5,14 @@
  * An open-source, self-hostable issue tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { ProjectState } from './projectState';
 
 export interface ProjectCreate {
+  /** @minLength 1 */
   name: string;
   description?: string | null;
   color?: string;
+  lead_id?: number | null;
+  target_date?: string | null;
+  state?: ProjectState;
 }

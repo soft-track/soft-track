@@ -436,3 +436,22 @@ def clear_cycle(session: Session, cycle_id: int) -> None:
         rule.is_enabled = False
         session.add(rule)
     session.flush()
+
+
+def clear_project(session: Session, project_id: int) -> None:
+    """Disarm rules conditioned on a project being deleted.
+
+    The condition cannot simply be cleared: a null condition means "no
+    opinion", so a rule that fired on one project's issues would quietly start
+    firing on every issue the team has. Nor is there anywhere to send it, since
+    the project's issues go to no project at all. So the rule is switched off
+    with the reference removed, and waits in the settings list for somebody to
+    say what it should mean now.
+    """
+    for rule in session.exec(
+        select(AutomationRule).where(AutomationRule.if_project_id == project_id)
+    ).all():
+        rule.if_project_id = None
+        rule.is_enabled = False
+        session.add(rule)
+    session.flush()

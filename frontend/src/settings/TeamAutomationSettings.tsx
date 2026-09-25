@@ -34,6 +34,7 @@ import {
   type RuleVocabulary,
 } from '@/automations/ruleText'
 import { PRIORITY_META, PRIORITY_ORDER } from '@/issues/issueMeta'
+import { pickableProjects } from '@/team/projects'
 import { useTeamByKey } from '@/team/useTeams'
 import { useTeamData } from '@/team/useTeamData'
 import { Avatar } from '@/ui/Avatar'
@@ -575,11 +576,13 @@ function RuleEditor({
                 }
               >
                 <option value="">Any</option>
-                {vocabulary.projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
+                {pickableProjects(vocabulary.projects, conditions.if_project_id).map(
+                  (project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ),
+                )}
               </Select>
             </Field>
 
