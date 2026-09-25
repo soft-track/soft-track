@@ -72,3 +72,31 @@ each request; deactivating, changing a password, resetting one, or using
 **Sign out everywhere** bumps it, and every token issued before that stops
 working. Tokens minted before this feature carry no version and are read as
 `0`, which matches every existing row — so upgrading signs nobody out.
+
+### Forgot password
+
+With SMTP configured, the sign-in page offers **Forgot password?**. It emails
+a link to choose a new password, which works once and expires after an hour
+(`PASSWORD_RESET_EXPIRE_MINUTES`). Without SMTP the link isn't shown, and a
+site administrator resets passwords from the admin page as before.
+
+Most of the design is about what the flow must not reveal or allow:
+
+- **It never says whether an address has an account.** The answer is the same
+  `204` either way. The email is sent after the response, so the time an SMTP
+  round trip takes can't be measured to tell the cases apart. Requests are
+  throttled per client address and per address typed, and the second limit
+  also stops the form being used to flood somebody's inbox. Because both are
+  keyed on what was typed, a `429` doesn't reveal anything either.
+- **Only a SHA-256 hash of the token is stored.** A leaked backup doesn't
+  contain working links.
+- **One link at a time.** Asking again replaces the previous link, and any
+  failed use spends it.
+- **A link dies when the password changes by any other route, or when the
+  account signs out everywhere.** Each link records the account's token
+  version, so an old email can't undo the owner's later change.
+- **Using a link signs out every session**, the same as changing a password,
+  and the next step is signing in with the new one.
+- The reset page removes the token from the address bar as soon as it has read
+  it, so the token doesn't linger in browser history or leak through `Referer`
+  headers.

@@ -134,6 +134,10 @@ def test_auth_config_is_exactly_what_the_signed_out_pages_need(client):
         # Names only, and only for providers with credentials configured. The
         # default install has none, so the sign-in page shows no buttons.
         "oauth_providers": [],
+        # Whether "Forgot password?" is offered (#83): true exactly when SMTP
+        # is configured, which the sign-in page would show anyway by having
+        # the link or not.
+        "password_reset": False,
     }
 
 

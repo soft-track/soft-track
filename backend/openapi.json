@@ -110,6 +110,76 @@
         }
       }
     },
+    "/auth/forgot-password": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Forgot Password",
+        "description": "Email a single-use link for choosing a new password.\n\nAlways 204, whether or not the address has an account, so the answer\ncannot be used to find out which addresses do. The mail goes out after\nthe response for the same reason: an SMTP round trip is slow enough to\ntime.",
+        "operationId": "forgot_password_auth_forgot_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Reset Password",
+        "description": "Set a new password with the token from a reset link.\n\nThe link works once. Every session the account had is signed out, and\nthe next step is signing in with the new password.",
+        "operationId": "reset_password_auth_reset_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/me": {
       "get": {
         "tags": [
@@ -5477,6 +5547,10 @@
             },
             "type": "array",
             "title": "Oauth Providers"
+          },
+          "password_reset": {
+            "type": "boolean",
+            "title": "Password Reset"
           }
         },
         "type": "object",
@@ -5484,7 +5558,8 @@
           "open_registration",
           "landing_page",
           "demo_credentials",
-          "oauth_providers"
+          "oauth_providers",
+          "password_reset"
         ],
         "title": "AuthConfig",
         "description": "What the sign-in pages need to know before anyone has authenticated."
@@ -6506,6 +6581,20 @@
           "counts"
         ],
         "title": "FlowPoint"
+      },
+      "ForgotPassword": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "ForgotPassword"
       },
       "GitProvider": {
         "type": "string",
@@ -8624,6 +8713,27 @@
         ],
         "title": "RepositoryRead",
         "description": "A connected repository, as the settings page receives it.\n\nCarries the secret. There is no point hiding it: the person reading this\npage is a team admin, it has to be pasted into the provider's settings\nform, and a \"shown once\" secret only means the rotate button gets used as\na \"show it again\" button. What it does mean is that this response is\nadmin-only -- see the router."
+      },
+      "ResetPassword": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Token"
+          },
+          "new_password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "New Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "new_password"
+        ],
+        "title": "ResetPassword",
+        "description": "The token from a reset link, and the password to set with it."
       },
       "RuleActions": {
         "properties": {

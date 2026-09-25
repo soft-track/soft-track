@@ -28,6 +28,7 @@ import type {
   AuthConfig,
   BodyLoginAuthLoginPost,
   ConnectedIdentity,
+  ForgotPassword,
   HTTPValidationError,
   InviteRead,
   OAuthExchange,
@@ -35,6 +36,7 @@ import type {
   OAuthLinkTicket,
   OAuthLinked,
   PasswordChange,
+  ResetPassword,
   Token,
   UserCreate,
   UserMe,
@@ -311,6 +313,150 @@ export const useLoginAuthLoginPost = <TError = HTTPValidationError,
         TContext
       > => {
       return useMutation(getLoginAuthLoginPostMutationOptions(options), queryClient);
+    }
+    /**
+ * Email a single-use link for choosing a new password.
+ *
+ * Always 204, whether or not the address has an account, so the answer
+ * cannot be used to find out which addresses do. The mail goes out after
+ * the response for the same reason: an SMTP round trip is slow enough to
+ * time.
+ * @summary Forgot Password
+ */
+export const forgotPasswordAuthForgotPasswordPost = (
+    forgotPassword: ForgotPassword,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/auth/forgot-password`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: forgotPassword, signal
+    },
+      );
+    }
+
+
+
+
+export const getForgotPasswordAuthForgotPasswordPostMutationKey = () => ['forgotPasswordAuthForgotPasswordPost'] as const;
+
+export const getForgotPasswordAuthForgotPasswordPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof forgotPasswordAuthForgotPasswordPost>>, TError,ForgotPasswordAuthForgotPasswordPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof forgotPasswordAuthForgotPasswordPost>>, TError,ForgotPasswordAuthForgotPasswordPostMutationVariables, TContext> => {
+
+const mutationKey = getForgotPasswordAuthForgotPasswordPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof forgotPasswordAuthForgotPasswordPost>>, ForgotPasswordAuthForgotPasswordPostMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  forgotPasswordAuthForgotPasswordPost(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ForgotPasswordAuthForgotPasswordPostMutationResult = NonNullable<Awaited<ReturnType<typeof forgotPasswordAuthForgotPasswordPost>>>
+    export type ForgotPasswordAuthForgotPasswordPostMutationBody = ForgotPassword
+    export type ForgotPasswordAuthForgotPasswordPostMutationError = HTTPValidationError
+    export type ForgotPasswordAuthForgotPasswordPostMutationVariables = {data: ForgotPassword}
+
+    /**
+ * @summary Forgot Password
+ */
+export const useForgotPasswordAuthForgotPasswordPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof forgotPasswordAuthForgotPasswordPost>>, TError,ForgotPasswordAuthForgotPasswordPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof forgotPasswordAuthForgotPasswordPost>>,
+        TError,
+        ForgotPasswordAuthForgotPasswordPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getForgotPasswordAuthForgotPasswordPostMutationOptions(options), queryClient);
+    }
+    /**
+ * Set a new password with the token from a reset link.
+ *
+ * The link works once. Every session the account had is signed out, and
+ * the next step is signing in with the new password.
+ * @summary Reset Password
+ */
+export const resetPasswordAuthResetPasswordPost = (
+    resetPassword: ResetPassword,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/auth/reset-password`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: resetPassword, signal
+    },
+      );
+    }
+
+
+
+
+export const getResetPasswordAuthResetPasswordPostMutationKey = () => ['resetPasswordAuthResetPasswordPost'] as const;
+
+export const getResetPasswordAuthResetPasswordPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetPasswordAuthResetPasswordPost>>, TError,ResetPasswordAuthResetPasswordPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof resetPasswordAuthResetPasswordPost>>, TError,ResetPasswordAuthResetPasswordPostMutationVariables, TContext> => {
+
+const mutationKey = getResetPasswordAuthResetPasswordPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resetPasswordAuthResetPasswordPost>>, ResetPasswordAuthResetPasswordPostMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  resetPasswordAuthResetPasswordPost(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResetPasswordAuthResetPasswordPostMutationResult = NonNullable<Awaited<ReturnType<typeof resetPasswordAuthResetPasswordPost>>>
+    export type ResetPasswordAuthResetPasswordPostMutationBody = ResetPassword
+    export type ResetPasswordAuthResetPasswordPostMutationError = HTTPValidationError
+    export type ResetPasswordAuthResetPasswordPostMutationVariables = {data: ResetPassword}
+
+    /**
+ * @summary Reset Password
+ */
+export const useResetPasswordAuthResetPasswordPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetPasswordAuthResetPasswordPost>>, TError,ResetPasswordAuthResetPasswordPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof resetPasswordAuthResetPasswordPost>>,
+        TError,
+        ResetPasswordAuthResetPasswordPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getResetPasswordAuthResetPasswordPostMutationOptions(options), queryClient);
     }
     /**
  * @summary Me

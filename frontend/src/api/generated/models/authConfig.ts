@@ -14,4 +14,5 @@ export interface AuthConfig {
   landing_page: boolean;
   demo_credentials: boolean;
   oauth_providers: string[];
+  password_reset: boolean;
 }

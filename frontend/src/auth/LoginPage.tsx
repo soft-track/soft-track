@@ -110,9 +110,21 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label htmlFor="login-password" className="mb-1.5 block text-sm font-medium text-neutral-700">
-              Password
-            </label>
+            <div className="mb-1.5 flex items-baseline justify-between">
+              <label htmlFor="login-password" className="block text-sm font-medium text-neutral-700">
+                Password
+              </label>
+              {/* Only where the email can actually be sent: a link to a form
+                  whose mail never arrives is worse than no link. */}
+              {config.data?.password_reset && (
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-medium text-brand-600 hover:text-brand-700"
+                >
+                  Forgot password?
+                </Link>
+              )}
+            </div>
             <input
               id="login-password"
               type="password"

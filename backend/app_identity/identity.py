@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 
@@ -11,9 +11,12 @@ from lib_identity.identity import (
     sign_out_everywhere,
     update_profile,
 )
+from lib_identity import password_reset
 from lib_identity.models.identity import (
     AuthConfig,
+    ForgotPassword,
     PasswordChange,
+    ResetPassword,
     Token,
     UserCreate,
     UserMe,
@@ -22,11 +25,14 @@ from lib_identity.models.identity import (
 from lib_identity.oauth_providers import configured_providers
 from lib_softtrack.models.invites import InviteRead
 from lib_softtrack.tables import User
+from lib_utils.mailer import get_mailer
 from lib_utils.rate_limit import (
     address_of,
     login_by_account,
     login_by_address,
     registration_by_address,
+    reset_by_account,
+    reset_by_address,
 )
 from web import get_session, settings
 
@@ -51,6 +57,7 @@ def auth_config():
         landing_page=settings.landing_page,
         demo_credentials=settings.demo_credentials_are_public,
         oauth_providers=configured_providers(),
+        password_reset=settings.email_delivery_configured,
     )
 
 
@@ -105,6 +112,42 @@ def login(
     login_by_address.forgive(address)
     login_by_account.forgive(account)
     return token
+
+
+@router.post("/forgot-password", status_code=204)
+def forgot_password(
+    request: Request,
+    payload: ForgotPassword,
+    background: BackgroundTasks,
+    session: Session = Depends(get_session),
+):
+    """Email a single-use link for choosing a new password.
+
+    Always 204, whether or not the address has an account, so the answer
+    cannot be used to find out which addresses do. The mail goes out after
+    the response for the same reason: an SMTP round trip is slow enough to
+    time.
+    """
+    address = address_of(request)
+    account = payload.email.strip().lower()
+    reset_by_address.raise_if_locked(address)
+    reset_by_account.raise_if_locked(account)
+    reset_by_address.record_attempt(address)
+    reset_by_account.record_attempt(account)
+
+    message = password_reset.request_reset(session, payload.email)
+    if message is not None:
+        background.add_task(get_mailer().send, *message)
+
+
+@router.post("/reset-password", status_code=204)
+def reset_password(payload: ResetPassword, session: Session = Depends(get_session)):
+    """Set a new password with the token from a reset link.
+
+    The link works once. Every session the account had is signed out, and
+    the next step is signing in with the new password.
+    """
+    password_reset.reset_password(session, payload.token, payload.new_password)
 
 
 @router.get("/me", response_model=UserMe)

@@ -155,6 +155,27 @@ registration_by_address = Throttle(
     forget_after=60 * 60.0,
 )
 
+# Password reset requests (#83), per address and per target account. Every
+# request counts and none is forgiven: a request always "succeeds" -- the
+# response is the same 204 whether or not the account exists -- so there is
+# no failure to charge for. Per address stops enumeration by volume; per
+# account stops anyone using the form to flood somebody's inbox, which the
+# address limit cannot see when the requests come from many addresses.
+reset_by_address = Throttle(
+    name="password reset requests from this address",
+    free_attempts=10,
+    base_delay=15.0,
+    max_delay=60 * 60.0,
+    forget_after=60 * 60.0,
+)
+reset_by_account = Throttle(
+    name="password reset requests for this address",
+    free_attempts=3,
+    base_delay=60.0,
+    max_delay=60 * 60.0,
+    forget_after=60 * 60.0,
+)
+
 # Per address, starting a sign-in with a provider. Every attempt counts,
 # because the thing being limited is somebody using the redirect as a way to
 # make this instance talk to a third party -- which succeeds and fails alike.
@@ -208,6 +229,8 @@ _ALL = (
     login_by_address,
     login_by_account,
     registration_by_address,
+    reset_by_address,
+    reset_by_account,
     oauth_by_address,
     oauth_callback_by_address,
     webhook_by_address,

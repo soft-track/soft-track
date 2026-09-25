@@ -70,6 +70,17 @@ class PasswordChange(BaseModel):
     new_password: str = Field(min_length=8)
 
 
+class ForgotPassword(BaseModel):
+    email: EmailStr
+
+
+class ResetPassword(BaseModel):
+    """The token from a reset link, and the password to set with it."""
+
+    token: str = Field(min_length=1)
+    new_password: str = Field(min_length=8)
+
+
 class AuthConfig(BaseModel):
     """What the sign-in pages need to know before anyone has authenticated."""
 
@@ -84,6 +95,10 @@ class AuthConfig(BaseModel):
     #: buttons should appear. Empty on an install that has configured neither,
     #: which is the default and keeps SoftTrack dependency-free.
     oauth_providers: list[str]
+    #: Whether "Forgot password?" is offered (#83). Only when this instance
+    #: can send mail -- a link to a form whose email never arrives is worse
+    #: than no link.
+    password_reset: bool
 
 
 class Token(BaseModel):

@@ -355,6 +355,28 @@ class UserIdentity(SQLModel, table=True):
     last_login_at: Optional[datetime] = None
 
 
+class PasswordReset(SQLModel, table=True):
+    """A pending "forgot password" link (#83).
+
+    Shaped like TeamInvite -- a row that disappears once it has been used --
+    with one difference: only a SHA-256 hash of the token is stored. The
+    token *is* the credential, for as long as the row lives, and a leaked
+    backup or a read-only SQL injection should not hand out working links.
+    Hashing is enough without a salt or a slow hash because the token is 256
+    random bits, not something a person chose.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    token_hash: str = Field(index=True, unique=True)
+    #: The account's `token_version` when the link was requested. Changing the
+    #: password any other way, or signing out everywhere, moves it on -- and
+    #: with it every link still sitting in an inbox.
+    token_version: int
+    created_at: datetime = Field(default_factory=utcnow)
+    expires_at: datetime
+
+
 class TeamInvite(SQLModel, table=True):
     """A pending invitation to join a team, addressed to an email.
 

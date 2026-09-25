@@ -41,6 +41,7 @@ const DEFAULT_CONFIG: AuthConfig = {
   landing_page: true,
   demo_credentials: true,
   oauth_providers: [],
+  password_reset: false,
 }
 
 function render(config: Partial<AuthConfig> = {}, at = '/login') {
@@ -71,6 +72,11 @@ function emailValueIn(html: string): string {
 }
 
 describe('LoginPage', () => {
+  it('offers "Forgot password?" only where a reset email can be sent (#83)', () => {
+    expect(render({ password_reset: true })).toContain('href="/forgot-password"')
+    expect(render({ password_reset: false })).not.toContain('forgot-password')
+  })
+
   it('offers the demo account where the demo account is seeded', () => {
     const html = render({ demo_credentials: true })
     expect(html).toContain('Demo login: demo@softtrack.dev / password123')
