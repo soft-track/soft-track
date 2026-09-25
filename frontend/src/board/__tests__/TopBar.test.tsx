@@ -233,9 +233,9 @@ describe('TopBar export', () => {
       // Firefox ignores a click on an anchor that is not in the document.
       mounted: true,
     })
-    // Released rather than leaked: the blob is held until it is revoked, and
-    // this one has done its whole job by the time the click returns.
-    expect(revokeObjectURL).toHaveBeenCalledWith(OBJECT_URL)
+    // Released rather than leaked, but only after the click has returned:
+    // Firefox and Safari start the download on a later tick.
+    await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith(OBJECT_URL))
     expect(document.querySelector('a[download]')).toBeNull()
   })
 

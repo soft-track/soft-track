@@ -318,6 +318,31 @@ def test_an_issue_with_nothing_set_leaves_those_cells_empty(client, export_board
     assert row[4] == "no_priority"
 
 
+def test_export_cells_that_look_like_formulas_are_neutralised(client, export_board):
+    """Typed text a spreadsheet would run as a formula comes out as text."""
+    team_id = export_board["team_id"]
+    headers = export_board["headers"]
+    label = client.post(
+        f"/teams/{team_id}/labels", json={"name": "@label"}, headers=headers
+    ).json()
+    issue = client.post(
+        f"/teams/{team_id}/issues",
+        json={
+            "title": '=HYPERLINK("https://evil.example","x")',
+            "description": "+1+1",
+            "label_ids": [label["id"]],
+        },
+        headers=headers,
+    ).json()
+
+    rows = export_rows(client, export_board)
+    row = next(r for r in rows[1:] if r[0] == issue["identifier"])
+
+    assert row[1] == '\'=HYPERLINK("https://evil.example","x")'
+    assert row[2] == "'+1+1"
+    assert row[6] == "'@label"
+
+
 def test_export_timestamps_are_formatted_without_losing_the_stored_value(
     client, export_board, session
 ):

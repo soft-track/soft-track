@@ -178,9 +178,10 @@ function ExportCsvButton({
       document.body.appendChild(link)
       link.click()
       link.remove()
-      // Unlike an attachment's URL, which stays in the DOM behind an <img>,
-      // this one has done its whole job by the time the click returns.
-      URL.revokeObjectURL(objectUrl)
+      // Released on the next tick rather than right away: Firefox and Safari
+      // start the download after the click returns, and a URL revoked before
+      // then downloads nothing.
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 0)
     } catch {
       setFailed(true)
     } finally {

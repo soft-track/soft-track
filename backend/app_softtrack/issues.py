@@ -64,21 +64,35 @@ def _csv_person(user: Optional[UserPublic]) -> str:
     return user.username or user.email
 
 
+#: What a spreadsheet takes a cell starting with to be a formula.
+_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _csv_text(value: str) -> str:
+    """Text someone typed, made safe to open in a spreadsheet.
+
+    Excel and Sheets run a cell starting with `=` (or `+`, `-`, `@`) as a
+    formula, so an issue titled `=HYPERLINK(...)` would run in the reader's
+    spreadsheet. A leading `'` makes the cell plain text again.
+    """
+    return f"'{value}" if value.startswith(_FORMULA_PREFIXES) else value
+
+
 def _csv_row(row: IssueExportRow) -> list[str]:
     """One issue as the columns of `CSV_COLUMNS`, in that order."""
     issue = row.issue
     return [
         issue.identifier,
-        issue.title,
-        issue.description or "",
-        issue.status.name,
+        _csv_text(issue.title),
+        _csv_text(issue.description or ""),
+        _csv_text(issue.status.name),
         issue.priority.value,
-        _csv_person(issue.assignee),
-        ";".join(label.name for label in issue.labels),
-        row.project_name,
-        row.cycle_name,
+        _csv_text(_csv_person(issue.assignee)),
+        _csv_text(";".join(label.name for label in issue.labels)),
+        _csv_text(row.project_name),
+        _csv_text(row.cycle_name),
         "" if issue.estimate is None else str(issue.estimate),
-        _csv_person(issue.creator),
+        _csv_text(_csv_person(issue.creator)),
         _csv_timestamp(issue.created_at),
         _csv_timestamp(issue.updated_at),
         issue.parent.identifier if issue.parent is not None else "",
