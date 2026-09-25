@@ -1,5 +1,6 @@
 import { IssuePriority, StatusCategory } from '@/api/generated/models'
 import type { IssueType, IssueUpdateEstimate, StatusRead } from '@/api/generated/models'
+import { i18n } from '@/i18n'
 import type { IconName } from '@/ui/Icon'
 
 /**
@@ -21,29 +22,27 @@ export const CATEGORY_ORDER: StatusCategory[] = [
 
 export const CATEGORY_META: Record<
   StatusCategory,
-  { label: string; hint: string; color: string }
+  { readonly label: string; readonly hint: string; color: string }
 > = {
-  backlog: {
-    label: 'Backlog',
-    hint: 'Not committed to yet',
-    color: 'var(--color-status-backlog)',
-  },
-  unstarted: {
-    label: 'Unstarted',
-    hint: 'Accepted, not begun',
-    color: 'var(--color-status-todo)',
-  },
-  started: {
-    label: 'Started',
-    hint: 'Work in flight',
-    color: 'var(--color-status-progress)',
-  },
-  done: { label: 'Done', hint: 'Finished', color: 'var(--color-status-done)' },
-  cancelled: {
-    label: 'Cancelled',
-    hint: 'Closed without being delivered',
-    color: 'var(--color-status-cancelled)',
-  },
+  backlog: category('backlog', 'var(--color-status-backlog)'),
+  unstarted: category('unstarted', 'var(--color-status-todo)'),
+  started: category('started', 'var(--color-status-progress)'),
+  done: category('done', 'var(--color-status-done)'),
+  cancelled: category('cancelled', 'var(--color-status-cancelled)'),
+}
+
+// The labels below are getters over the catalog (#106), so every caller keeps
+// reading `PRIORITY_META[p].label` and gets the current language's word.
+function category(key: StatusCategory, color: string) {
+  return {
+    color,
+    get label() {
+      return i18n.t(`issues:meta.category.${key}.label`)
+    },
+    get hint() {
+      return i18n.t(`issues:meta.category.${key}.hint`)
+    },
+  }
 }
 
 /** Work that is finished, one way or the other. Mirrors RESOLVED in lib_softtrack/statuses.py. */
@@ -68,20 +67,42 @@ export const PRIORITY_ORDER: IssuePriority[] = [
  * Issue types (#89): a label, an icon and a colour each. The icons differ in
  * outline, so the colour is never the only way to tell them apart.
  */
-export const TYPE_META: Record<IssueType, { label: string; icon: IconName; color: string }> = {
-  bug: { label: 'Bug', icon: 'bug', color: 'var(--color-status-cancelled)' },
-  task: { label: 'Task', icon: 'task', color: 'var(--color-brand-500)' },
-  story: { label: 'Story', icon: 'story', color: 'var(--color-status-done)' },
+export const TYPE_META: Record<
+  IssueType,
+  { readonly label: string; icon: IconName; color: string }
+> = {
+  bug: type('bug', 'bug', 'var(--color-status-cancelled)'),
+  task: type('task', 'task', 'var(--color-brand-500)'),
+  story: type('story', 'story', 'var(--color-status-done)'),
+}
+
+function type(key: IssueType, icon: IconName, color: string) {
+  return {
+    icon,
+    color,
+    get label() {
+      return i18n.t(`issues:meta.type.${key}`)
+    },
+  }
 }
 
 export const TYPE_ORDER: IssueType[] = ['task', 'bug', 'story']
 
-export const PRIORITY_META: Record<IssuePriority, { label: string; color: string }> = {
-  urgent: { label: 'Urgent', color: 'var(--color-priority-urgent)' },
-  high: { label: 'High', color: 'var(--color-priority-high)' },
-  medium: { label: 'Medium', color: 'var(--color-priority-medium)' },
-  low: { label: 'Low', color: 'var(--color-priority-low)' },
-  no_priority: { label: 'No priority', color: 'var(--color-priority-none)' },
+export const PRIORITY_META: Record<IssuePriority, { readonly label: string; color: string }> = {
+  urgent: priority('urgent', 'var(--color-priority-urgent)'),
+  high: priority('high', 'var(--color-priority-high)'),
+  medium: priority('medium', 'var(--color-priority-medium)'),
+  low: priority('low', 'var(--color-priority-low)'),
+  no_priority: priority('no_priority', 'var(--color-priority-none)'),
+}
+
+function priority(key: IssuePriority, color: string) {
+  return {
+    color,
+    get label() {
+      return i18n.t(`issues:meta.priority.${key}`)
+    },
+  }
 }
 
 /**

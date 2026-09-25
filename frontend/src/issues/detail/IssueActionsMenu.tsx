@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { useTranslation } from '@/i18n'
 import { Icon } from '@/ui/Icon'
 
 export interface IssueAction {
@@ -12,6 +13,7 @@ export interface IssueAction {
  * their own. Moving to another team (#98) is the first.
  */
 export function IssueActionsMenu({ actions }: { actions: IssueAction[] }) {
+  const { t } = useTranslation('issues')
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const toggle = useRef<HTMLButtonElement>(null)
@@ -51,8 +53,8 @@ export function IssueActionsMenu({ actions }: { actions: IssueAction[] }) {
         onClick={() => setOpen((value) => !value)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="More actions"
-        title="More actions"
+        aria-label={t('panel.actions.more')}
+        title={t('panel.actions.more')}
         className="btn btn-ghost btn-icon btn-sm text-neutral-500"
       >
         <Icon name="more" size={15} />
@@ -60,7 +62,7 @@ export function IssueActionsMenu({ actions }: { actions: IssueAction[] }) {
       {open && (
         <div
           role="menu"
-          aria-label="Issue actions"
+          aria-label={t('panel.actions.menu')}
           className="glass-strong absolute right-0 top-full z-10 mt-1 min-w-48 rounded-card p-1 shadow-lg"
         >
           {actions.map((action) => (

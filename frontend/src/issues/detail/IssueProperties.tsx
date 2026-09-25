@@ -6,6 +6,7 @@ import {
   type IssueType,
   type IssueUpdate,
 } from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
 import {
   ESTIMATE_SCALE,
   PRIORITY_META,
@@ -39,6 +40,7 @@ export function IssueProperties({
   /** A guest's view (#104): every value shown, none of them changeable. */
   readOnly?: boolean
 }) {
+  const { t } = useTranslation('issues')
   const { members, labels, cycles, statuses, projects } = useTeamContext()
 
   // A fieldset so one attribute disables every control in it -- including any
@@ -48,7 +50,7 @@ export function IssueProperties({
       disabled={readOnly}
       className="well mt-5 grid min-w-0 gap-x-4 gap-y-3 rounded-card border-0 p-3 sm:grid-cols-2"
     >
-      <Row label="Status" hint="S">
+      <Row label={t('properties.status')} hint="S">
         <Select
           dense
           data-field="status"
@@ -63,7 +65,7 @@ export function IssueProperties({
         </Select>
       </Row>
 
-      <Row label="Priority" hint="P">
+      <Row label={t('properties.priority')} hint="P">
         <Select
           dense
           data-field="priority"
@@ -78,7 +80,7 @@ export function IssueProperties({
         </Select>
       </Row>
 
-      <Row label="Type">
+      <Row label={t('properties.type')}>
         <Select
           dense
           data-field="type"
@@ -93,7 +95,7 @@ export function IssueProperties({
         </Select>
       </Row>
 
-      <Row label="Estimate">
+      <Row label={t('properties.estimate')}>
         <Select
           dense
           value={issue.estimate ?? ''}
@@ -103,23 +105,23 @@ export function IssueProperties({
             patch({ estimate: ESTIMATE_SCALE.find((p) => String(p) === e.target.value) ?? null })
           }
         >
-          <option value="">Not sized</option>
+          <option value="">{t('properties.notSized')}</option>
           {ESTIMATE_SCALE.map((points) => (
             <option key={points} value={points}>
-              {points} {points === 1 ? 'point' : 'points'}
+              {t('properties.points', { count: points })}
             </option>
           ))}
         </Select>
       </Row>
 
-      <Row label="Cycle">
+      <Row label={t('properties.cycle')}>
         <Select
           dense
           data-field="cycle"
           value={issue.cycle_id ?? ''}
           onChange={(e) => patch({ cycle_id: e.target.value ? Number(e.target.value) : null })}
         >
-          <option value="">Backlog</option>
+          <option value="">{t('properties.backlog')}</option>
           {cycles
             // A completed cycle is history; moving work into one would
             // rewrite numbers already reported.
@@ -132,7 +134,7 @@ export function IssueProperties({
         </Select>
       </Row>
 
-      <Row label="Due date">
+      <Row label={t('properties.dueDate')}>
         <input
           type="date"
           data-field="due"
@@ -142,14 +144,14 @@ export function IssueProperties({
         />
       </Row>
 
-      <Row label="Project">
+      <Row label={t('properties.project')}>
         <Select
           dense
           data-field="project"
           value={issue.project_id ?? ''}
           onChange={(e) => patch({ project_id: e.target.value ? Number(e.target.value) : null })}
         >
-          <option value="">No project</option>
+          <option value="">{t('properties.noProject')}</option>
           {/* An archived project is not offered for new work, but the one this
               issue is already in stays listed -- see pickableProjects. */}
           {pickableProjects(projects, issue.project_id).map((project) => (
@@ -160,14 +162,14 @@ export function IssueProperties({
         </Select>
       </Row>
 
-      <Row label="Assignee" hint="A">
+      <Row label={t('properties.assignee')} hint="A">
         <Select
           dense
           data-field="assignee"
           value={issue.assignee?.id ?? ''}
           onChange={(e) => patch({ assignee_id: e.target.value ? Number(e.target.value) : null })}
         >
-          <option value="">Unassigned</option>
+          <option value="">{t('properties.unassigned')}</option>
           {/* The current assignee stays listed even if their account was
               switched off, so opening the issue does not quietly offer to
               unassign it. */}
@@ -181,7 +183,7 @@ export function IssueProperties({
 
       <div className="sm:col-span-2">
         <span className="mb-1.5 flex items-center gap-1.5 text-xs text-neutral-500">
-          Labels <kbd className="kbd">L</kbd>
+          {t('properties.labels')} <kbd className="kbd">L</kbd>
         </span>
         <div className="flex flex-wrap gap-1.5">
           {labels.map((label, index) => {
@@ -202,7 +204,7 @@ export function IssueProperties({
             )
           })}
           {labels.length === 0 && (
-            <span className="text-xs text-neutral-400">No labels on this team yet.</span>
+            <span className="text-xs text-neutral-400">{t('properties.noLabels')}</span>
           )}
         </div>
       </div>

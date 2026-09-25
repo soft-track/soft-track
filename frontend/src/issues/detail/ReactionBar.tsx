@@ -12,6 +12,7 @@ import type {
   ReactionSummary,
 } from '@/api/generated/models'
 import { useAuth } from '@/auth/useAuth'
+import { useTranslation } from '@/i18n'
 import { chipLabel, REACTIONS, reactionFor, toggled, whoReacted } from '@/issues/detail/reactions'
 import { Icon } from '@/ui/Icon'
 
@@ -34,6 +35,7 @@ export function ReactionBar({
   canReact: boolean
 }) {
   const { user } = useAuth()
+  const { t } = useTranslation('issues')
   const queryClient = useQueryClient()
   const [picking, setPicking] = useState(false)
   const reactions = comment.reactions ?? []
@@ -99,7 +101,11 @@ export function ReactionBar({
           <span
             key={summary.emoji}
             role="img"
-            aria-label={`${glyph} ${summary.count}: ${tooltip}`}
+            aria-label={t('comments.reactions.guestChip', {
+              glyph,
+              total: summary.count,
+              who: tooltip,
+            })}
             title={tooltip}
             className="reaction-chip"
           >
@@ -133,6 +139,7 @@ function ReactionPicker({
   onPick: (emoji: ReactionEmoji) => void
   subtle: boolean
 }) {
+  const { t } = useTranslation('issues')
   const root = useRef<HTMLDivElement>(null)
   const firstOption = useRef<HTMLButtonElement>(null)
 
@@ -166,8 +173,8 @@ function ReactionPicker({
         data-picker-toggle
         onClick={() => onOpenChange(!open)}
         aria-expanded={open}
-        aria-label="Add a reaction"
-        title="Add a reaction"
+        aria-label={t('comments.reactions.add')}
+        title={t('comments.reactions.add')}
         className={`reaction-chip text-neutral-500 ${
           subtle && !open
             ? 'opacity-0 transition group-hover/comment:opacity-100 focus-visible:opacity-100'
@@ -179,7 +186,7 @@ function ReactionPicker({
       {open && (
         <div
           role="group"
-          aria-label="Reactions"
+          aria-label={t('comments.reactions.group')}
           className="glass-strong absolute bottom-full left-0 z-10 mb-1 flex gap-0.5 rounded-card p-1 shadow-lg"
         >
           {REACTIONS.map((reaction, index) => (
@@ -188,7 +195,7 @@ function ReactionPicker({
               ref={index === 0 ? firstOption : undefined}
               type="button"
               onClick={() => onPick(reaction.emoji)}
-              aria-label={`React with ${reaction.name}`}
+              aria-label={t('comments.reactions.reactWith', { name: reaction.name })}
               title={reaction.name}
               className="btn btn-ghost btn-icon btn-sm text-base"
             >

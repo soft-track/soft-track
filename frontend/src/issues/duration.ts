@@ -1,3 +1,5 @@
+import { i18n } from '@/i18n'
+
 /**
  * Durations as people type them (#102): "2h 30m", "45m", "1h15m", "1.5h",
  * "2:30", or a bare number of minutes. Minutes out, or null for anything
@@ -23,10 +25,16 @@ function positive(minutes: number): number | null {
   return Number.isFinite(minutes) && minutes > 0 ? minutes : null
 }
 
-/** "2h 30m", "45m", "3h" -- the way it was most likely typed. */
+/**
+ * "2h 30m", "45m", "3h" -- the way it was most likely typed. The units are
+ * the catalog's (#106); what `parseDuration` accepts is still English, since
+ * it reads what people type rather than what the page says.
+ */
 export function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60)
   const rest = minutes % 60
-  if (hours === 0) return `${rest}m`
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`
+  if (hours === 0) return i18n.t('issues:meta.duration.minutes', { minutes: rest })
+  return rest === 0
+    ? i18n.t('issues:meta.duration.hours', { hours })
+    : i18n.t('issues:meta.duration.both', { hours, minutes: rest })
 }

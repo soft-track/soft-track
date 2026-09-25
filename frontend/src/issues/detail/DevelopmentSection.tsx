@@ -6,6 +6,7 @@ import {
   type CodeLinkRead,
   type CodeLinks,
 } from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
 import { Icon, type IconName } from '@/ui/Icon'
 
 /**
@@ -23,15 +24,16 @@ import { Icon, type IconName } from '@/ui/Icon'
  * them would be noise on the majority to serve the minority.
  */
 export function DevelopmentSection({ issueId }: { issueId: number }) {
+  const { t } = useTranslation('issues')
   const { data } = useListCodeLinksIssuesIssueIdCodeLinksGet(issueId)
   if (!data) return null
 
   const groups: Array<{ key: keyof CodeLinks; label: string; icon: IconName }> = [
     // Pull requests first: "has this shipped" is the question this section is
     // most often opened to answer.
-    { key: 'pull_requests', label: 'Pull requests', icon: 'pull-request' },
-    { key: 'branches', label: 'Branches', icon: 'branch' },
-    { key: 'commits', label: 'Commits', icon: 'commit' },
+    { key: 'pull_requests', label: t('development.groups.pull_requests'), icon: 'pull-request' },
+    { key: 'branches', label: t('development.groups.branches'), icon: 'branch' },
+    { key: 'commits', label: t('development.groups.commits'), icon: 'commit' },
   ]
   // The three arrays default to empty on the server, so the schema marks them
   // optional and the client has to say so.
@@ -42,7 +44,7 @@ export function DevelopmentSection({ issueId }: { issueId: number }) {
 
   return (
     <div className="mt-5">
-      <p className="eyebrow mb-2">Development</p>
+      <p className="eyebrow mb-2">{t('development.title')}</p>
       <div className="space-y-3">
         {present.map((group) => (
           <div key={group.key}>
@@ -63,22 +65,24 @@ export function DevelopmentSection({ issueId }: { issueId: number }) {
 }
 
 /**
- * How a pull request's state reads, and what colour it carries.
+ * What colour a pull request's state carries; how it reads is the catalog's
+ * (`development.state`).
  *
  * Colours come through `--chip`, the same custom property every other chip in
  * the app is tinted by, so these follow the theme in both modes rather than
  * carrying a hard-coded pair of hex values each.
  */
-const STATE_META: Record<PullRequestState, { label: string; color: string }> = {
-  open: { label: 'Open', color: 'var(--color-brand-500)' },
+const STATE_META: Record<PullRequestState, { color: string }> = {
+  open: { color: 'var(--color-brand-500)' },
   // The same green as a Done column, because it means the same thing.
-  merged: { label: 'Merged', color: 'var(--color-status-done)' },
+  merged: { color: 'var(--color-status-done)' },
   // Not a failure, and not coloured as one: a pull request closed without
   // merging is usually a change of approach, not a mistake.
-  closed: { label: 'Closed', color: 'var(--color-neutral-500)' },
+  closed: { color: 'var(--color-neutral-500)' },
 }
 
 function CodeLinkRow({ link, kind }: { link: CodeLinkRead; kind: keyof CodeLinks }) {
+  const { t } = useTranslation('issues')
   return (
     <li>
       <a
@@ -86,7 +90,11 @@ function CodeLinkRow({ link, kind }: { link: CodeLinkRead; kind: keyof CodeLinks
         target="_blank"
         rel="noreferrer noopener"
         className="well flex items-center gap-2 rounded-control px-2.5 py-1.5 transition hover:bg-neutral-900/4"
-        title={`${link.repository.full_name} — open on ${link.repository.provider === 'github' ? 'GitHub' : 'GitLab'}`}
+        title={t('development.openOn', {
+          repository: link.repository.full_name,
+          // Product names, not words: the same in every language.
+          provider: link.repository.provider === 'github' ? 'GitHub' : 'GitLab',
+        })}
       >
         <span className="min-w-0 flex-1 truncate text-xs text-neutral-800">
           {kind === 'commits' ? (
@@ -112,7 +120,7 @@ function CodeLinkRow({ link, kind }: { link: CodeLinkRead; kind: keyof CodeLinks
             className="chip shrink-0"
             style={{ ['--chip' as string]: STATE_META[link.state].color }}
           >
-            {STATE_META[link.state].label}
+            {t(`development.state.${link.state}`)}
           </span>
         )}
         {link.author_name && (

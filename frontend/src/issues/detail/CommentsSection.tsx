@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { formatDistanceToNow } from 'date-fns'
 import { parseServerDate } from '@/api/dates'
 import { type FormEvent, useState } from 'react'
 
@@ -12,7 +11,9 @@ import type { AttachmentRead, CommentRead, IssueEventRead } from '@/api/generate
 import { AttachmentList } from '@/attachments/AttachmentList'
 import { attachmentMarkdown } from '@/attachments/urls'
 import { Markdown, MarkdownEditor } from '@/markdown/lazy'
-import { describeEvent, interleave } from '@/issues/detail/history'
+import { actorName, describeEvent, interleave } from '@/issues/detail/history'
+import { Trans, userText, useTranslation } from '@/i18n'
+import { formatRelative } from '@/i18n/format'
 import { ReactionBar } from '@/issues/detail/ReactionBar'
 import type { Mentionable } from '@/markdown/mentions'
 import { Avatar } from '@/ui/Avatar'
@@ -43,6 +44,7 @@ export function CommentsSection({
   /** False for a guest (#104), who reads the conversation but cannot join it. */
   canComment?: boolean
 }) {
+  const { t } = useTranslation('issues')
   const queryClient = useQueryClient()
   const commentsQuery = useListCommentsIssuesIssueIdCommentsGet(issueId)
   const eventsQuery = useListIssueEventsIssuesIssueIdEventsGet(issueId)
@@ -83,7 +85,7 @@ export function CommentsSection({
   return (
     <div className="hairline border-t px-5 py-4">
       <div className="mb-3 flex items-center gap-2">
-        <h3 className="text-sm font-semibold text-neutral-800">Activity</h3>
+        <h3 className="text-sm font-semibold text-neutral-800">{t('comments.title')}</h3>
         {total > 0 && (
           <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
             {total}
@@ -107,23 +109,21 @@ export function CommentsSection({
         )}
         {commentsQuery.data?.items.length === 0 && (
           <li className="text-xs text-neutral-400">
-            {canComment ? 'No comments yet. Start the conversation below.' : 'No comments yet.'}
+            {canComment ? t('comments.empty') : t('comments.emptyReadOnly')}
           </li>
         )}
       </ol>
 
 
       {!canComment ? (
-        <p className="text-xs text-neutral-400">
-          You are a guest on this team, so you can follow this issue but not comment on it.
-        </p>
+        <p className="text-xs text-neutral-400">{t('comments.guest')}</p>
       ) : (
         <form onSubmit={submit}>
           <MarkdownEditor
             value={body}
             onChange={setBody}
             people={people}
-            placeholder="Leave a comment…"
+            placeholder={t('comments.placeholder')}
             rows={3}
             onSubmit={() => void submit()}
             onUploadFiles={uploadForComment}
@@ -134,15 +134,21 @@ export function CommentsSection({
           <AttachmentList attachments={draftFiles} onRemove={removeDraftFile} />
           <div className="mt-2 flex items-center justify-end gap-3">
             <span className="flex items-center gap-1 text-[11px] text-neutral-400">
-              <kbd className="kbd">⌘</kbd>
-              <kbd className="kbd">↵</kbd> to send
+              <Trans
+                t={t}
+                i18nKey="comments.toSend"
+                components={{
+                  mod: <kbd className="kbd">⌘</kbd>,
+                  enter: <kbd className="kbd">↵</kbd>,
+                }}
+              />
             </span>
             <button
               type="submit"
               disabled={!body.trim() || createComment.isPending || uploading > 0}
               className="btn btn-primary btn-sm"
             >
-              {createComment.isPending ? 'Sending…' : 'Send'}
+              {createComment.isPending ? t('comments.sending') : t('comments.send')}
             </button>
           </div>
         </form>
@@ -160,9 +166,10 @@ export function CommentsSection({
  * it is deliberately not a person-shaped one.
  */
 function AutomationAvatar() {
+  const { t } = useTranslation('issues')
   return (
     <div
-      title="Posted by an automation rule"
+      title={t('comments.automationTitle')}
       className="flex size-[26px] shrink-0 items-center justify-center rounded-full bg-neutral-900/8 text-neutral-500"
       style={{ boxShadow: '0 0 0 1.5px var(--glass-border)' }}
     >
@@ -182,6 +189,7 @@ function CommentItem({
   people: Mentionable[]
   canReact: boolean
 }) {
+  const { t } = useTranslation('issues')
   return (
     <li className="group/comment flex gap-2.5">
       {comment.author ? (
@@ -192,10 +200,10 @@ function CommentItem({
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className="text-sm font-medium text-neutral-900">
-            {comment.author?.full_name ?? 'Automation'}
+            {comment.author?.full_name ?? t('comments.automation')}
           </span>
           <span className="text-[11px] text-neutral-400">
-            {formatDistanceToNow(parseServerDate(comment.created_at), { addSuffix: true })}
+            {formatRelative(parseServerDate(comment.created_at))}
           </span>
         </div>
         <div className="well mt-1 rounded-card rounded-tl-sm px-3 py-2">
@@ -215,6 +223,22 @@ function CommentItem({
  * One change, quieter than a comment: a single muted line with a small face,
  * e.g. "Maya moved this from Started to Done · 2 hours ago".
  */
+/** "Maya moved this from Started to Done", the name in bold (#106). */
+function EventSentence({ event }: { event: IssueEventRead }) {
+  const { t } = useTranslation('issues')
+  const { key, values } = describeEvent(event)
+  return (
+    <Trans
+      t={t}
+      // Typed by HistoryKey; see eventText for why it is shown one key's shape.
+      i18nKey={`history.${key}` as 'history.other'}
+      values={{ ...values, actor: actorName(event) }}
+      components={{ actor: <span className="font-medium text-neutral-700" /> }}
+      {...userText}
+    />
+  )
+}
+
 function EventLine({ event }: { event: IssueEventRead }) {
   return (
     <li className="flex items-center gap-2.5 pl-1 text-xs text-neutral-500">
@@ -226,14 +250,11 @@ function EventLine({ event }: { event: IssueEventRead }) {
         </span>
       )}
       <p className="min-w-0">
-        <span className="font-medium text-neutral-700">
-          {event.actor?.full_name ?? 'Automation'}
-        </span>{' '}
-        {describeEvent(event)}
+        <EventSentence event={event} />
         <span className="text-neutral-400">
           {' · '}
           <time dateTime={event.created_at}>
-            {formatDistanceToNow(parseServerDate(event.created_at), { addSuffix: true })}
+            {formatRelative(parseServerDate(event.created_at))}
           </time>
         </span>
       </p>

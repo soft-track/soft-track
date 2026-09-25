@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 
 import type { IssueRead } from '@/api/generated/models'
 import { selectionGesture } from '@/board/selection'
+import { useTranslation } from '@/i18n'
 import { DueBadge } from '@/issues/DueBadge'
 import { EstimateBadge } from '@/issues/EstimateBadge'
 import { isResolved } from '@/issues/issueMeta'
@@ -29,6 +30,7 @@ export function IssueCard({
   /** Off on a board grouped by project, where the column already says it. */
   showProject?: boolean
 }) {
+  const { t } = useTranslation('issues')
   const navigate = useNavigate()
   const { team, projects } = useTeamContext()
   const project = showProject
@@ -102,7 +104,7 @@ export function IssueCard({
         selected ? 'bg-brand-500/10 ring-2 ring-brand-500/70' : ''
       }`}
     >
-      {selected && <span className="sr-only">Selected. </span>}
+      {selected && <span className="sr-only">{t('card.selected')}</span>}
       <div className="mb-1.5 flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-1.5">
           {showStatus && (
@@ -124,7 +126,10 @@ export function IssueCard({
           {issue.child_count > 0 && (
             <span
               className="identifier text-[10px] text-neutral-400"
-              title={`${issue.completed_child_count} of ${issue.child_count} sub-issues done`}
+              title={t('card.subIssuesDone', {
+                done: issue.completed_child_count,
+                count: issue.child_count,
+              })}
             >
               {issue.completed_child_count}/{issue.child_count}
             </span>
@@ -160,7 +165,7 @@ export function IssueCard({
           ) : (
             <span
               className="h-[22px] w-[22px] shrink-0 rounded-full border border-dashed border-neutral-900/20"
-              title="Unassigned"
+              title={t('card.unassigned')}
             />
           )}
         </div>
@@ -176,11 +181,18 @@ export function IssueCard({
  * spans cycles is not mistaken for one more label.
  */
 export function ProjectBadge({ name, color }: { name: string; color: string }) {
+  const { t } = useTranslation('issues')
   return (
-    <span className="chip max-w-40" style={{ ['--chip' as string]: color }} title={`Project: ${name}`}>
+    <span
+      className="chip max-w-40"
+      style={{ ['--chip' as string]: color }}
+      title={t('card.projectTitle', { name })}
+    >
       <span className="dot" style={{ ['--dot' as string]: color }} aria-hidden="true" />
-      <span className="truncate">{name}</span>
-      <span className="sr-only"> (project)</span>
+      <span className="truncate" aria-hidden="true">
+        {name}
+      </span>
+      <span className="sr-only">{t('card.projectSpoken', { name })}</span>
     </span>
   )
 }
@@ -193,9 +205,10 @@ export function ProjectBadge({ name, color }: { name: string; color: string }) {
  * decoration does not do that job.
  */
 function BlockedMarker({ count }: { count: number }) {
+  const { t } = useTranslation('issues')
   return (
     <span
-      title={`Blocked by ${count} unresolved ${count === 1 ? 'issue' : 'issues'}`}
+      title={t('card.blockedBy', { count })}
       className="chip"
       style={{ ['--chip' as string]: 'var(--color-accent-amber)' }}
     >
@@ -204,7 +217,7 @@ function BlockedMarker({ count }: { count: number }) {
         <path d="M4 12 L12 4" stroke="currentColor" strokeWidth="1.6" />
       </svg>
       {count > 1 && count}
-      <span className="sr-only">Blocked</span>
+      <span className="sr-only">{t('card.blocked')}</span>
     </span>
   )
 }

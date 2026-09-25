@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { format, formatDistanceToNowStrict, isToday, isYesterday, parseISO } from 'date-fns'
+import { isToday, isYesterday, parseISO } from 'date-fns'
 import { type FormEvent, useState } from 'react'
 
 import {
@@ -14,6 +14,8 @@ import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { localToday } from '@/issues/dueDate'
 import { formatDuration, parseDuration } from '@/issues/duration'
+import { i18n, Trans, userText, useTranslation } from '@/i18n'
+import { formatDate } from '@/i18n/format'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 
@@ -26,6 +28,7 @@ const RECENT = 5
  */
 export function TimeSection({ issueId, readOnly }: { issueId: number; readOnly: boolean }) {
   const { user } = useAuth()
+  const { t } = useTranslation(['issues', 'common'])
   const queryClient = useQueryClient()
   const query = useIssueTimeIssuesIssueIdWorklogsGet(issueId)
   const [logging, setLogging] = useState(false)
@@ -48,22 +51,22 @@ export function TimeSection({ issueId, readOnly }: { issueId: number; readOnly: 
     <div className="mt-5">
       <div className="mb-2 flex items-center justify-between">
         <span className="flex items-center gap-2">
-          <span className="eyebrow">Time</span>
+          <span className="eyebrow">{t('time.title')}</span>
           {time.total_minutes > 0 && (
             <span className="identifier text-[11px] text-neutral-500">
-              {formatDuration(time.total_minutes)} logged
+              {t('time.logged', { duration: formatDuration(time.total_minutes) })}
             </span>
           )}
         </span>
         {!readOnly && !logging && (
           <button type="button" onClick={() => setLogging(true)} className="btn btn-ghost btn-xs">
-            <Icon name="plus" size={12} /> Log time
+            <Icon name="plus" size={12} /> {t('time.logTime')}
           </button>
         )}
       </div>
 
       {time.by_person.length > 1 && (
-        <ul className="mb-2 flex flex-wrap gap-1.5" aria-label="Time by person">
+        <ul className="mb-2 flex flex-wrap gap-1.5" aria-label={t('time.byPerson')}>
           {time.by_person.map((person) => (
             <li
               key={person.user.id}
@@ -79,7 +82,7 @@ export function TimeSection({ issueId, readOnly }: { issueId: number; readOnly: 
 
       {logging && (
         <WorklogForm
-          submitLabel="Log"
+          submitLabel={t('time.form.log')}
           onCancel={() => setLogging(false)}
           onSaved={() => {
             setLogging(false)
@@ -97,7 +100,7 @@ export function TimeSection({ issueId, readOnly }: { issueId: number; readOnly: 
                 <WorklogForm
                   issueId={issueId}
                   entry={entry}
-                  submitLabel="Save"
+                  submitLabel={t('common:save')}
                   onCancel={() => setEditing(null)}
                   onSaved={() => {
                     setEditing(null)
@@ -112,20 +115,36 @@ export function TimeSection({ issueId, readOnly }: { issueId: number; readOnly: 
               >
                 <Avatar user={entry.user} size={20} decorative />
                 <p className="min-w-0 flex-1 text-neutral-700">
-                  <span className="font-medium text-neutral-900">{entry.user.full_name}</span>{' '}
-                  <span className="identifier">{formatDuration(entry.minutes)}</span>{' '}
-                  <span className="text-neutral-400">{dayLabel(entry.worked_on)}</span>
-                  {entry.note && <span className="text-neutral-500"> — {entry.note}</span>}
+                  <Trans
+                    t={t}
+                    i18nKey={entry.note ? 'time.entryWithNote' : 'time.entry'}
+                    values={{
+                      name: entry.user.full_name,
+                      duration: formatDuration(entry.minutes),
+                      day: dayLabel(entry.worked_on),
+                      note: entry.note ?? '',
+                    }}
+                    components={{
+                      who: <span className="font-medium text-neutral-900" />,
+                      duration: <span className="identifier" />,
+                      day: <span className="text-neutral-400" />,
+                      note: <span className="text-neutral-500" />,
+                    }}
+                    {...userText}
+                  />
                 </p>
                 {!readOnly && entry.user.id === user?.id && (
                   <span className="flex shrink-0 opacity-0 transition focus-within:opacity-100 group-hover:opacity-100">
                     <button
                       type="button"
                       onClick={() => setEditing(entry.id)}
-                      aria-label={`Edit ${formatDuration(entry.minutes)} logged ${dayLabel(entry.worked_on)}`}
+                      aria-label={t('time.editEntry', {
+                        duration: formatDuration(entry.minutes),
+                        day: dayLabel(entry.worked_on),
+                      })}
                       className="btn btn-ghost btn-xs"
                     >
-                      Edit
+                      {t('common:edit')}
                     </button>
                     <button
                       type="button"
@@ -133,7 +152,10 @@ export function TimeSection({ issueId, readOnly }: { issueId: number; readOnly: 
                         await remove.mutateAsync({ worklogId: entry.id })
                         refresh()
                       }}
-                      aria-label={`Delete ${formatDuration(entry.minutes)} logged ${dayLabel(entry.worked_on)}`}
+                      aria-label={t('time.deleteEntry', {
+                        duration: formatDuration(entry.minutes),
+                        day: dayLabel(entry.worked_on),
+                      })}
                       className="btn btn-ghost btn-icon btn-xs text-neutral-400 hover:text-danger-600"
                     >
                       <Icon name="trash" size={12} />
@@ -151,22 +173,30 @@ export function TimeSection({ issueId, readOnly }: { issueId: number; readOnly: 
           onClick={() => setShowAll((value) => !value)}
           className="btn btn-ghost btn-xs mt-1"
         >
-          {showAll ? 'Show recent' : `Show all ${time.entries.length}`}
+          {showAll ? t('time.showRecent') : t('time.showAll', { count: time.entries.length })}
         </button>
       )}
     </div>
   )
 }
 
+const DAY = 24 * 60 * 60 * 1000
+
 /** The date an entry is for, the way a standup says it. */
 function dayLabel(day: string): string {
   const date = parseISO(day)
-  if (isToday(date)) return 'today'
-  if (isYesterday(date)) return 'yesterday'
-  const distance = Date.now() - date.getTime()
-  return distance < 6 * 24 * 60 * 60 * 1000
-    ? `${formatDistanceToNowStrict(date, { unit: 'day' })} ago`
-    : `on ${format(date, 'd MMM')}`
+  if (isToday(date)) return i18n.t('issues:time.day.today')
+  if (isYesterday(date)) return i18n.t('issues:time.day.yesterday')
+  const now = new Date()
+  const distance = now.getTime() - date.getTime()
+  if (distance >= 6 * DAY) {
+    const pattern = i18n.t('issues:time.day.pattern')
+    return i18n.t('issues:time.day.on', { date: formatDate(date, pattern) })
+  }
+  // Whole days, rounded, counted across a clock change the way
+  // date-fns's formatDistanceToNowStrict({ unit: 'day' }) counts them.
+  const shift = (date.getTimezoneOffset() - now.getTimezoneOffset()) * 60 * 1000
+  return i18n.t('issues:time.day.daysAgo', { count: Math.round((distance + shift) / DAY) })
 }
 
 function WorklogForm({
@@ -182,6 +212,7 @@ function WorklogForm({
   onCancel: () => void
   onSaved: () => void
 }) {
+  const { t } = useTranslation(['issues', 'common'])
   const create = useLogTimeIssuesIssueIdWorklogsPost()
   const update = useUpdateWorklogWorklogsWorklogIdPatch()
   const [duration, setDuration] = useState(entry ? formatDuration(entry.minutes) : '')
@@ -195,7 +226,7 @@ function WorklogForm({
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     if (minutes === null) {
-      setError('Try something like 2h 30m, 45m or 1.5h.')
+      setError(t('time.form.invalid'))
       return
     }
     setError(null)
@@ -213,7 +244,7 @@ function WorklogForm({
       }
       onSaved()
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not save that time.'))
+      setError(errorDetail(err, t('time.form.error')))
     }
   }
 
@@ -221,19 +252,19 @@ function WorklogForm({
     <form onSubmit={submit} className="well mb-2 space-y-2 rounded-card p-2.5">
       <div className="flex flex-wrap items-end gap-2">
         <label className="w-28">
-          <span className="eyebrow mb-1 block">Time spent</span>
+          <span className="eyebrow mb-1 block">{t('time.form.spent')}</span>
           <input
             autoFocus
             required
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
-            placeholder="2h 30m"
+            placeholder={t('time.form.spentPlaceholder')}
             aria-invalid={invalid || undefined}
             className="field field-sm identifier"
           />
         </label>
         <label>
-          <span className="eyebrow mb-1 block">On</span>
+          <span className="eyebrow mb-1 block">{t('time.form.on')}</span>
           <input
             type="date"
             required
@@ -244,24 +275,24 @@ function WorklogForm({
           />
         </label>
         <label className="min-w-40 flex-1">
-          <span className="eyebrow mb-1 block">Note</span>
+          <span className="eyebrow mb-1 block">{t('time.form.note')}</span>
           <input
             value={note}
             maxLength={500}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Debugging the webhook retry"
+            placeholder={t('time.form.notePlaceholder')}
             className="field field-sm"
           />
         </label>
       </div>
       {(error || invalid) && (
         <p role="alert" className="text-xs text-danger-600">
-          {error ?? 'Try something like 2h 30m, 45m or 1.5h.'}
+          {error ?? t('time.form.invalid')}
         </p>
       )}
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="btn btn-secondary btn-sm">
-          Cancel
+          {t('common:cancel')}
         </button>
         <button
           type="submit"

@@ -110,7 +110,7 @@ later is a new folder rather than a pass over every component.
 
 Folders are converted one at a time, and a converted folder is listed in
 `frontend/scripts/check-i18n.mjs`, which fails CI on literal text in JSX there.
-`settings/` is converted; `issues/` and `board/` are next. In a converted
+`settings/` and `issues/` are converted; `board/` is next. In a converted
 folder:
 
 ```tsx
@@ -132,7 +132,11 @@ guardrail enforces this one. And don't name a tag after an empty HTML element
 drops the text inside it. Call a link to a rule `<rule>`.
 
 Never build a sentence out of translated pieces — word order is the first
-thing a second language changes. Dates and numbers go through
+thing a second language changes. That includes a name set in bold beside a
+translated phrase: the name goes inside the sentence, as a `<Trans>` tag.
+A label map read from many places — `PRIORITY_META[p].label` — keeps its
+shape and makes `label` a getter over `i18n.t(...)`, so callers need not
+change. Lists ("Bug, Task and Story") go through `formatList`. Dates and numbers go through
 `@/i18n/format` (`formatDate`, `formatRelative`, `formatNumber`), which is the
 one place a locale is chosen. Backend error messages are translated by their
 code (#86) in `frontend/src/api/errors.ts`, not here.

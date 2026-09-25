@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n'
 import { isOverdue, longDue, shortDue } from '@/issues/dueDate'
 import { Icon } from '@/ui/Icon'
 
@@ -7,17 +8,24 @@ import { Icon } from '@/ui/Icon'
  * the colour is never the only signal.
  */
 export function DueBadge({ dueDate, resolved }: { dueDate: string; resolved: boolean }) {
+  const { t } = useTranslation('issues')
   const late = isOverdue(dueDate, resolved)
   return (
     <span
       className={`identifier inline-flex shrink-0 items-center gap-1 text-[11px] ${
         late ? 'font-semibold text-danger-600' : 'text-neutral-500'
       }`}
-      title={`Due ${longDue(dueDate)}${late ? ' — overdue' : ''}`}
+      title={t(late ? 'card.dueOverdue' : 'card.due', { date: longDue(dueDate) })}
     >
       <Icon name="calendar" size={11} />
-      {shortDue(dueDate)}
-      {late && <span className="sr-only"> (overdue)</span>}
+      {late ? (
+        <>
+          <span aria-hidden="true">{shortDue(dueDate)}</span>
+          <span className="sr-only">{t('card.overdueSpoken', { date: shortDue(dueDate) })}</span>
+        </>
+      ) : (
+        shortDue(dueDate)
+      )}
     </span>
   )
 }

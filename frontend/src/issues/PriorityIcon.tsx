@@ -24,7 +24,7 @@ export function PriorityIcon({ priority, size = 14 }: { priority: IssuePriority;
       <span
         title={meta.label}
         role="img"
-        aria-label="Urgent"
+        aria-label={meta.label}
         className="flex shrink-0 items-center justify-center rounded-[4px] text-white"
         style={{
           width: size,

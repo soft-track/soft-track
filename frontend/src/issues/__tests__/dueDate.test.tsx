@@ -30,7 +30,9 @@ describe('DueBadge', () => {
     vi.useFakeTimers({ now: new Date('2026-09-23T12:00:00') })
     render(<DueBadge dueDate="2026-09-12" resolved={false} />)
     const badge = screen.getByTitle(/Due Saturday 12 September 2026 — overdue/)
-    expect(badge.textContent).toBe('Sep 12 (overdue)')
+    // Seen: the date. Heard: the date and that it is late, as one sentence (#106).
+    expect(badge.querySelector('span[aria-hidden="true"]')?.textContent).toBe('Sep 12')
+    expect(badge.querySelector('.sr-only')?.textContent).toBe('Sep 12 (overdue)')
     expect(badge.className).toMatch(/text-danger-600/)
   })
 

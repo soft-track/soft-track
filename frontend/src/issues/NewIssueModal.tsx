@@ -4,6 +4,7 @@ import { type FormEvent, useId, useState } from 'react'
 import { useCreateIssueTeamsTeamIdIssuesPost } from '@/api/generated/endpoints/issues/issues'
 import { useListTemplatesTeamsTeamIdIssueTemplatesGet } from '@/api/generated/endpoints/templates/templates'
 import { IssuePriority, type IssueType } from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
 import {
   ESTIMATE_SCALE,
   PRIORITY_META,
@@ -21,6 +22,7 @@ import { Select } from '@/ui/Select'
 import { useFocusTrap } from '@/ui/useFocusTrap'
 
 export function NewIssueModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation(['issues', 'common'])
   const dialogRef = useFocusTrap<HTMLDivElement>()
   const titleId = useId()
   const { team, projects, labels, members, cycles, statuses } = useTeamContext()
@@ -58,7 +60,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
     // first when that would replace something the user wrote themselves.
     if (
       replacingLosesWork(description, appliedBody) &&
-      !window.confirm(`Replace the description you have written with the “${template.name}” template?`)
+      !window.confirm(t('newIssue.replaceDescription', { name: template.name }))
     ) {
       return
     }
@@ -96,7 +98,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
       invalidateProjects(queryClient, team.id)
       onClose()
     } catch {
-      setError('Could not create the issue. Please try again.')
+      setError(t('newIssue.errors.create'))
     }
   }
 
@@ -116,7 +118,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
       >
         <form onSubmit={onSubmit}>
           <h2 id={titleId} className="sr-only">
-            New issue
+            {t('newIssue.title')}
           </h2>
           <div className="hairline border-b px-5 pb-4 pt-4">
             <div className="mb-2 flex items-center justify-between">
@@ -131,9 +133,9 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
                     dense
                     value={templateId}
                     onChange={(e) => applyTemplate(e.target.value)}
-                    aria-label="Template"
+                    aria-label={t('newIssue.template')}
                   >
-                    <option value="">No template</option>
+                    <option value="">{t('newIssue.noTemplate')}</option>
                     {templates.map((template) => (
                       <option key={template.id} value={template.id}>
                         {template.name}
@@ -146,7 +148,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
                 type="button"
                 onClick={onClose}
                 className="btn btn-ghost btn-icon btn-xs text-neutral-400"
-                aria-label="Close"
+                aria-label={t('common:close')}
               >
                 <Icon name="close" size={14} />
               </button>
@@ -156,15 +158,15 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Issue title"
-              aria-label="Issue title"
+              placeholder={t('newIssue.issueTitle')}
+              aria-label={t('newIssue.issueTitle')}
               className="w-full border-none bg-transparent p-0 text-lg font-semibold tracking-tight text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-0"
             />
             <MarkdownEditor
               value={description}
               onChange={setDescription}
               people={activeMembers(members)}
-              placeholder="Add a description… Markdown works here."
+              placeholder={t('newIssue.descriptionPlaceholder')}
               rows={4}
               className="mt-3"
             />
@@ -181,7 +183,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
               dense
               value={statusId}
               onChange={(e) => setStatusId(e.target.value)}
-              aria-label="Status"
+              aria-label={t('newIssue.status')}
             >
               {statuses.map((status) => (
                 <option key={status.id} value={status.id}>
@@ -194,11 +196,11 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
               dense
               value={type}
               onChange={(e) => setType(e.target.value as IssueType)}
-              aria-label="Type"
+              aria-label={t('newIssue.type')}
             >
-              {TYPE_ORDER.map((t) => (
-                <option key={t} value={t}>
-                  {TYPE_META[t].label}
+              {TYPE_ORDER.map((value) => (
+                <option key={value} value={value}>
+                  {TYPE_META[value].label}
                 </option>
               ))}
             </Select>
@@ -207,7 +209,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
               dense
               value={priority}
               onChange={(e) => setPriority(e.target.value as IssuePriority)}
-              aria-label="Priority"
+              aria-label={t('newIssue.priority')}
             >
               {PRIORITY_ORDER.map((p) => (
                 <option key={p} value={p}>
@@ -222,18 +224,23 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
               onChange={(e) =>
                 setEstimate(ESTIMATE_SCALE.find((p) => String(p) === e.target.value) ?? null)
               }
-              aria-label="Estimate"
+              aria-label={t('newIssue.estimate')}
             >
-              <option value="">No estimate</option>
+              <option value="">{t('newIssue.noEstimate')}</option>
               {ESTIMATE_SCALE.map((points) => (
                 <option key={points} value={points}>
-                  {points} {points === 1 ? 'point' : 'points'}
+                  {t('card.points', { count: points })}
                 </option>
               ))}
             </Select>
 
-            <Select dense value={cycleId} onChange={(e) => setCycleId(e.target.value)} aria-label="Cycle">
-              <option value="">Backlog</option>
+            <Select
+              dense
+              value={cycleId}
+              onChange={(e) => setCycleId(e.target.value)}
+              aria-label={t('newIssue.cycle')}
+            >
+              <option value="">{t('newIssue.noCycle')}</option>
               {cycles
                 .filter((c) => c.state !== 'completed')
                 .map((cycle) => (
@@ -247,13 +254,18 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              aria-label="Due date"
-              title="Due date"
+              aria-label={t('newIssue.dueDate')}
+              title={t('newIssue.dueDate')}
               className="field field-sm w-auto"
             />
 
-            <Select dense value={projectId} onChange={(e) => setProjectId(e.target.value)} aria-label="Project">
-              <option value="">No project</option>
+            <Select
+              dense
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
+              aria-label={t('newIssue.project')}
+            >
+              <option value="">{t('newIssue.noProject')}</option>
               {pickableProjects(projects).map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -265,9 +277,9 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
               dense
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
-              aria-label="Assignee"
+              aria-label={t('newIssue.assignee')}
             >
-              <option value="">Unassigned</option>
+              <option value="">{t('newIssue.unassigned')}</option>
               {activeMembers(members).map((user) => (
                 <option key={user.id} value={user.id}>
                   {user.full_name}
@@ -299,14 +311,14 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
 
           <div className="hairline flex items-center justify-end gap-2 border-t px-5 py-3">
             <button type="button" onClick={onClose} className="btn btn-ghost">
-              Cancel
+              {t('common:cancel')}
             </button>
             <button
               type="submit"
               disabled={createIssue.isPending || !title.trim()}
               className="btn btn-primary"
             >
-              {createIssue.isPending ? 'Creating…' : 'Create issue'}
+              {createIssue.isPending ? t('newIssue.creating') : t('newIssue.create')}
             </button>
           </div>
         </form>

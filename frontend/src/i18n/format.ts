@@ -30,6 +30,21 @@ export function formatRelative(date: Date | number): string {
   return formatDistanceToNow(date, { addSuffix: true, locale: dateLocale() })
 }
 
+/**
+ * "Bug, Task and Story": a list joined the current language's way.
+ *
+ * English is joined without a comma before "and" -- the style the interface
+ * was written in -- so `en` is formatted as `en-GB`, which is the same words
+ * without it. Any other language uses its own rules.
+ */
+export function formatList(items: string[]): string {
+  const language = currentLanguage()
+  return new Intl.ListFormat(language === 'en' ? 'en-GB' : language, {
+    style: 'long',
+    type: 'conjunction',
+  }).format(items)
+}
+
 /** A number with the current language's grouping: 12,345. */
 export function formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
   return new Intl.NumberFormat(currentLanguage(), options).format(value)

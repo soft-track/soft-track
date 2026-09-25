@@ -9,6 +9,8 @@ import {
 } from '@/api/generated/endpoints/issues/issues'
 import type { IssueRead, TeamRead, TransferPlan } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
+import { useTranslation } from '@/i18n'
+import { formatList } from '@/i18n/format'
 import { Select } from '@/ui/Select'
 import { useFocusTrap } from '@/ui/useFocusTrap'
 
@@ -30,6 +32,7 @@ export function MoveIssueModal({
   teams: TeamRead[]
   onClose: () => void
 }) {
+  const { t } = useTranslation(['issues', 'common'])
   const dialogRef = useFocusTrap<HTMLDivElement>()
   const titleId = useId()
   const navigate = useNavigate()
@@ -62,7 +65,7 @@ export function MoveIssueModal({
       onClose()
       navigate(`/${result.issue.team_key}/issue/${result.issue.number}`)
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not move the issue.'))
+      setError(errorDetail(err, t('move.errors.move')))
     }
   }
 
@@ -94,20 +97,19 @@ export function MoveIssueModal({
         className="pop-in glass-strong w-full max-w-md rounded-panel p-5"
       >
         <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
-          Move {issue.identifier} to another team
+          {t('move.title', { identifier: issue.identifier })}
         </h2>
-        <p className="mt-1 text-sm text-neutral-500">
-          It keeps its comments, files, history and links. It gets a new key on the team it
-          moves to.
-        </p>
+        <p className="mt-1 text-sm text-neutral-500">{t('move.intro')}</p>
 
         <label className="mt-4 block">
-          <span className="mb-1.5 block text-xs font-medium text-neutral-500">Move to</span>
+          <span className="mb-1.5 block text-xs font-medium text-neutral-500">
+            {t('move.moveTo')}
+          </span>
           <Select block value={teamId} onChange={(e) => setTeamId(e.target.value)}>
-            {teams.length > 1 && <option value="">Choose a team…</option>}
+            {teams.length > 1 && <option value="">{t('move.chooseTeam')}</option>}
             {teams.map((team) => (
               <option key={team.id} value={team.id}>
-                {team.name} ({team.key})
+                {t('move.teamOption', { name: team.name, key: team.key })}
               </option>
             ))}
           </Select>
@@ -116,10 +118,10 @@ export function MoveIssueModal({
         {teamId !== '' && (
           <div className="well mt-4 rounded-card p-3" aria-live="polite">
             {plan.isLoading ? (
-              <p className="text-sm text-neutral-400">Working out what changes…</p>
+              <p className="text-sm text-neutral-400">{t('move.working')}</p>
             ) : plan.error ? (
               <p role="alert" className="text-sm text-danger-600">
-                {errorDetail(plan.error, 'Could not check that move.')}
+                {errorDetail(plan.error, t('move.errors.preview'))}
               </p>
             ) : plan.data ? (
               <PlanSummary plan={plan.data} />
@@ -135,7 +137,7 @@ export function MoveIssueModal({
 
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn btn-secondary btn-sm">
-            Cancel
+            {t('common:cancel')}
           </button>
           <button
             type="button"
@@ -143,7 +145,11 @@ export function MoveIssueModal({
             disabled={!plan.data || transfer.isPending}
             className="btn btn-primary btn-sm"
           >
-            {transfer.isPending ? 'Moving…' : target ? `Move to ${target.key}` : 'Move'}
+            {transfer.isPending
+              ? t('move.moving')
+              : target
+                ? t('move.confirmTo', { key: target.key })
+                : t('move.confirm')}
           </button>
         </div>
       </div>
@@ -154,43 +160,48 @@ export function MoveIssueModal({
 
 /** The plan as a list of plain sentences: what changes, then what is lost. */
 export function PlanSummary({ plan }: { plan: TransferPlan }) {
+  const { t } = useTranslation('issues')
+  const status = { from: plan.status.from_name, to: plan.status.to_name }
   const lines: Array<{ text: string; loses?: boolean }> = [
-    { text: `${plan.from_identifier} becomes ${plan.to_identifier}.` },
+    { text: t('move.plan.becomes', { from: plan.from_identifier, to: plan.to_identifier }) },
     plan.status.from_name === plan.status.to_name
-      ? { text: `Stays in ${plan.status.to_name}.` }
+      ? { text: t('move.plan.stays', { status: plan.status.to_name }) }
       : {
           text: plan.status.same_category
-            ? `Moves from ${plan.status.from_name} to ${plan.status.to_name}.`
-            : `Moves from ${plan.status.from_name} to ${plan.status.to_name} — that team has no column like it.`,
+            ? t('move.plan.moves', status)
+            : t('move.plan.movesUnlike', status),
         },
   ]
   if (plan.labels_kept.length > 0) {
-    lines.push({ text: `Keeps ${list(plan.labels_kept)}.` })
+    lines.push({ text: t('move.plan.keeps', { labels: formatList(plan.labels_kept) }) })
   }
   if (plan.labels_dropped.length > 0) {
     lines.push({
-      text: `Loses ${list(plan.labels_dropped)} — no label by that name there.`,
+      text: t('move.plan.loses', { labels: formatList(plan.labels_dropped) }),
       loses: true,
     })
   }
   if (plan.cycle_cleared) {
-    lines.push({ text: `Leaves ${plan.cycle_cleared}; cycles belong to one team.`, loses: true })
+    lines.push({ text: t('move.plan.leavesCycle', { cycle: plan.cycle_cleared }), loses: true })
   }
   if (plan.project_cleared) {
-    lines.push({ text: `Leaves ${plan.project_cleared}; projects belong to one team.`, loses: true })
+    lines.push({
+      text: t('move.plan.leavesProject', { project: plan.project_cleared }),
+      loses: true,
+    })
   }
   if (plan.assignee_cleared) {
     lines.push({
-      text: `Is unassigned from ${plan.assignee_cleared}, who is not on that team.`,
+      text: t('move.plan.unassigned', { name: plan.assignee_cleared }),
       loses: true,
     })
   }
   if (plan.parent_detached) {
-    lines.push({ text: `Stops being a sub-issue of ${plan.parent_detached}.`, loses: true })
+    lines.push({ text: t('move.plan.detached', { parent: plan.parent_detached }), loses: true })
   }
   if (plan.sub_issues.length > 0) {
     lines.push({
-      text: `Takes its sub-issue${plan.sub_issues.length === 1 ? '' : 's'} ${list(plan.sub_issues)} with it.`,
+      text: t('move.plan.takes', { count: plan.sub_issues.length, list: formatList(plan.sub_issues) }),
     })
   }
 
@@ -206,10 +217,4 @@ export function PlanSummary({ plan }: { plan: TransferPlan }) {
       ))}
     </ul>
   )
-}
-
-function list(items: string[]): string {
-  return items.length <= 1
-    ? items.join('')
-    : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
 }

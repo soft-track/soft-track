@@ -1,7 +1,8 @@
-import { formatDistanceToNow } from 'date-fns'
 import { useState } from 'react'
 import { parseServerDate } from '@/api/dates'
 import { AttachmentList } from '@/attachments/AttachmentList'
+import { useTranslation } from '@/i18n'
+import { formatRelative } from '@/i18n/format'
 import { CommentsSection } from '@/issues/detail/CommentsSection'
 import { DescriptionEditor } from '@/issues/detail/DescriptionEditor'
 import { DevelopmentSection } from '@/issues/detail/DevelopmentSection'
@@ -24,6 +25,7 @@ import { useFocusTrap } from '@/ui/useFocusTrap'
 
 /** The slide-over for one issue. Composes the sections; owns none of them. */
 export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClose: () => void }) {
+  const { t } = useTranslation(['issues', 'common'])
   const dialogRef = useFocusTrap<HTMLDivElement>()
   const editor = useIssueEditor(issueId)
   const files = useIssueAttachments(issueId)
@@ -45,7 +47,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
         ref={dialogRef}
         aria-modal="true"
         tabIndex={-1}
-        aria-label={issue ? `${issue.identifier} ${issue.title}` : 'Issue'}
+        aria-label={issue ? `${issue.identifier} ${issue.title}` : t('panel.loading')}
         onClick={(e) => e.stopPropagation()}
         className="slide-in-right glass-strong m-2 flex w-full max-w-xl flex-col overflow-hidden rounded-panel sm:m-3"
       >
@@ -64,7 +66,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
             {issue?.external_key && (
               <span
                 className="identifier rounded-full bg-neutral-900/6 px-2 py-0.5 text-[10px] text-neutral-500"
-                title="This issue's key before it was imported"
+                title={t('panel.importedKey')}
               >
                 {issue.external_key}
               </span>
@@ -76,7 +78,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
               <IssueActionsMenu
                 actions={
                   elsewhere.length > 0
-                    ? [{ label: 'Move to another team…', onSelect: () => setMoving(true) }]
+                    ? [{ label: t('panel.actions.moveToTeam'), onSelect: () => setMoving(true) }]
                     : []
                 }
               />
@@ -85,8 +87,8 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
               type="button"
               onClick={onClose}
               className="btn btn-ghost btn-icon btn-sm text-neutral-500"
-              aria-label="Close"
-              title="Close (Esc)"
+              aria-label={t('common:close')}
+              title={t('panel.closeHint')}
             >
               <Icon name="close" size={15} />
             </button>
@@ -109,7 +111,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
                 onChange={(e) => editor.setTitle(e.target.value)}
                 onBlur={readOnly ? undefined : editor.saveTitle}
                 readOnly={readOnly}
-                aria-label="Title"
+                aria-label={t('panel.title')}
                 className="w-full border-none bg-transparent p-0 text-lg font-semibold leading-snug tracking-tight text-neutral-900 focus:outline-none focus:ring-0"
               />
 
@@ -126,7 +128,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
 
               {files.attachments.length > 0 && (
                 <div className="mt-5">
-                  <p className="eyebrow mb-2">Files</p>
+                  <p className="eyebrow mb-2">{t('panel.files')}</p>
                   {/* Every file on the issue, including the ones embedded in
                       the description above. This list is also where they get
                       deleted, so leaving the embedded ones out would make
@@ -156,8 +158,10 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
                 <PriorityIcon priority={issue.priority} size={12} />
                 <Avatar user={issue.creator} size={16} decorative />
                 <span>
-                  Created by {issue.creator.full_name}{' '}
-                  {formatDistanceToNow(parseServerDate(issue.created_at), { addSuffix: true })}
+                  {t('panel.createdBy', {
+                    name: issue.creator.full_name,
+                    when: formatRelative(parseServerDate(issue.created_at)),
+                  })}
                 </span>
               </div>
             </div>

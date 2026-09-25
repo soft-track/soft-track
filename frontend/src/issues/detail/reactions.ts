@@ -1,22 +1,39 @@
 import type { ReactionEmoji, ReactionSummary, UserPublic } from '@/api/generated/models'
+import { i18n } from '@/i18n'
+import { formatList } from '@/i18n/format'
 
 /**
  * The eight reactions (#96), in the order the server returns them.
  *
  * The API names them; the glyph is only ever drawn here. `name` is what a
  * screen reader hears and the tooltip says -- "thumbs up", not the emoji's
- * Unicode name, which a screen reader would otherwise read out in full.
+ * Unicode name, which a screen reader would otherwise read out in full. It is
+ * a getter over the catalog (#106), so it is always the current language's.
  */
-export const REACTIONS: ReadonlyArray<{ emoji: ReactionEmoji; glyph: string; name: string }> = [
-  { emoji: 'thumbs_up', glyph: '👍', name: 'thumbs up' },
-  { emoji: 'thumbs_down', glyph: '👎', name: 'thumbs down' },
-  { emoji: 'laugh', glyph: '😄', name: 'laugh' },
-  { emoji: 'hooray', glyph: '🎉', name: 'hooray' },
-  { emoji: 'confused', glyph: '😕', name: 'confused' },
-  { emoji: 'heart', glyph: '❤️', name: 'heart' },
-  { emoji: 'rocket', glyph: '🚀', name: 'rocket' },
-  { emoji: 'eyes', glyph: '👀', name: 'eyes' },
+export const REACTIONS: ReadonlyArray<{
+  emoji: ReactionEmoji
+  glyph: string
+  readonly name: string
+}> = [
+  reaction('thumbs_up', '👍'),
+  reaction('thumbs_down', '👎'),
+  reaction('laugh', '😄'),
+  reaction('hooray', '🎉'),
+  reaction('confused', '😕'),
+  reaction('heart', '❤️'),
+  reaction('rocket', '🚀'),
+  reaction('eyes', '👀'),
 ]
+
+function reaction(emoji: ReactionEmoji, glyph: string) {
+  return {
+    emoji,
+    glyph,
+    get name() {
+      return i18n.t(`issues:comments.reactions.name.${emoji}`)
+    },
+  }
+}
 
 export function reactionFor(emoji: ReactionEmoji) {
   return REACTIONS.find((reaction) => reaction.emoji === emoji)!
@@ -25,20 +42,28 @@ export function reactionFor(emoji: ReactionEmoji) {
 /** What a chip button says to a screen reader: the count, and what pressing does. */
 export function chipLabel(summary: ReactionSummary): string {
   const { glyph } = reactionFor(summary.emoji)
-  const noun = summary.count === 1 ? 'reaction' : 'reactions'
-  const action = summary.reacted ? 'press to remove yours' : 'press to add yours'
-  return `${glyph} ${summary.count} ${noun}, ${action}`
+  const options = { glyph, count: summary.count }
+  return summary.reacted
+    ? i18n.t('issues:comments.reactions.chipRemove', options)
+    : i18n.t('issues:comments.reactions.chipAdd', options)
 }
 
 /** The tooltip: who, with "You" first when it is you. "You, Maya and Sam reacted with heart". */
 export function whoReacted(summary: ReactionSummary, meId: number | undefined): string {
-  const names = summary.users.map((user) => (user.id === meId ? 'You' : user.full_name))
-  const ordered = [...names.filter((n) => n === 'You'), ...names.filter((n) => n !== 'You')]
-  const list =
-    ordered.length <= 1
-      ? ordered.join('')
-      : `${ordered.slice(0, -1).join(', ')} and ${ordered[ordered.length - 1]}`
-  return `${list} reacted with ${reactionFor(summary.emoji).name}`
+  // Ordered by id rather than by comparing names: "You" is the catalog's word
+  // now, and somebody could be called it. `String()` because ListFormat
+  // throws on a missing name where a join printed it, and a tooltip is not
+  // worth a crash.
+  const you = i18n.t('issues:comments.reactions.you')
+  const ordered = [
+    ...summary.users.filter((user) => user.id === meId).map(() => you),
+    ...summary.users.filter((user) => user.id !== meId).map((user) => String(user.full_name)),
+  ]
+  return i18n.t('issues:comments.reactions.whoReacted', {
+    names: formatList(ordered),
+    name: reactionFor(summary.emoji).name,
+    count: ordered.length,
+  })
 }
 
 /**
