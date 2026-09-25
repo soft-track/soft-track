@@ -4,7 +4,7 @@ import type { IssueBulkChanges } from '@/api/generated/models'
 import type { BulkEdit } from '@/board/useBulkEdit'
 import { PRIORITY_META, PRIORITY_ORDER } from '@/issues/issueMeta'
 import { activeMembers } from '@/team/members'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
 

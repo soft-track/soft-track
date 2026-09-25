@@ -19,7 +19,8 @@ import { BulkActionBar } from '@/board/BulkActionBar'
 import { IssueListView } from '@/board/IssueListView'
 import { EMPTY_SELECTION, selectionReducer } from '@/board/selection'
 import { useBulkEdit } from '@/board/useBulkEdit'
-import { TeamProvider, type TeamContextValue } from '@/team/TeamContext'
+import { TeamProvider } from '@/team/TeamContext'
+import type { TeamContextValue } from '@/team/useTeamContext'
 
 const { update, remove } = vi.hoisted(() => ({
   update: { mutateAsync: vi.fn(), isPending: false },
