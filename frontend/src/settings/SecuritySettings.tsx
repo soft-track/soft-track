@@ -6,6 +6,7 @@ import {
 } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
+import { ApiTokens } from '@/settings/ApiTokens'
 import { ConnectedAccounts } from '@/settings/ConnectedAccounts'
 import { Icon } from '@/ui/Icon'
 
@@ -167,13 +168,16 @@ export default function SecuritySettings() {
 
       <ConnectedAccounts />
 
+      <ApiTokens />
+
       <section className="glass-strong rounded-panel p-6">
         <h2 className="text-base font-semibold tracking-tight text-neutral-900">
           Sign out everywhere
         </h2>
         <p className="mt-1 max-w-prose text-sm text-neutral-500">
           Ends every session on every other browser and device — a laptop left at the
-          office, a phone you no longer have. You stay signed in here.
+          office, a phone you no longer have. You stay signed in here. API tokens are
+          not sessions and keep working; revoke those above.
         </p>
         <button
           type="button"

@@ -132,6 +132,10 @@ class ErrorCode(str, enum.Enum):
 
     # --- links and sign-in flows -----------------------------------------------
     invite_invalid = "invite_invalid"
+    api_token_not_found = "api_token_not_found"
+    #: Tokens, passwords and other credentials are managed from a signed-in
+    #: session, not with an API token -- see lib_identity/api_tokens.py.
+    api_token_not_allowed = "api_token_not_allowed"
     invite_wrong_recipient = "invite_wrong_recipient"
     #: A password reset link that is wrong, used, expired or superseded.
     reset_link_invalid = "reset_link_invalid"

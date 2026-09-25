@@ -86,6 +86,8 @@ export const ErrorCode = {
   import_invalid: 'import_invalid',
   import_empty: 'import_empty',
   invite_invalid: 'invite_invalid',
+  api_token_not_found: 'api_token_not_found',
+  api_token_not_allowed: 'api_token_not_allowed',
   invite_wrong_recipient: 'invite_wrong_recipient',
   reset_link_invalid: 'reset_link_invalid',
   email_not_configured: 'email_not_configured',

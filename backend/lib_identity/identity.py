@@ -5,10 +5,11 @@ import re
 import secrets
 from functools import lru_cache
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, func, select
 
+from lib_identity import api_tokens
 from lib_identity.models.identity import Token, UserMe, UserUpdate
 from lib_identity.usernames import (
     assert_username_free,
@@ -17,6 +18,7 @@ from lib_identity.usernames import (
 )
 from lib_softtrack.tables import User, utcnow
 from lib_utils.password import hash_password, is_usable_password, verify_password
+from lib_utils.rate_limit import address_of, api_token_by_address
 from lib_utils.token import create_access_token, decode_access_token, is_access_token
 from web import get_session, settings
 from lib_utils.errors import ErrorCode, api_error
@@ -61,16 +63,34 @@ def find_user_by_email(session: Session, email: str) -> User | None:
 
 
 def get_current_user(
+    request: Request,
     token: str = Depends(oauth2_scheme),
     session: Session = Depends(get_session),
 ) -> User:
-    """FastAPI dependency resolving the bearer token to a User row."""
+    """FastAPI dependency resolving the bearer token to a User row.
+
+    The bearer is either a session JWT or a personal API token (#90), told
+    apart by the token's `softtrack_` prefix.
+    """
     credentials_exception = api_error(
         status_code=status.HTTP_401_UNAUTHORIZED,
         code=ErrorCode.not_authenticated,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    if api_tokens.is_api_token(token):
+        # Failures are throttled like sign-in failures: a token is a
+        # credential, and guessing one should cost what guessing a password
+        # does. Good tokens are never counted, so a busy script is never slowed.
+        address = address_of(request)
+        api_token_by_address.raise_if_locked(address)
+        user = api_tokens.authenticate(session, token)
+        if user is None:
+            api_token_by_address.record_attempt(address)
+            raise credentials_exception
+        request.state.via_api_token = True
+        return user
+
     payload = decode_access_token(token)
     if payload is None or payload.get("sub") is None:
         raise credentials_exception

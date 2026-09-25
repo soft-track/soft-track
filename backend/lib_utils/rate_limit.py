@@ -158,6 +158,18 @@ registration_by_address = Throttle(
     forget_after=60 * 60.0,
 )
 
+# Requests with an API token that does not check out (#90), per address.
+# Only failures count and a good token never forgives: a script using a valid
+# token is never slowed, while somebody trying tokens gets the same growing
+# wait as somebody trying passwords.
+api_token_by_address = Throttle(
+    name="requests with an invalid API token from this address",
+    free_attempts=10,
+    base_delay=1.0,
+    max_delay=15 * 60.0,
+    forget_after=15 * 60.0,
+)
+
 # Password reset requests (#83), per address and per target account. Every
 # request counts and none is forgiven: a request always "succeeds" -- the
 # response is the same 204 whether or not the account exists -- so there is
@@ -234,6 +246,7 @@ _ALL = (
     registration_by_address,
     reset_by_address,
     reset_by_account,
+    api_token_by_address,
     oauth_by_address,
     oauth_callback_by_address,
     webhook_by_address,

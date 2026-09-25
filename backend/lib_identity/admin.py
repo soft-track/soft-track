@@ -13,6 +13,7 @@ from typing import Optional
 from fastapi import Depends
 from sqlmodel import Session, col, func, or_, select
 
+from lib_identity import api_tokens
 from lib_identity.identity import get_current_user
 from lib_identity.models.admin import AdminUserRead, AdminUserUpdate
 from lib_identity.models.identity import UserMe
@@ -157,6 +158,10 @@ def update_user(
             # Deactivating has to end the sessions too, or the account keeps
             # working for up to a week on the token it already holds.
             user.token_version += 1
+            # And its API tokens, which no session version governs (#90).
+            # Deleted rather than suspended: reactivating an account should
+            # not quietly bring back credentials a script somewhere still has.
+            api_tokens.revoke_all(session, user.id)
         user.is_active = payload.is_active
 
     session.add(user)

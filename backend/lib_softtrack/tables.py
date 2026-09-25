@@ -414,6 +414,30 @@ class UserIdentity(SQLModel, table=True):
     last_login_at: Optional[datetime] = None
 
 
+class ApiToken(SQLModel, table=True):
+    """A personal API token, for scripts and integrations (#90).
+
+    Acts as its owner, with its owner's permissions -- there are no scopes
+    yet. Only a SHA-256 hash of the secret is stored: the secret is shown
+    once, when the token is made, and a leaked backup holds nothing usable.
+    Hashing needs no salt or slow hash because the secret is 256 random bits.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    name: str
+    token_hash: str = Field(index=True, unique=True)
+    #: The secret's last four characters, so a person can tell which token a
+    #: leak is -- "softtrack_...Xy3Q" -- without the secret being kept.
+    hint: str
+    created_at: datetime = Field(default_factory=utcnow)
+    #: Updated at most once a minute; a busy script would otherwise write a
+    #: row on every request just to say it is still busy.
+    last_used_at: Optional[datetime] = None
+    #: Null means it does not expire.
+    expires_at: Optional[datetime] = None
+
+
 class PasswordReset(SQLModel, table=True):
     """A pending "forgot password" link (#83).
 

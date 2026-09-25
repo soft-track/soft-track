@@ -11,7 +11,9 @@ from lib_identity.identity import (
     sign_out_everywhere,
     update_profile,
 )
-from lib_identity import password_reset
+from lib_identity import api_tokens, password_reset
+from lib_identity.api_tokens import RequireSession
+from lib_identity.models.api_tokens import ApiTokenCreate, ApiTokenCreated, ApiTokenRead
 from lib_identity.models.identity import (
     AuthConfig,
     ForgotPassword,
@@ -169,11 +171,50 @@ def change_my_password(
     payload: PasswordChange,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    # A leaked API token must not be able to take the account (#90).
+    _session_only: None = RequireSession,
 ):
     """Change the password, and return a token so this tab stays signed in."""
     return change_password(
         session, current_user, payload.current_password, payload.new_password
     )
+
+
+@router.get("/me/tokens", response_model=list[ApiTokenRead])
+def list_api_tokens(
+    current_user: User = Depends(get_current_user),
+    _session_only: None = RequireSession,
+    session: Session = Depends(get_session),
+):
+    """Your personal API tokens, without their secrets."""
+    return api_tokens.list_tokens(session, current_user)
+
+
+@router.post("/me/tokens", response_model=ApiTokenCreated)
+def create_api_token(
+    payload: ApiTokenCreate,
+    current_user: User = Depends(get_current_user),
+    _session_only: None = RequireSession,
+    session: Session = Depends(get_session),
+):
+    """Make a token for a script: `Authorization: Bearer softtrack_…`.
+
+    The response is the only time the secret is shown. It acts as you, with
+    your permissions, until it expires or is revoked. Tokens can only be
+    managed from a signed-in session, never with another token.
+    """
+    return api_tokens.create_token(session, current_user, payload)
+
+
+@router.delete("/me/tokens/{token_id}", status_code=204)
+def revoke_api_token(
+    token_id: int,
+    current_user: User = Depends(get_current_user),
+    _session_only: None = RequireSession,
+    session: Session = Depends(get_session),
+):
+    """Revoke a token. It stops working on the very next request."""
+    api_tokens.revoke_token(session, current_user, token_id)
 
 
 @router.post("/me/sign-out-everywhere", response_model=Token)
