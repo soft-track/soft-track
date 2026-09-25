@@ -5,6 +5,7 @@
  * An open-source, self-hostable issue tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { IssueGrouping } from './issueGrouping';
 import type { ViewFilters } from './viewFilters';
 
 export interface SavedViewCreate {
@@ -15,4 +16,5 @@ export interface SavedViewCreate {
   name: string;
   is_shared?: boolean;
   filters?: ViewFilters;
+  group_by?: IssueGrouping;
 }

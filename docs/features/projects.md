@@ -54,3 +54,16 @@ and both of those views only show work in flight now.
 
 Left out on purpose: dragging projects to reschedule them, dependencies
 between projects, and anything resembling resource planning.
+
+## Grouping the board by project
+
+The **Group by** menu next to the view tabs arranges the board, and the list,
+by project instead of by status. On the board, each project gets a column, and
+dragging cards between columns moves them between projects. This works for a
+whole selection too, as a single bulk edit. Issues in no project get a column
+of their own, at the end. An archived project only gets a column if it still
+holds some of the issues on screen. In the list, each project gets a section.
+
+Every card and list row shows its project as a badge in the project's colour.
+When the board is grouped by project, the badge is replaced by a status dot,
+because the column heading already names the project.

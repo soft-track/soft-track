@@ -10,6 +10,7 @@ import {
   NO_FILTERS,
   sameFilters,
 } from '@/board/filters'
+import type { BoardGrouping } from '@/board/grouping'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { useSavedViews } from '@/views/useSavedViews'
@@ -24,12 +25,15 @@ import { useSavedViews } from '@/views/useSavedViews'
  */
 export function ViewList({
   filters,
+  grouping,
   onApply,
   onEdit,
   isAdmin,
 }: {
   filters: BoardFilters
-  onApply: (filters: BoardFilters) => void
+  grouping: BoardGrouping
+  /** A view applies its grouping too; "All issues" only clears the filters. */
+  onApply: (filters: BoardFilters, grouping?: BoardGrouping) => void
   onEdit: (view: SavedViewRead) => void
   isAdmin: boolean
 }) {
@@ -57,6 +61,7 @@ export function ViewList({
           key={view.id}
           view={view}
           filters={filters}
+          grouping={grouping}
           views={views}
           onApply={onApply}
           onEdit={onEdit}
@@ -70,6 +75,7 @@ export function ViewList({
           key={view.id}
           view={view}
           filters={filters}
+          grouping={grouping}
           views={views}
           onApply={onApply}
           onEdit={onEdit}
@@ -87,6 +93,7 @@ function Group({ label }: { label: string }) {
 function ViewRow({
   view,
   filters,
+  grouping,
   views,
   onApply,
   onEdit,
@@ -94,8 +101,9 @@ function ViewRow({
 }: {
   view: SavedViewRead
   filters: BoardFilters
+  grouping: BoardGrouping
   views: ReturnType<typeof useSavedViews>
-  onApply: (filters: BoardFilters) => void
+  onApply: (filters: BoardFilters, grouping?: BoardGrouping) => void
   onEdit: (view: SavedViewRead) => void
   isAdmin: boolean
 }) {
@@ -112,7 +120,8 @@ function ViewRow({
     return () => window.removeEventListener('resize', measure)
   }, [menuOpen])
 
-  const showing = sameFilters(filters, fromViewFilters(view.filters))
+  const showing =
+    view.group_by === grouping && sameFilters(filters, fromViewFilters(view.filters))
   const isMine = views.myDefaultId === view.id
   const isTeams = views.teamDefaultId === view.id
   // Its owner, or an admin tidying up after somebody who left.
@@ -127,7 +136,7 @@ function ViewRow({
     <div className="group relative">
       <button
         type="button"
-        onClick={() => onApply(fromViewFilters(view.filters))}
+        onClick={() => onApply(fromViewFilters(view.filters), view.group_by)}
         className="nav-item w-full pr-7"
         data-active={showing}
         title={view.is_shared ? `Shared by ${view.owner.full_name}` : 'Only you can see this'}

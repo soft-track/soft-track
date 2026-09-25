@@ -36,3 +36,10 @@ Two things that follow from views being real rows rather than a blob of JSON:
 a filter pointing at another team's label is refused when the view is saved
 rather than silently matching nothing for ever, and deleting a cycle clears it
 from the views that filtered on it.
+
+**A view also remembers how the board was grouped:** by status, or by project
+(#63). The grouping is part of the link as `group=project`, next to the filter
+keys. It's left out for the default, so every link sent before grouping existed
+still opens exactly as it did. The `project` key still means "filter to this
+project", as it always has. A view is marked as showing only when both its
+filters and its grouping match what's on screen.

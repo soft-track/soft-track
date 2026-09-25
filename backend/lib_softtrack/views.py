@@ -61,6 +61,7 @@ def _to_read(view: SavedView, owner: User) -> SavedViewRead:
             project_id=view.project_id,
             cycle_id=view.cycle_id,
         ),
+        group_by=view.group_by,
         created_at=view.created_at,
         updated_at=view.updated_at,
     )
@@ -205,6 +206,7 @@ def create_view(
         name=payload.name.strip(),
         owner_id=current_user.id,
         is_shared=payload.is_shared,
+        group_by=payload.group_by,
     )
     _apply_filters(view, payload.filters)
     session.add(view)
@@ -224,6 +226,8 @@ def update_view(
     if payload.filters is not None:
         _validate_filters(session, view.team_id, payload.filters)
         _apply_filters(view, payload.filters)
+    if payload.group_by is not None:
+        view.group_by = payload.group_by
     if payload.is_shared is not None and payload.is_shared != view.is_shared:
         view.is_shared = payload.is_shared
         if not view.is_shared:

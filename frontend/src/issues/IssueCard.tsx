@@ -13,14 +13,23 @@ export function IssueCard({
   issue,
   selected = false,
   onSelect,
+  showStatus = false,
+  showProject = true,
 }: {
   issue: IssueRead
   selected?: boolean
   /** A shift- or ⌘/Ctrl-click. Without it those clicks open the issue like any other. */
   onSelect?: (issueId: number, gesture: 'range' | 'toggle') => void
+  /** For a board grouped by project, where the column no longer says it. */
+  showStatus?: boolean
+  /** Off on a board grouped by project, where the column already says it. */
+  showProject?: boolean
 }) {
   const navigate = useNavigate()
-  const { team } = useTeamContext()
+  const { team, projects } = useTeamContext()
+  const project = showProject
+    ? projects.find((candidate) => candidate.id === issue.project_id)
+    : undefined
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: issue.id,
   })
@@ -77,8 +86,19 @@ export function IssueCard({
     >
       {selected && <span className="sr-only">Selected. </span>}
       <div className="mb-1.5 flex items-center justify-between gap-2">
-        <span className="identifier text-[11px] font-medium text-neutral-400">
-          {issue.identifier}
+        <span className="flex min-w-0 items-center gap-1.5">
+          {showStatus && (
+            <span
+              className="dot"
+              style={{ ['--dot' as string]: issue.status.color }}
+              title={issue.status.name}
+            >
+              <span className="sr-only">{issue.status.name}</span>
+            </span>
+          )}
+          <span className="identifier text-[11px] font-medium text-neutral-400">
+            {issue.identifier}
+          </span>
         </span>
         <div className="flex items-center gap-1.5">
           {issue.blocked_by_count > 0 && <BlockedMarker count={issue.blocked_by_count} />}
@@ -101,6 +121,7 @@ export function IssueCard({
 
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-wrap gap-1">
+          {project && <ProjectBadge name={project.name} color={project.color} />}
           {issue.labels?.map((label) => (
             <span
               key={label.id}
@@ -121,6 +142,22 @@ export function IssueCard({
         )}
       </div>
     </div>
+  )
+}
+
+/**
+ * The project an issue is in, coloured from the project (#63).
+ *
+ * A chip like a label's, with a filled dot in front, so the one grouping that
+ * spans cycles is not mistaken for one more label.
+ */
+export function ProjectBadge({ name, color }: { name: string; color: string }) {
+  return (
+    <span className="chip max-w-40" style={{ ['--chip' as string]: color }} title={`Project: ${name}`}>
+      <span className="dot" style={{ ['--dot' as string]: color }} aria-hidden="true" />
+      <span className="truncate">{name}</span>
+      <span className="sr-only"> (project)</span>
+    </span>
   )
 }
 

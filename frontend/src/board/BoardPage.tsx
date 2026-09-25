@@ -14,6 +14,7 @@ import {
   toQueryParams,
   toSearchParams,
 } from '@/board/filters'
+import { type BoardGrouping, groupingFromSearchParams, withGrouping } from '@/board/grouping'
 import { IssueListView } from '@/board/IssueListView'
 import { KanbanBoard } from '@/board/KanbanBoard'
 import { EMPTY_SELECTION, selectionReducer } from '@/board/selection'
@@ -68,9 +69,17 @@ export default function BoardPage() {
   // back and forward buttons for free.
   const [searchParams, setSearchParams] = useSearchParams()
   const filters = useMemo(() => fromSearchParams(searchParams), [searchParams])
+  const grouping = groupingFromSearchParams(searchParams)
+  // The grouping rides along in the same URL, so changing a filter keeps it
+  // and a saved view can set both at once. Undefined leaves it as it is.
   const setFilters = useCallback(
-    (next: BoardFilters) => setSearchParams(toSearchParams(next)),
-    [setSearchParams],
+    (next: BoardFilters, nextGrouping?: BoardGrouping) =>
+      setSearchParams(withGrouping(toSearchParams(next), nextGrouping ?? grouping)),
+    [setSearchParams, grouping],
+  )
+  const setGrouping = useCallback(
+    (next: BoardGrouping) => setSearchParams(withGrouping(toSearchParams(filters), next)),
+    [setSearchParams, filters],
   )
 
   const teamData = useTeamData(team)
@@ -98,7 +107,10 @@ export default function BoardPage() {
       (candidate) => candidate.id === savedViews.effectiveDefaultId,
     )
     if (landing) {
-      setSearchParams(toSearchParams(fromViewFilters(landing.filters)), { replace: true })
+      setSearchParams(
+        withGrouping(toSearchParams(fromViewFilters(landing.filters)), landing.group_by),
+        { replace: true },
+      )
     }
   }, [urlIsBare, team, savedViews, setSearchParams])
 
@@ -203,16 +215,18 @@ export default function BoardPage() {
   const selectedCycle = teamData.cycles.find((cycle) => cycle.id === filters.cycleId) ?? null
   const isTeamAdmin =
     teamData.members.find((member) => member.user.id === user?.id)?.role === 'admin'
-  // Nothing to save while these filters are already a view somebody named.
-  const matchesSavedView = savedViews.views.some((candidate) =>
-    sameFilters(filters, fromViewFilters(candidate.filters)),
+  // Nothing to save while this board is already a view somebody named.
+  const matchesSavedView = savedViews.views.some(
+    (candidate) =>
+      candidate.group_by === grouping && sameFilters(filters, fromViewFilters(candidate.filters)),
   )
 
   const sidebar = (
     <Sidebar
       filters={filters}
-      onFiltersChange={(next) => {
-        setFilters(next)
+      grouping={grouping}
+      onFiltersChange={(next, nextGrouping) => {
+        setFilters(next, nextGrouping)
         setSidebarOpen(false)
       }}
       onEditView={(target) => {
@@ -260,6 +274,8 @@ export default function BoardPage() {
             <TopBar
               view={view}
               onViewChange={setView}
+              grouping={grouping}
+              onGroupingChange={setGrouping}
               onNewIssue={openNewIssue}
               onOpenSidebar={() => setSidebarOpen(true)}
               search={search}
@@ -293,14 +309,21 @@ export default function BoardPage() {
               ) : view === 'board' ? (
                 <KanbanBoard
                   issues={issues}
+                  grouping={grouping}
                   onStatusChange={changeStatus}
+                  onProjectChange={(ids, projectId) => bulk.update(ids, { project_id: projectId })}
                   estimates={teamData.estimates}
                   selectedIds={selection.ids}
                   onSelect={selectIssue}
                   onBulkStatusChange={(ids, status) => bulk.update(ids, { status_id: status.id })}
                 />
               ) : (
-                <IssueListView issues={issues} selectedIds={selection.ids} onSelect={selectIssue} />
+                <IssueListView
+                  issues={issues}
+                  grouping={grouping}
+                  selectedIds={selection.ids}
+                  onSelect={selectIssue}
+                />
               )}
             </div>
           </div>
@@ -330,6 +353,7 @@ export default function BoardPage() {
       {overlays.isOpen('saveView') && (
         <SaveViewModal
           filters={editingView ? fromViewFilters(editingView.filters) : filters}
+          grouping={editingView ? editingView.group_by : grouping}
           editing={editingView ?? undefined}
           onClose={() => {
             overlays.close('saveView')

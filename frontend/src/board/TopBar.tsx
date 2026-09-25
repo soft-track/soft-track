@@ -1,9 +1,11 @@
 import { FilterBar } from '@/board/FilterBar'
 import type { BoardFilters } from '@/board/filters'
+import type { BoardGrouping } from '@/board/grouping'
 import type { BoardView } from '@/keyboard/useCommands'
 import { NotificationsBell } from '@/notifications/NotificationsBell'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon, type IconName } from '@/ui/Icon'
+import { Select } from '@/ui/Select'
 
 const VIEWS: Array<{ id: BoardView; label: string; icon: IconName }> = [
   { id: 'board', label: 'Board', icon: 'board' },
@@ -15,6 +17,8 @@ const VIEWS: Array<{ id: BoardView; label: string; icon: IconName }> = [
 export function TopBar({
   view,
   onViewChange,
+  grouping,
+  onGroupingChange,
   onNewIssue,
   onOpenSidebar,
   search,
@@ -29,6 +33,8 @@ export function TopBar({
 }: {
   view: BoardView
   onViewChange: (view: BoardView) => void
+  grouping: BoardGrouping
+  onGroupingChange: (grouping: BoardGrouping) => void
   onNewIssue: () => void
   onOpenSidebar: () => void
   search: string
@@ -75,6 +81,20 @@ export function TopBar({
           </button>
         ))}
       </div>
+
+      {/* Only where there is something to arrange: the roadmap and reports
+          have their own shape. */}
+      {(view === 'board' || view === 'list') && (
+        <Select
+          dense
+          value={grouping}
+          onChange={(e) => onGroupingChange(e.target.value as BoardGrouping)}
+          aria-label="Group by"
+        >
+          <option value="status">By status</option>
+          <option value="project">By project</option>
+        </Select>
+      )}
 
       <FilterBar
         filters={filters}

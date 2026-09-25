@@ -52,6 +52,7 @@ export * from './issueBulkDelete';
 export * from './issueBulkUpdate';
 export * from './issueCreate';
 export * from './issueCreateEstimate';
+export * from './issueGrouping';
 export * from './issueLinkCreate';
 export * from './issueLinkRead';
 export * from './issueLinks';

@@ -10,6 +10,7 @@ import {
 } from '@dnd-kit/core'
 
 import type { EstimateSummary, IssueRead, StatusRead } from '@/api/generated/models'
+import { type BoardGrouping, groupByProject, projectForDropTarget } from '@/board/grouping'
 import { IssueCard } from '@/issues/IssueCard'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
@@ -25,35 +26,52 @@ type Load = EstimateSummary['by_status'][string]
  */
 const COLLAPSED_CATEGORIES: string[] = ['cancelled']
 
+/**
+ * One column, whatever the board is grouped by.
+ *
+ * `id` is the drop target -- `status:3`, `project:5` or `project:none` -- so a
+ * drop says what it means without the board having to remember which
+ * grouping produced the column.
+ */
+type BoardColumn = {
+  id: string
+  name: string
+  color: string
+  issues: IssueRead[]
+  /** Points in the column, rolled up on the server. Status columns only. */
+  load?: Load
+}
+
+const statusColumnId = (status: StatusRead) => `status:${status.id}`
+
 function Column({
-  status,
-  issues,
-  load,
+  column,
+  grouping,
   onCollapse,
   selectedIds,
   onSelect,
 }: {
-  status: StatusRead
-  issues: IssueRead[]
-  load?: Load
+  column: BoardColumn
+  grouping: BoardGrouping
   onCollapse: () => void
   selectedIds: readonly number[]
   onSelect?: (issueId: number, gesture: 'range' | 'toggle') => void
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: status.id })
+  const { id, name, color, issues, load } = column
+  const { setNodeRef, isOver } = useDroppable({ id })
 
   return (
     <section
       ref={setNodeRef}
-      data-column={status.id}
-      aria-label={status.name}
+      data-column={id}
+      aria-label={name}
       className={`group/column glass-subtle flex w-[82vw] shrink-0 snap-center flex-col rounded-panel transition-[box-shadow,background-color] duration-150 sm:w-80 lg:w-auto lg:min-w-[208px] lg:max-w-[400px] lg:flex-1 lg:shrink lg:snap-none ${
         isOver ? 'bg-brand-500/10 ring-2 ring-brand-400/60' : ''
       }`}
     >
       <header className="flex items-center gap-2 px-3 pb-2 pt-3">
-        <span className="dot" style={{ ['--dot' as string]: status.color }} aria-hidden="true" />
-        <h2 className="text-[13px] font-semibold text-neutral-800">{status.name}</h2>
+        <span className="dot" style={{ ['--dot' as string]: color }} aria-hidden="true" />
+        <h2 className="truncate text-[13px] font-semibold text-neutral-800">{name}</h2>
         <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
           {issues.length}
         </span>
@@ -77,7 +95,7 @@ function Column({
         <button
           type="button"
           onClick={onCollapse}
-          aria-label={`Collapse ${status.name}`}
+          aria-label={`Collapse ${name}`}
           title="Collapse column"
           className={`btn btn-ghost btn-icon btn-xs text-neutral-400 opacity-0 transition group-hover/column:opacity-100 focus-visible:opacity-100 ${
             load && load.points > 0 ? '' : 'ml-auto'
@@ -94,6 +112,9 @@ function Column({
             issue={issue}
             selected={selectedIds.includes(issue.id)}
             onSelect={onSelect}
+            // Whichever the columns already say is left off the card.
+            showStatus={grouping === 'project'}
+            showProject={grouping !== 'project'}
           />
         ))}
         {issues.length === 0 && (
@@ -107,36 +128,30 @@ function Column({
 }
 
 /** A folded column: a thin rail that still accepts drops and shows its count. */
-function CollapsedColumn({
-  status,
-  count,
-  onExpand,
-}: {
-  status: StatusRead
-  count: number
-  onExpand: () => void
-}) {
-  const { setNodeRef, isOver } = useDroppable({ id: status.id })
+function CollapsedColumn({ column, onExpand }: { column: BoardColumn; onExpand: () => void }) {
+  const { id, name, color } = column
+  const count = column.issues.length
+  const { setNodeRef, isOver } = useDroppable({ id })
 
   return (
     <button
       ref={setNodeRef}
       type="button"
       onClick={onExpand}
-      data-column={status.id}
+      data-column={id}
       data-collapsed="true"
-      aria-label={`Expand ${status.name}, ${count} issues`}
-      title={`${status.name} · ${count}`}
+      aria-label={`Expand ${name}, ${count} issues`}
+      title={`${name} · ${count}`}
       className={`glass-subtle flex w-11 shrink-0 flex-col items-center gap-3 rounded-panel py-3 transition-[box-shadow,background-color] hover:bg-neutral-900/5 ${
         isOver ? 'bg-brand-500/10 ring-2 ring-brand-400/60' : ''
       }`}
     >
-      <span className="dot" style={{ ['--dot' as string]: status.color }} aria-hidden="true" />
+      <span className="dot" style={{ ['--dot' as string]: color }} aria-hidden="true" />
       <span
         className="text-[12px] font-semibold text-neutral-700"
         style={{ writingMode: 'vertical-rl' }}
       >
-        {status.name}
+        {name}
       </span>
       <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
         {count}
@@ -147,14 +162,23 @@ function CollapsedColumn({
 
 export function KanbanBoard({
   issues,
+  grouping = 'status',
   onStatusChange,
+  onProjectChange,
   estimates,
   selectedIds = [],
   onSelect,
   onBulkStatusChange,
 }: {
   issues: IssueRead[]
+  /** Status columns, as the board always had, or one column per project (#63). */
+  grouping?: BoardGrouping
   onStatusChange: (issueId: number, status: StatusRead) => void
+  /**
+   * A card dropped on another project's column, or a selection dragged there
+   * together. Null is the "No project" column.
+   */
+  onProjectChange?: (issueIds: readonly number[], projectId: number | null) => void
   /** Server-side point rollups. Undefined while they load. */
   estimates?: EstimateSummary
   selectedIds?: readonly number[]
@@ -166,8 +190,8 @@ export function KanbanBoard({
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   )
-  const { statuses } = useTeamContext()
-  const [collapsed, setCollapsed] = useState<Set<number> | null>(null)
+  const { statuses, projects } = useTeamContext()
+  const [collapsed, setCollapsed] = useState<Set<string> | null>(null)
   // Seeded from the team's own columns on first render rather than in state's
   // initialiser: the statuses arrive with a query, so on the first pass there
   // is nothing to fold yet.
@@ -176,16 +200,32 @@ export function KanbanBoard({
     new Set(
       statuses
         .filter((status) => COLLAPSED_CATEGORIES.includes(status.category))
-        .map((status) => status.id),
+        .map(statusColumnId),
     )
 
-  const setCollapsedFor = (status: StatusRead, value: boolean) =>
+  const setCollapsedFor = (column: BoardColumn, value: boolean) =>
     setCollapsed(() => {
       const next = new Set(folded)
-      if (value) next.add(status.id)
-      else next.delete(status.id)
+      if (value) next.add(column.id)
+      else next.delete(column.id)
       return next
     })
+
+  const columns: BoardColumn[] =
+    grouping === 'project'
+      ? groupByProject(issues, projects, { includeEmpty: true }).map((group) => ({
+          id: group.key,
+          name: group.project?.name ?? 'No project',
+          color: group.project?.color ?? 'var(--color-neutral-300)',
+          issues: group.issues,
+        }))
+      : statuses.map((status) => ({
+          id: statusColumnId(status),
+          name: status.name,
+          color: status.color,
+          issues: issues.filter((issue) => issue.status.id === status.id),
+          load: estimates?.by_status?.[String(status.id)],
+        }))
 
   /**
    * Arrow keys move focus between cards.
@@ -238,7 +278,22 @@ export function KanbanBoard({
     const { active, over } = event
     if (!over) return
     const issueId = Number(active.id)
-    const target = statuses.find((status) => status.id === Number(over.id))
+
+    if (grouping === 'project') {
+      const projectId = projectForDropTarget(String(over.id))
+      if (projectId === undefined || !onProjectChange) return
+      // The same rule as status: a selection moves together, a lone card
+      // moves alone, and nothing already there is sent again.
+      const carried =
+        selectedIds.length > 1 && selectedIds.includes(issueId) ? selectedIds : [issueId]
+      const moving = carried.filter(
+        (id) => (issues.find((i) => i.id === id)?.project_id ?? null) !== projectId,
+      )
+      if (moving.length > 0) onProjectChange(moving, projectId)
+      return
+    }
+
+    const target = statuses.find((status) => statusColumnId(status) === String(over.id))
     if (!target) return
     // Dragging a card that is part of a selection carries the selection with
     // it -- the same thing a file manager does, and the reason to have
@@ -259,11 +314,9 @@ export function KanbanBoard({
   // What a shift-click range runs over: the cards actually on screen, column
   // by column. A folded column's cards are left out, so a range can never
   // select something nobody could see.
-  const visibleOrder = statuses
-    .filter((status) => !folded.has(status.id))
-    .flatMap((status) =>
-      issues.filter((issue) => issue.status.id === status.id).map((issue) => issue.id),
-    )
+  const visibleOrder = columns
+    .filter((column) => !folded.has(column.id))
+    .flatMap((column) => column.issues.map((issue) => issue.id))
   const selectCard = onSelect
     ? (issueId: number, gesture: 'range' | 'toggle') => onSelect(issueId, gesture, visibleOrder)
     : undefined
@@ -274,27 +327,24 @@ export function KanbanBoard({
         className="scroll-thin flex h-full snap-x snap-mandatory gap-3 overflow-x-auto pb-1 lg:snap-none"
         onKeyDown={moveFocus}
       >
-        {statuses.map((status) => {
-          const inColumn = issues.filter((issue) => issue.status.id === status.id)
-          return folded.has(status.id) ? (
+        {columns.map((column) =>
+          folded.has(column.id) ? (
             <CollapsedColumn
-              key={status.id}
-              status={status}
-              count={inColumn.length}
-              onExpand={() => setCollapsedFor(status, false)}
+              key={column.id}
+              column={column}
+              onExpand={() => setCollapsedFor(column, false)}
             />
           ) : (
             <Column
-              key={status.id}
-              status={status}
-              issues={inColumn}
-              load={estimates?.by_status?.[String(status.id)]}
-              onCollapse={() => setCollapsedFor(status, true)}
+              key={column.id}
+              column={column}
+              grouping={grouping}
+              onCollapse={() => setCollapsedFor(column, true)}
               selectedIds={selectedIds}
               onSelect={selectCard}
             />
-          )
-        })}
+          ),
+        )}
       </div>
     </DndContext>
   )

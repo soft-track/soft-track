@@ -72,6 +72,18 @@ class ProjectState(str, enum.Enum):
     cancelled = "cancelled"
 
 
+class IssueGrouping(str, enum.Enum):
+    """What the board's columns, and the list's sections, are made of.
+
+    A saved view stores one (#63), so "the planning view" can open grouped by
+    project while "my bugs" opens by status. Status is the default because it
+    is what the board always was.
+    """
+
+    status = "status"
+    project = "project"
+
+
 class IssuePriority(str, enum.Enum):
     no_priority = "no_priority"
     urgent = "urgent"
@@ -654,6 +666,10 @@ class SavedView(SQLModel, table=True):
     #: pointing at a cycle that no longer exists would match nothing and look
     #: broken rather than empty.
     cycle_id: Optional[int] = Field(default=None, foreign_key="cycle.id")
+
+    #: Not a filter -- it narrows nothing -- but part of what a view *is*: the
+    #: same issues read very differently by column and by project.
+    group_by: IssueGrouping = Field(default=IssueGrouping.status)
 
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)

@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, model_validator
 
 from lib_identity.models.identity import UserPublic
-from lib_softtrack.tables import IssuePriority
+from lib_softtrack.tables import IssueGrouping, IssuePriority
 
 
 class ViewFilters(BaseModel):
@@ -40,6 +40,10 @@ class SavedViewCreate(BaseModel):
     name: str = Field(min_length=1, max_length=60)
     is_shared: bool = False
     filters: ViewFilters = ViewFilters()
+    #: Beside the filters rather than inside them: a filter narrows the list
+    #: and a grouping only arranges it, and `ViewFilters` is also the shape
+    #: of the board's issue query, which has no use for a grouping.
+    group_by: IssueGrouping = IssueGrouping.status
 
 
 class SavedViewUpdate(BaseModel):
@@ -49,6 +53,7 @@ class SavedViewUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=60)
     is_shared: Optional[bool] = None
     filters: Optional[ViewFilters] = None
+    group_by: Optional[IssueGrouping] = None
 
 
 class SavedViewRead(BaseModel):
@@ -58,6 +63,7 @@ class SavedViewRead(BaseModel):
     owner: UserPublic
     is_shared: bool
     filters: ViewFilters
+    group_by: IssueGrouping
     created_at: datetime
     updated_at: datetime
 

@@ -9,7 +9,12 @@ import {
   useSetTeamDefaultViewTeamsTeamIdDefaultViewPut,
   useUpdateViewViewsViewIdPatch,
 } from '@/api/generated/endpoints/views/views'
-import type { SavedViewRead, SavedViewUpdate, ViewFilters } from '@/api/generated/models'
+import type {
+  IssueGrouping,
+  SavedViewRead,
+  SavedViewUpdate,
+  ViewFilters,
+} from '@/api/generated/models'
 
 /**
  * The team's saved views and everything that changes them.
@@ -43,10 +48,10 @@ export function useSavedViews(teamId: number) {
     /** What the board opens on: the personal override, else the team's. */
     effectiveDefaultId: query.data?.effective_default_id ?? null,
 
-    async save(name: string, filters: ViewFilters, isShared: boolean) {
+    async save(name: string, filters: ViewFilters, isShared: boolean, groupBy: IssueGrouping) {
       const view = await create.mutateAsync({
         teamId,
-        data: { name, is_shared: isShared, filters },
+        data: { name, is_shared: isShared, filters, group_by: groupBy },
       })
       await refresh()
       return view

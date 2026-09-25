@@ -6864,6 +6864,15 @@
         ],
         "title": "IssueCreate"
       },
+      "IssueGrouping": {
+        "type": "string",
+        "enum": [
+          "status",
+          "project"
+        ],
+        "title": "IssueGrouping",
+        "description": "What the board's columns, and the list's sections, are made of.\n\nA saved view stores one (#63), so \"the planning view\" can open grouped by\nproject while \"my bugs\" opens by status. Status is the default because it\nis what the board always was."
+      },
       "IssueLinkCreate": {
         "properties": {
           "target_id": {
@@ -8509,6 +8518,10 @@
             "default": {
               "unassigned": false
             }
+          },
+          "group_by": {
+            "$ref": "#/components/schemas/IssueGrouping",
+            "default": "status"
           }
         },
         "type": "object",
@@ -8541,6 +8554,9 @@
           "filters": {
             "$ref": "#/components/schemas/ViewFilters"
           },
+          "group_by": {
+            "$ref": "#/components/schemas/IssueGrouping"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -8560,6 +8576,7 @@
           "owner",
           "is_shared",
           "filters",
+          "group_by",
           "created_at",
           "updated_at"
         ],
@@ -8595,6 +8612,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/ViewFilters"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "group_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssueGrouping"
               },
               {
                 "type": "null"

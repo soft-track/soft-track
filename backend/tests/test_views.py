@@ -62,6 +62,53 @@ def test_a_view_round_trips_its_filters(client, pair):
     assert view["filters"]["unassigned"] is False
 
 
+def test_a_view_is_grouped_by_status_unless_it_says_otherwise(client, pair):
+    """Status is what the board always was, so an existing client that has
+    never heard of grouping keeps getting exactly that (#63)."""
+    view = create_view(client, pair, pair["team"]["id"], name="Plain")
+    assert view["group_by"] == "status"
+
+
+def test_a_view_carries_its_grouping_as_well_as_its_filters(client, pair):
+    team_id = pair["team"]["id"]
+    response = client.post(
+        f"/teams/{team_id}/views",
+        json={"name": "Planning", "group_by": "project", "filters": {}},
+        headers=pair["headers"],
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["group_by"] == "project"
+    listed = views(client, pair, team_id)["items"]
+    assert [v["group_by"] for v in listed] == ["project"]
+
+
+def test_regrouping_a_view_leaves_its_filters_alone(client, pair):
+    view = create_view(client, pair, pair["team"]["id"], priority="urgent")
+    response = client.patch(
+        f"/views/{view['id']}", json={"group_by": "project"}, headers=pair["headers"]
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["group_by"] == "project"
+    assert response.json()["filters"]["priority"] == "urgent"
+
+    # And the other way: changing the filters does not reset the grouping.
+    response = client.patch(
+        f"/views/{view['id']}",
+        json={"filters": {"priority": "high"}},
+        headers=pair["headers"],
+    )
+    assert response.json()["group_by"] == "project"
+
+
+def test_an_unknown_grouping_is_refused(client, pair):
+    response = client.post(
+        f"/teams/{pair['team']['id']}/views",
+        json={"name": "Odd", "group_by": "assignee", "filters": {}},
+        headers=pair["headers"],
+    )
+    assert response.status_code == 422
+
+
 def test_a_view_with_no_filters_is_all_issues(client, pair):
     view = create_view(client, pair, pair["team"]["id"], name="Everything")
     assert all(value in (None, False) for value in view["filters"].values())

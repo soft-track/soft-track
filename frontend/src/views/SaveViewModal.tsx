@@ -5,6 +5,7 @@ import { errorDetail } from '@/api/errors'
 import { summarise } from '@/board/filterLabels'
 import type { BoardFilters } from '@/board/filters'
 import { toViewFilters } from '@/board/filters'
+import type { BoardGrouping } from '@/board/grouping'
 import { useTeamContext } from '@/team/useTeamContext'
 import { useSavedViews } from '@/views/useSavedViews'
 
@@ -17,10 +18,13 @@ import { useSavedViews } from '@/views/useSavedViews'
  */
 export function SaveViewModal({
   filters,
+  grouping,
   editing,
   onClose,
 }: {
   filters: BoardFilters
+  /** Saved with the filters, so the view opens arranged the way it was saved. */
+  grouping: BoardGrouping
   editing?: SavedViewRead
   onClose: () => void
 }) {
@@ -40,9 +44,10 @@ export function SaveViewModal({
           name: name.trim(),
           is_shared: isShared,
           filters: toViewFilters(filters),
+          group_by: grouping,
         })
       } else {
-        await views.save(name.trim(), toViewFilters(filters), isShared)
+        await views.save(name.trim(), toViewFilters(filters), isShared, grouping)
       }
       onClose()
     } catch (err: unknown) {
@@ -67,6 +72,7 @@ export function SaveViewModal({
         </h2>
         <p className="mt-1 text-xs text-neutral-500">
           {summarise(filters, { members, labels, projects, cycles, statuses })}
+          {grouping === 'project' && ' · grouped by project'}
         </p>
 
         {error && (
