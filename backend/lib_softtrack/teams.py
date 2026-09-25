@@ -18,6 +18,7 @@ from lib_softtrack.tables import (
     Comment,
     Cycle,
     Issue,
+    IssueTemplate,
     OutboundWebhook,
     Project,
     Repository,
@@ -124,6 +125,12 @@ _TEAM_OWNED_BY_PATH = (
         "Repository not found",
     ),
     ("webhook_id", OutboundWebhook, ErrorCode.webhook_not_found, "Webhook not found"),
+    (
+        "template_id",
+        IssueTemplate,
+        ErrorCode.template_not_found,
+        "Template not found",
+    ),
 )
 
 

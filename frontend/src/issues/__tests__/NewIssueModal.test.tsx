@@ -33,6 +33,14 @@ vi.mock('@/api/generated/endpoints/issues/issues', () => ({
   useCreateIssueTeamsTeamIdIssuesPost: () => mutation,
 }))
 
+// The team's description templates (#97). Most tests have none, which is
+// also what hides the picker.
+const templates = vi.hoisted(() => ({ data: [] as unknown[] }))
+vi.mock('@/api/generated/endpoints/templates/templates', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/generated/endpoints/templates/templates')>()),
+  useListTemplatesTeamsTeamIdIssueTemplatesGet: () => templates,
+}))
+
 // Spread the real module: it also exports `Markdown`, and replacing the whole
 // module wholesale would make that `undefined` the day the modal previews a
 // description -- failing as "Element type is invalid" rather than as anything
@@ -137,6 +145,7 @@ const optionsOf = (name: string) =>
 beforeEach(() => {
   mutateAsync.mockReset()
   mutation.isPending = false
+  templates.data = []
 })
 
 // The suite runs without globals, so Testing Library cannot register this itself.
@@ -336,5 +345,74 @@ describe('NewIssueModal', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(mutateAsync).not.toHaveBeenCalled()
+  })
+})
+
+describe('description templates (#97)', () => {
+  const BUG = { id: 1, team_id: 7, name: 'Bug report', body: '## Steps\n\n1. ', position: 0 }
+  const IDEA = { id: 2, team_id: 7, name: 'Feature request', body: '## Problem', position: 1 }
+
+  afterEach(() => vi.restoreAllMocks())
+
+  it('offers no picker when the team has no templates', () => {
+    renderModal()
+    expect(screen.queryByRole('combobox', { name: 'Template' })).toBeNull()
+  })
+
+  it('fills the description, which stays editable and is what gets sent', async () => {
+    templates.data = [BUG, IDEA]
+    const { user } = renderModal()
+    expect(optionsOf('Template')).toEqual(['No template', 'Bug report', 'Feature request'])
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Template' }), 'Bug report')
+    const description = screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Description' })
+    expect(description.value).toBe('## Steps\n\n1. ')
+
+    await user.type(description, 'open settings')
+    await user.type(screen.getByRole('textbox', { name: 'Issue title' }), 'Crash')
+    await user.click(screen.getByRole('button', { name: 'Create issue' }))
+    expect(mutateAsync.mock.calls[0][0].data.description).toBe('## Steps\n\n1. open settings')
+  })
+
+  it('switches between templates without asking while nothing was typed', async () => {
+    templates.data = [BUG, IDEA]
+    const confirm = vi.spyOn(window, 'confirm')
+    const { user } = renderModal()
+    const picker = screen.getByRole('combobox', { name: 'Template' })
+
+    await user.selectOptions(picker, 'Bug report')
+    await user.selectOptions(picker, 'Feature request')
+    expect(confirm).not.toHaveBeenCalled()
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Description' }).value).toBe(
+      '## Problem',
+    )
+  })
+
+  it('asks before replacing what the user wrote, and keeps it on no', async () => {
+    templates.data = [BUG]
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const { user } = renderModal()
+    const description = screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Description' })
+    await user.type(description, 'My own notes')
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Template' }), 'Bug report')
+    expect(confirm).toHaveBeenCalledTimes(1)
+    expect(description.value).toBe('My own notes')
+    expect(screen.getByRole<HTMLSelectElement>('combobox', { name: 'Template' }).value).toBe('')
+  })
+
+  it('replaces it on yes', async () => {
+    templates.data = [BUG, IDEA]
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const { user } = renderModal()
+    const picker = screen.getByRole('combobox', { name: 'Template' })
+    await user.selectOptions(picker, 'Bug report')
+    const description = screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Description' })
+    // Editing the template's text makes it the user's.
+    await user.type(description, 'details')
+
+    await user.selectOptions(picker, 'Feature request')
+    expect(window.confirm).toHaveBeenCalledTimes(1)
+    expect(description.value).toBe('## Problem')
   })
 })

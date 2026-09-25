@@ -28,6 +28,7 @@ from app_softtrack.reports import router as reports_router
 from app_softtrack.search import router as search_router
 from app_softtrack.statuses import router as statuses_router
 from app_softtrack.teams import router as teams_router
+from app_softtrack.templates import router as templates_router
 from app_softtrack.webhooks import router as webhooks_router
 from app_softtrack.views import router as views_router
 from lib_utils.errors import ApiError, ApiErrorBody, ErrorCode, api_error_handler
@@ -136,6 +137,7 @@ app.include_router(imports_router)
 app.include_router(search_router)
 app.include_router(notifications_router)
 app.include_router(views_router)
+app.include_router(templates_router)
 app.include_router(statuses_router)
 app.include_router(automations_router)
 app.include_router(integrations_router)

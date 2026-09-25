@@ -163,6 +163,10 @@ def world(client, team, guest):
         json={"email": "later@example.com", "role": "member"},
     )
     comment = post(f"/issues/{issue['id']}/comments", json={"body": "Looks right"})
+    template = post(
+        f"/teams/{team_id}/issue-templates",
+        json={"name": "Bug report", "body": "## Steps"},
+    )
     return {
         "team_id": team_id,
         "issue_id": issue["id"],
@@ -178,6 +182,7 @@ def world(client, team, guest):
         "invite_id": invite["id"],
         "comment_id": comment["id"],
         "emoji": "thumbs_up",
+        "template_id": template["id"],
         # Somebody else on the team: changing *their* role is the write.
         "user_id": team["user"]["id"],
     }

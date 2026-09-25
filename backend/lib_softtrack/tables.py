@@ -776,6 +776,33 @@ class Comment(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow)
 
 
+class IssueTemplate(SQLModel, table=True):
+    """A starting point for a new issue's description (#97).
+
+    Per team and admin-managed: "Bug report" means repro steps on one team and
+    a customer ticket number on another. Only the description -- a default
+    assignee, labels or priority is what automation rules are for, and a
+    template that set them would be a second engine for the same job.
+
+    Choosing one fills the description field and nothing else holds on to it:
+    the issue does not remember which template it came from, so editing or
+    deleting a template never changes an issue that already exists.
+    """
+
+    __table_args__ = (
+        UniqueConstraint("team_id", "name", name="uq_issue_template_team_name"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    name: str
+    body: str
+    #: The picker's order, which admins set.
+    position: int = 0
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
 class CommentReaction(SQLModel, table=True):
     """One person's one reaction to one comment (#96).
 

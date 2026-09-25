@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useId, useState } from 'react'
 
 import { useCreateIssueTeamsTeamIdIssuesPost } from '@/api/generated/endpoints/issues/issues'
+import { useListTemplatesTeamsTeamIdIssueTemplatesGet } from '@/api/generated/endpoints/templates/templates'
 import { IssuePriority, type IssueType } from '@/api/generated/models'
 import {
   ESTIMATE_SCALE,
@@ -10,6 +11,7 @@ import {
   TYPE_META,
   TYPE_ORDER,
 } from '@/issues/issueMeta'
+import { replacingLosesWork } from '@/issues/templates'
 import { MarkdownEditor } from '@/markdown/lazy'
 import { activeMembers } from '@/team/members'
 import { invalidateProjects, pickableProjects } from '@/team/projects'
@@ -24,9 +26,14 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
   const { team, projects, labels, members, cycles, statuses } = useTeamContext()
   const queryClient = useQueryClient()
   const createIssue = useCreateIssueTeamsTeamIdIssuesPost()
+  const templates = useListTemplatesTeamsTeamIdIssueTemplatesGet(team.id).data ?? []
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  // The template in use, and the text it put there -- which is how choosing
+  // another one knows whether anything typed since would be lost (#97).
+  const [templateId, setTemplateId] = useState('')
+  const [appliedBody, setAppliedBody] = useState<string | null>(null)
   const [projectId, setProjectId] = useState<string>('')
   // Empty means "whatever the team's leftmost column is", which the API
   // decides. Seeding from `statuses[0]` here would race the query that
@@ -40,6 +47,25 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
   const [assigneeId, setAssigneeId] = useState<string>('')
   const [labelIds, setLabelIds] = useState<number[]>([])
   const [error, setError] = useState<string | null>(null)
+
+  const applyTemplate = (id: string) => {
+    const template = templates.find((candidate) => String(candidate.id) === id)
+    if (!template) {
+      setTemplateId('')
+      return
+    }
+    // A prefill, not a lock: it only ever writes the description, and asks
+    // first when that would replace something the user wrote themselves.
+    if (
+      replacingLosesWork(description, appliedBody) &&
+      !window.confirm(`Replace the description you have written with the “${template.name}” template?`)
+    ) {
+      return
+    }
+    setTemplateId(id)
+    setDescription(template.body)
+    setAppliedBody(template.body)
+  }
 
   const toggleLabel = (id: number) => {
     setLabelIds((prev) => (prev.includes(id) ? prev.filter((l) => l !== id) : [...prev, id]))
@@ -94,8 +120,27 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
           </h2>
           <div className="hairline border-b px-5 pb-4 pt-4">
             <div className="mb-2 flex items-center justify-between">
-              <span className="identifier rounded-full bg-neutral-900/6 px-2 py-0.5 text-[11px] font-semibold text-neutral-500">
-                {team.key}
+              <span className="flex items-center gap-2">
+                <span className="identifier rounded-full bg-neutral-900/6 px-2 py-0.5 text-[11px] font-semibold text-neutral-500">
+                  {team.key}
+                </span>
+                {/* Only on teams that wrote some: an empty picker is a
+                    question with no answers. */}
+                {templates.length > 0 && (
+                  <Select
+                    dense
+                    value={templateId}
+                    onChange={(e) => applyTemplate(e.target.value)}
+                    aria-label="Template"
+                  >
+                    <option value="">No template</option>
+                    {templates.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.name}
+                      </option>
+                    ))}
+                  </Select>
+                )}
               </span>
               <button
                 type="button"

@@ -54,6 +54,11 @@ export default function SettingsLayout() {
           icon: 'board' as IconName,
         },
         {
+          to: `/settings/teams/${team.key}/templates`,
+          label: 'Templates',
+          icon: 'task' as IconName,
+        },
+        {
           to: `/settings/teams/${team.key}/automation`,
           label: 'Automation',
           icon: 'sparkle' as IconName,

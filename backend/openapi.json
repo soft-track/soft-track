@@ -4728,6 +4728,271 @@
         }
       }
     },
+    "/teams/{team_id}/issue-templates": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "List Templates",
+        "description": "The team's description templates, in picker order. Any member may read.",
+        "operationId": "list_templates_teams__team_id__issue_templates_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IssueTemplateRead"
+                  },
+                  "title": "Response List Templates Teams  Team Id  Issue Templates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Create Template",
+        "description": "Add a template. Team admins only.",
+        "operationId": "create_template_teams__team_id__issue_templates_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueTemplateCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueTemplateRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/issue-templates/order": {
+      "put": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Reorder Templates",
+        "description": "Set the picker's order. Takes every template at once.",
+        "operationId": "reorder_templates_teams__team_id__issue_templates_order_put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueTemplateOrder"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IssueTemplateRead"
+                  },
+                  "title": "Response Reorder Templates Teams  Team Id  Issue Templates Order Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issue-templates/{template_id}": {
+      "patch": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Update Template",
+        "operationId": "update_template_issue_templates__template_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueTemplateUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueTemplateRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Delete Template",
+        "operationId": "delete_template_issue_templates__template_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/teams/{team_id}/statuses": {
       "get": {
         "tags": [
@@ -8363,6 +8628,120 @@
         "title": "IssueSort",
         "description": "What the issue list can be ordered by (#88)."
       },
+      "IssueTemplateCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Body"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "body"
+        ],
+        "title": "IssueTemplateCreate"
+      },
+      "IssueTemplateOrder": {
+        "properties": {
+          "template_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Template Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_ids"
+        ],
+        "title": "IssueTemplateOrder",
+        "description": "Every template on the team, in the order the picker should list them.\n\nAll of them at once, like `StatusOrder` and for the same reason: two admins\ndragging would otherwise interleave into an order neither chose."
+      },
+      "IssueTemplateRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "name",
+          "body",
+          "position",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "IssueTemplateRead"
+      },
+      "IssueTemplateUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          }
+        },
+        "type": "object",
+        "title": "IssueTemplateUpdate"
+      },
       "IssueType": {
         "type": "string",
         "enum": [
@@ -11462,6 +11841,7 @@
           "link_not_found",
           "attachment_not_found",
           "comment_not_found",
+          "template_not_found",
           "notification_not_found",
           "repository_not_found",
           "invite_not_found",
@@ -11473,6 +11853,7 @@
           "username_taken",
           "team_key_taken",
           "status_name_taken",
+          "template_name_taken",
           "rule_name_taken",
           "already_member",
           "link_exists",
@@ -11495,12 +11876,14 @@
           "issue_has_subissues",
           "labels_conflict",
           "status_order_incomplete",
+          "template_order_incomplete",
           "status_move_to_same",
           "view_other_team",
           "view_private_default",
           "rank_neighbour_is_self",
           "password_required_to_disconnect",
           "name_required",
+          "body_required",
           "invalid_colour",
           "username_invalid",
           "current_password_incorrect",

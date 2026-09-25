@@ -20,6 +20,7 @@ import TeamGeneralSettings from '@/settings/TeamGeneralSettings'
 import TeamIntegrationSettings from '@/settings/TeamIntegrationSettings'
 import TeamMembersSettings from '@/settings/TeamMembersSettings'
 import TeamStatusSettings from '@/settings/TeamStatusSettings'
+import TeamTemplateSettings from '@/settings/TeamTemplateSettings'
 import TeamWebhookSettings from '@/settings/TeamWebhookSettings'
 import { RequireSiteAdmin } from '@/settings/RequireSiteAdmin'
 
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="teams/:teamKey/members" element={<TeamMembersSettings />} />
             <Route path="teams/:teamKey/general" element={<TeamGeneralSettings />} />
             <Route path="teams/:teamKey/statuses" element={<TeamStatusSettings />} />
+            <Route path="teams/:teamKey/templates" element={<TeamTemplateSettings />} />
             <Route
               path="teams/:teamKey/automation"
               element={<TeamAutomationSettings />}

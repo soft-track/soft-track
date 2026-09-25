@@ -65,6 +65,7 @@ README, which show a team several cycles in.
 - [Sub-issues and links](docs/features/sub-issues.md)
 - [Projects (epics)](docs/features/projects.md)
 - [Issue types](docs/features/issue-types.md)
+- [Issue templates](docs/features/issue-templates.md)
 - [Markdown, mentions and task lists](docs/features/markdown.md)
 - [Saved views and shareable filters](docs/features/saved-views.md)
 - [Search](docs/features/search.md)

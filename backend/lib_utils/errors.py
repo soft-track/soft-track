@@ -63,6 +63,7 @@ class ErrorCode(str, enum.Enum):
     link_not_found = "link_not_found"
     attachment_not_found = "attachment_not_found"
     comment_not_found = "comment_not_found"
+    template_not_found = "template_not_found"
     notification_not_found = "notification_not_found"
     repository_not_found = "repository_not_found"
     invite_not_found = "invite_not_found"
@@ -79,6 +80,7 @@ class ErrorCode(str, enum.Enum):
     username_taken = "username_taken"
     team_key_taken = "team_key_taken"
     status_name_taken = "status_name_taken"
+    template_name_taken = "template_name_taken"
     rule_name_taken = "rule_name_taken"
     already_member = "already_member"
     link_exists = "link_exists"
@@ -107,6 +109,7 @@ class ErrorCode(str, enum.Enum):
     issue_has_subissues = "issue_has_subissues"
     labels_conflict = "labels_conflict"
     status_order_incomplete = "status_order_incomplete"
+    template_order_incomplete = "template_order_incomplete"
     status_move_to_same = "status_move_to_same"
     view_other_team = "view_other_team"
     view_private_default = "view_private_default"
@@ -116,6 +119,8 @@ class ErrorCode(str, enum.Enum):
 
     # --- what you sent is not usable ------------------------------------------
     name_required = "name_required"
+    #: A template (#97) whose text is only whitespace.
+    body_required = "body_required"
     invalid_colour = "invalid_colour"
     username_invalid = "username_invalid"
     current_password_incorrect = "current_password_incorrect"
