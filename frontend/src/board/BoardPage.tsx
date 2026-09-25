@@ -30,6 +30,7 @@ import { Sidebar } from '@/board/Sidebar'
 import { TopBar } from '@/board/TopBar'
 import { useBulkEdit } from '@/board/useBulkEdit'
 import { useOverlays } from '@/board/useOverlays'
+import { useMoveIssue } from '@/board/useMoveIssue'
 import { useStatusChange } from '@/board/useStatusChange'
 import { CycleBanner } from '@/cycles/CycleBanner'
 import { NewCycleModal } from '@/cycles/NewCycleModal'
@@ -149,14 +150,18 @@ export default function BoardPage() {
   // -- which is a fair price for not duplicating the precedence rule here.
   const filtersAreSettled = !urlIsBare || !savedViews.isLoading
 
+  // The board is in its own hand-arranged order (#88); the list in whatever
+  // the viewer sorted it by.
+  const order: BoardSort = view === 'board' ? { sort: 'rank', direction: 'asc' } : sort
   const issuesParams = useMemo(
-    () => ({ ...toQueryParams(filters), sort: sort.sort, direction: sort.direction }),
-    [filters, sort.sort, sort.direction],
+    () => ({ ...toQueryParams(filters), sort: order.sort, direction: order.direction }),
+    [filters, order.sort, order.direction],
   )
   const issuesQuery = useListIssuesTeamsTeamIdIssuesGet(team?.id ?? 0, issuesParams, {
     query: { enabled: Boolean(team) && filtersAreSettled && projectPageId === null },
   })
   const changeStatus = useStatusChange(team, issuesParams)
+  const moveIssue = useMoveIssue(team, issuesParams)
 
   // Every filter is applied by the server now, so this page is already what
   // the board should show. Filtering it again here would only ever narrow the
@@ -347,6 +352,7 @@ export default function BoardPage() {
                   issues={issues}
                   grouping={grouping}
                   onStatusChange={changeStatus}
+                  onMove={moveIssue}
                   onProjectChange={(ids, projectId) => bulk.update(ids, { project_id: projectId })}
                   estimates={teamData.estimates}
                   selectedIds={selection.ids}

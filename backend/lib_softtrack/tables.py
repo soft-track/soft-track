@@ -115,6 +115,8 @@ class IssueSort(str, enum.Enum):
     estimate = "estimate"
     #: Alphabetical, ignoring case.
     title = "title"
+    #: The board's own order, arranged by hand (part 2).
+    rank = "rank"
 
 
 class SortDirection(str, enum.Enum):
@@ -538,6 +540,10 @@ class Issue(SQLModel, table=True):
     status_id: int = Field(foreign_key="workflowstatus.id", index=True)
     priority: IssuePriority = Field(default=IssuePriority.no_priority)
     type: IssueType = Field(default=IssueType.task, index=True)
+    #: Where it sits on the board, as a fractional-indexing key compared by
+    #: code point -- see lib_softtrack/ranks.py. Set on creation (top of the
+    #: team) and by dragging; nothing else touches it.
+    rank: str = Field(default="", index=True)
     assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
     # One level of nesting only -- an issue with a parent may not itself be a
     # parent. See lib_softtrack/subissues.py for why that limit is enforced

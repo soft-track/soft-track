@@ -13,6 +13,7 @@ from lib_softtrack.models.issues import (
     IssueBulkChanges,
     IssueBulkDelete,
     IssueBulkUpdate,
+    IssueMove,
     IssueCreate,
     IssueRead,
     IssueUpdate,
@@ -44,6 +45,7 @@ from lib_softtrack.tables import (
     User,
     WorkflowStatus,
 )
+from lib_softtrack.ranks import neighbour_or_404, rank_between, rank_order, top_rank
 from lib_softtrack.statuses import (
     RESOLVED,
     default_status,
@@ -96,6 +98,7 @@ def issue_to_read(issue: Issue, session: Session) -> IssueRead:
         status=StatusRead.model_validate(session.get(WorkflowStatus, issue.status_id)),
         priority=issue.priority,
         type=issue.type,
+        rank=issue.rank,
         assignee=UserPublic.model_validate(assignee) if assignee else None,
         estimate=issue.estimate,
         blocked_by_count=open_blocker_counts(session, [issue.id]).get(issue.id, 0),
@@ -180,6 +183,7 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
             status=StatusRead.model_validate(statuses[issue.status_id]),
             priority=issue.priority,
             type=issue.type,
+            rank=issue.rank,
             assignee=(
                 UserPublic.model_validate(users[issue.assignee_id])
                 if issue.assignee_id
@@ -261,6 +265,8 @@ def create_issue(
         estimate=payload.estimate,
         cycle_id=payload.cycle_id,
         due_date=payload.due_date,
+        # On top of its column, where a new card is looked for.
+        rank=top_rank(session, team_id),
         creator_id=current_user.id,
     )
 
@@ -360,7 +366,7 @@ def list_issues(
     issues = session.exec(
         select(Issue)
         .where(*filters)
-        .order_by(*_ordering(sort, direction))
+        .order_by(*_ordering(sort, direction, rank_order(session)))
         .offset(offset)
         .limit(limit)
     ).all()
@@ -474,7 +480,7 @@ _PRIORITY_RANK = {
 }
 
 
-def _ordering(sort: IssueSort, direction: SortDirection) -> list:
+def _ordering(sort: IssueSort, direction: SortDirection, rank) -> list:
     """ORDER BY for the issue list (#88).
 
     Every ordering ends on the issue number, newest first, so issues that
@@ -485,7 +491,9 @@ def _ordering(sort: IssueSort, direction: SortDirection) -> list:
     newest_first = Issue.number.desc()
     if sort == IssueSort.created:
         return [newest_first if descending else Issue.number.asc()]
-    if sort == IssueSort.updated:
+    if sort == IssueSort.rank:
+        key = rank
+    elif sort == IssueSort.updated:
         key = Issue.updated_at
     elif sort == IssueSort.priority:
         key = case(
@@ -516,6 +524,38 @@ def _due_filter(due: DueFilter, today: date):
     # Monday is 0, so this is the coming Sunday -- or today, on a Sunday.
     end_of_week = today + timedelta(days=6 - today.weekday())
     return (Issue.due_date >= today) & (Issue.due_date <= end_of_week)
+
+
+def move_issue(
+    session: Session, current_user: User, issue_id: int, payload: IssueMove
+) -> IssueRead:
+    """Drop a card between two others on the board, maybe in another column.
+
+    One row changes: the card's own rank, between its new neighbours'. A
+    change of column goes through the ordinary update path first, so it
+    records history, notifies and runs rules exactly as a status change from
+    the issue panel does.
+    """
+    issue = get_issue_or_404(session, issue_id)
+    require_team_member(issue.team_id, current_user, session)
+    above = neighbour_or_404(session, issue, payload.above_id)
+    below = neighbour_or_404(session, issue, payload.below_id)
+
+    if payload.status_id is not None and payload.status_id != issue.status_id:
+        _apply_update(
+            session, current_user, issue, {"status_id": payload.status_id}, None
+        )
+
+    if above is None and below is None:
+        # An empty column, or nothing said: the top, like a new card.
+        issue.rank = top_rank(session, issue.team_id)
+    else:
+        issue.rank = rank_between(session, above, below)
+    issue.updated_at = datetime.now(timezone.utc)
+    session.add(issue)
+    session.commit()
+    session.refresh(issue)
+    return issue_to_read(issue, session)
 
 
 def delete_issue(

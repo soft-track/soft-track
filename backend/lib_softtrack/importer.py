@@ -12,6 +12,7 @@ from typing import Optional
 from sqlmodel import Session, select
 
 from lib_softtrack.history import record_creation
+from lib_softtrack.ranks import top_rank
 from lib_softtrack.jira import JiraParseError, parse
 from lib_softtrack import statuses as statuses_service
 from lib_softtrack.models.imports import ImportReport, ParsedIssue, UserMatch
@@ -282,6 +283,7 @@ def _create_issue(
         status_id=_status_for(session, team.id, parsed_issue).id,
         priority=parsed_issue.priority,
         type=parsed_issue.type,
+        rank=top_rank(session, team.id),
         assignee_id=assignee.id if assignee else None,
         creator_id=creator.id,
         project_id=project.id if project else None,

@@ -2333,6 +2333,64 @@
         }
       }
     },
+    "/issues/{issue_id}/move": {
+      "post": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "Move Issue",
+        "description": "Place a card between two others on the board, optionally in another\ncolumn. Its neighbours are named, never its new position's key -- the\nserver works that out, so a client never has to.",
+        "operationId": "move_issue_issues__issue_id__move_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueMove"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/issues/{issue_id}/events": {
       "get": {
         "tags": [
@@ -7376,6 +7434,46 @@
         "type": "object",
         "title": "IssueLinks"
       },
+      "IssueMove": {
+        "properties": {
+          "above_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Above Id"
+          },
+          "below_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Below Id"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          }
+        },
+        "type": "object",
+        "title": "IssueMove",
+        "description": "Where a card was dropped on the board (#88).\n\nThe cards it landed between, as the board showed them: `above_id` is the\none now above it, `below_id` the one below. Either is null at the top or\nbottom of a column, and both are null in an empty one. `status_id` moves\nit to another column at the same time."
+      },
       "IssuePriority": {
         "type": "string",
         "enum": [
@@ -7443,6 +7541,10 @@
           },
           "type": {
             "$ref": "#/components/schemas/IssueType"
+          },
+          "rank": {
+            "type": "string",
+            "title": "Rank"
           },
           "assignee": {
             "anyOf": [
@@ -7554,6 +7656,7 @@
           "status",
           "priority",
           "type",
+          "rank",
           "blocked_by_count",
           "child_count",
           "completed_child_count",
@@ -7570,7 +7673,8 @@
           "updated",
           "priority",
           "estimate",
-          "title"
+          "title",
+          "rank"
         ],
         "title": "IssueSort",
         "description": "What the issue list can be ordered by (#88)."
@@ -10354,6 +10458,7 @@
           "status_move_to_same",
           "view_other_team",
           "view_private_default",
+          "rank_neighbour_is_self",
           "password_required_to_disconnect",
           "name_required",
           "invalid_colour",

@@ -1,4 +1,4 @@
-import { useDraggable } from '@dnd-kit/core'
+import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useNavigate } from 'react-router-dom'
 
@@ -33,7 +33,9 @@ export function IssueCard({
   const project = showProject
     ? projects.find((candidate) => candidate.id === issue.project_id)
     : undefined
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  // Sortable rather than only draggable (#88): the other cards in its column
+  // make room for it while it is carried, and where it lands is kept.
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: issue.id,
   })
 
@@ -42,7 +44,9 @@ export function IssueCard({
   const style = transform
     ? {
         transform: `${CSS.Translate.toString(transform)} ${isDragging ? 'rotate(1.5deg) scale(1.03)' : ''}`,
-        transition: 'none',
+        // The carried card follows the pointer with no easing; the others
+        // slide out of its way with the sortable's own transition.
+        transition: isDragging ? 'none' : transition,
         opacity: isDragging ? 0.92 : 1,
         zIndex: isDragging ? 20 : undefined,
         boxShadow: isDragging

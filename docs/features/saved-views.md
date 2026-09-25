@@ -50,3 +50,12 @@ or Z first. Unestimated issues come last either way, because "not sized yet"
 isn't a small estimate. Ties are broken newest first, so paging never splits
 or repeats issues. Like the grouping, the sort is in the link as `sort=` and
 `dir=`, left out when it's the default (newest first), and saved views keep it.
+
+**The board's order is arranged by hand** (#88). Dragging a card within its
+column keeps it where it was dropped, and dropping it among another column's
+cards keeps its place there too. New issues start at the top of their
+column. Behind this is one order for the whole team, stored as a short key per
+issue (fractional indexing, `backend/lib_utils/ranking.py`). A move only
+rewrites the moved card's key, between the keys of its new neighbours, so a
+reorder never renumbers the column. Upgrading gives every existing issue a key
+in the order the board already showed, so nothing moves.

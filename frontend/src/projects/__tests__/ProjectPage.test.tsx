@@ -118,6 +118,7 @@ function issue(id: number, title: string, inStatus: StatusRead): IssueRead {
     status: inStatus,
     priority: 'no_priority',
     type: 'task',
+    rank: 'a0',
     blocked_by_count: 0,
     child_count: 0,
     completed_child_count: 0,

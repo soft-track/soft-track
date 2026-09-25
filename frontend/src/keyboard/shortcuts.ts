@@ -30,6 +30,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { keys: ['Enter'], description: 'Open the focused issue' },
       { keys: ['Space'], description: 'Pick up the focused card, or drop it' },
       { keys: ['←', '→'], description: 'Carry a picked-up card to another column' },
+      { keys: ['↑', '↓'], description: 'Move a picked-up card up or down its column' },
       { keys: ['Esc'], description: 'Put a picked-up card back' },
       { keys: ['⌘', 'Click'], description: 'Add or remove an issue from the selection' },
       { keys: ['⇧', 'Click'], description: 'Select a range of issues' },

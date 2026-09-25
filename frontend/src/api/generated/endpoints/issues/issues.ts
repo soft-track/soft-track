@@ -34,6 +34,7 @@ import type {
   IssueLinkCreate,
   IssueLinkRead,
   IssueLinks,
+  IssueMove,
   IssueRead,
   IssueUpdate,
   ListIssuesTeamsTeamIdIssuesGetParams,
@@ -569,6 +570,77 @@ export function useGetIssueByNumberTeamsTeamIdIssuesByNumberNumberGet<TData = Aw
 
 
 /**
+ * Place a card between two others on the board, optionally in another
+ * column. Its neighbours are named, never its new position's key -- the
+ * server works that out, so a client never has to.
+ * @summary Move Issue
+ */
+export const moveIssueIssuesIssueIdMovePost = (
+    issueId: number,
+    issueMove: IssueMove,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<IssueRead>(
+      {url: `/issues/${issueId}/move`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: issueMove, signal
+    },
+      );
+    }
+
+
+
+
+export const getMoveIssueIssuesIssueIdMovePostMutationKey = () => ['moveIssueIssuesIssueIdMovePost'] as const;
+
+export const getMoveIssueIssuesIssueIdMovePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moveIssueIssuesIssueIdMovePost>>, TError,MoveIssueIssuesIssueIdMovePostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof moveIssueIssuesIssueIdMovePost>>, TError,MoveIssueIssuesIssueIdMovePostMutationVariables, TContext> => {
+
+const mutationKey = getMoveIssueIssuesIssueIdMovePostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof moveIssueIssuesIssueIdMovePost>>, MoveIssueIssuesIssueIdMovePostMutationVariables> = (props) => {
+          const {issueId,data} = props ?? {};
+
+          return  moveIssueIssuesIssueIdMovePost(issueId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MoveIssueIssuesIssueIdMovePostMutationResult = NonNullable<Awaited<ReturnType<typeof moveIssueIssuesIssueIdMovePost>>>
+    export type MoveIssueIssuesIssueIdMovePostMutationBody = IssueMove
+    export type MoveIssueIssuesIssueIdMovePostMutationError = HTTPValidationError
+    export type MoveIssueIssuesIssueIdMovePostMutationVariables = {issueId: number;data: IssueMove}
+
+    /**
+ * @summary Move Issue
+ */
+export const useMoveIssueIssuesIssueIdMovePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moveIssueIssuesIssueIdMovePost>>, TError,MoveIssueIssuesIssueIdMovePostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof moveIssueIssuesIssueIdMovePost>>,
+        TError,
+        MoveIssueIssuesIssueIdMovePostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMoveIssueIssuesIssueIdMovePostMutationOptions(options), queryClient);
+    }
+    /**
  * What has happened to an issue: status, priority, assignee, estimate,
  * cycle and project changes, oldest first, with who made each one.
  *

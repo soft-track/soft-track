@@ -63,6 +63,7 @@ export * from './issueLinkCreate';
 export * from './issueLinkRead';
 export * from './issueLinks';
 export * from './issueLinkType';
+export * from './issueMove';
 export * from './issuePriority';
 export * from './issueRead';
 export * from './issueSort';

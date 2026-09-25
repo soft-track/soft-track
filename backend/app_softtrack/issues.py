@@ -15,6 +15,7 @@ from lib_softtrack.models.issues import (
     IssueBulkDelete,
     IssueBulkUpdate,
     IssueCreate,
+    IssueMove,
     IssueRead,
     IssueUpdate,
 )
@@ -157,6 +158,19 @@ def get_issue_by_number(
     current_user: User = Depends(get_current_user),
 ):
     return issues_service.get_issue_by_number(session, current_user, team_id, number)
+
+
+@router.post("/issues/{issue_id}/move", response_model=IssueRead)
+def move_issue(
+    issue_id: int,
+    payload: IssueMove,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Place a card between two others on the board, optionally in another
+    column. Its neighbours are named, never its new position's key -- the
+    server works that out, so a client never has to."""
+    return issues_service.move_issue(session, current_user, issue_id, payload)
 
 
 @router.get("/issues/{issue_id}/events", response_model=list[IssueEventRead])

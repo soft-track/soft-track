@@ -18,4 +18,5 @@ export const IssueSort = {
   priority: 'priority',
   estimate: 'estimate',
   title: 'title',
+  rank: 'rank',
 } as const;

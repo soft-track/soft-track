@@ -44,6 +44,7 @@ const ISSUE = {
   status: TODO,
   priority: 'no_priority',
   type: 'task',
+  rank: 'a0',
   blocked_by_count: 0,
   child_count: 0,
   completed_child_count: 0,
@@ -64,7 +65,11 @@ beforeEach(() => {
     const columns = [...document.querySelectorAll('[data-column]')]
     const left = column ? columns.indexOf(column) * 300 : 0
     if (this.hasAttribute('data-column')) return box(left, 0, 280, 800)
-    if (this.hasAttribute('data-card')) return box(left + 10, 60, 260, 90)
+    if (this.hasAttribute('data-card')) {
+      // Stacked down the column, one card every 100px.
+      const cards = column ? [...column.querySelectorAll('[data-card]')] : [this]
+      return box(left + 10, 60 + cards.indexOf(this) * 100, 260, 90)
+    }
     return box(0, 0, 1000, 800)
   })
 })
@@ -75,15 +80,18 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function renderBoard() {
+function renderBoard(issues: IssueRead[] = [ISSUE]) {
   const onStatusChange = vi.fn()
+  const onMove = vi.fn()
   render(
     <TeamProvider value={TEAM}>
       <MemoryRouter initialEntries={['/ENG']}>
         <Routes>
           <Route
             path="/ENG"
-            element={<KanbanBoard issues={[ISSUE]} onStatusChange={onStatusChange} />}
+            element={
+              <KanbanBoard issues={issues} onStatusChange={onStatusChange} onMove={onMove} />
+            }
           />
           <Route path="/ENG/issue/:n" element={<p>Opened the issue</p>} />
         </Routes>
@@ -93,7 +101,7 @@ function renderBoard() {
   const card = document.querySelector<HTMLElement>('[data-card="42"]')!
   card.focus()
   listen()
-  return { onStatusChange, user: userEvent.setup() }
+  return { onStatusChange, onMove, user: userEvent.setup() }
 }
 
 /**
@@ -154,6 +162,22 @@ describe('keyboard drag and drop', () => {
     const { user } = renderBoard()
     await user.keyboard('{Enter}')
     expect(screen.getByText('Opened the issue')).toBeTruthy()
+  })
+
+  it('moves a card down past the next one in its column with the arrows (#88)', async () => {
+    const below = { ...ISSUE, id: 43, number: 43, identifier: 'ENG-43', title: 'Below' }
+    const { onMove, onStatusChange, user } = renderBoard([ISSUE, below])
+
+    await user.keyboard(' ')
+    await user.keyboard('{ArrowDown}')
+    await waitFor(() => expect(announced()).toMatch(/ENG-42 is in Todo, next to ENG-43/))
+    await user.keyboard(' ')
+
+    await waitFor(() =>
+      expect(onMove).toHaveBeenCalledWith(42, { aboveId: 43, belowId: null }),
+    )
+    expect(onStatusChange).not.toHaveBeenCalled()
+    expect(announced()).toMatch(/Moved ENG-42 within Todo/)
   })
 
   it('tells a screen reader how, before anything is picked up', () => {

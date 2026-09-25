@@ -45,9 +45,24 @@ describe('columnCoordinates', () => {
     expect(columnCoordinates(press('ArrowRight'), args(null))).toEqual({ x: 600, y: 40 })
   })
 
-  it('ignores up and down, and anything else', () => {
-    expect(columnCoordinates(press('ArrowDown'), args())).toBeUndefined()
+  it('ignores anything that is not an arrow', () => {
     expect(columnCoordinates(press('KeyA'), args())).toBeUndefined()
+  })
+
+  it('steps up and down past the cards in the same column (#88)', () => {
+    const withCards = args('status:2')
+    const rects = withCards.context.droppableRects as Map<unknown, unknown>
+    rects.set(7, { ...rect(310, 260), top: 40, height: 90 })
+    rects.set(8, { ...rect(310, 260), top: 140, height: 90 })
+    rects.set(9, { ...rect(310, 260), top: 240, height: 90 })
+    // In another column, so never stepped to.
+    rects.set(10, { ...rect(10, 260), top: 140, height: 90 })
+    expect(columnCoordinates(press('ArrowDown'), withCards)).toEqual({ x: 300, y: 140 })
+    expect(columnCoordinates(press('ArrowUp'), withCards)).toEqual({ x: 300, y: 40 })
+  })
+
+  it('does nothing on up or down with no cards to step past', () => {
+    expect(columnCoordinates(press('ArrowDown'), args())).toBeUndefined()
   })
 
   it('keeps the arrow from scrolling the board as well', () => {
@@ -60,7 +75,8 @@ describe('columnCoordinates', () => {
 describe('announcements', () => {
   const said = announcements({
     issueName: (id) => `ENG-${id}`,
-    columnName: (id) => ({ 'status:1': 'Todo', 'status:2': 'In Progress' })[String(id)] ?? null,
+    columnName: (id) =>
+      ({ 'status:1': 'Todo', 'status:2': 'In Progress', 7: 'Todo' })[String(id)] ?? null,
     startColumn: () => 'Todo',
     drag: { moved: false },
   })
@@ -80,6 +96,14 @@ describe('announcements', () => {
     expect(said.onDragOver({ active, over: over('status:2') })).toBe('ENG-42 is over In Progress.')
     // Coming back is a move like any other, and is said.
     expect(said.onDragOver({ active, over: over('status:1') })).toBe('ENG-42 is over Todo.')
+  })
+
+  it('says which card it is next to, since that is where it lands (#88)', () => {
+    said.onDragStart({ active })
+    expect(said.onDragOver({ active, over: over(7 as never) })).toBe(
+      'ENG-42 is in Todo, next to ENG-7.',
+    )
+    expect(said.onDragEnd({ active, over: over(7 as never) })).toBe('Moved ENG-42 within Todo.')
   })
 
   it('says where the card stayed when nothing moved', () => {

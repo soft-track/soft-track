@@ -11,9 +11,9 @@ status, priority, assignee, project, cycle or labels on all of them in one
 transactional request, or deletes them after a confirmation. Dragging a
 selected card moves the whole selection, and `Esc` clears it.
 
-**Cards move between columns without a mouse.** On a focused card, Space
-picks it up. The left and right arrow keys carry it one column at a time,
-and Space or Enter drops it. Escape puts it back where it was. Every step is
+**Cards move without a mouse.** On a focused card, Space picks it up. The
+left and right arrow keys carry it one column at a time, up and down move it
+past the cards above and below it in its column, and Space or Enter drops it. Escape puts it back where it was. Every step is
 read out to screen readers in plain words ("Moved ENG-42 to In Progress"),
 never as internal ids. Enter on a card that isn't picked up still opens the
 issue, which is why Enter doesn't pick cards up. Moving a card that's part

@@ -68,6 +68,7 @@ export const ErrorCode = {
   status_move_to_same: 'status_move_to_same',
   view_other_team: 'view_other_team',
   view_private_default: 'view_private_default',
+  rank_neighbour_is_self: 'rank_neighbour_is_self',
   password_required_to_disconnect: 'password_required_to_disconnect',
   name_required: 'name_required',
   invalid_colour: 'invalid_colour',

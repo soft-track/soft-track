@@ -1,16 +1,21 @@
 import { useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 
 import {
+  type CollisionDetection,
   DndContext,
   KeyboardSensor,
   PointerSensor,
+  pointerWithin,
+  rectIntersection,
   useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 import type { EstimateSummary, IssueRead, StatusRead } from '@/api/generated/models'
+import { resolveDrop } from '@/board/dropTarget'
 import { type BoardGrouping, groupByProject, projectForDropTarget } from '@/board/grouping'
 import {
   announcements,
@@ -18,6 +23,7 @@ import {
   INSTRUCTIONS,
   KEYBOARD_CODES,
 } from '@/board/keyboardDrag'
+import type { Placement } from '@/board/useMoveIssue'
 import { IssueCard } from '@/issues/IssueCard'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
@@ -50,6 +56,20 @@ type BoardColumn = {
 }
 
 const statusColumnId = (status: StatusRead) => `status:${status.id}`
+
+/**
+ * What a card is over, preferring cards to the column behind them.
+ *
+ * A card sits inside its column, so the pointer is over both; the card is the
+ * more precise answer -- it says where in the column, not only which one.
+ * The keyboard has no pointer and falls back to overlap.
+ */
+const cardsFirst: CollisionDetection = (args) => {
+  const pointer = pointerWithin(args)
+  const hits = pointer.length > 0 ? pointer : rectIntersection(args)
+  const cards = hits.filter((hit) => typeof hit.id === 'number')
+  return cards.length > 0 ? cards : hits
+}
 
 function Column({
   column,
@@ -113,17 +133,22 @@ function Column({
       </header>
 
       <div className="scroll-thin flex-1 space-y-2 overflow-y-auto px-2 pb-2">
-        {issues.map((issue) => (
-          <IssueCard
-            key={issue.id}
-            issue={issue}
-            selected={selectedIds.includes(issue.id)}
-            onSelect={onSelect}
-            // Whichever the columns already say is left off the card.
-            showStatus={grouping === 'project'}
-            showProject={grouping !== 'project'}
-          />
-        ))}
+        <SortableContext
+          items={issues.map((issue) => issue.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {issues.map((issue) => (
+            <IssueCard
+              key={issue.id}
+              issue={issue}
+              selected={selectedIds.includes(issue.id)}
+              onSelect={onSelect}
+              // Whichever the columns already say is left off the card.
+              showStatus={grouping === 'project'}
+              showProject={grouping !== 'project'}
+            />
+          ))}
+        </SortableContext>
         {issues.length === 0 && (
           <div className="flex h-24 items-center justify-center rounded-card border border-dashed border-neutral-900/10 text-xs text-neutral-400">
             {isOver ? 'Drop here' : 'No issues'}
@@ -171,6 +196,7 @@ export function KanbanBoard({
   issues,
   grouping = 'status',
   onStatusChange,
+  onMove,
   onProjectChange,
   estimates,
   selectedIds = [],
@@ -181,6 +207,12 @@ export function KanbanBoard({
   /** Status columns, as the board always had, or one column per project (#63). */
   grouping?: BoardGrouping
   onStatusChange: (issueId: number, status: StatusRead) => void
+  /**
+   * A card dropped among other cards (#88): where it now sits in the board's
+   * order, and its new column when it changed one. Without it, cards can
+   * still change column but their order is not kept.
+   */
+  onMove?: (issueId: number, placement: Placement) => void
   /**
    * A card dropped on another project's column, or a selection dragged there
    * together. Null is the "No project" column.
@@ -300,8 +332,19 @@ export function KanbanBoard({
     if (!over) return
     const issueId = Number(active.id)
 
+    const drop = resolveDrop(columns, issueId, over.id)
+    const carriesSelection = selectedIds.length > 1 && selectedIds.includes(issueId)
+
+    // Reordering within a column. The same in either grouping: the order is
+    // one order for the whole team.
+    if (drop.kind === 'place' && !drop.changesColumn) {
+      onMove?.(issueId, { aboveId: drop.aboveId, belowId: drop.belowId })
+      return
+    }
+
     if (grouping === 'project') {
-      const projectId = projectForDropTarget(String(over.id))
+      if (drop.kind === 'none') return
+      const projectId = projectForDropTarget(drop.columnId)
       if (projectId === undefined || !onProjectChange) return
       // The same rule as status: a selection moves together, a lone card
       // moves alone, and nothing already there is sent again.
@@ -314,16 +357,22 @@ export function KanbanBoard({
       return
     }
 
-    const target = statuses.find((status) => statusColumnId(status) === String(over.id))
+    if (drop.kind === 'none') return
+    const target = statuses.find((status) => statusColumnId(status) === drop.columnId)
     if (!target) return
     // Dragging a card that is part of a selection carries the selection with
     // it -- the same thing a file manager does, and the reason to have
     // selected them. A card outside the selection moves on its own.
-    if (onBulkStatusChange && selectedIds.length > 1 && selectedIds.includes(issueId)) {
+    if (onBulkStatusChange && carriesSelection) {
       const moving = selectedIds.filter(
         (id) => issues.find((i) => i.id === id)?.status.id !== target.id,
       )
       if (moving.length > 0) onBulkStatusChange(moving, target)
+      return
+    }
+    // Dropped among the target column's cards: its place is kept as well.
+    if (drop.kind === 'place' && onMove) {
+      onMove(issueId, { aboveId: drop.aboveId, belowId: drop.belowId, status: target })
       return
     }
     const issue = issues.find((i) => i.id === issueId)
@@ -347,13 +396,18 @@ export function KanbanBoard({
       sensors={sensors}
       onDragStart={() => setDragging(true)}
       onDragEnd={handleDragEnd}
+      collisionDetection={cardsFirst}
       onDragCancel={() => setDragging(false)}
       accessibility={{
         screenReaderInstructions: INSTRUCTIONS,
         announcements: announcements({
           issueName: (id) =>
             issues.find((issue) => issue.id === Number(id))?.identifier ?? 'The issue',
-          columnName: (id) => columns.find((column) => column.id === id)?.name ?? null,
+          columnName: (id) =>
+            columns.find(
+              (column) =>
+                column.id === id || column.issues.some((issue) => issue.id === id),
+            )?.name ?? null,
           startColumn: (id) =>
             columns.find((column) => column.issues.some((issue) => issue.id === Number(id)))
               ?.name ?? null,

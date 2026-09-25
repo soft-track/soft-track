@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 from web import engine, init_db
 from lib_utils.password import hash_password
 from lib_softtrack import statuses as statuses_service
+from lib_softtrack.ranks import top_rank
 from lib_softtrack.tables import (
     Issue,
     IssueLabelLink,
@@ -145,6 +146,7 @@ def run():
                 priority=priority,
                 assignee_id=user.id,
                 creator_id=user.id,
+                rank=top_rank(session, team.id),
             )
             session.add(issue)
             session.commit()

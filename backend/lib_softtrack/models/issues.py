@@ -88,6 +88,20 @@ class IssueUpdate(BaseModel):
     label_ids: Optional[list[int]] = None
 
 
+class IssueMove(BaseModel):
+    """Where a card was dropped on the board (#88).
+
+    The cards it landed between, as the board showed them: `above_id` is the
+    one now above it, `below_id` the one below. Either is null at the top or
+    bottom of a column, and both are null in an empty one. `status_id` moves
+    it to another column at the same time.
+    """
+
+    above_id: Optional[int] = None
+    below_id: Optional[int] = None
+    status_id: Optional[int] = None
+
+
 class IssueRead(BaseModel):
     id: int
     team_id: int
@@ -100,6 +114,9 @@ class IssueRead(BaseModel):
     status: StatusRead
     priority: IssuePriority
     type: IssueType
+    #: The board's order (#88): a string compared by code point. Clients sort
+    #: by it; they never make one -- moving a card is POST /issues/{id}/move.
+    rank: str
     assignee: Optional[UserPublic] = None
     estimate: Optional[int] = None
     #: Unresolved issues that block this one. Zero for an issue that is free

@@ -24,6 +24,7 @@ export interface IssueRead {
   status: StatusRead;
   priority: IssuePriority;
   type: IssueType;
+  rank: string;
   assignee?: UserPublic | null;
   estimate?: number | null;
   blocked_by_count: number;
