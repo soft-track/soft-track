@@ -6,7 +6,6 @@ A project is what SoftTrack calls an epic -- see `tables.Project`.
 from datetime import datetime, timezone
 from typing import Optional
 
-
 from sqlmodel import Session, select
 
 from lib_softtrack import automations as automations_service

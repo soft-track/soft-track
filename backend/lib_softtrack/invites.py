@@ -13,7 +13,6 @@ import secrets
 from datetime import timedelta
 from typing import Optional
 
-
 from sqlmodel import Session, delete, select
 
 from lib_identity.models.identity import UserPublic

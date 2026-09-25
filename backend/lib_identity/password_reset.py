@@ -19,7 +19,6 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-
 from sqlalchemy import delete
 from sqlmodel import Session, select
 

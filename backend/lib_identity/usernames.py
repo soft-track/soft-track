@@ -7,7 +7,6 @@ keeps its own frozen copy, so this is the only place the live rules live.
 
 import re
 
-
 from sqlmodel import Session, func, select
 
 from lib_softtrack.tables import User

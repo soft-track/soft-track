@@ -18,7 +18,6 @@ on write, in `_validate`, rather than on every event.
 from datetime import datetime, timezone
 from typing import Optional
 
-
 from sqlmodel import Session, func, select
 
 from lib_identity.models.identity import UserPublic

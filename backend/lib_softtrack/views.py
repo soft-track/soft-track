@@ -15,7 +15,6 @@ expressed; the client is told the answer rather than the rule.
 from datetime import datetime, timezone
 from typing import Optional
 
-
 from sqlmodel import Session, or_, select
 
 from lib_identity.models.identity import UserPublic

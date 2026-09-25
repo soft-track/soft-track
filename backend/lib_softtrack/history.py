@@ -7,7 +7,6 @@ means a field added later gets history for free by naming it in TRACKED.
 
 from typing import Optional
 
-
 from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic

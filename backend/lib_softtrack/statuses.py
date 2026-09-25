@@ -10,7 +10,6 @@ status names somewhere.
 
 from typing import Iterable, Optional
 
-
 from sqlmodel import Session, select
 
 from lib_softtrack import automations as automations_service

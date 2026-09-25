@@ -9,7 +9,6 @@ and the whole point of the dry run is to be able to trust what it says.
 from datetime import datetime, timezone
 from typing import Optional
 
-
 from sqlmodel import Session, select
 
 from lib_softtrack.history import record_creation

@@ -17,7 +17,6 @@ Two rules the hooks all obey, so no caller has to remember them:
 from datetime import datetime, timezone
 from typing import Iterable, Optional
 
-
 from sqlmodel import Session, func, select
 
 from lib_identity.models.identity import UserPublic

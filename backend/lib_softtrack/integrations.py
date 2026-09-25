@@ -34,7 +34,6 @@ import secrets
 from datetime import datetime, timezone
 from typing import Optional
 
-
 from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
