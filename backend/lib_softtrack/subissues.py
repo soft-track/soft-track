@@ -90,21 +90,29 @@ def child_progress(
 
     Cancelled children are excluded from both numbers.
     """
-    if not parent_ids:
+    return progress_by(session, Issue.parent_id, parent_ids)
+
+
+def progress_by(session: Session, column, ids: list[int]) -> dict[int, tuple[int, int]]:
+    """`{id: (done, total)}` for issues grouped on `column`, in one query.
+
+    The one definition of progress. A parent's sub-issues and a project's
+    issues both count through here, so "what does a cancelled issue count
+    as" has one answer -- the one #13 settled -- rather than one per feature.
+    An id with no issues is simply absent; callers read that as 0 of 0.
+    """
+    if not ids:
         return {}
 
     done_when = case((in_category(_DONE), 1), else_=0)
 
     rows = session.exec(
-        select(Issue.parent_id, func.count(), func.coalesce(func.sum(done_when), 0))
-        .where(
-            Issue.parent_id.in_(parent_ids),
-            ~in_category(_EXCLUDED_FROM_PROGRESS),
-        )
-        .group_by(Issue.parent_id)
+        select(column, func.count(), func.coalesce(func.sum(done_when), 0))
+        .where(column.in_(ids), ~in_category(_EXCLUDED_FROM_PROGRESS))
+        .group_by(column)
     ).all()
 
-    return {parent_id: (int(done), int(total)) for parent_id, total, done in rows}
+    return {key: (int(done), int(total)) for key, total, done in rows}
 
 
 def _has_children(session: Session, issue_id: int) -> bool:

@@ -40,5 +40,11 @@ class ProjectRead(BaseModel):
     state: ProjectState
     archived: bool
     created_at: datetime
+    #: Progress, counted the way sub-issues are (#13): cancelled issues are in
+    #: neither number, so "4 of 6" cannot be made unreachable by cancelling
+    #: work. Zero of zero for a project with nothing in it. No defaults, for
+    #: the reason IssueRead gives for its own counts.
+    issue_count: int
+    completed_issue_count: int
 
     model_config = ConfigDict(from_attributes=True)

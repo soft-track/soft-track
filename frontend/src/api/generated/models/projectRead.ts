@@ -18,4 +18,6 @@ export interface ProjectRead {
   state: ProjectState;
   archived: boolean;
   created_at: string;
+  issue_count: number;
+  completed_issue_count: number;
 }

@@ -224,6 +224,7 @@ def create_issue(
 ) -> IssueRead:
     team = get_team_or_404(team_id, session)
     require_team_member(team_id, current_user, session)
+    _require_on_team(session, Project, payload.project_id, team_id, "project")
 
     number = team.next_issue_number
     team.next_issue_number = number + 1
@@ -414,6 +415,10 @@ def _apply_update(
         # Validate before assigning, so a rejected parent leaves the issue
         # exactly as it was rather than half-updated.
         validate_parent(session, issue, data["parent_id"])
+    # The check the bulk edit makes up front, made here for the single PATCH
+    # too: another team's project satisfies the foreign key, and would file
+    # the issue under an epic its own team cannot open.
+    _require_on_team(session, Project, data.get("project_id"), issue.team_id, "project")
     for field, value in data.items():
         setattr(issue, field, value)
     issue.updated_at = datetime.now(timezone.utc)

@@ -7,6 +7,7 @@ import {
   useBulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost,
 } from '@/api/generated/endpoints/issues/issues'
 import type { IssueBulkChanges, TeamRead } from '@/api/generated/models'
+import { invalidateProjects } from '@/team/projects'
 
 /**
  * Change or delete many issues in one request.
@@ -30,6 +31,7 @@ export function useBulkEdit(team: TeamRead | undefined) {
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/issues`] })
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/cycles`] })
+    invalidateProjects(queryClient, team.id)
     queryClient.invalidateQueries({
       predicate: (query) =>
         typeof query.queryKey[0] === 'string' && query.queryKey[0].startsWith('/issues/'),

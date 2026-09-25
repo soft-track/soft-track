@@ -11,11 +11,13 @@ import {
   PRIORITY_ORDER,
 } from '@/issues/issueMeta'
 import { activeMembers } from '@/team/members'
+import { pickableProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Select } from '@/ui/Select'
 
 /**
- * The block of selects: status, priority, estimate, cycle, assignee, labels.
+ * The block of selects: status, priority, estimate, cycle, project, assignee,
+ * labels.
  *
  * Each carries a `data-field` so the panel's single-key shortcuts can focus
  * it -- see usePanelShortcuts.
@@ -31,7 +33,7 @@ export function IssueProperties({
   currentLabelIds: Set<number>
   onToggleLabel: (labelId: number) => void
 }) {
-  const { members, labels, cycles, statuses } = useTeamContext()
+  const { members, labels, cycles, statuses, projects } = useTeamContext()
 
   return (
     <div className="well mt-5 grid gap-x-4 gap-y-3 rounded-card p-3 sm:grid-cols-2">
@@ -101,6 +103,24 @@ export function IssueProperties({
                 {cycle.display_name}
               </option>
             ))}
+        </Select>
+      </Row>
+
+      <Row label="Project">
+        <Select
+          dense
+          data-field="project"
+          value={issue.project_id ?? ''}
+          onChange={(e) => patch({ project_id: e.target.value ? Number(e.target.value) : null })}
+        >
+          <option value="">No project</option>
+          {/* An archived project is not offered for new work, but the one this
+              issue is already in stays listed -- see pickableProjects. */}
+          {pickableProjects(projects, issue.project_id).map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.name}
+            </option>
+          ))}
         </Select>
       </Row>
 

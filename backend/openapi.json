@@ -8114,6 +8114,14 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "issue_count": {
+            "type": "integer",
+            "title": "Issue Count"
+          },
+          "completed_issue_count": {
+            "type": "integer",
+            "title": "Completed Issue Count"
           }
         },
         "type": "object",
@@ -8124,7 +8132,9 @@
           "color",
           "state",
           "archived",
-          "created_at"
+          "created_at",
+          "issue_count",
+          "completed_issue_count"
         ],
         "title": "ProjectRead"
       },

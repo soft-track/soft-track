@@ -8,6 +8,7 @@ import {
 import type { IssueRead, IssueUpdate } from '@/api/generated/models'
 import { toggleTaskAtOffset } from '@/markdown/tasks'
 import { activeMembers } from '@/team/members'
+import { invalidateProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
 
 /**
@@ -49,6 +50,8 @@ export function useIssueEditor(issueId: number) {
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
     // Cycle progress moves whenever an issue's status or cycle changes.
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/cycles`] })
+    // And project progress whenever its status or project does.
+    invalidateProjects(queryClient, team.id)
   }
 
   const saveTitle = () => {

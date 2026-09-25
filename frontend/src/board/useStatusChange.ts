@@ -5,6 +5,7 @@ import {
   useUpdateIssueIssuesIssueIdPatch,
 } from '@/api/generated/endpoints/issues/issues'
 import type { IssueRead, StatusRead, TeamRead } from '@/api/generated/models'
+import { invalidateProjects } from '@/team/projects'
 
 /** The shape the list endpoint caches: a page, not a bare array. */
 type IssuePage = { items: IssueRead[]; total: number; limit: number; offset: number }
@@ -43,6 +44,7 @@ export function useStatusChange(
       // Moving a card moves its points between columns.
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/cycles`] })
+      invalidateProjects(queryClient, team.id)
     } catch {
       queryClient.setQueryData(queryKey, previous)
     }

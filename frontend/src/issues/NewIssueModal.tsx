@@ -10,7 +10,7 @@ import {
 } from '@/issues/issueMeta'
 import { MarkdownEditor } from '@/markdown/lazy'
 import { activeMembers } from '@/team/members'
-import { pickableProjects } from '@/team/projects'
+import { invalidateProjects, pickableProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
@@ -58,6 +58,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
         },
       })
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/issues`] })
+      invalidateProjects(queryClient, team.id)
       onClose()
     } catch {
       setError('Could not create the issue. Please try again.')
