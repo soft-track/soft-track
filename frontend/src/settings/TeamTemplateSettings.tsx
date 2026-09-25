@@ -14,6 +14,7 @@ import { useListTeamMembersTeamsTeamIdMembersGet } from '@/api/generated/endpoin
 import type { IssueTemplateRead, TeamRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
+import { useTranslation } from '@/i18n'
 import { useTeamByKey } from '@/team/useTeams'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
@@ -28,6 +29,7 @@ export default function TeamTemplateSettings() {
   const { teamKey } = useParams()
   const { team, isLoading } = useTeamByKey(teamKey)
   const { user } = useAuth()
+  const { t } = useTranslation(['settings', 'common'])
 
   const members = useListTeamMembersTeamsTeamIdMembersGet(team?.id ?? 0, {
     query: { enabled: Boolean(team) },
@@ -39,7 +41,7 @@ export default function TeamTemplateSettings() {
   if (!team) {
     return (
       <div className="glass-strong rounded-panel p-6 text-sm text-neutral-500">
-        That team does not exist, or you are not a member of it.
+        {t('common:teamNotFound')}
       </div>
     )
   }
@@ -47,6 +49,7 @@ export default function TeamTemplateSettings() {
 }
 
 function TemplateList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
   const queryClient = useQueryClient()
   const query = useListTemplatesTeamsTeamIdIssueTemplatesGet(team.id)
   const create = useCreateTemplateTeamsTeamIdIssueTemplatesPost()
@@ -86,17 +89,17 @@ function TemplateList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
           teamId: team.id,
           data: { template_ids: next.map((template) => template.id) },
         }),
-      'Could not reorder the templates.',
+      t('templates.errors.reorder'),
     )
   }
 
   const onDelete = (template: IssueTemplateRead) => {
-    if (!window.confirm(`Delete the “${template.name}” template? Issues filed from it keep their text.`)) {
+    if (!window.confirm(t('templates.confirmDelete', { name: template.name }))) {
       return
     }
     return run(
       () => remove.mutateAsync({ templateId: template.id }),
-      'Could not delete that template.',
+      t('templates.errors.delete'),
     )
   }
 
@@ -104,11 +107,10 @@ function TemplateList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
 
   return (
     <div className="glass-strong sheen rounded-panel p-6">
-      <h1 className="text-lg font-semibold tracking-tight text-neutral-900">Issue templates</h1>
-      <p className="mt-1 text-sm text-neutral-500">
-        Starting points for a new issue’s description on {team.name}. Choosing one in the
-        new-issue form fills the description, and it can be edited freely from there.
-      </p>
+      <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
+        {t('templates.title')}
+      </h1>
+      <p className="mt-1 text-sm text-neutral-500">{t('templates.intro', { team: team.name })}</p>
 
       {error && (
         <div
@@ -121,9 +123,7 @@ function TemplateList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
 
       {templates.length === 0 && editing !== 'new' && (
         <p className="well mt-5 rounded-control px-3 py-3 text-sm text-neutral-500">
-          {isAdmin
-            ? 'No templates yet. A bug report with repro steps is the usual first one.'
-            : 'This team has no templates.'}
+          {isAdmin ? t('templates.emptyAdmin') : t('templates.emptyMember')}
         </p>
       )}
 
@@ -133,12 +133,12 @@ function TemplateList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
             <li key={template.id}>
               <TemplateForm
                 initial={template}
-                submitLabel="Save"
+                submitLabel={t('common:save')}
                 onCancel={() => setEditing(null)}
                 onSubmit={async (data) => {
                   const ok = await run(
                     () => update.mutateAsync({ templateId: template.id, data }),
-                    'Could not save that template.',
+                    t('templates.errors.save'),
                   )
                   if (ok) setEditing(null)
                 }}
@@ -158,7 +158,7 @@ function TemplateList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
                     type="button"
                     onClick={() => move(index, -1)}
                     disabled={index === 0}
-                    aria-label={`Move ${template.name} up`}
+                    aria-label={t('templates.moveUp', { name: template.name })}
                     className="btn btn-ghost btn-icon btn-xs text-neutral-400 disabled:opacity-30"
                   >
                     <Icon name="chevron-up" size={13} />
@@ -167,7 +167,7 @@ function TemplateList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
                     type="button"
                     onClick={() => move(index, 1)}
                     disabled={index === templates.length - 1}
-                    aria-label={`Move ${template.name} down`}
+                    aria-label={t('templates.moveDown', { name: template.name })}
                     className="btn btn-ghost btn-icon btn-xs text-neutral-400 disabled:opacity-30"
                   >
                     <Icon name="chevron-down" size={13} />
@@ -177,12 +177,12 @@ function TemplateList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
                     onClick={() => setEditing(template.id)}
                     className="btn btn-ghost btn-xs"
                   >
-                    Edit
+                    {t('common:edit')}
                   </button>
                   <button
                     type="button"
                     onClick={() => onDelete(template)}
-                    aria-label={`Delete ${template.name}`}
+                    aria-label={t('templates.deleteNamed', { name: template.name })}
                     className="btn btn-ghost btn-icon btn-xs text-neutral-400 hover:text-danger-600"
                   >
                     <Icon name="trash" size={13} />
@@ -198,12 +198,12 @@ function TemplateList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
         (editing === 'new' ? (
           <div className="mt-3">
             <TemplateForm
-              submitLabel="Add template"
+              submitLabel={t('templates.addTemplate')}
               onCancel={() => setEditing(null)}
               onSubmit={async (data) => {
                 const ok = await run(
                   () => create.mutateAsync({ teamId: team.id, data }),
-                  'Could not add that template.',
+                  t('templates.errors.add'),
                 )
                 if (ok) setEditing(null)
               }}
@@ -216,12 +216,12 @@ function TemplateList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
             className="btn btn-secondary btn-sm mt-3"
           >
             <Icon name="plus" size={13} />
-            Add a template
+            {t('templates.addATemplate')}
           </button>
         ))}
 
       {!isAdmin && (
-        <p className="mt-4 text-xs text-neutral-400">Only team admins can change the templates.</p>
+        <p className="mt-4 text-xs text-neutral-400">{t('templates.adminsOnly')}</p>
       )}
     </div>
   )
@@ -238,6 +238,7 @@ function TemplateForm({
   onSubmit: (data: { name: string; body: string }) => Promise<void>
   onCancel: () => void
 }) {
+  const { t } = useTranslation(['settings', 'common'])
   const [name, setName] = useState(initial?.name ?? '')
   const [body, setBody] = useState(initial?.body ?? '')
   const [saving, setSaving] = useState(false)
@@ -256,34 +257,34 @@ function TemplateForm({
   return (
     <form onSubmit={submit} className="well space-y-3 rounded-card p-3">
       <label className="block">
-        <span className="eyebrow mb-1 block">Name</span>
+        <span className="eyebrow mb-1 block">{t('templates.form.nameLabel')}</span>
         <input
           autoFocus
           required
           maxLength={60}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Bug report"
+          placeholder={t('templates.form.namePlaceholder')}
           className="field field-sm"
         />
       </label>
       <label className="block">
-        <span className="eyebrow mb-1 block">Description (Markdown)</span>
+        <span className="eyebrow mb-1 block">{t('templates.form.bodyLabel')}</span>
         <textarea
           required
           rows={8}
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder={'## Steps to reproduce\n\n1. \n\n## Expected\n\n## Actual'}
+          placeholder={t('templates.form.bodyPlaceholder')}
           className="field field-sm identifier"
         />
       </label>
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="btn btn-secondary btn-sm">
-          Cancel
+          {t('common:cancel')}
         </button>
         <button type="submit" disabled={saving} className="btn btn-primary btn-sm">
-          {saving ? 'Saving…' : submitLabel}
+          {saving ? t('common:saving') : submitLabel}
         </button>
       </div>
     </form>

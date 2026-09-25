@@ -1,0 +1,72 @@
+/** Settings → Team → Automation. */
+export const automation = {
+  title: 'Automation',
+  intro: 'Rules that do {{team}}’s bookkeeping for it.',
+  explainer:
+    'A rule is one <strong>trigger</strong>, any number of <strong>conditions</strong>, and the <strong>actions</strong> to take on an issue that matches. Rules run in the order they are listed, and a rule’s own changes never set off another rule — so one thing happening is one pass, and two rules can never chase each other. Everything a rule does is in the log below.',
+  empty: 'No rules yet. Nothing happens on this team that somebody did not do.',
+  isOn: '{{name}} is on',
+  editNamed: 'Edit {{name}}',
+  deleteNamed: 'Delete {{name}}',
+  deleteHint: 'Delete this rule. What it has already done stays in the log.',
+  addRule: 'Add a rule',
+  adminsOnly: 'Only team admins can change the rules. Anyone can read them, and the log below.',
+  errors: {
+    toggle: 'Could not switch that rule.',
+    delete: 'Could not delete that rule.',
+    save: 'Could not save that rule.',
+  },
+  // A rule read back as a sentence. The trigger, conditions and actions come
+  // from automations/ruleText.ts.
+  sentence: {
+    then: 'When {{trigger}}, {{actions}}.',
+    ifThen: 'When {{trigger}}, if {{conditions}}, {{actions}}.',
+    lostAction:
+      'When {{trigger}}, <danger>do nothing — this rule lost its action and was switched off</danger>.',
+    ifLostAction:
+      'When {{trigger}}, if {{conditions}}, <danger>do nothing — this rule lost its action and was switched off</danger>.',
+    needsAction: 'When {{trigger}} — this rule needs at least one action.',
+    ifNeedsAction: 'When {{trigger}}, if {{conditions}} — this rule needs at least one action.',
+  },
+  runLog: {
+    title: 'Recent activity',
+    empty: 'Nothing yet. Every change a rule makes is recorded here.',
+    entry: '<rule>{{rule}}</rule> on <issue>{{identifier}}</issue> <muted>{{title}}</muted>',
+    entryDeleted:
+      '<rule>{{rule}}</rule><muted> (deleted)</muted> on <issue>{{identifier}}</issue> <muted>{{title}}</muted>',
+    after: 'after {{name}}',
+    noOne: 'no one',
+  },
+  editor: {
+    editTitle: 'Edit “{{name}}”',
+    newTitle: 'New rule',
+    nameLabel: 'Name',
+    namePlaceholder: 'Triage urgent bugs',
+    whenLabel: 'When',
+    ifLegend: 'If — leave blank for “any issue”',
+    statusIs: 'Status is',
+    priorityIs: 'Priority is',
+    typeIs: 'Type is',
+    hasLabel: 'Has the label',
+    inProject: 'In the project',
+    assignedTo: 'Assigned to',
+    any: 'Any',
+    anyone: 'Anyone',
+    nobody: 'Nobody',
+    thenLegend: 'Then — at least one',
+    setStatus: 'Set status to',
+    setPriority: 'Set priority to',
+    setType: 'Set type to',
+    assignTo: 'Assign to',
+    addLabel: 'Add the label',
+    moveToCycle: 'Move to cycle',
+    leaveIt: 'Leave it',
+    none: 'None',
+    activeCycle: 'Whichever cycle is active',
+    commentLabel: 'Post a comment',
+    commentPlaceholder: 'Filed outside a cycle — please size it.',
+    commentHint: 'Posted with no author, so nobody is quoted saying something they did not write.',
+    save: 'Save the rule',
+    addTo: 'Add it to {{team}}',
+  },
+} as const

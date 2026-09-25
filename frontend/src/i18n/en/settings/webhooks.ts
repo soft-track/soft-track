@@ -1,0 +1,41 @@
+/** Settings → Team → Webhooks. */
+export const webhooks = {
+  title: 'Webhooks',
+  adminsOnly: 'Webhooks are set up by a team admin — this page manages their signing secrets.',
+  intro:
+    'Post {{team}}’s events to a URL as JSON, signed with <code>X-SoftTrack-Signature</code> — an HMAC-SHA256 of the body. Failed deliveries are retried; a webhook that keeps failing is switched off until you turn it back on. Private and internal addresses are refused.',
+  payloadUrl: 'Payload URL',
+  urlPlaceholder: 'https://example.com/softtrack-webhook',
+  eventsLabel: 'Events',
+  events: {
+    issueCreated: 'Issue created',
+    issueUpdated: 'Issue updated',
+    issueStatusChanged: 'Issue status changed',
+    commentCreated: 'Comment added',
+    cycleStarted: 'Cycle started',
+    cycleCompleted: 'Cycle completed',
+  },
+  add: 'Add webhook',
+  adding: 'Adding…',
+  copySecret: 'Copy the signing secret now. It will not be shown again.',
+  summary: '{{events}} · secret {{hint}}',
+  switchedOff: 'Switched off.',
+  enabled: 'Enabled',
+  ping: 'Send a ping',
+  showDeliveries: 'Recent deliveries',
+  hideDeliveries: 'Hide recent deliveries',
+  confirmDelete: 'Delete the webhook to {{url}}?',
+  deliveries: {
+    none: 'Nothing has been sent yet.',
+    succeeded: 'succeeded',
+    failed: 'failed',
+    retrying: 'retrying (try {{attempt}})',
+    http: 'HTTP {{status}}',
+  },
+  errors: {
+    add: 'Could not add that webhook.',
+    change: 'Could not change that webhook.',
+    ping: 'Could not send a ping.',
+    delete: 'Could not delete it.',
+  },
+} as const

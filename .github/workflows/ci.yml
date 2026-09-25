@@ -113,6 +113,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Folders whose text lives in the translation catalog stay that way
+      # (#106): literal UI text in them fails here.
+      - name: No literal UI text in converted folders
+        run: npm run lint:i18n
+
       - name: Typecheck
         run: npx tsc -b --noEmit
 

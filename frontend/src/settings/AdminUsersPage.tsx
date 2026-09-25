@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { format, formatDistanceToNow } from 'date-fns'
 import { type FormEvent, useId, useState } from 'react'
 
 import {
@@ -11,6 +10,8 @@ import type { AdminUserRead } from '@/api/generated/models'
 import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
+import { Trans, userText, useTranslation } from '@/i18n'
+import { formatDate, formatRelative } from '@/i18n/format'
 import { useDebounced } from '@/search/useDebounced'
 import { DeactivatedChip } from '@/settings/RoleChip'
 import { Avatar } from '@/ui/Avatar'
@@ -21,6 +22,7 @@ import { useFocusTrap } from '@/ui/useFocusTrap'
 const PAGE_SIZE = 25
 
 export default function AdminUsersPage() {
+  const { t } = useTranslation(['settings', 'common'])
   const { user } = useAuth()
   const queryClient = useQueryClient()
 
@@ -51,17 +53,14 @@ export default function AdminUsersPage() {
       await updateUser.mutateAsync({ userId: target.id, data })
       refresh()
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not update that account.'))
+      setError(errorDetail(err, t('adminUsers.errors.update')))
     }
   }
 
   const onDeactivate = (target: AdminUserRead) => {
     if (
       target.is_active &&
-      !window.confirm(
-        `Deactivate ${target.full_name}? They will be signed out immediately and cannot ` +
-          'sign in again. Their issues, comments and history are untouched.',
-      )
+      !window.confirm(t('adminUsers.confirmDeactivate', { name: target.full_name }))
     ) {
       return
     }
@@ -74,11 +73,10 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-4">
       <div className="glass-strong sheen rounded-panel p-6">
-        <h1 className="text-lg font-semibold tracking-tight text-neutral-900">Users</h1>
-        <p className="mt-1 max-w-prose text-sm text-neutral-500">
-          Every account on this SoftTrack. Accounts are deactivated rather than deleted —
-          issues, comments and history all point at them.
-        </p>
+        <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
+          {t('adminUsers.title')}
+        </h1>
+        <p className="mt-1 max-w-prose text-sm text-neutral-500">{t('adminUsers.intro')}</p>
 
         {error && (
           <div
@@ -90,7 +88,7 @@ export default function AdminUsersPage() {
         )}
 
         <label className="relative mt-5 block max-w-sm">
-          <span className="sr-only">Search users</span>
+          <span className="sr-only">{t('adminUsers.searchLabel')}</span>
           <Icon
             name="search"
             size={14}
@@ -104,16 +102,16 @@ export default function AdminUsersPage() {
               setOffset(0)
             }}
             className="field pl-8"
-            placeholder="Name, email or username"
+            placeholder={t('adminUsers.searchPlaceholder')}
           />
         </label>
       </div>
 
       <section className="glass-strong rounded-panel p-6">
         {users.isPending ? (
-          <Loading label="Loading users…" />
+          <Loading label={t('adminUsers.loading')} />
         ) : shown.length === 0 ? (
-          <p className="text-sm text-neutral-400">No account matches that search.</p>
+          <p className="text-sm text-neutral-400">{t('adminUsers.empty')}</p>
         ) : (
           <ul className="divide-y divide-neutral-900/8">
             {shown.map((row) => {
@@ -132,19 +130,22 @@ export default function AdminUsersPage() {
                           className="chip"
                           style={{ ['--chip' as string]: 'var(--color-brand-500)' }}
                         >
-                          Site admin
+                          {t('adminUsers.siteAdmin')}
                         </span>
                       )}
                       {!row.is_active && <DeactivatedChip />}
                     </p>
                     <p className="text-xs text-neutral-400">
-                      {row.email} · {row.team_count} team{row.team_count === 1 ? '' : 's'} ·{' '}
+                      {row.email} · {t('adminUsers.teams', { count: row.team_count })} ·{' '}
                       {row.last_login_at
-                        ? `last seen ${formatDistanceToNow(parseServerDate(row.last_login_at), {
-                            addSuffix: true,
-                          })}`
-                        : 'never signed in'}{' '}
-                      · joined {format(parseServerDate(row.created_at), 'd MMM yyyy')}
+                        ? t('adminUsers.lastSeen', {
+                            when: formatRelative(parseServerDate(row.last_login_at)),
+                          })
+                        : t('adminUsers.neverSignedIn')}{' '}
+                      ·{' '}
+                      {t('adminUsers.joined', {
+                        date: formatDate(parseServerDate(row.created_at), 'd MMM yyyy'),
+                      })}
                     </p>
                   </div>
 
@@ -156,30 +157,32 @@ export default function AdminUsersPage() {
                       onClick={() => onDeactivate(row)}
                       disabled={isSelf}
                       title={
-                        isSelf ? 'You cannot deactivate your own account' : undefined
+                        isSelf ? t('adminUsers.cannotDeactivateSelf') : undefined
                       }
                       className={row.is_active ? 'btn btn-danger-ghost btn-sm' : 'btn btn-ghost btn-sm'}
                     >
-                      {row.is_active ? 'Deactivate' : 'Reactivate'}
+                      {row.is_active ? t('adminUsers.deactivate') : t('adminUsers.reactivate')}
                     </button>
                     <button
                       type="button"
                       onClick={() => patch(row, { is_site_admin: !row.is_site_admin })}
                       disabled={isSelf}
                       title={
-                        isSelf ? 'You cannot change your own site admin access' : undefined
+                        isSelf ? t('adminUsers.cannotChangeOwnAdmin') : undefined
                       }
                       className="btn btn-ghost btn-sm"
                     >
                       <Icon name="shield" size={14} />
-                      {row.is_site_admin ? 'Remove site admin' : 'Make site admin'}
+                      {row.is_site_admin
+                        ? t('adminUsers.removeSiteAdmin')
+                        : t('adminUsers.makeSiteAdmin')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setResetting(row)}
                       className="btn btn-ghost btn-sm"
                     >
-                      Reset password
+                      {t('adminUsers.resetPassword')}
                     </button>
                   </div>
                 </li>
@@ -191,7 +194,11 @@ export default function AdminUsersPage() {
         {total > PAGE_SIZE && (
           <div className="hairline mt-4 flex items-center justify-between border-t pt-4">
             <p className="text-xs text-neutral-400">
-              Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, total)} of {total}
+              {t('adminUsers.showing', {
+                from: offset + 1,
+                to: Math.min(offset + PAGE_SIZE, total),
+                total,
+              })}
             </p>
             <div className="flex gap-2">
               <button
@@ -201,7 +208,7 @@ export default function AdminUsersPage() {
                 className="btn btn-ghost btn-sm"
               >
                 <Icon name="chevron-left" size={14} />
-                Previous
+                {t('adminUsers.previous')}
               </button>
               <button
                 type="button"
@@ -209,7 +216,7 @@ export default function AdminUsersPage() {
                 onClick={() => setOffset(offset + PAGE_SIZE)}
                 className="btn btn-ghost btn-sm"
               >
-                Next
+                {t('adminUsers.next')}
                 <Icon name="chevron-right" size={14} />
               </button>
             </div>
@@ -237,6 +244,7 @@ function ResetPasswordModal({
   onClose: () => void
   onDone: () => void
 }) {
+  const { t } = useTranslation(['settings', 'common'])
   const dialogRef = useFocusTrap<HTMLFormElement>()
   const titleId = useId()
   const nameId = useId()
@@ -255,7 +263,7 @@ function ResetPasswordModal({
       onDone()
       onClose()
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not reset that password.'))
+      setError(errorDetail(err, t('adminUsers.errors.reset')))
     }
   }
 
@@ -275,16 +283,21 @@ function ResetPasswordModal({
         className="pop-in glass-strong w-full max-w-sm rounded-panel p-5"
       >
         <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
-          Reset password
+          {t('adminUsers.resetDialog.title')}
         </h2>
         <p className="mt-1 text-xs text-neutral-500">
-          Sets a new password for <strong id={nameId}>{target.full_name}</strong> and signs out every
-          session they have. There is no email — hand it over yourself.
+          <Trans
+            t={t}
+            i18nKey="adminUsers.resetDialog.body"
+            values={{ name: target.full_name }}
+            components={{ strong: <strong id={nameId} /> }}
+            {...userText}
+          />
         </p>
 
         <label className="mt-4 block">
           <span className="mb-1.5 block text-xs font-medium text-neutral-500">
-            New password
+            {t('adminUsers.resetDialog.newPassword')}
           </span>
           <input
             autoFocus
@@ -294,7 +307,7 @@ function ResetPasswordModal({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="field"
-            placeholder="At least 8 characters"
+            placeholder={t('adminUsers.resetDialog.placeholder')}
           />
         </label>
 
@@ -302,10 +315,12 @@ function ResetPasswordModal({
 
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn btn-ghost">
-            Cancel
+            {t('common:cancel')}
           </button>
           <button type="submit" disabled={resetPassword.isPending} className="btn btn-primary">
-            {resetPassword.isPending ? 'Resetting…' : 'Reset password'}
+            {resetPassword.isPending
+              ? t('adminUsers.resetDialog.submitting')
+              : t('adminUsers.resetDialog.submit')}
           </button>
         </div>
       </form>

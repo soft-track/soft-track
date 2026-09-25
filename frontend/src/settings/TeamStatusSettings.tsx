@@ -15,6 +15,7 @@ import { StatusCategory, type StatusRead, type TeamRead } from '@/api/generated/
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { CATEGORY_META, CATEGORY_ORDER } from '@/issues/issueMeta'
+import { Trans, useTranslation } from '@/i18n'
 import { useTeamByKey } from '@/team/useTeams'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
@@ -25,6 +26,7 @@ export default function TeamStatusSettings() {
   const { teamKey } = useParams()
   const { team, isLoading } = useTeamByKey(teamKey)
   const { user } = useAuth()
+  const { t } = useTranslation()
 
   const members = useListTeamMembersTeamsTeamIdMembersGet(team?.id ?? 0, {
     query: { enabled: Boolean(team) },
@@ -36,7 +38,7 @@ export default function TeamStatusSettings() {
   if (!team) {
     return (
       <div className="glass-strong rounded-panel p-6 text-sm text-neutral-500">
-        That team does not exist, or you are not a member of it.
+        {t('teamNotFound')}
       </div>
     )
   }
@@ -44,6 +46,7 @@ export default function TeamStatusSettings() {
 }
 
 function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
   const queryClient = useQueryClient()
   const query = useListStatusesTeamsTeamIdStatusesGet(team.id)
   const create = useCreateStatusTeamsTeamIdStatusesPost()
@@ -85,7 +88,7 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
           teamId: team.id,
           data: { status_ids: next.map((status) => status.id) },
         }),
-      'Could not reorder the columns.',
+      t('statuses.errors.reorder'),
     )
   }
 
@@ -98,7 +101,7 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
           teamId: team.id,
           data: { name: name.trim(), category, color: CATEGORY_META[category].color },
         }),
-      'Could not add that column.',
+      t('statuses.errors.add'),
     )
     setName('')
     setAdding(false)
@@ -108,17 +111,13 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
 
   return (
     <div className="glass-strong sheen rounded-panel p-6">
-      <h1 className="text-lg font-semibold tracking-tight text-neutral-900">Statuses</h1>
-      <p className="mt-1 text-sm text-neutral-500">
-        The columns on {team.name}’s board, in order.
-      </p>
+      <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
+        {t('statuses.title')}
+      </h1>
+      <p className="mt-1 text-sm text-neutral-500">{t('statuses.intro', { team: team.name })}</p>
 
       <p className="mt-4 text-sm text-neutral-600">
-        Every status belongs to one of five fixed <strong>categories</strong>. The
-        category is what the tracker reads — whether a cycle is finished, whether a
-        blocker still blocks, what counts as delivered on a burndown — so you can call
-        a column anything and none of that has to learn its name. The five cannot be
-        added to; that is the line between a workflow and a workflow engine.
+        <Trans t={t} i18nKey="statuses.categories" components={{ strong: <strong /> }} />
       </p>
 
       {error && (
@@ -144,7 +143,7 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
             {isAdmin ? (
               <input
                 defaultValue={status.name}
-                aria-label={`Name of ${status.name}`}
+                aria-label={t('statuses.nameOf', { name: status.name })}
                 onBlur={(e) => {
                   const value = e.target.value.trim()
                   if (value && value !== status.name) {
@@ -154,7 +153,7 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
                           statusId: status.id,
                           data: { name: value },
                         }),
-                      'Could not rename that column.',
+                      t('statuses.errors.rename'),
                     )
                   }
                 }}
@@ -169,7 +168,7 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
             {isAdmin ? (
               <Select
                 dense
-                aria-label={`Category of ${status.name}`}
+                aria-label={t('statuses.categoryOf', { name: status.name })}
                 value={status.category}
                 onChange={(e) =>
                   run(
@@ -178,7 +177,7 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
                         statusId: status.id,
                         data: { category: e.target.value as StatusCategory },
                       }),
-                    'Could not change that category.',
+                    t('statuses.errors.recategorise'),
                   )
                 }
               >
@@ -200,7 +199,7 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
                   type="button"
                   onClick={() => move(index, -1)}
                   disabled={index === 0}
-                  aria-label={`Move ${status.name} earlier`}
+                  aria-label={t('statuses.moveEarlier', { name: status.name })}
                   className="btn btn-ghost btn-icon btn-xs text-neutral-400 disabled:opacity-30"
                 >
                   <Icon name="chevron-left" size={13} />
@@ -209,7 +208,7 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
                   type="button"
                   onClick={() => move(index, 1)}
                   disabled={index === statuses.length - 1}
-                  aria-label={`Move ${status.name} later`}
+                  aria-label={t('statuses.moveLater', { name: status.name })}
                   className="btn btn-ghost btn-icon btn-xs text-neutral-400 disabled:opacity-30"
                 >
                   <Icon name="chevron-right" size={13} />
@@ -220,10 +219,10 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
                   disabled={statuses.length === 1}
                   title={
                     statuses.length === 1
-                      ? 'A team needs at least one column'
-                      : `Delete ${status.name}`
+                      ? t('statuses.lastColumn')
+                      : t('statuses.deleteNamed', { name: status.name })
                   }
-                  aria-label={`Delete ${status.name}`}
+                  aria-label={t('statuses.deleteNamed', { name: status.name })}
                   className="btn btn-ghost btn-icon btn-xs text-neutral-400 hover:text-danger-600 disabled:opacity-30"
                 >
                   <Icon name="trash" size={13} />
@@ -238,19 +237,19 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
         (adding ? (
           <form onSubmit={onAdd} className="mt-3 flex flex-wrap items-end gap-2">
             <label className="min-w-40 flex-1">
-              <span className="eyebrow mb-1 block">Name</span>
+              <span className="eyebrow mb-1 block">{t('statuses.nameLabel')}</span>
               <input
                 autoFocus
                 required
                 maxLength={40}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Blocked"
+                placeholder={t('statuses.namePlaceholder')}
                 className="field field-sm"
               />
             </label>
             <label>
-              <span className="eyebrow mb-1 block">Means</span>
+              <span className="eyebrow mb-1 block">{t('statuses.meansLabel')}</span>
               <Select
                 dense
                 value={category}
@@ -258,20 +257,23 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
               >
                 {CATEGORY_ORDER.map((value) => (
                   <option key={value} value={value}>
-                    {CATEGORY_META[value].label} — {CATEGORY_META[value].hint}
+                    {t('statuses.categoryOption', {
+                      label: CATEGORY_META[value].label,
+                      hint: CATEGORY_META[value].hint,
+                    })}
                   </option>
                 ))}
               </Select>
             </label>
             <button type="submit" className="btn btn-primary btn-sm">
-              Add
+              {t('common:add')}
             </button>
             <button
               type="button"
               onClick={() => setAdding(false)}
               className="btn btn-secondary btn-sm"
             >
-              Cancel
+              {t('common:cancel')}
             </button>
           </form>
         ) : (
@@ -281,13 +283,13 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
             className="btn btn-secondary btn-sm mt-3"
           >
             <Icon name="plus" size={13} />
-            Add a status
+            {t('statuses.addStatus')}
           </button>
         ))}
 
       {!isAdmin && (
         <p className="mt-4 text-xs text-neutral-400">
-          Only team admins can change the board’s columns.
+          {t('statuses.adminsOnly')}
         </p>
       )}
 
@@ -303,7 +305,7 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
                   statusId: deleting.id,
                   data: { move_to_id: moveToId },
                 }),
-              'Could not delete that column.',
+              t('statuses.errors.delete'),
             )
             setDeleting(null)
           }}
@@ -331,6 +333,7 @@ function DeleteStatusModal({
   onClose: () => void
   onConfirm: (moveToId: number) => Promise<void>
 }) {
+  const { t } = useTranslation(['settings', 'common'])
   const dialogRef = useFocusTrap<HTMLFormElement>()
   const titleId = useId()
   const options = statuses.filter((other) => other.id !== status.id)
@@ -355,15 +358,15 @@ function DeleteStatusModal({
         className="pop-in glass-strong w-full max-w-sm rounded-panel p-5"
       >
         <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
-          Delete “{status.name}”
+          {t('statuses.deleteDialog.title', { name: status.name })}
         </h2>
         <p className="mt-1 text-sm text-neutral-500">
-          Any issues in it have to go somewhere. Nothing is deleted but the column.
+          {t('statuses.deleteDialog.body')}
         </p>
 
         <label className="mt-4 block">
           <span className="mb-1.5 block text-xs font-medium text-neutral-500">
-            Move its issues to
+            {t('statuses.deleteDialog.moveTo')}
           </span>
           <Select block value={moveToId} onChange={(e) => setMoveToId(e.target.value)}>
             {options.map((option) => (
@@ -376,10 +379,10 @@ function DeleteStatusModal({
 
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn btn-secondary btn-sm">
-            Cancel
+            {t('common:cancel')}
           </button>
           <button type="submit" className="btn btn-primary btn-sm">
-            Delete the column
+            {t('statuses.deleteDialog.confirm')}
           </button>
         </div>
       </form>

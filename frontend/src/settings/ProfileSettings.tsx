@@ -7,6 +7,7 @@ import {
 } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
+import { Trans, userText, useTranslation } from '@/i18n'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 
@@ -23,6 +24,7 @@ const AVATAR_COLORS = [
 
 export default function ProfileSettings() {
   const { user } = useAuth()
+  const { t } = useTranslation(['settings', 'common'])
   const queryClient = useQueryClient()
   const updateMe = useUpdateMeAuthMePatch()
 
@@ -65,7 +67,7 @@ export default function ProfileSettings() {
       setCurrentPassword('')
       setSaved(true)
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not save your profile.'))
+      setError(errorDetail(err, t('profile.errors.save')))
     }
   }
 
@@ -73,10 +75,10 @@ export default function ProfileSettings() {
 
   return (
     <form onSubmit={onSubmit} className="glass-strong sheen rounded-panel p-6">
-      <h1 className="text-lg font-semibold tracking-tight text-neutral-900">Profile</h1>
-      <p className="mt-1 text-sm text-neutral-500">
-        How you appear to everyone else on this SoftTrack.
-      </p>
+      <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
+        {t('profile.title')}
+      </h1>
+      <p className="mt-1 text-sm text-neutral-500">{t('profile.intro')}</p>
 
       {error && (
         <div
@@ -89,13 +91,15 @@ export default function ProfileSettings() {
       {saved && !error && (
         <p className="mt-4 flex items-center gap-1.5 text-sm text-neutral-500">
           <Icon name="check" size={14} className="text-accent-mint" />
-          Saved.
+          {t('profile.saved')}
         </p>
       )}
 
       <div className="mt-6 space-y-5">
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-neutral-700">Full name</span>
+          <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+            {t('profile.fullName')}
+          </span>
           <input
             required
             value={fullName}
@@ -105,7 +109,9 @@ export default function ProfileSettings() {
         </label>
 
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-neutral-700">Username</span>
+          <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+            {t('profile.username')}
+          </span>
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-400">
               @
@@ -123,13 +129,20 @@ export default function ProfileSettings() {
             />
           </div>
           <span className="mt-1.5 block text-xs text-neutral-400">
-            2–39 characters. Letters, digits, dots, dashes and underscores. This is what
-            <code className="identifier"> @{username || 'you'}</code> resolves to in comments.
+            <Trans
+              t={t}
+              i18nKey="profile.usernameHint"
+              values={{ username: username || t('profile.usernameFallback') }}
+              components={{ handle: <code className="identifier" /> }}
+              {...userText}
+            />
           </span>
         </label>
 
         <div>
-          <span className="mb-1.5 block text-sm font-medium text-neutral-700">Avatar colour</span>
+          <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+            {t('profile.avatarColour')}
+          </span>
           <div className="flex flex-wrap items-center gap-3">
             <Avatar user={preview} size={40} />
             <div className="flex flex-wrap gap-2">
@@ -138,7 +151,7 @@ export default function ProfileSettings() {
                   key={color}
                   type="button"
                   onClick={() => setAvatarColor(color)}
-                  aria-label={`Use ${color}`}
+                  aria-label={t('profile.useColour', { color })}
                   aria-pressed={avatarColor.toLowerCase() === color}
                   className="h-7 w-7 rounded-full transition-transform hover:scale-110"
                   style={{
@@ -155,7 +168,9 @@ export default function ProfileSettings() {
         </div>
 
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-neutral-700">Email</span>
+          <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+            {t('profile.email')}
+          </span>
           <input
             type="email"
             required
@@ -169,7 +184,7 @@ export default function ProfileSettings() {
         {confirmWithPassword && (
           <label className="well block rounded-control p-3">
             <span className="mb-1.5 block text-sm font-medium text-neutral-700">
-              Current password
+              {t('profile.currentPassword')}
             </span>
             <input
               type="password"
@@ -178,11 +193,10 @@ export default function ProfileSettings() {
               onChange={(e) => setCurrentPassword(e.target.value)}
               className="field"
               autoComplete="current-password"
-              placeholder="Confirm it is you"
+              placeholder={t('profile.currentPasswordPlaceholder')}
             />
             <span className="mt-1.5 block text-xs text-neutral-400">
-              Your email is the address a password reset would go to, so changing it needs
-              your password.
+              {t('profile.currentPasswordHint')}
             </span>
           </label>
         )}
@@ -190,7 +204,7 @@ export default function ProfileSettings() {
 
       <div className="mt-6 flex justify-end">
         <button type="submit" disabled={updateMe.isPending} className="btn btn-primary">
-          {updateMe.isPending ? 'Saving…' : 'Save changes'}
+          {updateMe.isPending ? t('common:saving') : t('profile.saveChanges')}
         </button>
       </div>
     </form>

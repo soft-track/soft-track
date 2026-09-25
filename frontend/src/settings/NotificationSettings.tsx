@@ -7,6 +7,7 @@ import {
   useUpdateNotificationSettingsNotificationsSettingsPatch,
 } from '@/api/generated/endpoints/notifications/notifications'
 import { errorDetail } from '@/api/errors'
+import { Trans, useTranslation } from '@/i18n'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 
@@ -18,6 +19,7 @@ import { Loading } from '@/ui/Loading'
  * per-issue mute (the Watch button) is the control people actually reach for.
  */
 export default function NotificationSettings() {
+  const { t } = useTranslation(['settings', 'common'])
   const queryClient = useQueryClient()
   const settingsQuery = useGetNotificationSettingsNotificationsSettingsGet()
   const update = useUpdateNotificationSettingsNotificationsSettingsPatch()
@@ -40,16 +42,16 @@ export default function NotificationSettings() {
         queryKey: getGetNotificationSettingsNotificationsSettingsGetQueryKey(),
       })
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not save that.'))
+      setError(errorDetail(err, t('notifications.errors.save')))
     }
   }
 
   return (
     <div className="glass-strong sheen rounded-panel p-6">
-      <h1 className="text-lg font-semibold tracking-tight text-neutral-900">Notifications</h1>
-      <p className="mt-1 text-sm text-neutral-500">
-        What reaches you, and where.
-      </p>
+      <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
+        {t('notifications.title')}
+      </h1>
+      <p className="mt-1 text-sm text-neutral-500">{t('notifications.intro')}</p>
 
       {error && (
         <div
@@ -61,20 +63,13 @@ export default function NotificationSettings() {
       )}
 
       <div className="mt-6">
-        <p className="eyebrow mb-2">In the app</p>
-        <p className="text-sm text-neutral-600">
-          You are told when an issue is assigned to you, when someone mentions you, and
-          when an issue you are watching gets a comment or changes status. You watch an
-          issue automatically once you create it, comment on it, or are assigned it —
-          and the Watch button on any issue overrides that either way.
-        </p>
-        <p className="mt-2 text-sm text-neutral-500">
-          This cannot be turned off; the inbox is how the tracker reaches you at all.
-        </p>
+        <p className="eyebrow mb-2">{t('notifications.inApp.heading')}</p>
+        <p className="text-sm text-neutral-600">{t('notifications.inApp.body')}</p>
+        <p className="mt-2 text-sm text-neutral-500">{t('notifications.inApp.alwaysOn')}</p>
       </div>
 
       <div className="hairline mt-6 border-t pt-6">
-        <p className="eyebrow mb-2">By email</p>
+        <p className="eyebrow mb-2">{t('notifications.email.heading')}</p>
         {settings.email_delivery_configured ? (
           <>
             <label className="flex items-start gap-3">
@@ -87,18 +82,17 @@ export default function NotificationSettings() {
               />
               <span>
                 <span className="block text-sm font-medium text-neutral-700">
-                  Send me a digest
+                  {t('notifications.email.digest')}
                 </span>
                 <span className="mt-0.5 block text-xs text-neutral-500">
-                  One email gathering up anything you have not already read. Nothing is
-                  sent while you are keeping up with the inbox yourself.
+                  {t('notifications.email.digestHint')}
                 </span>
               </span>
             </label>
             {settings.email_notifications && (
               <p className="mt-3 flex items-center gap-1.5 text-xs text-neutral-400">
                 <Icon name="mail" size={13} />
-                Digests go to the address on your profile.
+                {t('notifications.email.destination')}
               </p>
             )}
           </>
@@ -107,9 +101,11 @@ export default function NotificationSettings() {
           // change anything reads as a bug in the app rather than a missing
           // setting on the server.
           <p className="text-sm text-neutral-500">
-            This SoftTrack has no mail server configured, so nothing is sent by email.
-            An administrator can set <code className="identifier">SMTP_HOST</code> to
-            turn digests on.
+            <Trans
+              t={t}
+              i18nKey="notifications.email.notConfigured"
+              components={{ code: <code className="identifier" /> }}
+            />
           </p>
         )}
       </div>

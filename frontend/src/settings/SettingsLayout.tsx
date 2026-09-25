@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/auth/useAuth'
+import { useTranslation } from '@/i18n'
 import { useMyTeams } from '@/team/useTeams'
 import { Icon, type IconName } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
@@ -22,6 +23,7 @@ export default function SettingsLayout() {
   const { data: teams, isLoading } = useMyTeams()
   const location = useLocation()
   const navigate = useNavigate()
+  const { t } = useTranslation(['settings', 'common'])
 
   if (isLoading || !user) {
     return (
@@ -33,49 +35,53 @@ export default function SettingsLayout() {
 
   const groups: Group[] = [
     {
-      title: 'Account',
+      title: t('layout.groups.account'),
       entries: [
-        { to: '/settings/profile', label: 'Profile', icon: 'users' },
-        { to: '/settings/notifications', label: 'Notifications', icon: 'bell' },
-        { to: '/settings/security', label: 'Security', icon: 'shield' },
+        { to: '/settings/profile', label: t('layout.nav.profile'), icon: 'users' },
+        {
+          to: '/settings/notifications',
+          label: t('layout.nav.notifications'),
+          icon: 'bell',
+        },
+        { to: '/settings/security', label: t('layout.nav.security'), icon: 'shield' },
       ],
     },
     ...(teams ?? []).map((team) => ({
-      title: `${team.name} · ${team.key}`,
+      title: t('layout.teamGroup', { team: team.name, teamKey: team.key }),
       entries: [
         {
           to: `/settings/teams/${team.key}/members`,
-          label: 'Members',
+          label: t('layout.nav.members'),
           icon: 'users' as IconName,
         },
         {
           to: `/settings/teams/${team.key}/statuses`,
-          label: 'Statuses',
+          label: t('layout.nav.statuses'),
           icon: 'board' as IconName,
         },
         {
           to: `/settings/teams/${team.key}/templates`,
-          label: 'Templates',
+          label: t('layout.nav.templates'),
           icon: 'task' as IconName,
         },
         {
           to: `/settings/teams/${team.key}/automation`,
-          label: 'Automation',
+          label: t('layout.nav.automation'),
           icon: 'sparkle' as IconName,
         },
         {
           to: `/settings/teams/${team.key}/repositories`,
-          label: 'Repositories',
+          label: t('layout.nav.repositories'),
           icon: 'branch' as IconName,
         },
         {
           to: `/settings/teams/${team.key}/webhooks`,
-          label: 'Webhooks',
+          label: t('layout.nav.webhooks'),
           icon: 'link' as IconName,
         },
         {
           to: `/settings/teams/${team.key}/general`,
-          label: 'General',
+          label: t('layout.nav.general'),
           icon: 'settings' as IconName,
         },
       ],
@@ -83,9 +89,13 @@ export default function SettingsLayout() {
     ...(user.is_site_admin
       ? [
           {
-            title: 'Administration',
+            title: t('layout.groups.administration'),
             entries: [
-              { to: '/settings/admin/users', label: 'Users', icon: 'shield' as IconName },
+              {
+                to: '/settings/admin/users',
+                label: t('layout.nav.users'),
+                icon: 'shield' as IconName,
+              },
             ],
           },
         ]
@@ -105,7 +115,7 @@ export default function SettingsLayout() {
           className="btn btn-ghost btn-sm text-neutral-500"
         >
           <Icon name="chevron-left" size={14} />
-          Back to board
+          {t('layout.backToBoard')}
         </button>
       </div>
 
@@ -115,7 +125,7 @@ export default function SettingsLayout() {
         <div className="lg:hidden">
           <Select
             block
-            aria-label="Settings section"
+            aria-label={t('layout.sectionLabel')}
             value={
               allEntries.find((entry) => location.pathname.startsWith(entry.to))?.to ??
               '/settings/profile'

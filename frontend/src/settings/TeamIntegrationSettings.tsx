@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { formatDistanceToNow } from 'date-fns'
 import { type FormEvent, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
@@ -15,33 +14,40 @@ import { GitProvider, type RepositoryRead, type TeamRead } from '@/api/generated
 import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
+import { Trans, userText, useTranslation } from '@/i18n'
+import { formatRelative } from '@/i18n/format'
 import { useTeamByKey } from '@/team/useTeams'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 import { Select } from '@/ui/Select'
 
-const PROVIDER_META: Record<
-  GitProvider,
-  { label: string; placeholder: string; secretField: string; where: string }
-> = {
+// `label` is the product's own name and stays as it is; the rest are catalog
+// keys, resolved with `t` where they are shown.
+const PROVIDER_META = {
   github: {
     label: 'GitHub',
-    placeholder: 'acme/api',
-    secretField: 'Secret',
-    where: 'Settings → Webhooks → Add webhook',
+    placeholder: 'integrations.providers.github.placeholder',
+    secretField: 'integrations.providers.github.secretField',
+    where: 'integrations.providers.github.where',
+    setup: 'integrations.providers.github.setup',
   },
   gitlab: {
     label: 'GitLab',
-    placeholder: 'acme/api',
-    secretField: 'Secret token',
-    where: 'Settings → Webhooks',
+    placeholder: 'integrations.providers.gitlab.placeholder',
+    secretField: 'integrations.providers.gitlab.secretField',
+    where: 'integrations.providers.gitlab.where',
+    setup: 'integrations.providers.gitlab.setup',
   },
-}
+} as const satisfies Record<
+  GitProvider,
+  { label: string; placeholder: string; secretField: string; where: string; setup: string }
+>
 
 export default function TeamIntegrationSettings() {
   const { teamKey } = useParams()
   const { team, isLoading } = useTeamByKey(teamKey)
   const { user } = useAuth()
+  const { t } = useTranslation(['settings', 'common'])
 
   const members = useListTeamMembersTeamsTeamIdMembersGet(team?.id ?? 0, {
     query: { enabled: Boolean(team) },
@@ -53,7 +59,7 @@ export default function TeamIntegrationSettings() {
   if (!team) {
     return (
       <div className="glass-strong rounded-panel p-6 text-sm text-neutral-500">
-        That team does not exist, or you are not a member of it.
+        {t('common:teamNotFound')}
       </div>
     )
   }
@@ -64,13 +70,9 @@ export default function TeamIntegrationSettings() {
     return (
       <div className="glass-strong rounded-panel p-6">
         <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
-          Repositories
+          {t('integrations.title')}
         </h1>
-        <p className="mt-2 text-sm text-neutral-500">
-          Connecting a repository is a team admin’s job — this page shows webhook
-          secrets, so it is not readable by the whole team. The branches and pull
-          requests themselves show up on the issues, for everybody.
-        </p>
+        <p className="mt-2 text-sm text-neutral-500">{t('integrations.adminsOnly')}</p>
       </div>
     )
   }
@@ -78,6 +80,7 @@ export default function TeamIntegrationSettings() {
 }
 
 function Repositories({ team }: { team: TeamRead }) {
+  const { t } = useTranslation(['settings', 'common'])
   const queryClient = useQueryClient()
   const query = useListRepositoriesTeamsTeamIdRepositoriesGet(team.id)
   const create = useCreateRepositoryTeamsTeamIdRepositoriesPost()
@@ -115,7 +118,7 @@ function Repositories({ team }: { team: TeamRead }) {
           teamId: team.id,
           data: { provider, full_name: fullName.trim() },
         }),
-      'Could not connect that repository.',
+      t('integrations.errors.connect'),
     )
     setFullName('')
     setAdding(false)
@@ -126,30 +129,31 @@ function Repositories({ team }: { team: TeamRead }) {
   return (
     <div className="glass-strong sheen rounded-panel p-6">
       <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
-        Repositories
+        {t('integrations.title')}
       </h1>
       <p className="mt-1 text-sm text-neutral-500">
-        Connect {team.name}’s code so its issues know about it.
+        {t('integrations.intro', { team: team.name })}
       </p>
 
       <p className="mt-4 text-sm text-neutral-600">
-        Put <span className="identifier">{team.key}-42</span> in a branch name, a
-        commit message or a pull request title, and that branch, commit or pull
-        request shows up on issue {team.key}-42. Nothing else to fill in — the
-        connection is already in the text you were going to write.
+        <Trans
+          t={t}
+          i18nKey="integrations.howItWorks"
+          values={{ key: team.key }}
+          {...userText}
+          components={{ issue: <span className="identifier" /> }}
+        />
       </p>
       <p className="mt-2 text-sm text-neutral-600">
-        To move the issue as well — to In&nbsp;Review when the pull request opens, to
-        Done when it merges — write an{' '}
-        <a href={`/settings/teams/${team.key}/automation`} className="underline">
-          automation rule
-        </a>{' '}
-        with one of the repository triggers.
+        <Trans
+          t={t}
+          i18nKey="integrations.automation"
+          components={{
+            rule: <a href={`/settings/teams/${team.key}/automation`} className="underline" />,
+          }}
+        />
       </p>
-      <p className="mt-2 text-xs text-neutral-400">
-        SoftTrack never clones your code and holds no access token. It is sent
-        webhooks, verifies their signature, and reads the text.
-      </p>
+      <p className="mt-2 text-xs text-neutral-400">{t('integrations.privacy')}</p>
 
       {error && (
         <div
@@ -161,9 +165,7 @@ function Repositories({ team }: { team: TeamRead }) {
       )}
 
       {repositories.length === 0 ? (
-        <p className="mt-5 text-sm text-neutral-400">
-          No repositories connected yet.
-        </p>
+        <p className="mt-5 text-sm text-neutral-400">{t('integrations.empty')}</p>
       ) : (
         <ul className="mt-5 space-y-3">
           {repositories.map((repository) => (
@@ -173,13 +175,13 @@ function Repositories({ team }: { team: TeamRead }) {
               onRotate={() =>
                 run(
                   () => rotate.mutateAsync({ repositoryId: repository.id }),
-                  'Could not rotate that secret.',
+                  t('integrations.errors.rotate'),
                 )
               }
               onDisconnect={() =>
                 run(
                   () => remove.mutateAsync({ repositoryId: repository.id }),
-                  'Could not disconnect that repository.',
+                  t('integrations.errors.disconnect'),
                 )
               }
             />
@@ -190,7 +192,7 @@ function Repositories({ team }: { team: TeamRead }) {
       {adding ? (
         <form onSubmit={onAdd} className="mt-4 flex flex-wrap items-end gap-2">
           <label>
-            <span className="eyebrow mb-1 block">Provider</span>
+            <span className="eyebrow mb-1 block">{t('integrations.providerLabel')}</span>
             <Select
               dense
               value={provider}
@@ -204,25 +206,25 @@ function Repositories({ team }: { team: TeamRead }) {
             </Select>
           </label>
           <label className="min-w-48 flex-1">
-            <span className="eyebrow mb-1 block">Repository</span>
+            <span className="eyebrow mb-1 block">{t('integrations.repositoryLabel')}</span>
             <input
               autoFocus
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder={PROVIDER_META[provider].placeholder}
+              placeholder={t(PROVIDER_META[provider].placeholder)}
               className="field field-sm w-full"
             />
           </label>
           <button type="submit" className="btn btn-primary btn-sm">
-            Connect
+            {t('integrations.connect')}
           </button>
           <button
             type="button"
             onClick={() => setAdding(false)}
             className="btn btn-secondary btn-sm"
           >
-            Cancel
+            {t('common:cancel')}
           </button>
         </form>
       ) : (
@@ -232,7 +234,7 @@ function Repositories({ team }: { team: TeamRead }) {
           className="btn btn-secondary btn-sm mt-4"
         >
           <Icon name="plus" size={13} />
-          Connect a repository
+          {t('integrations.connectRepository')}
         </button>
       )}
     </div>
@@ -248,6 +250,7 @@ function RepositoryRow({
   onRotate: () => Promise<void>
   onDisconnect: () => Promise<void>
 }) {
+  const { t } = useTranslation(['settings', 'common'])
   const [confirming, setConfirming] = useState(false)
   const meta = PROVIDER_META[repository.provider]
 
@@ -265,9 +268,8 @@ function RepositoryRow({
             actually get wrong. */}
         {repository.last_delivery_at ? (
           <span className="shrink-0 text-[11px] text-neutral-400">
-            last delivery{' '}
-            {formatDistanceToNow(parseServerDate(repository.last_delivery_at), {
-              addSuffix: true,
+            {t('integrations.lastDelivery', {
+              when: formatRelative(parseServerDate(repository.last_delivery_at)),
             })}
           </span>
         ) : (
@@ -278,31 +280,28 @@ function RepositoryRow({
             className="shrink-0 text-[11px]"
             style={{ color: 'var(--color-status-progress)' }}
           >
-            no deliveries yet
+            {t('integrations.noDeliveries')}
           </span>
         )}
       </div>
 
       <div className="mt-3 space-y-2">
-        <Copyable label="Payload URL" value={repository.webhook_url} />
-        <Copyable label={meta.secretField} value={repository.secret} secret />
+        <Copyable label={t('integrations.payloadUrl')} value={repository.webhook_url} />
+        <Copyable label={t(meta.secretField)} value={repository.secret} secret />
       </div>
 
       <p className="mt-2 text-[11px] text-neutral-400">
-        Add these under {meta.label} → {meta.where}
-        {repository.provider === 'github'
-          ? ', with content type application/json and the push and pull request events.'
-          : ', with the push and merge request events.'}
+        {t(meta.setup, { provider: meta.label, where: t(meta.where) })}
       </p>
 
       <div className="mt-3 flex justify-end gap-2">
         <button
           type="button"
           onClick={onRotate}
-          title="Issues a new secret and a new URL. Both have to be updated at the provider."
+          title={t('integrations.rotateHint')}
           className="btn btn-ghost btn-xs text-neutral-500"
         >
-          Rotate
+          {t('integrations.rotate')}
         </button>
         {confirming ? (
           <>
@@ -311,14 +310,14 @@ function RepositoryRow({
               onClick={() => setConfirming(false)}
               className="btn btn-secondary btn-xs"
             >
-              Cancel
+              {t('common:cancel')}
             </button>
             <button
               type="button"
               onClick={onDisconnect}
               className="btn btn-xs btn-danger-ghost"
             >
-              Disconnect and remove its links
+              {t('integrations.confirmDisconnect')}
             </button>
           </>
         ) : (
@@ -327,7 +326,7 @@ function RepositoryRow({
             onClick={() => setConfirming(true)}
             className="btn btn-ghost btn-xs text-neutral-500 hover:text-danger-600"
           >
-            Disconnect
+            {t('integrations.disconnect')}
           </button>
         )}
       </div>
@@ -352,6 +351,7 @@ function Copyable({
   value: string
   secret?: boolean
 }) {
+  const { t } = useTranslation(['settings', 'common'])
   const [revealed, setRevealed] = useState(!secret)
   const [copied, setCopied] = useState(false)
 
@@ -381,7 +381,11 @@ function Copyable({
         <button
           type="button"
           onClick={() => setRevealed((current) => !current)}
-          aria-label={revealed ? `Hide the ${label}` : `Show the ${label}`}
+          aria-label={
+            revealed
+              ? t('integrations.copyable.hide', { label })
+              : t('integrations.copyable.show', { label })
+          }
           className="btn btn-ghost btn-icon btn-xs shrink-0 text-neutral-400"
         >
           <Icon name={revealed ? 'eye-off' : 'eye'} size={13} />
@@ -390,7 +394,7 @@ function Copyable({
       <button
         type="button"
         onClick={copy}
-        aria-label={`Copy the ${label}`}
+        aria-label={t('integrations.copyable.copy', { label })}
         className="btn btn-ghost btn-icon btn-xs shrink-0 text-neutral-400"
       >
         <Icon name={copied ? 'check' : 'copy'} size={13} />

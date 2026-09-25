@@ -44,6 +44,7 @@ pytest --cov --cov-fail-under=85           # tests and the coverage floor
 ```bash
 cd frontend
 npx oxlint src/                            # lint
+npm run lint:i18n                          # no literal UI text in converted folders
 npx tsc -b --noEmit                        # typecheck
 npm test                                   # vitest
 npm run build                              # the build must succeed
@@ -98,6 +99,43 @@ Then *read the generated file*. Autogenerate is reliable for added tables,
 columns and indexes, and unreliable for server defaults, constraint renames,
 and anything that has to move data. It also does not import `sqlmodel` on its
 own for `AutoString` columns -- check the imports at the top.
+
+## Text in the interface
+
+User-facing text lives in the translation catalog, `frontend/src/i18n/en/`,
+not in JSX — one namespace per feature folder, typed so a mistyped key fails
+the typecheck. English is the only language until the catalog is complete;
+the point for now is that new text goes into a catalog, so adding a language
+later is a new folder rather than a pass over every component.
+
+Folders are converted one at a time, and a converted folder is listed in
+`frontend/scripts/check-i18n.mjs`, which fails CI on literal text in JSX there.
+`settings/` is converted; `issues/` and `board/` are next. In a converted
+folder:
+
+```tsx
+import { Trans, useTranslation } from '@/i18n'
+
+const { t } = useTranslation(['settings', 'common'])
+t('members.title')                              // a plain string
+t('members.invited', { email })                 // "Invited {{email}}"
+<Trans t={t} i18nKey="members.emailed" values={{ email }}
+       components={{ strong: <strong /> }}
+       {...userText} />                         // markup inside a sentence
+```
+
+Two things about `<Trans>` that bite. A `<Trans>` given `values` needs
+`{...userText}`: Trans parses the finished string as markup, so a team called
+"R&D <code>ops</code>" would otherwise lose half its name to a tag — the
+guardrail enforces this one. And don't name a tag after an empty HTML element
+(`link`, `br`, `img`): i18next renders `<link>` as the real, empty element and
+drops the text inside it. Call a link to a rule `<rule>`.
+
+Never build a sentence out of translated pieces — word order is the first
+thing a second language changes. Dates and numbers go through
+`@/i18n/format` (`formatDate`, `formatRelative`, `formatNumber`), which is the
+one place a locale is chosen. Backend error messages are translated by their
+code (#86) in `frontend/src/api/errors.ts`, not here.
 
 ## Tests
 

@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { formatDistanceToNow } from 'date-fns'
 import { type FormEvent, useId, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
@@ -34,6 +33,8 @@ import {
   joinClauses,
   type RuleVocabulary,
 } from '@/automations/ruleText'
+import { Trans, userText, useTranslation } from '@/i18n'
+import { formatRelative } from '@/i18n/format'
 import { PRIORITY_META, PRIORITY_ORDER, TYPE_META, TYPE_ORDER } from '@/issues/issueMeta'
 import { pickableProjects } from '@/team/projects'
 import { useTeamByKey } from '@/team/useTeams'
@@ -68,6 +69,7 @@ export default function TeamAutomationSettings() {
   const { teamKey } = useParams()
   const { team, isLoading } = useTeamByKey(teamKey)
   const { user } = useAuth()
+  const { t } = useTranslation(['settings', 'common'])
 
   const members = useListTeamMembersTeamsTeamIdMembersGet(team?.id ?? 0, {
     query: { enabled: Boolean(team) },
@@ -79,7 +81,7 @@ export default function TeamAutomationSettings() {
   if (!team) {
     return (
       <div className="glass-strong rounded-panel p-6 text-sm text-neutral-500">
-        That team does not exist, or you are not a member of it.
+        {t('common:teamNotFound')}
       </div>
     )
   }
@@ -87,6 +89,7 @@ export default function TeamAutomationSettings() {
 }
 
 function Automation({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
   const queryClient = useQueryClient()
   const { statuses, labels, projects, members, cycles } = useTeamData(team)
   const vocabulary: RuleVocabulary = { statuses, labels, projects, members, cycles }
@@ -133,19 +136,14 @@ function Automation({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
     <div className="space-y-4">
       <div className="glass-strong sheen rounded-panel p-6">
         <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
-          Automation
+          {t('automation.title')}
         </h1>
         <p className="mt-1 text-sm text-neutral-500">
-          Rules that do {team.name}’s bookkeeping for it.
+          {t('automation.intro', { team: team.name })}
         </p>
 
         <p className="mt-4 text-sm text-neutral-600">
-          A rule is one <strong>trigger</strong>, any number of{' '}
-          <strong>conditions</strong>, and the <strong>actions</strong> to take on an
-          issue that matches. Rules run in the order they are listed, and a rule’s own
-          changes never set off another rule — so one thing happening is one pass, and
-          two rules can never chase each other. Everything a rule does is in the log
-          below.
+          <Trans t={t} i18nKey="automation.explainer" components={{ strong: <strong /> }} />
         </p>
 
         {error && (
@@ -158,9 +156,7 @@ function Automation({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
         )}
 
         {items.length === 0 ? (
-          <p className="mt-5 text-sm text-neutral-400">
-            No rules yet. Nothing happens on this team that somebody did not do.
-          </p>
+          <p className="mt-5 text-sm text-neutral-400">{t('automation.empty')}</p>
         ) : (
           <ul className="mt-5 space-y-1.5">
             {items.map((rule) => (
@@ -172,7 +168,7 @@ function Automation({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
                   type="checkbox"
                   checked={rule.is_enabled}
                   disabled={!isAdmin}
-                  aria-label={`${rule.name} is on`}
+                  aria-label={t('automation.isOn', { name: rule.name })}
                   onChange={(e) =>
                     run(
                       () =>
@@ -180,7 +176,7 @@ function Automation({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
                           ruleId: rule.id,
                           data: { is_enabled: e.target.checked },
                         }),
-                      'Could not switch that rule.',
+                      t('automation.errors.toggle'),
                     )
                   }
                   className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-brand-600)]"
@@ -202,21 +198,21 @@ function Automation({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
                     <button
                       type="button"
                       onClick={() => setEditing(rule)}
-                      aria-label={`Edit ${rule.name}`}
+                      aria-label={t('automation.editNamed', { name: rule.name })}
                       className="btn btn-ghost btn-xs text-neutral-400"
                     >
-                      Edit
+                      {t('common:edit')}
                     </button>
                     <button
                       type="button"
                       onClick={() =>
                         run(
                           () => remove.mutateAsync({ ruleId: rule.id }),
-                          'Could not delete that rule.',
+                          t('automation.errors.delete'),
                         )
                       }
-                      aria-label={`Delete ${rule.name}`}
-                      title="Delete this rule. What it has already done stays in the log."
+                      aria-label={t('automation.deleteNamed', { name: rule.name })}
+                      title={t('automation.deleteHint')}
                       className="btn btn-ghost btn-icon btn-xs text-neutral-400 hover:text-danger-600"
                     >
                       <Icon name="trash" size={13} />
@@ -235,13 +231,10 @@ function Automation({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
             className="btn btn-secondary btn-sm mt-3"
           >
             <Icon name="plus" size={13} />
-            Add a rule
+            {t('automation.addRule')}
           </button>
         ) : (
-          <p className="mt-4 text-xs text-neutral-400">
-            Only team admins can change the rules. Anyone can read them, and the log
-            below.
-          </p>
+          <p className="mt-4 text-xs text-neutral-400">{t('automation.adminsOnly')}</p>
         )}
       </div>
 
@@ -263,7 +256,7 @@ function Automation({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
                 editing === 'new'
                   ? create.mutateAsync({ teamId: team.id, data: payload })
                   : update.mutateAsync({ ruleId: editing.id, data: payload }),
-              'Could not save that rule.',
+              t('automation.errors.save'),
             )
             if (ok) setEditing(null)
           }}
@@ -281,23 +274,33 @@ function RuleSentence({
   rule: AutomationRuleRead
   vocabulary: RuleVocabulary
 }) {
+  const { t } = useTranslation(['settings', 'common'])
   const conditions = describeConditions(rule.conditions, vocabulary)
   const actions = describeActions(rule.actions, vocabulary)
+  const trigger = TRIGGER_LABELS[rule.trigger]
+  const hasConditions = conditions.length > 0
+
+  if (actions.length > 0) {
+    return hasConditions
+      ? t('automation.sentence.ifThen', {
+          trigger,
+          conditions: joinClauses(conditions),
+          actions: joinClauses(actions),
+        })
+      : t('automation.sentence.then', { trigger, actions: joinClauses(actions) })
+  }
+  // Deleting a cycle strips the action out of the rules that filled it
+  // and switches them off. Saying so beats trailing off.
   return (
-    <>
-      When {TRIGGER_LABELS[rule.trigger]}
-      {conditions.length > 0 && <>, if {joinClauses(conditions)}</>},{' '}
-      {actions.length > 0 ? (
-        joinClauses(actions)
-      ) : (
-        // Deleting a cycle strips the action out of the rules that filled it
-        // and switches them off. Saying so beats trailing off.
-        <span className="text-danger-600">
-          do nothing — this rule lost its action and was switched off
-        </span>
-      )}
-      .
-    </>
+    <Trans
+      t={t}
+      i18nKey={
+        hasConditions ? 'automation.sentence.ifLostAction' : 'automation.sentence.lostAction'
+      }
+      values={{ trigger, conditions: joinClauses(conditions) }}
+      components={{ danger: <span className="text-danger-600" /> }}
+      {...userText}
+    />
   )
 }
 
@@ -322,10 +325,13 @@ function RunLog({
   total: number
   isLoading: boolean
 }) {
+  const { t } = useTranslation(['settings', 'common'])
   return (
     <div className="glass-strong rounded-panel p-6">
       <div className="flex items-baseline gap-2">
-        <h2 className="text-sm font-semibold text-neutral-800">Recent activity</h2>
+        <h2 className="text-sm font-semibold text-neutral-800">
+          {t('automation.runLog.title')}
+        </h2>
         {total > 0 && (
           <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
             {total}
@@ -336,9 +342,7 @@ function RunLog({
       {isLoading ? (
         <Loading />
       ) : runs.length === 0 ? (
-        <p className="mt-3 text-sm text-neutral-400">
-          Nothing yet. Every change a rule makes is recorded here.
-        </p>
+        <p className="mt-3 text-sm text-neutral-400">{t('automation.runLog.empty')}</p>
       ) : (
         <ul className="mt-3 space-y-2.5">
           {runs.map((entry) => (
@@ -351,15 +355,26 @@ function RunLog({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-neutral-600">
-                  <span className="font-medium text-neutral-900">
-                    {entry.rule_name}
-                  </span>
-                  {entry.rule_id === null && (
-                    // The rule is gone; the row is why the log outlives it.
-                    <span className="text-neutral-400"> (deleted)</span>
-                  )}{' '}
-                  on <span className="identifier">{entry.issue_identifier}</span>{' '}
-                  <span className="text-neutral-400">{entry.issue_title}</span>
+                  <Trans
+                    t={t}
+                    i18nKey={
+                      // The rule is gone; the row is why the log outlives it.
+                      entry.rule_id === null
+                        ? 'automation.runLog.entryDeleted'
+                        : 'automation.runLog.entry'
+                    }
+                    values={{
+                      rule: entry.rule_name,
+                      identifier: entry.issue_identifier,
+                      title: entry.issue_title,
+                    }}
+                    components={{
+                      rule: <span className="font-medium text-neutral-900" />,
+                      issue: <span className="identifier" />,
+                      muted: <span className="text-neutral-400" />,
+                    }}
+                    {...userText}
+                  />
                 </p>
                 <p className="mt-0.5 whitespace-pre-line text-xs text-neutral-500">
                   {entry.summary}
@@ -368,15 +383,13 @@ function RunLog({
                   {entry.actor ? (
                     <>
                       <Avatar user={entry.actor} size={14} decorative />
-                      after {entry.actor.full_name}
+                      {t('automation.runLog.after', { name: entry.actor.full_name })}
                     </>
                   ) : (
-                    'no one'
+                    t('automation.runLog.noOne')
                   )}
                   <span aria-hidden="true">·</span>
-                  {formatDistanceToNow(parseServerDate(entry.created_at), {
-                    addSuffix: true,
-                  })}
+                  {formatRelative(parseServerDate(entry.created_at))}
                 </p>
               </div>
             </li>
@@ -425,6 +438,7 @@ function RuleEditor({
     actions: RuleActions
   }) => Promise<void>
 }) {
+  const { t } = useTranslation(['settings', 'common'])
   const dialogRef = useFocusTrap<HTMLFormElement>()
   const titleId = useId()
   const [name, setName] = useState(rule?.name ?? '')
@@ -449,15 +463,21 @@ function RuleEditor({
   const setAction = (patch: Partial<RuleActions>) =>
     setActions((current) => ({ ...current, ...patch }))
 
-  const preview = [
-    `When ${TRIGGER_LABELS[trigger]}`,
-    describeConditions(conditions, vocabulary).length > 0
-      ? `, if ${joinClauses(describeConditions(conditions, vocabulary))}`
-      : '',
-    describeActions(actions, vocabulary).length > 0
-      ? `, ${joinClauses(describeActions(actions, vocabulary))}.`
-      : ' — this rule needs at least one action.',
-  ].join('')
+  const conditionClauses = describeConditions(conditions, vocabulary)
+  const actionClauses = describeActions(actions, vocabulary)
+  const sentence = {
+    trigger: TRIGGER_LABELS[trigger],
+    conditions: joinClauses(conditionClauses),
+    actions: joinClauses(actionClauses),
+  }
+  const preview =
+    actionClauses.length > 0
+      ? conditionClauses.length > 0
+        ? t('automation.sentence.ifThen', sentence)
+        : t('automation.sentence.then', sentence)
+      : conditionClauses.length > 0
+        ? t('automation.sentence.ifNeedsAction', sentence)
+        : t('automation.sentence.needsAction', sentence)
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
@@ -485,24 +505,26 @@ function RuleEditor({
         className="pop-in glass-strong w-full max-w-lg rounded-panel p-5"
       >
         <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
-          {rule ? `Edit “${rule.name}”` : 'New rule'}
+          {rule
+            ? t('automation.editor.editTitle', { name: rule.name })
+            : t('automation.editor.newTitle')}
         </h2>
 
         <label className="mt-4 block">
-          <span className="eyebrow mb-1 block">Name</span>
+          <span className="eyebrow mb-1 block">{t('automation.editor.nameLabel')}</span>
           <input
             autoFocus
             required
             maxLength={60}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Triage urgent bugs"
+            placeholder={t('automation.editor.namePlaceholder')}
             className="field field-sm w-full"
           />
         </label>
 
         <label className="mt-3 block">
-          <span className="eyebrow mb-1 block">When</span>
+          <span className="eyebrow mb-1 block">{t('automation.editor.whenLabel')}</span>
           <Select
             dense
             block
@@ -518,17 +540,17 @@ function RuleEditor({
         </label>
 
         <fieldset className="hairline mt-4 border-t pt-3">
-          <legend className="eyebrow">If — leave blank for “any issue”</legend>
+          <legend className="eyebrow">{t('automation.editor.ifLegend')}</legend>
 
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            <Field label="Status is">
+            <Field label={t('automation.editor.statusIs')}>
               <Select
                 dense
                 block
                 value={asText(conditions.if_status_id)}
                 onChange={(e) => setCondition({ if_status_id: idOrNull(e.target.value) })}
               >
-                <option value="">Any</option>
+                <option value="">{t('automation.editor.any')}</option>
                 {vocabulary.statuses.map((status) => (
                   <option key={status.id} value={status.id}>
                     {status.name}
@@ -537,7 +559,7 @@ function RuleEditor({
               </Select>
             </Field>
 
-            <Field label="Priority is">
+            <Field label={t('automation.editor.priorityIs')}>
               <Select
                 dense
                 block
@@ -548,7 +570,7 @@ function RuleEditor({
                   })
                 }
               >
-                <option value="">Any</option>
+                <option value="">{t('automation.editor.any')}</option>
                 {PRIORITY_ORDER.map((value) => (
                   <option key={value} value={value}>
                     {PRIORITY_META[value].label}
@@ -557,7 +579,7 @@ function RuleEditor({
               </Select>
             </Field>
 
-            <Field label="Type is">
+            <Field label={t('automation.editor.typeIs')}>
               <Select
                 dense
                 block
@@ -566,7 +588,7 @@ function RuleEditor({
                   setCondition({ if_type: (e.target.value || null) as IssueType | null })
                 }
               >
-                <option value="">Any</option>
+                <option value="">{t('automation.editor.any')}</option>
                 {TYPE_ORDER.map((value) => (
                   <option key={value} value={value}>
                     {TYPE_META[value].label}
@@ -575,14 +597,14 @@ function RuleEditor({
               </Select>
             </Field>
 
-            <Field label="Has the label">
+            <Field label={t('automation.editor.hasLabel')}>
               <Select
                 dense
                 block
                 value={asText(conditions.if_label_id)}
                 onChange={(e) => setCondition({ if_label_id: idOrNull(e.target.value) })}
               >
-                <option value="">Any</option>
+                <option value="">{t('automation.editor.any')}</option>
                 {vocabulary.labels.map((label) => (
                   <option key={label.id} value={label.id}>
                     {label.name}
@@ -591,7 +613,7 @@ function RuleEditor({
               </Select>
             </Field>
 
-            <Field label="In the project">
+            <Field label={t('automation.editor.inProject')}>
               <Select
                 dense
                 block
@@ -600,7 +622,7 @@ function RuleEditor({
                   setCondition({ if_project_id: idOrNull(e.target.value) })
                 }
               >
-                <option value="">Any</option>
+                <option value="">{t('automation.editor.any')}</option>
                 {pickableProjects(vocabulary.projects, conditions.if_project_id).map(
                   (project) => (
                     <option key={project.id} value={project.id}>
@@ -611,7 +633,7 @@ function RuleEditor({
               </Select>
             </Field>
 
-            <Field label="Assigned to">
+            <Field label={t('automation.editor.assignedTo')}>
               <Select
                 dense
                 block
@@ -633,8 +655,8 @@ function RuleEditor({
                   )
                 }
               >
-                <option value="">Anyone</option>
-                <option value="unassigned">Nobody</option>
+                <option value="">{t('automation.editor.anyone')}</option>
+                <option value="unassigned">{t('automation.editor.nobody')}</option>
                 {vocabulary.members.map((member) => (
                   <option key={member.user.id} value={member.user.id}>
                     {member.user.full_name}
@@ -646,17 +668,17 @@ function RuleEditor({
         </fieldset>
 
         <fieldset className="hairline mt-4 border-t pt-3">
-          <legend className="eyebrow">Then — at least one</legend>
+          <legend className="eyebrow">{t('automation.editor.thenLegend')}</legend>
 
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            <Field label="Set status to">
+            <Field label={t('automation.editor.setStatus')}>
               <Select
                 dense
                 block
                 value={asText(actions.set_status_id)}
                 onChange={(e) => setAction({ set_status_id: idOrNull(e.target.value) })}
               >
-                <option value="">Leave it</option>
+                <option value="">{t('automation.editor.leaveIt')}</option>
                 {vocabulary.statuses.map((status) => (
                   <option key={status.id} value={status.id}>
                     {status.name}
@@ -665,7 +687,7 @@ function RuleEditor({
               </Select>
             </Field>
 
-            <Field label="Set priority to">
+            <Field label={t('automation.editor.setPriority')}>
               <Select
                 dense
                 block
@@ -676,7 +698,7 @@ function RuleEditor({
                   })
                 }
               >
-                <option value="">Leave it</option>
+                <option value="">{t('automation.editor.leaveIt')}</option>
                 {PRIORITY_ORDER.map((value) => (
                   <option key={value} value={value}>
                     {PRIORITY_META[value].label}
@@ -685,7 +707,7 @@ function RuleEditor({
               </Select>
             </Field>
 
-            <Field label="Set type to">
+            <Field label={t('automation.editor.setType')}>
               <Select
                 dense
                 block
@@ -694,7 +716,7 @@ function RuleEditor({
                   setAction({ set_type: (e.target.value || null) as IssueType | null })
                 }
               >
-                <option value="">Leave it</option>
+                <option value="">{t('automation.editor.leaveIt')}</option>
                 {TYPE_ORDER.map((value) => (
                   <option key={value} value={value}>
                     {TYPE_META[value].label}
@@ -703,7 +725,7 @@ function RuleEditor({
               </Select>
             </Field>
 
-            <Field label="Assign to">
+            <Field label={t('automation.editor.assignTo')}>
               <Select
                 dense
                 block
@@ -712,7 +734,7 @@ function RuleEditor({
                   setAction({ set_assignee_id: idOrNull(e.target.value) })
                 }
               >
-                <option value="">Leave it</option>
+                <option value="">{t('automation.editor.leaveIt')}</option>
                 {vocabulary.members.map((member) => (
                   <option key={member.user.id} value={member.user.id}>
                     {member.user.full_name}
@@ -721,14 +743,14 @@ function RuleEditor({
               </Select>
             </Field>
 
-            <Field label="Add the label">
+            <Field label={t('automation.editor.addLabel')}>
               <Select
                 dense
                 block
                 value={asText(actions.add_label_id)}
                 onChange={(e) => setAction({ add_label_id: idOrNull(e.target.value) })}
               >
-                <option value="">None</option>
+                <option value="">{t('automation.editor.none')}</option>
                 {vocabulary.labels.map((label) => (
                   <option key={label.id} value={label.id}>
                     {label.name}
@@ -737,7 +759,7 @@ function RuleEditor({
               </Select>
             </Field>
 
-            <Field label="Move to cycle" className="sm:col-span-2">
+            <Field label={t('automation.editor.moveToCycle')} className="sm:col-span-2">
               <Select
                 dense
                 block
@@ -757,10 +779,10 @@ function RuleEditor({
                   )
                 }
               >
-                <option value="">Leave it</option>
+                <option value="">{t('automation.editor.leaveIt')}</option>
                 {/* Above the named ones because it is the one that keeps
                     meaning "the sprint" a fortnight from now. */}
-                <option value="active">Whichever cycle is active</option>
+                <option value="active">{t('automation.editor.activeCycle')}</option>
                 {openCycles.map((cycle) => (
                   <option key={cycle.id} value={cycle.id}>
                     {cycle.display_name}
@@ -772,19 +794,18 @@ function RuleEditor({
 
           <label className="mt-2 block">
             <span className="mb-1 block text-xs font-medium text-neutral-500">
-              Post a comment
+              {t('automation.editor.commentLabel')}
             </span>
             <textarea
               rows={2}
               maxLength={2000}
               value={actions.comment_body ?? ''}
               onChange={(e) => setAction({ comment_body: e.target.value || null })}
-              placeholder="Filed outside a cycle — please size it."
+              placeholder={t('automation.editor.commentPlaceholder')}
               className="field field-sm w-full resize-y"
             />
             <span className="mt-1 block text-[11px] text-neutral-400">
-              Posted with no author, so nobody is quoted saying something they did
-              not write.
+              {t('automation.editor.commentHint')}
             </span>
           </label>
         </fieldset>
@@ -795,10 +816,14 @@ function RuleEditor({
 
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn btn-secondary btn-sm">
-            Cancel
+            {t('common:cancel')}
           </button>
           <button type="submit" disabled={saving} className="btn btn-primary btn-sm">
-            {saving ? 'Saving…' : rule ? 'Save the rule' : `Add it to ${team.key}`}
+            {saving
+              ? t('common:saving')
+              : rule
+                ? t('automation.editor.save')
+                : t('automation.editor.addTo', { team: team.key })}
           </button>
         </div>
       </form>

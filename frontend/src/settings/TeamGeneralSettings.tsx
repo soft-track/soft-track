@@ -9,6 +9,7 @@ import {
 import type { TeamRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
+import { Trans, userText, useTranslation } from '@/i18n'
 import { useTeamByKey } from '@/team/useTeams'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
@@ -17,6 +18,7 @@ export default function TeamGeneralSettings() {
   const { teamKey } = useParams()
   const { team, isLoading } = useTeamByKey(teamKey)
   const { user } = useAuth()
+  const { t } = useTranslation(['settings', 'common'])
 
   const members = useListTeamMembersTeamsTeamIdMembersGet(team?.id ?? 0, {
     query: { enabled: Boolean(team) },
@@ -28,7 +30,7 @@ export default function TeamGeneralSettings() {
   if (!team) {
     return (
       <div className="glass-strong rounded-panel p-6 text-sm text-neutral-500">
-        That team does not exist, or you are not a member of it.
+        {t('common:teamNotFound')}
       </div>
     )
   }
@@ -39,6 +41,7 @@ export default function TeamGeneralSettings() {
 }
 
 function TeamGeneralForm({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
   const queryClient = useQueryClient()
   const updateTeam = useUpdateTeamTeamsTeamIdPatch()
 
@@ -60,17 +63,17 @@ function TeamGeneralForm({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}`] })
       setSaved(true)
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not save this team.'))
+      setError(errorDetail(err, t('general.errors.save')))
     }
   }
 
   return (
     <form onSubmit={onSubmit} className="glass-strong sheen rounded-panel p-6">
-      <h1 className="text-lg font-semibold tracking-tight text-neutral-900">General</h1>
+      <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
+        {t('general.title')}
+      </h1>
       <p className="mt-1 text-sm text-neutral-500">
-        {isAdmin
-          ? 'What this team is called, and what it is for.'
-          : 'Only admins of this team can change these.'}
+        {isAdmin ? t('general.introAdmin') : t('general.introMember')}
       </p>
 
       {error && (
@@ -84,13 +87,15 @@ function TeamGeneralForm({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }
       {saved && !error && (
         <p className="mt-4 flex items-center gap-1.5 text-sm text-neutral-500">
           <Icon name="check" size={14} className="text-accent-mint" />
-          Saved.
+          {t('general.saved')}
         </p>
       )}
 
       <div className="mt-6 max-w-lg space-y-5">
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-neutral-700">Name</span>
+          <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+            {t('general.nameLabel')}
+          </span>
           <input
             required
             disabled={!isAdmin}
@@ -102,7 +107,7 @@ function TeamGeneralForm({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }
 
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium text-neutral-700">
-            Description
+            {t('general.descriptionLabel')}
           </span>
           <textarea
             rows={3}
@@ -110,20 +115,26 @@ function TeamGeneralForm({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="field resize-y"
-            placeholder="What this team works on"
+            placeholder={t('general.descriptionPlaceholder')}
           />
         </label>
 
         <div>
-          <span className="mb-1.5 block text-sm font-medium text-neutral-700">Key</span>
+          <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+            {t('general.keyLabel')}
+          </span>
           <div className="flex flex-wrap items-center gap-2.5">
             <span className="identifier well rounded-control px-2.5 py-1.5 text-sm text-neutral-700">
               {team.key}
             </span>
             <span className="text-xs text-neutral-400">
-              Cannot be changed — identifiers like{' '}
-              <code className="identifier">{team.key}-42</code> are already in commit
-              messages and chat logs.
+              <Trans
+                t={t}
+                i18nKey="general.keyFixed"
+                values={{ key: team.key }}
+                {...userText}
+                components={{ code: <code className="identifier" /> }}
+              />
             </span>
           </div>
         </div>
@@ -132,7 +143,7 @@ function TeamGeneralForm({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }
       {isAdmin && (
         <div className="mt-6 flex justify-end">
           <button type="submit" disabled={updateTeam.isPending} className="btn btn-primary">
-            {updateTeam.isPending ? 'Saving…' : 'Save changes'}
+            {updateTeam.isPending ? t('common:saving') : t('general.saveChanges')}
           </button>
         </div>
       )}

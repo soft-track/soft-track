@@ -1,0 +1,40 @@
+/** Settings → Site admin → Users. */
+export const adminUsers = {
+  title: 'Users',
+  intro:
+    'Every account on this SoftTrack. Accounts are deactivated rather than deleted — issues, comments and history all point at them.',
+  searchLabel: 'Search users',
+  searchPlaceholder: 'Name, email or username',
+  loading: 'Loading users…',
+  empty: 'No account matches that search.',
+  siteAdmin: 'Site admin',
+  teams_one: '{{count}} team',
+  teams_other: '{{count}} teams',
+  lastSeen: 'last seen {{when}}',
+  neverSignedIn: 'never signed in',
+  joined: 'joined {{date}}',
+  deactivate: 'Deactivate',
+  reactivate: 'Reactivate',
+  cannotDeactivateSelf: 'You cannot deactivate your own account',
+  confirmDeactivate:
+    'Deactivate {{name}}? They will be signed out immediately and cannot sign in again. Their issues, comments and history are untouched.',
+  makeSiteAdmin: 'Make site admin',
+  removeSiteAdmin: 'Remove site admin',
+  cannotChangeOwnAdmin: 'You cannot change your own site admin access',
+  resetPassword: 'Reset password',
+  showing: 'Showing {{from}}–{{to}} of {{total}}',
+  previous: 'Previous',
+  next: 'Next',
+  errors: {
+    update: 'Could not update that account.',
+    reset: 'Could not reset that password.',
+  },
+  resetDialog: {
+    title: 'Reset password',
+    body: 'Sets a new password for <strong>{{name}}</strong> and signs out every session they have. There is no email — hand it over yourself.',
+    newPassword: 'New password',
+    placeholder: 'At least 8 characters',
+    submit: 'Reset password',
+    submitting: 'Resetting…',
+  },
+} as const

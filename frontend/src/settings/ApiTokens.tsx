@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { formatDistanceToNow } from 'date-fns'
 import { type FormEvent, useState } from 'react'
 
 import { parseServerDate } from '@/api/dates'
@@ -11,17 +10,19 @@ import {
   useRevokeApiTokenAuthMeTokensTokenIdDelete,
 } from '@/api/generated/endpoints/auth/auth'
 import type { ApiTokenCreated } from '@/api/generated/models'
+import { Trans, userText, useTranslation } from '@/i18n'
+import { formatRelative } from '@/i18n/format'
 import { Icon } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
 
 const EXPIRY_OPTIONS = [
-  { days: 30, label: '30 days' },
-  { days: 90, label: '90 days' },
-  { days: 365, label: 'A year' },
-  { days: 0, label: 'Never' },
-]
+  { days: 30, label: 'apiTokens.expiry.days30' },
+  { days: 90, label: 'apiTokens.expiry.days90' },
+  { days: 365, label: 'apiTokens.expiry.year' },
+  { days: 0, label: 'apiTokens.expiry.never' },
+] as const
 
-const ago = (value: string) => formatDistanceToNow(parseServerDate(value), { addSuffix: true })
+const ago = (value: string) => formatRelative(parseServerDate(value))
 
 /**
  * Personal API tokens (#90): for scripts and integrations, made and revoked
@@ -29,6 +30,7 @@ const ago = (value: string) => formatDistanceToNow(parseServerDate(value), { add
  * never again -- the server keeps only a hash of it.
  */
 export function ApiTokens() {
+  const { t } = useTranslation(['settings', 'common'])
   const queryClient = useQueryClient()
   const tokens = useListApiTokensAuthMeTokensGet()
   const create = useCreateApiTokenAuthMeTokensPost()
@@ -55,19 +57,19 @@ export function ApiTokens() {
       setName('')
       await refresh()
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not create that token.'))
+      setError(errorDetail(err, t('apiTokens.errors.create')))
     }
   }
 
   const onRevoke = async (id: number, label: string) => {
-    if (!window.confirm(`Revoke “${label}”? Anything using it stops working at once.`)) return
+    if (!window.confirm(t('apiTokens.confirmRevoke', { name: label }))) return
     setError(null)
     try {
       await revoke.mutateAsync({ tokenId: id })
       if (fresh?.id === id) setFresh(null)
       await refresh()
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not revoke that token.'))
+      setError(errorDetail(err, t('apiTokens.errors.revoke')))
     }
   }
 
@@ -77,7 +79,7 @@ export function ApiTokens() {
       await navigator.clipboard.writeText(fresh.token)
       setCopied(true)
     } catch {
-      setError('Could not reach the clipboard. Select the token and copy it by hand.')
+      setError(t('apiTokens.errors.clipboard'))
     }
   }
 
@@ -87,12 +89,14 @@ export function ApiTokens() {
         id="api-tokens-heading"
         className="text-base font-semibold tracking-tight text-neutral-900"
       >
-        API tokens
+        {t('apiTokens.title')}
       </h2>
       <p className="mt-1 max-w-prose text-sm text-neutral-500">
-        For scripts and integrations. A token acts as you, with your access, sent as{' '}
-        <code className="identifier text-xs">Authorization: Bearer softtrack_…</code>. It
-        cannot manage tokens or change your password — those need you signed in.
+        <Trans
+          t={t}
+          i18nKey="apiTokens.intro"
+          components={{ code: <code className="identifier text-xs" /> }}
+        />
       </p>
 
       {error && (
@@ -106,22 +110,26 @@ export function ApiTokens() {
 
       <form onSubmit={onCreate} className="mt-4 flex flex-wrap items-end gap-2">
         <label className="min-w-[14rem] flex-1">
-          <span className="mb-1.5 block text-xs font-medium text-neutral-500">Name</span>
+          <span className="mb-1.5 block text-xs font-medium text-neutral-500">
+            {t('apiTokens.nameLabel')}
+          </span>
           <input
             required
             maxLength={80}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Nightly export"
+            placeholder={t('apiTokens.namePlaceholder')}
             className="field"
           />
         </label>
         <label>
-          <span className="mb-1.5 block text-xs font-medium text-neutral-500">Expires</span>
+          <span className="mb-1.5 block text-xs font-medium text-neutral-500">
+            {t('apiTokens.expiresLabel')}
+          </span>
           <Select value={expiryDays} onChange={(e) => setExpiryDays(Number(e.target.value))}>
             {EXPIRY_OPTIONS.map((option) => (
               <option key={option.days} value={option.days}>
-                {option.label}
+                {t(option.label)}
               </option>
             ))}
           </Select>
@@ -132,14 +140,20 @@ export function ApiTokens() {
           className="btn btn-primary"
         >
           <Icon name="plus" size={14} />
-          {create.isPending ? 'Creating…' : 'Create token'}
+          {create.isPending ? t('apiTokens.creating') : t('apiTokens.create')}
         </button>
       </form>
 
       {fresh && (
         <div role="status" className="well mt-4 rounded-control p-3">
           <p className="text-sm text-neutral-700">
-            Copy <strong>{fresh.name}</strong> now. It will not be shown again.
+            <Trans
+              t={t}
+              i18nKey="apiTokens.copyNow"
+              values={{ name: fresh.name }}
+              components={{ strong: <strong /> }}
+              {...userText}
+            />
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <code
@@ -150,7 +164,7 @@ export function ApiTokens() {
             </code>
             <button type="button" onClick={onCopy} className="btn btn-secondary btn-sm">
               <Icon name={copied ? 'check' : 'copy'} size={14} />
-              {copied ? 'Copied' : 'Copy'}
+              {copied ? t('common:copied') : t('common:copy')}
             </button>
           </div>
         </div>
@@ -164,9 +178,14 @@ export function ApiTokens() {
                 <p className="text-sm font-medium text-neutral-900">{token.name}</p>
                 <p className="identifier text-xs text-neutral-400">{token.hint}</p>
                 <p className="text-xs text-neutral-500">
-                  Created {ago(token.created_at)} ·{' '}
-                  {token.last_used_at ? `last used ${ago(token.last_used_at)}` : 'never used'} ·{' '}
-                  {token.expires_at ? `expires ${ago(token.expires_at)}` : 'does not expire'}
+                  {t('apiTokens.created', { when: ago(token.created_at) })} ·{' '}
+                  {token.last_used_at
+                    ? t('apiTokens.lastUsed', { when: ago(token.last_used_at) })
+                    : t('apiTokens.neverUsed')}{' '}
+                  ·{' '}
+                  {token.expires_at
+                    ? t('apiTokens.expires', { when: ago(token.expires_at) })
+                    : t('apiTokens.noExpiry')}
                 </p>
               </div>
               <button
@@ -175,7 +194,7 @@ export function ApiTokens() {
                 className="btn btn-danger-ghost btn-sm"
               >
                 <Icon name="trash" size={14} />
-                Revoke
+                {t('apiTokens.revoke')}
               </button>
             </li>
           ))}

@@ -6,12 +6,14 @@ import {
 } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
+import { useTranslation } from '@/i18n'
 import { ApiTokens } from '@/settings/ApiTokens'
 import { ConnectedAccounts } from '@/settings/ConnectedAccounts'
 import { Icon } from '@/ui/Icon'
 
 export default function SecuritySettings() {
   const { user, setSession } = useAuth()
+  const { t } = useTranslation(['settings', 'common'])
   const changePassword = useChangeMyPasswordAuthMePasswordPost()
   const signOutEverywhere = useSignOutEverywhereRouteAuthMeSignOutEverywherePost()
 
@@ -33,7 +35,7 @@ export default function SecuritySettings() {
     setNotice(null)
 
     if (next !== confirm) {
-      setError('The two new passwords do not match.')
+      setError(t('security.errors.mismatch'))
       return
     }
 
@@ -52,20 +54,16 @@ export default function SecuritySettings() {
       setConfirm('')
       setNotice(
         settingFirstPassword
-          ? 'Password set. You can now sign in with your email address too.'
-          : 'Password changed. Every other session has been signed out.',
+          ? t('security.notices.passwordSet')
+          : t('security.notices.passwordChanged'),
       )
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not change your password.'))
+      setError(errorDetail(err, t('security.errors.change')))
     }
   }
 
   const onSignOutEverywhere = async () => {
-    if (
-      !window.confirm(
-        'Sign out of every other browser and device? You will stay signed in here.',
-      )
-    ) {
+    if (!window.confirm(t('security.signOutEverywhere.confirm'))) {
       return
     }
     setError(null)
@@ -73,9 +71,9 @@ export default function SecuritySettings() {
     try {
       const token = await signOutEverywhere.mutateAsync()
       setSession(token.access_token, token.user)
-      setNotice('Signed out everywhere else.')
+      setNotice(t('security.notices.signedOutEverywhere'))
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not sign out the other sessions.'))
+      setError(errorDetail(err, t('security.errors.signOutEverywhere')))
     }
   }
 
@@ -84,11 +82,13 @@ export default function SecuritySettings() {
       <form onSubmit={onSubmit} className="glass-strong sheen rounded-panel p-6">
         {/* The page's heading, not the card's: Connected accounts and Sign
             out everywhere sit under it too. */}
-        <h1 className="text-lg font-semibold tracking-tight text-neutral-900">Security</h1>
+        <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
+          {t('security.title')}
+        </h1>
         <p className="mt-1 max-w-prose text-sm text-neutral-500">
           {settingFirstPassword
-            ? 'This account signs in with a provider and has no password. Setting one adds email and password as a second way in — useful if that provider is ever switched off here.'
-            : 'Changing your password signs out every other session.'}
+            ? t('security.introFirstPassword')
+            : t('security.intro')}
         </p>
 
         {error && (
@@ -110,7 +110,7 @@ export default function SecuritySettings() {
           {!settingFirstPassword && (
             <label className="block">
               <span className="mb-1.5 block text-sm font-medium text-neutral-700">
-                Current password
+                {t('security.currentPassword')}
               </span>
               <input
                 type="password"
@@ -125,7 +125,7 @@ export default function SecuritySettings() {
 
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-neutral-700">
-              New password
+              {t('security.newPassword')}
             </span>
             <input
               type="password"
@@ -135,13 +135,13 @@ export default function SecuritySettings() {
               value={next}
               onChange={(e) => setNext(e.target.value)}
               className="field"
-              placeholder="At least 8 characters"
+              placeholder={t('security.newPasswordPlaceholder')}
             />
           </label>
 
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-neutral-700">
-              Confirm new password
+              {t('security.confirmPassword')}
             </span>
             <input
               type="password"
@@ -158,10 +158,10 @@ export default function SecuritySettings() {
         <div className="mt-6 flex justify-end">
           <button type="submit" disabled={changePassword.isPending} className="btn btn-primary">
             {changePassword.isPending
-              ? 'Saving…'
+              ? t('common:saving')
               : settingFirstPassword
-                ? 'Set password'
-                : 'Change password'}
+                ? t('security.setPassword')
+                : t('security.changePassword')}
           </button>
         </div>
       </form>
@@ -172,12 +172,10 @@ export default function SecuritySettings() {
 
       <section className="glass-strong rounded-panel p-6">
         <h2 className="text-base font-semibold tracking-tight text-neutral-900">
-          Sign out everywhere
+          {t('security.signOutEverywhere.title')}
         </h2>
         <p className="mt-1 max-w-prose text-sm text-neutral-500">
-          Ends every session on every other browser and device — a laptop left at the
-          office, a phone you no longer have. You stay signed in here. API tokens are
-          not sessions and keep working; revoke those above.
+          {t('security.signOutEverywhere.body')}
         </p>
         <button
           type="button"
@@ -186,7 +184,9 @@ export default function SecuritySettings() {
           className="btn btn-secondary mt-4"
         >
           <Icon name="logout" size={15} />
-          {signOutEverywhere.isPending ? 'Signing out…' : 'Sign out everywhere'}
+          {signOutEverywhere.isPending
+            ? t('security.signOutEverywhere.pending')
+            : t('security.signOutEverywhere.button')}
         </button>
       </section>
     </div>

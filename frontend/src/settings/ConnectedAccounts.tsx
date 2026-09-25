@@ -1,4 +1,3 @@
-import { formatDistanceToNow } from 'date-fns'
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
@@ -21,6 +20,8 @@ import {
   startProviderFlow,
   type ProviderName,
 } from '@/auth/oauth'
+import { useTranslation } from '@/i18n'
+import { formatRelative } from '@/i18n/format'
 import { Icon } from '@/ui/Icon'
 
 const RETURN_PATH = '/settings/security'
@@ -37,6 +38,7 @@ const RETURN_PATH = '/settings/security'
  * differ.
  */
 export function ConnectedAccounts() {
+  const { t } = useTranslation(['settings', 'common'])
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const [params, setParams] = useSearchParams()
@@ -97,14 +99,14 @@ export function ConnectedAccounts() {
       const { ticket } = await linkTicket.mutateAsync({ provider })
       startProviderFlow(provider, { ticket, next: RETURN_PATH })
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not start that connection.'))
+      setError(errorDetail(err, t('connectedAccounts.errors.connect')))
     }
   }
 
   const onDisconnect = async (provider: ProviderName) => {
     if (
       !window.confirm(
-        `Disconnect ${PROVIDERS[provider]}? You will no longer be able to sign in with it.`,
+        t('connectedAccounts.confirmDisconnect', { provider: PROVIDERS[provider] }),
       )
     ) {
       return
@@ -116,7 +118,7 @@ export function ConnectedAccounts() {
         queryKey: getMyIdentitiesAuthMeIdentitiesGetQueryKey(),
       })
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not disconnect that account.'))
+      setError(errorDetail(err, t('connectedAccounts.errors.disconnect')))
     }
   }
 
@@ -127,11 +129,10 @@ export function ConnectedAccounts() {
   return (
     <section className="glass-strong rounded-panel p-6">
       <h2 className="text-base font-semibold tracking-tight text-neutral-900">
-        Connected accounts
+        {t('connectedAccounts.title')}
       </h2>
       <p className="mt-1 max-w-prose text-sm text-neutral-500">
-        Sign in without a password. Connecting one attaches it to this account —
-        it does not have to use the same email address.
+        {t('connectedAccounts.intro')}
       </p>
 
       {message && (
@@ -145,7 +146,7 @@ export function ConnectedAccounts() {
       {!message && linkedLabel && (
         <p className="mt-4 flex items-center gap-1.5 text-sm text-neutral-500">
           <Icon name="check" size={14} className="text-accent-mint" />
-          {linkedLabel} connected.
+          {t('connectedAccounts.linked', { provider: linkedLabel })}
         </p>
       )}
 
@@ -165,15 +166,14 @@ export function ConnectedAccounts() {
                     ? [
                         identity.email,
                         identity.last_login_at
-                          ? `last used ${formatDistanceToNow(
-                              parseServerDate(identity.last_login_at),
-                              { addSuffix: true },
-                            )}`
+                          ? t('connectedAccounts.lastUsed', {
+                              when: formatRelative(parseServerDate(identity.last_login_at)),
+                            })
                           : null,
                       ]
                         .filter(Boolean)
                         .join(' · ')
-                    : 'Not connected'}
+                    : t('connectedAccounts.notConnected')}
                 </p>
               </div>
 
@@ -189,7 +189,7 @@ export function ConnectedAccounts() {
                     disabled={linkTicket.isPending}
                     className="btn btn-secondary"
                   >
-                    Use another
+                    {t('connectedAccounts.useAnother')}
                   </button>
                   <button
                     type="button"
@@ -197,7 +197,7 @@ export function ConnectedAccounts() {
                     disabled={disconnect.isPending}
                     className="btn btn-secondary"
                   >
-                    Disconnect
+                    {t('connectedAccounts.disconnect')}
                   </button>
                 </div>
               ) : (
@@ -208,7 +208,7 @@ export function ConnectedAccounts() {
                   className="btn btn-secondary shrink-0"
                 >
                   <Icon name="link" size={15} />
-                  Connect
+                  {t('connectedAccounts.connect')}
                 </button>
               )}
             </li>
