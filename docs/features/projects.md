@@ -31,3 +31,26 @@ An issue belongs to at most one project. It gets into one:
 - by picking the project when creating the issue
 - through the **Project** field in the issue's details
 - through **Set project** on a selection from the board
+
+## The roadmap
+
+The **Roadmap** tab lists the team's projects under the month their target
+date falls in, with each project's state, progress, lead and date. Every row
+opens the project's page. It answers the question the board and the cycles
+view cannot: will this land by the date? An epic spans cycles by definition,
+and both of those views only show work in flight now.
+
+- **By month, not a zoomable timeline.** A target is a single day, and "what
+  lands when" can be read straight off a list of months. A timeline would be a
+  lot of code to maintain in exchange for a picture of the same thing. Months
+  with nothing due are skipped rather than drawn empty.
+- **Projects with no target date are listed last, under their own heading**,
+  and the top of the page says how many there are. Leaving them off would make
+  an unplanned project look like one that doesn't exist.
+- **Overdue** means past the target date and neither completed nor cancelled.
+  Dates are compared as calendar days, so a target never moves across midnight
+  for a reader in another timezone.
+- Archived projects are left out, because they were retired from planning.
+
+Left out on purpose: dragging projects to reschedule them, dependencies
+between projects, and anything resembling resource planning.

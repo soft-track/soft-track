@@ -33,6 +33,7 @@ import { type BoardView, useCommands } from '@/keyboard/useCommands'
 import { useGlobalShortcuts } from '@/keyboard/useGlobalShortcuts'
 import { isTypingTarget } from '@/keyboard/typing'
 import { ProjectPage } from '@/projects/ProjectPage'
+import { RoadmapView } from '@/projects/RoadmapView'
 import { ReportsView } from '@/reports/ReportsView'
 import { SearchResults } from '@/search/SearchResults'
 import { useDebounced } from '@/search/useDebounced'
@@ -285,6 +286,8 @@ export default function BoardPage() {
                 />
               ) : !filtersAreSettled || issuesQuery.isLoading ? (
                 <Loading label="Loading issues…" />
+              ) : view === 'roadmap' ? (
+                <RoadmapView />
               ) : view === 'reports' ? (
                 <ReportsView />
               ) : view === 'board' ? (
@@ -304,7 +307,10 @@ export default function BoardPage() {
         )}
       </div>
 
-      {hasSelection && !searchQuery && view !== 'reports' && projectPageId === null && (
+      {hasSelection &&
+        !searchQuery &&
+        (view === 'board' || view === 'list') &&
+        projectPageId === null && (
         <BulkActionBar selectedIds={selection.ids} bulk={bulk} onClear={clearSelection} />
       )}
       {overlays.isOpen('palette') && (

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import type { TeamRead, UserMe } from '@/api/generated/models'
 import type { Command } from '@/keyboard/CommandPalette'
 
-export type BoardView = 'board' | 'list' | 'reports'
+export type BoardView = 'board' | 'list' | 'roadmap' | 'reports'
 
 /** What the command palette can do from the board, beyond jumping to issues. */
 export function useCommands({
