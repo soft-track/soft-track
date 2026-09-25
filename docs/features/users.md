@@ -32,18 +32,25 @@ would otherwise be one departure away from having nobody who can add anyone.
 A team's **key** cannot be changed. `ENG-42` is already in commit messages,
 chat logs and browser history by the time anyone wants to rename it.
 
-### Invitations, without a mail server
+### Invitations, with or without a mail server
 
-SoftTrack does not send invitations by email — the only mail it sends is the
-[notification digest](notifications.md), and that is off unless SMTP is
-configured. An invitation is a row and a link: a team admin
-invites an address from **Settings → *Team* → Members**, and copies the link
-into whatever the team already uses. That works whether or not the person has an
+An invitation is a row and a link. A team admin invites an address from
+**Settings → *Team* → Members** and copies the link into whatever the team
+already uses. With SMTP configured, the invitation can also be emailed. That
+option is ticked by default, and the email says who invited them, to which
+team and role, and when the link expires. Emailing is purely an addition:
+the link can always be copied, and an instance without SMTP sees nothing
+new. Pending invitations that were emailed say "Sent to …" with the time the
+email was *attempted*. SMTP accepting a message is all SoftTrack can know
+about its delivery. That works whether or not the person has an
 account — `/invite/<token>` shows who invited them, to which team, and as
 what, and offers to sign in or register from there.
 
 - One live invitation per address per team. Re-inviting the same address mints
-a fresh token and retires the old link, which is what "resend" does.
+a fresh token and retires the old link, which is what "resend" does. Resend
+repeats the original delivery: it emails again if the invitation was emailed.
+A resend that isn't emailed clears "Sent to", because the emailed link has
+just stopped working.
 - Accepting checks the signed-in user's address against the invitation's, so a
   forwarded link admits nobody it was not sent to.
 - Accept, decline and revoke all delete the row. The membership and its

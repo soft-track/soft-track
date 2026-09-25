@@ -11,9 +11,10 @@ import type { UserPublic } from './userPublic';
 /**
  * A pending invitation, as an admin of the team (or its recipient) sees it.
  *
- * Carries the token because there is no mail server: the link is copied out
- * of this response and sent by whatever the team already uses. Only ever
- * returned to a team admin or to the person the invite is addressed to.
+ * Carries the token so the link can be copied out of this response and sent
+ * by whatever the team already uses -- which works on every instance, with
+ * or without a mail server. Only ever returned to a team admin or to the
+ * person the invite is addressed to.
  */
 export interface InviteRead {
   id: number;
@@ -26,4 +27,5 @@ export interface InviteRead {
   invited_by: UserPublic;
   created_at: string;
   expires_at: string;
+  emailed_at?: string | null;
 }

@@ -1,22 +1,24 @@
 """Invitations: asking someone to join a team, whether or not they have an account.
 
-There is no mail server in SoftTrack, so an invitation is a link the inviter
-copies and sends by whatever the team already uses. That shapes the design more
-than anything else here: the link is the credential, so its token is
-unguessable, it expires, and accepting it checks the signed-in user's address
-against the one it was sent to -- a forwarded link admits nobody it was not
-meant for.
+An invitation is a link. The inviter copies it and sends it by whatever the
+team already uses, and where SMTP is configured SoftTrack can also email it
+(#84) -- as an addition, never instead: copying the link works everywhere.
+That shapes the design more than anything else here: the link is the
+credential, so its token is unguessable, it expires, and accepting it checks
+the signed-in user's address against the one it was sent to -- a forwarded
+link admits nobody it was not meant for.
 """
 
 import secrets
 from datetime import timedelta
+from typing import Optional
 
 from fastapi import HTTPException
 from sqlmodel import Session, delete, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.invites import InviteCreate, InvitePreview, InviteRead
-from lib_softtrack.tables import Team, TeamInvite, TeamMember, User, utcnow
+from lib_softtrack.tables import Team, TeamInvite, TeamMember, TeamRole, User, utcnow
 from lib_softtrack.teams import get_team_or_404, require_team_admin
 from web import settings
 
@@ -63,14 +65,49 @@ def _to_read(session: Session, invite: TeamInvite, team: Team) -> InviteRead:
         invited_by=UserPublic.model_validate(inviter),
         created_at=invite.created_at,
         expires_at=invite.expires_at,
+        emailed_at=invite.emailed_at,
     )
+
+
+def _invite_email(
+    invite: TeamInvite, team: Team, inviter: User
+) -> tuple[str, str, str]:
+    """The message: who, which team, the link, and when it stops working.
+
+    Plain text, like the digest, and written to be understood by somebody
+    who has never heard of SoftTrack -- which, for most invitees, is true.
+    """
+    link = f"{settings.app_base_url.rstrip('/')}/invite/{invite.token}"
+    role = "an admin" if invite.role == TeamRole.admin else "a member"
+    expires = f"{invite.expires_at.day} {invite.expires_at:%B %Y}"
+    body = (
+        f"{inviter.full_name} ({inviter.email}) has invited you to join the "
+        f"{team.name} team on {settings.app_name}, as {role}.\n\n"
+        f"To accept, open this link:\n\n{link}\n\n"
+        f"You can sign in or create an account with {invite.email} from there. "
+        f"The link works until {expires}.\n\n"
+        "If you were not expecting this, you can ignore this email.\n"
+    )
+    subject = f"{inviter.full_name} invited you to {team.name} on {settings.app_name}"
+    return invite.email, subject, body
 
 
 def create_invite(
     session: Session, current_user: User, team_id: int, payload: InviteCreate
-) -> InviteRead:
+) -> tuple[InviteRead, Optional[tuple[str, str, str]]]:
+    """Create an invitation -- or refresh one, which is the resend.
+
+    Returns the invitation and, when `send_email` was asked for, the message
+    to send. The caller sends it after responding: nothing about the
+    invitation depends on an SMTP server answering quickly.
+    """
     team = get_team_or_404(team_id, session)
     require_team_admin(team_id, current_user, session)
+    if payload.send_email and not settings.email_delivery_configured:
+        raise HTTPException(
+            status_code=400,
+            detail="This instance cannot send email. Copy the link instead.",
+        )
 
     email = payload.email.strip().lower()
 
@@ -110,11 +147,15 @@ def create_invite(
             invited_by_id=current_user.id,
             expires_at=_expiry(),
         )
+    # Set on every create and resend, so an email sent with an older link is
+    # never reported as if it carried this one.
+    invite.emailed_at = utcnow() if payload.send_email else None
     session.add(invite)
     session.commit()
     session.refresh(invite)
 
-    return _to_read(session, invite, team)
+    message = _invite_email(invite, team, current_user) if payload.send_email else None
+    return _to_read(session, invite, team), message
 
 
 def list_invites(

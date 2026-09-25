@@ -10,4 +10,5 @@ import type { TeamRole } from './teamRole';
 export interface InviteCreate {
   email: string;
   role?: TeamRole;
+  send_email?: boolean;
 }

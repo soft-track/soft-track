@@ -53,6 +53,10 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
 };
 
 /**
+ * Invite an address to the team, or refresh an existing invitation.
+ *
+ * The response carries the link to copy, as it always has. With
+ * `send_email` it is also emailed to the address, after the response.
  * @summary Create Invite
  */
 export const createInviteTeamsTeamIdInvitesPost = (

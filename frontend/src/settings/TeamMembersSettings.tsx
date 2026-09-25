@@ -8,6 +8,7 @@ import {
   useListInvitesTeamsTeamIdInvitesGet,
   useRevokeInviteTeamsTeamIdInvitesInviteIdDelete,
 } from '@/api/generated/endpoints/invites/invites'
+import { useGetNotificationSettingsNotificationsSettingsGet } from '@/api/generated/endpoints/notifications/notifications'
 import {
   useListTeamMembersTeamsTeamIdMembersGet,
   useRemoveTeamMemberTeamsTeamIdMembersUserIdDelete,
@@ -53,6 +54,13 @@ export default function TeamMembersSettings() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<TeamRole>('member')
   const [lastInvite, setLastInvite] = useState<InviteRead | null>(null)
+  // Whether this instance can send mail at all (#84). The same answer the
+  // notification settings use to decide whether to offer email digests.
+  const canEmail =
+    useGetNotificationSettingsNotificationsSettingsGet().data?.email_delivery_configured === true
+  // On by default where it is possible: someone who typed an address expects
+  // the invitation to reach it. Copying the link still works either way.
+  const [emailIt, setEmailIt] = useState(true)
   const [copied, setCopied] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -78,7 +86,7 @@ export default function TeamMembersSettings() {
     try {
       const invite = await createInvite.mutateAsync({
         teamId: team.id,
-        data: { email: inviteEmail, role: inviteRole },
+        data: { email: inviteEmail, role: inviteRole, send_email: canEmail && emailIt },
       })
       setLastInvite(invite)
       setInviteEmail('')
@@ -186,14 +194,39 @@ export default function TeamMembersSettings() {
               <Icon name="mail" size={15} />
               {createInvite.isPending ? 'Inviting…' : 'Send invite'}
             </button>
+            {canEmail && (
+              <label className="flex w-full items-center gap-2 text-sm text-neutral-600">
+                <input
+                  type="checkbox"
+                  checked={emailIt}
+                  onChange={(e) => setEmailIt(e.target.checked)}
+                  className="h-4 w-4 accent-[var(--color-brand-600)]"
+                />
+                Email the invitation to them
+              </label>
+            )}
           </form>
         )}
 
         {lastInvite && (
           <div className="well mt-4 rounded-control p-3">
             <p className="text-sm text-neutral-700">
-              Invitation ready for <strong>{lastInvite.email}</strong>. SoftTrack does not
-              send email — copy this link and send it however your team already talks.
+              {lastInvite.emailed_at ? (
+                <>
+                  Invitation emailed to <strong>{lastInvite.email}</strong>. The link is here
+                  too, if you would rather send it yourself.
+                </>
+              ) : canEmail ? (
+                <>
+                  Invitation ready for <strong>{lastInvite.email}</strong>. Copy this link and
+                  send it however your team already talks.
+                </>
+              ) : (
+                <>
+                  Invitation ready for <strong>{lastInvite.email}</strong>. This instance does
+                  not send email — copy this link and send it however your team already talks.
+                </>
+              )}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <code className="identifier min-w-0 flex-1 truncate rounded-control bg-neutral-900/5 px-2 py-1.5 text-xs text-neutral-600">
@@ -283,6 +316,14 @@ export default function TeamMembersSettings() {
                       Invited by {invite.invited_by.full_name} · expires{' '}
                       {formatDistanceToNow(parseServerDate(invite.expires_at), { addSuffix: true })}
                     </p>
+                    {/* Attempted, not delivered: SMTP accepting the message
+                        is all this instance can know. */}
+                    {invite.emailed_at && (
+                      <p className="text-xs text-neutral-500">
+                        Sent to {invite.email}{' '}
+                        {formatDistanceToNow(parseServerDate(invite.emailed_at), { addSuffix: true })}
+                      </p>
+                    )}
                   </div>
                   <RoleChip role={invite.role} />
                   <button
@@ -299,7 +340,13 @@ export default function TeamMembersSettings() {
                       createInvite
                         .mutateAsync({
                           teamId: team.id,
-                          data: { email: invite.email, role: invite.role },
+                          // Resent the way it was first sent: by email if it
+                          // was emailed, as a fresh link to copy if not.
+                          data: {
+                            email: invite.email,
+                            role: invite.role,
+                            send_email: canEmail && invite.emailed_at != null,
+                          },
                         })
                         .then((fresh) => {
                           // Re-inviting mints a new token and retires the old

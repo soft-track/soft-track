@@ -1148,6 +1148,7 @@
           "invites"
         ],
         "summary": "Create Invite",
+        "description": "Invite an address to the team, or refresh an existing invitation.\n\nThe response carries the link to copy, as it always has. With\n`send_email` it is also emailed to the address, after the response.",
         "operationId": "create_invite_teams__team_id__invites_post",
         "security": [
           {
@@ -6717,6 +6718,11 @@
           "role": {
             "$ref": "#/components/schemas/TeamRole",
             "default": "member"
+          },
+          "send_email": {
+            "type": "boolean",
+            "title": "Send Email",
+            "default": false
           }
         },
         "type": "object",
@@ -6805,6 +6811,18 @@
             "type": "string",
             "format": "date-time",
             "title": "Expires At"
+          },
+          "emailed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emailed At"
           }
         },
         "type": "object",
@@ -6821,7 +6839,7 @@
           "expires_at"
         ],
         "title": "InviteRead",
-        "description": "A pending invitation, as an admin of the team (or its recipient) sees it.\n\nCarries the token because there is no mail server: the link is copied out\nof this response and sent by whatever the team already uses. Only ever\nreturned to a team admin or to the person the invite is addressed to."
+        "description": "A pending invitation, as an admin of the team (or its recipient) sees it.\n\nCarries the token so the link can be copied out of this response and sent\nby whatever the team already uses -- which works on every instance, with\nor without a mail server. Only ever returned to a team admin or to the\nperson the invite is addressed to."
       },
       "IssueBulkChanges": {
         "properties": {

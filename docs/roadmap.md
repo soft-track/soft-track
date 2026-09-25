@@ -9,7 +9,8 @@ markdown descriptions, sub-issues, issue links (blocks / relates-to), cycles
 (sprints), estimates, full-text search, and keyboard-first navigation.
 
 **After that:** burndown/velocity reports, automation rules, GitHub/GitLab
-branch and PR linking, and sending invitations by email (SMTP). Signing in with
+branch and PR linking. Sending invitations by email (SMTP) is done — see
+[user management](features/users.md). Signing in with
 [Google and GitHub](features/oauth.md) is done.
 
 **Later:** real-time sync, granular permissions, SSO/SCIM, audit log, and a

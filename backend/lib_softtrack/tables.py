@@ -407,6 +407,11 @@ class TeamInvite(SQLModel, table=True):
     invited_by_id: int = Field(foreign_key="user.id")
     created_at: datetime = Field(default_factory=utcnow)
     expires_at: datetime
+    #: When the current link was emailed to the address (#84), or null if it
+    #: never was. "Attempted", not "delivered": SMTP accepting a message is
+    #: all this instance can know. Cleared when a re-invite mints a new link
+    #: without emailing it, because the link in the old email no longer works.
+    emailed_at: Optional[datetime] = None
 
 
 class Team(SQLModel, table=True):
