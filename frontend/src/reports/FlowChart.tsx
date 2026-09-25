@@ -1,6 +1,8 @@
-import { format, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
 
 import type { CumulativeFlow, StatusCategory } from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
+import { formatDate } from '@/i18n/format'
 import { CATEGORY_META } from '@/issues/issueMeta'
 import { Figure, Key, Tooltip, XAxis, YAxis } from '@/reports/Chart'
 import { PAD, useCrosshair } from '@/reports/chartGeometry'
@@ -18,6 +20,7 @@ const H = 220
  * palette is not used here.
  */
 export function FlowChart({ data }: { data: CumulativeFlow }) {
+  const { t } = useTranslation(['reports', 'common'])
   const days = data.days
   const { index, onMove, onLeave } = useCrosshair(days.length)
 
@@ -59,9 +62,9 @@ export function FlowChart({ data }: { data: CumulativeFlow }) {
 
   return (
     <Figure
-      title="Cumulative flow"
-      note="Issues in each stage, per day. A band that keeps widening is work piling up in that stage."
-      empty={allEmpty ? 'No issue history in this window yet.' : undefined}
+      title={t('flow.title')}
+      note={t('flow.note')}
+      empty={allEmpty ? t('flow.empty') : undefined}
       legend={
         <>
           {FLOW_ORDER.map((status) => (
@@ -79,7 +82,7 @@ export function FlowChart({ data }: { data: CumulativeFlow }) {
           viewBox={`0 0 ${W} ${H}`}
           className="w-full"
           role="img"
-          aria-label="Cumulative flow diagram"
+          aria-label={t('flow.chart')}
           onMouseMove={(e) => onMove(e, W)}
           onMouseLeave={onLeave}
         >
@@ -104,7 +107,7 @@ export function FlowChart({ data }: { data: CumulativeFlow }) {
             />
           )}
           <XAxis
-            labels={days.map((d) => format(parseISO(d.day), 'd MMM'))}
+            labels={days.map((d) => formatDate(parseISO(d.day), 'd MMM'))}
             width={W}
             height={H}
           />
@@ -114,7 +117,7 @@ export function FlowChart({ data }: { data: CumulativeFlow }) {
           <Tooltip
             x={x(index!)}
             width={W}
-            title={format(parseISO(hovered.day), 'EEE d MMM')}
+            title={formatDate(parseISO(hovered.day), 'EEE d MMM')}
             rows={FLOW_ORDER.filter(
               (status) => (hovered.counts[status as StatusCategory] ?? 0) > 0,
             ).map((status) => ({

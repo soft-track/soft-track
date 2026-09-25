@@ -1,4 +1,5 @@
 import type { TimeSpent } from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
 import { formatDuration } from '@/issues/duration'
 import { Figure } from '@/reports/Chart'
 import { INK } from '@/reports/chartTokens'
@@ -20,15 +21,18 @@ export function TimeSpentChart({
   note: string
   data: TimeSpent
 }) {
+  const { t } = useTranslation(['reports', 'common'])
   const max = Math.max(1, ...data.by_person.map((person) => person.minutes))
 
   return (
     <Figure
       title={title}
       note={
-        data.total_minutes > 0 ? `${note} ${formatDuration(data.total_minutes)} in all.` : note
+        data.total_minutes > 0
+          ? t('timeSpent.noteWithTotal', { note, total: formatDuration(data.total_minutes) })
+          : note
       }
-      empty={data.total_minutes === 0 ? 'No time logged.' : undefined}
+      empty={data.total_minutes === 0 ? t('timeSpent.empty') : undefined}
     >
       <ul className="space-y-2">
         {data.by_person.map((person) => (

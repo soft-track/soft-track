@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { formatDistanceToNow, isPast } from 'date-fns'
+import { isPast } from 'date-fns'
 import { useState } from 'react'
 
 import { formatCycleRange, parseServerDate } from '@/api/dates'
@@ -10,11 +10,14 @@ import {
 } from '@/api/generated/endpoints/cycles/cycles'
 import type { CycleRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
+import { Trans, userText, useTranslation } from '@/i18n'
+import { formatRelative } from '@/i18n/format'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 
 /** Shown above the board while a cycle is selected. */
 export function CycleBanner({ cycle }: { cycle: CycleRead }) {
+  const { t } = useTranslation(['cycles', 'common'])
   const { team } = useTeamContext()
   const queryClient = useQueryClient()
   const [message, setMessage] = useState<string | null>(null)
@@ -36,7 +39,7 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
       setMessage(describe(result as never))
       refresh()
     } catch (err: unknown) {
-      setError(errorDetail(err, 'That did not work.'))
+      setError(errorDetail(err, t('banner.error')))
     }
   }
 
@@ -56,8 +59,9 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
           {cycle.state !== 'completed' && (
             <span className={overdue ? 'text-danger-600' : undefined}>
               {' · '}
-              {overdue ? 'ended ' : 'ends '}
-              {formatDistanceToNow(ends, { addSuffix: true })}
+              {overdue
+                ? t('schedule.ended', { when: formatRelative(ends) })
+                : t('schedule.ends', { when: formatRelative(ends) })}
             </span>
           )}
         </span>
@@ -69,23 +73,24 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
               style={{ width: `${done * 100}%` }}
             />
           </span>
-          <span className="identifier">
-            {progress.issues_completed}/{progress.issues_total}
-          </span>{' '}
-          issues ·{' '}
-          <span className="identifier">
-            {progress.points_completed}/{progress.points_total}
-          </span>{' '}
-          pts
-          {progress.issues_unestimated > 0 && (
-            <span
-              className="text-neutral-400"
-              title="Points totals are only as honest as this number is small"
-            >
-              {' '}
-              ({progress.issues_unestimated} unsized)
-            </span>
-          )}
+          <Trans
+            t={t}
+            i18nKey={
+              progress.issues_unestimated > 0 ? 'banner.progressUnsized' : 'banner.progress'
+            }
+            values={{
+              issuesCompleted: progress.issues_completed,
+              count: progress.issues_total,
+              pointsCompleted: progress.points_completed,
+              pointsTotal: progress.points_total,
+              unsized: progress.issues_unestimated,
+            }}
+            components={{
+              num: <span className="identifier" />,
+              muted: <span className="text-neutral-400" title={t('banner.unsizedHint')} />,
+            }}
+            {...userText}
+          />
         </span>
 
         <div className="ml-auto flex items-center gap-2">
@@ -96,12 +101,12 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
               onClick={() =>
                 run(
                   () => startCycle.mutateAsync({ cycleId: cycle.id }),
-                  () => 'Cycle started.',
+                  () => t('banner.started'),
                 )
               }
               className="btn btn-primary btn-sm"
             >
-              Start cycle
+              {t('banner.start')}
             </button>
           )}
           {cycle.state === 'active' && (
@@ -113,17 +118,15 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
                   () => completeCycle.mutateAsync({ cycleId: cycle.id }),
                   (result: { carried_over: number; carried_into_cycle_id: number | null }) =>
                     result.carried_over === 0
-                      ? 'Cycle completed with everything finished.'
-                      : `Cycle completed. ${result.carried_over} unfinished ${
-                          result.carried_over === 1 ? 'issue' : 'issues'
-                        } moved to ${
-                          result.carried_into_cycle_id ? 'the next cycle' : 'the backlog'
-                        }.`,
+                      ? t('banner.completedAllDone')
+                      : result.carried_into_cycle_id
+                        ? t('banner.completedToNext', { count: result.carried_over })
+                        : t('banner.completedToBacklog', { count: result.carried_over }),
                 )
               }
               className="btn btn-primary btn-sm"
             >
-              Complete cycle
+              {t('banner.complete')}
             </button>
           )}
           {cycle.state === 'completed' && (
@@ -131,7 +134,7 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
               className="chip"
               style={{ ['--chip' as string]: 'var(--color-status-done)' }}
             >
-              <Icon name="check" size={11} /> Completed
+              <Icon name="check" size={11} /> {t('banner.completed')}
             </span>
           )}
         </div>

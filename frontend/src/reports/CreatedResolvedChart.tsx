@@ -1,6 +1,8 @@
-import { format, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
 
 import type { CreatedVsResolved } from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
+import { formatDate } from '@/i18n/format'
 import { Figure, Key, Tooltip, XAxis, YAxis } from '@/reports/Chart'
 import { PAD, useCrosshair } from '@/reports/chartGeometry'
 import { INK } from '@/reports/chartTokens'
@@ -18,6 +20,7 @@ const BACKLOG_H = 90
  * chart lets the author decide which line looks like it is winning.
  */
 export function CreatedResolvedChart({ data }: { data: CreatedVsResolved }) {
+  const { t } = useTranslation(['reports', 'common'])
   const days = data.days
   const { index, onMove, onLeave } = useCrosshair(days.length)
 
@@ -36,13 +39,16 @@ export function CreatedResolvedChart({ data }: { data: CreatedVsResolved }) {
 
   return (
     <Figure
-      title="Created vs resolved"
-      note={`${data.total_created} opened and ${data.total_resolved} closed in this window. The lower plot is the backlog those two lines produce.`}
-      empty={nothing ? 'Nothing opened or closed in this window.' : undefined}
+      title={t('createdResolved.title')}
+      note={t('createdResolved.note', {
+        opened: data.total_created,
+        closed: data.total_resolved,
+      })}
+      empty={nothing ? t('createdResolved.empty') : undefined}
       legend={
         <>
-          <Key colour={INK.measure} label="Created" />
-          <Key colour={INK.resolved} label="Resolved" />
+          <Key colour={INK.measure} label={t('createdResolved.created')} />
+          <Key colour={INK.resolved} label={t('createdResolved.resolved')} />
         </>
       }
     >
@@ -51,7 +57,7 @@ export function CreatedResolvedChart({ data }: { data: CreatedVsResolved }) {
           viewBox={`0 0 ${W} ${H}`}
           className="w-full"
           role="img"
-          aria-label="Issues created and resolved per day"
+          aria-label={t('createdResolved.chart')}
           onMouseMove={(e) => onMove(e, W)}
           onMouseLeave={onLeave}
         >
@@ -95,20 +101,20 @@ export function CreatedResolvedChart({ data }: { data: CreatedVsResolved }) {
             />
           )}
           <XAxis
-            labels={days.map((d) => format(parseISO(d.day), 'd MMM'))}
+            labels={days.map((d) => formatDate(parseISO(d.day), 'd MMM'))}
             width={W}
             height={H}
           />
         </svg>
 
         <p className="mt-1 mb-0.5 text-[11px] uppercase tracking-wide text-neutral-400">
-          Open issues
+          {t('createdResolved.openIssues')}
         </p>
         <svg
           viewBox={`0 0 ${W} ${BACKLOG_H}`}
           className="w-full"
           role="img"
-          aria-label="Open issues at the end of each day"
+          aria-label={t('createdResolved.backlogChart')}
         >
           <YAxis max={backlogMax} width={W} height={BACKLOG_H} ticks={1} />
           <path
@@ -132,11 +138,19 @@ export function CreatedResolvedChart({ data }: { data: CreatedVsResolved }) {
           <Tooltip
             x={x(index!)}
             width={W}
-            title={format(parseISO(hovered.day), 'EEE d MMM')}
+            title={formatDate(parseISO(hovered.day), 'EEE d MMM')}
             rows={[
-              { colour: INK.measure, label: 'Created', value: String(hovered.created) },
-              { colour: INK.resolved, label: 'Resolved', value: String(hovered.resolved) },
-              { label: 'Open', value: String(hovered.open_at_end_of_day) },
+              {
+                colour: INK.measure,
+                label: t('createdResolved.created'),
+                value: String(hovered.created),
+              },
+              {
+                colour: INK.resolved,
+                label: t('createdResolved.resolved'),
+                value: String(hovered.resolved),
+              },
+              { label: t('createdResolved.open'), value: String(hovered.open_at_end_of_day) },
             ]}
           />
         )}

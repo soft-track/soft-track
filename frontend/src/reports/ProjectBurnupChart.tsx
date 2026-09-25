@@ -1,7 +1,9 @@
-import { format, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
 import { useState } from 'react'
 
 import type { ProjectBurnup, ProjectBurnupPoint } from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
+import { formatDate } from '@/i18n/format'
 import { unestimatedNote } from '@/reports/burnup'
 import { Figure, Key, Tooltip, XAxis, YAxis } from '@/reports/Chart'
 import { PAD, useCrosshair } from '@/reports/chartGeometry'
@@ -27,6 +29,7 @@ const SERIES: Record<Unit, { scope: Count; done: Count }> = {
  * burndown folds into "remaining" and hides.
  */
 export function ProjectBurnupChart({ data }: { data: ProjectBurnup }) {
+  const { t } = useTranslation(['reports', 'common'])
   const [unit, setUnit] = useState<Unit>('issues')
   const points = data.points
   const { index, onMove, onLeave } = useCrosshair(points.length)
@@ -45,26 +48,35 @@ export function ProjectBurnupChart({ data }: { data: ProjectBurnup }) {
   const latest = points[points.length - 1]
   const floor = unit === 'points' ? unestimatedNote(latest) : null
   const hovered = index !== null ? points[index] : null
-  const label = unit === 'issues' ? 'issues' : 'pts'
+  const value = (count: number) =>
+    unit === 'issues'
+      ? t('burnup.value.issues', { count })
+      : t('burnup.value.points', { value: count })
+  // The label on the latest day: a `+` says the points scope is only a floor.
+  const latestLabel = (point: ProjectBurnupPoint) => {
+    const counts = { done: read(point, series.done), scope: read(point, series.scope) }
+    if (unit === 'issues') {
+      return t('burnup.latest.issues', { done: counts.done, count: counts.scope })
+    }
+    return point.unestimated_issues > 0
+      ? t('burnup.latest.pointsFloor', counts)
+      : t('burnup.latest.points', counts)
+  }
 
   return (
     <Figure
-      title="Burnup"
+      title={t('burnup.title')}
       note={
         data.started_on
-          ? `Scope against completed work since ${format(parseISO(data.started_on), 'd MMM yyyy')}, the first day history records anything about this project. Cancelled issues count as neither.`
+          ? t('burnup.note', { date: formatDate(parseISO(data.started_on), 'd MMM yyyy') })
           : undefined
       }
-      empty={
-        points.length === 0
-          ? 'No history for this project yet. The chart starts on the first day an issue is moved into it or out of it.'
-          : undefined
-      }
+      empty={points.length === 0 ? t('burnup.empty') : undefined}
       legend={
         <>
-          <Key colour={INK.contrastSeries} label="Scope" />
-          <Key colour={INK.measure} label="Completed" />
-          <div className="segmented ml-auto" role="tablist" aria-label="Measure">
+          <Key colour={INK.contrastSeries} label={t('burnup.scope')} />
+          <Key colour={INK.measure} label={t('burnup.completed')} />
+          <div className="segmented ml-auto" role="tablist" aria-label={t('burnup.measure')}>
             {(['issues', 'points'] as const).map((option) => (
               <button
                 key={option}
@@ -75,7 +87,7 @@ export function ProjectBurnupChart({ data }: { data: ProjectBurnup }) {
                 onClick={() => setUnit(option)}
                 className="segmented-item"
               >
-                {option === 'issues' ? 'Issues' : 'Points'}
+                {option === 'issues' ? t('burnup.issues') : t('burnup.points')}
               </button>
             ))}
           </div>
@@ -95,7 +107,11 @@ export function ProjectBurnupChart({ data }: { data: ProjectBurnup }) {
           viewBox={`0 0 ${W} ${H}`}
           className="w-full"
           role="img"
-          aria-label={`Burnup for ${data.project_name}, in ${unit}`}
+          aria-label={
+            unit === 'issues'
+              ? t('burnup.chart.issues', { project: data.project_name })
+              : t('burnup.chart.points', { project: data.project_name })
+          }
           onMouseMove={(e) => onMove(e, W)}
           onMouseLeave={onLeave}
         >
@@ -122,8 +138,7 @@ export function ProjectBurnupChart({ data }: { data: ProjectBurnup }) {
               className="fill-neutral-700"
               style={{ fontSize: 11, fontVariantNumeric: 'tabular-nums' }}
             >
-              {read(latest, series.done)} of {read(latest, series.scope)}
-              {unit === 'points' && latest.unestimated_issues > 0 ? '+' : ''} {label}
+              {latestLabel(latest)}
             </text>
           )}
           {index !== null && (
@@ -137,7 +152,7 @@ export function ProjectBurnupChart({ data }: { data: ProjectBurnup }) {
             />
           )}
           <XAxis
-            labels={points.map((p) => format(parseISO(p.day), 'd MMM'))}
+            labels={points.map((p) => formatDate(parseISO(p.day), 'd MMM'))}
             width={W}
             height={H}
           />
@@ -146,20 +161,20 @@ export function ProjectBurnupChart({ data }: { data: ProjectBurnup }) {
           <Tooltip
             x={x(index!)}
             width={W}
-            title={format(parseISO(hovered.day), 'EEE d MMM')}
+            title={formatDate(parseISO(hovered.day), 'EEE d MMM')}
             rows={[
               {
                 colour: INK.contrastSeries,
-                label: 'Scope',
-                value: `${read(hovered, series.scope)} ${label}`,
+                label: t('burnup.scope'),
+                value: value(read(hovered, series.scope)),
               },
               {
                 colour: INK.measure,
-                label: 'Completed',
-                value: `${read(hovered, series.done)} ${label}`,
+                label: t('burnup.completed'),
+                value: value(read(hovered, series.done)),
               },
               ...(hovered.unestimated_issues > 0
-                ? [{ label: 'Unestimated', value: `${hovered.unestimated_issues}` }]
+                ? [{ label: t('burnup.unestimated'), value: `${hovered.unestimated_issues}` }]
                 : []),
             ]}
           />

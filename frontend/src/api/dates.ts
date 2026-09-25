@@ -1,3 +1,5 @@
+import { i18n } from '@/i18n'
+
 /**
  * Parse a timestamp the API returned.
  *
@@ -27,10 +29,16 @@ export function formatCycleRange(
   endsAt: string,
   timeZone = 'UTC',
 ): string {
-  const formatter = new Intl.DateTimeFormat('en-GB', {
+  // The language's own day and month order (#106); English keeps the
+  // interface's day-first "8 Sept", which is `en-GB`.
+  const language = i18n.language || 'en'
+  const formatter = new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : language, {
     day: 'numeric',
     month: 'short',
     timeZone,
   })
-  return `${formatter.format(parseServerDate(startsAt))} – ${formatter.format(parseServerDate(endsAt))}`
+  return i18n.t('common:dateRange', {
+    start: formatter.format(parseServerDate(startsAt)),
+    end: formatter.format(parseServerDate(endsAt)),
+  })
 }

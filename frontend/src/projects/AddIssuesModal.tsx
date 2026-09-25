@@ -5,6 +5,7 @@ import { errorDetail } from '@/api/errors'
 import { useBulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost } from '@/api/generated/endpoints/issues/issues'
 import { useSearchSearchGet } from '@/api/generated/endpoints/search/search'
 import type { ProjectRead } from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
 import { useDebounced } from '@/search/useDebounced'
 import { invalidateProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
@@ -29,6 +30,7 @@ export function AddIssuesModal({
   alreadyIn: ReadonlySet<number>
   onClose: () => void
 }) {
+  const { t } = useTranslation(['projects', 'common'])
   const dialogRef = useFocusTrap<HTMLFormElement>()
   const titleId = useId()
   const { team } = useTeamContext()
@@ -67,7 +69,7 @@ export function AddIssuesModal({
       invalidateProjects(queryClient, team.id)
       onClose()
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not add those issues.'))
+      setError(errorDetail(err, t('add.errors.add')))
     }
   }
 
@@ -87,12 +89,9 @@ export function AddIssuesModal({
         className="pop-in glass-strong flex max-h-[70vh] w-full max-w-lg flex-col rounded-panel p-5"
       >
         <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
-          Add issues to {project.name}
+          {t('add.title', { project: project.name })}
         </h2>
-        <p className="mt-1 text-xs text-neutral-500">
-          An issue belongs to one project at a time, so adding one that is already
-          in another project moves it here.
-        </p>
+        <p className="mt-1 text-xs text-neutral-500">{t('add.intro')}</p>
 
         {error && (
           <div
@@ -104,7 +103,7 @@ export function AddIssuesModal({
         )}
 
         <label className="relative mt-4 block">
-          <span className="sr-only">Search issues</span>
+          <span className="sr-only">{t('add.searchLabel')}</span>
           <Icon
             name="search"
             size={14}
@@ -115,7 +114,7 @@ export function AddIssuesModal({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search issues on this team…"
+            placeholder={t('add.searchPlaceholder')}
             className="field pl-8"
           />
         </label>
@@ -123,14 +122,14 @@ export function AddIssuesModal({
         <ul className="scroll-thin -mx-1 mt-3 min-h-24 flex-1 overflow-y-auto px-1">
           {!settled && (
             <li className="py-6 text-center text-sm text-neutral-400">
-              Search by title, description or comment.
+              {t('add.prompt')}
             </li>
           )}
           {settled && results.isLoading && (
-            <li className="py-6 text-center text-sm text-neutral-400">Searching…</li>
+            <li className="py-6 text-center text-sm text-neutral-400">{t('add.searching')}</li>
           )}
           {settled && !results.isLoading && hits.length === 0 && (
-            <li className="py-6 text-center text-sm text-neutral-400">No issues match.</li>
+            <li className="py-6 text-center text-sm text-neutral-400">{t('add.noMatches')}</li>
           )}
           {hits.map((hit) => {
             const inside = alreadyIn.has(hit.id)
@@ -152,7 +151,7 @@ export function AddIssuesModal({
                     {hit.identifier}
                   </span>
                   <span className="min-w-0 flex-1 truncate">{hit.title}</span>
-                  {inside && <span className="shrink-0 text-xs">Already here</span>}
+                  {inside && <span className="shrink-0 text-xs">{t('add.alreadyHere')}</span>}
                 </label>
               </li>
             )
@@ -161,16 +160,14 @@ export function AddIssuesModal({
 
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn btn-secondary btn-sm">
-            Cancel
+            {t('common:cancel')}
           </button>
           <button
             type="submit"
             disabled={picked.size === 0 || bulkUpdate.isPending}
             className="btn btn-primary btn-sm"
           >
-            {picked.size === 0
-              ? 'Add issues'
-              : `Add ${picked.size} ${picked.size === 1 ? 'issue' : 'issues'}`}
+            {picked.size === 0 ? t('add.submitNone') : t('add.submit', { count: picked.size })}
           </button>
         </div>
       </form>

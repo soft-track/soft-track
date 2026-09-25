@@ -2,6 +2,8 @@ import { format, parseISO } from 'date-fns'
 import { Link } from 'react-router-dom'
 
 import type { ProjectRead } from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
+import { formatDate } from '@/i18n/format'
 import { isOverdue, roadmapSections } from '@/projects/roadmap'
 import { progressLabel, progressRatio, stateMeta } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
@@ -15,6 +17,7 @@ import { Avatar } from '@/ui/Avatar'
  * land by the date". Each row opens the project's own page.
  */
 export function RoadmapView({ today = format(new Date(), 'yyyy-MM-dd') }: { today?: string }) {
+  const { t } = useTranslation(['projects', 'common'])
   const { team, projects } = useTeamContext()
   const sections = roadmapSections(projects, today)
   const undated = sections.find((section) => section.key === 'undated')
@@ -22,8 +25,8 @@ export function RoadmapView({ today = format(new Date(), 'yyyy-MM-dd') }: { toda
   if (sections.length === 0) {
     return (
       <div className="glass flex h-full flex-col items-center justify-center gap-1 rounded-panel text-sm text-neutral-400">
-        <p>No projects on {team.name} yet.</p>
-        <p className="text-xs">A project with a target date shows up here under its month.</p>
+        <p>{t('roadmap.empty', { team: team.name })}</p>
+        <p className="text-xs">{t('roadmap.emptyHint')}</p>
       </div>
     )
   }
@@ -32,10 +35,7 @@ export function RoadmapView({ today = format(new Date(), 'yyyy-MM-dd') }: { toda
     <div className="glass scroll-thin h-full overflow-y-auto rounded-panel px-4 py-3">
       {undated && (
         <p className="mb-3 text-xs text-neutral-500">
-          {undated.projects.length === 1
-            ? '1 project has no target date'
-            : `${undated.projects.length} projects have no target date`}
-          {' — listed at the bottom.'}
+          {t('roadmap.undated', { count: undated.projects.length })}
         </p>
       )}
       <div className="space-y-5">
@@ -48,7 +48,7 @@ export function RoadmapView({ today = format(new Date(), 'yyyy-MM-dd') }: { toda
               {section.title}
               {section.isCurrentMonth && (
                 <span className="chip" style={{ ['--chip' as string]: 'var(--color-brand-500)' }}>
-                  This month
+                  {t('roadmap.thisMonth')}
                 </span>
               )}
             </h2>
@@ -65,6 +65,7 @@ export function RoadmapView({ today = format(new Date(), 'yyyy-MM-dd') }: { toda
 }
 
 function RoadmapRow({ project, today }: { project: ProjectRead; today: string }) {
+  const { t } = useTranslation(['projects', 'common'])
   const { team, members } = useTeamContext()
   const lead = members.find((member) => member.user.id === project.lead_id)?.user
   const state = stateMeta(project.state)
@@ -86,7 +87,7 @@ function RoadmapRow({ project, today }: { project: ProjectRead; today: string })
           {state.label}
         </span>
 
-        <span className="hidden w-36 shrink-0 md:block" title={progress ?? 'No issues yet'}>
+        <span className="hidden w-36 shrink-0 md:block" title={progress ?? t('roadmap.noIssues')}>
           <span className="block h-1.5 overflow-hidden rounded-full bg-neutral-900/8">
             <span
               className="block h-full rounded-full"
@@ -94,7 +95,7 @@ function RoadmapRow({ project, today }: { project: ProjectRead; today: string })
             />
           </span>
           <span className="mt-0.5 block text-[11px] text-neutral-400">
-            {progress ?? 'No issues yet'}
+            {progress ?? t('roadmap.noIssues')}
           </span>
         </span>
 
@@ -103,7 +104,7 @@ function RoadmapRow({ project, today }: { project: ProjectRead; today: string })
         ) : (
           <span
             className="h-[22px] w-[22px] shrink-0 rounded-full border border-dashed border-neutral-900/20"
-            title="No lead"
+            title={t('roadmap.noLead')}
           />
         )}
 
@@ -112,8 +113,10 @@ function RoadmapRow({ project, today }: { project: ProjectRead; today: string })
             overdue ? 'font-semibold text-danger-600' : 'text-neutral-500'
           }`}
         >
-          {project.target_date ? format(parseISO(project.target_date), 'd MMM') : '—'}
-          {overdue && <span className="block text-[10px] font-medium">Overdue</span>}
+          {project.target_date
+            ? formatDate(parseISO(project.target_date), t('roadmap.dayPattern'))
+            : '—'}
+          {overdue && <span className="block text-[10px] font-medium">{t('roadmap.overdue')}</span>}
         </span>
       </Link>
     </li>

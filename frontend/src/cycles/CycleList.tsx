@@ -1,6 +1,8 @@
-import { formatDistanceToNow, isPast } from 'date-fns'
+import { isPast } from 'date-fns'
 import { parseServerDate } from '@/api/dates'
 import type { CycleRead } from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
+import { formatRelative } from '@/i18n/format'
 
 /**
  * Cycles in the sidebar.
@@ -18,6 +20,7 @@ export function CycleList({
   activeCycleId: number | null
   onSelect: (cycleId: number | null) => void
 }) {
+  const { t } = useTranslation(['cycles', 'common'])
   const rank = { active: 0, upcoming: 1, completed: 2 } as const
   const ordered = [...cycles].sort(
     (a, b) => rank[a.state] - rank[b.state] || b.number - a.number,
@@ -27,7 +30,7 @@ export function CycleList({
   )
 
   if (cycles.length === 0) {
-    return <p className="px-2 text-xs text-neutral-400">No cycles yet.</p>
+    return <p className="px-2 text-xs text-neutral-400">{t('list.empty')}</p>
   }
 
   return (
@@ -59,6 +62,7 @@ function CycleRow({
   selected: boolean
   onSelect: () => void
 }) {
+  const { t } = useTranslation(['cycles', 'common'])
   const { progress } = cycle
   const done = progress.issues_total > 0 ? progress.issues_completed / progress.issues_total : 0
   const ends = parseServerDate(cycle.ends_at)
@@ -76,7 +80,7 @@ function CycleRow({
         <span
           className="dot"
           style={{ ['--dot' as string]: STATE_COLOUR[cycle.state] }}
-          title={cycle.state}
+          title={t(`list.state.${cycle.state}`)}
         />
         <span
           className={`min-w-0 flex-1 truncate ${
@@ -107,13 +111,13 @@ function CycleRow({
           >
             {/* Points, not just issues -- eight of ten issues done with two of
                 thirty points burned means the hard work is still ahead. */}
-            {progress.points_total > 0 && (
-              <>
-                {progress.points_completed}/{progress.points_total} pts ·{' '}
-              </>
-            )}
-            {overdue ? 'ended ' : 'ends '}
-            {formatDistanceToNow(ends, { addSuffix: true })}
+            {progress.points_total > 0
+              ? t(overdue ? 'list.pointsEnded' : 'list.pointsEnds', {
+                  completed: progress.points_completed,
+                  total: progress.points_total,
+                  when: formatRelative(ends),
+                })
+              : t(overdue ? 'schedule.ended' : 'schedule.ends', { when: formatRelative(ends) })}
           </span>
         </>
       )}

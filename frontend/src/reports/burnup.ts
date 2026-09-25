@@ -1,4 +1,5 @@
 import type { ProjectBurnupPoint } from '@/api/generated/models'
+import { i18n } from '@/i18n'
 
 /**
  * Whether a points chart has to say it is a floor (#64), and what to say.
@@ -10,7 +11,5 @@ import type { ProjectBurnupPoint } from '@/api/generated/models'
 export function unestimatedNote(point: ProjectBurnupPoint | undefined): string | null {
   const count = point?.unestimated_issues ?? 0
   if (count === 0) return null
-  return count === 1
-    ? '1 issue in scope has no estimate, so the points scope is a floor, not the size of the project.'
-    : `${count} issues in scope have no estimate, so the points scope is a floor, not the size of the project.`
+  return i18n.t('reports:burnup.floor', { count })
 }

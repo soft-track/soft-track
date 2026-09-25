@@ -1,6 +1,8 @@
-import { format, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
 
 import type { Burndown } from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
+import { formatDate } from '@/i18n/format'
 import { Figure, Key, Tooltip, XAxis, YAxis } from '@/reports/Chart'
 import { PAD, useCrosshair } from '@/reports/chartGeometry'
 import { INK } from '@/reports/chartTokens'
@@ -9,6 +11,7 @@ const W = 640
 const H = 220
 
 export function BurndownChart({ data }: { data: Burndown }) {
+  const { t } = useTranslation(['reports', 'common'])
   const points = data.points
   const { index, onMove, onLeave } = useCrosshair(points.length)
 
@@ -28,15 +31,15 @@ export function BurndownChart({ data }: { data: Burndown }) {
 
   return (
     <Figure
-      title={`Burndown · ${data.cycle_name}`}
-      note="Points still outstanding each day. The dashed line runs from the cycle's opening scope to zero — work added later does not move it."
-      empty={points.length === 0 ? 'This cycle has not started yet.' : undefined}
+      title={t('burndown.title', { cycle: data.cycle_name })}
+      note={t('burndown.note')}
+      empty={points.length === 0 ? t('burndown.notStarted') : undefined}
       legend={
         <>
-          <Key colour={INK.measure} label="Remaining" />
-          <Key colour={INK.axis} label="Ideal" dashed />
+          <Key colour={INK.measure} label={t('burndown.remaining')} />
+          <Key colour={INK.axis} label={t('burndown.ideal')} dashed />
           {data.scope_changes.length > 0 && (
-            <Key colour={INK.contrastSeries} label="Scope changed" />
+            <Key colour={INK.contrastSeries} label={t('burndown.scopeChanged')} />
           )}
         </>
       }
@@ -46,7 +49,7 @@ export function BurndownChart({ data }: { data: Burndown }) {
           viewBox={`0 0 ${W} ${H}`}
           className="w-full"
           role="img"
-          aria-label={`Burndown for ${data.cycle_name}`}
+          aria-label={t('burndown.chart', { cycle: data.cycle_name })}
           onMouseMove={(e) => onMove(e, W)}
           onMouseLeave={onLeave}
         >
@@ -102,7 +105,7 @@ export function BurndownChart({ data }: { data: Burndown }) {
                 className="fill-neutral-700"
                 style={{ fontSize: 11, fontVariantNumeric: 'tabular-nums' }}
               >
-                {points[points.length - 1].points_remaining} left
+                {t('burndown.left', { points: points[points.length - 1].points_remaining })}
               </text>
             </>
           )}
@@ -119,7 +122,7 @@ export function BurndownChart({ data }: { data: Burndown }) {
           )}
 
           <XAxis
-            labels={points.map((p) => format(parseISO(p.day), 'd MMM'))}
+            labels={points.map((p) => formatDate(parseISO(p.day), 'd MMM'))}
             width={W}
             height={H}
           />
@@ -129,12 +132,23 @@ export function BurndownChart({ data }: { data: Burndown }) {
           <Tooltip
             x={x(index!)}
             width={W}
-            title={format(parseISO(hovered.day), 'EEE d MMM')}
+            title={formatDate(parseISO(hovered.day), 'EEE d MMM')}
             rows={[
-              { colour: INK.measure, label: 'Remaining', value: `${hovered.points_remaining} pts` },
-              { colour: INK.axis, label: 'Ideal', value: `${Math.round(hovered.ideal_remaining)} pts` },
-              { label: 'Scope', value: `${hovered.points_total} pts` },
-              { label: 'Issues left', value: `${hovered.issues_remaining}` },
+              {
+                colour: INK.measure,
+                label: t('burndown.remaining'),
+                value: t('burndown.points', { points: hovered.points_remaining }),
+              },
+              {
+                colour: INK.axis,
+                label: t('burndown.ideal'),
+                value: t('burndown.points', { points: Math.round(hovered.ideal_remaining) }),
+              },
+              {
+                label: t('burndown.scope'),
+                value: t('burndown.points', { points: hovered.points_total }),
+              },
+              { label: t('burndown.issuesLeft'), value: `${hovered.issues_remaining}` },
             ]}
           />
         )}

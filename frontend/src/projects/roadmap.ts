@@ -1,6 +1,8 @@
-import { format, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
 
 import type { ProjectRead } from '@/api/generated/models'
+import { i18n } from '@/i18n'
+import { formatDate } from '@/i18n/format'
 
 /** One month of the roadmap, or the projects that have no date at all. */
 export type RoadmapSection = {
@@ -54,7 +56,7 @@ export function roadmapSections(projects: ProjectRead[], today: string): Roadmap
 
   const sections: RoadmapSection[] = [...byMonth.keys()].sort().map((month) => ({
     key: month,
-    title: format(parseISO(`${month}-01`), 'MMMM yyyy'),
+    title: formatDate(parseISO(`${month}-01`), i18n.t('projects:roadmap.monthPattern')),
     isCurrentMonth: month === currentMonth,
     projects: byMonth
       .get(month)!
@@ -70,7 +72,7 @@ export function roadmapSections(projects: ProjectRead[], today: string): Roadmap
   if (undated.length > 0) {
     sections.push({
       key: 'undated',
-      title: 'No target date',
+      title: i18n.t('projects:roadmap.undatedSection'),
       isCurrentMonth: false,
       projects: undated,
     })

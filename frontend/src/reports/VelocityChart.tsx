@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import type { Velocity } from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
 import { Figure, Key } from '@/reports/Chart'
 import { PAD } from '@/reports/chartGeometry'
 import { INK } from '@/reports/chartTokens'
@@ -16,6 +17,7 @@ const H = 220
  * which is also what discharges the contrast warning on a pale fill.
  */
 export function VelocityChart({ data }: { data: Velocity }) {
+  const { t } = useTranslation(['reports', 'common'])
   const [hovered, setHovered] = useState<number | null>(null)
   const cycles = data.cycles
 
@@ -33,20 +35,29 @@ export function VelocityChart({ data }: { data: Velocity }) {
 
   return (
     <Figure
-      title="Velocity"
-      note="Points delivered in each completed cycle, against what the cycle held when it started."
-      empty={cycles.length === 0 ? 'No completed cycles yet.' : undefined}
+      title={t('velocity.title')}
+      note={t('velocity.note')}
+      empty={cycles.length === 0 ? t('velocity.empty') : undefined}
       legend={
         <>
-          <Key colour={INK.reference} label="Committed at start" />
-          <Key colour={INK.measure} label="Completed" />
+          <Key colour={INK.reference} label={t('velocity.committed')} />
+          <Key colour={INK.measure} label={t('velocity.completed')} />
           {data.average_points != null && (
-            <Key colour={INK.contrastSeries} label={`Average ${data.average_points} pts`} dashed />
+            <Key
+              colour={INK.contrastSeries}
+              label={t('velocity.average', { points: data.average_points })}
+              dashed
+            />
           )}
         </>
       }
     >
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Velocity by cycle">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full"
+        role="img"
+        aria-label={t('velocity.chart')}
+      >
         {[0, 0.5, 1].map((fraction) => (
           <line
             key={fraction}

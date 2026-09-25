@@ -11,6 +11,7 @@ import {
   sameFilters,
 } from '@/board/filters'
 import { type Arrangement, fromViewSort, sameSort } from '@/board/sorting'
+import { useTranslation } from '@/i18n'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { useSavedViews } from '@/views/useSavedViews'
@@ -37,6 +38,7 @@ export function ViewList({
   onEdit: (view: SavedViewRead) => void
   isAdmin: boolean
 }) {
+  const { t } = useTranslation(['views', 'common'])
   const { team } = useTeamContext()
   const views = useSavedViews(team.id)
 
@@ -52,10 +54,10 @@ export function ViewList({
         data-active={isEmpty(filters)}
       >
         <Icon name="board" size={15} className="opacity-70" />
-        All issues
+        {t('list.allIssues')}
       </button>
 
-      {shared.length > 0 && <Group label="Shared" />}
+      {shared.length > 0 && <Group label={t('list.shared')} />}
       {shared.map((view) => (
         <ViewRow
           key={view.id}
@@ -69,7 +71,7 @@ export function ViewList({
         />
       ))}
 
-      {mine.length > 0 && <Group label="Private" />}
+      {mine.length > 0 && <Group label={t('list.private')} />}
       {mine.map((view) => (
         <ViewRow
           key={view.id}
@@ -107,6 +109,7 @@ function ViewRow({
   onEdit: (view: SavedViewRead) => void
   isAdmin: boolean
 }) {
+  const { t } = useTranslation(['views', 'common'])
   const { user } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -144,7 +147,9 @@ function ViewRow({
         }
         className="nav-item w-full pr-7"
         data-active={showing}
-        title={view.is_shared ? `Shared by ${view.owner.full_name}` : 'Only you can see this'}
+        title={
+          view.is_shared ? t('list.sharedBy', { name: view.owner.full_name }) : t('list.onlyYou')
+        }
       >
         <Icon name={view.is_shared ? 'users' : 'filter'} size={14} className="opacity-70" />
         <span className="truncate">{view.name}</span>
@@ -153,7 +158,7 @@ function ViewRow({
             name="check"
             size={12}
             className={isMine ? 'ml-auto text-brand-500' : 'ml-auto text-neutral-400'}
-            aria-label={isMine ? 'Your default' : "The team's default"}
+            aria-label={isMine ? t('list.myDefault') : t('list.teamDefault')}
           />
         )}
       </button>
@@ -162,7 +167,7 @@ function ViewRow({
         ref={buttonRef}
         type="button"
         onClick={() => setMenuOpen((it) => !it)}
-        aria-label={`Actions for ${view.name}`}
+        aria-label={t('list.actionsFor', { name: view.name })}
         className="btn btn-ghost btn-icon btn-xs absolute right-1 top-1/2 -translate-y-1/2 text-neutral-400 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
       >
         <Icon name="more" size={13} />
@@ -179,20 +184,20 @@ function ViewRow({
             />
             <div
               role="menu"
-              aria-label={`${view.name} actions`}
+              aria-label={t('list.menu', { name: view.name })}
               style={{ top: anchor.bottom + 6, left: Math.min(anchor.left, window.innerWidth - 200) }}
               className="glass-menu fixed z-50 w-48 rounded-panel p-1"
             >
               <MenuItem
                 onClick={() => act(() => views.makeMyDefault(isMine ? null : view.id))}
               >
-                {isMine ? 'Stop opening on this' : 'Open on this by default'}
+                {isMine ? t('list.stopOpening') : t('list.openByDefault')}
               </MenuItem>
               {isAdmin && view.is_shared && (
                 <MenuItem
                   onClick={() => act(() => views.makeTeamDefault(isTeams ? null : view.id))}
                 >
-                  {isTeams ? "Clear the team's default" : "Make the team's default"}
+                  {isTeams ? t('list.clearTeamDefault') : t('list.makeTeamDefault')}
                 </MenuItem>
               )}
               {canEdit && (
@@ -203,13 +208,13 @@ function ViewRow({
                       onEdit(view)
                     }}
                   >
-                    Rename or reshare…
+                    {t('list.rename')}
                   </MenuItem>
                   <MenuItem
                     danger
                     onClick={() => act(() => views.destroy(view))}
                   >
-                    Delete view
+                    {t('list.delete')}
                   </MenuItem>
                 </>
               )}
