@@ -1,18 +1,22 @@
 import { formatDistanceToNow } from 'date-fns'
+import { useState } from 'react'
 import { parseServerDate } from '@/api/dates'
 import { AttachmentList } from '@/attachments/AttachmentList'
 import { CommentsSection } from '@/issues/detail/CommentsSection'
 import { DescriptionEditor } from '@/issues/detail/DescriptionEditor'
 import { DevelopmentSection } from '@/issues/detail/DevelopmentSection'
+import { IssueActionsMenu } from '@/issues/detail/IssueActionsMenu'
 import { IssueLinksSection } from '@/issues/detail/IssueLinksSection'
 import { IssueProperties } from '@/issues/detail/IssueProperties'
 import { SubIssuesSection } from '@/issues/detail/SubIssuesSection'
 import { useIssueAttachments } from '@/issues/detail/useIssueAttachments'
 import { useIssueEditor } from '@/issues/detail/useIssueEditor'
 import { usePanelShortcuts } from '@/issues/detail/usePanelShortcuts'
+import { MoveIssueModal } from '@/issues/MoveIssueModal'
 import { PriorityIcon } from '@/issues/PriorityIcon'
 import { WatchToggle } from '@/notifications/WatchToggle'
 import { useCanWrite } from '@/team/useCanWrite'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 import { useFocusTrap } from '@/ui/useFocusTrap'
@@ -27,6 +31,11 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
   // A guest (#104) sees the whole issue and can change none of it -- except
   // whether they are watching it, which is theirs.
   const readOnly = !useCanWrite()
+  const { teams } = useTeamContext()
+  const [moving, setMoving] = useState(false)
+  // Teams it could go to. Whether the user may write to each is the
+  // server's call, and the move dialog says so if not.
+  const elsewhere = issue ? teams.filter((team) => team.id !== issue.team_id) : []
 
   return (
     <div className="scrim fixed inset-0 z-20 flex justify-end" onClick={onClose}>
@@ -62,6 +71,15 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
           </span>
           <span className="flex shrink-0 items-center gap-1">
             {issue && <WatchToggle issueId={issue.id} />}
+            {issue && !readOnly && (
+              <IssueActionsMenu
+                actions={
+                  elsewhere.length > 0
+                    ? [{ label: 'Move to another team…', onSelect: () => setMoving(true) }]
+                    : []
+                }
+              />
+            )}
             <button
               type="button"
               onClick={onClose}
@@ -154,6 +172,9 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
           </div>
         )}
       </div>
+      {moving && issue && (
+        <MoveIssueModal issue={issue} teams={elsewhere} onClose={() => setMoving(false)} />
+      )}
     </div>
   )
 }

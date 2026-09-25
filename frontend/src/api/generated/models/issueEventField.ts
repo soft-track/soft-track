@@ -20,4 +20,5 @@ export const IssueEventField = {
   assignee: 'assignee',
   priority: 'priority',
   due_date: 'due_date',
+  team: 'team',
 } as const;

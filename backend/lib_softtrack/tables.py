@@ -184,6 +184,10 @@ class IssueEventField(str, enum.Enum):
     priority = "priority"
     #: When the issue is due (#87).
     due_date = "due_date"
+    #: Which team it is on, recorded as its key -- `ENG-42` to `OPS-17` (#98).
+    #: The key rather than the team id because the key is what changed from
+    #: anybody's point of view, and what the Activity feed has to show.
+    team = "team"
 
 
 class DueFilter(str, enum.Enum):

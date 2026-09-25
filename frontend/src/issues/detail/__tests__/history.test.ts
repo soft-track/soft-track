@@ -101,4 +101,10 @@ describe('interleave', () => {
     )
     expect(items.map((item) => item.kind)).toEqual(['comment', 'event'])
   })
+
+  it('reads a move between teams as the keys (#98)', () => {
+    expect(describeEvent(event('team', 'ENG-42', 'OPS-17'))).toBe(
+      'moved this from ENG-42 to OPS-17',
+    )
+  })
 })

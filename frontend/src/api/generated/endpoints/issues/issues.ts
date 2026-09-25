@@ -36,9 +36,13 @@ import type {
   IssueLinks,
   IssueMove,
   IssueRead,
+  IssueTransfer,
   IssueUpdate,
   ListIssuesTeamsTeamIdIssuesGetParams,
-  PageIssueRead
+  PageIssueRead,
+  PreviewTransferIssuesIssueIdTransferGetParams,
+  TransferPlan,
+  TransferResult
 } from '../../models';
 
 import { apiClient } from '../../../client';
@@ -1196,4 +1200,178 @@ export const useDeleteIssueLinkIssuesIssueIdLinksLinkIdDelete = <TError = HTTPVa
         TContext
       > => {
       return useMutation(getDeleteIssueLinkIssuesIssueIdLinksLinkIdDeleteMutationOptions(options), queryClient);
+    }
+    /**
+ * What moving the issue to `team_id` would change, without changing it.
+ * @summary Preview Transfer
+ */
+export const previewTransferIssuesIssueIdTransferGet = (
+    issueId: number,
+    params: PreviewTransferIssuesIssueIdTransferGetParams,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TransferPlan>(
+      {url: `/issues/${issueId}/transfer`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+
+
+
+
+export const getPreviewTransferIssuesIssueIdTransferGetQueryKey = (issueId: number,
+    params?: PreviewTransferIssuesIssueIdTransferGetParams,) => {
+    return [
+    `/issues/${issueId}/transfer`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getPreviewTransferIssuesIssueIdTransferGetQueryOptions = <TData = Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>, TError = HTTPValidationError>(issueId: number,
+    params: PreviewTransferIssuesIssueIdTransferGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPreviewTransferIssuesIssueIdTransferGetQueryKey(issueId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>> = ({ signal }) => previewTransferIssuesIssueIdTransferGet(issueId,params, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: issueId !== null && issueId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type PreviewTransferIssuesIssueIdTransferGetQueryResult = NonNullable<Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>>
+export type PreviewTransferIssuesIssueIdTransferGetQueryError = HTTPValidationError
+
+
+export function usePreviewTransferIssuesIssueIdTransferGet<TData = Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>, TError = HTTPValidationError>(
+ issueId: number,
+    params: PreviewTransferIssuesIssueIdTransferGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>,
+          TError,
+          Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePreviewTransferIssuesIssueIdTransferGet<TData = Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>, TError = HTTPValidationError>(
+ issueId: number,
+    params: PreviewTransferIssuesIssueIdTransferGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>,
+          TError,
+          Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePreviewTransferIssuesIssueIdTransferGet<TData = Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>, TError = HTTPValidationError>(
+ issueId: number,
+    params: PreviewTransferIssuesIssueIdTransferGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Preview Transfer
+ */
+
+export function usePreviewTransferIssuesIssueIdTransferGet<TData = Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>, TError = HTTPValidationError>(
+ issueId: number,
+    params: PreviewTransferIssuesIssueIdTransferGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof previewTransferIssuesIssueIdTransferGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getPreviewTransferIssuesIssueIdTransferGetQueryOptions(issueId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Move the issue, and its sub-issues, to another team (#98).
+ *
+ * It takes the target team's next number, and whatever does not exist on the
+ * target team is remapped or cleared -- see `lib_softtrack/transfers.py`.
+ * Needs write access to both teams.
+ * @summary Transfer Issue
+ */
+export const transferIssueIssuesIssueIdTransferPost = (
+    issueId: number,
+    issueTransfer: IssueTransfer,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TransferResult>(
+      {url: `/issues/${issueId}/transfer`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: issueTransfer, signal
+    },
+      );
+    }
+
+
+
+
+export const getTransferIssueIssuesIssueIdTransferPostMutationKey = () => ['transferIssueIssuesIssueIdTransferPost'] as const;
+
+export const getTransferIssueIssuesIssueIdTransferPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transferIssueIssuesIssueIdTransferPost>>, TError,TransferIssueIssuesIssueIdTransferPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof transferIssueIssuesIssueIdTransferPost>>, TError,TransferIssueIssuesIssueIdTransferPostMutationVariables, TContext> => {
+
+const mutationKey = getTransferIssueIssuesIssueIdTransferPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof transferIssueIssuesIssueIdTransferPost>>, TransferIssueIssuesIssueIdTransferPostMutationVariables> = (props) => {
+          const {issueId,data} = props ?? {};
+
+          return  transferIssueIssuesIssueIdTransferPost(issueId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TransferIssueIssuesIssueIdTransferPostMutationResult = NonNullable<Awaited<ReturnType<typeof transferIssueIssuesIssueIdTransferPost>>>
+    export type TransferIssueIssuesIssueIdTransferPostMutationBody = IssueTransfer
+    export type TransferIssueIssuesIssueIdTransferPostMutationError = HTTPValidationError
+    export type TransferIssueIssuesIssueIdTransferPostMutationVariables = {issueId: number;data: IssueTransfer}
+
+    /**
+ * @summary Transfer Issue
+ */
+export const useTransferIssueIssuesIssueIdTransferPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transferIssueIssuesIssueIdTransferPost>>, TError,TransferIssueIssuesIssueIdTransferPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof transferIssueIssuesIssueIdTransferPost>>,
+        TError,
+        TransferIssueIssuesIssueIdTransferPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getTransferIssueIssuesIssueIdTransferPostMutationOptions(options), queryClient);
     }

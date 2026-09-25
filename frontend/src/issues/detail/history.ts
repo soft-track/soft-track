@@ -66,6 +66,11 @@ export function describeEvent(event: IssueEventRead): string {
       return `moved this from ${before} to ${after}`
     }
 
+    case 'team':
+      // Keys, not team names: ENG-42 becoming OPS-17 is the fact anybody
+      // holding the old link needs (#98).
+      return `moved this from ${from ?? 'another team'} to ${to ?? 'another team'}`
+
     default:
       return 'changed this'
   }

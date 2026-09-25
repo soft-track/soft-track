@@ -10,6 +10,7 @@ from lib_softtrack import estimates as estimates_service
 from lib_softtrack import history as history_service
 from lib_softtrack import issues as issues_service
 from lib_softtrack import links as links_service
+from lib_softtrack import transfers as transfers_service
 from lib_softtrack.models.estimates import EstimateSummary
 from lib_softtrack.models.history import IssueEventRead
 from lib_softtrack.models.issues import (
@@ -23,6 +24,11 @@ from lib_softtrack.models.issues import (
 from lib_softtrack.models.links import IssueLinkCreate, IssueLinkRead, IssueLinks
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
 from lib_softtrack.storage import Storage, get_storage
+from lib_softtrack.models.transfers import (
+    IssueTransfer,
+    TransferPlan,
+    TransferResult,
+)
 from lib_softtrack.tables import (
     DueFilter,
     IssuePriority,
@@ -272,3 +278,38 @@ def delete_issue_link(
     current_user: User = Depends(get_current_user),
 ):
     links_service.delete_link(session, current_user, issue_id, link_id)
+
+
+@router.get("/issues/{issue_id}/transfer", response_model=TransferPlan)
+def preview_transfer(
+    issue_id: int,
+    team_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """What moving the issue to `team_id` would change, without changing it."""
+    return transfers_service.preview_transfer(session, current_user, issue_id, team_id)
+
+
+# `transfer` rather than `move`: /issues/{id}/move already exists, and is the
+# board's drag -- a column and a place in it, on the same team.
+@router.post(
+    "/issues/{issue_id}/transfer",
+    response_model=TransferResult,
+    dependencies=[team_writer],
+)
+def transfer_issue(
+    issue_id: int,
+    payload: IssueTransfer,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Move the issue, and its sub-issues, to another team (#98).
+
+    It takes the target team's next number, and whatever does not exist on the
+    target team is remapped or cleared -- see `lib_softtrack/transfers.py`.
+    Needs write access to both teams.
+    """
+    return transfers_service.transfer_issue(
+        session, current_user, issue_id, payload.team_id
+    )

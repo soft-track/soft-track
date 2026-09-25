@@ -2853,6 +2853,119 @@
         }
       }
     },
+    "/issues/{issue_id}/transfer": {
+      "get": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "Preview Transfer",
+        "description": "What moving the issue to `team_id` would change, without changing it.",
+        "operationId": "preview_transfer_issues__issue_id__transfer_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          },
+          {
+            "name": "team_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferPlan"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "Transfer Issue",
+        "description": "Move the issue, and its sub-issues, to another team (#98).\n\nIt takes the target team's next number, and whatever does not exist on the\ntarget team is remapped or cleared -- see `lib_softtrack/transfers.py`.\nNeeds write access to both teams.",
+        "operationId": "transfer_issue_issues__issue_id__transfer_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueTransfer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/issues/{issue_id}/comments": {
       "post": {
         "tags": [
@@ -8190,7 +8303,8 @@
           "project",
           "assignee",
           "priority",
-          "due_date"
+          "due_date",
+          "team"
         ],
         "title": "IssueEventField",
         "description": "Which field an IssueEvent records a change to."
@@ -8741,6 +8855,20 @@
         },
         "type": "object",
         "title": "IssueTemplateUpdate"
+      },
+      "IssueTransfer": {
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team_id"
+        ],
+        "title": "IssueTransfer",
+        "description": "Where to move an issue (#98)."
       },
       "IssueType": {
         "type": "string",
@@ -10869,6 +10997,29 @@
         "title": "StatusCategory",
         "description": "What a status *means*, as opposed to what a team calls it.\n\nFixed on purpose, and the reason per-team statuses are safe to allow at\nall. Everything that has to reason about work -- burndown, velocity, \"is\nthis cycle finished\", \"3 of 5 sub-issues done\", whether a blocker still\nblocks -- asks the category, never the name. A team can add \"Blocked\" or\n\"QA\" without any of that having an opinion about it.\n\nUnconstrained workflow states are how Jira became Jira. These five are the\nline."
       },
+      "StatusChange": {
+        "properties": {
+          "from_name": {
+            "type": "string",
+            "title": "From Name"
+          },
+          "to_name": {
+            "type": "string",
+            "title": "To Name"
+          },
+          "same_category": {
+            "type": "boolean",
+            "title": "Same Category"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_name",
+          "to_name",
+          "same_category"
+        ],
+        "title": "StatusChange"
+      },
       "StatusCreate": {
         "properties": {
           "name": {
@@ -11210,6 +11361,117 @@
           "user"
         ],
         "title": "Token"
+      },
+      "TransferPlan": {
+        "properties": {
+          "from_identifier": {
+            "type": "string",
+            "title": "From Identifier"
+          },
+          "to_identifier": {
+            "type": "string",
+            "title": "To Identifier"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusChange"
+          },
+          "labels_kept": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Labels Kept"
+          },
+          "labels_dropped": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Labels Dropped"
+          },
+          "cycle_cleared": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cycle Cleared"
+          },
+          "project_cleared": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Cleared"
+          },
+          "assignee_cleared": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Cleared"
+          },
+          "parent_detached": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Detached"
+          },
+          "sub_issues": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sub Issues"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_identifier",
+          "to_identifier",
+          "status",
+          "labels_kept",
+          "labels_dropped",
+          "sub_issues"
+        ],
+        "title": "TransferPlan",
+        "description": "What moving an issue to another team would change, before it does.\n\nThe confirmation dialog shows this, and `transfer_issue` carries out the\nsame plan -- they are computed by one function, so the summary a person\nagreed to is the change they get."
+      },
+      "TransferResult": {
+        "properties": {
+          "issue": {
+            "$ref": "#/components/schemas/IssueRead"
+          },
+          "sub_issues": {
+            "items": {
+              "$ref": "#/components/schemas/IssueRead"
+            },
+            "type": "array",
+            "title": "Sub Issues"
+          }
+        },
+        "type": "object",
+        "required": [
+          "issue",
+          "sub_issues"
+        ],
+        "title": "TransferResult"
       },
       "UnreadCount": {
         "properties": {
@@ -11878,6 +12140,7 @@
           "status_order_incomplete",
           "template_order_incomplete",
           "status_move_to_same",
+          "transfer_same_team",
           "view_other_team",
           "view_private_default",
           "rank_neighbour_is_self",

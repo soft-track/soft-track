@@ -111,6 +111,8 @@ class ErrorCode(str, enum.Enum):
     status_order_incomplete = "status_order_incomplete"
     template_order_incomplete = "template_order_incomplete"
     status_move_to_same = "status_move_to_same"
+    #: Moving an issue to the team it is already on (#98).
+    transfer_same_team = "transfer_same_team"
     view_other_team = "view_other_team"
     view_private_default = "view_private_default"
     #: A card cannot be dropped next to itself (#88).
