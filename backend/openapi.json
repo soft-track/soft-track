@@ -8110,6 +8110,14 @@
             "type": "boolean",
             "title": "Archived"
           },
+          "issue_count": {
+            "type": "integer",
+            "title": "Issue Count"
+          },
+          "completed_issue_count": {
+            "type": "integer",
+            "title": "Completed Issue Count"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -8124,6 +8132,8 @@
           "color",
           "state",
           "archived",
+          "issue_count",
+          "completed_issue_count",
           "created_at"
         ],
         "title": "ProjectRead"

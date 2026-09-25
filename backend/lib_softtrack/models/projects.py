@@ -39,6 +39,12 @@ class ProjectRead(BaseModel):
     target_date: Optional[date] = None
     state: ProjectState
     archived: bool
+    #: Progress over the issues in the project, counted the way sub-issues
+    #: count children: cancelled issues are left out of both numbers, so a
+    #: project whose remaining work was cancelled can still reach 100%.
+    #: No default, for the reason IssueRead's counts have none.
+    issue_count: int
+    completed_issue_count: int
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

@@ -224,6 +224,7 @@ def create_issue(
 ) -> IssueRead:
     team = get_team_or_404(team_id, session)
     require_team_member(team_id, current_user, session)
+    _require_on_team(session, Project, payload.project_id, team_id, "project")
 
     number = team.next_issue_number
     team.next_issue_number = number + 1
@@ -410,6 +411,9 @@ def _apply_update(
         # Moving an issue into another team's column would take it off its own
         # board entirely.
         resolve_for_team(session, issue.team_id, data["status_id"])
+    # Filing an issue into another team's project would put it in an epic
+    # its own team cannot open.
+    _require_on_team(session, Project, data.get("project_id"), issue.team_id, "project")
     if data.get("parent_id") is not None:
         # Validate before assigning, so a rejected parent leaves the issue
         # exactly as it was rather than half-updated.

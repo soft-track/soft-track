@@ -84,6 +84,8 @@ function project(id: number, name: string, archived = false): ProjectRead {
     color: '#6366f1',
     state: 'planned',
     archived,
+    issue_count: 0,
+    completed_issue_count: 0,
     created_at: '2026-01-01T00:00:00Z',
   }
 }

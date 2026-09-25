@@ -27,6 +27,7 @@ import { NewCycleModal } from '@/cycles/NewCycleModal'
 import { ImportJiraModal } from '@/imports/ImportJiraModal'
 import { IssueDetailPanel } from '@/issues/IssueDetailPanel'
 import { NewIssueModal } from '@/issues/NewIssueModal'
+import { ProjectPage } from '@/projects/ProjectPage'
 import { CommandPalette } from '@/keyboard/CommandPalette'
 import { ShortcutsCheatsheet } from '@/keyboard/ShortcutsCheatsheet'
 import { type BoardView, useCommands } from '@/keyboard/useCommands'
@@ -43,7 +44,14 @@ import { SaveViewModal } from '@/views/SaveViewModal'
 import { useSavedViews } from '@/views/useSavedViews'
 
 export default function BoardPage() {
-  const { teamKey, issueNumber } = useParams<{ teamKey: string; issueNumber?: string }>()
+  const { teamKey, issueNumber, projectId } = useParams<{
+    teamKey: string
+    issueNumber?: string
+    projectId?: string
+  }>()
+  // A project's own page sits in the board's frame, sidebar and all, in place
+  // of the issues.
+  const projectPageId = projectId ? Number(projectId) : null
   const navigate = useNavigate()
   const { team, isLoading, teams } = useTeamByKey(teamKey)
   const { user } = useAuth()
@@ -61,8 +69,15 @@ export default function BoardPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const filters = useMemo(() => fromSearchParams(searchParams), [searchParams])
   const setFilters = useCallback(
-    (next: BoardFilters) => setSearchParams(toSearchParams(next)),
-    [setSearchParams],
+    (next: BoardFilters) => {
+      // A filter picked from a project page is a request for the board.
+      if (projectPageId !== null) {
+        navigate({ pathname: `/${teamKey}`, search: toSearchParams(next).toString() })
+      } else {
+        setSearchParams(toSearchParams(next))
+      }
+    },
+    [setSearchParams, navigate, projectPageId, teamKey],
   )
 
   const teamData = useTeamData(team)
@@ -77,6 +92,9 @@ export default function BoardPage() {
   const hasLanded = useRef(false)
   useEffect(() => {
     if (hasLanded.current) return
+    // Not yet: the default view is for the board, and would only decorate a
+    // project page's URL with filters it does not read.
+    if (projectPageId !== null) return
     // Arriving with filters already in the URL -- a pasted link, or a reload
     // -- means the question has been asked and the default does not apply.
     if (!urlIsBare) {
@@ -92,7 +110,7 @@ export default function BoardPage() {
     if (landing) {
       setSearchParams(toSearchParams(fromViewFilters(landing.filters)), { replace: true })
     }
-  }, [urlIsBare, team, savedViews, setSearchParams])
+  }, [urlIsBare, team, savedViews, setSearchParams, projectPageId])
 
   // Hold the issue query until the URL cannot still be rewritten from under
   // it. When a team default exists this still costs one superseded request on
@@ -102,7 +120,7 @@ export default function BoardPage() {
 
   const issuesParams = useMemo(() => toQueryParams(filters), [filters])
   const issuesQuery = useListIssuesTeamsTeamIdIssuesGet(team?.id ?? 0, issuesParams, {
-    query: { enabled: Boolean(team) && filtersAreSettled },
+    query: { enabled: Boolean(team) && filtersAreSettled && projectPageId === null },
   })
   const changeStatus = useStatusChange(team, issuesParams)
 
@@ -243,55 +261,65 @@ export default function BoardPage() {
           </div>
         )}
 
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
-          <TopBar
-            view={view}
-            onViewChange={setView}
-            onNewIssue={openNewIssue}
-            onOpenSidebar={() => setSidebarOpen(true)}
-            search={search}
-            onSearchChange={setSearch}
-            filters={filters}
-            onFiltersChange={setFilters}
-            onSaveView={() => {
-              setEditingView(null)
-              overlays.open('saveView')
-            }}
-            canSaveView={!matchesSavedView}
-            notificationsOpen={overlays.isOpen('notifications')}
-            onToggleNotifications={() => overlays.toggle('notifications')}
-            onCloseNotifications={() => overlays.close('notifications')}
-          />
-          {selectedCycle && !searchQuery && <CycleBanner cycle={selectedCycle} />}
-          <div className="min-h-0 flex-1">
-            {searchQuery ? (
-              <SearchResults
-                query={searchQuery}
-                hits={searchResults.data?.items ?? []}
-                total={searchResults.data?.total ?? 0}
-                isLoading={searchResults.isLoading}
-              />
-            ) : !filtersAreSettled || issuesQuery.isLoading ? (
-              <Loading label="Loading issues…" />
-            ) : view === 'reports' ? (
-              <ReportsView />
-            ) : view === 'board' ? (
-              <KanbanBoard
-                issues={issues}
-                onStatusChange={changeStatus}
-                estimates={teamData.estimates}
-                selectedIds={selection.ids}
-                onSelect={selectIssue}
-                onBulkStatusChange={(ids, status) => bulk.update(ids, { status_id: status.id })}
-              />
-            ) : (
-              <IssueListView issues={issues} selectedIds={selection.ids} onSelect={selectIssue} />
-            )}
+        {projectPageId !== null ? (
+          <div className="min-w-0 flex-1">
+            <ProjectPage
+              key={projectPageId}
+              projectId={projectPageId}
+              onOpenSidebar={() => setSidebarOpen(true)}
+            />
           </div>
-        </div>
+        ) : (
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            <TopBar
+              view={view}
+              onViewChange={setView}
+              onNewIssue={openNewIssue}
+              onOpenSidebar={() => setSidebarOpen(true)}
+              search={search}
+              onSearchChange={setSearch}
+              filters={filters}
+              onFiltersChange={setFilters}
+              onSaveView={() => {
+                setEditingView(null)
+                overlays.open('saveView')
+              }}
+              canSaveView={!matchesSavedView}
+              notificationsOpen={overlays.isOpen('notifications')}
+              onToggleNotifications={() => overlays.toggle('notifications')}
+              onCloseNotifications={() => overlays.close('notifications')}
+            />
+            {selectedCycle && !searchQuery && <CycleBanner cycle={selectedCycle} />}
+            <div className="min-h-0 flex-1">
+              {searchQuery ? (
+                <SearchResults
+                  query={searchQuery}
+                  hits={searchResults.data?.items ?? []}
+                  total={searchResults.data?.total ?? 0}
+                  isLoading={searchResults.isLoading}
+                />
+              ) : !filtersAreSettled || issuesQuery.isLoading ? (
+                <Loading label="Loading issues…" />
+              ) : view === 'reports' ? (
+                <ReportsView />
+              ) : view === 'board' ? (
+                <KanbanBoard
+                  issues={issues}
+                  onStatusChange={changeStatus}
+                  estimates={teamData.estimates}
+                  selectedIds={selection.ids}
+                  onSelect={selectIssue}
+                  onBulkStatusChange={(ids, status) => bulk.update(ids, { status_id: status.id })}
+                />
+              ) : (
+                <IssueListView issues={issues} selectedIds={selection.ids} onSelect={selectIssue} />
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {hasSelection && !searchQuery && view !== 'reports' && (
+      {hasSelection && !searchQuery && view !== 'reports' && projectPageId === null && (
         <BulkActionBar selectedIds={selection.ids} bulk={bulk} onClear={clearSelection} />
       )}
       {overlays.isOpen('palette') && (

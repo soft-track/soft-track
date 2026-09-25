@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import type { SavedViewRead } from '@/api/generated/models'
 import { useAuth } from '@/auth/useAuth'
@@ -36,6 +36,7 @@ export function Sidebar({
   // the board is showing its issues, so the row that toggles it off stays.
   const projects = pickableProjects(allProjects, filters.projectId)
   const navigate = useNavigate()
+  const { projectId: openProjectId } = useParams<{ projectId?: string }>()
   const { theme, toggle: toggleTheme } = useTheme()
 
   return (
@@ -108,27 +109,40 @@ export function Sidebar({
             <p className="px-2 text-xs text-neutral-400">No projects yet.</p>
           )}
           {projects.map((project) => (
-            <button
-              key={project.id}
-              type="button"
-              // A project is a filter like any other now, so picking one
-              // composes with whatever else is set rather than replacing it.
-              onClick={() =>
-                onFiltersChange({
-                  ...filters,
-                  projectId: filters.projectId === project.id ? null : project.id,
-                })
-              }
-              className="nav-item"
-              data-active={filters.projectId === project.id}
-            >
-              <span
-                className="dot"
-                style={{ ['--dot' as string]: project.color }}
-                aria-hidden="true"
-              />
-              <span className="truncate">{project.name}</span>
-            </button>
+            <div key={project.id} className="group flex items-center gap-0.5">
+              <button
+                type="button"
+                // A project is a filter like any other now, so picking one
+                // composes with whatever else is set rather than replacing it.
+                onClick={() =>
+                  onFiltersChange({
+                    ...filters,
+                    projectId: filters.projectId === project.id ? null : project.id,
+                  })
+                }
+                className="nav-item min-w-0 flex-1"
+                data-active={
+                  filters.projectId === project.id || openProjectId === String(project.id)
+                }
+              >
+                <span
+                  className="dot"
+                  style={{ ['--dot' as string]: project.color }}
+                  aria-hidden="true"
+                />
+                <span className="truncate">{project.name}</span>
+              </button>
+              {/* The filter shows the issues; the page says how far along
+                  they are. Two gestures, so two targets. */}
+              <Link
+                to={`/${team.key}/projects/${project.id}`}
+                aria-label={`Open ${project.name}`}
+                title="Open project page"
+                className="btn btn-ghost btn-icon btn-xs shrink-0 text-neutral-400 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+              >
+                <Icon name="chevron-right" size={13} />
+              </Link>
+            </div>
           ))}
         </div>
       </nav>

@@ -17,5 +17,7 @@ export interface ProjectRead {
   target_date?: string | null;
   state: ProjectState;
   archived: boolean;
+  issue_count: number;
+  completed_issue_count: number;
   created_at: string;
 }

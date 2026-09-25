@@ -82,6 +82,7 @@ export default function App() {
 
           <Route path="/:teamKey" element={<BoardPage />} />
           <Route path="/:teamKey/issue/:issueNumber" element={<BoardPage />} />
+          <Route path="/:teamKey/projects/:projectId" element={<BoardPage />} />
         </Route>
 
         {/* Still "/", which no longer means "go to login" for a signed-out
