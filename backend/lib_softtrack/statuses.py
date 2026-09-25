@@ -10,7 +10,7 @@ status names somewhere.
 
 from typing import Iterable, Optional
 
-from fastapi import HTTPException
+
 from sqlmodel import Session, select
 
 from lib_softtrack import automations as automations_service
@@ -34,6 +34,7 @@ from lib_softtrack.teams import (
     require_team_admin,
     require_team_member,
 )
+from lib_utils.errors import ErrorCode, api_error
 
 #: Work that is finished, one way or the other. Off the burndown, and unable
 #: to block anything.
@@ -91,8 +92,10 @@ def default_status(session: Session, team_id: int) -> WorkflowStatus:
         # Unreachable while every team is created with the defaults and the
         # last status cannot be deleted. Worth a clear error rather than an
         # IndexError if a future path ever manages it.
-        raise HTTPException(
-            status_code=409, detail="This team has no statuses to put an issue in"
+        raise api_error(
+            status_code=409,
+            code=ErrorCode.team_has_no_statuses,
+            detail="This team has no statuses to put an issue in",
         )
     return statuses[0]
 
@@ -102,7 +105,9 @@ def get_status_or_404(
 ) -> WorkflowStatus:
     status = session.get(WorkflowStatus, status_id)
     if status is None:
-        raise HTTPException(status_code=404, detail="Status not found")
+        raise api_error(
+            status_code=404, code=ErrorCode.status_not_found, detail="Status not found"
+        )
     require_team_member(status.team_id, current_user, session)
     return status
 
@@ -119,7 +124,11 @@ def resolve_for_team(
         return None
     status = session.get(WorkflowStatus, status_id)
     if status is None or status.team_id != team_id:
-        raise HTTPException(status_code=400, detail="No such status on this team")
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.not_on_this_team,
+            detail="No such status on this team",
+        )
     return status
 
 
@@ -144,8 +153,10 @@ def _assert_name_free(
     if except_id is not None:
         statement = statement.where(WorkflowStatus.id != except_id)
     if session.exec(statement).first():
-        raise HTTPException(
-            status_code=400, detail="This team already has a status with that name"
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.status_name_taken,
+            detail="This team already has a status with that name",
         )
 
 
@@ -209,8 +220,9 @@ def reorder_statuses(
         # Anything less than the whole set means the client is working from a
         # stale board -- somebody else added or removed a column. Applying it
         # would silently drop or duplicate positions.
-        raise HTTPException(
+        raise api_error(
             status_code=400,
+            code=ErrorCode.status_order_incomplete,
             detail="Reordering takes every status on the team, exactly once",
         )
 
@@ -241,17 +253,24 @@ def delete_status(
         if other.id != status.id
     ]
     if not remaining:
-        raise HTTPException(
+        raise api_error(
             status_code=409,
+            code=ErrorCode.last_status,
             detail="A team needs at least one status; there would be nowhere to put its issues.",
         )
 
     target = session.get(WorkflowStatus, payload.move_to_id)
     if target is None or target.team_id != status.team_id:
-        raise HTTPException(status_code=400, detail="No such status on this team")
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.not_on_this_team,
+            detail="No such status on this team",
+        )
     if target.id == status.id:
-        raise HTTPException(
-            status_code=400, detail="Move the issues to a different status"
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.status_move_to_same,
+            detail="Move the issues to a different status",
         )
 
     # No history is written for the move. These issues did not change state --

@@ -21,7 +21,7 @@ from pathlib import PurePosixPath
 from typing import Optional
 from urllib.parse import quote
 
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
 from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
@@ -29,6 +29,7 @@ from lib_softtrack.models.attachments import AttachmentRead
 from lib_softtrack.storage import ObjectNotFound, Storage
 from lib_softtrack.tables import Attachment, Comment, Issue, User
 from lib_softtrack.teams import require_team_member
+from lib_utils.errors import ErrorCode, api_error
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +166,9 @@ def _expand(session: Session, attachments: list[Attachment]) -> list[AttachmentR
 def _issue_or_404(session: Session, issue_id: int) -> Issue:
     issue = session.get(Issue, issue_id)
     if issue is None:
-        raise HTTPException(status_code=404, detail="Issue not found")
+        raise api_error(
+            status_code=404, code=ErrorCode.issue_not_found, detail="Issue not found"
+        )
     return issue
 
 
@@ -179,7 +182,11 @@ def get_attachment_for_read(
     """
     attachment = session.get(Attachment, attachment_id)
     if attachment is None:
-        raise HTTPException(status_code=404, detail="Attachment not found")
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.attachment_not_found,
+            detail="Attachment not found",
+        )
     issue = _issue_or_404(session, attachment.issue_id)
     require_team_member(issue.team_id, current_user, session)
     return attachment
@@ -204,12 +211,17 @@ def create_attachment(
 
     filename = safe_filename(upload.filename or "")
     if not filename:
-        raise HTTPException(status_code=422, detail="That file has no usable name.")
+        raise api_error(
+            status_code=422,
+            code=ErrorCode.attachment_name_missing,
+            detail="That file has no usable name.",
+        )
 
     content_type = content_type_for(filename)
     if content_type is None:
-        raise HTTPException(
+        raise api_error(
             status_code=415,
+            code=ErrorCode.attachment_type_not_allowed,
             detail=(
                 f"{PurePosixPath(filename).suffix or 'That file type'} is not an "
                 "accepted attachment type. Accepted: "
@@ -219,12 +231,15 @@ def create_attachment(
         )
 
     if not data:
-        raise HTTPException(status_code=422, detail="That file is empty.")
+        raise api_error(
+            status_code=422, code=ErrorCode.file_empty, detail="That file is empty."
+        )
 
     signatures = _IMAGE_SIGNATURES.get(content_type)
     if signatures and not data.startswith(signatures):
-        raise HTTPException(
+        raise api_error(
             status_code=422,
+            code=ErrorCode.attachment_content_mismatch,
             detail=f"{filename} is not a valid {content_type.split('/')[1].upper()}.",
         )
 
@@ -315,8 +330,9 @@ def claim_for_comment(
             or attachment.issue_id != comment.issue_id
             or attachment.comment_id is not None
         ):
-            raise HTTPException(
+            raise api_error(
                 status_code=400,
+                code=ErrorCode.attachment_not_attachable,
                 detail=f"Attachment {attachment_id} cannot be attached to this comment.",
             )
         attachment.comment_id = comment.id

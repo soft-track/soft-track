@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlmodel import Session
 
 from lib_identity.identity import get_current_user
@@ -6,6 +6,7 @@ from lib_softtrack import importer
 from lib_softtrack.models.imports import ImportReport
 from lib_softtrack.tables import User
 from web import get_session
+from lib_utils.errors import ErrorCode, api_error
 
 router = APIRouter(tags=["import"])
 
@@ -33,12 +34,15 @@ async def import_jira(
     """
     raw = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(raw) > MAX_UPLOAD_BYTES:
-        raise HTTPException(
+        raise api_error(
             status_code=413,
+            code=ErrorCode.file_too_large,
             detail=f"That file is larger than {MAX_UPLOAD_BYTES // (1024 * 1024)}MB.",
         )
     if not raw:
-        raise HTTPException(status_code=422, detail="That file is empty.")
+        raise api_error(
+            status_code=422, code=ErrorCode.file_empty, detail="That file is empty."
+        )
 
     try:
         # Jira exports from the Cloud UI are frequently UTF-8 with a BOM, and
@@ -49,8 +53,9 @@ async def import_jira(
         try:
             text = raw.decode("latin-1")
         except UnicodeDecodeError:
-            raise HTTPException(
+            raise api_error(
                 status_code=422,
+                code=ErrorCode.import_not_utf8,
                 detail="Could not read that file as text. Export it as UTF-8.",
             )
 

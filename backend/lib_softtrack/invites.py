@@ -13,7 +13,7 @@ import secrets
 from datetime import timedelta
 from typing import Optional
 
-from fastapi import HTTPException
+
 from sqlmodel import Session, delete, select
 
 from lib_identity.models.identity import UserPublic
@@ -21,6 +21,7 @@ from lib_softtrack.models.invites import InviteCreate, InvitePreview, InviteRead
 from lib_softtrack.tables import Team, TeamInvite, TeamMember, TeamRole, User, utcnow
 from lib_softtrack.teams import get_team_or_404, require_team_admin
 from web import settings
+from lib_utils.errors import ErrorCode, api_error
 
 
 def _new_token() -> str:
@@ -104,8 +105,9 @@ def create_invite(
     team = get_team_or_404(team_id, session)
     require_team_admin(team_id, current_user, session)
     if payload.send_email and not settings.email_delivery_configured:
-        raise HTTPException(
+        raise api_error(
             status_code=400,
+            code=ErrorCode.email_not_configured,
             detail="This instance cannot send email. Copy the link instead.",
         )
 
@@ -122,7 +124,11 @@ def create_invite(
             )
         ).first()
         if already:
-            raise HTTPException(status_code=400, detail="User is already a member")
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.already_member,
+                detail="User is already a member",
+            )
 
     invite = session.exec(
         select(TeamInvite).where(
@@ -183,7 +189,11 @@ def revoke_invite(
     # The team is part of the lookup, not just the id: an admin of one team
     # must not be able to revoke another team's invitation by guessing a number.
     if not invite or invite.team_id != team_id:
-        raise HTTPException(status_code=404, detail="Invitation not found")
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.invite_not_found,
+            detail="Invitation not found",
+        )
 
     session.delete(invite)
     session.commit()
@@ -202,8 +212,10 @@ def _live_invite_or_404(session: Session, token: str) -> TeamInvite:
     # Unknown and expired answer identically. Distinguishing them would turn
     # this public endpoint into a way to test whether a token was ever real.
     if not invite:
-        raise HTTPException(
-            status_code=404, detail="This invitation is no longer valid"
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.invite_invalid,
+            detail="This invitation is no longer valid",
         )
     return invite
 
@@ -224,8 +236,9 @@ def get_invite_preview(session: Session, token: str) -> InvitePreview:
 
 def _assert_addressed_to(invite: TeamInvite, user: User) -> None:
     if invite.email != user.email.strip().lower():
-        raise HTTPException(
+        raise api_error(
             status_code=403,
+            code=ErrorCode.invite_wrong_recipient,
             detail="This invitation was sent to a different email address",
         )
 

@@ -19,6 +19,7 @@ from lib_softtrack.tables import User, utcnow
 from lib_utils.password import hash_password, is_usable_password, verify_password
 from lib_utils.token import create_access_token, decode_access_token, is_access_token
 from web import get_session, settings
+from lib_utils.errors import ErrorCode, api_error
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -64,8 +65,9 @@ def get_current_user(
     session: Session = Depends(get_session),
 ) -> User:
     """FastAPI dependency resolving the bearer token to a User row."""
-    credentials_exception = HTTPException(
+    credentials_exception = api_error(
         status_code=status.HTTP_401_UNAUTHORIZED,
+        code=ErrorCode.not_authenticated,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
@@ -157,14 +159,19 @@ def register_user(
 
     email = email.strip().lower()
     if find_user_by_email(session, email):
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.email_taken,
+            detail="Email already registered",
+        )
 
     # On a closed instance the invitation is the credential that lets someone
     # create an account at all -- checked against the address rather than the
     # link, so a shared link cannot sign up a stranger.
     if not settings.open_registration and not find_live_invite(session, email):
-        raise HTTPException(
+        raise api_error(
             status_code=403,
+            code=ErrorCode.invite_only,
             detail="Registration on this SoftTrack is by invitation",
         )
 
@@ -221,14 +228,19 @@ def login_user(session: Session, email: str, password: str) -> Token:
     password_matches = verify_password(password, hashed)
 
     if not user or not password_matches:
-        raise HTTPException(
+        raise api_error(
             status_code=status.HTTP_401_UNAUTHORIZED,
+            code=ErrorCode.bad_credentials,
             detail="Incorrect email or password",
         )
     # After the password check, not before: answering "deactivated" to a wrong
     # password would confirm the address exists to someone guessing.
     if not user.is_active:
-        raise HTTPException(status_code=403, detail="This account has been deactivated")
+        raise api_error(
+            status_code=403,
+            code=ErrorCode.account_deactivated,
+            detail="This account has been deactivated",
+        )
 
     user.last_login_at = utcnow()
     session.add(user)
@@ -241,7 +253,11 @@ def update_profile(session: Session, user: User, payload: UserUpdate) -> User:
     if payload.full_name is not None:
         name = payload.full_name.strip()
         if not name:
-            raise HTTPException(status_code=400, detail="A name cannot be empty")
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.name_required,
+                detail="A name cannot be empty",
+            )
         user.full_name = name
 
     if payload.username is not None:
@@ -251,7 +267,11 @@ def update_profile(session: Session, user: User, payload: UserUpdate) -> User:
 
     if payload.avatar_color is not None:
         if not _HEX_COLOR.match(payload.avatar_color):
-            raise HTTPException(status_code=400, detail="A colour looks like #6366f1")
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.invalid_colour,
+                detail="A colour looks like #6366f1",
+            )
         user.avatar_color = payload.avatar_color.lower()
 
     if payload.email is not None:
@@ -267,13 +287,18 @@ def update_profile(session: Session, user: User, payload: UserUpdate) -> User:
                 not payload.current_password
                 or not verify_password(payload.current_password, user.hashed_password)
             ):
-                raise HTTPException(
+                raise api_error(
                     status_code=400,
+                    code=ErrorCode.current_password_required,
                     detail="Enter your current password to change your email",
                 )
             existing = find_user_by_email(session, email)
             if existing and existing.id != user.id:
-                raise HTTPException(status_code=400, detail="Email already registered")
+                raise api_error(
+                    status_code=400,
+                    code=ErrorCode.email_taken,
+                    detail="Email already registered",
+                )
             user.email = email
 
     session.add(user)
@@ -296,7 +321,11 @@ def change_password(
     if is_usable_password(user.hashed_password) and not verify_password(
         current or "", user.hashed_password
     ):
-        raise HTTPException(status_code=400, detail="Current password is incorrect")
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.current_password_incorrect,
+            detail="Current password is incorrect",
+        )
 
     user.hashed_password = hash_password(new)
     # Every other session dies here. That is the point of changing a password

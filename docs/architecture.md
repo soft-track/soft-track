@@ -69,6 +69,31 @@ cd ../frontend && npm run generate:api
 
 The `npm run export:openapi` shortcut performs the first step when the backend virtualenv is in the default location.
 
+## Errors
+
+An error the API raises on purpose carries a stable code as well as a sentence:
+
+```json
+{"detail": "Only team admins can do that", "code": "not_team_admin"}
+```
+
+- **`detail`** is the English sentence. It's the same text the API returned
+  before codes existed, so nothing that shows it changes.
+- **`code`** is what a client should branch on, or translate. The sentence can
+  be reworded; a code can't be renamed or removed without breaking clients.
+
+The codes are listed in one place, the `ErrorCode` enum in
+`backend/lib_utils/errors.py`, grouped by what went wrong. The OpenAPI schema
+publishes that enum, so the generated frontend client has it as a type. The
+frontend's `errorDetail()` shows its own wording for codes it knows (sign-in
+and team-permission errors so far) and falls back to `detail` for the rest.
+
+Request validation errors (FastAPI's 422s) keep their own shape, a list of
+field errors, and have no code. New errors are raised as
+`raise api_error(403, ErrorCode.not_team_admin, "Only team admins can do that")`.
+A test fails if a bare `HTTPException` is raised anywhere, and another fails
+if a listed code is never used.
+
 ## Database and migration workflow
 
 The schema is managed with Alembic, and the app applies migrations on startup. The database URL comes from `DATABASE_URL`, and the same setting is used by the app and by the migration tooling.

@@ -14,7 +14,9 @@ from dataclasses import dataclass, field
 from math import ceil
 from typing import Callable
 
-from fastapi import HTTPException, Request, status
+from fastapi import Request, status
+
+from lib_utils.errors import ErrorCode, api_error
 
 # Sweeping every write would be O(n) on a dict that is usually tiny, so only
 # bother once it has grown enough to be worth the walk. This is the bound on
@@ -69,8 +71,9 @@ class Throttle:
                 return
         retry_after = max(1, ceil(remaining))
         unit = "second" if retry_after == 1 else "seconds"
-        raise HTTPException(
+        raise api_error(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            code=ErrorCode.rate_limited,
             detail=f"Too many {self.name}. Try again in {retry_after} {unit}.",
             headers={"Retry-After": str(retry_after)},
         )

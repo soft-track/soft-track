@@ -1,6 +1,5 @@
 """Team services, including the membership guards the other domains rely on."""
 
-from fastapi import HTTPException
 from sqlmodel import Session, func, select
 
 from lib_identity.models.identity import UserPublic
@@ -12,12 +11,15 @@ from lib_softtrack.models.teams import (
     TeamUpdate,
 )
 from lib_softtrack.tables import Team, TeamMember, TeamRole, User
+from lib_utils.errors import ErrorCode, api_error
 
 
 def get_team_or_404(team_id: int, session: Session) -> Team:
     team = session.get(Team, team_id)
     if not team:
-        raise HTTPException(status_code=404, detail="Team not found")
+        raise api_error(
+            status_code=404, code=ErrorCode.team_not_found, detail="Team not found"
+        )
     return team
 
 
@@ -41,7 +43,11 @@ def require_team_member(team_id: int, user: User, session: Session) -> TeamMembe
         )
     ).first()
     if not membership:
-        raise HTTPException(status_code=403, detail="Not a member of this team")
+        raise api_error(
+            status_code=403,
+            code=ErrorCode.not_team_member,
+            detail="Not a member of this team",
+        )
     return membership
 
 
@@ -54,7 +60,11 @@ def require_team_admin(team_id: int, user: User, session: Session) -> TeamMember
     """
     membership = require_team_member(team_id, user, session)
     if membership.role != TeamRole.admin:
-        raise HTTPException(status_code=403, detail="Only team admins can do that")
+        raise api_error(
+            status_code=403,
+            code=ErrorCode.not_team_admin,
+            detail="Only team admins can do that",
+        )
     return membership
 
 
@@ -81,7 +91,11 @@ def create_team(session: Session, current_user: User, payload: TeamCreate) -> Te
     key = payload.key.upper()
     existing = session.exec(select(Team).where(Team.key == key)).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Team key already in use")
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.team_key_taken,
+            detail="Team key already in use",
+        )
 
     team = Team(name=payload.name, key=key, description=payload.description)
     session.add(team)
@@ -129,7 +143,11 @@ def update_team(
     if payload.name is not None:
         name = payload.name.strip()
         if not name:
-            raise HTTPException(status_code=400, detail="A team needs a name")
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.name_required,
+                detail="A team needs a name",
+            )
         team.name = name
     if payload.description is not None:
         team.description = payload.description.strip() or None
@@ -177,9 +195,17 @@ def add_team_member(
 
     user = find_user_by_email(session, payload.email)
     if not user:
-        raise HTTPException(status_code=404, detail="No user with that email")
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.user_not_found,
+            detail="No user with that email",
+        )
     if not user.is_active:
-        raise HTTPException(status_code=400, detail="That account has been deactivated")
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.account_deactivated,
+            detail="That account has been deactivated",
+        )
 
     existing = session.exec(
         select(TeamMember).where(
@@ -187,7 +213,11 @@ def add_team_member(
         )
     ).first()
     if existing:
-        raise HTTPException(status_code=400, detail="User is already a member")
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.already_member,
+            detail="User is already a member",
+        )
 
     membership = TeamMember(team_id=team_id, user_id=user.id, role=payload.role)
     session.add(membership)
@@ -208,7 +238,11 @@ def _membership_or_404(session: Session, team_id: int, user_id: int) -> TeamMemb
         )
     ).first()
     if not membership:
-        raise HTTPException(status_code=404, detail="Not a member of this team")
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.member_not_found,
+            detail="Not a member of this team",
+        )
     return membership
 
 
@@ -228,7 +262,11 @@ def update_team_member_role(
         membership.role == TeamRole.admin and payload.role != TeamRole.admin
     )
     if demoting_an_admin and _active_admin_count(session, team_id) <= 1:
-        raise HTTPException(status_code=409, detail="A team needs at least one admin")
+        raise api_error(
+            status_code=409,
+            code=ErrorCode.last_team_admin,
+            detail="A team needs at least one admin",
+        )
 
     membership.role = payload.role
     session.add(membership)
@@ -264,7 +302,11 @@ def remove_team_member(
     membership = _membership_or_404(session, team_id, member_user_id)
 
     if membership.role == TeamRole.admin and _active_admin_count(session, team_id) <= 1:
-        raise HTTPException(status_code=409, detail="A team needs at least one admin")
+        raise api_error(
+            status_code=409,
+            code=ErrorCode.last_team_admin,
+            detail="A team needs at least one admin",
+        )
 
     session.delete(membership)
     session.commit()

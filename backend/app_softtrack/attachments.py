@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
@@ -8,6 +8,7 @@ from lib_softtrack.models.attachments import AttachmentRead
 from lib_softtrack.storage import ObjectNotFound, Storage, copy_stream, get_storage
 from lib_softtrack.tables import User
 from web import get_session, settings
+from lib_utils.errors import ErrorCode, api_error
 
 router = APIRouter(tags=["attachments"])
 
@@ -32,8 +33,9 @@ async def upload_attachment(
     # not enough for an oversized upload to be worth sending.
     data = await file.read(limit + 1)
     if len(data) > limit:
-        raise HTTPException(
+        raise api_error(
             status_code=413,
+            code=ErrorCode.file_too_large,
             detail=f"That file is larger than {limit // (1024 * 1024)}MB.",
         )
 
@@ -80,7 +82,11 @@ def download_attachment(
     except ObjectNotFound:
         # The row promised bytes that are not there. That is a real failure,
         # but retrying cannot fix it, so say so with a status that means gone.
-        raise HTTPException(status_code=410, detail="That file is no longer stored.")
+        raise api_error(
+            status_code=410,
+            code=ErrorCode.attachment_gone,
+            detail="That file is no longer stored.",
+        )
 
     return StreamingResponse(
         copy_stream(body),

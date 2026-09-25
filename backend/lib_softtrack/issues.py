@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import HTTPException
+
 from sqlalchemy import func, or_
 from sqlmodel import Session, select
 
@@ -45,6 +45,7 @@ from lib_softtrack.statuses import default_status, resolve_for_team
 from lib_softtrack.storage import Storage
 from lib_softtrack.subissues import child_progress, detach_children, validate_parent
 from lib_softtrack.teams import get_team_or_404, is_team_member, require_team_member
+from lib_utils.errors import ErrorCode, api_error
 
 
 def _parent_ref(issue: Issue, session: Session) -> Optional[ParentRef]:
@@ -215,7 +216,9 @@ def set_labels(issue_id: int, label_ids: list[int], session: Session) -> None:
 def get_issue_or_404(session: Session, issue_id: int) -> Issue:
     issue = session.get(Issue, issue_id)
     if not issue:
-        raise HTTPException(status_code=404, detail="Issue not found")
+        raise api_error(
+            status_code=404, code=ErrorCode.issue_not_found, detail="Issue not found"
+        )
     return issue
 
 
@@ -362,7 +365,9 @@ def get_issue_by_number(
         select(Issue).where(Issue.team_id == team_id, Issue.number == number)
     ).one_or_none()
     if not issue:
-        raise HTTPException(status_code=404, detail="Issue not found")
+        raise api_error(
+            status_code=404, code=ErrorCode.issue_not_found, detail="Issue not found"
+        )
     return issue_to_read(issue, session)
 
 
@@ -558,8 +563,9 @@ def _team_issues_or_404(
     }
     missing = [issue_id for issue_id in wanted if issue_id not in found]
     if missing:
-        raise HTTPException(
+        raise api_error(
             status_code=404,
+            code=ErrorCode.issues_not_found,
             detail="Issues not found on this team: "
             + ", ".join(str(issue_id) for issue_id in missing),
         )
@@ -579,7 +585,11 @@ def _require_on_team(
         return
     row = session.get(model, row_id)
     if row is None or row.team_id != team_id:
-        raise HTTPException(status_code=400, detail=f"No such {noun} on this team")
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.not_on_this_team,
+            detail=f"No such {noun} on this team",
+        )
 
 
 def _validate_bulk_changes(
@@ -591,14 +601,18 @@ def _validate_bulk_changes(
     for label_id in {*changes.add_label_ids, *changes.remove_label_ids}:
         _require_on_team(session, Label, label_id, team_id, "label")
     if set(changes.add_label_ids) & set(changes.remove_label_ids):
-        raise HTTPException(
-            status_code=400, detail="A label cannot be both added and removed."
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.labels_conflict,
+            detail="A label cannot be both added and removed.",
         )
     if changes.assignee_id is not None and not is_team_member(
         team_id, changes.assignee_id, session
     ):
-        raise HTTPException(
-            status_code=400, detail="The assignee is not a member of this team."
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.user_not_on_team,
+            detail="The assignee is not a member of this team.",
         )
 
 

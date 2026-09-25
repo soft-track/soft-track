@@ -7,7 +7,7 @@ means a field added later gets history for free by naming it in TRACKED.
 
 from typing import Optional
 
-from fastapi import HTTPException
+
 from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
@@ -22,6 +22,7 @@ from lib_softtrack.tables import (
     WorkflowStatus,
 )
 from lib_softtrack.teams import require_team_member
+from lib_utils.errors import ErrorCode, api_error
 
 #: The fields worth a history row. The first four are what the reports chart;
 #: assignee and priority are what people ask an issue's history about (#81).
@@ -188,7 +189,9 @@ def issue_events(
     EVENT_LIMIT of them."""
     issue = session.get(Issue, issue_id)
     if issue is None:
-        raise HTTPException(status_code=404, detail="Issue not found")
+        raise api_error(
+            status_code=404, code=ErrorCode.issue_not_found, detail="Issue not found"
+        )
     require_team_member(issue.team_id, current_user, session)
 
     changes = list(

@@ -9,6 +9,7 @@
 export * from './adminPasswordReset';
 export * from './adminUserRead';
 export * from './adminUserUpdate';
+export * from './apiErrorBody';
 export * from './assigneeLoad';
 export * from './attachmentRead';
 export * from './authConfig';
@@ -38,6 +39,7 @@ export * from './cycleRead';
 export * from './cycleState';
 export * from './cycleUpdate';
 export * from './defaultViewUpdate';
+export * from './errorCode';
 export * from './estimateSummary';
 export * from './estimateSummaryByStatus';
 export * from './flowPoint';

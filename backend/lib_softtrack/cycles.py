@@ -16,7 +16,7 @@ an accounting event, not a reason to lose anything.
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import HTTPException
+
 from sqlalchemy import case, func
 from sqlmodel import Session, select
 
@@ -34,6 +34,7 @@ from lib_softtrack.models.cycles import (
 from lib_softtrack.statuses import in_category
 from lib_softtrack.tables import Cycle, CycleState, Issue, StatusCategory, User
 from lib_softtrack.teams import get_team_or_404, require_team_member
+from lib_utils.errors import ErrorCode, api_error
 
 #: Statuses that count as finished for cycle progress and for deciding what
 #: carries over. Cancelled counts as finished: it is not outstanding work, and
@@ -48,7 +49,9 @@ _COMPLETED = StatusCategory.done
 def get_cycle_or_404(session: Session, cycle_id: int) -> Cycle:
     cycle = session.get(Cycle, cycle_id)
     if cycle is None:
-        raise HTTPException(status_code=404, detail="Cycle not found")
+        raise api_error(
+            status_code=404, code=ErrorCode.cycle_not_found, detail="Cycle not found"
+        )
     return cycle
 
 
@@ -162,8 +165,9 @@ def update_cycle(
     require_team_member(cycle.team_id, current_user, session)
 
     if cycle.state is CycleState.completed:
-        raise HTTPException(
+        raise api_error(
             status_code=409,
+            code=ErrorCode.cycle_completed,
             detail="A completed cycle cannot be changed; its numbers are history.",
         )
 
@@ -171,7 +175,11 @@ def update_cycle(
     starts_at = data.get("starts_at", cycle.starts_at)
     ends_at = data.get("ends_at", cycle.ends_at)
     if ends_at <= starts_at:
-        raise HTTPException(status_code=422, detail="ends_at must be after starts_at")
+        raise api_error(
+            status_code=422,
+            code=ErrorCode.cycle_dates_invalid,
+            detail="ends_at must be after starts_at",
+        )
 
     for field, value in data.items():
         setattr(cycle, field, value)
@@ -186,7 +194,11 @@ def start_cycle(session: Session, current_user: User, cycle_id: int) -> CycleRea
     require_team_member(cycle.team_id, current_user, session)
 
     if cycle.state is CycleState.completed:
-        raise HTTPException(status_code=409, detail="That cycle is already completed.")
+        raise api_error(
+            status_code=409,
+            code=ErrorCode.cycle_completed,
+            detail="That cycle is already completed.",
+        )
     if cycle.state is CycleState.active:
         return _read(session, cycle)
 
@@ -198,8 +210,9 @@ def start_cycle(session: Session, current_user: User, cycle_id: int) -> CycleRea
     if active is not None:
         # Two active cycles would make "the current cycle" ambiguous for every
         # burndown and every board filter that follows.
-        raise HTTPException(
+        raise api_error(
             status_code=409,
+            code=ErrorCode.cycle_already_active,
             detail=(
                 f"{active.name or f'Cycle {active.number}'} is still active. "
                 "Complete it before starting another."
@@ -220,7 +233,11 @@ def complete_cycle(
     require_team_member(cycle.team_id, current_user, session)
 
     if cycle.state is CycleState.completed:
-        raise HTTPException(status_code=409, detail="That cycle is already completed.")
+        raise api_error(
+            status_code=409,
+            code=ErrorCode.cycle_completed,
+            detail="That cycle is already completed.",
+        )
 
     # Read before anything moves: a `cycle_completed` rule is about the work
     # that was in this cycle, which after the carry-over below is no longer a
@@ -277,8 +294,9 @@ def delete_cycle(session: Session, current_user: User, cycle_id: int) -> None:
     require_team_member(cycle.team_id, current_user, session)
 
     if cycle.state is CycleState.completed:
-        raise HTTPException(
+        raise api_error(
             status_code=409,
+            code=ErrorCode.cycle_completed,
             detail="A completed cycle cannot be deleted; its numbers are history.",
         )
 

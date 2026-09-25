@@ -15,7 +15,7 @@ expressed; the client is told the answer rather than the rule.
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import HTTPException
+
 from sqlmodel import Session, or_, select
 
 from lib_identity.models.identity import UserPublic
@@ -43,6 +43,7 @@ from lib_softtrack.teams import (
     require_team_admin,
     require_team_member,
 )
+from lib_utils.errors import ErrorCode, api_error
 
 
 def _to_read(view: SavedView, owner: User) -> SavedViewRead:
@@ -87,19 +88,35 @@ def _validate_filters(session: Session, team_id: int, filters: ViewFilters) -> N
     if filters.status_id is not None:
         status = session.get(WorkflowStatus, filters.status_id)
         if status is None or status.team_id != team_id:
-            raise HTTPException(status_code=400, detail="No such status on this team")
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.not_on_this_team,
+                detail="No such status on this team",
+            )
     if filters.label_id is not None:
         label = session.get(Label, filters.label_id)
         if label is None or label.team_id != team_id:
-            raise HTTPException(status_code=400, detail="No such label on this team")
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.not_on_this_team,
+                detail="No such label on this team",
+            )
     if filters.project_id is not None:
         project = session.get(Project, filters.project_id)
         if project is None or project.team_id != team_id:
-            raise HTTPException(status_code=400, detail="No such project on this team")
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.not_on_this_team,
+                detail="No such project on this team",
+            )
     if filters.cycle_id is not None:
         cycle = session.get(Cycle, filters.cycle_id)
         if cycle is None or cycle.team_id != team_id:
-            raise HTTPException(status_code=400, detail="No such cycle on this team")
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.not_on_this_team,
+                detail="No such cycle on this team",
+            )
     if filters.assignee_id is not None:
         member = session.exec(
             select(TeamMember).where(
@@ -108,8 +125,10 @@ def _validate_filters(session: Session, team_id: int, filters: ViewFilters) -> N
             )
         ).first()
         if member is None:
-            raise HTTPException(
-                status_code=400, detail="That person is not on this team"
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.user_not_on_team,
+                detail="That person is not on this team",
             )
 
 
@@ -133,10 +152,14 @@ def get_view_or_404(session: Session, current_user: User, view_id: int) -> Saved
     """
     view = session.get(SavedView, view_id)
     if view is None:
-        raise HTTPException(status_code=404, detail="View not found")
+        raise api_error(
+            status_code=404, code=ErrorCode.view_not_found, detail="View not found"
+        )
     require_team_member(view.team_id, current_user, session)
     if not view.is_shared and view.owner_id != current_user.id:
-        raise HTTPException(status_code=404, detail="View not found")
+        raise api_error(
+            status_code=404, code=ErrorCode.view_not_found, detail="View not found"
+        )
     return view
 
 
@@ -286,10 +309,15 @@ def set_team_default(
     else:
         view = get_view_or_404(session, current_user, payload.view_id)
         if view.team_id != team_id:
-            raise HTTPException(status_code=400, detail="That view is another team's")
-        if not view.is_shared:
-            raise HTTPException(
+            raise api_error(
                 status_code=400,
+                code=ErrorCode.view_other_team,
+                detail="That view is another team's",
+            )
+        if not view.is_shared:
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.view_private_default,
                 detail="A private view cannot be the team default; share it first.",
             )
         team.default_view_id = view.id
@@ -316,7 +344,11 @@ def set_my_default(
     else:
         view = get_view_or_404(session, current_user, payload.view_id)
         if view.team_id != team_id:
-            raise HTTPException(status_code=400, detail="That view is another team's")
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.view_other_team,
+                detail="That view is another team's",
+            )
         if existing is None:
             session.add(
                 UserDefaultView(

@@ -6,7 +6,7 @@ A project is what SoftTrack calls an epic -- see `tables.Project`.
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import HTTPException
+
 from sqlmodel import Session, select
 
 from lib_softtrack import automations as automations_service
@@ -16,6 +16,7 @@ from lib_softtrack.models.projects import ProjectCreate, ProjectRead, ProjectUpd
 from lib_softtrack.subissues import progress_by
 from lib_softtrack.tables import Issue, Project, TeamMember, User
 from lib_softtrack.teams import get_team_or_404, require_team_member
+from lib_utils.errors import ErrorCode, api_error
 
 #: Fields that mean "no value" when sent as null, as opposed to the rest of
 #: ProjectUpdate, where null only ever means "not sent".
@@ -34,8 +35,10 @@ def _require_lead_in_team(
         )
     ).first()
     if membership is None:
-        raise HTTPException(
-            status_code=422, detail="The lead must be a member of the team."
+        raise api_error(
+            status_code=422,
+            code=ErrorCode.user_not_on_team,
+            detail="The lead must be a member of the team.",
         )
 
 
@@ -64,7 +67,11 @@ def project_to_read(session: Session, project: Project) -> ProjectRead:
 def get_project_or_404(session: Session, project_id: int) -> Project:
     project = session.get(Project, project_id)
     if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.project_not_found,
+            detail="Project not found",
+        )
     return project
 
 

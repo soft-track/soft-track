@@ -19,7 +19,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import HTTPException
+
 from sqlalchemy import delete
 from sqlmodel import Session, select
 
@@ -27,6 +27,7 @@ from lib_identity.identity import find_user_by_email
 from lib_softtrack.tables import PasswordReset, User, utcnow
 from lib_utils.password import hash_password
 from web import settings
+from lib_utils.errors import ErrorCode, api_error
 
 #: One message for a token that is wrong, expired, used, or outrun by a
 #: password change. Telling them apart would help nobody but a guesser.
@@ -95,7 +96,9 @@ def reset_password(session: Session, token: str, new_password: str) -> None:
         select(PasswordReset).where(PasswordReset.token_hash == _hash(token))
     ).first()
     if reset is None:
-        raise HTTPException(status_code=400, detail=INVALID_LINK)
+        raise api_error(
+            status_code=400, code=ErrorCode.reset_link_invalid, detail=INVALID_LINK
+        )
 
     user = session.get(User, reset.user_id)
     usable = (
@@ -111,7 +114,9 @@ def reset_password(session: Session, token: str, new_password: str) -> None:
     session.delete(reset)
     if not usable:
         session.commit()
-        raise HTTPException(status_code=400, detail=INVALID_LINK)
+        raise api_error(
+            status_code=400, code=ErrorCode.reset_link_invalid, detail=INVALID_LINK
+        )
 
     user.hashed_password = hash_password(new_password)
     # Every session ends. Somebody who could not remember the password may

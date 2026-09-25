@@ -5,7 +5,7 @@ separately `B blocked by A` would let the two halves drift apart the moment a
 delete missed one of them; deriving the inverse at read time means they cannot.
 """
 
-from fastapi import HTTPException, status as http_status
+from fastapi import status as http_status
 from sqlmodel import Session, select
 
 from lib_softtrack.models.statuses import StatusRead
@@ -26,6 +26,7 @@ from lib_softtrack.tables import (
 )
 from lib_softtrack.statuses import RESOLVED, in_category
 from lib_softtrack.teams import require_team_member
+from lib_utils.errors import ErrorCode, api_error
 
 #: An issue whose status means one of these cannot block anything -- it is
 #: finished. Used to decide whether a card is *currently* blocked, as opposed
@@ -44,7 +45,9 @@ _RELATION_NAMES: dict[IssueLinkType, tuple[str, str]] = {
 def _issue_or_404(session: Session, issue_id: int) -> Issue:
     issue = session.get(Issue, issue_id)
     if issue is None:
-        raise HTTPException(status_code=404, detail="Issue not found")
+        raise api_error(
+            status_code=404, code=ErrorCode.issue_not_found, detail="Issue not found"
+        )
     return issue
 
 
@@ -74,29 +77,36 @@ def create_link(
     require_team_member(target.team_id, current_user, session)
 
     if source.id == target.id:
-        raise HTTPException(
-            status_code=400, detail="An issue cannot be linked to itself."
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.link_to_self,
+            detail="An issue cannot be linked to itself.",
         )
 
     if _link_exists(session, source.id, target.id, payload.type):
-        raise HTTPException(
-            status_code=409, detail="These issues are already linked that way."
+        raise api_error(
+            status_code=409,
+            code=ErrorCode.link_exists,
+            detail="These issues are already linked that way.",
         )
 
     if payload.type is IssueLinkType.relates_to:
         # Symmetric: B relates to A is the same fact as A relates to B, so the
         # mirror is a duplicate rather than a second relationship.
         if _link_exists(session, target.id, source.id, payload.type):
-            raise HTTPException(
-                status_code=409, detail="These issues are already related."
+            raise api_error(
+                status_code=409,
+                code=ErrorCode.link_exists,
+                detail="These issues are already related.",
             )
     elif payload.type in DIRECTED_LINK_TYPES:
         # Direction means something here, so the pair cannot point both ways:
         # "A blocks B and B blocks A" describes work that can never start.
         if _link_exists(session, target.id, source.id, payload.type):
             forward, inverse = _RELATION_NAMES[payload.type]
-            raise HTTPException(
+            raise api_error(
                 status_code=409,
+                code=ErrorCode.link_contradicts,
                 detail=(
                     f"That would contradict an existing link: this issue is "
                     f"already {inverse.replace('_', ' ')} that one."
@@ -134,7 +144,11 @@ def delete_link(
     # Either end may remove the relationship -- it belongs to both issues, and
     # requiring the author to undo it would strand links when people leave.
     if link is None or issue.id not in (link.source_id, link.target_id):
-        raise HTTPException(status_code=404, detail="Link not found on this issue")
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.link_not_found,
+            detail="Link not found on this issue",
+        )
 
     session.delete(link)
     session.commit()

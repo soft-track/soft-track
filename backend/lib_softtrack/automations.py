@@ -18,7 +18,7 @@ on write, in `_validate`, rather than on every event.
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import HTTPException
+
 from sqlmodel import Session, func, select
 
 from lib_identity.models.identity import UserPublic
@@ -48,6 +48,7 @@ from lib_softtrack.teams import (
     require_team_admin,
     require_team_member,
 )
+from lib_utils.errors import ErrorCode, api_error
 
 #: How many runs a team's log keeps. The log is written to on every automated
 #: change and read roughly never, so it is the one table here that grows
@@ -115,8 +116,9 @@ def _belongs_to_team(session: Session, table, row_id: Optional[int], team_id: in
         return None
     row = session.get(table, row_id)
     if row is None or row.team_id != team_id:
-        raise HTTPException(
+        raise api_error(
             status_code=400,
+            code=ErrorCode.not_on_this_team,
             detail=f"No such {table.__name__.lower().removeprefix('workflow')} "
             "on this team",
         )
@@ -152,16 +154,19 @@ def _validate(
         # numbers are history everywhere else in SoftTrack, and a rule that
         # kept dropping work into it would rewrite a report every time it
         # fired.
-        raise HTTPException(
+        raise api_error(
             status_code=400,
+            code=ErrorCode.cycle_completed,
             detail="That cycle is completed; its numbers are history. "
             "Use the active cycle instead.",
         )
 
     for user_id in (conditions.if_assignee_id, actions.set_assignee_id):
         if not _is_member(session, team_id, user_id):
-            raise HTTPException(
-                status_code=400, detail="That person is not on this team"
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.user_not_on_team,
+                detail="That person is not on this team",
             )
 
 
@@ -174,8 +179,10 @@ def _assert_name_free(
     if except_id is not None:
         statement = statement.where(AutomationRule.id != except_id)
     if session.exec(statement).first():
-        raise HTTPException(
-            status_code=400, detail="This team already has a rule with that name"
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.rule_name_taken,
+            detail="This team already has a rule with that name",
         )
 
 
@@ -189,7 +196,9 @@ def get_rule_or_404(
 ) -> AutomationRule:
     rule = session.get(AutomationRule, rule_id)
     if rule is None:
-        raise HTTPException(status_code=404, detail="Rule not found")
+        raise api_error(
+            status_code=404, code=ErrorCode.rule_not_found, detail="Rule not found"
+        )
     require_team_member(rule.team_id, current_user, session)
     return rule
 

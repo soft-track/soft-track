@@ -17,7 +17,7 @@ Two rules the hooks all obey, so no caller has to remember them:
 from datetime import datetime, timezone
 from typing import Iterable, Optional
 
-from fastapi import HTTPException
+
 from sqlmodel import Session, func, select
 
 from lib_identity.models.identity import UserPublic
@@ -40,6 +40,7 @@ from lib_softtrack.tables import (
     TeamMember,
     User,
 )
+from lib_utils.errors import ErrorCode, api_error
 
 #: How much of a comment the inbox quotes. Long enough to recognise which
 #: comment it was, short enough that a row stays one line on a phone.
@@ -455,7 +456,11 @@ def set_read(
     # 404 rather than 403 for someone else's notification: the caller has no
     # business learning that the id exists.
     if row is None or row.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Notification not found")
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.notification_not_found,
+            detail="Notification not found",
+        )
 
     row.read_at = datetime.now(timezone.utc) if read else None
     session.add(row)

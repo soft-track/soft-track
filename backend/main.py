@@ -3,6 +3,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 
 from app_identity.admin import router as admin_router
@@ -27,6 +28,7 @@ from app_softtrack.statuses import router as statuses_router
 from app_softtrack.teams import router as teams_router
 from app_softtrack.webhooks import router as webhooks_router
 from app_softtrack.views import router as views_router
+from lib_utils.errors import ApiError, ApiErrorBody, ErrorCode, api_error_handler
 from web import init_db, settings
 
 
@@ -69,6 +71,36 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+# Errors raised with a code keep FastAPI's body and add the code to it (#86).
+app.add_exception_handler(ApiError, api_error_handler)
+
+
+def _openapi_with_error_codes():
+    """The schema, plus the error body and its codes.
+
+    No route declares the error body as a response -- every route would have
+    to, and they would say the same thing -- so it is added here once. That
+    is what puts `ErrorCode` in the generated frontend client as a type.
+    """
+    if app.openapi_schema:
+        return app.openapi_schema
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    extra = ApiErrorBody.model_json_schema(ref_template="#/components/schemas/{model}")
+    components = schema.setdefault("components", {}).setdefault("schemas", {})
+    components.update(extra.pop("$defs", {}))
+    components["ApiErrorBody"] = extra
+    assert "ErrorCode" in components, ErrorCode
+    app.openapi_schema = schema
+    return schema
+
+
+app.openapi = _openapi_with_error_codes
 
 app.add_middleware(
     CORSMiddleware,

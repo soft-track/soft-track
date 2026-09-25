@@ -34,7 +34,7 @@ import secrets
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import HTTPException
+
 from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
@@ -65,6 +65,7 @@ from lib_softtrack.teams import (
 )
 from lib_softtrack.webhooks import CodeEvent, WebhookError
 from web import settings
+from lib_utils.errors import ErrorCode, api_error
 
 #: How many commits from one push are worth recording against an issue. A
 #: branch merged from a fork, or a rebase of a long-lived branch, can carry
@@ -113,7 +114,11 @@ def get_repository_or_404(
 ) -> Repository:
     repository = session.get(Repository, repository_id)
     if repository is None:
-        raise HTTPException(status_code=404, detail="Repository not found")
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.repository_not_found,
+            detail="Repository not found",
+        )
     require_team_member(repository.team_id, current_user, session)
     return repository
 
@@ -149,8 +154,10 @@ def create_repository(
         )
     ).first()
     if existing is not None:
-        raise HTTPException(
-            status_code=400, detail="That repository is already connected to this team"
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.repository_already_connected,
+            detail="That repository is already connected to this team",
         )
 
     repository = Repository(

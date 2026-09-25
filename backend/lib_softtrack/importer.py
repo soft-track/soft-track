@@ -9,7 +9,7 @@ and the whole point of the dry run is to be able to trust what it says.
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import HTTPException
+
 from sqlmodel import Session, select
 
 from lib_softtrack.history import record_creation
@@ -27,6 +27,7 @@ from lib_softtrack.tables import (
     User,
 )
 from lib_softtrack.teams import get_team_or_404, require_team_member
+from lib_utils.errors import ErrorCode, api_error
 
 #: Colours cycled through for labels created by an import, so an imported
 #: board does not arrive entirely grey.
@@ -152,10 +153,16 @@ def import_export(
     try:
         parsed = parse(filename, content)
     except JiraParseError as error:
-        raise HTTPException(status_code=422, detail=str(error))
+        raise api_error(
+            status_code=422, code=ErrorCode.import_invalid, detail=str(error)
+        )
 
     if not parsed:
-        raise HTTPException(status_code=422, detail="No issues found in that file.")
+        raise api_error(
+            status_code=422,
+            code=ErrorCode.import_empty,
+            detail="No issues found in that file.",
+        )
 
     people = {
         name for issue in parsed for name in (issue.assignee, issue.reporter) if name

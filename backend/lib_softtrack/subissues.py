@@ -12,12 +12,12 @@ Enforcing that pair makes cycles impossible without a graph walk: a cycle of
 any length needs every issue in it to have both a parent and a child.
 """
 
-from fastapi import HTTPException
 from sqlalchemy import case, func
 from sqlmodel import Session, select
 
 from lib_softtrack.statuses import in_category
 from lib_softtrack.tables import Issue, StatusCategory
+from lib_utils.errors import ErrorCode, api_error
 
 #: A cancelled child is neither done nor outstanding, so it is left out of the
 #: count entirely. "3 of 5 done" should not become unreachable because two of
@@ -32,23 +32,31 @@ _EXCLUDED_FROM_PROGRESS = StatusCategory.cancelled
 def validate_parent(session: Session, issue: Issue, parent_id: int) -> Issue:
     """Check that `issue` may be nested under `parent_id`, and return it."""
     if parent_id == issue.id:
-        raise HTTPException(
-            status_code=400, detail="An issue cannot be its own parent."
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.parent_is_self,
+            detail="An issue cannot be its own parent.",
         )
 
     parent = session.get(Issue, parent_id)
     if parent is None:
-        raise HTTPException(status_code=404, detail="Parent issue not found")
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.parent_not_found,
+            detail="Parent issue not found",
+        )
 
     if parent.team_id != issue.team_id:
-        raise HTTPException(
+        raise api_error(
             status_code=400,
+            code=ErrorCode.parent_other_team,
             detail="A sub-issue must be on the same team as its parent.",
         )
 
     if parent.parent_id is not None:
-        raise HTTPException(
+        raise api_error(
             status_code=400,
+            code=ErrorCode.parent_is_subissue,
             detail=(
                 "That issue is already a sub-issue. Sub-issues are one level "
                 "deep, so it cannot also be a parent."
@@ -56,8 +64,9 @@ def validate_parent(session: Session, issue: Issue, parent_id: int) -> Issue:
         )
 
     if issue.id is not None and _has_children(session, issue.id):
-        raise HTTPException(
+        raise api_error(
             status_code=400,
+            code=ErrorCode.issue_has_subissues,
             detail=(
                 "This issue has sub-issues of its own, so it cannot become a "
                 "sub-issue. Move or detach its children first."

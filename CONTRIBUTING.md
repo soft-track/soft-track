@@ -74,7 +74,10 @@ build time.
 **Business logic goes in the service layer.** The backend is thin routers over
 services: `app_softtrack/issues.py` parses the request and calls
 `lib_softtrack/issues.py`, which does the work. A route handler should be
-short enough to read in one go. Logic in a handler is hard to test without
+short enough to read in one go. Errors are raised with
+`api_error(status, ErrorCode.…, "sentence")` rather than a bare
+`HTTPException`, so clients get a code to branch on (see
+[docs/architecture.md](docs/architecture.md#errors)). Logic in a handler is hard to test without
 HTTP and tends to get copied the next time a second route needs it.
 
 **Schema changes need a migration.** The schema is managed by Alembic and

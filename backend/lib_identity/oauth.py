@@ -59,6 +59,7 @@ from lib_identity.oauth_providers import OAuthError, OAuthIdentity, Provider
 from lib_softtrack.tables import OAuthProvider, User, UserIdentity, utcnow
 from lib_utils.password import is_usable_password, unusable_password
 from web import settings
+from lib_utils.errors import ErrorCode, api_error
 
 #: Holds the signed state for one sign-in attempt. Scoped to /auth, which is
 #: the only prefix either endpoint lives under, so it is not attached to every
@@ -120,8 +121,10 @@ def provider_or_404(name: str) -> Provider:
     """
     provider = oauth_providers.PROVIDERS.get(name)
     if provider is None or not oauth_providers.is_configured(name):
-        raise HTTPException(
-            status_code=404, detail="That sign-in provider is not enabled here"
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.oauth_provider_disabled,
+            detail="That sign-in provider is not enabled here",
         )
     return provider
 
@@ -454,8 +457,10 @@ def apply_link(session: Session, user: User, ticket: str) -> str:
     worthless -- it can complete a round trip, but the result can only be
     spent by somebody already holding the session it names.
     """
-    expired = HTTPException(
-        status_code=400, detail="That connection request has expired"
+    expired = api_error(
+        status_code=400,
+        code=ErrorCode.oauth_expired,
+        detail="That connection request has expired",
     )
     claims = _decode(ticket, _LINK_RESULT_TYPE)
     if claims is None:
@@ -481,8 +486,13 @@ def apply_link(session: Session, user: User, ticket: str) -> str:
             ),
         )
     except OAuthError as exc:
-        raise HTTPException(
+        raise api_error(
             status_code=409,
+            code=(
+                ErrorCode.oauth_account_taken
+                if exc.code == "already_connected"
+                else ErrorCode.oauth_connect_failed
+            ),
             detail=(
                 "That account already signs in to a different SoftTrack account"
                 if exc.code == "already_connected"
@@ -568,18 +578,27 @@ def disconnect(session: Session, user: User, name: str) -> None:
     try:
         provider = OAuthProvider(name)
     except ValueError:
-        raise HTTPException(status_code=404, detail="Unknown sign-in provider")
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.oauth_provider_unknown,
+            detail="Unknown sign-in provider",
+        )
 
     rows = session.exec(
         select(UserIdentity).where(UserIdentity.user_id == user.id)
     ).all()
     row = next((r for r in rows if r.provider == provider), None)
     if row is None:
-        raise HTTPException(status_code=404, detail="That account is not connected")
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.oauth_not_connected,
+            detail="That account is not connected",
+        )
 
     if len(rows) == 1 and not is_usable_password(user.hashed_password):
-        raise HTTPException(
+        raise api_error(
             status_code=400,
+            code=ErrorCode.password_required_to_disconnect,
             detail=(
                 "Set a password first — disconnecting this would leave you no "
                 "way to sign in."
@@ -627,17 +646,33 @@ def exchange(session: Session, ticket: str, handshake: str) -> Token:
     """
     claims = _decode(ticket, _EXCHANGE_TYPE)
     if claims is None or not handshake:
-        raise HTTPException(status_code=400, detail="That sign-in has expired")
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.oauth_expired,
+            detail="That sign-in has expired",
+        )
 
     expected = str(claims.get("hs") or "")
     if not expected or not secrets.compare_digest(expected, _digest(handshake)):
-        raise HTTPException(status_code=400, detail="That sign-in has expired")
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.oauth_expired,
+            detail="That sign-in has expired",
+        )
 
     user = session.get(User, int(claims["uid"]))
     if user is None or not user.is_active:
-        raise HTTPException(status_code=400, detail="That sign-in has expired")
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.oauth_expired,
+            detail="That sign-in has expired",
+        )
     if user.token_version != claims.get("ver"):
-        raise HTTPException(status_code=400, detail="That sign-in has expired")
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.oauth_expired,
+            detail="That sign-in has expired",
+        )
 
     return issue_token(user)
 
