@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import type { IssueRead } from '@/api/generated/models'
 import { type BoardGrouping, groupByProject } from '@/board/grouping'
 import { selectionGesture } from '@/board/selection'
+import { useTranslation } from '@/i18n'
 import { DueBadge } from '@/issues/DueBadge'
 import { EstimateBadge } from '@/issues/EstimateBadge'
 import { ProjectBadge } from '@/issues/IssueCard'
@@ -30,12 +31,13 @@ export function IssueListView({
   /** `order` is the list as shown, which is what a shift-click range runs over. */
   onSelect?: OnSelect
 }) {
+  const { t } = useTranslation(['board', 'common'])
   const { projects } = useTeamContext()
 
   if (issues.length === 0) {
     return (
       <div className="glass flex h-full items-center justify-center rounded-panel text-sm text-neutral-400">
-        No issues match the current filters.
+        {t('list.empty')}
       </div>
     )
   }
@@ -57,7 +59,7 @@ export function IssueListView({
                 style={{ ['--dot' as string]: group.project?.color ?? 'var(--color-neutral-300)' }}
                 aria-hidden="true"
               />
-              {group.project?.name ?? 'No project'}
+              {group.project?.name ?? t('list.noProject')}
               <span className="identifier text-[11px] font-medium text-neutral-400">
                 {group.issues.length}
               </span>
@@ -112,6 +114,7 @@ function IssueRow({
   onSelect?: OnSelect
   showProject: boolean
 }) {
+  const { t } = useTranslation(['board', 'common'])
   const navigate = useNavigate()
   const { team, projects } = useTeamContext()
   const status = issue.status
@@ -140,7 +143,7 @@ function IssueRow({
           selected ? 'bg-brand-500/10 hover:bg-brand-500/15' : 'hover:bg-neutral-900/4'
         }`}
       >
-        {selected && <span className="sr-only">Selected. </span>}
+        {selected && <span className="sr-only">{t('list.selected')}</span>}
         <PriorityIcon priority={issue.priority} />
         <IssueTypeIcon type={issue.type} />
         <span className="identifier w-16 shrink-0 text-xs font-medium text-neutral-400">

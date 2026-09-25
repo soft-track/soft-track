@@ -38,6 +38,7 @@ import { useStatusChange } from '@/board/useStatusChange'
 import { CalendarView } from '@/calendar/CalendarView'
 import { CycleBanner } from '@/cycles/CycleBanner'
 import { NewCycleModal } from '@/cycles/NewCycleModal'
+import { useTranslation } from '@/i18n'
 import { ImportJiraModal } from '@/imports/ImportJiraModal'
 import { IssueDetailPanel } from '@/issues/IssueDetailPanel'
 import { NewIssueModal } from '@/issues/NewIssueModal'
@@ -71,6 +72,7 @@ export default function BoardPage() {
   const navigate = useNavigate()
   const { team, isLoading, teams } = useTeamByKey(teamKey)
   const { user } = useAuth()
+  const { t } = useTranslation(['board', 'common'])
 
   const [view, setView] = useState<BoardView>('board')
   const [search, setSearch] = useState('')
@@ -378,7 +380,7 @@ export default function BoardPage() {
                   isLoading={searchResults.isLoading}
                 />
               ) : !filtersAreSettled || issuesQuery.isLoading ? (
-                <Loading label="Loading issues…" />
+                <Loading label={t('page.loadingIssues')} />
               ) : view === 'calendar' ? (
                 <CalendarView params={toQueryParams(filters)} canWrite={canWrite} />
               ) : view === 'roadmap' ? (

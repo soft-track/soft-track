@@ -110,7 +110,8 @@ later is a new folder rather than a pass over every component.
 
 Folders are converted one at a time, and a converted folder is listed in
 `frontend/scripts/check-i18n.mjs`, which fails CI on literal text in JSX there.
-`settings/` and `issues/` are converted; `board/` is next. In a converted
+`settings/`, `issues/` and `board/` are converted; the other folders follow one
+at a time, the same way. In a converted
 folder:
 
 ```tsx

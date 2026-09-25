@@ -6,6 +6,8 @@ import type {
   UniqueIdentifier,
 } from '@dnd-kit/core'
 
+import { i18n } from '@/i18n'
+
 /**
  * Keys for moving a card without a mouse (#80).
  *
@@ -89,13 +91,13 @@ function cardStep(
   return { x: current.x, y: next.top }
 }
 
-/** What a screen reader hears before anything is picked up. */
-export const INSTRUCTIONS: ScreenReaderInstructions = {
-  draggable:
-    'To move this issue, press Space to pick it up. The left and right arrow keys ' +
-    'choose a column, up and down move it past the cards above and below, and Space ' +
-    'drops it. Escape cancels. Enter opens the issue.',
-}
+/**
+ * What a screen reader hears before anything is picked up. A function, so it
+ * is read in the current language rather than the one at import.
+ */
+export const instructions = (): ScreenReaderInstructions => ({
+  draggable: i18n.t('board:kanban.keyboard.instructions'),
+})
 
 /**
  * The words read out during a move, e.g. "Moved ENG-42 to In Progress".
@@ -129,7 +131,10 @@ export function announcements({
     onDragStart({ active }) {
       drag.moved = false
       const from = startColumn(active.id)
-      return `Picked up ${issueName(active.id)}${from ? ` in ${from}` : ''}. Use the arrow keys to move it, Space to drop, Escape to cancel.`
+      const issue = issueName(active.id)
+      return from
+        ? i18n.t('board:kanban.keyboard.pickedUpIn', { issue, column: from })
+        : i18n.t('board:kanban.keyboard.pickedUp', { issue })
     },
     onDragOver({ active, over }) {
       const column = columnName(over?.id)
@@ -139,26 +144,42 @@ export function announcements({
         return undefined
       }
       drag.moved = true
-      if (!column) return `${issueName(active.id)} is not over a column.`
+      const issue = issueName(active.id)
+      if (!column) return i18n.t('board:kanban.keyboard.notOverColumn', { issue })
       // Over a card: say which, since that is where it will land (#88).
       if (typeof over?.id === 'number') {
-        return `${issueName(active.id)} is in ${column}, next to ${issueName(over.id)}.`
+        return i18n.t('board:kanban.keyboard.nextTo', {
+          issue,
+          column,
+          other: issueName(over.id),
+        })
       }
-      return `${issueName(active.id)} is over ${column}.`
+      return i18n.t('board:kanban.keyboard.over', { issue, column })
     },
     onDragEnd({ active, over }) {
       const to = columnName(over?.id)
       const from = startColumn(active.id)
-      if (!to) return `${issueName(active.id)} was not dropped on a column, so it stays in ${from}.`
+      const issue = issueName(active.id)
+      if (!to) {
+        return i18n.t('board:kanban.keyboard.notDropped', { issue, column: from ?? itsColumn() })
+      }
       if (to === from) {
         return over?.id === active.id || typeof over?.id !== 'number'
-          ? `${issueName(active.id)} stays in ${to}.`
-          : `Moved ${issueName(active.id)} within ${to}.`
+          ? i18n.t('board:kanban.keyboard.stays', { issue, column: to })
+          : i18n.t('board:kanban.keyboard.movedWithin', { issue, column: to })
       }
-      return `Moved ${issueName(active.id)} to ${to}.`
+      return i18n.t('board:kanban.keyboard.movedTo', { issue, column: to })
     },
     onDragCancel({ active }) {
-      return `Move cancelled. ${issueName(active.id)} stays in ${startColumn(active.id)}.`
+      return i18n.t('board:kanban.keyboard.cancelled', {
+        issue: issueName(active.id),
+        column: startColumn(active.id) ?? itsColumn(),
+      })
     },
   }
+}
+
+/** A card in no column used to be announced as staying in "null". */
+function itsColumn(): string {
+  return i18n.t('board:kanban.keyboard.itsColumn')
 }

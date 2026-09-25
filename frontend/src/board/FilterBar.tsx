@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import type { DueFilter, IssuePriority, IssueType } from '@/api/generated/models'
 import { describeFilters, withoutFilter } from '@/board/filterLabels'
 import { activeCount, type BoardFilters, isEmpty, NO_FILTERS } from '@/board/filters'
+import { useTranslation } from '@/i18n'
 import { DUE_FILTER_LABEL } from '@/issues/dueDate'
 import { PRIORITY_META, PRIORITY_ORDER, TYPE_META, TYPE_ORDER } from '@/issues/issueMeta'
 import { activeMembers } from '@/team/members'
@@ -31,6 +32,7 @@ export function FilterBar({
   /** False while the current filters already match a saved view. */
   canSave: boolean
 }) {
+  const { t } = useTranslation(['board', 'common'])
   const { members, labels, projects, cycles, statuses } = useTeamContext()
   const [open, setOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -62,7 +64,7 @@ export function FilterBar({
         className="btn btn-secondary btn-sm data-[active=true]:text-neutral-900"
       >
         <Icon name="filter" size={13} />
-        Filter
+        {t('filters.button')}
         {count > 0 && (
           <span className="rounded-full bg-brand-600 px-1.5 text-[10px] font-semibold text-white">
             {count}
@@ -77,7 +79,7 @@ export function FilterBar({
           <button
             type="button"
             onClick={() => onChange(withoutFilter(filters, chip.key))}
-            aria-label={`Clear ${chip.field.toLowerCase()} filter`}
+            aria-label={t(`filters.clearChip.${chip.key}`)}
             className="-mr-0.5 rounded-full p-0.5 text-neutral-400 hover:text-neutral-800"
           >
             <Icon name="close" size={11} />
@@ -92,7 +94,7 @@ export function FilterBar({
             onClick={() => onChange(NO_FILTERS)}
             className="btn btn-ghost btn-xs text-neutral-500"
           >
-            Clear
+            {t('filters.clearAll')}
           </button>
           {canSave && (
             <button
@@ -101,7 +103,7 @@ export function FilterBar({
               className="btn btn-ghost btn-xs text-brand-600"
             >
               <Icon name="plus" size={12} />
-              Save view
+              {t('filters.saveView')}
             </button>
           )}
         </>
@@ -119,7 +121,7 @@ export function FilterBar({
             <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
             <div
               role="dialog"
-              aria-label="Filter issues"
+              aria-label={t('filters.dialogLabel')}
               style={{
                 top: anchor.bottom + 8,
                 left: Math.max(8, Math.min(anchor.left, window.innerWidth - 288)),
@@ -127,7 +129,7 @@ export function FilterBar({
               className="glass-menu fixed z-50 w-[17.5rem] max-w-[calc(100vw-1rem)] rounded-panel p-3"
             >
               <div className="space-y-2.5">
-                <Field label="Status">
+                <Field label={t('filters.fields.status')}>
                   <Select
                     block
                     dense
@@ -136,7 +138,7 @@ export function FilterBar({
                       set('statusId', e.target.value ? Number(e.target.value) : null)
                     }
                   >
-                    <option value="">Any status</option>
+                    <option value="">{t('filters.any.status')}</option>
                     {statuses.map((status) => (
                       <option key={status.id} value={status.id}>
                         {status.name}
@@ -145,7 +147,7 @@ export function FilterBar({
                   </Select>
                 </Field>
 
-                <Field label="Priority">
+                <Field label={t('filters.fields.priority')}>
                   <Select
                     block
                     dense
@@ -154,7 +156,7 @@ export function FilterBar({
                       set('priority', (e.target.value || null) as IssuePriority | null)
                     }
                   >
-                    <option value="">Any priority</option>
+                    <option value="">{t('filters.any.priority')}</option>
                     {PRIORITY_ORDER.map((priority) => (
                       <option key={priority} value={priority}>
                         {PRIORITY_META[priority].label}
@@ -163,7 +165,7 @@ export function FilterBar({
                   </Select>
                 </Field>
 
-                <Field label="Assignee">
+                <Field label={t('filters.fields.assignee')}>
                   <Select
                     block
                     dense
@@ -176,8 +178,8 @@ export function FilterBar({
                       )
                     }}
                   >
-                    <option value="">Anyone</option>
-                    <option value="unassigned">Unassigned</option>
+                    <option value="">{t('filters.any.assignee')}</option>
+                    <option value="unassigned">{t('filters.unassigned')}</option>
                     {activeMembers(members).map((user) => (
                       <option key={user.id} value={user.id}>
                         {user.full_name}
@@ -186,14 +188,14 @@ export function FilterBar({
                   </Select>
                 </Field>
 
-                <Field label="Label">
+                <Field label={t('filters.fields.label')}>
                   <Select
                     block
                     dense
                     value={filters.labelId ?? ''}
                     onChange={(e) => set('labelId', e.target.value ? Number(e.target.value) : null)}
                   >
-                    <option value="">Any label</option>
+                    <option value="">{t('filters.any.label')}</option>
                     {labels.map((label) => (
                       <option key={label.id} value={label.id}>
                         {label.name}
@@ -202,7 +204,7 @@ export function FilterBar({
                   </Select>
                 </Field>
 
-                <Field label="Project">
+                <Field label={t('filters.fields.project')}>
                   <Select
                     block
                     dense
@@ -211,7 +213,7 @@ export function FilterBar({
                       set('projectId', e.target.value ? Number(e.target.value) : null)
                     }
                   >
-                    <option value="">Any project</option>
+                    <option value="">{t('filters.any.project')}</option>
                     {pickableProjects(projects, filters.projectId).map((project) => (
                       <option key={project.id} value={project.id}>
                         {project.name}
@@ -220,14 +222,14 @@ export function FilterBar({
                   </Select>
                 </Field>
 
-                <Field label="Cycle">
+                <Field label={t('filters.fields.cycle')}>
                   <Select
                     block
                     dense
                     value={filters.cycleId ?? ''}
                     onChange={(e) => set('cycleId', e.target.value ? Number(e.target.value) : null)}
                   >
-                    <option value="">Any cycle</option>
+                    <option value="">{t('filters.any.cycle')}</option>
                     {cycles.map((cycle) => (
                       <option key={cycle.id} value={cycle.id}>
                         {cycle.display_name}
@@ -236,14 +238,14 @@ export function FilterBar({
                   </Select>
                 </Field>
 
-                <Field label="Type">
+                <Field label={t('filters.fields.type')}>
                   <Select
                     block
                     dense
                     value={filters.type ?? ''}
                     onChange={(e) => set('type', (e.target.value || null) as IssueType | null)}
                   >
-                    <option value="">Any type</option>
+                    <option value="">{t('filters.any.type')}</option>
                     {TYPE_ORDER.map((type) => (
                       <option key={type} value={type}>
                         {TYPE_META[type].label}
@@ -252,14 +254,14 @@ export function FilterBar({
                   </Select>
                 </Field>
 
-                <Field label="Due">
+                <Field label={t('filters.fields.due')}>
                   <Select
                     block
                     dense
                     value={filters.due ?? ''}
                     onChange={(e) => set('due', (e.target.value || null) as DueFilter | null)}
                   >
-                    <option value="">Any due date</option>
+                    <option value="">{t('filters.any.due')}</option>
                     {(Object.keys(DUE_FILTER_LABEL) as DueFilter[]).map((due) => (
                       <option key={due} value={due}>
                         {DUE_FILTER_LABEL[due]}

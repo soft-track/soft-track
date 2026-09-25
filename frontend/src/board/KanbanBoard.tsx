@@ -20,10 +20,11 @@ import { type BoardGrouping, groupByProject, projectForDropTarget } from '@/boar
 import {
   announcements,
   columnCoordinates,
-  INSTRUCTIONS,
+  instructions,
   KEYBOARD_CODES,
 } from '@/board/keyboardDrag'
 import type { Placement } from '@/board/useMoveIssue'
+import { useTranslation } from '@/i18n'
 import { IssueCard } from '@/issues/IssueCard'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
@@ -84,6 +85,7 @@ function Column({
   selectedIds: readonly number[]
   onSelect?: (issueId: number, gesture: 'range' | 'toggle') => void
 }) {
+  const { t } = useTranslation(['board', 'common'])
   const { id, name, color, issues, load } = column
   const { setNodeRef, isOver } = useDroppable({ id })
 
@@ -107,13 +109,14 @@ function Column({
             className="identifier ml-auto text-[11px] text-neutral-400"
             title={
               load.unestimated_count > 0
-                ? `${load.points} points, with ${load.unestimated_count} issue${
-                    load.unestimated_count === 1 ? '' : 's'
-                  } not yet sized`
-                : `${load.points} points`
+                ? t('kanban.pointsTitleUnsized', {
+                    points: load.points,
+                    count: load.unestimated_count,
+                  })
+                : t('kanban.pointsTitle', { points: load.points })
             }
           >
-            {load.points} pts
+            {t('kanban.pointsShort', { points: load.points })}
             {/* An unsized issue is not worth zero, so say so rather than let
                 the total read as complete. */}
             {load.unestimated_count > 0 && <span className="text-neutral-300"> +?</span>}
@@ -122,8 +125,8 @@ function Column({
         <button
           type="button"
           onClick={onCollapse}
-          aria-label={`Collapse ${name}`}
-          title="Collapse column"
+          aria-label={t('kanban.collapseNamed', { name })}
+          title={t('kanban.collapseColumn')}
           className={`btn btn-ghost btn-icon btn-xs text-neutral-400 opacity-0 transition group-hover/column:opacity-100 focus-visible:opacity-100 ${
             load && load.points > 0 ? '' : 'ml-auto'
           }`}
@@ -151,7 +154,7 @@ function Column({
         </SortableContext>
         {issues.length === 0 && (
           <div className="flex h-24 items-center justify-center rounded-card border border-dashed border-neutral-900/10 text-xs text-neutral-400">
-            {isOver ? 'Drop here' : 'No issues'}
+            {isOver ? t('kanban.dropHere') : t('kanban.noIssues')}
           </div>
         )}
       </div>
@@ -162,6 +165,7 @@ function Column({
 /** A folded column: a thin rail that still accepts drops and shows its count. */
 function CollapsedColumn({ column, onExpand }: { column: BoardColumn; onExpand: () => void }) {
   const { id, name, color } = column
+  const { t } = useTranslation(['board', 'common'])
   const count = column.issues.length
   const { setNodeRef, isOver } = useDroppable({ id })
 
@@ -172,8 +176,8 @@ function CollapsedColumn({ column, onExpand }: { column: BoardColumn; onExpand: 
       onClick={onExpand}
       data-column={id}
       data-collapsed="true"
-      aria-label={`Expand ${name}, ${count} issues`}
-      title={`${name} · ${count}`}
+      aria-label={t('kanban.expandNamed', { name, count })}
+      title={t('kanban.collapsedTitle', { name, count })}
       className={`glass-subtle flex w-11 shrink-0 flex-col items-center gap-3 rounded-panel py-3 transition-[box-shadow,background-color] hover:bg-neutral-900/5 ${
         isOver ? 'bg-brand-500/10 ring-2 ring-brand-400/60' : ''
       }`}
@@ -242,6 +246,7 @@ export function KanbanBoard({
   // One object for the board's lifetime; state, not a ref, because it is
   // handed to them while rendering.
   const [drag] = useState(() => ({ moved: false }))
+  const { t } = useTranslation(['board', 'common'])
   const { statuses, projects } = useTeamContext()
   const [collapsed, setCollapsed] = useState<Set<string> | null>(null)
   // Seeded from the team's own columns on first render rather than in state's
@@ -267,7 +272,7 @@ export function KanbanBoard({
     grouping === 'project'
       ? groupByProject(issues, projects, { includeEmpty: true }).map((group) => ({
           id: group.key,
-          name: group.project?.name ?? 'No project',
+          name: group.project?.name ?? t('kanban.noProject'),
           color: group.project?.color ?? 'var(--color-neutral-300)',
           issues: group.issues,
         }))
@@ -399,10 +404,10 @@ export function KanbanBoard({
       collisionDetection={cardsFirst}
       onDragCancel={() => setDragging(false)}
       accessibility={{
-        screenReaderInstructions: INSTRUCTIONS,
+        screenReaderInstructions: instructions(),
         announcements: announcements({
           issueName: (id) =>
-            issues.find((issue) => issue.id === Number(id))?.identifier ?? 'The issue',
+            issues.find((issue) => issue.id === Number(id))?.identifier ?? t('kanban.theIssue'),
           columnName: (id) =>
             columns.find(
               (column) =>

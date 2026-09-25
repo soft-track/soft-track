@@ -1,5 +1,6 @@
 import type { IssueSort, SortDirection } from '@/api/generated/models'
 import type { BoardGrouping } from '@/board/grouping'
+import { i18n } from '@/i18n'
 
 /**
  * How the list is ordered (#88). Kept apart from the filters, like the
@@ -10,12 +11,38 @@ export type BoardSort = { sort: IssueSort; direction: SortDirection }
 
 export const DEFAULT_SORT: BoardSort = { sort: 'created', direction: 'desc' }
 
+// Labels are getters over the catalog (#106), so they are read when shown.
 export const SORT_OPTIONS: Array<{ sort: IssueSort; label: string }> = [
-  { sort: 'created', label: 'Created' },
-  { sort: 'updated', label: 'Updated' },
-  { sort: 'priority', label: 'Priority' },
-  { sort: 'estimate', label: 'Estimate' },
-  { sort: 'title', label: 'Title' },
+  {
+    sort: 'created',
+    get label() {
+      return i18n.t('board:arrange.sort.created')
+    },
+  },
+  {
+    sort: 'updated',
+    get label() {
+      return i18n.t('board:arrange.sort.updated')
+    },
+  },
+  {
+    sort: 'priority',
+    get label() {
+      return i18n.t('board:arrange.sort.priority')
+    },
+  },
+  {
+    sort: 'estimate',
+    get label() {
+      return i18n.t('board:arrange.sort.estimate')
+    },
+  },
+  {
+    sort: 'title',
+    get label() {
+      return i18n.t('board:arrange.sort.title')
+    },
+  },
 ]
 
 const SORTS: readonly string[] = SORT_OPTIONS.map((option) => option.sort)
