@@ -1,7 +1,12 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { useCreateTeamTeamsPost } from '@/api/generated/endpoints/teams/teams'
+import {
+  getListMyTeamsTeamsGetQueryKey,
+  useCreateTeamTeamsPost,
+} from '@/api/generated/endpoints/teams/teams'
+import type { TeamRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { Logo } from '@/ui/Logo'
@@ -10,6 +15,7 @@ export default function NewTeamPage() {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const createTeam = useCreateTeamTeamsPost()
+  const queryClient = useQueryClient()
 
   const [name, setName] = useState('')
   const [key, setKey] = useState('')
@@ -22,6 +28,15 @@ export default function NewTeamPage() {
       const team = await createTeam.mutateAsync({
         data: { name, key: key.toUpperCase() },
       })
+      // Into the cached team list before navigating. The board finds its team
+      // in that list, which is cached for 30s -- so without this, a brand-new
+      // account's empty list sends it straight back here, and anyone else
+      // lands on their first team instead of the new one (found by e2e, #92).
+      queryClient.setQueryData<TeamRead[]>(getListMyTeamsTeamsGetQueryKey(), (teams) => [
+        ...(teams ?? []).filter((existing) => existing.id !== team.id),
+        team,
+      ])
+      void queryClient.invalidateQueries({ queryKey: getListMyTeamsTeamsGetQueryKey() })
       navigate(`/${team.key}`, { replace: true })
     } catch (err: unknown) {
       setError(errorDetail(err, 'Could not create the team.'))

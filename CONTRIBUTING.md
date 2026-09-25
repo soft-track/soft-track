@@ -52,6 +52,10 @@ npm run build                              # the build must succeed
 The fourth job regenerates `backend/openapi.json` and fails if it differs from
 what is committed. See below.
 
+The E2E job drives the running stack from a browser: sign-up, the board,
+mentions and search. Running it locally needs Docker and Playwright;
+[e2e/README.md](e2e/README.md) has the commands.
+
 ## Three things worth knowing before you open a PR
 
 **The API client is generated, and it is committed.** Everything under

@@ -190,3 +190,64 @@ jobs:
       - name: Tear down
         if: always()
         run: docker compose down -v
+
+  e2e:
+    name: E2E · Playwright journeys
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      # The same images the Docker job builds and smoke-tests: the real
+      # backend, the built frontend, and Postgres, driven from a browser.
+      - name: Start the stack
+        run: |
+          docker compose up -d --build
+          for i in $(seq 1 60); do
+            if curl -fs http://localhost:8000/health >/dev/null \
+              && curl -fs http://localhost:5173 >/dev/null; then
+              echo "stack up"; exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::the stack did not come up"
+          docker compose logs
+          exit 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install Playwright and Chromium
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run the journeys
+        working-directory: e2e
+        env:
+          CI: "true"
+        run: npx playwright test
+
+      # A failure nobody can see is a failure nobody fixes: the trace has
+      # every action, the DOM before and after each, and the network.
+      # Open one with `npx playwright show-trace <trace.zip>`.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 14
+
+      - name: Backend logs on failure
+        if: failure()
+        run: docker compose logs backend
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

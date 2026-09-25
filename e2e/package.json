@@ -1,0 +1,13 @@
+{
+  "name": "softtrack-e2e",
+  "private": true,
+  "description": "End-to-end journeys through the running stack (issue #92).",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0",
+    "@types/node": "^22.0.0"
+  }
+}
