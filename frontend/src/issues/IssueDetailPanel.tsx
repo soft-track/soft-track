@@ -9,6 +9,7 @@ import { IssueActionsMenu } from '@/issues/detail/IssueActionsMenu'
 import { IssueLinksSection } from '@/issues/detail/IssueLinksSection'
 import { IssueProperties } from '@/issues/detail/IssueProperties'
 import { SubIssuesSection } from '@/issues/detail/SubIssuesSection'
+import { TimeSection } from '@/issues/detail/TimeSection'
 import { useIssueAttachments } from '@/issues/detail/useIssueAttachments'
 import { useIssueEditor } from '@/issues/detail/useIssueEditor'
 import { usePanelShortcuts } from '@/issues/detail/usePanelShortcuts'
@@ -149,6 +150,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
               {!issue.parent && <SubIssuesSection issue={issue} readOnly={readOnly} />}
               <IssueLinksSection issueId={issue.id} readOnly={readOnly} />
               <DevelopmentSection issueId={issue.id} />
+              <TimeSection issueId={issue.id} readOnly={readOnly} />
 
               <div className="mt-5 flex items-center gap-2 text-xs text-neutral-400">
                 <PriorityIcon priority={issue.priority} size={12} />

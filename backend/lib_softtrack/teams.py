@@ -20,6 +20,7 @@ from lib_softtrack.tables import (
     Issue,
     IssueTemplate,
     OutboundWebhook,
+    Worklog,
     Project,
     Repository,
     SavedView,
@@ -160,6 +161,16 @@ def team_id_for_path(session: Session, path_params: Mapping[str, str]) -> int:
                 detail="Attachment not found",
             )
         ids = {"issue_id": attachment.issue_id}
+
+    if "worklog_id" in ids:
+        worklog = session.get(Worklog, ids["worklog_id"])
+        if worklog is None:
+            raise api_error(
+                status_code=404,
+                code=ErrorCode.worklog_not_found,
+                detail="Time entry not found",
+            )
+        ids = {"issue_id": worklog.issue_id}
 
     if "comment_id" in ids:
         comment = session.get(Comment, ids["comment_id"])

@@ -163,6 +163,7 @@ def world(client, team, guest):
         json={"email": "later@example.com", "role": "member"},
     )
     comment = post(f"/issues/{issue['id']}/comments", json={"body": "Looks right"})
+    worklog = post(f"/issues/{issue['id']}/worklogs", json={"minutes": 30})
     template = post(
         f"/teams/{team_id}/issue-templates",
         json={"name": "Bug report", "body": "## Steps"},
@@ -183,6 +184,7 @@ def world(client, team, guest):
         "comment_id": comment["id"],
         "emoji": "thumbs_up",
         "template_id": template["id"],
+        "worklog_id": worklog["id"],
         # Somebody else on the team: changing *their* role is the write.
         "user_id": team["user"]["id"],
     }

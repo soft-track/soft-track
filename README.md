@@ -62,6 +62,7 @@ README, which show a team several cycles in.
 - [Statuses and categories](docs/features/statuses.md)
 - [Cycles and estimates](docs/features/cycles.md)
 - [Reports](docs/features/reports.md)
+- [Time tracking](docs/features/time-tracking.md)
 - [Sub-issues and links](docs/features/sub-issues.md)
 - [Moving an issue to another team](docs/features/moving-issues.md)
 - [Projects (epics)](docs/features/projects.md)

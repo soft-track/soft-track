@@ -28,7 +28,9 @@ import type {
   ProjectBurnup,
   TeamCreatedVsResolvedTeamsTeamIdCreatedVsResolvedGetParams,
   TeamCumulativeFlowTeamsTeamIdCumulativeFlowGetParams,
+  TeamTimeSpentTeamsTeamIdTimeSpentGetParams,
   TeamVelocityTeamsTeamIdVelocityGetParams,
+  TimeSpent,
   Velocity
 } from '../../models';
 
@@ -538,6 +540,200 @@ export function useTeamCreatedVsResolvedTeamsTeamIdCreatedVsResolvedGet<TData = 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getTeamCreatedVsResolvedTeamsTeamIdCreatedVsResolvedGetQueryOptions(teamId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Time logged during the cycle on issues that were ever in it, by person (#102).
+ * @summary Cycle Time Spent
+ */
+export const cycleTimeSpentCyclesCycleIdTimeSpentGet = (
+    cycleId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TimeSpent>(
+      {url: `/cycles/${cycleId}/time-spent`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getCycleTimeSpentCyclesCycleIdTimeSpentGetQueryKey = (cycleId: number,) => {
+    return [
+    `/cycles/${cycleId}/time-spent`
+    ] as const;
+    }
+
+
+export const getCycleTimeSpentCyclesCycleIdTimeSpentGetQueryOptions = <TData = Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError = HTTPValidationError>(cycleId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCycleTimeSpentCyclesCycleIdTimeSpentGetQueryKey(cycleId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>> = ({ signal }) => cycleTimeSpentCyclesCycleIdTimeSpentGet(cycleId, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: cycleId !== null && cycleId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CycleTimeSpentCyclesCycleIdTimeSpentGetQueryResult = NonNullable<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>>
+export type CycleTimeSpentCyclesCycleIdTimeSpentGetQueryError = HTTPValidationError
+
+
+export function useCycleTimeSpentCyclesCycleIdTimeSpentGet<TData = Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError = HTTPValidationError>(
+ cycleId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>,
+          TError,
+          Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCycleTimeSpentCyclesCycleIdTimeSpentGet<TData = Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError = HTTPValidationError>(
+ cycleId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>,
+          TError,
+          Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCycleTimeSpentCyclesCycleIdTimeSpentGet<TData = Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError = HTTPValidationError>(
+ cycleId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Cycle Time Spent
+ */
+
+export function useCycleTimeSpentCyclesCycleIdTimeSpentGet<TData = Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError = HTTPValidationError>(
+ cycleId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCycleTimeSpentCyclesCycleIdTimeSpentGetQueryOptions(cycleId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Time logged on the team's issues over the last `days` days, by person (#102).
+ * @summary Team Time Spent
+ */
+export const teamTimeSpentTeamsTeamIdTimeSpentGet = (
+    teamId: number,
+    params?: TeamTimeSpentTeamsTeamIdTimeSpentGetParams,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TimeSpent>(
+      {url: `/teams/${teamId}/time-spent`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+
+
+
+
+export const getTeamTimeSpentTeamsTeamIdTimeSpentGetQueryKey = (teamId: number,
+    params?: TeamTimeSpentTeamsTeamIdTimeSpentGetParams,) => {
+    return [
+    `/teams/${teamId}/time-spent`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getTeamTimeSpentTeamsTeamIdTimeSpentGetQueryOptions = <TData = Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>, TError = HTTPValidationError>(teamId: number,
+    params?: TeamTimeSpentTeamsTeamIdTimeSpentGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getTeamTimeSpentTeamsTeamIdTimeSpentGetQueryKey(teamId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>> = ({ signal }) => teamTimeSpentTeamsTeamIdTimeSpentGet(teamId,params, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: teamId !== null && teamId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type TeamTimeSpentTeamsTeamIdTimeSpentGetQueryResult = NonNullable<Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>>
+export type TeamTimeSpentTeamsTeamIdTimeSpentGetQueryError = HTTPValidationError
+
+
+export function useTeamTimeSpentTeamsTeamIdTimeSpentGet<TData = Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    params: undefined |  TeamTimeSpentTeamsTeamIdTimeSpentGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>,
+          TError,
+          Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useTeamTimeSpentTeamsTeamIdTimeSpentGet<TData = Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    params?: TeamTimeSpentTeamsTeamIdTimeSpentGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>,
+          TError,
+          Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useTeamTimeSpentTeamsTeamIdTimeSpentGet<TData = Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    params?: TeamTimeSpentTeamsTeamIdTimeSpentGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Team Time Spent
+ */
+
+export function useTeamTimeSpentTeamsTeamIdTimeSpentGet<TData = Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    params?: TeamTimeSpentTeamsTeamIdTimeSpentGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamTimeSpentTeamsTeamIdTimeSpentGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getTeamTimeSpentTeamsTeamIdTimeSpentGetQueryOptions(teamId,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

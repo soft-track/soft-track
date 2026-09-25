@@ -64,6 +64,7 @@ class ErrorCode(str, enum.Enum):
     attachment_not_found = "attachment_not_found"
     comment_not_found = "comment_not_found"
     template_not_found = "template_not_found"
+    worklog_not_found = "worklog_not_found"
     notification_not_found = "notification_not_found"
     repository_not_found = "repository_not_found"
     invite_not_found = "invite_not_found"
@@ -111,6 +112,10 @@ class ErrorCode(str, enum.Enum):
     status_order_incomplete = "status_order_incomplete"
     template_order_incomplete = "template_order_incomplete"
     status_move_to_same = "status_move_to_same"
+    #: Only the person who logged time can change or delete the entry (#102).
+    not_your_worklog = "not_your_worklog"
+    #: A date worked that has not happened yet.
+    worklog_in_future = "worklog_in_future"
     #: Moving an issue to the team it is already on (#98).
     transfer_same_team = "transfer_same_team"
     view_other_team = "view_other_team"

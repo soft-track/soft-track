@@ -4040,6 +4040,114 @@
         }
       }
     },
+    "/cycles/{cycle_id}/time-spent": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Cycle Time Spent",
+        "description": "Time logged during the cycle on issues that were ever in it, by person (#102).",
+        "operationId": "cycle_time_spent_cycles__cycle_id__time_spent_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cycle Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeSpent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/time-spent": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Team Time Spent",
+        "description": "Time logged on the team's issues over the last `days` days, by person (#102).",
+        "operationId": "team_time_spent_teams__team_id__time_spent_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeSpent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/teams/{team_id}/import/jira": {
       "post": {
         "tags": [
@@ -5102,6 +5210,207 @@
             "schema": {
               "type": "integer",
               "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issue_id}/worklogs": {
+      "get": {
+        "tags": [
+          "worklogs"
+        ],
+        "summary": "Issue Time",
+        "description": "Time spent on the issue: the total, who spent it, and every entry.",
+        "operationId": "issue_time_issues__issue_id__worklogs_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueTime"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "worklogs"
+        ],
+        "summary": "Log Time",
+        "description": "Log time you spent on the issue, on one day.",
+        "operationId": "log_time_issues__issue_id__worklogs_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorklogCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorklogRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/worklogs/{worklog_id}": {
+      "patch": {
+        "tags": [
+          "worklogs"
+        ],
+        "summary": "Update Worklog",
+        "description": "Change one of your own entries.",
+        "operationId": "update_worklog_worklogs__worklog_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "worklog_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Worklog Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorklogUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorklogRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "worklogs"
+        ],
+        "summary": "Delete Worklog",
+        "description": "Delete one of your own entries.",
+        "operationId": "delete_worklog_worklogs__worklog_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "worklog_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Worklog Id"
             }
           }
         ],
@@ -8892,6 +9201,36 @@
         "type": "object",
         "title": "IssueTemplateUpdate"
       },
+      "IssueTime": {
+        "properties": {
+          "total_minutes": {
+            "type": "integer",
+            "title": "Total Minutes"
+          },
+          "by_person": {
+            "items": {
+              "$ref": "#/components/schemas/PersonTime"
+            },
+            "type": "array",
+            "title": "By Person"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/WorklogRead"
+            },
+            "type": "array",
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_minutes",
+          "by_person",
+          "entries"
+        ],
+        "title": "IssueTime",
+        "description": "Everything the issue panel shows about time spent on one issue."
+      },
       "IssueTransfer": {
         "properties": {
           "team_id": {
@@ -10011,6 +10350,23 @@
           "new_password"
         ],
         "title": "PasswordChange"
+      },
+      "PersonTime": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserPublic"
+          },
+          "minutes": {
+            "type": "integer",
+            "title": "Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "minutes"
+        ],
+        "title": "PersonTime"
       },
       "ProjectBurnup": {
         "properties": {
@@ -11376,6 +11732,28 @@
         "title": "TeamUpdate",
         "description": "What an admin may change about a team.\n\nNo `key`: identifiers like ENG-42 are already in commit messages, chat\nlogs and browser history, and renaming the prefix would strand every one\nof them. See README."
       },
+      "TimeSpent": {
+        "properties": {
+          "total_minutes": {
+            "type": "integer",
+            "title": "Total Minutes"
+          },
+          "by_person": {
+            "items": {
+              "$ref": "#/components/schemas/PersonTime"
+            },
+            "type": "array",
+            "title": "By Person"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_minutes",
+          "by_person"
+        ],
+        "title": "TimeSpent",
+        "description": "A rollup for a report: how much time, and whose (#102)."
+      },
       "Token": {
         "properties": {
           "access_token": {
@@ -12115,6 +12493,144 @@
         "title": "WebhookReceipt",
         "description": "What the webhook endpoint answers with.\n\nMore than an empty 200 on purpose. Both providers show the response body\nin their delivery log, and that log is the entire debugging surface for\nwhoever is setting this up -- \"accepted, matched nothing\" is the answer to\nthe question they are about to ask, and it is much cheaper to read there\nthan to work out from an issue page that did not change."
       },
+      "WorklogCreate": {
+        "properties": {
+          "minutes": {
+            "type": "integer",
+            "maximum": 1440.0,
+            "minimum": 1.0,
+            "title": "Minutes"
+          },
+          "worked_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worked On"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "minutes"
+        ],
+        "title": "WorklogCreate"
+      },
+      "WorklogRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "issue_id": {
+            "type": "integer",
+            "title": "Issue Id"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserPublic"
+          },
+          "minutes": {
+            "type": "integer",
+            "title": "Minutes"
+          },
+          "worked_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Worked On"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "issue_id",
+          "user",
+          "minutes",
+          "worked_on",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "WorklogRead"
+      },
+      "WorklogUpdate": {
+        "properties": {
+          "minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1440.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minutes"
+          },
+          "worked_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worked On"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "title": "WorklogUpdate"
+      },
       "ErrorCode": {
         "description": "Every code the API can return. Grouped by what the client did wrong.",
         "enum": [
@@ -12140,6 +12656,7 @@
           "attachment_not_found",
           "comment_not_found",
           "template_not_found",
+          "worklog_not_found",
           "notification_not_found",
           "repository_not_found",
           "invite_not_found",
@@ -12176,6 +12693,8 @@
           "status_order_incomplete",
           "template_order_incomplete",
           "status_move_to_same",
+          "not_your_worklog",
+          "worklog_in_future",
           "transfer_same_team",
           "view_other_team",
           "view_private_default",

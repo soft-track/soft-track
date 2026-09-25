@@ -17,6 +17,7 @@ from sqlalchemy import or_
 from sqlmodel import Session, select
 
 from lib_softtrack.cycles import get_cycle_or_404
+from lib_softtrack.models.worklogs import TimeSpent
 from lib_softtrack.models.reports import (
     Burndown,
     BurndownPoint,
@@ -40,6 +41,7 @@ from lib_softtrack.tables import (
     IssueEventField,
     StatusCategory,
     User,
+    Worklog,
 )
 from lib_softtrack.teams import get_team_or_404, require_team_member
 
@@ -496,3 +498,52 @@ def created_vs_resolved(
         total_created=sum(created_on.values()),
         total_resolved=sum(resolved_on.values()),
     )
+
+
+# --- time spent (#102) ---------------------------------------------------
+
+
+def cycle_time_spent(session: Session, current_user: User, cycle_id: int) -> TimeSpent:
+    """Time logged during the cycle on the cycle's work, by person.
+
+    "During" is the cycle's dates and "the cycle's work" is any issue that was
+    ever in it -- so time spent before an issue was carried over to the next
+    cycle stays with this one, and time spent on it afterwards goes with it.
+    Taking the issues currently in the cycle instead would move a finished
+    sprint's hours every time somebody tidied the backlog.
+    """
+    from lib_softtrack.worklogs import rollup
+
+    cycle = get_cycle_or_404(session, cycle_id)
+    require_team_member(cycle.team_id, current_user, session)
+    issue_ids = _ever_in_cycle(session, cycle_id)
+    if not issue_ids:
+        return TimeSpent(total_minutes=0, by_person=[])
+    rows = session.exec(
+        select(Worklog, User)
+        .join(User, User.id == Worklog.user_id)
+        .where(
+            Worklog.issue_id.in_(issue_ids),
+            Worklog.worked_on >= cycle.starts_at.date(),
+            Worklog.worked_on <= cycle.ends_at.date(),
+        )
+    ).all()
+    return rollup(rows)
+
+
+def team_time_spent(
+    session: Session, current_user: User, team_id: int, days: int = 30
+) -> TimeSpent:
+    """Time logged on the team's issues over the last `days` days, by person."""
+    from lib_softtrack.worklogs import rollup
+
+    get_team_or_404(team_id, session)
+    require_team_member(team_id, current_user, session)
+    since = date.today() - timedelta(days=days - 1)
+    rows = session.exec(
+        select(Worklog, User)
+        .join(User, User.id == Worklog.user_id)
+        .join(Issue, Issue.id == Worklog.issue_id)
+        .where(Issue.team_id == team_id, Worklog.worked_on >= since)
+    ).all()
+    return rollup(rows)

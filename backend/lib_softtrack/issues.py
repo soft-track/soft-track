@@ -621,6 +621,11 @@ def _delete_rows(session: Session, issue: Issue) -> list[str]:
     # again: the rows hold a foreign key here, and a link to the code for an
     # issue that no longer exists is not worth keeping.
     integrations_service.delete_links_for_issue(session, issue_id)
+    # And the time logged against it (#102). Imported here because the
+    # worklog service reads issues through this module.
+    from lib_softtrack import worklogs as worklogs_service
+
+    worklogs_service.delete_for_issue(session, issue_id)
     session.flush()
 
     # Attachments before comments: a comment attachment holds a foreign key to

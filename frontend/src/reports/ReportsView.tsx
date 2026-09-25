@@ -2,13 +2,16 @@ import { useState } from 'react'
 
 import {
   useCycleBurndownCyclesCycleIdBurndownGet,
+  useCycleTimeSpentCyclesCycleIdTimeSpentGet,
   useTeamCreatedVsResolvedTeamsTeamIdCreatedVsResolvedGet,
   useTeamCumulativeFlowTeamsTeamIdCumulativeFlowGet,
+  useTeamTimeSpentTeamsTeamIdTimeSpentGet,
   useTeamVelocityTeamsTeamIdVelocityGet,
 } from '@/api/generated/endpoints/reports/reports'
 import { BurndownChart } from '@/reports/BurndownChart'
 import { CreatedResolvedChart } from '@/reports/CreatedResolvedChart'
 import { FlowChart } from '@/reports/FlowChart'
+import { TimeSpentChart } from '@/reports/TimeSpentChart'
 import { VelocityChart } from '@/reports/VelocityChart'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Select } from '@/ui/Select'
@@ -37,6 +40,11 @@ export function ReportsView() {
     team.id,
     { days },
   )
+  // Time spent (#102): in the chosen cycle, and over the chosen window.
+  const cycleTime = useCycleTimeSpentCyclesCycleIdTimeSpentGet(selected?.id ?? 0, {
+    query: { enabled: Boolean(selected) },
+  })
+  const windowTime = useTeamTimeSpentTeamsTeamIdTimeSpentGet(team.id, { days })
 
   return (
     <div className="scroll-thin h-full overflow-y-auto">
@@ -91,6 +99,20 @@ export function ReportsView() {
         {velocity.data && <VelocityChart data={velocity.data} />}
         {flow.data && <FlowChart data={flow.data} />}
         {createdResolved.data && <CreatedResolvedChart data={createdResolved.data} />}
+        {selected && cycleTime.data && (
+          <TimeSpentChart
+            title={`Time in ${selected.display_name}`}
+            note="Logged during the cycle on issues that were in it."
+            data={cycleTime.data}
+          />
+        )}
+        {windowTime.data && (
+          <TimeSpentChart
+            title={`Time, last ${days} days`}
+            note="Logged on this team's issues."
+            data={windowTime.data}
+          />
+        )}
       </div>
 
       <p className="mt-3 px-1 text-xs text-neutral-400">

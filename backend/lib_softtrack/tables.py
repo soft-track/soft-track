@@ -780,6 +780,29 @@ class Comment(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow)
 
 
+class Worklog(SQLModel, table=True):
+    """Time somebody spent on an issue, on one day (#102).
+
+    Minutes as an integer rather than an interval type: every question asked
+    of this table is a sum, and integers sum exactly and identically on SQLite
+    and Postgres. One entry is one day's work -- which is why it has a date
+    and why it is capped at a day -- so "2h yesterday, 3h today" is two rows
+    and a report by date is a `GROUP BY` rather than a guess about how a
+    three-day entry should be spread.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    issue_id: int = Field(foreign_key="issue.id", index=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    minutes: int
+    #: The day the work happened, in the logger's own calendar. Defaults to
+    #: their today; worth changing for "I forgot to log Friday".
+    worked_on: date = Field(index=True)
+    note: Optional[str] = None
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
 class IssueTemplate(SQLModel, table=True):
     """A starting point for a new issue's description (#97).
 
