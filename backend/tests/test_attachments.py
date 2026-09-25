@@ -216,16 +216,20 @@ def test_downloading_returns_the_bytes(client, team):
     assert response.headers["content-type"].startswith("image/png")
 
 
-def test_an_image_is_served_inline_and_a_document_as_a_download(client, team):
+def test_what_can_be_previewed_is_inline_and_the_rest_a_download(client, team):
+    """Images, PDFs and text are shown in place (#101); a zip is saved."""
     issue = make_issue(client, team)
     image = attach(client, team, issue)
-    document = attach(client, team, issue, body=b"log line", name="server.log")
+    log = attach(client, team, issue, body=b"log line", name="server.log")
+    archive = attach(client, team, issue, body=b"PK\x03\x04", name="dump.zip")
 
-    inline = client.get(image["url"], headers=team["headers"])
-    download = client.get(document["url"], headers=team["headers"])
-
-    assert inline.headers["content-disposition"].startswith("inline;")
-    assert download.headers["content-disposition"].startswith("attachment;")
+    for attachment, disposition in (
+        (image, "inline;"),
+        (log, "inline;"),
+        (archive, "attachment;"),
+    ):
+        response = client.get(attachment["url"], headers=team["headers"])
+        assert response.headers["content-disposition"].startswith(disposition)
 
 
 def test_the_response_forbids_content_sniffing(client, team):

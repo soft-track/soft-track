@@ -14,6 +14,7 @@ export * from './apiTokenCreate';
 export * from './apiTokenCreated';
 export * from './apiTokenRead';
 export * from './assigneeLoad';
+export * from './attachmentPreview';
 export * from './attachmentRead';
 export * from './authConfig';
 export * from './automationRuleCreate';

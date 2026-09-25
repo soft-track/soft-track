@@ -5,6 +5,7 @@
  * An open-source, self-hostable issue tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { AttachmentPreview } from './attachmentPreview';
 import type { UserPublic } from './userPublic';
 
 export interface AttachmentRead {
@@ -15,6 +16,7 @@ export interface AttachmentRead {
   content_type: string;
   size_bytes: number;
   is_image: boolean;
+  preview?: AttachmentPreview | null;
   url: string;
   uploaded_by: UserPublic;
   created_at: string;

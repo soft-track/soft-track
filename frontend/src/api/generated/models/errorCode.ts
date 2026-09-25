@@ -89,6 +89,7 @@ export const ErrorCode = {
   attachment_content_mismatch: 'attachment_content_mismatch',
   attachment_not_attachable: 'attachment_not_attachable',
   attachment_gone: 'attachment_gone',
+  range_not_satisfiable: 'range_not_satisfiable',
   import_not_utf8: 'import_not_utf8',
   import_invalid: 'import_invalid',
   import_empty: 'import_empty',

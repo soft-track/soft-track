@@ -1,9 +1,19 @@
+import enum
 from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
 from lib_identity.models.identity import UserPublic
+
+
+class AttachmentPreview(str, enum.Enum):
+    """How a file can be shown without downloading it (#101)."""
+
+    image = "image"
+    pdf = "pdf"
+    #: Shown as plain text; the server always serves these as text/plain.
+    text = "text"
 
 
 class AttachmentRead(BaseModel):
@@ -19,6 +29,9 @@ class AttachmentRead(BaseModel):
     #: caller from keeping its own list of image types in sync with the
     #: server's.
     is_image: bool
+    #: How the client can preview it, or null for download only. Decided here
+    #: so the client never keeps its own list of safe types.
+    preview: Optional[AttachmentPreview] = None
     #: Where the bytes are, relative to the API root. Relative on purpose: it
     #: is what gets written into markdown, and an absolute URL would bake this
     #: deployment's hostname into the issue text forever.

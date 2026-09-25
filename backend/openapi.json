@@ -3339,6 +3339,22 @@
               "type": "integer",
               "title": "Attachment Id"
             }
+          },
+          {
+            "name": "Range",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Range"
+            }
           }
         ],
         "responses": {
@@ -6653,6 +6669,16 @@
         "title": "AssigneeLoad",
         "description": "What one person is carrying. `user` is null for unassigned work."
       },
+      "AttachmentPreview": {
+        "type": "string",
+        "enum": [
+          "image",
+          "pdf",
+          "text"
+        ],
+        "title": "AttachmentPreview",
+        "description": "How a file can be shown without downloading it (#101)."
+      },
       "AttachmentRead": {
         "properties": {
           "id": {
@@ -6689,6 +6715,16 @@
           "is_image": {
             "type": "boolean",
             "title": "Is Image"
+          },
+          "preview": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttachmentPreview"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "url": {
             "type": "string",
@@ -12158,6 +12194,7 @@
           "attachment_content_mismatch",
           "attachment_not_attachable",
           "attachment_gone",
+          "range_not_satisfiable",
           "import_not_utf8",
           "import_invalid",
           "import_empty",

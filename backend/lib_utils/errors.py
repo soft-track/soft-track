@@ -136,6 +136,8 @@ class ErrorCode(str, enum.Enum):
     attachment_not_attachable = "attachment_not_attachable"
     #: The attachment's row exists but its bytes are gone from storage.
     attachment_gone = "attachment_gone"
+    #: A byte range that starts past the end of the file.
+    range_not_satisfiable = "range_not_satisfiable"
     import_not_utf8 = "import_not_utf8"
     import_invalid = "import_invalid"
     import_empty = "import_empty"

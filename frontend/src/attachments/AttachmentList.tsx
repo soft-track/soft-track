@@ -1,5 +1,8 @@
+import { useState } from 'react'
+
 import type { AttachmentRead } from '@/api/generated/models'
 import { AttachmentImage } from '@/attachments/AttachmentImage'
+import { AttachmentPreviewDialog } from '@/attachments/AttachmentPreviewDialog'
 import { downloadAttachment, formatBytes } from '@/attachments/urls'
 import { Icon } from '@/ui/Icon'
 
@@ -9,7 +12,8 @@ import { Icon } from '@/ui/Icon'
  * Images get a thumbnail because "was it the login screen or the settings
  * one" is answered by looking rather than by reading a filename. Everything
  * else gets a row with its size, which is the next most useful thing to know
- * before deciding to download it.
+ * before deciding to download it. A PDF or a text file opens in a preview
+ * (#101); anything else downloads.
  */
 export function AttachmentList({
   attachments,
@@ -21,7 +25,14 @@ export function AttachmentList({
   onRemove?: (attachment: AttachmentRead) => void
   compact?: boolean
 }) {
+  const [previewing, setPreviewing] = useState<AttachmentRead | null>(null)
+
   if (attachments.length === 0) return null
+
+  const open = (attachment: AttachmentRead) =>
+    attachment.preview === 'pdf' || attachment.preview === 'text'
+      ? setPreviewing(attachment)
+      : downloadAttachment(attachment.url, attachment.filename)
 
   return (
     <ul className={`flex flex-wrap gap-2 ${compact ? 'mt-2' : 'mt-2'}`}>
@@ -29,8 +40,11 @@ export function AttachmentList({
         <li key={attachment.id} className="group relative">
           <button
             type="button"
-            onClick={() => downloadAttachment(attachment.url, attachment.filename)}
+            onClick={() => open(attachment)}
             title={`${attachment.filename} · ${formatBytes(attachment.size_bytes)}`}
+            aria-haspopup={
+              attachment.preview === 'pdf' || attachment.preview === 'text' ? 'dialog' : undefined
+            }
             className="glass-card block max-w-[12rem] overflow-hidden rounded-card text-left"
           >
             {attachment.is_image ? (
@@ -68,6 +82,9 @@ export function AttachmentList({
           )}
         </li>
       ))}
+      {previewing && (
+        <AttachmentPreviewDialog attachment={previewing} onClose={() => setPreviewing(null)} />
+      )}
     </ul>
   )
 }
