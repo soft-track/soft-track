@@ -69,7 +69,10 @@ jobs:
         # the referential bugs Postgres would catch without needing a service.
         env:
           DATABASE_URL: "sqlite://"
-        run: pytest --cov --cov-report=term-missing --cov-report=xml --cov-fail-under=85
+        # --durations=10 names the slowest tests in the log, so the next time
+        # this step creeps back towards the ten minutes it took before #169 the
+        # culprit is a scroll away rather than a profiling session.
+        run: pytest --cov --cov-report=term-missing --cov-report=xml --cov-fail-under=85 --durations=10
 
       - name: Coverage summary
         if: always()
