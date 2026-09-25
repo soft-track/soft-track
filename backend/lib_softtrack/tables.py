@@ -414,6 +414,77 @@ class UserIdentity(SQLModel, table=True):
     last_login_at: Optional[datetime] = None
 
 
+class WebhookEvent(str, enum.Enum):
+    """What an outbound webhook can be sent (#91).
+
+    The same happenings the notification system already observes, named the
+    way most senders name theirs: `resource.verb`.
+    """
+
+    issue_created = "issue.created"
+    #: Any change to an issue's fields. A status change sends this *and*
+    #: `issue.status_changed`, so a consumer can listen to only the latter.
+    issue_updated = "issue.updated"
+    issue_status_changed = "issue.status_changed"
+    comment_created = "comment.created"
+    cycle_started = "cycle.started"
+    cycle_completed = "cycle.completed"
+    #: Sent on request from the settings page, to check a URL works.
+    ping = "ping"
+
+
+class OutboundWebhook(SQLModel, table=True):
+    """A URL a team's events are posted to (#91). Managed by team admins."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    url: str
+    #: The HMAC key for X-SoftTrack-Signature. Kept as given -- signing needs
+    #: the key itself, unlike a credential that only has to be checked -- and
+    #: shown once, when the webhook is made.
+    secret: str
+    #: The subscribed WebhookEvent values, comma-separated. A short fixed set,
+    #: read and written only through lib_softtrack/outbound.py.
+    events: str
+    is_enabled: bool = Field(default=True)
+    #: Deliveries in a row that failed after every retry. Reset by a success.
+    consecutive_failures: int = Field(default=0)
+    #: Why it was switched off automatically; null if it was not.
+    disabled_reason: Optional[str] = None
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class WebhookDelivery(SQLModel, table=True):
+    """One event on its way to one webhook, and what happened to it (#91).
+
+    Written in the same transaction as the change it reports -- an outbox --
+    so an event is never lost to a crash between the change and the send, and
+    the send happens later, off the request. The same rows are the delivery
+    log the settings page shows, like AutomationRun is for rules.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    webhook_id: int = Field(foreign_key="outboundwebhook.id", index=True)
+    event: str
+    #: The exact JSON body, fixed when the event happened, so every retry
+    #: sends -- and signs -- the same bytes.
+    payload: str
+    #: pending, succeeded or failed.
+    status: str = Field(default="pending", index=True)
+    attempts: int = Field(default=0)
+    #: When the next attempt is due; null once it has succeeded or given up.
+    next_attempt_at: Optional[datetime] = Field(default=None, index=True)
+    #: A worker's hold on the row while it sends, so two processes never
+    #: send the same delivery. See outbound._claim.
+    claimed_until: Optional[datetime] = None
+    response_status: Optional[int] = None
+    #: The start of the response body, or the error, for debugging from the UI.
+    response_excerpt: Optional[str] = None
+    created_at: datetime = Field(default_factory=utcnow, index=True)
+    completed_at: Optional[datetime] = None
+
+
 class ApiToken(SQLModel, table=True):
     """A personal API token, for scripts and integrations (#90).
 

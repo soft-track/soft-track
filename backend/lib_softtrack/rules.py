@@ -43,7 +43,7 @@ from typing import Iterable, Optional
 from sqlmodel import Session, select
 
 from lib_softtrack import automations as automations_service
-from lib_softtrack import history, notifications as notifications_service
+from lib_softtrack import history, notifications as notifications_service, outbound
 from lib_softtrack.automations import MAX_RUNS_PER_TEAM
 from lib_softtrack.models.automations import RuleActions
 from lib_softtrack.tables import (
@@ -303,6 +303,7 @@ def _apply(
     actions = automations_service.actions_of(rule)
     history_before = history.snapshot(issue)
     notify_before = notifications_service.snapshot(issue)
+    hook_before = outbound.snapshot(issue)
 
     lines: list[str] = []
     touched_issue = False
@@ -366,6 +367,7 @@ def _apply(
         notifications_service.on_issue_updated(
             session, issue, notify_before, actor=None
         )
+        outbound.issue_changed(session, issue, hook_before, actor=None)
 
     return lines
 

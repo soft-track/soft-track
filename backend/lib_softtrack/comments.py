@@ -4,6 +4,7 @@ from sqlalchemy import func
 from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
+from lib_softtrack import outbound
 from lib_softtrack import attachments as attachments_service
 from lib_softtrack import notifications as notifications_service
 from lib_softtrack import rules as rules_service
@@ -11,7 +12,7 @@ from lib_softtrack.models.attachments import AttachmentRead
 from lib_softtrack.models.comments import CommentCreate, CommentRead
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.issues import get_issue_or_404
-from lib_softtrack.tables import Comment, User
+from lib_softtrack.tables import Comment, User, WebhookEvent
 from lib_softtrack.teams import require_team_member
 
 
@@ -45,6 +46,24 @@ def create_comment(
     try:
         attachments_service.claim_for_comment(session, comment, payload.attachment_ids)
         notifications_service.on_comment_created(session, issue, comment, current_user)
+        outbound.emit(
+            session,
+            issue.team_id,
+            WebhookEvent.comment_created,
+            lambda: {
+                "issue": {
+                    "id": issue.id,
+                    "number": issue.number,
+                    "title": issue.title,
+                },
+                "comment": {
+                    "id": comment.id,
+                    "body": comment.body,
+                    "created_at": comment.created_at,
+                },
+            },
+            current_user,
+        )
         rules_service.on_comment_created(session, issue, current_user)
         session.commit()
     except Exception:

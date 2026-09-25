@@ -19,6 +19,7 @@ from typing import Optional
 from sqlalchemy import case, func
 from sqlmodel import Session, select
 
+from lib_softtrack import outbound
 from lib_softtrack import automations as automations_service
 from lib_softtrack import rules as rules_service
 from lib_softtrack import views as views_service
@@ -31,7 +32,14 @@ from lib_softtrack.models.cycles import (
     CycleUpdate,
 )
 from lib_softtrack.statuses import in_category
-from lib_softtrack.tables import Cycle, CycleState, Issue, StatusCategory, User
+from lib_softtrack.tables import (
+    Cycle,
+    CycleState,
+    Issue,
+    StatusCategory,
+    User,
+    WebhookEvent,
+)
 from lib_softtrack.teams import get_team_or_404, require_team_member
 from lib_utils.errors import ErrorCode, api_error
 
@@ -220,6 +228,13 @@ def start_cycle(session: Session, current_user: User, cycle_id: int) -> CycleRea
 
     cycle.state = CycleState.active
     session.add(cycle)
+    outbound.emit(
+        session,
+        cycle.team_id,
+        WebhookEvent.cycle_started,
+        lambda: {"cycle": _read(session, cycle)},
+        current_user,
+    )
     session.commit()
     session.refresh(cycle)
     return _read(session, cycle)
@@ -277,6 +292,17 @@ def complete_cycle(
     # After the carry-over, so a rule can act on the issues that came out of
     # the cycle unfinished as well as the ones that stayed.
     rules_service.on_cycle_completed(session, cycle, members, current_user)
+    outbound.emit(
+        session,
+        cycle.team_id,
+        WebhookEvent.cycle_completed,
+        lambda: {
+            "cycle": _read(session, cycle),
+            "carried_over": len(unfinished),
+            "carried_into_cycle_id": successor.id if successor else None,
+        },
+        current_user,
+    )
 
     session.commit()
     session.refresh(cycle)

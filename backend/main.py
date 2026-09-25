@@ -11,6 +11,7 @@ from app_identity.identity import router as identity_router
 from app_identity.oauth import router as oauth_router
 from lib_identity.identity import warm_password_hasher
 from lib_softtrack.digest import digest_loop
+from lib_softtrack.outbound import webhook_loop
 from app_softtrack.attachments import router as attachments_router
 from app_softtrack.automations import router as automations_router
 from app_softtrack.comments import router as comments_router
@@ -21,6 +22,7 @@ from app_softtrack.invites import router as invites_router
 from app_softtrack.issues import router as issues_router
 from app_softtrack.labels import router as labels_router
 from app_softtrack.notifications import router as notifications_router
+from app_softtrack.outbound import router as outbound_router
 from app_softtrack.projects import router as projects_router
 from app_softtrack.reports import router as reports_router
 from app_softtrack.search import router as search_router
@@ -59,10 +61,17 @@ async def lifespan(app: FastAPI):
             settings.smtp_host,
         )
 
+    # Outbound webhooks (#91): the outbox is sent from here, off any request.
+    webhooks: asyncio.Task | None = None
+    if settings.webhook_delivery:
+        webhooks = asyncio.create_task(webhook_loop())
+
     yield
 
     if digest is not None:
         digest.cancel()
+    if webhooks is not None:
+        webhooks.cancel()
 
 
 app = FastAPI(
@@ -131,6 +140,7 @@ app.include_router(statuses_router)
 app.include_router(automations_router)
 app.include_router(integrations_router)
 app.include_router(webhooks_router)
+app.include_router(outbound_router)
 
 
 @app.get("/health", tags=["health"])

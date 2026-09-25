@@ -116,6 +116,15 @@ class Settings(BaseSettings):
     email_from: str = "softtrack@localhost"
     #: How often the digest loop wakes up.
     digest_interval_minutes: int = 15
+    #: Run the loop that sends outbound webhooks (#91). Off only for the test
+    #: suite, which drives deliveries directly.
+    webhook_delivery: bool = True
+    #: Allow outbound webhooks to private, loopback and link-local addresses.
+    #: Off by default: a webhook URL is server-side request forgery surface,
+    #: and a team admin should not be able to point this server at
+    #: 169.254.169.254 or the database next door. Turn it on for a genuinely
+    #: internal target, such as your own Slack proxy.
+    webhook_allow_private_targets: bool = False
     #: How long a notification waits before it can be emailed. This is what
     #: makes it a digest rather than a mail per event: someone triaging a
     #: dozen issues generates one mail, not twelve.

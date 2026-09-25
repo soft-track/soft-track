@@ -64,6 +64,11 @@ export default function SettingsLayout() {
           icon: 'branch' as IconName,
         },
         {
+          to: `/settings/teams/${team.key}/webhooks`,
+          label: 'Webhooks',
+          icon: 'link' as IconName,
+        },
+        {
           to: `/settings/teams/${team.key}/general`,
           label: 'General',
           icon: 'settings' as IconName,

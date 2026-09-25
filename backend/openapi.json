@@ -5535,6 +5535,307 @@
         }
       }
     },
+    "/teams/{team_id}/outbound-webhooks": {
+      "get": {
+        "tags": [
+          "outbound webhooks"
+        ],
+        "summary": "List Webhooks",
+        "description": "The team's outbound webhooks. Team admins only.",
+        "operationId": "list_webhooks_teams__team_id__outbound_webhooks_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OutboundWebhookRead"
+                  },
+                  "title": "Response List Webhooks Teams  Team Id  Outbound Webhooks Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "outbound webhooks"
+        ],
+        "summary": "Create Webhook",
+        "description": "Post chosen events to a URL, signed with `X-SoftTrack-Signature`.\n\nThe URL must be public unless WEBHOOK_ALLOW_PRIVATE_TARGETS is set. The\nreply carries the signing secret -- the only time it is shown.",
+        "operationId": "create_webhook_teams__team_id__outbound_webhooks_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutboundWebhookCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboundWebhookCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/outbound-webhooks/{webhook_id}": {
+      "patch": {
+        "tags": [
+          "outbound webhooks"
+        ],
+        "summary": "Update Webhook",
+        "operationId": "update_webhook_outbound_webhooks__webhook_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "webhook_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Webhook Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutboundWebhookUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboundWebhookRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "outbound webhooks"
+        ],
+        "summary": "Delete Webhook",
+        "operationId": "delete_webhook_outbound_webhooks__webhook_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "webhook_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Webhook Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/outbound-webhooks/{webhook_id}/deliveries": {
+      "get": {
+        "tags": [
+          "outbound webhooks"
+        ],
+        "summary": "List Deliveries",
+        "description": "The latest deliveries, newest first, with the receiver's answer.",
+        "operationId": "list_deliveries_outbound_webhooks__webhook_id__deliveries_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "webhook_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Webhook Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebhookDeliveryRead"
+                  },
+                  "title": "Response List Deliveries Outbound Webhooks  Webhook Id  Deliveries Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/outbound-webhooks/{webhook_id}/ping": {
+      "post": {
+        "tags": [
+          "outbound webhooks"
+        ],
+        "summary": "Ping Webhook",
+        "description": "Queue a `ping` delivery, to check the URL and the secret.",
+        "operationId": "ping_webhook_outbound_webhooks__webhook_id__ping_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "webhook_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Webhook Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -8406,6 +8707,218 @@
         "title": "OAuthProvider",
         "description": "An identity provider somebody can sign in with.\n\nTwo, and closed on purpose. Each one is a different set of quirks rather\nthan a row of configuration -- see `lib_identity/oauth_providers.py` -- and\na self-hosted instance that configures neither keeps email and password\nwith no external dependency at all. Unrelated to `GitProvider`: that is a\nrepository SoftTrack is told about, this is a way into an account."
       },
+      "OutboundWebhookCreate": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Url"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/WebhookEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "secret": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "events"
+        ],
+        "title": "OutboundWebhookCreate"
+      },
+      "OutboundWebhookCreated": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/WebhookEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled"
+          },
+          "consecutive_failures": {
+            "type": "integer",
+            "title": "Consecutive Failures"
+          },
+          "disabled_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disabled Reason"
+          },
+          "secret_hint": {
+            "type": "string",
+            "title": "Secret Hint"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "secret": {
+            "type": "string",
+            "title": "Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "url",
+          "events",
+          "is_enabled",
+          "consecutive_failures",
+          "secret_hint",
+          "created_at",
+          "secret"
+        ],
+        "title": "OutboundWebhookCreated",
+        "description": "Returned once, when the webhook is made: the only time the secret is seen."
+      },
+      "OutboundWebhookRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/WebhookEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled"
+          },
+          "consecutive_failures": {
+            "type": "integer",
+            "title": "Consecutive Failures"
+          },
+          "disabled_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disabled Reason"
+          },
+          "secret_hint": {
+            "type": "string",
+            "title": "Secret Hint"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "url",
+          "events",
+          "is_enabled",
+          "consecutive_failures",
+          "secret_hint",
+          "created_at"
+        ],
+        "title": "OutboundWebhookRead"
+      },
+      "OutboundWebhookUpdate": {
+        "properties": {
+          "url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "events": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/WebhookEvent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Events"
+          },
+          "is_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Enabled"
+          }
+        },
+        "type": "object",
+        "title": "OutboundWebhookUpdate"
+      },
       "Page_AdminUserRead_": {
         "properties": {
           "items": {
@@ -10630,6 +11143,100 @@
         ],
         "title": "WatchState"
       },
+      "WebhookDeliveryRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "event": {
+            "type": "string",
+            "title": "Event"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts"
+          },
+          "next_attempt_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Attempt At"
+          },
+          "response_status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Status"
+          },
+          "response_excerpt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Excerpt"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "event",
+          "status",
+          "attempts",
+          "created_at"
+        ],
+        "title": "WebhookDeliveryRead"
+      },
+      "WebhookEvent": {
+        "type": "string",
+        "enum": [
+          "issue.created",
+          "issue.updated",
+          "issue.status_changed",
+          "comment.created",
+          "cycle.started",
+          "cycle.completed",
+          "ping"
+        ],
+        "title": "WebhookEvent",
+        "description": "What an outbound webhook can be sent (#91).\n\nThe same happenings the notification system already observes, named the\nway most senders name theirs: `resource.verb`."
+      },
       "WebhookReceipt": {
         "properties": {
           "events": {
@@ -10734,6 +11341,9 @@
           "import_empty",
           "invite_invalid",
           "api_token_not_found",
+          "webhook_not_found",
+          "webhook_invalid",
+          "webhook_target_private",
           "api_token_not_allowed",
           "invite_wrong_recipient",
           "reset_link_invalid",

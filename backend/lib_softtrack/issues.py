@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack import attachments as attachments_service
+from lib_softtrack import outbound
 from lib_softtrack.models.issues import (
     IssueBulkChanges,
     IssueBulkDelete,
@@ -43,6 +44,7 @@ from lib_softtrack.tables import (
     SortDirection,
     Team,
     User,
+    WebhookEvent,
     WorkflowStatus,
 )
 from lib_softtrack.ranks import neighbour_or_404, rank_between, rank_order, top_rank
@@ -279,6 +281,13 @@ def create_issue(
 
     record_creation(session, issue, current_user)
     notifications_service.on_issue_created(session, issue, current_user)
+    outbound.emit(
+        session,
+        issue.team_id,
+        WebhookEvent.issue_created,
+        lambda: {"issue": issue_to_read(issue, session)},
+        current_user,
+    )
     session.commit()
 
     if payload.label_ids:
@@ -434,6 +443,7 @@ def _apply_update(
     issue's changes in one transaction.
     """
     before = snapshot(issue)
+    hook_before = outbound.snapshot(issue)
     # Three snapshots of the same row, and three different questions about it.
     # History tracks what can be charted, notifications track what somebody
     # would want to be told about, and automation tracks what a rule can fire
@@ -463,6 +473,9 @@ def _apply_update(
 
     record_changes(session, issue, before, current_user)
     notifications_service.on_issue_updated(session, issue, watched_before, current_user)
+    # Before the rules run, so what a person did and what a rule then did
+    # arrive as separate deliveries -- the same split history keeps.
+    outbound.issue_changed(session, issue, hook_before, current_user)
     # Last, so a rule reads the issue as the update left it -- and so its own
     # changes are recorded as a separate step in the history rather than
     # folded into the one the person made.

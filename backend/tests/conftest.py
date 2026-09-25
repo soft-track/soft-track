@@ -20,6 +20,9 @@ import os
 
 # Must be set before `web` is imported: it builds the engine at module scope.
 os.environ.setdefault("DATABASE_URL", "sqlite://")
+# The suite sends webhooks by calling outbound.deliver_due itself, against
+# its own database; the app's loop would poll a different one (#91).
+os.environ.setdefault("WEBHOOK_DELIVERY", "false")
 
 import pytest
 from fastapi.testclient import TestClient

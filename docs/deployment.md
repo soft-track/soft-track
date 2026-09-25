@@ -75,6 +75,11 @@ The generated API client under `src/api/generated/` is checked in and up to date
 - `SECRET_KEY` in `backend/.env.example` is a placeholder; generate a real secret before running beyond local development.
 - CORS origins for local dev are set in `backend/web.py` (`cors_origins`); add the deployed frontend origin there for production.
 - SMTP is optional. With no `SMTP_HOST`, the inbox is the only notification channel.
+- Outbound webhooks are only sent to public addresses. Set
+  `WEBHOOK_ALLOW_PRIVATE_TARGETS=true` to allow private, loopback and link-local
+  targets, for example your own Slack proxy. Only do this on an instance where
+  every team admin is trusted to choose where this server sends requests. See
+  [outbound webhooks](features/outbound-webhooks.md).
 - Signing in with Google or GitHub is optional and off until both halves of a provider's credentials are set. `API_BASE_URL` has to be right for it, because the redirect URI is built from it.
 
 ## User management and security

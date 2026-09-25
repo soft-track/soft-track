@@ -133,6 +133,11 @@ class ErrorCode(str, enum.Enum):
     # --- links and sign-in flows -----------------------------------------------
     invite_invalid = "invite_invalid"
     api_token_not_found = "api_token_not_found"
+    webhook_not_found = "webhook_not_found"
+    #: Not an http(s) URL, or no events chosen.
+    webhook_invalid = "webhook_invalid"
+    #: The URL points at a private, loopback or link-local address (#91).
+    webhook_target_private = "webhook_target_private"
     #: Tokens, passwords and other credentials are managed from a signed-in
     #: session, not with an API token -- see lib_identity/api_tokens.py.
     api_token_not_allowed = "api_token_not_allowed"
