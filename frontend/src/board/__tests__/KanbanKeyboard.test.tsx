@@ -11,10 +11,15 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { IssueRead, StatusRead } from '@/api/generated/models'
+import type { IssueRead, StatusRead, TeamMemberRead } from '@/api/generated/models'
 import { KanbanBoard } from '@/board/KanbanBoard'
 import { TeamProvider } from '@/team/TeamContext'
 import type { TeamContextValue } from '@/team/useTeamContext'
+
+vi.mock('@/auth/useAuth', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/auth/useAuth')>()),
+  useAuth: () => ({ user: { id: 10 } }),
+}))
 
 function status(id: number, name: string): StatusRead {
   return { id, team_id: 7, name, category: 'unstarted', position: id, color: '#888' }
@@ -80,11 +85,11 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function renderBoard(issues: IssueRead[] = [ISSUE]) {
+function renderBoard(issues: IssueRead[] = [ISSUE], team: TeamContextValue = TEAM) {
   const onStatusChange = vi.fn()
   const onMove = vi.fn()
   render(
-    <TeamProvider value={TEAM}>
+    <TeamProvider value={team}>
       <MemoryRouter initialEntries={['/ENG']}>
         <Routes>
           <Route
@@ -187,5 +192,36 @@ describe('keyboard drag and drop', () => {
     expect(document.getElementById(describedBy)?.textContent).toMatch(
       /press Space to pick it up/,
     )
+  })
+
+  it('does not pick anything up for a guest (#104)', async () => {
+    const guest = {
+      ...TEAM,
+      members: [
+        {
+          user: { id: 10, full_name: 'Carol Client' },
+          role: 'guest',
+          joined_at: '2026-01-01T00:00:00Z',
+        } as unknown as TeamMemberRead,
+      ],
+    }
+    const { onStatusChange, onMove, user } = renderBoard([ISSUE], guest)
+
+    const card = document.querySelector('[data-card="42"]')!
+    // No "sortable" role description and no pick-up instructions: nothing
+    // offers a move the server would refuse.
+    expect(card.getAttribute('aria-roledescription')).toBeNull()
+    expect(card.getAttribute('aria-describedby')).toBeNull()
+
+    await user.keyboard(' ')
+    await user.keyboard('{ArrowRight}')
+    await user.keyboard(' ')
+    expect(announced()).not.toMatch(/Picked up/)
+    expect(onStatusChange).not.toHaveBeenCalled()
+    expect(onMove).not.toHaveBeenCalled()
+
+    // Opening it still works: a guest reads issues.
+    await user.keyboard('{Enter}')
+    expect(screen.getByText('Opened the issue')).toBeTruthy()
   })
 })

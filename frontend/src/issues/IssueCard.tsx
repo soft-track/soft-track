@@ -9,6 +9,7 @@ import { EstimateBadge } from '@/issues/EstimateBadge'
 import { isResolved } from '@/issues/issueMeta'
 import { IssueTypeIcon } from '@/issues/IssueTypeIcon'
 import { PriorityIcon } from '@/issues/PriorityIcon'
+import { useCanWrite } from '@/team/useCanWrite'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
 
@@ -35,8 +36,13 @@ export function IssueCard({
     : undefined
   // Sortable rather than only draggable (#88): the other cards in its column
   // make room for it while it is carried, and where it lands is kept.
+  // A guest's cards stay put (#104). The drag handlers and their "sortable"
+  // announcement are left off too, rather than offering a move that is
+  // refused on drop.
+  const canWrite = useCanWrite()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: issue.id,
+    disabled: !canWrite,
   })
 
   // While dragging, the card follows the pointer with no easing and lifts
@@ -61,8 +67,7 @@ export function IssueCard({
     <div
       ref={setNodeRef}
       style={style}
-      {...listeners}
-      {...attributes}
+      {...(canWrite ? { ...listeners, ...attributes } : {})}
       role="button"
       tabIndex={0}
       data-card={issue.id}

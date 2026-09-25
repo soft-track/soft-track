@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
+from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import automations as automations_service
 from lib_softtrack.models.automations import (
@@ -35,7 +36,11 @@ def list_rules(
     return automations_service.list_rules(session, current_user, team_id)
 
 
-@router.post("/teams/{team_id}/automation-rules", response_model=AutomationRuleRead)
+@router.post(
+    "/teams/{team_id}/automation-rules",
+    response_model=AutomationRuleRead,
+    dependencies=[team_writer],
+)
 def create_rule(
     team_id: int,
     payload: AutomationRuleCreate,
@@ -76,7 +81,11 @@ def list_runs(
 
 # Per-rule routes hang off /automation-rules rather than nesting under the
 # team, the way views do: a rule id is unique without its team.
-@router.patch("/automation-rules/{rule_id}", response_model=AutomationRuleRead)
+@router.patch(
+    "/automation-rules/{rule_id}",
+    response_model=AutomationRuleRead,
+    dependencies=[team_writer],
+)
 def update_rule(
     rule_id: int,
     payload: AutomationRuleUpdate,
@@ -86,7 +95,9 @@ def update_rule(
     return automations_service.update_rule(session, current_user, rule_id, payload)
 
 
-@router.delete("/automation-rules/{rule_id}", status_code=204)
+@router.delete(
+    "/automation-rules/{rule_id}", status_code=204, dependencies=[team_writer]
+)
 def delete_rule(
     rule_id: int,
     session: Session = Depends(get_session),

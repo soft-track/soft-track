@@ -6,10 +6,20 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * What someone may do inside one team.
+ *
+ * Ordered from most to least power. `guest` (#104) sees everything a member
+ * sees -- board, list, issues, comments, cycles, reports, search -- and
+ * changes nothing: no issues, no comments, no settings. The one thing a guest
+ * does write is their own relationship to the team: watching an issue,
+ * choosing their own default view, and leaving.
+ */
 export type TeamRole = typeof TeamRole[keyof typeof TeamRole];
 
 
 export const TeamRole = {
   admin: 'admin',
   member: 'member',
+  guest: 'guest',
 } as const;

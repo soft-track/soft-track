@@ -30,16 +30,24 @@ export function IssueProperties({
   patch,
   currentLabelIds,
   onToggleLabel,
+  readOnly = false,
 }: {
   issue: IssueRead
   patch: (data: IssueUpdate) => Promise<void>
   currentLabelIds: Set<number>
   onToggleLabel: (labelId: number) => void
+  /** A guest's view (#104): every value shown, none of them changeable. */
+  readOnly?: boolean
 }) {
   const { members, labels, cycles, statuses, projects } = useTeamContext()
 
+  // A fieldset so one attribute disables every control in it -- including any
+  // property added later -- while still showing each one's current value.
   return (
-    <div className="well mt-5 grid gap-x-4 gap-y-3 rounded-card p-3 sm:grid-cols-2">
+    <fieldset
+      disabled={readOnly}
+      className="well mt-5 grid min-w-0 gap-x-4 gap-y-3 rounded-card border-0 p-3 sm:grid-cols-2"
+    >
       <Row label="Status" hint="S">
         <Select
           dense
@@ -198,7 +206,7 @@ export function IssueProperties({
           )}
         </div>
       </div>
-    </div>
+    </fieldset>
   )
 }
 

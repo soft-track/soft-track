@@ -40,7 +40,7 @@ const MAYA = {
   is_active: true,
 }
 
-function renderFeed() {
+function renderFeed({ canComment = true } = {}) {
   render(
     <QueryClientProvider client={new QueryClient()}>
       <CommentsSection
@@ -50,6 +50,7 @@ function renderFeed() {
         removeAttachment={vi.fn()}
         uploading={0}
         onFilesClaimed={vi.fn()}
+        canComment={canComment}
       />
     </QueryClientProvider>,
   )
@@ -115,5 +116,34 @@ describe('the Activity feed', () => {
     expect(screen.getByText(/changed the priority from Low to Urgent/).textContent).toMatch(
       /^Automation changed the priority/,
     )
+  })
+
+  it('shows a guest the conversation, and no way to join it (#104)', () => {
+    mocks.comments.data = {
+      items: [
+        {
+          id: 1,
+          body: 'Deployed to staging.',
+          author: MAYA,
+          attachments: [],
+          created_at: '2026-09-25T09:00:00',
+        },
+      ],
+      total: 1,
+    }
+    mocks.events.data = []
+    renderFeed({ canComment: false })
+
+    expect(screen.getByText('Deployed to staging.')).toBeTruthy()
+    expect(screen.queryByRole('textbox', { name: 'Comment' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull()
+    expect(screen.getByText(/guest on this team/)).toBeTruthy()
+  })
+
+  it('offers members the composer', () => {
+    mocks.comments.data = { items: [], total: 0 }
+    mocks.events.data = []
+    renderFeed()
+    expect(screen.getByRole('textbox', { name: 'Comment' })).toBeTruthy()
   })
 })

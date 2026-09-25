@@ -19,6 +19,7 @@ import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { DeactivatedChip, RoleChip } from '@/settings/RoleChip'
+import { ROLE_HINTS, ROLE_LABELS } from '@/settings/roles'
 import { copyInviteLink, inviteUrl } from '@/settings/inviteLink'
 import { useTeamByKey } from '@/team/useTeams'
 import { Avatar } from '@/ui/Avatar'
@@ -154,7 +155,7 @@ export default function TeamMembersSettings() {
         </h1>
         <p className="mt-1 text-sm text-neutral-500">
           {isAdmin
-            ? 'Admins can invite people, change roles and remove members.'
+            ? 'Admins can invite people, change roles and remove members. Guests can see everything on the team and change nothing.'
             : 'Only admins of this team can change who is in it.'}
         </p>
 
@@ -186,9 +187,9 @@ export default function TeamMembersSettings() {
               value={inviteRole}
               onChange={(e) => setInviteRole(e.target.value as TeamRole)}
               aria-label="Invited role"
+              title={ROLE_HINTS[inviteRole]}
             >
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
+              <RoleOptions />
             </Select>
             <button type="submit" disabled={createInvite.isPending} className="btn btn-primary">
               <Icon name="mail" size={15} />
@@ -274,9 +275,9 @@ export default function TeamMembersSettings() {
                   value={member.role}
                   onChange={(e) => onRoleChange(member.user.id, e.target.value as TeamRole)}
                   aria-label={`Role for ${member.user.full_name}`}
+                  title={ROLE_HINTS[member.role]}
                 >
-                  <option value="member">Member</option>
-                  <option value="admin">Admin</option>
+                  <RoleOptions />
                 </Select>
               ) : (
                 <RoleChip role={member.role} />
@@ -377,5 +378,18 @@ export default function TeamMembersSettings() {
         </section>
       )}
     </div>
+  )
+}
+
+/** Most access first, so the choice reads as a scale. */
+function RoleOptions() {
+  return (
+    <>
+      {(['admin', 'member', 'guest'] as const).map((role) => (
+        <option key={role} value={role}>
+          {ROLE_LABELS[role]}
+        </option>
+      ))}
+    </>
   )
 }

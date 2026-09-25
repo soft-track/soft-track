@@ -40,7 +40,8 @@ export function TopBar({
   onGroupingChange: (grouping: BoardGrouping) => void
   sort: BoardSort
   onSortChange: (sort: BoardSort) => void
-  onNewIssue: () => void
+  /** Absent for a guest (#104): the button is not shown. */
+  onNewIssue?: () => void
   onOpenSidebar: () => void
   search: string
   onSearchChange: (value: string) => void
@@ -178,10 +179,20 @@ export function TopBar({
           onClose={onCloseNotifications}
         />
 
-        <button type="button" onClick={onNewIssue} className="btn btn-primary">
-          <Icon name="plus" size={14} strokeWidth={2.2} />
-          <span className="hidden sm:inline">New issue</span>
-        </button>
+        {onNewIssue ? (
+          <button type="button" onClick={onNewIssue} className="btn btn-primary">
+            <Icon name="plus" size={14} strokeWidth={2.2} />
+            <span className="hidden sm:inline">New issue</span>
+          </button>
+        ) : (
+          <span
+            className="chip"
+            style={{ ['--chip' as string]: 'var(--color-neutral-500)' }}
+            title="You are a guest on this team: you can see everything and change nothing."
+          >
+            View only
+          </span>
+        )}
       </div>
     </header>
   )

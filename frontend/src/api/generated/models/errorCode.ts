@@ -19,6 +19,7 @@ export const ErrorCode = {
   rate_limited: 'rate_limited',
   not_team_member: 'not_team_member',
   not_team_admin: 'not_team_admin',
+  team_read_only: 'team_read_only',
   not_site_admin: 'not_site_admin',
   invite_only: 'invite_only',
   team_not_found: 'team_not_found',

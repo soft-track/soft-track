@@ -18,3 +18,16 @@ export function activeMembers(
     .map((member) => member.user)
     .filter((user) => user.is_active || user.id === keepId)
 }
+
+/**
+ * Whether someone may change anything on this team (#104).
+ *
+ * Only a guest may not. Someone missing from the roster -- still loading, or
+ * a test that never listed them -- counts as able to: this decides what the
+ * UI offers, and the server refuses a guest whatever the UI shows, so the
+ * cheap mistake is offering a button that will 403, not hiding the board's
+ * controls from its own members while a query is in flight.
+ */
+export function canWriteIn(members: TeamMemberRead[], userId: number | undefined): boolean {
+  return members.find((member) => member.user.id === userId)?.role !== 'guest'
+}

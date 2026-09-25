@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
+from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import comments as comments_service
 from lib_softtrack.models.comments import CommentCreate, CommentRead
@@ -11,7 +12,11 @@ from web import get_session
 router = APIRouter(tags=["comments"])
 
 
-@router.post("/issues/{issue_id}/comments", response_model=CommentRead)
+@router.post(
+    "/issues/{issue_id}/comments",
+    response_model=CommentRead,
+    dependencies=[team_writer],
+)
 def create_comment(
     issue_id: int,
     payload: CommentCreate,

@@ -1,18 +1,22 @@
 import type { TeamRole } from '@/api/generated/models'
+import { ROLE_HINTS, ROLE_LABELS } from '@/settings/roles'
 
 /** A team role, shown where it is a fact rather than a choice. */
 export function RoleChip({ role }: { role: TeamRole }) {
-  const admin = role === 'admin'
   return (
     <span
       className="chip"
+      title={ROLE_HINTS[role]}
       style={{
-        ['--chip' as string]: admin
-          ? 'var(--color-brand-500)'
-          : 'var(--color-neutral-500)',
+        ['--chip' as string]:
+          role === 'admin'
+            ? 'var(--color-brand-500)'
+            : role === 'guest'
+              ? 'var(--color-accent-amber)'
+              : 'var(--color-neutral-500)',
       }}
     >
-      {admin ? 'Admin' : 'Member'}
+      {ROLE_LABELS[role]}
     </span>
   )
 }

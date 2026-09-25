@@ -35,7 +35,14 @@ const ADDABLE = [
   { type: IssueLinkType.duplicates, label: 'duplicates' },
 ] as const
 
-export function IssueLinksSection({ issueId }: { issueId: number }) {
+export function IssueLinksSection({
+  issueId,
+  readOnly = false,
+}: {
+  issueId: number
+  /** A guest's view (#104): the links, with no adding or removing. */
+  readOnly?: boolean
+}) {
   const { team } = useTeamContext()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -96,6 +103,9 @@ export function IssueLinksSection({ issueId }: { issueId: number }) {
   const links = linksQuery.data
   const total = GROUPS.reduce((sum, group) => sum + (links?.[group.key]?.length ?? 0), 0)
 
+  // With nothing to list and nothing to add, a guest would see a bare heading.
+  if (readOnly && total === 0) return null
+
   return (
     <div className="mt-5">
       <div className="mb-2 flex items-center justify-between">
@@ -103,22 +113,24 @@ export function IssueLinksSection({ issueId }: { issueId: number }) {
           <span className="eyebrow">Links</span>
           {total > 0 && <span className="identifier text-[11px] text-neutral-400">{total}</span>}
         </span>
-        <button
-          type="button"
-          onClick={() => {
-            setAdding((open) => !open)
-            setError(null)
-          }}
-          className="btn btn-ghost btn-xs"
-        >
-          {adding ? (
-            'Cancel'
-          ) : (
-            <>
-              <Icon name="link" size={12} /> Add
-            </>
-          )}
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => {
+              setAdding((open) => !open)
+              setError(null)
+            }}
+            className="btn btn-ghost btn-xs"
+          >
+            {adding ? (
+              'Cancel'
+            ) : (
+              <>
+                <Icon name="link" size={12} /> Add
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {adding && (
@@ -182,7 +194,7 @@ export function IssueLinksSection({ issueId }: { issueId: number }) {
                     key={row.id}
                     row={row}
                     onOpen={() => navigate(`/${row.issue.team_key}/issue/${row.issue.number}`)}
-                    onRemove={() => remove(row.id)}
+                    onRemove={readOnly ? undefined : () => remove(row.id)}
                   />
                 ))}
               </ul>
@@ -201,7 +213,7 @@ function LinkRow({
 }: {
   row: IssueLinkRead
   onOpen: () => void
-  onRemove: () => void
+  onRemove?: () => void
 }) {
   const status = row.issue.status
   const resolved = isResolved(status)
@@ -225,14 +237,16 @@ function LinkRow({
           {row.issue.title}
         </span>
       </button>
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label={`Remove link to ${row.issue.identifier}`}
-        className="btn btn-ghost btn-icon btn-xs shrink-0 text-neutral-400 opacity-0 transition hover:text-danger-600 focus-visible:opacity-100 group-hover:opacity-100"
-      >
-        <Icon name="close" size={12} />
-      </button>
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={`Remove link to ${row.issue.identifier}`}
+          className="btn btn-ghost btn-icon btn-xs shrink-0 text-neutral-400 opacity-0 transition hover:text-danger-600 focus-visible:opacity-100 group-hover:opacity-100"
+        >
+          <Icon name="close" size={12} />
+        </button>
+      )}
     </li>
   )
 }

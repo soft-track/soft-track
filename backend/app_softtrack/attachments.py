@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
+from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import attachments as attachments_service
 from lib_softtrack.models.attachments import AttachmentRead
@@ -13,7 +14,11 @@ from lib_utils.errors import ErrorCode, api_error
 router = APIRouter(tags=["attachments"])
 
 
-@router.post("/issues/{issue_id}/attachments", response_model=AttachmentRead)
+@router.post(
+    "/issues/{issue_id}/attachments",
+    response_model=AttachmentRead,
+    dependencies=[team_writer],
+)
 async def upload_attachment(
     issue_id: int,
     file: UploadFile = File(..., description="The file to attach."),
@@ -104,7 +109,9 @@ def download_attachment(
     )
 
 
-@router.delete("/attachments/{attachment_id}", status_code=204)
+@router.delete(
+    "/attachments/{attachment_id}", status_code=204, dependencies=[team_writer]
+)
 def delete_attachment(
     attachment_id: int,
     session: Session = Depends(get_session),

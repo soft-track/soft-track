@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
+from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import integrations as integrations_service
 from lib_softtrack.models.integrations import (
@@ -29,7 +30,11 @@ def list_repositories(
     return integrations_service.list_repositories(session, current_user, team_id)
 
 
-@router.post("/teams/{team_id}/repositories", response_model=RepositoryRead)
+@router.post(
+    "/teams/{team_id}/repositories",
+    response_model=RepositoryRead,
+    dependencies=[team_writer],
+)
 def create_repository(
     team_id: int,
     payload: RepositoryCreate,
@@ -43,7 +48,11 @@ def create_repository(
     )
 
 
-@router.post("/repositories/{repository_id}/rotate", response_model=RepositoryRead)
+@router.post(
+    "/repositories/{repository_id}/rotate",
+    response_model=RepositoryRead,
+    dependencies=[team_writer],
+)
 def rotate_secret(
     repository_id: int,
     session: Session = Depends(get_session),
@@ -54,7 +63,9 @@ def rotate_secret(
     return integrations_service.rotate_secret(session, current_user, repository_id)
 
 
-@router.delete("/repositories/{repository_id}", status_code=204)
+@router.delete(
+    "/repositories/{repository_id}", status_code=204, dependencies=[team_writer]
+)
 def delete_repository(
     repository_id: int,
     session: Session = Depends(get_session),

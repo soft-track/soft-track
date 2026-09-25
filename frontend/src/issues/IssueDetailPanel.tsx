@@ -12,6 +12,7 @@ import { useIssueEditor } from '@/issues/detail/useIssueEditor'
 import { usePanelShortcuts } from '@/issues/detail/usePanelShortcuts'
 import { PriorityIcon } from '@/issues/PriorityIcon'
 import { WatchToggle } from '@/notifications/WatchToggle'
+import { useCanWrite } from '@/team/useCanWrite'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 import { useFocusTrap } from '@/ui/useFocusTrap'
@@ -23,6 +24,9 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
   const files = useIssueAttachments(issueId)
   usePanelShortcuts(onClose)
   const { issue } = editor
+  // A guest (#104) sees the whole issue and can change none of it -- except
+  // whether they are watching it, which is theirs.
+  const readOnly = !useCanWrite()
 
   return (
     <div className="scrim fixed inset-0 z-20 flex justify-end" onClick={onClose}>
@@ -80,11 +84,12 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
         ) : (
           <div className="scroll-thin flex-1 overflow-y-auto">
             <div className="px-5 pb-5 pt-4">
-              {issue.parent && <SubIssuesSection issue={issue} />}
+              {issue.parent && <SubIssuesSection issue={issue} readOnly={readOnly} />}
               <input
                 value={editor.title}
                 onChange={(e) => editor.setTitle(e.target.value)}
-                onBlur={editor.saveTitle}
+                onBlur={readOnly ? undefined : editor.saveTitle}
+                readOnly={readOnly}
                 aria-label="Title"
                 className="w-full border-none bg-transparent p-0 text-lg font-semibold leading-snug tracking-tight text-neutral-900 focus:outline-none focus:ring-0"
               />
@@ -97,6 +102,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
                 onSave={(description) => editor.patch({ description })}
                 onToggleTask={editor.toggleTask}
                 onUploadFiles={files.uploadForDescription}
+                readOnly={readOnly}
               />
 
               {files.attachments.length > 0 && (
@@ -106,7 +112,10 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
                       the description above. This list is also where they get
                       deleted, so leaving the embedded ones out would make
                       them impossible to remove. */}
-                  <AttachmentList attachments={files.attachments} onRemove={files.remove} />
+                  <AttachmentList
+                    attachments={files.attachments}
+                    onRemove={readOnly ? undefined : files.remove}
+                  />
                 </div>
               )}
               {files.error && <p className="mt-2 text-xs text-danger-600">{files.error}</p>}
@@ -116,10 +125,11 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
                 patch={editor.patch}
                 currentLabelIds={editor.currentLabelIds}
                 onToggleLabel={editor.toggleLabel}
+                readOnly={readOnly}
               />
 
-              {!issue.parent && <SubIssuesSection issue={issue} />}
-              <IssueLinksSection issueId={issue.id} />
+              {!issue.parent && <SubIssuesSection issue={issue} readOnly={readOnly} />}
+              <IssueLinksSection issueId={issue.id} readOnly={readOnly} />
               <DevelopmentSection issueId={issue.id} />
 
               <div className="mt-5 flex items-center gap-2 text-xs text-neutral-400">
@@ -139,6 +149,7 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
               removeAttachment={files.remove}
               uploading={files.uploading}
               onFilesClaimed={files.invalidate}
+              canComment={!readOnly}
             />
           </div>
         )}

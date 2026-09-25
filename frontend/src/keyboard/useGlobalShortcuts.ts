@@ -19,7 +19,8 @@ export function useGlobalShortcuts({
   togglePalette: () => void
   /** Escape: close the shallowest open layer, never two at once. */
   closeTop: () => void
-  openNewIssue: () => void
+  /** Absent for a guest (#104), who has nothing to create. */
+  openNewIssue?: () => void
   openShortcuts: () => void
   /** True while the palette or the cheatsheet is up, so C and ? stay quiet. */
   suppressed: boolean
@@ -40,7 +41,7 @@ export function useGlobalShortcuts({
       if (!isPlainKey(event) || isTypingTarget(event.target)) return
       if (suppressed) return
 
-      if (event.key === 'c') {
+      if (event.key === 'c' && openNewIssue) {
         event.preventDefault()
         openNewIssue()
       } else if (event.key === '?') {

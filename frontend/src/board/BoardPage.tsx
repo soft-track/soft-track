@@ -47,6 +47,7 @@ import { RoadmapView } from '@/projects/RoadmapView'
 import { ReportsView } from '@/reports/ReportsView'
 import { SearchResults } from '@/search/SearchResults'
 import { useDebounced } from '@/search/useDebounced'
+import { canWriteIn } from '@/team/members'
 import { TeamProvider } from '@/team/TeamContext'
 import { useTeamData } from '@/team/useTeamData'
 import { useTeamByKey } from '@/team/useTeams'
@@ -195,7 +196,11 @@ export default function BoardPage() {
     { query: { enabled: Boolean(team) && searchQuery.length > 0 } },
   )
 
-  const openNewIssue = useCallback(() => overlays.open('newIssue'), [overlays])
+  // A guest (#104) is offered nothing that writes. The server refuses them
+  // regardless; this only keeps the board from offering what will fail.
+  const canWrite = canWriteIn(teamData.members, user?.id)
+  const openNewIssueNow = useCallback(() => overlays.open('newIssue'), [overlays])
+  const openNewIssue = canWrite ? openNewIssueNow : undefined
   const openShortcuts = useCallback(() => overlays.open('shortcuts'), [overlays])
   const togglePalette = useCallback(() => overlays.toggle('palette'), [overlays])
 
@@ -274,14 +279,22 @@ export default function BoardPage() {
         overlays.open('saveView')
       }}
       isAdmin={isTeamAdmin}
-      onNewCycle={() => {
-        setSidebarOpen(false)
-        overlays.open('newCycle')
-      }}
-      onImport={() => {
-        setSidebarOpen(false)
-        overlays.open('import')
-      }}
+      onNewCycle={
+        canWrite
+          ? () => {
+              setSidebarOpen(false)
+              overlays.open('newCycle')
+            }
+          : undefined
+      }
+      onImport={
+        canWrite
+          ? () => {
+              setSidebarOpen(false)
+              overlays.open('import')
+            }
+          : undefined
+      }
     />
   )
 
@@ -327,7 +340,7 @@ export default function BoardPage() {
                 setEditingView(null)
                 overlays.open('saveView')
               }}
-              canSaveView={!matchesSavedView}
+              canSaveView={canWrite && !matchesSavedView}
               notificationsOpen={overlays.isOpen('notifications')}
               onToggleNotifications={() => overlays.toggle('notifications')}
               onCloseNotifications={() => overlays.close('notifications')}
@@ -356,7 +369,7 @@ export default function BoardPage() {
                   onProjectChange={(ids, projectId) => bulk.update(ids, { project_id: projectId })}
                   estimates={teamData.estimates}
                   selectedIds={selection.ids}
-                  onSelect={selectIssue}
+                  onSelect={canWrite ? selectIssue : undefined}
                   onBulkStatusChange={(ids, status) => bulk.update(ids, { status_id: status.id })}
                 />
               ) : (
@@ -364,7 +377,7 @@ export default function BoardPage() {
                   issues={issues}
                   grouping={grouping}
                   selectedIds={selection.ids}
-                  onSelect={selectIssue}
+                  onSelect={canWrite ? selectIssue : undefined}
                 />
               )}
             </div>

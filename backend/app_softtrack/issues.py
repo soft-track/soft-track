@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
+from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import estimates as estimates_service
 from lib_softtrack import history as history_service
@@ -35,7 +36,9 @@ from web import get_session
 router = APIRouter(tags=["issues"])
 
 
-@router.post("/teams/{team_id}/issues", response_model=IssueRead)
+@router.post(
+    "/teams/{team_id}/issues", response_model=IssueRead, dependencies=[team_writer]
+)
 def create_issue(
     team_id: int,
     payload: IssueCreate,
@@ -104,7 +107,11 @@ def list_issues(
     )
 
 
-@router.post("/teams/{team_id}/issues/bulk-update", response_model=list[IssueRead])
+@router.post(
+    "/teams/{team_id}/issues/bulk-update",
+    response_model=list[IssueRead],
+    dependencies=[team_writer],
+)
 def bulk_update_issues(
     team_id: int,
     payload: IssueBulkUpdate,
@@ -119,7 +126,9 @@ def bulk_update_issues(
     return issues_service.bulk_update_issues(session, current_user, team_id, payload)
 
 
-@router.post("/teams/{team_id}/issues/bulk-delete", status_code=204)
+@router.post(
+    "/teams/{team_id}/issues/bulk-delete", status_code=204, dependencies=[team_writer]
+)
 def bulk_delete_issues(
     team_id: int,
     payload: IssueBulkDelete,
@@ -160,7 +169,9 @@ def get_issue_by_number(
     return issues_service.get_issue_by_number(session, current_user, team_id, number)
 
 
-@router.post("/issues/{issue_id}/move", response_model=IssueRead)
+@router.post(
+    "/issues/{issue_id}/move", response_model=IssueRead, dependencies=[team_writer]
+)
 def move_issue(
     issue_id: int,
     payload: IssueMove,
@@ -197,7 +208,9 @@ def get_issue(
     return issues_service.get_issue(session, current_user, issue_id)
 
 
-@router.patch("/issues/{issue_id}", response_model=IssueRead)
+@router.patch(
+    "/issues/{issue_id}", response_model=IssueRead, dependencies=[team_writer]
+)
 def update_issue(
     issue_id: int,
     payload: IssueUpdate,
@@ -207,7 +220,7 @@ def update_issue(
     return issues_service.update_issue(session, current_user, issue_id, payload)
 
 
-@router.delete("/issues/{issue_id}", status_code=204)
+@router.delete("/issues/{issue_id}", status_code=204, dependencies=[team_writer])
 def delete_issue(
     issue_id: int,
     session: Session = Depends(get_session),
@@ -237,7 +250,9 @@ def list_issue_links(
     return links_service.list_links(session, current_user, issue_id)
 
 
-@router.post("/issues/{issue_id}/links", response_model=IssueLinkRead)
+@router.post(
+    "/issues/{issue_id}/links", response_model=IssueLinkRead, dependencies=[team_writer]
+)
 def create_issue_link(
     issue_id: int,
     payload: IssueLinkCreate,
@@ -247,7 +262,9 @@ def create_issue_link(
     return links_service.create_link(session, current_user, issue_id, payload)
 
 
-@router.delete("/issues/{issue_id}/links/{link_id}", status_code=204)
+@router.delete(
+    "/issues/{issue_id}/links/{link_id}", status_code=204, dependencies=[team_writer]
+)
 def delete_issue_link(
     issue_id: int,
     link_id: int,

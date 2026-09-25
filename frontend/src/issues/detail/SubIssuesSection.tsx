@@ -17,7 +17,14 @@ import { Icon } from '@/ui/Icon'
  * Nesting is one level deep, so an issue is either a parent or a child and
  * never both -- which is why this renders one or the other, never a tree.
  */
-export function SubIssuesSection({ issue }: { issue: IssueRead }) {
+export function SubIssuesSection({
+  issue,
+  readOnly = false,
+}: {
+  issue: IssueRead
+  /** A guest's view (#104): the sub-issues, with no adding or ticking. */
+  readOnly?: boolean
+}) {
   const { team, statuses } = useTeamContext()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -92,6 +99,9 @@ export function SubIssuesSection({ issue }: { issue: IssueRead }) {
     )
   }
 
+  // With nothing to list and nothing to add, a guest would see a bare heading.
+  if (readOnly && issue.child_count === 0) return null
+
   return (
     <div className="mt-5">
       <div className="mb-2 flex items-center justify-between">
@@ -103,19 +113,21 @@ export function SubIssuesSection({ issue }: { issue: IssueRead }) {
             </span>
           )}
         </span>
-        <button
-          type="button"
-          onClick={() => setAdding((open) => !open)}
-          className="btn btn-ghost btn-xs"
-        >
-          {adding ? (
-            'Cancel'
-          ) : (
-            <>
-              <Icon name="plus" size={12} /> Add
-            </>
-          )}
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => setAdding((open) => !open)}
+            className="btn btn-ghost btn-xs"
+          >
+            {adding ? (
+              'Cancel'
+            ) : (
+              <>
+                <Icon name="plus" size={12} /> Add
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {issue.child_count > 0 && (
@@ -157,7 +169,7 @@ export function SubIssuesSection({ issue }: { issue: IssueRead }) {
                   type="checkbox"
                   checked={done}
                   onChange={() => toggleDone(child)}
-                  disabled={done ? !reopenIn : !doneIn}
+                  disabled={readOnly || (done ? !reopenIn : !doneIn)}
                   aria-label={done ? `Reopen ${child.identifier}` : `Complete ${child.identifier}`}
                   className="h-3.5 w-3.5 shrink-0 rounded accent-brand-600"
                 />

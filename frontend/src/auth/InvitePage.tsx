@@ -114,6 +114,12 @@ export default function InvitePage() {
         <span>as</span>
         <RoleChip role={invite.role} />
       </div>
+      {invite.role === 'guest' && (
+        <p className="mt-2 text-sm text-neutral-500">
+          A guest can see the team&rsquo;s issues, comments, cycles and reports, and change none of
+          them.
+        </p>
+      )}
       <p className="mt-3 text-sm text-neutral-500">
         Sent to <strong className="text-neutral-700">{invite.email}</strong>.
       </p>

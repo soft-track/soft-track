@@ -22,6 +22,7 @@ export function DescriptionEditor({
   onSave,
   onToggleTask,
   onUploadFiles,
+  readOnly = false,
 }: {
   /** What the server has. */
   saved: string | null | undefined
@@ -32,6 +33,8 @@ export function DescriptionEditor({
   onSave: (description: string) => Promise<void>
   onToggleTask: (offset: number) => void
   onUploadFiles?: (files: File[]) => Promise<Array<{ markdown: string }>>
+  /** A guest's view (#104): the description, and no way to change it. */
+  readOnly?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const { team, teams } = useTeamContext()
@@ -80,6 +83,7 @@ export function DescriptionEditor({
   }
 
   if (!saved?.trim()) {
+    if (readOnly) return null
     return (
       <div className="mt-3">
         <button
@@ -96,13 +100,19 @@ export function DescriptionEditor({
 
   return (
     <div className="mt-3">
-      <Markdown people={people} onToggleTask={onToggleTask} teamKeys={teamKeys}>
+      <Markdown
+        people={people}
+        onToggleTask={readOnly ? undefined : onToggleTask}
+        teamKeys={teamKeys}
+      >
         {saved}
       </Markdown>
       <div className="mt-2 flex items-center gap-3">
-        <button type="button" onClick={() => setEditing(true)} className="btn btn-ghost btn-xs">
-          Edit description
-        </button>
+        {!readOnly && (
+          <button type="button" onClick={() => setEditing(true)} className="btn btn-ghost btn-xs">
+            Edit description
+          </button>
+        )}
         <TaskProgress source={saved} />
       </div>
     </div>

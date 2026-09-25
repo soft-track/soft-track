@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
+from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import views as views_service
 from lib_softtrack.models.views import (
@@ -30,7 +31,9 @@ def list_views(
     return views_service.list_views(session, current_user, team_id)
 
 
-@router.post("/teams/{team_id}/views", response_model=SavedViewRead)
+@router.post(
+    "/teams/{team_id}/views", response_model=SavedViewRead, dependencies=[team_writer]
+)
 def create_view(
     team_id: int,
     payload: SavedViewCreate,
@@ -42,7 +45,9 @@ def create_view(
 
 # Above /teams/{team_id}/views/{view_id} would be ambiguous, so the per-view
 # routes hang off /views instead: a view id is unique without its team.
-@router.patch("/views/{view_id}", response_model=SavedViewRead)
+@router.patch(
+    "/views/{view_id}", response_model=SavedViewRead, dependencies=[team_writer]
+)
 def update_view(
     view_id: int,
     payload: SavedViewUpdate,
@@ -52,7 +57,7 @@ def update_view(
     return views_service.update_view(session, current_user, view_id, payload)
 
 
-@router.delete("/views/{view_id}", status_code=204)
+@router.delete("/views/{view_id}", status_code=204, dependencies=[team_writer])
 def delete_view(
     view_id: int,
     session: Session = Depends(get_session),
@@ -61,7 +66,11 @@ def delete_view(
     views_service.delete_view(session, current_user, view_id)
 
 
-@router.put("/teams/{team_id}/default-view", response_model=SavedViews)
+@router.put(
+    "/teams/{team_id}/default-view",
+    response_model=SavedViews,
+    dependencies=[team_writer],
+)
 def set_team_default_view(
     team_id: int,
     payload: DefaultViewUpdate,

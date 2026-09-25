@@ -21,14 +21,17 @@ export function useCommands({
   team: TeamRead | undefined
   teams: TeamRead[]
   user: UserMe | null
-  openNewIssue: () => void
+  /** Absent for a guest (#104), who has nothing to create. */
+  openNewIssue?: () => void
   openShortcuts: () => void
 }): Command[] {
   const navigate = useNavigate()
 
   return useMemo(() => {
     const list: Command[] = [
-      { id: 'new-issue', label: 'Create an issue', hint: 'C', group: 'Actions', run: openNewIssue },
+      ...(openNewIssue
+        ? [{ id: 'new-issue', label: 'Create an issue', hint: 'C', group: 'Actions', run: openNewIssue }]
+        : []),
       {
         id: 'toggle-view',
         label: view === 'board' ? 'Switch to list view' : 'Switch to board view',

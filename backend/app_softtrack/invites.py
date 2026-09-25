@@ -1,6 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, Response
 from sqlmodel import Session
 
+from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import invites as invites_service
 from lib_softtrack.models.invites import InviteCreate, InvitePreview, InviteRead
@@ -15,7 +16,9 @@ from web import get_session
 router = APIRouter(tags=["invites"])
 
 
-@router.post("/teams/{team_id}/invites", response_model=InviteRead)
+@router.post(
+    "/teams/{team_id}/invites", response_model=InviteRead, dependencies=[team_writer]
+)
 def create_invite(
     team_id: int,
     payload: InviteCreate,
@@ -45,7 +48,9 @@ def list_invites(
     return invites_service.list_invites(session, current_user, team_id)
 
 
-@router.delete("/teams/{team_id}/invites/{invite_id}", status_code=204)
+@router.delete(
+    "/teams/{team_id}/invites/{invite_id}", status_code=204, dependencies=[team_writer]
+)
 def revoke_invite(
     team_id: int,
     invite_id: int,

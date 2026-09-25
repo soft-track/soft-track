@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlmodel import Session
 
+from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import importer
 from lib_softtrack.models.imports import ImportReport
@@ -15,7 +16,11 @@ router = APIRouter(tags=["import"])
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 
 
-@router.post("/teams/{team_id}/import/jira", response_model=ImportReport)
+@router.post(
+    "/teams/{team_id}/import/jira",
+    response_model=ImportReport,
+    dependencies=[team_writer],
+)
 async def import_jira(
     team_id: int,
     file: UploadFile = File(..., description="A Jira CSV or JSON export."),

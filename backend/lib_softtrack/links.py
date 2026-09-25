@@ -25,7 +25,7 @@ from lib_softtrack.tables import (
     WorkflowStatus,
 )
 from lib_softtrack.statuses import RESOLVED, in_category
-from lib_softtrack.teams import require_team_member
+from lib_softtrack.teams import require_team_member, require_team_writer
 from lib_utils.errors import ErrorCode, api_error
 
 #: An issue whose status means one of these cannot block anything -- it is
@@ -73,8 +73,10 @@ def create_link(
 
     # Membership of *both* teams. Linking across teams is useful, but it must
     # not become a way to learn that an issue exists in a team you are not in.
-    require_team_member(source.team_id, current_user, session)
-    require_team_member(target.team_id, current_user, session)
+    # Write access to both, too (#104): the link shows on the target issue as
+    # well, so a guest of the target team would otherwise be editing it.
+    require_team_writer(source.team_id, current_user, session)
+    require_team_writer(target.team_id, current_user, session)
 
     if source.id == target.id:
         raise api_error(

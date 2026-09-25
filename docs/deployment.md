@@ -90,7 +90,7 @@ The first user to register on a fresh instance gets `is_site_admin`.
 
 ### Team roles
 
-Every membership is `admin` or `member`. The team key is fixed once set, and the default rules protect against removing the last active admin.
+Every membership is `admin`, `member` or `guest` (read-only — see [user management](features/users.md#guests)). The team key is fixed once set, and the default rules protect against removing the last active admin.
 
 ### Invitations without a mail server
 

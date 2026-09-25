@@ -10603,9 +10603,11 @@
         "type": "string",
         "enum": [
           "admin",
-          "member"
+          "member",
+          "guest"
         ],
-        "title": "TeamRole"
+        "title": "TeamRole",
+        "description": "What someone may do inside one team.\n\nOrdered from most to least power. `guest` (#104) sees everything a member\nsees -- board, list, issues, comments, cycles, reports, search -- and\nchanges nothing: no issues, no comments, no settings. The one thing a guest\ndoes write is their own relationship to the team: watching an issue,\nchoosing their own default view, and leaving."
       },
       "TeamUpdate": {
         "properties": {
@@ -11273,6 +11275,7 @@
           "rate_limited",
           "not_team_member",
           "not_team_admin",
+          "team_read_only",
           "not_site_admin",
           "invite_only",
           "team_not_found",

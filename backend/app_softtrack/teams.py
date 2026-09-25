@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Response
 from sqlmodel import Session
 
+from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import teams as teams_service
 from lib_softtrack.models.teams import (
@@ -43,7 +44,7 @@ def get_team(
     return teams_service.get_team(session, current_user, team_id)
 
 
-@router.patch("/{team_id}", response_model=TeamRead)
+@router.patch("/{team_id}", response_model=TeamRead, dependencies=[team_writer])
 def update_team(
     team_id: int,
     payload: TeamUpdate,
@@ -62,7 +63,9 @@ def list_team_members(
     return teams_service.list_team_members(session, current_user, team_id)
 
 
-@router.post("/{team_id}/members", response_model=TeamMemberRead)
+@router.post(
+    "/{team_id}/members", response_model=TeamMemberRead, dependencies=[team_writer]
+)
 def add_team_member(
     team_id: int,
     payload: TeamMemberAdd,
@@ -72,7 +75,11 @@ def add_team_member(
     return teams_service.add_team_member(session, current_user, team_id, payload)
 
 
-@router.patch("/{team_id}/members/{user_id}", response_model=TeamMemberRead)
+@router.patch(
+    "/{team_id}/members/{user_id}",
+    response_model=TeamMemberRead,
+    dependencies=[team_writer],
+)
 def update_team_member_role(
     team_id: int,
     user_id: int,

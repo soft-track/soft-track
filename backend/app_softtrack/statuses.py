@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
+from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import statuses as statuses_service
 from lib_softtrack.models.statuses import (
@@ -26,7 +27,9 @@ def list_statuses(
     return statuses_service.list_statuses(session, current_user, team_id)
 
 
-@router.post("/teams/{team_id}/statuses", response_model=StatusRead)
+@router.post(
+    "/teams/{team_id}/statuses", response_model=StatusRead, dependencies=[team_writer]
+)
 def create_status(
     team_id: int,
     payload: StatusCreate,
@@ -41,7 +44,11 @@ def create_status(
     return statuses_service.create_status(session, current_user, team_id, payload)
 
 
-@router.put("/teams/{team_id}/statuses/order", response_model=list[StatusRead])
+@router.put(
+    "/teams/{team_id}/statuses/order",
+    response_model=list[StatusRead],
+    dependencies=[team_writer],
+)
 def reorder_statuses(
     team_id: int,
     payload: StatusOrder,
@@ -55,7 +62,9 @@ def reorder_statuses(
     return statuses_service.reorder_statuses(session, current_user, team_id, payload)
 
 
-@router.patch("/statuses/{status_id}", response_model=StatusRead)
+@router.patch(
+    "/statuses/{status_id}", response_model=StatusRead, dependencies=[team_writer]
+)
 def update_status(
     status_id: int,
     payload: StatusUpdate,
@@ -67,7 +76,9 @@ def update_status(
 
 # A body on DELETE rather than a query parameter: where the issues go is not
 # optional, and a required body is the shape that says so.
-@router.delete("/statuses/{status_id}", response_model=list[StatusRead])
+@router.delete(
+    "/statuses/{status_id}", response_model=list[StatusRead], dependencies=[team_writer]
+)
 def delete_status(
     status_id: int,
     payload: StatusDelete,

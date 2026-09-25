@@ -29,6 +29,7 @@ export function CommentsSection({
   removeAttachment,
   uploading,
   onFilesClaimed,
+  canComment = true,
 }: {
   issueId: number
   people: Mentionable[]
@@ -38,6 +39,8 @@ export function CommentsSection({
   uploading: number
   /** A posted comment takes its files off the issue's own list. */
   onFilesClaimed: () => void
+  /** False for a guest (#104), who reads the conversation but cannot join it. */
+  canComment?: boolean
 }) {
   const queryClient = useQueryClient()
   const commentsQuery = useListCommentsIssuesIssueIdCommentsGet(issueId)
@@ -96,39 +99,47 @@ export function CommentsSection({
           ),
         )}
         {commentsQuery.data?.items.length === 0 && (
-          <li className="text-xs text-neutral-400">No comments yet. Start the conversation below.</li>
+          <li className="text-xs text-neutral-400">
+            {canComment ? 'No comments yet. Start the conversation below.' : 'No comments yet.'}
+          </li>
         )}
       </ol>
 
 
-      <form onSubmit={submit}>
-        <MarkdownEditor
-          value={body}
-          onChange={setBody}
-          people={people}
-          placeholder="Leave a comment…"
-          rows={3}
-          onSubmit={() => void submit()}
-          onUploadFiles={uploadForComment}
-        />
-        {/* Uploaded, but not attached to anything until this comment is
-            sent. Removing one here deletes it, which is what the user means
-            by taking it back out of a draft. */}
-        <AttachmentList attachments={draftFiles} onRemove={removeDraftFile} />
-        <div className="mt-2 flex items-center justify-end gap-3">
-          <span className="flex items-center gap-1 text-[11px] text-neutral-400">
-            <kbd className="kbd">⌘</kbd>
-            <kbd className="kbd">↵</kbd> to send
-          </span>
-          <button
-            type="submit"
-            disabled={!body.trim() || createComment.isPending || uploading > 0}
-            className="btn btn-primary btn-sm"
-          >
-            {createComment.isPending ? 'Sending…' : 'Send'}
-          </button>
-        </div>
-      </form>
+      {!canComment ? (
+        <p className="text-xs text-neutral-400">
+          You are a guest on this team, so you can follow this issue but not comment on it.
+        </p>
+      ) : (
+        <form onSubmit={submit}>
+          <MarkdownEditor
+            value={body}
+            onChange={setBody}
+            people={people}
+            placeholder="Leave a comment…"
+            rows={3}
+            onSubmit={() => void submit()}
+            onUploadFiles={uploadForComment}
+          />
+          {/* Uploaded, but not attached to anything until this comment is
+              sent. Removing one here deletes it, which is what the user means
+              by taking it back out of a draft. */}
+          <AttachmentList attachments={draftFiles} onRemove={removeDraftFile} />
+          <div className="mt-2 flex items-center justify-end gap-3">
+            <span className="flex items-center gap-1 text-[11px] text-neutral-400">
+              <kbd className="kbd">⌘</kbd>
+              <kbd className="kbd">↵</kbd> to send
+            </span>
+            <button
+              type="submit"
+              disabled={!body.trim() || createComment.isPending || uploading > 0}
+              className="btn btn-primary btn-sm"
+            >
+              {createComment.isPending ? 'Sending…' : 'Send'}
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   )
 }

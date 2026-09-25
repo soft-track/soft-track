@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
+from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import labels as labels_service
 from lib_softtrack.models.labels import LabelCreate, LabelRead
@@ -10,7 +11,9 @@ from web import get_session
 router = APIRouter(tags=["labels"])
 
 
-@router.post("/teams/{team_id}/labels", response_model=LabelRead)
+@router.post(
+    "/teams/{team_id}/labels", response_model=LabelRead, dependencies=[team_writer]
+)
 def create_label(
     team_id: int,
     payload: LabelCreate,

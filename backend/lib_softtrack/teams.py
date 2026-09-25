@@ -1,6 +1,8 @@
 """Team services, including the membership guards the other domains rely on."""
 
-from sqlmodel import Session, func, select
+from typing import Mapping
+
+from sqlmodel import Session, case, func, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.teams import (
@@ -10,7 +12,21 @@ from lib_softtrack.models.teams import (
     TeamMemberUpdate,
     TeamUpdate,
 )
-from lib_softtrack.tables import Team, TeamMember, TeamRole, User
+from lib_softtrack.tables import (
+    Attachment,
+    AutomationRule,
+    Cycle,
+    Issue,
+    OutboundWebhook,
+    Project,
+    Repository,
+    SavedView,
+    Team,
+    TeamMember,
+    TeamRole,
+    User,
+    WorkflowStatus,
+)
 from lib_utils.errors import ErrorCode, api_error
 
 
@@ -66,6 +82,85 @@ def require_team_admin(team_id: int, user: User, session: Session) -> TeamMember
             detail="Only team admins can do that",
         )
     return membership
+
+
+def require_team_writer(team_id: int, user: User, session: Session) -> TeamMember:
+    """The guard for anything that changes what a team contains (#104).
+
+    Admins and members pass; guests do not. Most routes get this from
+    `app_softtrack.guards.team_writer`, which works out the team from the URL
+    before the request body is even parsed. A service calls it directly only
+    when a request reaches a *second* team named in its body -- linking to an
+    issue elsewhere, or moving an issue to another team -- because the URL
+    only says which team the request starts from.
+    """
+    membership = require_team_member(team_id, user, session)
+    if membership.role == TeamRole.guest:
+        raise api_error(
+            status_code=403,
+            code=ErrorCode.team_read_only,
+            detail="Guests can view this team but not change it",
+        )
+    return membership
+
+
+#: How a path parameter names the team a request acts on: the row it
+#: identifies, and what to answer when there is no such row -- the same code
+#: and sentence the route's own service would, so a guard running first does
+#: not change what a bad id gets back. Ordered: the first one present in a
+#: path wins, so `/issues/{issue_id}/links/{link_id}` resolves by the issue.
+_TEAM_OWNED_BY_PATH = (
+    ("issue_id", Issue, ErrorCode.issue_not_found, "Issue not found"),
+    ("cycle_id", Cycle, ErrorCode.cycle_not_found, "Cycle not found"),
+    ("project_id", Project, ErrorCode.project_not_found, "Project not found"),
+    ("view_id", SavedView, ErrorCode.view_not_found, "View not found"),
+    ("status_id", WorkflowStatus, ErrorCode.status_not_found, "Status not found"),
+    ("rule_id", AutomationRule, ErrorCode.rule_not_found, "Rule not found"),
+    (
+        "repository_id",
+        Repository,
+        ErrorCode.repository_not_found,
+        "Repository not found",
+    ),
+    ("webhook_id", OutboundWebhook, ErrorCode.webhook_not_found, "Webhook not found"),
+)
+
+
+def team_id_for_path(session: Session, path_params: Mapping[str, str]) -> int:
+    """The team a team-scoped URL is about, looked up from its path parameters.
+
+    404s the way the route itself would when the row does not exist, so a
+    guard running ahead of the handler does not change what a bad id answers.
+    A path this cannot resolve is a bug in the route table rather than a bad
+    request, hence the `LookupError` -- the guest sweep in
+    tests/test_guest_role.py is what turns that into a failing test instead
+    of a 500 in production.
+    """
+    # The guard runs before FastAPI has converted the path, so the values are
+    # still strings. One that is not a number names no row.
+    ids = {name: int(v) if v.isdigit() else 0 for name, v in path_params.items()}
+
+    if "team_id" in ids:
+        return get_team_or_404(ids["team_id"], session).id
+
+    if "attachment_id" in ids:
+        attachment = session.get(Attachment, ids["attachment_id"])
+        if attachment is None:
+            raise api_error(
+                status_code=404,
+                code=ErrorCode.attachment_not_found,
+                detail="Attachment not found",
+            )
+        ids = {"issue_id": attachment.issue_id}
+
+    for name, table, code, detail in _TEAM_OWNED_BY_PATH:
+        if name in ids:
+            row = session.get(table, ids[name])
+            if row is None:
+                raise api_error(status_code=404, code=code, detail=detail)
+            return row.team_id
+
+    raise LookupError(f"No team can be read from path parameters {sorted(path_params)}")
 
 
 def _active_admin_count(session: Session, team_id: int) -> int:
@@ -158,6 +253,13 @@ def update_team(
     return team
 
 
+_ROLE_ORDER = case(
+    (TeamMember.role == TeamRole.admin, 0),
+    (TeamMember.role == TeamRole.member, 1),
+    else_=2,
+)
+
+
 def list_team_members(
     session: Session, current_user: User, team_id: int
 ) -> list[TeamMemberRead]:
@@ -170,9 +272,12 @@ def list_team_members(
         select(TeamMember, User)
         .join(User, User.id == TeamMember.user_id)
         .where(TeamMember.team_id == team_id)
-        # Admins first, then in the order people joined: the roster reads as
-        # "who runs this team" before "who is on it".
-        .order_by(TeamMember.role, TeamMember.joined_at)
+        # Admins, members, then guests, each in the order they joined: the
+        # roster reads as "who runs this team" before "who is on it", and
+        # "who is only looking" last. Spelled out with a CASE because the
+        # enum's own sort order is its declaration order on Postgres and
+        # alphabetical on SQLite -- which would file guests above members.
+        .order_by(_ROLE_ORDER, TeamMember.joined_at)
     ).all()
 
     return [

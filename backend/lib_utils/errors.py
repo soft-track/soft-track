@@ -43,6 +43,8 @@ class ErrorCode(str, enum.Enum):
     # --- what you may do -------------------------------------------------------
     not_team_member = "not_team_member"
     not_team_admin = "not_team_admin"
+    #: A guest of the team (#104): may look, may not change anything.
+    team_read_only = "team_read_only"
     not_site_admin = "not_site_admin"
     #: Registration is invite-only on this instance.
     invite_only = "invite_only"

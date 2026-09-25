@@ -23,14 +23,42 @@ the proof. The reasoning is worth reading before changing it.
 
 ### Team roles
 
-Every membership is `admin` or `member`. Admins rename the team, invite people,
-change roles, and remove members; members do everything else. Anyone can leave
-a team on their own. A team always keeps at least one **active** admin —
+Every membership is `admin`, `member` or `guest`. Admins rename the team,
+invite people, change roles, and remove members; members do everything else.
+Anyone can leave a team on their own. A team always keeps at least one **active** admin —
 "active" matters, because a team whose other admin was deactivated months ago
 would otherwise be one departure away from having nobody who can add anyone.
 
 A team's **key** cannot be changed. `ENG-42` is already in commit messages,
 chat logs and browser history by the time anyone wants to rename it.
+
+### Guests
+
+A guest sees what a member sees -- the board, the list, every issue and its
+comments, cycles, reports and search -- and changes none of it: no issues, no
+comments, no settings. It is the role for a stakeholder, a client, or a
+neighbouring team that needs visibility without write access, and it is the
+part of "granular permissions" that covers most of the need without committing
+to a permission model.
+
+What a guest *does* write is their own relationship to the team: watching an
+issue (so they are notified like anyone else), choosing their own default view,
+and leaving. Admins make someone a guest from the invitation form or by
+changing an existing member's role.
+
+The boundary is on the server, in one place. Every route that changes
+something inside a team declares `team_writer` (`backend/app_softtrack/guards.py`),
+which works out the team from the URL and refuses a guest before the request
+body is even read. `backend/tests/test_guest_role.py` sends every POST, PUT,
+PATCH and DELETE in the OpenAPI schema as a guest and expects a 403 with the
+code `team_read_only`, so a new route that forgets the guard fails the suite
+the day it is written. A route a guest is *meant* to reach is listed there
+with the reason. The browser hides the controls a guest cannot use -- the New
+issue button, dragging cards, the comment box -- but that is only so it does
+not offer what would fail.
+
+Linking issues across teams needs write access to both, because the link shows
+on both issues.
 
 ### Invitations, with or without a mail server
 

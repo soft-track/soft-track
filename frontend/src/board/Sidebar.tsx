@@ -31,8 +31,9 @@ export function Sidebar({
   onEditView: (view: SavedViewRead) => void
   /** Team admins can set the team default and tidy up others' shared views. */
   isAdmin: boolean
-  onNewCycle: () => void
-  onImport: () => void
+  /** Absent for a guest (#104), and so are the buttons. */
+  onNewCycle?: () => void
+  onImport?: () => void
 }) {
   const { user, logout } = useAuth()
   const { team, teams, projects: allProjects, cycles } = useTeamContext()
@@ -91,15 +92,17 @@ export function Sidebar({
         <div>
           <div className="mb-1.5 flex items-center justify-between px-2">
             <p className="eyebrow">Cycles</p>
-            <button
-              type="button"
-              onClick={onNewCycle}
-              aria-label="New cycle"
-              title="New cycle"
-              className="btn btn-ghost btn-icon btn-xs"
-            >
-              <Icon name="plus" size={13} />
-            </button>
+            {onNewCycle && (
+              <button
+                type="button"
+                onClick={onNewCycle}
+                aria-label="New cycle"
+                title="New cycle"
+                className="btn btn-ghost btn-icon btn-xs"
+              >
+                <Icon name="plus" size={13} />
+              </button>
+            )}
           </div>
           <CycleList
             cycles={cycles}
@@ -164,10 +167,12 @@ export function Sidebar({
           <Icon name="users" size={15} className="opacity-70" />
           Members
         </Link>
-        <button type="button" onClick={onImport} className="nav-item text-neutral-500">
-          <Icon name="upload" size={15} className="opacity-70" />
-          Import from Jira
-        </button>
+        {onImport && (
+          <button type="button" onClick={onImport} className="nav-item text-neutral-500">
+            <Icon name="upload" size={15} className="opacity-70" />
+            Import from Jira
+          </button>
+        )}
         <Link to="/new-team" className="nav-item text-neutral-500">
           <Icon name="plus" size={15} className="opacity-70" />
           New team
