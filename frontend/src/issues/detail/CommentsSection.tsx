@@ -7,15 +7,21 @@ import {
   useCreateCommentIssuesIssueIdCommentsPost,
   useListCommentsIssuesIssueIdCommentsGet,
 } from '@/api/generated/endpoints/comments/comments'
-import type { AttachmentRead } from '@/api/generated/models'
+import { useListIssueEventsIssuesIssueIdEventsGet } from '@/api/generated/endpoints/issues/issues'
+import type { AttachmentRead, CommentRead, IssueEventRead } from '@/api/generated/models'
 import { AttachmentList } from '@/attachments/AttachmentList'
 import { attachmentMarkdown } from '@/attachments/urls'
 import { Markdown, MarkdownEditor } from '@/markdown/lazy'
+import { describeEvent, interleave } from '@/issues/detail/history'
 import type { Mentionable } from '@/markdown/mentions'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 
-/** The comment thread and its composer. Owns the draft; nothing else needs it. */
+/**
+ * The Activity feed -- comments and the issue's history in one stream, oldest
+ * first (#81) -- and the comment composer. Owns the draft; nothing else needs
+ * it.
+ */
 export function CommentsSection({
   issueId,
   people,
@@ -35,6 +41,7 @@ export function CommentsSection({
 }) {
   const queryClient = useQueryClient()
   const commentsQuery = useListCommentsIssuesIssueIdCommentsGet(issueId)
+  const eventsQuery = useListIssueEventsIssuesIssueIdEventsGet(issueId)
   const createComment = useCreateCommentIssuesIssueIdCommentsPost()
   const [body, setBody] = useState('')
   // Files uploaded while this comment is being written. They belong to the
@@ -80,37 +87,19 @@ export function CommentsSection({
         )}
       </div>
 
-      <div className="mb-4 space-y-4">
-        {commentsQuery.data?.items.map((comment) => (
-          <div key={comment.id} className="flex gap-2.5">
-            {comment.author ? (
-              <Avatar user={comment.author} size={26} decorative />
-            ) : (
-              <AutomationAvatar />
-            )}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-2">
-                <span className="text-sm font-medium text-neutral-900">
-                  {comment.author?.full_name ?? 'Automation'}
-                </span>
-                <span className="text-[11px] text-neutral-400">
-                  {formatDistanceToNow(parseServerDate(comment.created_at), { addSuffix: true })}
-                </span>
-              </div>
-              <div className="well mt-1 rounded-card rounded-tl-sm px-3 py-2">
-                {/* Read-only checkboxes: there is no endpoint to edit a comment
-                    yet, so a toggle here could not be saved. Its attachments
-                    are read-only for the same reason. */}
-                <Markdown people={people}>{comment.body}</Markdown>
-                <AttachmentList attachments={comment.attachments ?? []} compact />
-              </div>
-            </div>
-          </div>
-        ))}
-        {commentsQuery.data?.items.length === 0 && (
-          <p className="text-xs text-neutral-400">No comments yet. Start the conversation below.</p>
+      <ol className="mb-4 space-y-4">
+        {interleave(commentsQuery.data?.items ?? [], eventsQuery.data ?? []).map((item) =>
+          item.kind === 'event' ? (
+            <EventLine key={`event-${item.event.id}`} event={item.event} />
+          ) : (
+            <CommentItem key={`comment-${item.comment.id}`} comment={item.comment} people={people} />
+          ),
         )}
-      </div>
+        {commentsQuery.data?.items.length === 0 && (
+          <li className="text-xs text-neutral-400">No comments yet. Start the conversation below.</li>
+        )}
+      </ol>
+
 
       <form onSubmit={submit}>
         <MarkdownEditor
@@ -161,5 +150,64 @@ function AutomationAvatar() {
     >
       <Icon name="sparkle" size={13} />
     </div>
+  )
+}
+
+function CommentItem({ comment, people }: { comment: CommentRead; people: Mentionable[] }) {
+  return (
+    <li className="flex gap-2.5">
+      {comment.author ? (
+        <Avatar user={comment.author} size={26} decorative />
+      ) : (
+        <AutomationAvatar />
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <span className="text-sm font-medium text-neutral-900">
+            {comment.author?.full_name ?? 'Automation'}
+          </span>
+          <span className="text-[11px] text-neutral-400">
+            {formatDistanceToNow(parseServerDate(comment.created_at), { addSuffix: true })}
+          </span>
+        </div>
+        <div className="well mt-1 rounded-card rounded-tl-sm px-3 py-2">
+          {/* Read-only checkboxes: there is no endpoint to edit a comment
+              yet, so a toggle here could not be saved. Its attachments
+              are read-only for the same reason. */}
+          <Markdown people={people}>{comment.body}</Markdown>
+          <AttachmentList attachments={comment.attachments ?? []} compact />
+        </div>
+      </div>
+    </li>
+  )
+}
+
+/**
+ * One change, quieter than a comment: a single muted line with a small face,
+ * e.g. "Maya moved this from Started to Done · 2 hours ago".
+ */
+function EventLine({ event }: { event: IssueEventRead }) {
+  return (
+    <li className="flex items-center gap-2.5 pl-1 text-xs text-neutral-500">
+      {event.actor ? (
+        <Avatar user={event.actor} size={18} decorative />
+      ) : (
+        <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-neutral-900/6 text-neutral-400">
+          <Icon name="sparkle" size={11} />
+        </span>
+      )}
+      <p className="min-w-0">
+        <span className="font-medium text-neutral-700">
+          {event.actor?.full_name ?? 'Automation'}
+        </span>{' '}
+        {describeEvent(event)}
+        <span className="text-neutral-400">
+          {' · '}
+          <time dateTime={event.created_at}>
+            {formatDistanceToNow(parseServerDate(event.created_at), { addSuffix: true })}
+          </time>
+        </span>
+      </p>
+    </li>
   )
 }

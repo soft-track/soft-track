@@ -52,6 +52,8 @@ export * from './issueBulkDelete';
 export * from './issueBulkUpdate';
 export * from './issueCreate';
 export * from './issueCreateEstimate';
+export * from './issueEventField';
+export * from './issueEventRead';
 export * from './issueGrouping';
 export * from './issueLinkCreate';
 export * from './issueLinkRead';

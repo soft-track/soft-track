@@ -7,23 +7,33 @@ means a field added later gets history for free by naming it in TRACKED.
 
 from typing import Optional
 
-from sqlmodel import Session
+from fastapi import HTTPException
+from sqlmodel import Session, select
 
+from lib_identity.models.identity import UserPublic
+from lib_softtrack.models.history import IssueEventRead
 from lib_softtrack.tables import (
+    Cycle,
     Issue,
     IssueEvent,
     IssueEventField,
+    Project,
     User,
     WorkflowStatus,
 )
+from lib_softtrack.teams import require_team_member
 
-#: The fields worth a history row. Everything here can be charted; title and
-#: description changes are noise for reporting and would swamp the table.
+#: The fields worth a history row. The first four are what the reports chart;
+#: assignee and priority are what people ask an issue's history about (#81).
+#: Title and description changes are noise and would swamp the table; label
+#: changes are left out for the same reason.
 TRACKED: dict[str, IssueEventField] = {
     "status_id": IssueEventField.status,
     "cycle_id": IssueEventField.cycle,
     "estimate": IssueEventField.estimate,
     "project_id": IssueEventField.project,
+    "assignee_id": IssueEventField.assignee,
+    "priority": IssueEventField.priority,
 }
 
 
@@ -72,6 +82,7 @@ def record_creation(session: Session, issue: Issue, actor: Optional[User]) -> No
                 old_value=None,
                 new_value=_recorded(session, attribute, value),
                 actor_id=actor.id if actor else None,
+                opening=True,
             )
         )
 
@@ -125,3 +136,98 @@ def _recorded(session: Session, attribute: str, value: object) -> Optional[str]:
 def snapshot(issue: Issue) -> dict[str, object]:
     """The tracked fields as they are now, for comparison after an update."""
     return {attribute: getattr(issue, attribute) for attribute in TRACKED}
+
+
+# --- reading it back (#81) ---------------------------------------------------
+
+#: The most events one issue's history returns: the latest ones. An issue
+#: with more than this has been through a lot, and the oldest moves are the
+#: least likely to be what anybody opened the panel to find.
+EVENT_LIMIT = 100
+
+
+def _labels(session: Session, events: list[IssueEvent]) -> dict[tuple, str]:
+    """`{(field, id): name}` for every id an event mentions, one query per kind."""
+    ids: dict[IssueEventField, set[int]] = {
+        IssueEventField.assignee: set(),
+        IssueEventField.cycle: set(),
+        IssueEventField.project: set(),
+    }
+    for event in events:
+        if event.field in ids:
+            for value in (event.old_value, event.new_value):
+                if value is not None and value.isdigit():
+                    ids[event.field].add(int(value))
+
+    labels: dict[tuple, str] = {}
+    if ids[IssueEventField.assignee]:
+        for user in session.exec(
+            select(User).where(User.id.in_(ids[IssueEventField.assignee]))
+        ):
+            labels[(IssueEventField.assignee, user.id)] = user.full_name
+    if ids[IssueEventField.cycle]:
+        for cycle in session.exec(
+            select(Cycle).where(Cycle.id.in_(ids[IssueEventField.cycle]))
+        ):
+            labels[(IssueEventField.cycle, cycle.id)] = (
+                cycle.name or f"Cycle {cycle.number}"
+            )
+    if ids[IssueEventField.project]:
+        for project in session.exec(
+            select(Project).where(Project.id.in_(ids[IssueEventField.project]))
+        ):
+            labels[(IssueEventField.project, project.id)] = project.name
+    return labels
+
+
+def issue_events(
+    session: Session, current_user: User, issue_id: int
+) -> list[IssueEventRead]:
+    """What happened to one issue, oldest first: the changes, not the values it
+    was created with (`IssueEvent.opening`), and at most the latest
+    EVENT_LIMIT of them."""
+    issue = session.get(Issue, issue_id)
+    if issue is None:
+        raise HTTPException(status_code=404, detail="Issue not found")
+    require_team_member(issue.team_id, current_user, session)
+
+    changes = list(
+        session.exec(
+            select(IssueEvent)
+            .where(
+                IssueEvent.issue_id == issue_id, IssueEvent.opening == False
+            )  # noqa: E712
+            .order_by(IssueEvent.created_at.desc(), IssueEvent.id.desc())
+            .limit(EVENT_LIMIT)
+        ).all()
+    )
+    changes.reverse()
+
+    labels = _labels(session, changes)
+    actors = {
+        user.id: UserPublic.model_validate(user)
+        for user in session.exec(
+            select(User).where(
+                User.id.in_({e.actor_id for e in changes if e.actor_id is not None})
+            )
+        )
+    }
+
+    def label(event: IssueEvent, value: Optional[str]) -> Optional[str]:
+        if value is None or not value.isdigit():
+            return None
+        return labels.get((event.field, int(value)))
+
+    return [
+        IssueEventRead(
+            id=event.id,
+            field=event.field,
+            old_value=event.old_value,
+            new_value=event.new_value,
+            old_label=label(event, event.old_value),
+            new_label=label(event, event.new_value),
+            actor=actors.get(event.actor_id),
+            created_at=event.created_at,
+        )
+        for event in changes
+    ]

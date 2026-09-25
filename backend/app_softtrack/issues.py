@@ -5,9 +5,11 @@ from sqlmodel import Session
 
 from lib_identity.identity import get_current_user
 from lib_softtrack import estimates as estimates_service
+from lib_softtrack import history as history_service
 from lib_softtrack import issues as issues_service
 from lib_softtrack import links as links_service
 from lib_softtrack.models.estimates import EstimateSummary
+from lib_softtrack.models.history import IssueEventRead
 from lib_softtrack.models.issues import (
     IssueBulkDelete,
     IssueBulkUpdate,
@@ -125,6 +127,21 @@ def get_issue_by_number(
     current_user: User = Depends(get_current_user),
 ):
     return issues_service.get_issue_by_number(session, current_user, team_id, number)
+
+
+@router.get("/issues/{issue_id}/events", response_model=list[IssueEventRead])
+def list_issue_events(
+    issue_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """What has happened to an issue: status, priority, assignee, estimate,
+    cycle and project changes, oldest first, with who made each one.
+
+    The latest 100 changes. The values an issue was created with are its
+    starting point rather than changes, and are left out.
+    """
+    return history_service.issue_events(session, current_user, issue_id)
 
 
 @router.get("/issues/{issue_id}", response_model=IssueRead)

@@ -2185,6 +2185,58 @@
         }
       }
     },
+    "/issues/{issue_id}/events": {
+      "get": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "List Issue Events",
+        "description": "What has happened to an issue: status, priority, assignee, estimate,\ncycle and project changes, oldest first, with who made each one.\n\nThe latest 100 changes. The values an issue was created with are its\nstarting point rather than changes, and are left out.",
+        "operationId": "list_issue_events_issues__issue_id__events_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IssueEventRead"
+                  },
+                  "title": "Response List Issue Events Issues  Issue Id  Events Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/issues/{issue_id}": {
       "get": {
         "tags": [
@@ -6911,6 +6963,97 @@
           "title"
         ],
         "title": "IssueCreate"
+      },
+      "IssueEventField": {
+        "type": "string",
+        "enum": [
+          "status",
+          "cycle",
+          "estimate",
+          "project",
+          "assignee",
+          "priority"
+        ],
+        "title": "IssueEventField",
+        "description": "Which field an IssueEvent records a change to."
+      },
+      "IssueEventRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "field": {
+            "$ref": "#/components/schemas/IssueEventField"
+          },
+          "old_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Value"
+          },
+          "new_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Value"
+          },
+          "old_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Label"
+          },
+          "new_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Label"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "field",
+          "created_at"
+        ],
+        "title": "IssueEventRead",
+        "description": "One change to one field of an issue, as the Activity feed shows it (#81).\n\n`old_value`/`new_value` are what the history stores: a status *category*\n(see `_status_category` in history.py), a priority, an estimate, or a\nrow id. For the id fields -- assignee, cycle, project -- the labels carry\nthe name it has now, or null when that row has since been deleted."
       },
       "IssueGrouping": {
         "type": "string",

@@ -30,6 +30,7 @@ import type {
   IssueBulkDelete,
   IssueBulkUpdate,
   IssueCreate,
+  IssueEventRead,
   IssueLinkCreate,
   IssueLinkRead,
   IssueLinks,
@@ -556,6 +557,103 @@ export function useGetIssueByNumberTeamsTeamIdIssuesByNumberNumberGet<TData = Aw
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetIssueByNumberTeamsTeamIdIssuesByNumberNumberGetQueryOptions(teamId,number,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * What has happened to an issue: status, priority, assignee, estimate,
+ * cycle and project changes, oldest first, with who made each one.
+ *
+ * The latest 100 changes. The values an issue was created with are its
+ * starting point rather than changes, and are left out.
+ * @summary List Issue Events
+ */
+export const listIssueEventsIssuesIssueIdEventsGet = (
+    issueId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<IssueEventRead[]>(
+      {url: `/issues/${issueId}/events`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getListIssueEventsIssuesIssueIdEventsGetQueryKey = (issueId: number,) => {
+    return [
+    `/issues/${issueId}/events`
+    ] as const;
+    }
+
+
+export const getListIssueEventsIssuesIssueIdEventsGetQueryOptions = <TData = Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>, TError = HTTPValidationError>(issueId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListIssueEventsIssuesIssueIdEventsGetQueryKey(issueId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>> = ({ signal }) => listIssueEventsIssuesIssueIdEventsGet(issueId, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: issueId !== null && issueId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListIssueEventsIssuesIssueIdEventsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>>
+export type ListIssueEventsIssuesIssueIdEventsGetQueryError = HTTPValidationError
+
+
+export function useListIssueEventsIssuesIssueIdEventsGet<TData = Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>, TError = HTTPValidationError>(
+ issueId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListIssueEventsIssuesIssueIdEventsGet<TData = Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>, TError = HTTPValidationError>(
+ issueId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListIssueEventsIssuesIssueIdEventsGet<TData = Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>, TError = HTTPValidationError>(
+ issueId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Issue Events
+ */
+
+export function useListIssueEventsIssuesIssueIdEventsGet<TData = Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>, TError = HTTPValidationError>(
+ issueId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listIssueEventsIssuesIssueIdEventsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListIssueEventsIssuesIssueIdEventsGetQueryOptions(issueId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

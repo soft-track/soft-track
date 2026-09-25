@@ -47,6 +47,8 @@ export function useIssueEditor(issueId: number) {
     await updateIssue.mutateAsync({ issueId, data })
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/issues`] })
     queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}`] })
+    // The change just made belongs in the Activity feed below.
+    queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}/events`] })
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
     // Cycle progress moves whenever an issue's status or cycle changes.
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/cycles`] })

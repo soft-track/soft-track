@@ -137,6 +137,11 @@ class IssueEventField(str, enum.Enum):
     #: did this epic grow after work started" answerable, and scope added late
     #: is what explains most missed dates.
     project = "project"
+    #: Who it is assigned to, and how urgent it is (#81). Not charted by any
+    #: report -- recorded because they are what people ask the history about:
+    #: "who gave me this?", "who made it urgent?".
+    assignee = "assignee"
+    priority = "priority"
 
 
 class TeamRole(str, enum.Enum):
@@ -530,6 +535,13 @@ class IssueEvent(SQLModel, table=True):
     new_value: Optional[str] = None
     actor_id: Optional[int] = Field(default=None, foreign_key="user.id")
     created_at: datetime = Field(default_factory=utcnow, index=True)
+    #: The value a field started with, written when the issue was created or
+    #: imported -- not a change to it. The reports need these (a chart has to
+    #: know where an issue began); the Activity feed leaves them out (#81).
+    #: Marked when written rather than inferred afterwards: "old value null,
+    #: soon after creation" also describes a real change made quickly, such
+    #: as an automation assigning a new issue.
+    opening: bool = Field(default=False)
 
 
 class Comment(SQLModel, table=True):
