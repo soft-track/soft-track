@@ -44,6 +44,7 @@ import { useGlobalShortcuts } from '@/keyboard/useGlobalShortcuts'
 import { isTypingTarget } from '@/keyboard/typing'
 import { ProjectPage } from '@/projects/ProjectPage'
 import { RoadmapView } from '@/projects/RoadmapView'
+import { useTeamEvents } from '@/realtime/useTeamEvents'
 import { ReportsView } from '@/reports/ReportsView'
 import { SearchResults } from '@/search/SearchResults'
 import { useDebounced } from '@/search/useDebounced'
@@ -112,6 +113,8 @@ export default function BoardPage() {
   )
 
   const teamData = useTeamData(team)
+  // Other people's changes arrive as they happen (#103).
+  useTeamEvents(team?.id)
   const savedViews = useSavedViews(team?.id ?? 0)
 
   // Landing on the default view, at most once per mount.

@@ -13,7 +13,7 @@ branch and PR linking. Sending invitations by email (SMTP) is done — see
 [user management](features/users.md). Signing in with
 [Google and GitHub](features/oauth.md) is done.
 
-**Later:** real-time sync, granular permissions, SSO/SCIM, audit log, and a
+**Later:** real-time sync beyond live board updates (presence, multi-worker fan-out), granular permissions beyond the guest role, SSO/SCIM, audit log, and a
 capped set of custom fields. Enterprise SAML/OIDC belongs here rather than with
 the OAuth work above: it is a different shape of problem -- per-customer
 metadata, signed assertions, directory sync -- and not two more buttons.

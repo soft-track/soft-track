@@ -76,6 +76,7 @@ README, which show a team several cycles in.
 - [GitHub and GitLab](docs/features/git-integrations.md)
 - [Outbound webhooks](docs/features/outbound-webhooks.md)
 - [Notifications](docs/features/notifications.md)
+- [Live updates](docs/features/live-updates.md)
 - [Reactions](docs/features/reactions.md)
 - [Attachments](docs/features/attachments.md)
 - [User management](docs/features/users.md)

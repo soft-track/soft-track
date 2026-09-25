@@ -10,12 +10,14 @@ from app_identity.admin import router as admin_router
 from app_identity.identity import router as identity_router
 from app_identity.oauth import router as oauth_router
 from lib_identity.identity import warm_password_hasher
+from lib_softtrack import realtime
 from lib_softtrack.digest import digest_loop
 from lib_softtrack.outbound import webhook_loop
 from app_softtrack.attachments import router as attachments_router
 from app_softtrack.automations import router as automations_router
 from app_softtrack.comments import router as comments_router
 from app_softtrack.cycles import router as cycles_router
+from app_softtrack.events import router as events_router
 from app_softtrack.imports import router as imports_router
 from app_softtrack.integrations import router as integrations_router
 from app_softtrack.invites import router as invites_router
@@ -75,6 +77,10 @@ async def lifespan(app: FastAPI):
     if webhooks is not None:
         webhooks.cancel()
 
+
+# Real-time nudges (#103) are published from the ORM's own commit events, so
+# they are switched on once, here, for every session the app opens.
+realtime.install()
 
 app = FastAPI(
     title=settings.app_name,
@@ -140,6 +146,7 @@ app.include_router(notifications_router)
 app.include_router(views_router)
 app.include_router(templates_router)
 app.include_router(worklogs_router)
+app.include_router(events_router)
 app.include_router(statuses_router)
 app.include_router(automations_router)
 app.include_router(integrations_router)

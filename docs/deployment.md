@@ -160,4 +160,17 @@ Deleting an issue removes both its rows and the attached files.
 
 If TLS is terminated by nginx or a load balancer, run uvicorn with `--proxy-headers --forwarded-allow-ips=<your proxy's address>` so Starlette can trust the proxied client address for rate limiting and request metadata.
 
+### Live updates behind a proxy
+
+Boards update live over a server-sent event stream, `GET /teams/{team_id}/events` ([live updates](features/live-updates.md)). It is an ordinary long-lived HTTP response, so it passes through proxies without an upgrade, but two proxy defaults get in its way:
+
+- **Buffering.** nginx buffers responses by default, which holds every event back until a buffer fills. The API sends `X-Accel-Buffering: no` on this route, which nginx honours without any change to its config. For other proxies, turn response buffering off for `/teams/*/events`.
+- **Idle timeouts.** The stream sends a `: ping` comment every 25 seconds. Keep the proxy's read timeout above that — nginx's default `proxy_read_timeout 60s` is fine; anything under 25 seconds drops the stream between pings. The browser reconnects after a drop, but the board is not live while it does.
+
+Serve the API over **HTTP/2** if you can. Over HTTP/1.1 a browser opens about six connections per host, and each open board holds one for its stream; the frontend closes the stream in hidden tabs for exactly this reason, but HTTP/2 multiplexes them and the limit goes away.
+
+**One worker is the supported shape for live updates.** Events are delivered in process: with several uvicorn workers, a change handled by one worker reaches only the streams open on that worker, and boards connected to the others update on their next refetch instead. Postgres `LISTEN/NOTIFY` is the designed follow-up; `lib_softtrack/realtime.py` has the seam for it.
+
+The Docker image runs uvicorn with `--timeout-graceful-shutdown 5`. An event stream never finishes by itself, so without a limit a shutdown would wait on every open board until the container is killed.
+
 See [architecture.md](architecture.md) for the system layout and [../CONTRIBUTING.md](../CONTRIBUTING.md) for contributor workflow and local checks.
