@@ -1,7 +1,12 @@
 import { describe as group, expect, it } from 'vitest'
 
 import type { NotificationRead } from '@/api/generated/models'
-import { badgeLabel, describe, issueHref } from '@/notifications/notificationMeta'
+import {
+  badgeLabel,
+  describe,
+  issueHref,
+  unreadAnnouncement,
+} from '@/notifications/notificationMeta'
 
 const base: NotificationRead = {
   id: 1,
@@ -54,5 +59,17 @@ group('badgeLabel', () => {
     expect(badgeLabel(0)).toBe('0')
     expect(badgeLabel(9)).toBe('9')
     expect(badgeLabel(10)).toBe('9+')
+  })
+})
+
+group('unreadAnnouncement', () => {
+  it('reads as a sentence, with the exact count', () => {
+    expect(unreadAnnouncement(1)).toBe('1 unread notification')
+    expect(unreadAnnouncement(3)).toBe('3 unread notifications')
+    expect(unreadAnnouncement(12)).toBe('12 unread notifications')
+  })
+
+  it('says nothing for zero, since nothing arriving is not news', () => {
+    expect(unreadAnnouncement(0)).toBe('')
   })
 })

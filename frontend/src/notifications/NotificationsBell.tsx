@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 
-import { badgeLabel } from '@/notifications/notificationMeta'
+import { badgeLabel, unreadAnnouncement } from '@/notifications/notificationMeta'
 import { NotificationsInbox } from '@/notifications/NotificationsInbox'
 import { useUnreadCount } from '@/notifications/useNotifications'
 import { Icon } from '@/ui/Icon'
@@ -65,6 +65,14 @@ export function NotificationsBell({
           </span>
         )}
       </button>
+
+      {/* A changing aria-label is never announced, so the poll's result also
+          lands here. Outside the button, or it would double up in the name;
+          always mounted, since a live region only announces changes made
+          after it exists. */}
+      <span aria-live="polite" className="sr-only">
+        {unreadAnnouncement(unread)}
+      </span>
 
       {open && anchor && <NotificationsInbox anchor={anchor} onClose={onClose} />}
     </>

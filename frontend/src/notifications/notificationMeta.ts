@@ -44,6 +44,15 @@ export function badgeLabel(unread: number): string {
   return unread > 9 ? '9+' : String(unread)
 }
 
+/**
+ * What a screen reader hears when the count changes. Empty at zero: nothing
+ * arriving is not news, and an empty live region announces nothing.
+ */
+export function unreadAnnouncement(unread: number): string {
+  if (unread === 0) return ''
+  return `${unread} unread notification${unread === 1 ? '' : 's'}`
+}
+
 /** Between a floating panel and the control it hangs from, and the viewport. */
 const GAP = 8
 
