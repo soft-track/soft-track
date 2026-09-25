@@ -5,9 +5,10 @@ Two implementations behind one function, chosen by the dialect at runtime:
 * **Postgres** uses `to_tsvector` / `plainto_tsquery` ranked by `ts_rank`,
   backed by GIN indexes. That is the deployment target, and the one that stays
   fast and handles stemming -- "deploying" finds "deploy".
-* **SQLite** falls back to case-insensitive LIKE. It is the local-development
-  default, it has no stemming, and it will degrade on a large dataset. Saying
-  that plainly beats pretending one code path serves both equally.
+* **SQLite** uses FTS5 (#85): tables over the same text, kept in step by
+  triggers -- see search_fts.py -- ranked by `bm25()`, with Porter stemming
+  so "deploying" finds "deploy" here too. Only a SQLite built without FTS5
+  falls back to case-insensitive LIKE, which has no ranking and no stemming.
 
 Two properties hold either way. Tenancy is filtered *in the query*, never as a
 post-filter, so a bug in ranking or pagination can never widen the scope. And
@@ -19,18 +20,21 @@ from typing import Optional
 
 from sqlalchemy import (
     Float,
+    Integer,
     String,
     cast,
     func,
     literal_column,
     or_,
     select as sa_select,
+    text,
 )
 from sqlmodel import Session, select
 
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.models.search import SearchHit
 from lib_softtrack.models.statuses import StatusRead
+from lib_softtrack.search_fts import fts_query
 from lib_softtrack.tables import (
     Comment,
     Issue,
@@ -69,9 +73,18 @@ def search_issues(
         return Page(items=[], total=0, limit=limit, offset=offset)
 
     postgres = session.get_bind().dialect.name == "postgresql"
-    condition, order_by = (
-        _postgres_query(query, team_ids) if postgres else _like_query(query, team_ids)
-    )
+    fts = not postgres and _fts_ready(session)
+    if postgres:
+        condition, order_by = _postgres_query(query, team_ids)
+    elif fts:
+        match = fts_query(query)
+        if match is None:
+            # Nothing but punctuation: no words to look for, so nothing
+            # matches -- which is what plainto_tsquery makes of it too.
+            return Page(items=[], total=0, limit=limit, offset=offset)
+        condition, order_by = _fts_query(match, team_ids)
+    else:
+        condition, order_by = _like_query(query, team_ids)
 
     total = session.exec(select(func.count()).select_from(Issue).where(condition)).one()
 
@@ -89,13 +102,17 @@ def search_issues(
 
     # One query for every matching comment on the page, rather than one per
     # result. Ordered so the first row per issue is the earliest match.
+    # The same matching rule as the search itself, so a comment that found an
+    # issue through stemming ("deploying" for "deploy") is the one quoted.
+    comment_matches = (
+        Comment.id.in_(_fts_matches("comment_fts", fts_query(query)))
+        if fts
+        else cast(Comment.body, String).ilike(f"%{query}%")
+    )
     comment_by_issue: dict[int, str] = {}
     for comment in session.exec(
         select(Comment)
-        .where(
-            Comment.issue_id.in_([issue.id for issue in issues]),
-            cast(Comment.body, String).ilike(f"%{query}%"),
-        )
+        .where(Comment.issue_id.in_([issue.id for issue in issues]), comment_matches)
         .order_by(Comment.created_at)
     ).all():
         comment_by_issue.setdefault(comment.issue_id, comment.body)
@@ -177,6 +194,65 @@ def _postgres_query(query: str, team_ids: list[int]):
     # are not equally interesting, and the fresher one almost always is.
     rank = cast(func.ts_rank(document, tsquery), Float)
     return condition, (rank.desc(), Issue.updated_at.desc())
+
+
+def _fts_ready(session: Session) -> bool:
+    """Whether this SQLite database has the FTS5 index. Only a SQLite built
+    without FTS5 lacks it, and that one keeps the LIKE path."""
+    return (
+        session.exec(
+            text(
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'issue_fts'"
+            )
+        ).first()
+        is not None
+    )
+
+
+def _fts_matches(table: str, match: str):
+    """The rowids `match` finds in one FTS5 table, as a subquery.
+
+    `match` goes in as a bound parameter, never into the SQL text -- and it
+    has already been through `fts_query`, which leaves nothing FTS5 would read
+    as an operator.
+    """
+    return (
+        text(f"SELECT rowid AS id FROM {table} WHERE {table} MATCH :match")
+        .bindparams(match=match)
+        .columns(id=Integer)
+        .subquery()
+        .select()
+    )
+
+
+def _fts_query(match: str, team_ids: list[int]):
+    """The FTS5 search, held to the same contract as the Postgres one.
+
+    Relevance first, from the issue's own title and description; an issue
+    found only through a comment comes after every issue whose own text
+    matched, as with `ts_rank` on Postgres, which scores such an issue 0.
+    Recency breaks ties. bm25() is "lower is better", so it sorts ascending.
+    """
+    scored = (
+        text(
+            "SELECT rowid AS id, bm25(issue_fts) AS score"
+            " FROM issue_fts WHERE issue_fts MATCH :match"
+        )
+        .bindparams(match=match)
+        .columns(id=Integer, score=Float)
+        .subquery()
+    )
+    comment_ids = _fts_matches("comment_fts", match)
+    found_via_comment = sa_select(Comment.issue_id).where(Comment.id.in_(comment_ids))
+
+    condition = (Issue.team_id.in_(team_ids)) & or_(
+        Issue.id.in_(sa_select(scored.c.id)),
+        Issue.id.in_(found_via_comment),
+    )
+    score = sa_select(scored.c.score).where(scored.c.id == Issue.id).scalar_subquery()
+    # Past any real bm25() score, which is never positive.
+    unmatched = 1e9
+    return condition, (func.coalesce(score, unmatched).asc(), Issue.updated_at.desc())
 
 
 def _like_query(query: str, team_ids: list[int]):

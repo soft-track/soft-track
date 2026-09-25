@@ -1,8 +1,9 @@
 """Search across issues and comments (issue #19).
 
-These run on SQLite, which takes the LIKE path. The Postgres path is exercised
-against the real stack -- see the PR -- because a tsvector query cannot be
-faked on a dialect that has none. The behaviours asserted here (tenancy,
+These run on SQLite, which takes the FTS5 path (#85; see
+tests/test_search_fts.py for what is specific to it). The Postgres path is
+exercised against the real stack -- see the PR -- because a tsvector query
+cannot be faked on a dialect that has none. The behaviours asserted here (tenancy,
 attribution, snippets, paging) are dialect-independent by design.
 """
 
