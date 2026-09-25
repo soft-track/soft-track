@@ -2,6 +2,7 @@ import { useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 
 import {
   DndContext,
+  KeyboardSensor,
   PointerSensor,
   useDroppable,
   useSensor,
@@ -11,6 +12,12 @@ import {
 
 import type { EstimateSummary, IssueRead, StatusRead } from '@/api/generated/models'
 import { type BoardGrouping, groupByProject, projectForDropTarget } from '@/board/grouping'
+import {
+  announcements,
+  columnCoordinates,
+  INSTRUCTIONS,
+  KEYBOARD_CODES,
+} from '@/board/keyboardDrag'
 import { IssueCard } from '@/issues/IssueCard'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
@@ -189,7 +196,20 @@ export function KanbanBoard({
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    // The same move without a mouse (#80): Space to pick up, arrows to change
+    // column, Space or Enter to drop, Escape to cancel.
+    useSensor(KeyboardSensor, {
+      coordinateGetter: columnCoordinates,
+      keyboardCodes: KEYBOARD_CODES,
+    }),
   )
+  // While a card is held, the arrow keys belong to the drag, not to moving
+  // focus between cards.
+  const [dragging, setDragging] = useState(false)
+  // Read and written by the announcements, which are rebuilt every render.
+  // One object for the board's lifetime; state, not a ref, because it is
+  // handed to them while rendering.
+  const [drag] = useState(() => ({ moved: false }))
   const { statuses, projects } = useTeamContext()
   const [collapsed, setCollapsed] = useState<Set<string> | null>(null)
   // Seeded from the team's own columns on first render rather than in state's
@@ -237,7 +257,7 @@ export function KanbanBoard({
    */
   const moveFocus = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     const keys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']
-    if (!keys.includes(event.key)) return
+    if (dragging || !keys.includes(event.key)) return
 
     const board = event.currentTarget
     const active = document.activeElement
@@ -275,6 +295,7 @@ export function KanbanBoard({
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
+    setDragging(false)
     const { active, over } = event
     if (!over) return
     const issueId = Number(active.id)
@@ -322,7 +343,24 @@ export function KanbanBoard({
     : undefined
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={() => setDragging(true)}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setDragging(false)}
+      accessibility={{
+        screenReaderInstructions: INSTRUCTIONS,
+        announcements: announcements({
+          issueName: (id) =>
+            issues.find((issue) => issue.id === Number(id))?.identifier ?? 'The issue',
+          columnName: (id) => columns.find((column) => column.id === id)?.name ?? null,
+          startColumn: (id) =>
+            columns.find((column) => column.issues.some((issue) => issue.id === Number(id)))
+              ?.name ?? null,
+          drag,
+        }),
+      }}
+    >
       <div
         className="scroll-thin flex h-full snap-x snap-mandatory gap-3 overflow-x-auto pb-1 lg:snap-none"
         onKeyDown={moveFocus}

@@ -73,12 +73,18 @@ export function IssueCard({
         if (e.shiftKey) e.preventDefault()
       }}
       onKeyDown={(e) => {
-        // The card is a div, so Enter and Space have to be wired by hand to
-        // match what a real button would do.
-        if (e.key === 'Enter' || e.key === ' ') {
+        // Enter opens the issue, as it would on a real button. Everything
+        // else goes to dnd-kit, which picks the card up on Space (#80) --
+        // this handler replaces the one spread in from `listeners`, so it
+        // has to be handed on explicitly or the keyboard sensor never hears
+        // a thing. Enter while a card is held is the drop, not an open.
+        if (e.key === 'Enter') {
+          if (isDragging) return
           e.preventDefault()
           open()
+          return
         }
+        listeners?.onKeyDown?.(e)
       }}
       className={`glass-card relative w-full cursor-grab touch-none rounded-card p-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/70 active:cursor-grabbing ${
         selected ? 'bg-brand-500/10 ring-2 ring-brand-500/70' : ''

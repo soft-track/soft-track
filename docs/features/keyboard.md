@@ -11,6 +11,15 @@ status, priority, assignee, project, cycle or labels on all of them in one
 transactional request, or deletes them after a confirmation. Dragging a
 selected card moves the whole selection, and `Esc` clears it.
 
+**Cards move between columns without a mouse.** On a focused card, Space
+picks it up. The left and right arrow keys carry it one column at a time,
+and Space or Enter drops it. Escape puts it back where it was. Every step is
+read out to screen readers in plain words ("Moved ENG-42 to In Progress"),
+never as internal ids. Enter on a card that isn't picked up still opens the
+issue, which is why Enter doesn't pick cards up. Moving a card that's part
+of a selection moves the whole selection, just as dragging with the mouse
+does.
+
 On an open issue, `S`, `P`, `A` and `L` jump to status, priority, assignee and
 labels — the panel prints those letters next to the
 fields, so the shortcut is discoverable from the thing it acts on.
