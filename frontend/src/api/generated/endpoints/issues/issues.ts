@@ -27,6 +27,8 @@ import type {
 import type {
   EstimateSummary,
   HTTPValidationError,
+  IssueBulkDelete,
+  IssueBulkUpdate,
   IssueCreate,
   IssueLinkCreate,
   IssueLinkRead,
@@ -226,6 +228,151 @@ export function useListIssuesTeamsTeamIdIssuesGet<TData = Awaited<ReturnType<typ
 
 
 /**
+ * Apply one set of changes to up to 200 of the team's issues.
+ *
+ * Transactional: every issue changes or none does. Returns the issues as the
+ * batch left them, in the order they were asked for.
+ * @summary Bulk Update Issues
+ */
+export const bulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost = (
+    teamId: number,
+    issueBulkUpdate: IssueBulkUpdate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<IssueRead[]>(
+      {url: `/teams/${teamId}/issues/bulk-update`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: issueBulkUpdate, signal
+    },
+      );
+    }
+
+
+
+
+export const getBulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePostMutationKey = () => ['bulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost'] as const;
+
+export const getBulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost>>, TError,BulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof bulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost>>, TError,BulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePostMutationVariables, TContext> => {
+
+const mutationKey = getBulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost>>, BulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePostMutationVariables> = (props) => {
+          const {teamId,data} = props ?? {};
+
+          return  bulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost(teamId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePostMutationResult = NonNullable<Awaited<ReturnType<typeof bulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost>>>
+    export type BulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePostMutationBody = IssueBulkUpdate
+    export type BulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePostMutationError = HTTPValidationError
+    export type BulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePostMutationVariables = {teamId: number;data: IssueBulkUpdate}
+
+    /**
+ * @summary Bulk Update Issues
+ */
+export const useBulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost>>, TError,BulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof bulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost>>,
+        TError,
+        BulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getBulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePostMutationOptions(options), queryClient);
+    }
+    /**
+ * Delete up to 200 of the team's issues, all of them or none.
+ *
+ * A POST rather than a DELETE with a body, which too many clients and
+ * proxies drop. Each issue goes the way a single delete takes it --
+ * attachments with it, sub-issues promoted.
+ * @summary Bulk Delete Issues
+ */
+export const bulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePost = (
+    teamId: number,
+    issueBulkDelete: IssueBulkDelete,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/teams/${teamId}/issues/bulk-delete`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: issueBulkDelete, signal
+    },
+      );
+    }
+
+
+
+
+export const getBulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePostMutationKey = () => ['bulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePost'] as const;
+
+export const getBulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePost>>, TError,BulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof bulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePost>>, TError,BulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePostMutationVariables, TContext> => {
+
+const mutationKey = getBulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePost>>, BulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePostMutationVariables> = (props) => {
+          const {teamId,data} = props ?? {};
+
+          return  bulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePost(teamId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePostMutationResult = NonNullable<Awaited<ReturnType<typeof bulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePost>>>
+    export type BulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePostMutationBody = IssueBulkDelete
+    export type BulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePostMutationError = HTTPValidationError
+    export type BulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePostMutationVariables = {teamId: number;data: IssueBulkDelete}
+
+    /**
+ * @summary Bulk Delete Issues
+ */
+export const useBulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePost>>, TError,BulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof bulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePost>>,
+        TError,
+        BulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getBulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePostMutationOptions(options), queryClient);
+    }
+    /**
  * Story-point rollups by column and by assignee for the whole team.
  *
  * Separate from the issue list because the list is paginated: summing a page

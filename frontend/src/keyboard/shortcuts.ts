@@ -28,6 +28,9 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { keys: ['←', '→'], description: 'Move between columns' },
       { keys: ['↑', '↓'], description: 'Move between cards' },
       { keys: ['Enter'], description: 'Open the focused issue' },
+      { keys: ['⌘', 'Click'], description: 'Add or remove an issue from the selection' },
+      { keys: ['⇧', 'Click'], description: 'Select a range of issues' },
+      { keys: ['Esc'], description: 'Clear the selection' },
     ],
   },
   {

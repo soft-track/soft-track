@@ -1,12 +1,22 @@
 import { useNavigate } from 'react-router-dom'
 
 import type { IssueRead } from '@/api/generated/models'
+import { selectionGesture } from '@/board/selection'
 import { EstimateBadge } from '@/issues/EstimateBadge'
 import { PriorityIcon } from '@/issues/PriorityIcon'
 import { useTeamContext } from '@/team/TeamContext'
 import { Avatar } from '@/ui/Avatar'
 
-export function IssueListView({ issues }: { issues: IssueRead[] }) {
+export function IssueListView({
+  issues,
+  selectedIds = [],
+  onSelect,
+}: {
+  issues: IssueRead[]
+  selectedIds?: readonly number[]
+  /** `order` is the list as shown, which is what a shift-click range runs over. */
+  onSelect?: (issueId: number, gesture: 'range' | 'toggle', order: readonly number[]) => void
+}) {
   const navigate = useNavigate()
   const { team } = useTeamContext()
 
@@ -23,13 +33,33 @@ export function IssueListView({ issues }: { issues: IssueRead[] }) {
       <ul className="divide-y divide-neutral-900/8">
         {issues.map((issue) => {
           const status = issue.status
+          const selected = selectedIds.includes(issue.id)
           return (
             <li key={issue.id}>
               <button
                 type="button"
-                onClick={() => navigate(`/${team.key}/issue/${issue.number}`)}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-neutral-900/4 focus:outline-none focus-visible:bg-brand-500/10"
+                data-selected={selected || undefined}
+                onClick={(e) => {
+                  const gesture = selectionGesture(e)
+                  if (gesture && onSelect) {
+                    onSelect(
+                      issue.id,
+                      gesture,
+                      issues.map((row) => row.id),
+                    )
+                    return
+                  }
+                  navigate(`/${team.key}/issue/${issue.number}`)
+                }}
+                // Shift-click would otherwise extend a text selection down the list.
+                onMouseDown={(e) => {
+                  if (e.shiftKey) e.preventDefault()
+                }}
+                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors focus:outline-none focus-visible:bg-brand-500/10 ${
+                  selected ? 'bg-brand-500/10 hover:bg-brand-500/15' : 'hover:bg-neutral-900/4'
+                }`}
               >
+                {selected && <span className="sr-only">Selected. </span>}
                 <PriorityIcon priority={issue.priority} />
                 <span className="identifier w-16 shrink-0 text-xs font-medium text-neutral-400">
                   {issue.identifier}

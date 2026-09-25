@@ -21,6 +21,18 @@ def get_team_or_404(team_id: int, session: Session) -> Team:
     return team
 
 
+def is_team_member(team_id: int, user_id: int, session: Session) -> bool:
+    """Whether a user id -- not necessarily the caller's -- is on the team."""
+    return (
+        session.exec(
+            select(TeamMember.user_id).where(
+                TeamMember.team_id == team_id, TeamMember.user_id == user_id
+            )
+        ).first()
+        is not None
+    )
+
+
 def require_team_member(team_id: int, user: User, session: Session) -> TeamMember:
     """Every team-scoped endpoint funnels through here; it is the tenancy boundary."""
     membership = session.exec(

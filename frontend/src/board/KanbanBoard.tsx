@@ -30,11 +30,15 @@ function Column({
   issues,
   load,
   onCollapse,
+  selectedIds,
+  onSelect,
 }: {
   status: StatusRead
   issues: IssueRead[]
   load?: Load
   onCollapse: () => void
+  selectedIds: readonly number[]
+  onSelect?: (issueId: number, gesture: 'range' | 'toggle') => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status.id })
 
@@ -85,7 +89,12 @@ function Column({
 
       <div className="scroll-thin flex-1 space-y-2 overflow-y-auto px-2 pb-2">
         {issues.map((issue) => (
-          <IssueCard key={issue.id} issue={issue} />
+          <IssueCard
+            key={issue.id}
+            issue={issue}
+            selected={selectedIds.includes(issue.id)}
+            onSelect={onSelect}
+          />
         ))}
         {issues.length === 0 && (
           <div className="flex h-24 items-center justify-center rounded-card border border-dashed border-neutral-900/10 text-xs text-neutral-400">
@@ -140,11 +149,19 @@ export function KanbanBoard({
   issues,
   onStatusChange,
   estimates,
+  selectedIds = [],
+  onSelect,
+  onBulkStatusChange,
 }: {
   issues: IssueRead[]
   onStatusChange: (issueId: number, status: StatusRead) => void
   /** Server-side point rollups. Undefined while they load. */
   estimates?: EstimateSummary
+  selectedIds?: readonly number[]
+  /** `order` is the cards on screen, column by column, for a shift-click range. */
+  onSelect?: (issueId: number, gesture: 'range' | 'toggle', order: readonly number[]) => void
+  /** Dropping one card of a selection moves all of it, in one request. */
+  onBulkStatusChange?: (issueIds: readonly number[], status: StatusRead) => void
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -222,11 +239,34 @@ export function KanbanBoard({
     if (!over) return
     const issueId = Number(active.id)
     const target = statuses.find((status) => status.id === Number(over.id))
+    if (!target) return
+    // Dragging a card that is part of a selection carries the selection with
+    // it -- the same thing a file manager does, and the reason to have
+    // selected them. A card outside the selection moves on its own.
+    if (onBulkStatusChange && selectedIds.length > 1 && selectedIds.includes(issueId)) {
+      const moving = selectedIds.filter(
+        (id) => issues.find((i) => i.id === id)?.status.id !== target.id,
+      )
+      if (moving.length > 0) onBulkStatusChange(moving, target)
+      return
+    }
     const issue = issues.find((i) => i.id === issueId)
-    if (issue && target && issue.status.id !== target.id) {
+    if (issue && issue.status.id !== target.id) {
       onStatusChange(issueId, target)
     }
   }
+
+  // What a shift-click range runs over: the cards actually on screen, column
+  // by column. A folded column's cards are left out, so a range can never
+  // select something nobody could see.
+  const visibleOrder = statuses
+    .filter((status) => !folded.has(status.id))
+    .flatMap((status) =>
+      issues.filter((issue) => issue.status.id === status.id).map((issue) => issue.id),
+    )
+  const selectCard = onSelect
+    ? (issueId: number, gesture: 'range' | 'toggle') => onSelect(issueId, gesture, visibleOrder)
+    : undefined
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
@@ -250,6 +290,8 @@ export function KanbanBoard({
               issues={inColumn}
               load={estimates?.by_status?.[String(status.id)]}
               onCollapse={() => setCollapsedFor(status, true)}
+              selectedIds={selectedIds}
+              onSelect={selectCard}
             />
           )
         })}

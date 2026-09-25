@@ -3,12 +3,22 @@ import { CSS } from '@dnd-kit/utilities'
 import { useNavigate } from 'react-router-dom'
 
 import type { IssueRead } from '@/api/generated/models'
+import { selectionGesture } from '@/board/selection'
 import { EstimateBadge } from '@/issues/EstimateBadge'
 import { PriorityIcon } from '@/issues/PriorityIcon'
 import { useTeamContext } from '@/team/TeamContext'
 import { Avatar } from '@/ui/Avatar'
 
-export function IssueCard({ issue }: { issue: IssueRead }) {
+export function IssueCard({
+  issue,
+  selected = false,
+  onSelect,
+}: {
+  issue: IssueRead
+  selected?: boolean
+  /** A shift- or ⌘/Ctrl-click. Without it those clicks open the issue like any other. */
+  onSelect?: (issueId: number, gesture: 'range' | 'toggle') => void
+}) {
   const navigate = useNavigate()
   const { team } = useTeamContext()
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -40,7 +50,19 @@ export function IssueCard({ issue }: { issue: IssueRead }) {
       role="button"
       tabIndex={0}
       data-card={issue.id}
-      onClick={open}
+      data-selected={selected || undefined}
+      onClick={(e) => {
+        const gesture = selectionGesture(e)
+        if (gesture && onSelect) {
+          onSelect(issue.id, gesture)
+          return
+        }
+        open()
+      }}
+      // Shift-click would otherwise extend a text selection across the board.
+      onMouseDown={(e) => {
+        if (e.shiftKey) e.preventDefault()
+      }}
       onKeyDown={(e) => {
         // The card is a div, so Enter and Space have to be wired by hand to
         // match what a real button would do.
@@ -49,8 +71,11 @@ export function IssueCard({ issue }: { issue: IssueRead }) {
           open()
         }
       }}
-      className="glass-card relative w-full cursor-grab touch-none rounded-card p-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/70 active:cursor-grabbing"
+      className={`glass-card relative w-full cursor-grab touch-none rounded-card p-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/70 active:cursor-grabbing ${
+        selected ? 'bg-brand-500/10 ring-2 ring-brand-500/70' : ''
+      }`}
     >
+      {selected && <span className="sr-only">Selected. </span>}
       <div className="mb-1.5 flex items-center justify-between gap-2">
         <span className="identifier text-[11px] font-medium text-neutral-400">
           {issue.identifier}

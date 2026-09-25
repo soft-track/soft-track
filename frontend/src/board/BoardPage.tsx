@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { useListIssuesTeamsTeamIdIssuesGet } from '@/api/generated/endpoints/issues/issues'
 import { useSearchSearchGet } from '@/api/generated/endpoints/search/search'
 import type { IssueRead, SavedViewRead } from '@/api/generated/models'
 import { useAuth } from '@/auth/AuthContext'
+import { BulkActionBar } from '@/board/BulkActionBar'
 import {
   type BoardFilters,
   fromSearchParams,
@@ -15,8 +16,10 @@ import {
 } from '@/board/filters'
 import { IssueListView } from '@/board/IssueListView'
 import { KanbanBoard } from '@/board/KanbanBoard'
+import { EMPTY_SELECTION, selectionReducer } from '@/board/selection'
 import { Sidebar } from '@/board/Sidebar'
 import { TopBar } from '@/board/TopBar'
+import { useBulkEdit } from '@/board/useBulkEdit'
 import { useOverlays } from '@/board/useOverlays'
 import { useStatusChange } from '@/board/useStatusChange'
 import { CycleBanner } from '@/cycles/CycleBanner'
@@ -28,6 +31,7 @@ import { CommandPalette } from '@/keyboard/CommandPalette'
 import { ShortcutsCheatsheet } from '@/keyboard/ShortcutsCheatsheet'
 import { type BoardView, useCommands } from '@/keyboard/useCommands'
 import { useGlobalShortcuts } from '@/keyboard/useGlobalShortcuts'
+import { isTypingTarget } from '@/keyboard/typing'
 import { ReportsView } from '@/reports/ReportsView'
 import { SearchResults } from '@/search/SearchResults'
 import { useDebounced } from '@/search/useDebounced'
@@ -107,6 +111,25 @@ export default function BoardPage() {
   // page that was loaded, which is the bug that moved filtering server-side.
   const issues = useMemo(() => issuesQuery.data?.items ?? [], [issuesQuery.data])
 
+  const [selection, dispatchSelection] = useReducer(selectionReducer, EMPTY_SELECTION)
+  const bulk = useBulkEdit(team)
+  const { clearError } = bulk
+  const clearSelection = useCallback(() => {
+    dispatchSelection({ type: 'clear' })
+    clearError()
+  }, [clearError])
+  const selectIssue = useCallback(
+    (id: number, gesture: 'range' | 'toggle', order: readonly number[]) =>
+      dispatchSelection(gesture === 'range' ? { type: 'range', id, order } : { type: 'toggle', id }),
+    [],
+  )
+  // A selection only ever holds what is on screen. Changing a filter, or a
+  // refetch after somebody else deleted one, drops what went away -- so the
+  // bar can never act on an issue nobody can see any more.
+  useEffect(() => {
+    dispatchSelection({ type: 'retain', visible: issues.map((issue) => issue.id) })
+  }, [issues])
+
   // Search runs on the server. The old client-side filter could only see the
   // page that was already loaded, and only matched titles.
   const searchQuery = useDebounced(search.trim(), 250)
@@ -135,6 +158,20 @@ export default function BoardPage() {
     openNewIssue,
     openShortcuts,
   })
+
+  // Escape clears the selection, but only once there is nothing above the
+  // board for it to close first -- the global handler closes overlays, and an
+  // open issue panel has its own.
+  const hasSelection = selection.ids.length > 0
+  const escapeClearsSelection = hasSelection && overlays.top === null && !issueNumber
+  useEffect(() => {
+    if (!escapeClearsSelection) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isTypingTarget(event.target)) clearSelection()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [escapeClearsSelection, clearSelection])
 
   const openIssueFromPalette = useCallback(
     (issue: IssueRead) => navigate(`/${team?.key}/issue/${issue.number}`),
@@ -243,14 +280,20 @@ export default function BoardPage() {
                 issues={issues}
                 onStatusChange={changeStatus}
                 estimates={teamData.estimates}
+                selectedIds={selection.ids}
+                onSelect={selectIssue}
+                onBulkStatusChange={(ids, status) => bulk.update(ids, { status_id: status.id })}
               />
             ) : (
-              <IssueListView issues={issues} />
+              <IssueListView issues={issues} selectedIds={selection.ids} onSelect={selectIssue} />
             )}
           </div>
         </div>
       </div>
 
+      {hasSelection && !searchQuery && view !== 'reports' && (
+        <BulkActionBar selectedIds={selection.ids} bulk={bulk} onClear={clearSelection} />
+      )}
       {overlays.isOpen('palette') && (
         <CommandPalette
           onClose={() => overlays.close('palette')}

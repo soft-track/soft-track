@@ -8,7 +8,13 @@ from lib_softtrack import estimates as estimates_service
 from lib_softtrack import issues as issues_service
 from lib_softtrack import links as links_service
 from lib_softtrack.models.estimates import EstimateSummary
-from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate
+from lib_softtrack.models.issues import (
+    IssueBulkDelete,
+    IssueBulkUpdate,
+    IssueCreate,
+    IssueRead,
+    IssueUpdate,
+)
 from lib_softtrack.models.links import IssueLinkCreate, IssueLinkRead, IssueLinks
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
 from lib_softtrack.storage import Storage, get_storage
@@ -63,6 +69,38 @@ def list_issues(
         limit=limit,
         offset=offset,
     )
+
+
+@router.post("/teams/{team_id}/issues/bulk-update", response_model=list[IssueRead])
+def bulk_update_issues(
+    team_id: int,
+    payload: IssueBulkUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Apply one set of changes to up to 200 of the team's issues.
+
+    Transactional: every issue changes or none does. Returns the issues as the
+    batch left them, in the order they were asked for.
+    """
+    return issues_service.bulk_update_issues(session, current_user, team_id, payload)
+
+
+@router.post("/teams/{team_id}/issues/bulk-delete", status_code=204)
+def bulk_delete_issues(
+    team_id: int,
+    payload: IssueBulkDelete,
+    session: Session = Depends(get_session),
+    storage: Storage = Depends(get_storage),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete up to 200 of the team's issues, all of them or none.
+
+    A POST rather than a DELETE with a body, which too many clients and
+    proxies drop. Each issue goes the way a single delete takes it --
+    attachments with it, sub-issues promoted.
+    """
+    issues_service.bulk_delete_issues(session, current_user, team_id, payload, storage)
 
 
 @router.get("/teams/{team_id}/estimates", response_model=EstimateSummary)

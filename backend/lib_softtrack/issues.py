@@ -10,7 +10,15 @@ from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack import attachments as attachments_service
-from lib_softtrack.models.issues import IssueCreate, IssueRead, IssueUpdate, ParentRef
+from lib_softtrack.models.issues import (
+    IssueBulkChanges,
+    IssueBulkDelete,
+    IssueBulkUpdate,
+    IssueCreate,
+    IssueRead,
+    IssueUpdate,
+    ParentRef,
+)
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.models.statuses import StatusRead
 from lib_softtrack.history import record_changes, record_creation, snapshot
@@ -21,12 +29,14 @@ from lib_softtrack import rules as rules_service
 from lib_softtrack.links import open_blocker_counts
 from lib_softtrack.tables import (
     Comment,
+    Cycle,
     Issue,
     IssueEvent,
     IssueLabelLink,
     IssueLink,
     IssuePriority,
     Label,
+    Project,
     Team,
     User,
     WorkflowStatus,
@@ -34,7 +44,7 @@ from lib_softtrack.tables import (
 from lib_softtrack.statuses import default_status, resolve_for_team
 from lib_softtrack.storage import Storage
 from lib_softtrack.subissues import child_progress, detach_children, validate_parent
-from lib_softtrack.teams import get_team_or_404, require_team_member
+from lib_softtrack.teams import get_team_or_404, is_team_member, require_team_member
 
 
 def _parent_ref(issue: Issue, session: Session) -> Optional[ParentRef]:
@@ -361,6 +371,33 @@ def update_issue(
     issue = get_issue_or_404(session, issue_id)
     require_team_member(issue.team_id, current_user, session)
 
+    _apply_update(
+        session,
+        current_user,
+        issue,
+        payload.model_dump(exclude_unset=True, exclude={"label_ids"}),
+        payload.label_ids,
+    )
+
+    session.commit()
+    session.refresh(issue)
+    return issue_to_read(issue, session)
+
+
+def _apply_update(
+    session: Session,
+    current_user: User,
+    issue: Issue,
+    data: dict,
+    label_ids: Optional[list[int]],
+) -> None:
+    """Change one issue and everything that follows from it, without committing.
+
+    Shared by the single PATCH and the bulk edit, so an issue changed twenty
+    at a time gets the same history, notifications and automation runs as one
+    changed by hand. Committing is the caller's job: the bulk edit needs every
+    issue's changes in one transaction.
+    """
     before = snapshot(issue)
     # Three snapshots of the same row, and three different questions about it.
     # History tracks what can be charted, notifications track what somebody
@@ -369,7 +406,6 @@ def update_issue(
     # would mean every field added to one answer being added to all three.
     watched_before = notifications_service.snapshot(issue)
     rule_before = rules_service.snapshot(issue)
-    data = payload.model_dump(exclude_unset=True, exclude={"label_ids"})
     if data.get("status_id") is not None:
         # Moving an issue into another team's column would take it off its own
         # board entirely.
@@ -383,8 +419,8 @@ def update_issue(
     issue.updated_at = datetime.now(timezone.utc)
     session.add(issue)
 
-    if payload.label_ids is not None:
-        set_labels(issue.id, payload.label_ids, session)
+    if label_ids is not None:
+        set_labels(issue.id, label_ids, session)
 
     record_changes(session, issue, before, current_user)
     notifications_service.on_issue_updated(session, issue, watched_before, current_user)
@@ -393,16 +429,26 @@ def update_issue(
     # folded into the one the person made.
     rules_service.on_issue_updated(session, issue, rule_before, current_user)
 
-    session.commit()
-    session.refresh(issue)
-    return issue_to_read(issue, session)
-
 
 def delete_issue(
     session: Session, current_user: User, issue_id: int, storage: Storage
 ) -> None:
     issue = get_issue_or_404(session, issue_id)
     require_team_member(issue.team_id, current_user, session)
+
+    storage_keys = _delete_rows(session, issue)
+    session.commit()
+
+    attachments_service.purge(storage, storage_keys)
+
+
+def _delete_rows(session: Session, issue: Issue) -> list[str]:
+    """Remove one issue and its dependents, without committing.
+
+    Returns the attachment keys whose bytes should be purged once the caller
+    has committed -- see `attachments.take_keys_for_issue`.
+    """
+    issue_id = issue.id
 
     # Clear the rows that point at this issue before removing it. Postgres
     # enforces these foreign keys and rejects the delete otherwise; SQLite only
@@ -481,6 +527,159 @@ def delete_issue(
     session.flush()
 
     session.delete(issue)
-    session.commit()
+    return storage_keys
+
+
+# ---------------------------------------------------------------------------
+# Bulk edit
+# ---------------------------------------------------------------------------
+
+
+def _team_issues_or_404(
+    session: Session, team_id: int, issue_ids: list[int]
+) -> list[Issue]:
+    """Every requested issue, in the order asked for, or a 404 for all of them.
+
+    Scoped to the team in the path: an id from another team is reported as
+    not found rather than forbidden, the same answer a single GET gives, so
+    the endpoint cannot be used to probe which ids exist elsewhere.
+    """
+    wanted = list(dict.fromkeys(issue_ids))
+    found = {
+        issue.id: issue
+        for issue in session.exec(
+            select(Issue).where(Issue.team_id == team_id, Issue.id.in_(wanted))
+        ).all()
+    }
+    missing = [issue_id for issue_id in wanted if issue_id not in found]
+    if missing:
+        raise HTTPException(
+            status_code=404,
+            detail="Issues not found on this team: "
+            + ", ".join(str(issue_id) for issue_id in missing),
+        )
+    return [found[issue_id] for issue_id in wanted]
+
+
+def _require_on_team(
+    session: Session, model: type, row_id: Optional[int], team_id: int, noun: str
+) -> None:
+    """A project, cycle or label id from the request, checked against the team.
+
+    Checked once up front rather than left to the foreign key: a row from
+    another team satisfies the foreign key and would quietly file twenty
+    issues somewhere their own board cannot see.
+    """
+    if row_id is None:
+        return
+    row = session.get(model, row_id)
+    if row is None or row.team_id != team_id:
+        raise HTTPException(status_code=400, detail=f"No such {noun} on this team")
+
+
+def _validate_bulk_changes(
+    session: Session, team_id: int, changes: IssueBulkChanges
+) -> None:
+    resolve_for_team(session, team_id, changes.status_id)
+    _require_on_team(session, Project, changes.project_id, team_id, "project")
+    _require_on_team(session, Cycle, changes.cycle_id, team_id, "cycle")
+    for label_id in {*changes.add_label_ids, *changes.remove_label_ids}:
+        _require_on_team(session, Label, label_id, team_id, "label")
+    if set(changes.add_label_ids) & set(changes.remove_label_ids):
+        raise HTTPException(
+            status_code=400, detail="A label cannot be both added and removed."
+        )
+    if changes.assignee_id is not None and not is_team_member(
+        team_id, changes.assignee_id, session
+    ):
+        raise HTTPException(
+            status_code=400, detail="The assignee is not a member of this team."
+        )
+
+
+def _bulk_label_ids(
+    session: Session, issue: Issue, add: list[int], remove: list[int]
+) -> Optional[list[int]]:
+    """The issue's label set after the add and remove, or None if unchanged."""
+    if not add and not remove:
+        return None
+    current = set(
+        session.exec(
+            select(IssueLabelLink.label_id).where(IssueLabelLink.issue_id == issue.id)
+        ).all()
+    )
+    wanted = (current | set(add)) - set(remove)
+    return sorted(wanted) if wanted != current else None
+
+
+def bulk_update_issues(
+    session: Session, current_user: User, team_id: int, payload: IssueBulkUpdate
+) -> list[IssueRead]:
+    """Apply one set of changes to many issues, all of them or none.
+
+    Everything that can be checked once is checked before anything changes.
+    What can only fail per issue fails inside the transaction, and the whole
+    batch is rolled back rather than leaving the first half changed: a bulk
+    edit that stops partway leaves somebody to work out which half landed.
+    """
+    get_team_or_404(team_id, session)
+    require_team_member(team_id, current_user, session)
+    issues = _team_issues_or_404(session, team_id, payload.issue_ids)
+
+    changes = payload.changes
+    _validate_bulk_changes(session, team_id, changes)
+    data = changes.model_dump(
+        exclude_unset=True, exclude={"add_label_ids", "remove_label_ids"}
+    )
+    # Status and priority have no "cleared" state, so a null for either is
+    # read as "leave it alone" rather than written to a non-null column.
+    for field in ("status_id", "priority"):
+        if data.get(field, ...) is None:
+            del data[field]
+
+    try:
+        for issue in issues:
+            _apply_update(
+                session,
+                current_user,
+                issue,
+                data,
+                _bulk_label_ids(
+                    session, issue, changes.add_label_ids, changes.remove_label_ids
+                ),
+            )
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    return _expand_issues(issues, session)
+
+
+def bulk_delete_issues(
+    session: Session,
+    current_user: User,
+    team_id: int,
+    payload: IssueBulkDelete,
+    storage: Storage,
+) -> None:
+    """Delete many issues in one transaction, then purge their attachments.
+
+    Deleting a parent and one of its sub-issues in the same batch is fine in
+    either order: the parent's delete promotes the child, and the child's
+    delete removes it.
+    """
+    get_team_or_404(team_id, session)
+    require_team_member(team_id, current_user, session)
+    issues = _team_issues_or_404(session, team_id, payload.issue_ids)
+
+    storage_keys: list[str] = []
+    try:
+        for issue in issues:
+            storage_keys += _delete_rows(session, issue)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
 
     attachments_service.purge(storage, storage_keys)

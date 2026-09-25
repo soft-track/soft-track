@@ -116,3 +116,46 @@ class IssueRead(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+#: The most issues one bulk request may touch. The board's page size, so
+#: "select everything on screen" always fits in one request, and a mistake
+#: can never reach further than what somebody could see when they made it.
+MAX_BULK_ISSUES = 200
+
+BulkIssueIds = Annotated[
+    list[int],
+    Field(
+        min_length=1,
+        max_length=MAX_BULK_ISSUES,
+        description=f"Between 1 and {MAX_BULK_ISSUES} issues, all on this team.",
+    ),
+]
+
+
+class IssueBulkChanges(BaseModel):
+    """What to do to every issue in the batch. Omitted fields are left alone.
+
+    The same unset-versus-null distinction as `IssueUpdate`: an explicit null
+    assignee, project or cycle clears it on every issue.
+    """
+
+    status_id: Optional[int] = None
+    priority: Optional[IssuePriority] = None
+    assignee_id: Optional[int] = None
+    project_id: Optional[int] = None
+    cycle_id: Optional[int] = None
+    #: Labels are added and removed rather than replaced. Twenty issues rarely
+    #: share a label set, and "set these labels" across them would silently
+    #: strip whatever each one had that the others did not.
+    add_label_ids: list[int] = []
+    remove_label_ids: list[int] = []
+
+
+class IssueBulkUpdate(BaseModel):
+    issue_ids: BulkIssueIds
+    changes: IssueBulkChanges
+
+
+class IssueBulkDelete(BaseModel):
+    issue_ids: BulkIssueIds
