@@ -10,7 +10,7 @@ import enum
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import Index, UniqueConstraint
 from sqlmodel import SQLModel, Field
 
 from lib_utils.password import is_usable_password
@@ -384,6 +384,8 @@ class Label(SQLModel, table=True):
 
 
 class Issue(SQLModel, table=True):
+    __table_args__ = (Index("ix_issue_team_number", "team_id", "number", unique=True),)
+
     id: Optional[int] = Field(default=None, primary_key=True)
     team_id: int = Field(foreign_key="team.id", index=True)
     project_id: Optional[int] = Field(

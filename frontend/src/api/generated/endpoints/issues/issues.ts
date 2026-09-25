@@ -322,6 +322,105 @@ export function useGetEstimateSummaryTeamsTeamIdEstimatesGet<TData = Awaited<Ret
 
 
 /**
+ * @summary Get Issue By Number
+ */
+export const getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet = (
+    teamId: number,
+    number: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<IssueRead>(
+      {url: `/teams/${teamId}/issues/by-number/${number}`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getGetIssueByNumberTeamsTeamIdIssuesByNumberNumberGetQueryKey = (teamId: number,
+    number: number,) => {
+    return [
+    `/teams/${teamId}/issues/by-number/${number}`
+    ] as const;
+    }
+
+
+export const getGetIssueByNumberTeamsTeamIdIssuesByNumberNumberGetQueryOptions = <TData = Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>, TError = HTTPValidationError>(teamId: number,
+    number: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetIssueByNumberTeamsTeamIdIssuesByNumberNumberGetQueryKey(teamId,number);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>> = ({ signal }) => getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet(teamId,number, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: teamId !== null && teamId !== undefined && number !== null && number !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetIssueByNumberTeamsTeamIdIssuesByNumberNumberGetQueryResult = NonNullable<Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>>
+export type GetIssueByNumberTeamsTeamIdIssuesByNumberNumberGetQueryError = HTTPValidationError
+
+
+export function useGetIssueByNumberTeamsTeamIdIssuesByNumberNumberGet<TData = Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    number: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>,
+          TError,
+          Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetIssueByNumberTeamsTeamIdIssuesByNumberNumberGet<TData = Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    number: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>,
+          TError,
+          Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetIssueByNumberTeamsTeamIdIssuesByNumberNumberGet<TData = Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    number: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Issue By Number
+ */
+
+export function useGetIssueByNumberTeamsTeamIdIssuesByNumberNumberGet<TData = Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    number: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIssueByNumberTeamsTeamIdIssuesByNumberNumberGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetIssueByNumberTeamsTeamIdIssuesByNumberNumberGetQueryOptions(teamId,number,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
  * @summary Get Issue
  */
 export const getIssueIssuesIssueIdGet = (

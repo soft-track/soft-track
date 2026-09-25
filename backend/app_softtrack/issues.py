@@ -79,6 +79,16 @@ def get_estimate_summary(
     return estimates_service.estimate_summary(session, current_user, team_id)
 
 
+@router.get("/teams/{team_id}/issues/by-number/{number}", response_model=IssueRead)
+def get_issue_by_number(
+    team_id: int,
+    number: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    return issues_service.get_issue_by_number(session, current_user, team_id, number)
+
+
 @router.get("/issues/{issue_id}", response_model=IssueRead)
 def get_issue(
     issue_id: int,

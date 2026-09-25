@@ -5,11 +5,13 @@ it happened is gone. So these tests are about what gets written, not about
 what the charts do with it.
 """
 
+from sqlmodel import select
+
 from lib_softtrack.tables import IssueEvent, IssueEventField
 
 
 def events(session, issue_id, field=None):
-    rows = session.query(IssueEvent).filter(IssueEvent.issue_id == issue_id).all()
+    rows = session.exec(select(IssueEvent).where(IssueEvent.issue_id == issue_id)).all()
     if field is not None:
         rows = [row for row in rows if row.field is field]
     return sorted(rows, key=lambda row: row.id)

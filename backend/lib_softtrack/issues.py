@@ -342,6 +342,19 @@ def get_issue(session: Session, current_user: User, issue_id: int) -> IssueRead:
     return issue_to_read(issue, session)
 
 
+def get_issue_by_number(
+    session: Session, current_user: User, team_id: int, number: int
+) -> IssueRead:
+    get_team_or_404(team_id, session)
+    require_team_member(team_id, current_user, session)
+    issue = session.exec(
+        select(Issue).where(Issue.team_id == team_id, Issue.number == number)
+    ).one_or_none()
+    if not issue:
+        raise HTTPException(status_code=404, detail="Issue not found")
+    return issue_to_read(issue, session)
+
+
 def update_issue(
     session: Session, current_user: User, issue_id: int, payload: IssueUpdate
 ) -> IssueRead:

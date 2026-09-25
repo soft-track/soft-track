@@ -7,7 +7,7 @@ neither routing (`app_*`) nor business logic (`lib_*`) lives here.
 from pathlib import Path
 
 from pydantic import model_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import inspect
 from sqlmodel import Session, create_engine
 
@@ -118,8 +118,7 @@ class Settings(BaseSettings):
     #: dozen issues generates one mail, not twelve.
     digest_delay_minutes: int = 10
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file=".env")
 
     @model_validator(mode="after")
     def _refuse_the_published_secret_in_production(self) -> "Settings":
