@@ -7,7 +7,9 @@
  */
 import type { DueFilter } from './dueFilter';
 import type { IssuePriority } from './issuePriority';
+import type { IssueSort } from './issueSort';
 import type { IssueType } from './issueType';
+import type { SortDirection } from './sortDirection';
 
 export type ListIssuesTeamsTeamIdIssuesGetParams = {
 project_id?: number | null;
@@ -45,6 +47,14 @@ today?: string | null;
  * Only issues of this type.
  */
 type?: IssueType | null;
+/**
+ * What to order by.
+ */
+sort?: IssueSort;
+/**
+ * desc is newest, most urgent, largest, or Z first.
+ */
+direction?: SortDirection;
 /**
  * @minimum 1
  * @maximum 200

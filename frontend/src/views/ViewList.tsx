@@ -10,7 +10,7 @@ import {
   NO_FILTERS,
   sameFilters,
 } from '@/board/filters'
-import type { BoardGrouping } from '@/board/grouping'
+import { type Arrangement, fromViewSort, sameSort } from '@/board/sorting'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { useSavedViews } from '@/views/useSavedViews'
@@ -25,15 +25,15 @@ import { useSavedViews } from '@/views/useSavedViews'
  */
 export function ViewList({
   filters,
-  grouping,
+  arrangement,
   onApply,
   onEdit,
   isAdmin,
 }: {
   filters: BoardFilters
-  grouping: BoardGrouping
-  /** A view applies its grouping too; "All issues" only clears the filters. */
-  onApply: (filters: BoardFilters, grouping?: BoardGrouping) => void
+  arrangement: Arrangement
+  /** A view applies its grouping and sort too; "All issues" only clears filters. */
+  onApply: (filters: BoardFilters, arrangement?: Arrangement) => void
   onEdit: (view: SavedViewRead) => void
   isAdmin: boolean
 }) {
@@ -61,7 +61,7 @@ export function ViewList({
           key={view.id}
           view={view}
           filters={filters}
-          grouping={grouping}
+          arrangement={arrangement}
           views={views}
           onApply={onApply}
           onEdit={onEdit}
@@ -75,7 +75,7 @@ export function ViewList({
           key={view.id}
           view={view}
           filters={filters}
-          grouping={grouping}
+          arrangement={arrangement}
           views={views}
           onApply={onApply}
           onEdit={onEdit}
@@ -93,7 +93,7 @@ function Group({ label }: { label: string }) {
 function ViewRow({
   view,
   filters,
-  grouping,
+  arrangement,
   views,
   onApply,
   onEdit,
@@ -101,9 +101,9 @@ function ViewRow({
 }: {
   view: SavedViewRead
   filters: BoardFilters
-  grouping: BoardGrouping
+  arrangement: Arrangement
   views: ReturnType<typeof useSavedViews>
-  onApply: (filters: BoardFilters, grouping?: BoardGrouping) => void
+  onApply: (filters: BoardFilters, arrangement?: Arrangement) => void
   onEdit: (view: SavedViewRead) => void
   isAdmin: boolean
 }) {
@@ -120,8 +120,11 @@ function ViewRow({
     return () => window.removeEventListener('resize', measure)
   }, [menuOpen])
 
+  const viewSort = fromViewSort(view.sort, view.sort_direction)
   const showing =
-    view.group_by === grouping && sameFilters(filters, fromViewFilters(view.filters))
+    view.group_by === arrangement.grouping &&
+    sameSort(viewSort, arrangement.sort) &&
+    sameFilters(filters, fromViewFilters(view.filters))
   const isMine = views.myDefaultId === view.id
   const isTeams = views.teamDefaultId === view.id
   // Its owner, or an admin tidying up after somebody who left.
@@ -136,7 +139,9 @@ function ViewRow({
     <div className="group relative">
       <button
         type="button"
-        onClick={() => onApply(fromViewFilters(view.filters), view.group_by)}
+        onClick={() =>
+          onApply(fromViewFilters(view.filters), { grouping: view.group_by, sort: viewSort })
+        }
         className="nav-item w-full pr-7"
         data-active={showing}
         title={view.is_shared ? `Shared by ${view.owner.full_name}` : 'Only you can see this'}

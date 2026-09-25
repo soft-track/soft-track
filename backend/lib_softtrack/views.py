@@ -64,6 +64,8 @@ def _to_read(view: SavedView, owner: User) -> SavedViewRead:
             type=view.type,
         ),
         group_by=view.group_by,
+        sort=view.sort,
+        sort_direction=view.sort_direction,
         created_at=view.created_at,
         updated_at=view.updated_at,
     )
@@ -233,6 +235,8 @@ def create_view(
         owner_id=current_user.id,
         is_shared=payload.is_shared,
         group_by=payload.group_by,
+        sort=payload.sort,
+        sort_direction=payload.sort_direction,
     )
     _apply_filters(view, payload.filters)
     session.add(view)
@@ -254,6 +258,13 @@ def update_view(
         _apply_filters(view, payload.filters)
     if payload.group_by is not None:
         view.group_by = payload.group_by
+    # Sorting is set as a pair and may be set back to the default (null), so
+    # it follows whatever was sent rather than skipping nulls.
+    sent = payload.model_fields_set
+    if "sort" in sent:
+        view.sort = payload.sort
+    if "sort_direction" in sent:
+        view.sort_direction = payload.sort_direction
     if payload.is_shared is not None and payload.is_shared != view.is_shared:
         view.is_shared = payload.is_shared
         if not view.is_shared:

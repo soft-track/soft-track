@@ -6,6 +6,13 @@ import { summarise } from '@/board/filterLabels'
 import type { BoardFilters } from '@/board/filters'
 import { toViewFilters } from '@/board/filters'
 import type { BoardGrouping } from '@/board/grouping'
+import {
+  type BoardSort,
+  DEFAULT_SORT,
+  isDefaultSort,
+  SORT_OPTIONS,
+  toViewSort,
+} from '@/board/sorting'
 import { useTeamContext } from '@/team/useTeamContext'
 import { useSavedViews } from '@/views/useSavedViews'
 import { useFocusTrap } from '@/ui/useFocusTrap'
@@ -20,12 +27,15 @@ import { useFocusTrap } from '@/ui/useFocusTrap'
 export function SaveViewModal({
   filters,
   grouping,
+  sort = DEFAULT_SORT,
   editing,
   onClose,
 }: {
   filters: BoardFilters
   /** Saved with the filters, so the view opens arranged the way it was saved. */
   grouping: BoardGrouping
+  /** Saved with the filters too (#88). */
+  sort?: BoardSort
   editing?: SavedViewRead
   onClose: () => void
 }) {
@@ -48,9 +58,16 @@ export function SaveViewModal({
           is_shared: isShared,
           filters: toViewFilters(filters),
           group_by: grouping,
+          ...toViewSort(sort),
         })
       } else {
-        await views.save(name.trim(), toViewFilters(filters), isShared, grouping)
+        await views.save(
+          name.trim(),
+          toViewFilters(filters),
+          isShared,
+          grouping,
+          toViewSort(sort),
+        )
       }
       onClose()
     } catch (err: unknown) {
@@ -79,6 +96,10 @@ export function SaveViewModal({
         <p className="mt-1 text-xs text-neutral-500">
           {summarise(filters, { members, labels, projects, cycles, statuses })}
           {grouping === 'project' && ' · grouped by project'}
+          {!isDefaultSort(sort) &&
+            ` · sorted by ${SORT_OPTIONS.find((o) => o.sort === sort.sort)?.label.toLowerCase()}, ${
+              sort.direction === 'asc' ? 'ascending' : 'descending'
+            }`}
         </p>
 
         {error && (

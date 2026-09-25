@@ -11,6 +11,7 @@ import {
 } from '@/api/generated/endpoints/views/views'
 import type {
   IssueGrouping,
+  SavedViewCreate,
   SavedViewRead,
   SavedViewUpdate,
   ViewFilters,
@@ -48,10 +49,16 @@ export function useSavedViews(teamId: number) {
     /** What the board opens on: the personal override, else the team's. */
     effectiveDefaultId: query.data?.effective_default_id ?? null,
 
-    async save(name: string, filters: ViewFilters, isShared: boolean, groupBy: IssueGrouping) {
+    async save(
+      name: string,
+      filters: ViewFilters,
+      isShared: boolean,
+      groupBy: IssueGrouping,
+      sort: Pick<SavedViewCreate, 'sort' | 'sort_direction'> = {},
+    ) {
       const view = await create.mutateAsync({
         teamId,
-        data: { name, is_shared: isShared, filters, group_by: groupBy },
+        data: { name, is_shared: isShared, filters, group_by: groupBy, ...sort },
       })
       await refresh()
       return view

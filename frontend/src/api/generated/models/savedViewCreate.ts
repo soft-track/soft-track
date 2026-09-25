@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { IssueGrouping } from './issueGrouping';
+import type { IssueSort } from './issueSort';
+import type { SortDirection } from './sortDirection';
 import type { ViewFilters } from './viewFilters';
 
 export interface SavedViewCreate {
@@ -17,4 +19,6 @@ export interface SavedViewCreate {
   is_shared?: boolean;
   filters?: ViewFilters;
   group_by?: IssueGrouping;
+  sort?: IssueSort | null;
+  sort_direction?: SortDirection | null;
 }

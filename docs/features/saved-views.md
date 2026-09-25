@@ -43,3 +43,10 @@ keys. It's left out for the default, so every link sent before grouping existed
 still opens exactly as it did. The `project` key still means "filter to this
 project", as it always has. A view is marked as showing only when both its
 filters and its grouping match what's on screen.
+
+**The list can be sorted** by created, updated, priority, estimate or title,
+in either direction (#88). "Descending" puts the newest, most urgent, largest
+or Z first. Unestimated issues come last either way, because "not sized yet"
+isn't a small estimate. Ties are broken newest first, so paging never splits
+or repeats issues. Like the grouping, the sort is in the link as `sort=` and
+`dir=`, left out when it's the default (newest first), and saved views keep it.

@@ -15,6 +15,14 @@ import {
   toSearchParams,
 } from '@/board/filters'
 import { type BoardGrouping, groupingFromSearchParams, withGrouping } from '@/board/grouping'
+import {
+  type Arrangement,
+  type BoardSort,
+  fromViewSort,
+  sameSort,
+  sortFromSearchParams,
+  withSort,
+} from '@/board/sorting'
 import { IssueListView } from '@/board/IssueListView'
 import { KanbanBoard } from '@/board/KanbanBoard'
 import { EMPTY_SELECTION, selectionReducer } from '@/board/selection'
@@ -70,16 +78,35 @@ export default function BoardPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const filters = useMemo(() => fromSearchParams(searchParams), [searchParams])
   const grouping = groupingFromSearchParams(searchParams)
-  // The grouping rides along in the same URL, so changing a filter keeps it
-  // and a saved view can set both at once. Undefined leaves it as it is.
+  const sort = sortFromSearchParams(searchParams)
+  // The grouping and the sort ride along in the same URL, so changing a
+  // filter keeps them and a saved view can set all three at once.
+  const writeUrl = useCallback(
+    (
+      nextFilters: BoardFilters,
+      nextGrouping: BoardGrouping,
+      nextSort: BoardSort,
+      options?: { replace: boolean },
+    ) =>
+      setSearchParams(
+        withSort(withGrouping(toSearchParams(nextFilters), nextGrouping), nextSort),
+        options,
+      ),
+    [setSearchParams],
+  )
+  /** Undefined leaves the arrangement as it is; a saved view brings its own. */
   const setFilters = useCallback(
-    (next: BoardFilters, nextGrouping?: BoardGrouping) =>
-      setSearchParams(withGrouping(toSearchParams(next), nextGrouping ?? grouping)),
-    [setSearchParams, grouping],
+    (next: BoardFilters, arrangement?: Arrangement) =>
+      writeUrl(next, arrangement?.grouping ?? grouping, arrangement?.sort ?? sort),
+    [writeUrl, grouping, sort],
   )
   const setGrouping = useCallback(
-    (next: BoardGrouping) => setSearchParams(withGrouping(toSearchParams(filters), next)),
-    [setSearchParams, filters],
+    (next: BoardGrouping) => writeUrl(filters, next, sort),
+    [writeUrl, filters, sort],
+  )
+  const setSort = useCallback(
+    (next: BoardSort) => writeUrl(filters, grouping, next),
+    [writeUrl, filters, grouping],
   )
 
   const teamData = useTeamData(team)
@@ -107,12 +134,14 @@ export default function BoardPage() {
       (candidate) => candidate.id === savedViews.effectiveDefaultId,
     )
     if (landing) {
-      setSearchParams(
-        withGrouping(toSearchParams(fromViewFilters(landing.filters)), landing.group_by),
+      writeUrl(
+        fromViewFilters(landing.filters),
+        landing.group_by,
+        fromViewSort(landing.sort, landing.sort_direction),
         { replace: true },
       )
     }
-  }, [urlIsBare, team, savedViews, setSearchParams])
+  }, [urlIsBare, team, savedViews, writeUrl])
 
   // Hold the issue query until the URL cannot still be rewritten from under
   // it. When a team default exists this still costs one superseded request on
@@ -120,7 +149,10 @@ export default function BoardPage() {
   // -- which is a fair price for not duplicating the precedence rule here.
   const filtersAreSettled = !urlIsBare || !savedViews.isLoading
 
-  const issuesParams = useMemo(() => toQueryParams(filters), [filters])
+  const issuesParams = useMemo(
+    () => ({ ...toQueryParams(filters), sort: sort.sort, direction: sort.direction }),
+    [filters, sort.sort, sort.direction],
+  )
   const issuesQuery = useListIssuesTeamsTeamIdIssuesGet(team?.id ?? 0, issuesParams, {
     query: { enabled: Boolean(team) && filtersAreSettled && projectPageId === null },
   })
@@ -218,15 +250,17 @@ export default function BoardPage() {
   // Nothing to save while this board is already a view somebody named.
   const matchesSavedView = savedViews.views.some(
     (candidate) =>
-      candidate.group_by === grouping && sameFilters(filters, fromViewFilters(candidate.filters)),
+      candidate.group_by === grouping &&
+      sameSort(sort, fromViewSort(candidate.sort, candidate.sort_direction)) &&
+      sameFilters(filters, fromViewFilters(candidate.filters)),
   )
 
   const sidebar = (
     <Sidebar
       filters={filters}
-      grouping={grouping}
-      onFiltersChange={(next, nextGrouping) => {
-        setFilters(next, nextGrouping)
+      arrangement={{ grouping, sort }}
+      onFiltersChange={(next, arrangement) => {
+        setFilters(next, arrangement)
         setSidebarOpen(false)
       }}
       onEditView={(target) => {
@@ -276,6 +310,8 @@ export default function BoardPage() {
               onViewChange={setView}
               grouping={grouping}
               onGroupingChange={setGrouping}
+              sort={sort}
+              onSortChange={setSort}
               onNewIssue={openNewIssue}
               onOpenSidebar={() => setSidebarOpen(true)}
               search={search}
@@ -354,6 +390,11 @@ export default function BoardPage() {
         <SaveViewModal
           filters={editingView ? fromViewFilters(editingView.filters) : filters}
           grouping={editingView ? editingView.group_by : grouping}
+          sort={
+            editingView
+              ? fromViewSort(editingView.sort, editingView.sort_direction)
+              : sort
+          }
           editing={editingView ?? undefined}
           onClose={() => {
             overlays.close('saveView')

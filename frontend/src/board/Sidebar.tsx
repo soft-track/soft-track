@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import type { SavedViewRead } from '@/api/generated/models'
 import { useAuth } from '@/auth/useAuth'
 import type { BoardFilters } from '@/board/filters'
-import type { BoardGrouping } from '@/board/grouping'
+import type { Arrangement } from '@/board/sorting'
 import { CycleList } from '@/cycles/CycleList'
 import { InvitesBanner } from '@/team/InvitesBanner'
 import { pickableProjects } from '@/team/projects'
@@ -17,7 +17,7 @@ import { ViewList } from '@/views/ViewList'
 
 export function Sidebar({
   filters,
-  grouping,
+  arrangement,
   onFiltersChange,
   onEditView,
   isAdmin,
@@ -25,9 +25,9 @@ export function Sidebar({
   onImport,
 }: {
   filters: BoardFilters
-  grouping: BoardGrouping
-  /** A grouping comes with a saved view; everything else leaves it alone. */
-  onFiltersChange: (filters: BoardFilters, grouping?: BoardGrouping) => void
+  arrangement: Arrangement
+  /** A saved view brings its grouping and sort; everything else leaves them. */
+  onFiltersChange: (filters: BoardFilters, arrangement?: Arrangement) => void
   onEditView: (view: SavedViewRead) => void
   /** Team admins can set the team default and tidy up others' shared views. */
   isAdmin: boolean
@@ -81,7 +81,7 @@ export function Sidebar({
               "Private" heading it read as somebody's saved view. */}
           <ViewList
             filters={filters}
-            grouping={grouping}
+            arrangement={arrangement}
             onApply={onFiltersChange}
             onEdit={onEditView}
             isAdmin={isAdmin}

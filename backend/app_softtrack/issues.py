@@ -21,7 +21,14 @@ from lib_softtrack.models.issues import (
 from lib_softtrack.models.links import IssueLinkCreate, IssueLinkRead, IssueLinks
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
 from lib_softtrack.storage import Storage, get_storage
-from lib_softtrack.tables import DueFilter, IssuePriority, IssueType, User
+from lib_softtrack.tables import (
+    DueFilter,
+    IssuePriority,
+    IssueSort,
+    IssueType,
+    SortDirection,
+    User,
+)
 from web import get_session
 
 router = APIRouter(tags=["issues"])
@@ -64,6 +71,11 @@ def list_issues(
         ),
     ),
     type: Optional[IssueType] = Query(None, description="Only issues of this type."),
+    sort: IssueSort = Query(IssueSort.created, description="What to order by."),
+    direction: SortDirection = Query(
+        SortDirection.desc,
+        description="desc is newest, most urgent, largest, or Z first.",
+    ),
     limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(0, ge=0),
     session: Session = Depends(get_session),
@@ -84,6 +96,8 @@ def list_issues(
         due=due,
         today=today,
         type=type,
+        sort=sort,
+        direction=direction,
         limit=limit,
         offset=offset,
     )

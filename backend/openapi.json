@@ -2047,6 +2047,28 @@
             "description": "Only issues of this type."
           },
           {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/IssueSort",
+              "description": "What to order by.",
+              "default": "created"
+            },
+            "description": "What to order by."
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection",
+              "description": "desc is newest, most urgent, largest, or Z first.",
+              "default": "desc"
+            },
+            "description": "desc is newest, most urgent, largest, or Z first."
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -7541,6 +7563,18 @@
         ],
         "title": "IssueRead"
       },
+      "IssueSort": {
+        "type": "string",
+        "enum": [
+          "created",
+          "updated",
+          "priority",
+          "estimate",
+          "title"
+        ],
+        "title": "IssueSort",
+        "description": "What the issue list can be ordered by (#88)."
+      },
       "IssueType": {
         "type": "string",
         "enum": [
@@ -9073,6 +9107,26 @@
           "group_by": {
             "$ref": "#/components/schemas/IssueGrouping",
             "default": "status"
+          },
+          "sort": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssueSort"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sort_direction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SortDirection"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -9107,6 +9161,26 @@
           },
           "group_by": {
             "$ref": "#/components/schemas/IssueGrouping"
+          },
+          "sort": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssueSort"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sort_direction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SortDirection"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "created_at": {
             "type": "string",
@@ -9173,6 +9247,26 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/IssueGrouping"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sort": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssueSort"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sort_direction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SortDirection"
               },
               {
                 "type": "null"
@@ -9329,6 +9423,14 @@
           "snippet"
         ],
         "title": "SearchHit"
+      },
+      "SortDirection": {
+        "type": "string",
+        "enum": [
+          "asc",
+          "desc"
+        ],
+        "title": "SortDirection"
       },
       "StatusCategory": {
         "type": "string",

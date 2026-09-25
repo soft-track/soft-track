@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
-from sqlalchemy import func, or_
+from sqlalchemy import case, func, or_
 from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
@@ -35,9 +35,11 @@ from lib_softtrack.tables import (
     IssueLabelLink,
     IssueLink,
     IssuePriority,
+    IssueSort,
     IssueType,
     Label,
     Project,
+    SortDirection,
     Team,
     User,
     WorkflowStatus,
@@ -303,6 +305,8 @@ def list_issues(
     due: Optional[DueFilter] = None,
     today: Optional[date] = None,
     type: Optional[IssueType] = None,
+    sort: IssueSort = IssueSort.created,
+    direction: SortDirection = SortDirection.desc,
     limit: int = DEFAULT_LIMIT,
     offset: int = 0,
 ) -> Page[IssueRead]:
@@ -356,7 +360,7 @@ def list_issues(
     issues = session.exec(
         select(Issue)
         .where(*filters)
-        .order_by(Issue.number.desc())
+        .order_by(*_ordering(sort, direction))
         .offset(offset)
         .limit(limit)
     ).all()
@@ -457,6 +461,48 @@ def _apply_update(
     # changes are recorded as a separate step in the history rather than
     # folded into the one the person made.
     rules_service.on_issue_updated(session, issue, rule_before, current_user)
+
+
+#: Most urgent highest, so "descending" reads as "most urgent first" -- the
+#: way a person means "sort by priority".
+_PRIORITY_RANK = {
+    IssuePriority.urgent: 4,
+    IssuePriority.high: 3,
+    IssuePriority.medium: 2,
+    IssuePriority.low: 1,
+    IssuePriority.no_priority: 0,
+}
+
+
+def _ordering(sort: IssueSort, direction: SortDirection) -> list:
+    """ORDER BY for the issue list (#88).
+
+    Every ordering ends on the issue number, newest first, so issues that
+    tie -- the same priority, no estimate -- come back in a stable order
+    and a page boundary never splits or repeats them.
+    """
+    descending = direction == SortDirection.desc
+    newest_first = Issue.number.desc()
+    if sort == IssueSort.created:
+        return [newest_first if descending else Issue.number.asc()]
+    if sort == IssueSort.updated:
+        key = Issue.updated_at
+    elif sort == IssueSort.priority:
+        key = case(
+            *[(Issue.priority == p, rank) for p, rank in _PRIORITY_RANK.items()],
+            else_=0,
+        )
+    elif sort == IssueSort.title:
+        key = func.lower(Issue.title)
+    else:
+        # Unsized last whichever way round: an estimate of "none" is not a
+        # small estimate, and sorting it among the ones would say it was.
+        return [
+            Issue.estimate.is_(None),
+            Issue.estimate.desc() if descending else Issue.estimate.asc(),
+            newest_first,
+        ]
+    return [key.desc() if descending else key.asc(), newest_first]
 
 
 def _due_filter(due: DueFilter, today: date):

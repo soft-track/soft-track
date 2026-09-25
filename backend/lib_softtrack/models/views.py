@@ -4,7 +4,14 @@ from typing import Optional
 from pydantic import BaseModel, Field, model_validator
 
 from lib_identity.models.identity import UserPublic
-from lib_softtrack.tables import DueFilter, IssueGrouping, IssuePriority, IssueType
+from lib_softtrack.tables import (
+    DueFilter,
+    IssueGrouping,
+    IssuePriority,
+    IssueSort,
+    IssueType,
+    SortDirection,
+)
 
 
 class ViewFilters(BaseModel):
@@ -48,6 +55,9 @@ class SavedViewCreate(BaseModel):
     #: and a grouping only arranges it, and `ViewFilters` is also the shape
     #: of the board's issue query, which has no use for a grouping.
     group_by: IssueGrouping = IssueGrouping.status
+    #: How the list is ordered (#88). Null is the default: newest first.
+    sort: Optional[IssueSort] = None
+    sort_direction: Optional[SortDirection] = None
 
 
 class SavedViewUpdate(BaseModel):
@@ -58,6 +68,8 @@ class SavedViewUpdate(BaseModel):
     is_shared: Optional[bool] = None
     filters: Optional[ViewFilters] = None
     group_by: Optional[IssueGrouping] = None
+    sort: Optional[IssueSort] = None
+    sort_direction: Optional[SortDirection] = None
 
 
 class SavedViewRead(BaseModel):
@@ -68,6 +80,8 @@ class SavedViewRead(BaseModel):
     is_shared: bool
     filters: ViewFilters
     group_by: IssueGrouping
+    sort: Optional[IssueSort] = None
+    sort_direction: Optional[SortDirection] = None
     created_at: datetime
     updated_at: datetime
 

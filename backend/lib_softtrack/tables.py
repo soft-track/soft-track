@@ -103,6 +103,25 @@ class IssueType(str, enum.Enum):
     story = "story"
 
 
+class IssueSort(str, enum.Enum):
+    """What the issue list can be ordered by (#88)."""
+
+    #: When it was filed. The default, and what the list always did.
+    created = "created"
+    updated = "updated"
+    #: Urgent first when descending; "no priority" is the lowest of all.
+    priority = "priority"
+    #: Largest first when descending. Unsized issues come last either way.
+    estimate = "estimate"
+    #: Alphabetical, ignoring case.
+    title = "title"
+
+
+class SortDirection(str, enum.Enum):
+    asc = "asc"
+    desc = "desc"
+
+
 class IssuePriority(str, enum.Enum):
     no_priority = "no_priority"
     urgent = "urgent"
@@ -758,6 +777,10 @@ class SavedView(SQLModel, table=True):
     #: Not a filter -- it narrows nothing -- but part of what a view *is*: the
     #: same issues read very differently by column and by project.
     group_by: IssueGrouping = Field(default=IssueGrouping.status)
+    #: How the list is ordered (#88). Null is the default, newest first --
+    #: which is what every view saved before this column existed showed.
+    sort: Optional[IssueSort] = None
+    sort_direction: Optional[SortDirection] = None
 
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)

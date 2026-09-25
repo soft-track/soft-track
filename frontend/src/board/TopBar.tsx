@@ -1,6 +1,7 @@
 import { FilterBar } from '@/board/FilterBar'
 import type { BoardFilters } from '@/board/filters'
 import type { BoardGrouping } from '@/board/grouping'
+import { type BoardSort, SORT_OPTIONS } from '@/board/sorting'
 import type { BoardView } from '@/keyboard/useCommands'
 import { NotificationsBell } from '@/notifications/NotificationsBell'
 import { useTeamContext } from '@/team/useTeamContext'
@@ -19,6 +20,8 @@ export function TopBar({
   onViewChange,
   grouping,
   onGroupingChange,
+  sort,
+  onSortChange,
   onNewIssue,
   onOpenSidebar,
   search,
@@ -35,6 +38,8 @@ export function TopBar({
   onViewChange: (view: BoardView) => void
   grouping: BoardGrouping
   onGroupingChange: (grouping: BoardGrouping) => void
+  sort: BoardSort
+  onSortChange: (sort: BoardSort) => void
   onNewIssue: () => void
   onOpenSidebar: () => void
   search: string
@@ -94,6 +99,39 @@ export function TopBar({
           <option value="status">By status</option>
           <option value="project">By project</option>
         </Select>
+      )}
+
+      {/* The list's order (#88). The board is ordered by hand instead. */}
+      {view === 'list' && (
+        <div className="flex items-center gap-1">
+          <Select
+            dense
+            value={sort.sort}
+            onChange={(e) => onSortChange({ ...sort, sort: e.target.value as BoardSort['sort'] })}
+            aria-label="Sort by"
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.sort} value={option.sort}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+          <button
+            type="button"
+            onClick={() =>
+              onSortChange({ ...sort, direction: sort.direction === 'asc' ? 'desc' : 'asc' })
+            }
+            className="btn btn-ghost btn-icon btn-sm"
+            aria-label={
+              sort.direction === 'asc'
+                ? 'Ascending; switch to descending'
+                : 'Descending; switch to ascending'
+            }
+            title={sort.direction === 'asc' ? 'Ascending' : 'Descending'}
+          >
+            <Icon name={sort.direction === 'asc' ? 'chevron-up' : 'chevron-down'} size={14} />
+          </button>
+        </div>
       )}
 
       <FilterBar

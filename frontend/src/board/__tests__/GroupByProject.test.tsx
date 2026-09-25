@@ -21,6 +21,7 @@ import type {
   TeamMemberRead,
 } from '@/api/generated/models'
 import { NO_FILTERS } from '@/board/filters'
+import { DEFAULT_SORT } from '@/board/sorting'
 import { IssueListView } from '@/board/IssueListView'
 import { KanbanBoard } from '@/board/KanbanBoard'
 import { TeamProvider } from '@/team/TeamContext'
@@ -209,20 +210,62 @@ describe('saved views carry the grouping', () => {
     mocks.list.data = { items: [savedView(1, 'Planning', 'project')] }
     const onApply = vi.fn()
     const user = renderWith(
-      <ViewList filters={NO_FILTERS} grouping="status" onApply={onApply} onEdit={() => {}} isAdmin />,
+      <ViewList filters={NO_FILTERS} arrangement={{ grouping: 'status', sort: DEFAULT_SORT }} onApply={onApply} onEdit={() => {}} isAdmin />,
     )
 
     await user.click(screen.getByRole('button', { name: 'Planning' }))
-    expect(onApply).toHaveBeenCalledWith(NO_FILTERS, 'project')
+    expect(onApply).toHaveBeenCalledWith(NO_FILTERS, {
+      grouping: 'project',
+      sort: DEFAULT_SORT,
+    })
   })
 
   it('only marks a view as showing when the grouping matches too', () => {
     mocks.list.data = { items: [savedView(1, 'Planning', 'project')] }
     renderWith(
-      <ViewList filters={NO_FILTERS} grouping="status" onApply={() => {}} onEdit={() => {}} isAdmin />,
+      <ViewList filters={NO_FILTERS} arrangement={{ grouping: 'status', sort: DEFAULT_SORT }} onApply={() => {}} onEdit={() => {}} isAdmin />,
     )
     const row = screen.getByRole('button', { name: 'Planning' })
     expect(row.getAttribute('data-active')).toBe('false')
+  })
+
+  it('applies a view’s sort along with it (#88)', async () => {
+    mocks.list.data = {
+      items: [{ ...savedView(1, 'Hot', 'status'), sort: 'priority', sort_direction: 'desc' }],
+    }
+    const onApply = vi.fn()
+    const user = renderWith(
+      <ViewList
+        filters={NO_FILTERS}
+        arrangement={{ grouping: 'status', sort: DEFAULT_SORT }}
+        onApply={onApply}
+        onEdit={() => {}}
+        isAdmin
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'Hot' }))
+    expect(onApply).toHaveBeenCalledWith(NO_FILTERS, {
+      grouping: 'status',
+      sort: { sort: 'priority', direction: 'desc' },
+    })
+  })
+
+  it('saves the sort with a new view, and nothing for the default (#88)', async () => {
+    const user = renderWith(
+      <SaveViewModal
+        filters={NO_FILTERS}
+        grouping="status"
+        sort={{ sort: 'title', direction: 'asc' }}
+        onClose={() => {}}
+      />,
+    )
+    expect(screen.getByText(/sorted by title, ascending/)).toBeTruthy()
+    await user.type(screen.getByRole('textbox'), 'A to Z')
+    await user.click(screen.getByRole('button', { name: 'Save view' }))
+    expect(mocks.create.mutateAsync).toHaveBeenCalledWith({
+      teamId: 7,
+      data: expect.objectContaining({ sort: 'title', sort_direction: 'asc' }),
+    })
   })
 
   it('saves the grouping with a new view', async () => {
