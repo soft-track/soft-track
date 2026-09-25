@@ -8,7 +8,7 @@ import type {
 import type { BoardFilters } from '@/board/filters'
 import { NO_FILTERS } from '@/board/filters'
 import { DUE_FILTER_LABEL } from '@/issues/dueDate'
-import { PRIORITY_META } from '@/issues/issueMeta'
+import { PRIORITY_META, TYPE_META } from '@/issues/issueMeta'
 
 /** What the filter bar needs in order to name an id. */
 export type FilterLookups = {
@@ -97,6 +97,10 @@ export function describeFilters(
       field: 'Cycle',
       value: cycle?.display_name ?? 'Deleted cycle',
     })
+  }
+
+  if (filters.type !== null) {
+    chips.push({ key: 'type', field: 'Type', value: TYPE_META[filters.type].label })
   }
 
   if (filters.due !== null) {

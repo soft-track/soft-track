@@ -1,6 +1,7 @@
 import type {
   DueFilter,
   IssuePriority,
+  IssueType,
   ListIssuesTeamsTeamIdIssuesGetParams,
   ViewFilters,
 } from '@/api/generated/models'
@@ -28,6 +29,8 @@ export type BoardFilters = {
   cycleId: number | null
   /** Overdue, due this week, or no due date (#87). */
   due: DueFilter | null
+  /** Bug, task or story (#89). */
+  type: IssueType | null
 }
 
 export const NO_FILTERS: BoardFilters = {
@@ -38,6 +41,7 @@ export const NO_FILTERS: BoardFilters = {
   projectId: null,
   cycleId: null,
   due: null,
+  type: null,
 }
 
 /**
@@ -55,9 +59,11 @@ const KEYS = {
   projectId: 'project',
   cycleId: 'cycle',
   due: 'due',
+  type: 'type',
 } as const
 
 const DUE_VALUES: readonly string[] = ['overdue', 'this_week', 'none']
+const TYPE_VALUES: readonly string[] = ['bug', 'task', 'story']
 
 function readNumber(raw: string | null): number | null {
   if (raw === null) return null
@@ -84,6 +90,9 @@ export function fromSearchParams(params: URLSearchParams): BoardFilters {
     due: DUE_VALUES.includes(params.get(KEYS.due) ?? '')
       ? (params.get(KEYS.due) as DueFilter)
       : null,
+    type: TYPE_VALUES.includes(params.get(KEYS.type) ?? '')
+      ? (params.get(KEYS.type) as IssueType)
+      : null,
   }
 }
 
@@ -102,6 +111,7 @@ export function toSearchParams(filters: BoardFilters): URLSearchParams {
   if (filters.projectId !== null) params.set(KEYS.projectId, String(filters.projectId))
   if (filters.cycleId !== null) params.set(KEYS.cycleId, String(filters.cycleId))
   if (filters.due) params.set(KEYS.due, filters.due)
+  if (filters.type) params.set(KEYS.type, filters.type)
   return params
 }
 
@@ -125,6 +135,7 @@ export function toQueryParams(
     cycle_id: filters.cycleId ?? undefined,
     due: filters.due ?? undefined,
     today: filters.due ? today : undefined,
+    type: filters.type ?? undefined,
   }
 }
 
@@ -138,6 +149,7 @@ export function fromViewFilters(filters: ViewFilters): BoardFilters {
     projectId: filters.project_id ?? null,
     cycleId: filters.cycle_id ?? null,
     due: filters.due ?? null,
+    type: filters.type ?? null,
   }
 }
 
@@ -152,6 +164,7 @@ export function toViewFilters(filters: BoardFilters): ViewFilters {
     project_id: filters.projectId,
     cycle_id: filters.cycleId,
     due: filters.due,
+    type: filters.type,
   }
 }
 
@@ -180,6 +193,7 @@ export function sameFilters(a: BoardFilters, b: BoardFilters): boolean {
     a.labelId === b.labelId &&
     a.projectId === b.projectId &&
     a.cycleId === b.cycleId &&
-    a.due === b.due
+    a.due === b.due &&
+    a.type === b.type
   )
 }

@@ -84,6 +84,25 @@ class IssueGrouping(str, enum.Enum):
     project = "project"
 
 
+class IssueType(str, enum.Enum):
+    """What kind of work an issue is (#89).
+
+    A fixed three, deliberately: per-team custom types are how Jira's type
+    list grew until nobody could say what a "Sub-task (Technical)" was.
+
+    There is no `epic`. An epic is a Project (#60-#64) -- a grouping of issues
+    with a lead, a target date and progress -- and making it a type as well
+    would give the tracker two competing ways to say "these belong together".
+    """
+
+    #: Something that does not work as it should.
+    bug = "bug"
+    #: A piece of work that is not a bug or a user-facing story. The default.
+    task = "task"
+    #: A change described from the user's side.
+    story = "story"
+
+
 class IssuePriority(str, enum.Enum):
     no_priority = "no_priority"
     urgent = "urgent"
@@ -499,6 +518,7 @@ class Issue(SQLModel, table=True):
     #: started, done -- is the status's category; see StatusCategory.
     status_id: int = Field(foreign_key="workflowstatus.id", index=True)
     priority: IssuePriority = Field(default=IssuePriority.no_priority)
+    type: IssueType = Field(default=IssueType.task, index=True)
     assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
     # One level of nesting only -- an issue with a parent may not itself be a
     # parent. See lib_softtrack/subissues.py for why that limit is enforced
@@ -733,6 +753,7 @@ class SavedView(SQLModel, table=True):
     #: broken rather than empty.
     cycle_id: Optional[int] = Field(default=None, foreign_key="cycle.id")
     due: Optional[DueFilter] = None
+    type: Optional[IssueType] = None
 
     #: Not a filter -- it narrows nothing -- but part of what a view *is*: the
     #: same issues read very differently by column and by project.
@@ -829,6 +850,7 @@ class AutomationRule(SQLModel, table=True):
     #: same column read the same way, so there is one rule to remember.
     if_status_id: Optional[int] = Field(default=None, foreign_key="workflowstatus.id")
     if_priority: Optional[IssuePriority] = None
+    if_type: Optional[IssueType] = None
     if_label_id: Optional[int] = Field(default=None, foreign_key="label.id")
     if_project_id: Optional[int] = Field(default=None, foreign_key="project.id")
     if_assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
@@ -840,6 +862,7 @@ class AutomationRule(SQLModel, table=True):
     # --- Actions ---------------------------------------------------------
     set_status_id: Optional[int] = Field(default=None, foreign_key="workflowstatus.id")
     set_priority: Optional[IssuePriority] = None
+    set_type: Optional[IssueType] = None
     set_assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
     #: Added, never replacing what is there. Labels are additive everywhere
     #: else in SoftTrack, and a rule that silently stripped the ones somebody

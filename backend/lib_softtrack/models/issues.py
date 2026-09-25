@@ -6,7 +6,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.labels import LabelRead
 from lib_softtrack.models.statuses import StatusRead
-from lib_softtrack.tables import IssuePriority
+from lib_softtrack.tables import IssuePriority, IssueType
 
 # A modified Fibonacci scale. The gaps are the point: they stop a team
 # arguing about whether something is a 6 or a 7, a distinction no estimate is
@@ -58,6 +58,7 @@ class IssueCreate(BaseModel):
     #: issue belongs and is what `backlog` used to mean.
     status_id: Optional[int] = None
     priority: IssuePriority = IssuePriority.no_priority
+    type: IssueType = IssueType.task
     assignee_id: Optional[int] = None
     estimate: Estimate = None
     parent_id: Optional[int] = None
@@ -72,6 +73,7 @@ class IssueUpdate(BaseModel):
     project_id: Optional[int] = None
     status_id: Optional[int] = None
     priority: Optional[IssuePriority] = None
+    type: Optional[IssueType] = None
     assignee_id: Optional[int] = None
     # `exclude_unset` in the service keeps "clear the estimate" (an explicit
     # null) distinct from "leave it alone" (the field omitted). The same
@@ -97,6 +99,7 @@ class IssueRead(BaseModel):
     description: Optional[str] = None
     status: StatusRead
     priority: IssuePriority
+    type: IssueType
     assignee: Optional[UserPublic] = None
     estimate: Optional[int] = None
     #: Unresolved issues that block this one. Zero for an issue that is free

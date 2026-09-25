@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { IssuePriority } from './issuePriority';
+import type { IssueType } from './issueType';
 
 /**
  * What a rule does to an issue it matched.
@@ -25,6 +26,7 @@ import type { IssuePriority } from './issuePriority';
 export interface RuleActions {
   set_status_id?: number | null;
   set_priority?: IssuePriority | null;
+  set_type?: IssueType | null;
   set_assignee_id?: number | null;
   add_label_id?: number | null;
   set_cycle_id?: number | null;

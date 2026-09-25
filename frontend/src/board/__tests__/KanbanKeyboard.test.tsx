@@ -43,6 +43,7 @@ const ISSUE = {
   title: 'Keyboard drag',
   status: TODO,
   priority: 'no_priority',
+  type: 'task',
   blocked_by_count: 0,
   child_count: 0,
   completed_child_count: 0,

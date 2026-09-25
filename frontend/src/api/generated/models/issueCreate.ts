@@ -7,6 +7,7 @@
  */
 import type { IssueCreateEstimate } from './issueCreateEstimate';
 import type { IssuePriority } from './issuePriority';
+import type { IssueType } from './issueType';
 
 export interface IssueCreate {
   title: string;
@@ -14,6 +15,7 @@ export interface IssueCreate {
   project_id?: number | null;
   status_id?: number | null;
   priority?: IssuePriority;
+  type?: IssueType;
   assignee_id?: number | null;
   /** Story points on the scale 1, 2, 3, 5, 8. Null means not sized yet, which is distinct from an estimate of zero. */
   estimate?: IssueCreateEstimate;

@@ -7,6 +7,7 @@ import { DueBadge } from '@/issues/DueBadge'
 import { EstimateBadge } from '@/issues/EstimateBadge'
 import { ProjectBadge } from '@/issues/IssueCard'
 import { isResolved } from '@/issues/issueMeta'
+import { IssueTypeIcon } from '@/issues/IssueTypeIcon'
 import { PriorityIcon } from '@/issues/PriorityIcon'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
@@ -141,6 +142,7 @@ function IssueRow({
       >
         {selected && <span className="sr-only">Selected. </span>}
         <PriorityIcon priority={issue.priority} />
+        <IssueTypeIcon type={issue.type} />
         <span className="identifier w-16 shrink-0 text-xs font-medium text-neutral-400">
           {issue.identifier}
         </span>

@@ -17,6 +17,7 @@ import {
   AutomationTrigger,
   CycleState,
   IssuePriority,
+  IssueType,
   type AutomationRuleRead,
   type AutomationRunRead,
   type RuleActions,
@@ -33,7 +34,7 @@ import {
   joinClauses,
   type RuleVocabulary,
 } from '@/automations/ruleText'
-import { PRIORITY_META, PRIORITY_ORDER } from '@/issues/issueMeta'
+import { PRIORITY_META, PRIORITY_ORDER, TYPE_META, TYPE_ORDER } from '@/issues/issueMeta'
 import { pickableProjects } from '@/team/projects'
 import { useTeamByKey } from '@/team/useTeams'
 import { useTeamData } from '@/team/useTeamData'
@@ -556,6 +557,24 @@ function RuleEditor({
               </Select>
             </Field>
 
+            <Field label="Type is">
+              <Select
+                dense
+                block
+                value={conditions.if_type ?? ''}
+                onChange={(e) =>
+                  setCondition({ if_type: (e.target.value || null) as IssueType | null })
+                }
+              >
+                <option value="">Any</option>
+                {TYPE_ORDER.map((value) => (
+                  <option key={value} value={value}>
+                    {TYPE_META[value].label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
             <Field label="Has the label">
               <Select
                 dense
@@ -661,6 +680,24 @@ function RuleEditor({
                 {PRIORITY_ORDER.map((value) => (
                   <option key={value} value={value}>
                     {PRIORITY_META[value].label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
+            <Field label="Set type to">
+              <Select
+                dense
+                block
+                value={actions.set_type ?? ''}
+                onChange={(e) =>
+                  setAction({ set_type: (e.target.value || null) as IssueType | null })
+                }
+              >
+                <option value="">Leave it</option>
+                {TYPE_ORDER.map((value) => (
+                  <option key={value} value={value}>
+                    {TYPE_META[value].label}
                   </option>
                 ))}
               </Select>

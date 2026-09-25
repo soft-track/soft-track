@@ -2,11 +2,13 @@ import { useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useId, useState } from 'react'
 
 import { useCreateIssueTeamsTeamIdIssuesPost } from '@/api/generated/endpoints/issues/issues'
-import { IssuePriority } from '@/api/generated/models'
+import { IssuePriority, type IssueType } from '@/api/generated/models'
 import {
   ESTIMATE_SCALE,
   PRIORITY_META,
   PRIORITY_ORDER,
+  TYPE_META,
+  TYPE_ORDER,
 } from '@/issues/issueMeta'
 import { MarkdownEditor } from '@/markdown/lazy'
 import { activeMembers } from '@/team/members'
@@ -31,6 +33,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
   // loads them.
   const [statusId, setStatusId] = useState<string>('')
   const [priority, setPriority] = useState<IssuePriority>(IssuePriority.no_priority)
+  const [type, setType] = useState<IssueType>('task')
   const [estimate, setEstimate] = useState<(typeof ESTIMATE_SCALE)[number] | null>(null)
   const [cycleId, setCycleId] = useState<string>('')
   const [dueDate, setDueDate] = useState('')
@@ -55,6 +58,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
           project_id: projectId ? Number(projectId) : undefined,
           status_id: statusId ? Number(statusId) : undefined,
           priority,
+          type,
           estimate,
           cycle_id: cycleId ? Number(cycleId) : undefined,
           due_date: dueDate || undefined,
@@ -137,6 +141,19 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
               {statuses.map((status) => (
                 <option key={status.id} value={status.id}>
                   {status.name}
+                </option>
+              ))}
+            </Select>
+
+            <Select
+              dense
+              value={type}
+              onChange={(e) => setType(e.target.value as IssueType)}
+              aria-label="Type"
+            >
+              {TYPE_ORDER.map((t) => (
+                <option key={t} value={t}>
+                  {TYPE_META[t].label}
                 </option>
               ))}
             </Select>

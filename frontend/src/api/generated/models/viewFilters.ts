@@ -7,6 +7,7 @@
  */
 import type { DueFilter } from './dueFilter';
 import type { IssuePriority } from './issuePriority';
+import type { IssueType } from './issueType';
 
 /**
  * What a view narrows the issue list to.
@@ -26,4 +27,5 @@ export interface ViewFilters {
   project_id?: number | null;
   cycle_id?: number | null;
   due?: DueFilter | null;
+  type?: IssueType | null;
 }

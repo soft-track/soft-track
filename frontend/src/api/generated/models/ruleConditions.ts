@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { IssuePriority } from './issuePriority';
+import type { IssueType } from './issueType';
 
 /**
  * Which issues a rule acts on, out of the ones its trigger reaches.
@@ -19,6 +20,7 @@ import type { IssuePriority } from './issuePriority';
 export interface RuleConditions {
   if_status_id?: number | null;
   if_priority?: IssuePriority | null;
+  if_type?: IssueType | null;
   if_label_id?: number | null;
   if_project_id?: number | null;
   if_assignee_id?: number | null;

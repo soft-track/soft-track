@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { IssuePriority } from './issuePriority';
+import type { IssueType } from './issueType';
 import type { ParsedComment } from './parsedComment';
 import type { StatusCategory } from './statusCategory';
 
@@ -18,6 +19,7 @@ export interface ParsedIssue {
   description?: string | null;
   status: StatusCategory;
   priority: IssuePriority;
+  type?: IssueType;
   raw_status?: string | null;
   raw_priority?: string | null;
   assignee?: string | null;

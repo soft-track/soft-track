@@ -3,12 +3,15 @@ import type { ReactNode } from 'react'
 import {
   type IssuePriority,
   type IssueRead,
+  type IssueType,
   type IssueUpdate,
 } from '@/api/generated/models'
 import {
   ESTIMATE_SCALE,
   PRIORITY_META,
   PRIORITY_ORDER,
+  TYPE_META,
+  TYPE_ORDER,
 } from '@/issues/issueMeta'
 import { activeMembers } from '@/team/members'
 import { pickableProjects } from '@/team/projects'
@@ -62,6 +65,21 @@ export function IssueProperties({
           {PRIORITY_ORDER.map((p) => (
             <option key={p} value={p}>
               {PRIORITY_META[p].label}
+            </option>
+          ))}
+        </Select>
+      </Row>
+
+      <Row label="Type">
+        <Select
+          dense
+          data-field="type"
+          value={issue.type}
+          onChange={(e) => patch({ type: e.target.value as IssueType })}
+        >
+          {TYPE_ORDER.map((type) => (
+            <option key={type} value={type}>
+              {TYPE_META[type].label}
             </option>
           ))}
         </Select>

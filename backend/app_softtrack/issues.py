@@ -21,7 +21,7 @@ from lib_softtrack.models.issues import (
 from lib_softtrack.models.links import IssueLinkCreate, IssueLinkRead, IssueLinks
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
 from lib_softtrack.storage import Storage, get_storage
-from lib_softtrack.tables import DueFilter, IssuePriority, User
+from lib_softtrack.tables import DueFilter, IssuePriority, IssueType, User
 from web import get_session
 
 router = APIRouter(tags=["issues"])
@@ -63,6 +63,7 @@ def list_issues(
             "'this week' is its week."
         ),
     ),
+    type: Optional[IssueType] = Query(None, description="Only issues of this type."),
     limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(0, ge=0),
     session: Session = Depends(get_session),
@@ -82,6 +83,7 @@ def list_issues(
         cycle_id=cycle_id,
         due=due,
         today=today,
+        type=type,
         limit=limit,
         offset=offset,
     )

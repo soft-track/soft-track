@@ -23,7 +23,7 @@ from datetime import datetime
 from typing import Any, Iterable, Optional
 
 from lib_softtrack.models.imports import ParsedComment, ParsedIssue
-from lib_softtrack.tables import IssuePriority, StatusCategory
+from lib_softtrack.tables import IssuePriority, IssueType, StatusCategory
 
 #: Jira's default workflow statuses, plus the ones teams most often add,
 #: mapped to what they *mean*. Matched case-insensitively after stripping, so
@@ -93,6 +93,23 @@ def map_status(raw: Optional[str]) -> tuple[StatusCategory, Optional[str]]:
         return STATUS_FALLBACK, None
     mapped = STATUS_MAP.get(raw.strip().lower())
     return (mapped, None) if mapped else (STATUS_FALLBACK, raw.strip())
+
+
+#: Jira's issue types onto SoftTrack's three (#89). Only those with a direct
+#: counterpart are named; everything else -- Task, Sub-task, Improvement, New
+#: Feature, a team's own invention -- is a task, SoftTrack's word for work that
+#: is neither a bug nor a story. An Epic row lands as a task too: epics
+#: themselves become projects, through each issue's epic link below.
+TYPE_MAP: dict[str, IssueType] = {
+    "bug": IssueType.bug,
+    "defect": IssueType.bug,
+    "story": IssueType.story,
+    "user story": IssueType.story,
+}
+
+
+def map_type(raw: Optional[str]) -> IssueType:
+    return TYPE_MAP.get((raw or "").strip().lower(), IssueType.task)
 
 
 def map_priority(raw: Optional[str]) -> tuple[IssuePriority, Optional[str]]:
@@ -195,6 +212,7 @@ def parse_csv(text: str) -> list[ParsedIssue]:
                 description=_first(row, "description"),
                 status=status,
                 priority=priority,
+                type=map_type(_first(row, "issue type", "issuetype")),
                 raw_status=unmapped_status,
                 raw_priority=unmapped_priority,
                 assignee=_first(row, "assignee"),
@@ -278,6 +296,7 @@ def parse_json(text: str) -> list[ParsedIssue]:
                 description=_text_of(fields.get("description")),
                 status=status,
                 priority=priority,
+                type=map_type(_name_of(fields.get("issuetype") or fields.get("type"))),
                 raw_status=unmapped_status,
                 raw_priority=unmapped_priority,
                 assignee=_person(fields.get("assignee")),

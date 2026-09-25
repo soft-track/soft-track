@@ -281,6 +281,7 @@ def _create_issue(
         description=parsed_issue.description,
         status_id=_status_for(session, team.id, parsed_issue).id,
         priority=parsed_issue.priority,
+        type=parsed_issue.type,
         assignee_id=assignee.id if assignee else None,
         creator_id=creator.id,
         project_id=project.id if project else None,

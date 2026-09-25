@@ -1,5 +1,6 @@
 import { IssuePriority, StatusCategory } from '@/api/generated/models'
-import type { IssueUpdateEstimate, StatusRead } from '@/api/generated/models'
+import type { IssueType, IssueUpdateEstimate, StatusRead } from '@/api/generated/models'
+import type { IconName } from '@/ui/Icon'
 
 /**
  * What each status *category* means, for the few places that have a category
@@ -62,6 +63,18 @@ export const PRIORITY_ORDER: IssuePriority[] = [
   IssuePriority.low,
   IssuePriority.no_priority,
 ]
+
+/**
+ * Issue types (#89): a label, an icon and a colour each. The icons differ in
+ * outline, so the colour is never the only way to tell them apart.
+ */
+export const TYPE_META: Record<IssueType, { label: string; icon: IconName; color: string }> = {
+  bug: { label: 'Bug', icon: 'bug', color: 'var(--color-status-cancelled)' },
+  task: { label: 'Task', icon: 'task', color: 'var(--color-brand-500)' },
+  story: { label: 'Story', icon: 'story', color: 'var(--color-status-done)' },
+}
+
+export const TYPE_ORDER: IssueType[] = ['task', 'bug', 'story']
 
 export const PRIORITY_META: Record<IssuePriority, { label: string; color: string }> = {
   urgent: { label: 'Urgent', color: 'var(--color-priority-urgent)' },

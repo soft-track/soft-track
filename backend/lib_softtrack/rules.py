@@ -264,6 +264,8 @@ def _matches(session: Session, rule: AutomationRule, issue: Issue) -> bool:
         return False
     if rule.if_priority is not None and issue.priority != rule.if_priority:
         return False
+    if rule.if_type is not None and issue.type != rule.if_type:
+        return False
     if rule.if_project_id is not None and issue.project_id != rule.if_project_id:
         return False
     if rule.if_unassigned and issue.assignee_id is not None:
@@ -314,6 +316,11 @@ def _apply(
     if actions.set_priority is not None and issue.priority != actions.set_priority:
         issue.priority = actions.set_priority
         lines.append(f"Set priority to {actions.set_priority.value.replace('_', ' ')}")
+        touched_issue = True
+
+    if actions.set_type is not None and issue.type != actions.set_type:
+        issue.type = actions.set_type
+        lines.append(f"Set type to {actions.set_type.value}")
         touched_issue = True
 
     if (

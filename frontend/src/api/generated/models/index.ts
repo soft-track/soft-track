@@ -66,6 +66,7 @@ export * from './issueLinkType';
 export * from './issuePriority';
 export * from './issueRead';
 export * from './issueStatus';
+export * from './issueType';
 export * from './issueUpdate';
 export * from './issueUpdateEstimate';
 export * from './labelCreate';

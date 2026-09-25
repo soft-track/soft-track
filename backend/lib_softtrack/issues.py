@@ -35,6 +35,7 @@ from lib_softtrack.tables import (
     IssueLabelLink,
     IssueLink,
     IssuePriority,
+    IssueType,
     Label,
     Project,
     Team,
@@ -92,6 +93,7 @@ def issue_to_read(issue: Issue, session: Session) -> IssueRead:
         description=issue.description,
         status=StatusRead.model_validate(session.get(WorkflowStatus, issue.status_id)),
         priority=issue.priority,
+        type=issue.type,
         assignee=UserPublic.model_validate(assignee) if assignee else None,
         estimate=issue.estimate,
         blocked_by_count=open_blocker_counts(session, [issue.id]).get(issue.id, 0),
@@ -175,6 +177,7 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
             description=issue.description,
             status=StatusRead.model_validate(statuses[issue.status_id]),
             priority=issue.priority,
+            type=issue.type,
             assignee=(
                 UserPublic.model_validate(users[issue.assignee_id])
                 if issue.assignee_id
@@ -251,6 +254,7 @@ def create_issue(
             or default_status(session, team_id)
         ).id,
         priority=payload.priority,
+        type=payload.type,
         assignee_id=payload.assignee_id,
         estimate=payload.estimate,
         cycle_id=payload.cycle_id,
@@ -298,6 +302,7 @@ def list_issues(
     cycle_id: Optional[int] = None,
     due: Optional[DueFilter] = None,
     today: Optional[date] = None,
+    type: Optional[IssueType] = None,
     limit: int = DEFAULT_LIMIT,
     offset: int = 0,
 ) -> Page[IssueRead]:
@@ -339,6 +344,8 @@ def list_issues(
         filters.append(Issue.parent_id == parent_id)
     if cycle_id is not None:
         filters.append(Issue.cycle_id == cycle_id)
+    if type is not None:
+        filters.append(Issue.type == type)
     if due is not None:
         filters.append(_due_filter(due, today or datetime.now(timezone.utc).date()))
 

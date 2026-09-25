@@ -33,6 +33,7 @@ describe('describeFilters', () => {
         projectId: 2,
         cycleId: 5,
         due: 'overdue',
+        type: 'bug',
       },
       lookups,
     )
@@ -43,6 +44,7 @@ describe('describeFilters', () => {
       'Label: Bug',
       'Project: Platform',
       'Cycle: Cycle 5',
+      'Type: Bug',
       'Due: Overdue',
     ])
   })

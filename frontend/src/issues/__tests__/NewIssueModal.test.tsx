@@ -175,6 +175,7 @@ describe('NewIssueModal', () => {
         project_id: undefined,
         status_id: 2,
         priority: 'high',
+        type: 'task',
         estimate: null,
         cycle_id: undefined,
         assignee_id: 11,
@@ -204,6 +205,16 @@ describe('NewIssueModal', () => {
       await user.tab({ shift: true })
       expect(dialog.contains(document.activeElement)).toBe(true)
     }
+  })
+
+  it('sends the type picked, and task when nobody picks one (#89)', async () => {
+    const { user } = renderModal()
+    await user.type(screen.getByPlaceholderText('Issue title'), 'It crashes')
+    await user.selectOptions(screen.getByLabelText('Type'), 'bug')
+    await user.click(screen.getByRole('button', { name: /create issue/i }))
+    expect(mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ type: 'bug' }) }),
+    )
   })
 
   it('sends a due date when one is picked (#87)', async () => {
@@ -258,6 +269,7 @@ describe('NewIssueModal', () => {
         project_id: undefined,
         status_id: undefined,
         priority: 'no_priority',
+        type: 'task',
         estimate: null,
         cycle_id: undefined,
         assignee_id: undefined,

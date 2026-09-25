@@ -37,6 +37,9 @@ export type IconName =
   | 'branch'
   | 'pull-request'
   | 'commit'
+  | 'bug'
+  | 'task'
+  | 'story'
 
 const PATHS: Record<IconName, JSX.Element> = {
   search: (
@@ -176,6 +179,22 @@ const PATHS: Record<IconName, JSX.Element> = {
       <path d="M3 12h6M15 12h6" />
     </>
   ),
+  // Issue types (#89). Three different outlines -- a rounded body with legs, a
+  // square with a tick, a bookmark -- so they are told apart by shape, not by
+  // the colour they are drawn in.
+  bug: (
+    <>
+      <rect x="8" y="7" width="8" height="12" rx="4" />
+      <path d="M12 11v8M8 11H4M8 15H4M16 11h4M16 15h4M10 7 8.5 4.5M14 7l1.5-2.5" />
+    </>
+  ),
+  task: (
+    <>
+      <rect x="4.5" y="4.5" width="15" height="15" rx="3" />
+      <path d="m8.5 12 2.5 2.5 4.5-5" />
+    </>
+  ),
+  story: <path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1Z" />,
 }
 
 /** Stroked line icons on a 24-unit grid. Colour comes from `currentColor`. */

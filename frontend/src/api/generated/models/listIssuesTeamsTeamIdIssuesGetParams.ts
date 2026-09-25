@@ -7,6 +7,7 @@
  */
 import type { DueFilter } from './dueFilter';
 import type { IssuePriority } from './issuePriority';
+import type { IssueType } from './issueType';
 
 export type ListIssuesTeamsTeamIdIssuesGetParams = {
 project_id?: number | null;
@@ -40,6 +41,10 @@ due?: DueFilter | null;
  * The caller's own date, which `due` is measured from. Defaults to today in UTC; a client should send its local date, so that 'this week' is its week.
  */
 today?: string | null;
+/**
+ * Only issues of this type.
+ */
+type?: IssueType | null;
 /**
  * @minimum 1
  * @maximum 200

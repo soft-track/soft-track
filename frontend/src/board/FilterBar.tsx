@@ -1,11 +1,11 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import type { DueFilter, IssuePriority } from '@/api/generated/models'
+import type { DueFilter, IssuePriority, IssueType } from '@/api/generated/models'
 import { describeFilters, withoutFilter } from '@/board/filterLabels'
 import { activeCount, type BoardFilters, isEmpty, NO_FILTERS } from '@/board/filters'
 import { DUE_FILTER_LABEL } from '@/issues/dueDate'
-import { PRIORITY_META, PRIORITY_ORDER } from '@/issues/issueMeta'
+import { PRIORITY_META, PRIORITY_ORDER, TYPE_META, TYPE_ORDER } from '@/issues/issueMeta'
 import { activeMembers } from '@/team/members'
 import { pickableProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
@@ -231,6 +231,22 @@ export function FilterBar({
                     {cycles.map((cycle) => (
                       <option key={cycle.id} value={cycle.id}>
                         {cycle.display_name}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+
+                <Field label="Type">
+                  <Select
+                    block
+                    dense
+                    value={filters.type ?? ''}
+                    onChange={(e) => set('type', (e.target.value || null) as IssueType | null)}
+                  >
+                    <option value="">Any type</option>
+                    {TYPE_ORDER.map((type) => (
+                      <option key={type} value={type}>
+                        {TYPE_META[type].label}
                       </option>
                     ))}
                   </Select>

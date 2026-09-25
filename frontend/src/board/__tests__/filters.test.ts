@@ -21,6 +21,7 @@ const some: BoardFilters = {
   projectId: 2,
   cycleId: 5,
   due: 'overdue',
+  type: 'bug',
 }
 
 describe('the URL round trip', () => {
@@ -64,6 +65,7 @@ describe('toQueryParams', () => {
       cycle_id: 5,
       due: 'overdue',
       today: '2026-09-23',
+      type: 'bug',
     })
   })
 
@@ -126,7 +128,7 @@ describe('sameFilters', () => {
 describe('activeCount', () => {
   it('counts the chips the filter bar will show', () => {
     expect(activeCount(NO_FILTERS)).toBe(0)
-    expect(activeCount(some)).toBe(7)
+    expect(activeCount(some)).toBe(8)
     expect(isEmpty(NO_FILTERS)).toBe(true)
     expect(isEmpty({ ...NO_FILTERS, statusId: 4 })).toBe(false)
   })

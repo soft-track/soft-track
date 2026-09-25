@@ -61,6 +61,7 @@ def _to_read(view: SavedView, owner: User) -> SavedViewRead:
             project_id=view.project_id,
             cycle_id=view.cycle_id,
             due=view.due,
+            type=view.type,
         ),
         group_by=view.group_by,
         created_at=view.created_at,
@@ -77,6 +78,7 @@ def _apply_filters(view: SavedView, filters: ViewFilters) -> None:
     view.project_id = filters.project_id
     view.cycle_id = filters.cycle_id
     view.due = filters.due
+    view.type = filters.type
 
 
 def _validate_filters(session: Session, team_id: int, filters: ViewFilters) -> None:

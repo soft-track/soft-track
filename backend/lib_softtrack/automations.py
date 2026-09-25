@@ -61,6 +61,7 @@ MAX_RUNS_PER_TEAM = 500
 _CONDITION_FIELDS = (
     "if_status_id",
     "if_priority",
+    "if_type",
     "if_label_id",
     "if_project_id",
     "if_assignee_id",
@@ -69,6 +70,7 @@ _CONDITION_FIELDS = (
 _ACTION_FIELDS = (
     "set_status_id",
     "set_priority",
+    "set_type",
     "set_assignee_id",
     "add_label_id",
     "set_cycle_id",

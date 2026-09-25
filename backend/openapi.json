@@ -2029,6 +2029,24 @@
             "description": "The caller's own date, which `due` is measured from. Defaults to today in UTC; a client should send its local date, so that 'this week' is its week."
           },
           {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/IssueType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only issues of this type.",
+              "title": "Type"
+            },
+            "description": "Only issues of this type."
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -7050,6 +7068,10 @@
             "$ref": "#/components/schemas/IssuePriority",
             "default": "no_priority"
           },
+          "type": {
+            "$ref": "#/components/schemas/IssueType",
+            "default": "task"
+          },
           "assignee_id": {
             "anyOf": [
               {
@@ -7397,6 +7419,9 @@
           "priority": {
             "$ref": "#/components/schemas/IssuePriority"
           },
+          "type": {
+            "$ref": "#/components/schemas/IssueType"
+          },
           "assignee": {
             "anyOf": [
               {
@@ -7506,6 +7531,7 @@
           "title",
           "status",
           "priority",
+          "type",
           "blocked_by_count",
           "child_count",
           "completed_child_count",
@@ -7514,6 +7540,16 @@
           "updated_at"
         ],
         "title": "IssueRead"
+      },
+      "IssueType": {
+        "type": "string",
+        "enum": [
+          "bug",
+          "task",
+          "story"
+        ],
+        "title": "IssueType",
+        "description": "What kind of work an issue is (#89).\n\nA fixed three, deliberately: per-team custom types are how Jira's type\nlist grew until nobody could say what a \"Sub-task (Technical)\" was.\n\nThere is no `epic`. An epic is a Project (#60-#64) -- a grouping of issues\nwith a lead, a target date and progress -- and making it a type as well\nwould give the tracker two competing ways to say \"these belong together\"."
       },
       "IssueUpdate": {
         "properties": {
@@ -7565,6 +7601,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/IssuePriority"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssueType"
               },
               {
                 "type": "null"
@@ -8255,6 +8301,10 @@
           "priority": {
             "$ref": "#/components/schemas/IssuePriority"
           },
+          "type": {
+            "$ref": "#/components/schemas/IssueType",
+            "default": "task"
+          },
           "raw_status": {
             "anyOf": [
               {
@@ -8860,6 +8910,16 @@
               }
             ]
           },
+          "set_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssueType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "set_assignee_id": {
             "anyOf": [
               {
@@ -8932,6 +8992,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/IssuePriority"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "if_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssueType"
               },
               {
                 "type": "null"
@@ -10063,6 +10133,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/DueFilter"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssueType"
               },
               {
                 "type": "null"

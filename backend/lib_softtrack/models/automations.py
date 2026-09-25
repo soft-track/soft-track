@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, model_validator
 
 from lib_identity.models.identity import UserPublic
-from lib_softtrack.tables import AutomationTrigger, IssuePriority
+from lib_softtrack.tables import AutomationTrigger, IssuePriority, IssueType
 
 
 class RuleConditions(BaseModel):
@@ -20,6 +20,7 @@ class RuleConditions(BaseModel):
     #: For a `status_changed` trigger this is the status the issue moved *to*.
     if_status_id: Optional[int] = None
     if_priority: Optional[IssuePriority] = None
+    if_type: Optional[IssueType] = None
     if_label_id: Optional[int] = None
     if_project_id: Optional[int] = None
     if_assignee_id: Optional[int] = None
@@ -53,6 +54,7 @@ class RuleActions(BaseModel):
 
     set_status_id: Optional[int] = None
     set_priority: Optional[IssuePriority] = None
+    set_type: Optional[IssueType] = None
     set_assignee_id: Optional[int] = None
     #: Added to whatever the issue already has, never replacing it.
     add_label_id: Optional[int] = None
@@ -68,6 +70,7 @@ class RuleActions(BaseModel):
             (
                 self.set_status_id is not None,
                 self.set_priority is not None,
+                self.set_type is not None,
                 self.set_assignee_id is not None,
                 self.add_label_id is not None,
                 self.set_cycle_id is not None,

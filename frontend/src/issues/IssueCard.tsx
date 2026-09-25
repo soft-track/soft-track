@@ -7,6 +7,7 @@ import { selectionGesture } from '@/board/selection'
 import { DueBadge } from '@/issues/DueBadge'
 import { EstimateBadge } from '@/issues/EstimateBadge'
 import { isResolved } from '@/issues/issueMeta'
+import { IssueTypeIcon } from '@/issues/IssueTypeIcon'
 import { PriorityIcon } from '@/issues/PriorityIcon'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
@@ -104,6 +105,7 @@ export function IssueCard({
               <span className="sr-only">{issue.status.name}</span>
             </span>
           )}
+          <IssueTypeIcon type={issue.type} size={13} />
           <span className="identifier text-[11px] font-medium text-neutral-400">
             {issue.identifier}
           </span>
