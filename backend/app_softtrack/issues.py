@@ -80,6 +80,12 @@ def list_issues(
             "'this week' is its week."
         ),
     ),
+    due_from: Optional[date] = Query(
+        None, description="Only issues due on or after this day."
+    ),
+    due_to: Optional[date] = Query(
+        None, description="Only issues due on or before this day."
+    ),
     type: Optional[IssueType] = Query(None, description="Only issues of this type."),
     sort: IssueSort = Query(IssueSort.created, description="What to order by."),
     direction: SortDirection = Query(
@@ -105,6 +111,8 @@ def list_issues(
         cycle_id=cycle_id,
         due=due,
         today=today,
+        due_from=due_from,
+        due_to=due_to,
         type=type,
         sort=sort,
         direction=direction,

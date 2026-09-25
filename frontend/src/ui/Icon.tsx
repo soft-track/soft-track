@@ -43,6 +43,7 @@ export type IconName =
   | 'story'
   | 'smile'
   | 'download'
+  | 'calendar-grid'
 
 const PATHS: Record<IconName, JSX.Element> = {
   search: (
@@ -200,6 +201,12 @@ const PATHS: Record<IconName, JSX.Element> = {
     </>
   ),
   story: <path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1Z" />,
+  'calendar-grid': (
+    <>
+      <rect x="4" y="5" width="16" height="15" rx="2" />
+      <path d="M4 10h16M8 3v4M16 3v4M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01" />
+    </>
+  ),
   smile: (
     <>
       <circle cx="12" cy="12" r="9" />

@@ -12,7 +12,8 @@ import {
 import type { WorklogRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
-import { formatDuration, localToday, parseDuration } from '@/issues/duration'
+import { localToday } from '@/issues/dueDate'
+import { formatDuration, parseDuration } from '@/issues/duration'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 

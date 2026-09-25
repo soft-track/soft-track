@@ -1,5 +1,3 @@
-import { format } from 'date-fns'
-
 /**
  * Durations as people type them (#102): "2h 30m", "45m", "1h15m", "1.5h",
  * "2:30", or a bare number of minutes. Minutes out, or null for anything
@@ -31,13 +29,4 @@ export function formatDuration(minutes: number): string {
   const rest = minutes % 60
   if (hours === 0) return `${rest}m`
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`
-}
-
-/**
- * Today in the user's own calendar -- what "today" means to whoever is
- * logging. The server's today is UTC's, which is tomorrow for half the world
- * by evening.
- */
-export function localToday(): string {
-  return format(new Date(), 'yyyy-MM-dd')
 }

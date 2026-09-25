@@ -8,7 +8,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { localToday } from '@/issues/duration'
+import { localToday } from '@/issues/dueDate'
 import { TimeSection } from '@/issues/detail/TimeSection'
 
 const ME = { id: 1, full_name: 'Olivia Owner', avatar_color: '#123', is_active: true }

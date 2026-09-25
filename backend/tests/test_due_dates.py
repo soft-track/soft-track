@@ -165,3 +165,34 @@ def test_a_saved_view_keeps_the_due_filter(client, team):
     )
     assert response.status_code == 200, response.text
     assert response.json()["filters"]["due"] == "overdue"
+
+
+# --- a date range, for the calendar (#105) ------------------------------------
+
+
+def test_a_due_date_range_is_inclusive_at_both_ends(client, team):
+    team_id = team["team"]["id"]
+    for day in ("2026-08-31", "2026-09-01", "2026-09-15", "2026-09-30", "2026-10-01"):
+        client.post(
+            f"/teams/{team_id}/issues",
+            json={"title": day, "due_date": day},
+            headers=team["headers"],
+        )
+    client.post(
+        f"/teams/{team_id}/issues", json={"title": "undated"}, headers=team["headers"]
+    )
+
+    def titles(**params):
+        response = client.get(
+            f"/teams/{team_id}/issues", params=params, headers=team["headers"]
+        )
+        assert response.status_code == 200, response.text
+        return sorted(issue["title"] for issue in response.json()["items"])
+
+    assert titles(due_from="2026-09-01", due_to="2026-09-30") == [
+        "2026-09-01",
+        "2026-09-15",
+        "2026-09-30",
+    ]
+    assert titles(due_from="2026-09-30") == ["2026-09-30", "2026-10-01"]
+    assert titles(due_to="2026-08-31") == ["2026-08-31"]

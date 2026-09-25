@@ -70,6 +70,7 @@ README, which show a team several cycles in.
 - [Issue templates](docs/features/issue-templates.md)
 - [Markdown, mentions and task lists](docs/features/markdown.md)
 - [Saved views and shareable filters](docs/features/saved-views.md)
+- [Calendar](docs/features/calendar.md)
 - [Search](docs/features/search.md)
 - [Keyboard and the command palette](docs/features/keyboard.md)
 - [Automation rules](docs/features/automations.md)

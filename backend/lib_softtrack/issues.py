@@ -320,6 +320,8 @@ def list_issues(
     cycle_id: Optional[int] = None,
     due: Optional[DueFilter] = None,
     today: Optional[date] = None,
+    due_from: Optional[date] = None,
+    due_to: Optional[date] = None,
     type: Optional[IssueType] = None,
     sort: IssueSort = IssueSort.created,
     direction: SortDirection = SortDirection.desc,
@@ -368,6 +370,12 @@ def list_issues(
         filters.append(Issue.type == type)
     if due is not None:
         filters.append(_due_filter(due, today or datetime.now(timezone.utc).date()))
+    # A date range, both ends inclusive (#105): the calendar asks for the days
+    # its grid shows. Either end alone is an open range.
+    if due_from is not None:
+        filters.append(Issue.due_date >= due_from)
+    if due_to is not None:
+        filters.append(Issue.due_date <= due_to)
 
     # `total` counts everything matching the filters, not the page, so the UI
     # can show "50 of 1,204" without a second request.

@@ -11,6 +11,7 @@ import { Select } from '@/ui/Select'
 const VIEWS: Array<{ id: BoardView; label: string; icon: IconName }> = [
   { id: 'board', label: 'Board', icon: 'board' },
   { id: 'list', label: 'List', icon: 'list' },
+  { id: 'calendar', label: 'Calendar', icon: 'calendar-grid' },
   { id: 'roadmap', label: 'Roadmap', icon: 'calendar' },
   { id: 'reports', label: 'Reports', icon: 'chart' },
 ]

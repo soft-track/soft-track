@@ -44,6 +44,14 @@ due?: DueFilter | null;
  */
 today?: string | null;
 /**
+ * Only issues due on or after this day.
+ */
+due_from?: string | null;
+/**
+ * Only issues due on or before this day.
+ */
+due_to?: string | null;
+/**
  * Only issues of this type.
  */
 type?: IssueType | null;

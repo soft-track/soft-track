@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
-import { useListIssuesTeamsTeamIdIssuesGet } from '@/api/generated/endpoints/issues/issues'
+import {
+  useGetIssueByNumberTeamsTeamIdIssuesByNumberNumberGet,
+  useListIssuesTeamsTeamIdIssuesGet,
+} from '@/api/generated/endpoints/issues/issues'
 import { useSearchSearchGet } from '@/api/generated/endpoints/search/search'
 import type { IssueRead, SavedViewRead } from '@/api/generated/models'
 import { useAuth } from '@/auth/useAuth'
@@ -32,6 +35,7 @@ import { useBulkEdit } from '@/board/useBulkEdit'
 import { useOverlays } from '@/board/useOverlays'
 import { useMoveIssue } from '@/board/useMoveIssue'
 import { useStatusChange } from '@/board/useStatusChange'
+import { CalendarView } from '@/calendar/CalendarView'
 import { CycleBanner } from '@/cycles/CycleBanner'
 import { NewCycleModal } from '@/cycles/NewCycleModal'
 import { ImportJiraModal } from '@/imports/ImportJiraModal'
@@ -91,10 +95,14 @@ export default function BoardPage() {
       nextSort: BoardSort,
       options?: { replace: boolean },
     ) =>
-      setSearchParams(
-        withSort(withGrouping(toSearchParams(nextFilters), nextGrouping), nextSort),
-        options,
-      ),
+      setSearchParams((current) => {
+        const next = withSort(withGrouping(toSearchParams(nextFilters), nextGrouping), nextSort)
+        // The calendar's month (#105) is not a filter, but narrowing the
+        // calendar should not also jump it back to this month.
+        const month = current.get('month')
+        if (month) next.set('month', month)
+        return next
+      }, options),
     [setSearchParams],
   )
   /** Undefined leaves the arrangement as it is; a saved view brings its own. */
@@ -238,6 +246,18 @@ export default function BoardPage() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [escapeClearsSelection, clearSelection])
 
+  // The open issue, from the page already loaded when it is there -- and by
+  // its number when it is not: an issue reached from the calendar (#105) or
+  // from search need not be among the board's first page.
+  const loadedIssue = issueNumber
+    ? issues.find((i) => String(i.number) === issueNumber)
+    : undefined
+  const fetchedIssue = useGetIssueByNumberTeamsTeamIdIssuesByNumberNumberGet(
+    team?.id ?? 0,
+    Number(issueNumber ?? 0),
+    { query: { enabled: Boolean(team && issueNumber) && !loadedIssue } },
+  )
+
   const openIssueFromPalette = useCallback(
     (issue: IssueRead) => navigate(`/${team?.key}/issue/${issue.number}`),
     [navigate, team?.key],
@@ -256,7 +276,7 @@ export default function BoardPage() {
     return <Navigate to="/new-team" replace />
   }
 
-  const openIssue = issueNumber ? issues.find((i) => String(i.number) === issueNumber) : undefined
+  const openIssue = loadedIssue ?? (issueNumber ? fetchedIssue.data : undefined)
   const selectedCycle = teamData.cycles.find((cycle) => cycle.id === filters.cycleId) ?? null
   const isTeamAdmin =
     teamData.members.find((member) => member.user.id === user?.id)?.role === 'admin'
@@ -359,6 +379,8 @@ export default function BoardPage() {
                 />
               ) : !filtersAreSettled || issuesQuery.isLoading ? (
                 <Loading label="Loading issues…" />
+              ) : view === 'calendar' ? (
+                <CalendarView params={toQueryParams(filters)} canWrite={canWrite} />
               ) : view === 'roadmap' ? (
                 <RoadmapView />
               ) : view === 'reports' ? (

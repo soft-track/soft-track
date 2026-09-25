@@ -2146,6 +2146,44 @@
             "description": "The caller's own date, which `due` is measured from. Defaults to today in UTC; a client should send its local date, so that 'this week' is its week."
           },
           {
+            "name": "due_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only issues due on or after this day.",
+              "title": "Due From"
+            },
+            "description": "Only issues due on or after this day."
+          },
+          {
+            "name": "due_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only issues due on or before this day.",
+              "title": "Due To"
+            },
+            "description": "Only issues due on or before this day."
+          },
+          {
             "name": "type",
             "in": "query",
             "required": false,
