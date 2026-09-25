@@ -11,6 +11,7 @@ from sqlmodel import Session, select
 
 from lib_softtrack import automations as automations_service
 from lib_softtrack import views as views_service
+from lib_softtrack.history import record_changes, snapshot
 from lib_softtrack.models.projects import ProjectCreate, ProjectRead, ProjectUpdate
 from lib_softtrack.subissues import progress_by
 from lib_softtrack.tables import Issue, Project, TeamMember, User
@@ -137,9 +138,14 @@ def delete_project(session: Session, current_user: User, project_id: int) -> Non
 
     now = datetime.now(timezone.utc)
     for issue in session.exec(select(Issue).where(Issue.project_id == project_id)):
+        before = snapshot(issue)
         issue.project_id = None
         issue.updated_at = now
         session.add(issue)
+        # Leaving the project is a change like any other, and history is
+        # what the burnup replays -- an issue released silently would still
+        # be "in" the deleted project for ever as far as the events know.
+        record_changes(session, issue, before, current_user)
 
     # A view left filtering on a project that no longer exists matches
     # nothing, which reads as broken rather than empty.

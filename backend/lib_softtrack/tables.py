@@ -133,6 +133,10 @@ class IssueEventField(str, enum.Enum):
     status = "status"
     cycle = "cycle"
     estimate = "estimate"
+    #: Which project -- epic -- the issue is in (#64). What makes "how much
+    #: did this epic grow after work started" answerable, and scope added late
+    #: is what explains most missed dates.
+    project = "project"
 
 
 class TeamRole(str, enum.Enum):

@@ -3188,6 +3188,54 @@
         }
       }
     },
+    "/projects/{project_id}/burnup": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Project Burnup",
+        "description": "A project's scope against its completed work, each day, in issues and points.\n\nStarts on the first day history records anything about the project. Points\nonly cover sized issues; `unestimated_issues` says how many are not sized,\nso the points total is not mistaken for the whole epic.",
+        "operationId": "project_burnup_projects__project_id__burnup_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectBurnup"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/teams/{team_id}/velocity": {
       "get": {
         "tags": [
@@ -8002,6 +8050,84 @@
           "new_password"
         ],
         "title": "PasswordChange"
+      },
+      "ProjectBurnup": {
+        "properties": {
+          "project_id": {
+            "type": "integer",
+            "title": "Project Id"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
+          "started_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started On"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectBurnupPoint"
+            },
+            "type": "array",
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id",
+          "project_name",
+          "points"
+        ],
+        "title": "ProjectBurnup"
+      },
+      "ProjectBurnupPoint": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "scope_issues": {
+            "type": "integer",
+            "title": "Scope Issues"
+          },
+          "completed_issues": {
+            "type": "integer",
+            "title": "Completed Issues"
+          },
+          "scope_points": {
+            "type": "integer",
+            "title": "Scope Points"
+          },
+          "completed_points": {
+            "type": "integer",
+            "title": "Completed Points"
+          },
+          "unestimated_issues": {
+            "type": "integer",
+            "title": "Unestimated Issues"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "scope_issues",
+          "completed_issues",
+          "scope_points",
+          "completed_points",
+          "unestimated_issues"
+        ],
+        "title": "ProjectBurnupPoint",
+        "description": "What one project -- an epic -- held at the end of one day (#64)."
       },
       "ProjectCreate": {
         "properties": {

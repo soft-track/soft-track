@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => ({
   project: { data: undefined as unknown, isLoading: false },
   issues: { data: undefined as unknown, isLoading: false },
   search: { data: undefined as unknown, isLoading: false },
+  burnup: { data: undefined as unknown },
   updateProject: { mutateAsync: vi.fn(), isPending: false },
   updateIssue: { mutateAsync: vi.fn(), isPending: false },
   bulkUpdate: { mutateAsync: vi.fn(), isPending: false },
@@ -43,6 +44,11 @@ vi.mock('@/api/generated/endpoints/issues/issues', async (importOriginal) => ({
   useListIssuesTeamsTeamIdIssuesGet: () => mocks.issues,
   useUpdateIssueIssuesIssueIdPatch: () => mocks.updateIssue,
   useBulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost: () => mocks.bulkUpdate,
+}))
+
+vi.mock('@/api/generated/endpoints/reports/reports', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/generated/endpoints/reports/reports')>()),
+  useProjectBurnupProjectsProjectIdBurnupGet: () => mocks.burnup,
 }))
 
 vi.mock('@/api/generated/endpoints/search/search', async (importOriginal) => ({
@@ -141,6 +147,7 @@ function renderPage() {
 
 beforeEach(() => {
   mocks.search.data = undefined
+  mocks.burnup.data = undefined
   mocks.updateProject.mutateAsync.mockReset().mockResolvedValue(PLATFORM)
   mocks.updateIssue.mutateAsync.mockReset().mockResolvedValue({})
   mocks.bulkUpdate.mutateAsync.mockReset().mockResolvedValue([])
@@ -177,6 +184,27 @@ describe('what is in it and how far along', () => {
     expect(screen.getByText('No issues in this project yet')).toBeTruthy()
     expect(screen.getByText(/Project field when creating an issue/)).toBeTruthy()
     expect(screen.getByText('Nothing in this project yet')).toBeTruthy()
+  })
+
+  it('shows the burnup once it has loaded', () => {
+    showing(PLATFORM, [])
+    mocks.burnup.data = {
+      project_id: 5,
+      project_name: 'Platform',
+      started_on: '2026-09-20',
+      points: [
+        {
+          day: '2026-09-20',
+          scope_issues: 2,
+          completed_issues: 1,
+          scope_points: 5,
+          completed_points: 3,
+          unestimated_issues: 0,
+        },
+      ],
+    }
+    renderPage()
+    expect(screen.getByRole('img', { name: 'Burnup for Platform, in issues' })).toBeTruthy()
   })
 
   it('treats another team’s project as missing', () => {

@@ -25,6 +25,7 @@ import type {
   CreatedVsResolved,
   CumulativeFlow,
   HTTPValidationError,
+  ProjectBurnup,
   TeamCreatedVsResolvedTeamsTeamIdCreatedVsResolvedGetParams,
   TeamCumulativeFlowTeamsTeamIdCumulativeFlowGetParams,
   TeamVelocityTeamsTeamIdVelocityGetParams,
@@ -137,6 +138,103 @@ export function useCycleBurndownCyclesCycleIdBurndownGet<TData = Awaited<ReturnT
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getCycleBurndownCyclesCycleIdBurndownGetQueryOptions(cycleId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * A project's scope against its completed work, each day, in issues and points.
+ *
+ * Starts on the first day history records anything about the project. Points
+ * only cover sized issues; `unestimated_issues` says how many are not sized,
+ * so the points total is not mistaken for the whole epic.
+ * @summary Project Burnup
+ */
+export const projectBurnupProjectsProjectIdBurnupGet = (
+    projectId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<ProjectBurnup>(
+      {url: `/projects/${projectId}/burnup`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getProjectBurnupProjectsProjectIdBurnupGetQueryKey = (projectId: number,) => {
+    return [
+    `/projects/${projectId}/burnup`
+    ] as const;
+    }
+
+
+export const getProjectBurnupProjectsProjectIdBurnupGetQueryOptions = <TData = Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>, TError = HTTPValidationError>(projectId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getProjectBurnupProjectsProjectIdBurnupGetQueryKey(projectId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>> = ({ signal }) => projectBurnupProjectsProjectIdBurnupGet(projectId, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: projectId !== null && projectId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ProjectBurnupProjectsProjectIdBurnupGetQueryResult = NonNullable<Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>>
+export type ProjectBurnupProjectsProjectIdBurnupGetQueryError = HTTPValidationError
+
+
+export function useProjectBurnupProjectsProjectIdBurnupGet<TData = Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>, TError = HTTPValidationError>(
+ projectId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>,
+          TError,
+          Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProjectBurnupProjectsProjectIdBurnupGet<TData = Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>, TError = HTTPValidationError>(
+ projectId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>,
+          TError,
+          Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProjectBurnupProjectsProjectIdBurnupGet<TData = Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>, TError = HTTPValidationError>(
+ projectId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Project Burnup
+ */
+
+export function useProjectBurnupProjectsProjectIdBurnupGet<TData = Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>, TError = HTTPValidationError>(
+ projectId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof projectBurnupProjectsProjectIdBurnupGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getProjectBurnupProjectsProjectIdBurnupGetQueryOptions(projectId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

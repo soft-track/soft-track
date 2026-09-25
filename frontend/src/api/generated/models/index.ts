@@ -91,6 +91,8 @@ export * from './parentRef';
 export * from './parsedComment';
 export * from './parsedIssue';
 export * from './passwordChange';
+export * from './projectBurnup';
+export * from './projectBurnupPoint';
 export * from './projectCreate';
 export * from './projectRead';
 export * from './projectState';

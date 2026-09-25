@@ -7,6 +7,7 @@ from lib_softtrack.models.reports import (
     Burndown,
     CreatedVsResolved,
     CumulativeFlow,
+    ProjectBurnup,
     Velocity,
 )
 from lib_softtrack.tables import User
@@ -28,6 +29,21 @@ def cycle_burndown(
     actually happened is that the sprint grew.
     """
     return reports_service.burndown(session, current_user, cycle_id)
+
+
+@router.get("/projects/{project_id}/burnup", response_model=ProjectBurnup)
+def project_burnup(
+    project_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """A project's scope against its completed work, each day, in issues and points.
+
+    Starts on the first day history records anything about the project. Points
+    only cover sized issues; `unestimated_issues` says how many are not sized,
+    so the points total is not mistaken for the whole epic.
+    """
+    return reports_service.project_burnup(session, current_user, project_id)
 
 
 @router.get("/teams/{team_id}/velocity", response_model=Velocity)

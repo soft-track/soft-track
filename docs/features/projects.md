@@ -67,3 +67,29 @@ holds some of the issues on screen. In the list, each project gets a section.
 Every card and list row shows its project as a badge in the project's colour.
 When the board is grouped by project, the badge is replaced by a status dot,
 because the column heading already names the project.
+
+## Burnup
+
+Each project's page has a burnup chart: the project's scope against its
+completed work, day by day, in issues or in points. It's a burnup rather than
+a burndown because an epic's scope is expected to change. A rising scope line
+is work added after work started, which explains most missed dates. A burndown
+would fold that into "remaining" and hide it.
+
+The chart is replayed from issue history, like the [reports](reports.md), so
+every change to an issue's project is recorded along with its status, cycle
+and estimate changes. That includes issues released when their project is
+deleted.
+
+- **Cancelled issues count as neither scope nor completed work**, the same
+  rule as progress.
+- **Unestimated issues aren't counted as zero points.** They're counted
+  separately. When any are in scope, the points view says so and marks the
+  total as a floor (`8+ pts`). An unestimated issue means "not sized yet",
+  which is different from a small one.
+- **The chart starts on the first day history records anything about the
+  project.** It isn't drawn back to the project's creation, because nothing
+  was recorded then. Upgrading to this release records every issue already in
+  a project, stamped at the moment of the upgrade. That is true, and doesn't
+  claim when the issue joined. It means an existing project's chart starts on
+  upgrade day at its real scope.

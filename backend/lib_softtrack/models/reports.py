@@ -21,6 +21,34 @@ class BurndownPoint(BaseModel):
     ideal_remaining: float
 
 
+class ProjectBurnupPoint(BaseModel):
+    """What one project -- an epic -- held at the end of one day (#64)."""
+
+    day: date
+    #: Issues in the project that day, cancelled ones left out -- the same
+    #: rule progress follows (#13): cancelled work was neither done nor owed.
+    scope_issues: int
+    completed_issues: int
+    #: Points across the sized issues only. An unsized issue is not zero,
+    #: so it is counted below instead of being summed in as one.
+    scope_points: int
+    completed_points: int
+    #: In scope that day with no estimate. Non-zero means `scope_points` is a
+    #: floor, not the size of the epic.
+    unestimated_issues: int
+
+
+class ProjectBurnup(BaseModel):
+    project_id: int
+    project_name: str
+    #: The first day history records anything about this project, or null
+    #: when it has none yet. The chart starts here rather than at the
+    #: project's creation: before this day there is nothing to replay, and
+    #: drawing it flat would be inventing a history.
+    started_on: Optional[date] = None
+    points: list[ProjectBurnupPoint]
+
+
 class ScopeChange(BaseModel):
     day: date
     issues_added: int

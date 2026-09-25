@@ -5,8 +5,8 @@ outstanding on the ninth, how much did the last six cycles deliver, is work
 piling up in review, is the backlog growing.
 
 No query over the current rows can answer any of those. The `issueevent` table
-is the only source — every change to an issue's status, cycle or estimate
-writes a row — and each report replays those events up to the end of each day
+is the only source — every change to an issue's status, cycle, estimate or
+project writes a row — and each report replays those events up to the end of each day
 and counts what the board looked like then. One replay serves all of them.
 
 Three details that follow from that:

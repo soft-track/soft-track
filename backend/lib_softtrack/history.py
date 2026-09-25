@@ -23,6 +23,7 @@ TRACKED: dict[str, IssueEventField] = {
     "status_id": IssueEventField.status,
     "cycle_id": IssueEventField.cycle,
     "estimate": IssueEventField.estimate,
+    "project_id": IssueEventField.project,
 }
 
 

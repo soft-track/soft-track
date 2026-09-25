@@ -11,11 +11,13 @@ import {
   useGetProjectProjectsProjectIdGet,
   useUpdateProjectProjectsProjectIdPatch,
 } from '@/api/generated/endpoints/projects/projects'
+import { useProjectBurnupProjectsProjectIdBurnupGet } from '@/api/generated/endpoints/reports/reports'
 import type { IssueRead, ProjectRead, ProjectUpdate } from '@/api/generated/models'
 import { EstimateBadge } from '@/issues/EstimateBadge'
 import { IssueDetailPanel } from '@/issues/IssueDetailPanel'
 import { PriorityIcon } from '@/issues/PriorityIcon'
 import { AddIssuesModal } from '@/projects/AddIssuesModal'
+import { ProjectBurnupChart } from '@/reports/ProjectBurnupChart'
 import { activeMembers } from '@/team/members'
 import {
   PROJECT_STATES,
@@ -89,6 +91,7 @@ function ProjectDetail({
   const queryClient = useQueryClient()
   const updateProject = useUpdateProjectProjectsProjectIdPatch()
   const updateIssue = useUpdateIssueIssuesIssueIdPatch()
+  const burnup = useProjectBurnupProjectsProjectIdBurnupGet(project.id)
 
   const [adding, setAdding] = useState(false)
   const [openIssueId, setOpenIssueId] = useState<number | null>(null)
@@ -245,6 +248,12 @@ function ProjectDetail({
           </div>
         </div>
       </header>
+
+      {burnup.data && (
+        <div className="hairline border-b px-5 py-4">
+          <ProjectBurnupChart data={burnup.data} />
+        </div>
+      )}
 
       <section className="px-5 py-4" aria-label="Issues">
         {isLoadingIssues ? (
