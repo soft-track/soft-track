@@ -129,10 +129,10 @@ function listen() {
 const announced = () => heard.join(' | ')
 
 describe('keyboard drag and drop', () => {
-  it('picks up with Space, moves with the arrows, drops with Space', async () => {
+  it('picks up with Shift+Space, moves with the arrows, drops with Space', async () => {
     const { onStatusChange, user } = renderBoard()
 
-    await user.keyboard(' ')
+    await user.keyboard('{Shift>} {/Shift}')
     await waitFor(() => expect(announced()).toMatch(/Picked up ENG-42 in Todo/))
 
     await user.keyboard('{ArrowRight}')
@@ -145,7 +145,7 @@ describe('keyboard drag and drop', () => {
 
   it('drops with Enter too, without opening the issue', async () => {
     const { onStatusChange, user } = renderBoard()
-    await user.keyboard(' ')
+    await user.keyboard('{Shift>} {/Shift}')
     await user.keyboard('{ArrowRight}{ArrowRight}')
     await user.keyboard('{Enter}')
 
@@ -155,12 +155,28 @@ describe('keyboard drag and drop', () => {
 
   it('puts the card back on Escape', async () => {
     const { onStatusChange, user } = renderBoard()
-    await user.keyboard(' ')
+    await user.keyboard('{Shift>} {/Shift}')
     await user.keyboard('{ArrowRight}')
     await user.keyboard('{Escape}')
 
     await waitFor(() => expect(announced()).toMatch(/Move cancelled\. ENG-42 stays in Todo/))
     expect(onStatusChange).not.toHaveBeenCalled()
+  })
+
+  it('leaves plain Space to the quick peek (#113), not the drag', async () => {
+    const { onStatusChange, user } = renderBoard()
+    await user.keyboard(' ')
+    await user.keyboard('{ArrowRight}')
+    await user.keyboard(' ')
+
+    expect(announced()).not.toMatch(/Picked up/)
+    expect(onStatusChange).not.toHaveBeenCalled()
+  })
+
+  it('picks up on Shift+Space only, not on Space with any other modifier', async () => {
+    const { user } = renderBoard()
+    await user.keyboard('{Control>} {/Control}{Alt>} {/Alt}')
+    expect(announced()).not.toMatch(/Picked up/)
   })
 
   it('still opens the issue on Enter when nothing is picked up', async () => {
@@ -173,7 +189,7 @@ describe('keyboard drag and drop', () => {
     const below = { ...ISSUE, id: 43, number: 43, identifier: 'ENG-43', title: 'Below' }
     const { onMove, onStatusChange, user } = renderBoard([ISSUE, below])
 
-    await user.keyboard(' ')
+    await user.keyboard('{Shift>} {/Shift}')
     await user.keyboard('{ArrowDown}')
     await waitFor(() => expect(announced()).toMatch(/ENG-42 is in Todo, next to ENG-43/))
     await user.keyboard(' ')
@@ -190,7 +206,7 @@ describe('keyboard drag and drop', () => {
     const card = document.querySelector('[data-card="42"]')!
     const describedBy = card.getAttribute('aria-describedby')!
     expect(document.getElementById(describedBy)?.textContent).toMatch(
-      /press Space to pick it up/,
+      /press Shift and Space to pick it up/,
     )
   })
 
@@ -213,7 +229,7 @@ describe('keyboard drag and drop', () => {
     expect(card.getAttribute('aria-roledescription')).toBeNull()
     expect(card.getAttribute('aria-describedby')).toBeNull()
 
-    await user.keyboard(' ')
+    await user.keyboard('{Shift>} {/Shift}')
     await user.keyboard('{ArrowRight}')
     await user.keyboard(' ')
     expect(announced()).not.toMatch(/Picked up/)

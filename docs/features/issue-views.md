@@ -1,8 +1,9 @@
-# Opening an issue: the panel and the page
+# Opening an issue: the peek, the panel and the page
 
 An issue has one address, `/ENG/issue/42`, and it's the one people paste.
 What you see at that address depends on how you got there, not on the
-address.
+address. Before any of that there's the quick peek, which has no address
+at all.
 
 - **The panel** slides over the board. Opening a card on the board, a row in
   the list or an issue in the calendar gives you the panel, with the board
@@ -15,6 +16,33 @@ address.
 The choice lives in the browser's history entry rather than in the URL. That
 way the link you copy from either surface is the same link, and a reload
 keeps whichever surface you were on.
+
+## The quick peek
+
+Sometimes you want one thing from a card: who has it, what the description
+says, whether it's blocked. For that there's the peek. It's a read-only card
+that appears beside the one you're looking at, on the board or in the list:
+
+- **Space** on a focused card or list row opens it, and Space again closes
+  it. As you arrow from card to card the peek follows the focus.
+- **Rest the mouse** on a card or row for 400 ms and it opens; move off and
+  it goes. The delay is the design: any shorter and the board flickers with
+  previews as the pointer crosses it. Touch screens get no hover peek, since
+  there is no hover to rest with.
+- **Enter** opens the peeked issue as a page. **Escape** closes the peek and
+  nothing else: not your selection, not anything open underneath.
+
+The peek shows what the board already knows: title, status, assignee,
+priority, estimate, due date, project, labels, the first lines of the
+description as plain text, sub-issue progress and how many issues block it.
+It makes **no requests**. Nothing loads, which is what makes it a peek. It
+doesn't change the URL, move focus or your selection, and it isn't one of
+the board's overlays. It never covers the card it describes, and it moves to
+the other side of the card near the edge of the screen. In the list it sits
+above or below the row instead.
+
+Because Space now peeks, keyboard drag picks a card up with **Shift+Space**;
+see [Keyboard](keyboard.md).
 
 ## The page
 
@@ -61,3 +89,8 @@ in the board's URL.
   the same board mounted when the panel opens over it.
 - The page finds the issue with `GET /teams/{team_id}/issues/by-number/{number}`
   (#111), then reads it by id like the panel does.
+- The peek is `frontend/src/board/usePeek.ts` (state and the hover delay),
+  `peekContext.ts` (what a card or row wires up) and `IssuePeek.tsx` (the
+  card itself, drawn in a portal and positioned by `placePeek` in
+  `peek.ts`). `BoardPage` owns the one peek and passes it the board's own
+  list, so what it shows is always the board's current copy.

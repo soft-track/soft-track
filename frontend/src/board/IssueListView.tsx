@@ -1,5 +1,6 @@
 import type { IssueRead } from '@/api/generated/models'
 import { type BoardGrouping, groupByProject } from '@/board/grouping'
+import { usePeekTrigger } from '@/board/peekContext'
 import { selectionGesture } from '@/board/selection'
 import { useTranslation } from '@/i18n'
 import { DueBadge } from '@/issues/DueBadge'
@@ -9,6 +10,7 @@ import { isResolved } from '@/issues/issueMeta'
 import { IssueTypeIcon } from '@/issues/IssueTypeIcon'
 import { PriorityIcon } from '@/issues/PriorityIcon'
 import { useOpenIssue } from '@/issues/surface'
+import { isPlainKey } from '@/keyboard/typing'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
 
@@ -116,6 +118,8 @@ function IssueRow({
   const { t } = useTranslation(['board', 'common'])
   const openIssue = useOpenIssue()
   const { projects } = useTeamContext()
+  // The quick peek (#113), as on a card: Space, or a mouse resting on the row.
+  const peek = usePeekTrigger(issue.id)
   const status = issue.status
   const project = showProject
     ? projects.find((candidate) => candidate.id === issue.project_id)
@@ -126,6 +130,22 @@ function IssueRow({
       <button
         type="button"
         data-selected={selected || undefined}
+        onPointerEnter={peek.onPointerEnter}
+        onPointerLeave={peek.onPointerLeave}
+        onPointerDown={peek.close}
+        onFocus={peek.onFocus}
+        onBlur={peek.onBlur}
+        onKeyDown={(e) => {
+          if (e.key === ' ' && !e.shiftKey && isPlainKey(e.nativeEvent)) {
+            e.preventDefault()
+            peek.toggle(e.currentTarget)
+          }
+        }}
+        // A button clicks itself when Space comes back up. Space is the
+        // peek's here, not a second way to open the issue.
+        onKeyUp={(e) => {
+          if (e.key === ' ') e.preventDefault()
+        }}
         onClick={(e) => {
           const gesture = selectionGesture(e)
           if (gesture && onSelect) {

@@ -11,9 +11,12 @@ import { i18n } from '@/i18n'
 /**
  * Keys for moving a card without a mouse (#80).
  *
- * Space picks a card up and puts it down. Enter also puts it down, but does
- * not pick one up: Enter on a focused card already opens the issue, and a
- * keyboard user relies on that far more often than on dragging.
+ * Shift+Space picks a card up, and Space or Enter puts it down. Plain Space
+ * on a card that is not held is the quick peek (#113): the card's own key
+ * handler keeps it from ever reaching the sensor, so `start` still names
+ * Space -- a key code, which Shift does not change. Enter does not pick a
+ * card up: Enter on a focused card already opens the issue, and a keyboard
+ * user relies on that far more often than on dragging.
  */
 export const KEYBOARD_CODES: NonNullable<KeyboardSensorOptions['keyboardCodes']> = {
   start: ['Space'],

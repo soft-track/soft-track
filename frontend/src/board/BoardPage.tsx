@@ -27,12 +27,15 @@ import {
   withSort,
 } from '@/board/sorting'
 import { IssueListView } from '@/board/IssueListView'
+import { IssuePeekLayer } from '@/board/IssuePeek'
+import { PeekContext } from '@/board/peekContext'
 import { KanbanBoard } from '@/board/KanbanBoard'
 import { EMPTY_SELECTION, selectionReducer } from '@/board/selection'
 import { Sidebar } from '@/board/Sidebar'
 import { TopBar } from '@/board/TopBar'
 import { useBulkEdit } from '@/board/useBulkEdit'
 import { useOverlays } from '@/board/useOverlays'
+import { usePeek } from '@/board/usePeek'
 import { useMoveIssue } from '@/board/useMoveIssue'
 import { useStatusChange } from '@/board/useStatusChange'
 import { CalendarView } from '@/calendar/CalendarView'
@@ -260,9 +263,21 @@ export default function BoardPage() {
     openShortcuts,
   })
 
+  // The quick peek (#113) belongs to the board as it is: a panel opening, an
+  // overlay, another view or a search each end it. Not an overlay itself, so
+  // the overlay stack does not know about it.
+  const peek = usePeek()
+  const closePeek = peek.close
+  useEffect(() => {
+    closePeek()
+  }, [closePeek, issueNumber, overlays.top, view, searchQuery])
+  const peekedIssue = peek.peeked
+    ? issues.find((issue) => issue.id === peek.peeked?.id)
+    : undefined
+
   // Escape clears the selection, but only once there is nothing above the
   // board for it to close first -- the global handler closes overlays, and an
-  // open issue panel has its own.
+  // open issue panel has its own. An open peek takes its Escape first.
   const hasSelection = selection.ids.length > 0
   const escapeClearsSelection = hasSelection && overlays.top === null && !issueNumber
   useEffect(() => {
@@ -413,44 +428,46 @@ export default function BoardPage() {
               onOpenNotifiedIssue={leaveForIssue}
             />
             {selectedCycle && !searchQuery && <CycleBanner cycle={selectedCycle} />}
-            <div className="min-h-0 flex-1">
-              {searchQuery ? (
-                <SearchResults
-                  query={searchQuery}
-                  hits={searchResults.data?.items ?? []}
-                  total={searchResults.data?.total ?? 0}
-                  isLoading={searchResults.isLoading}
-                  onOpen={leaveForIssue}
-                />
-              ) : !filtersAreSettled || issuesQuery.isLoading ? (
-                <Loading label={t('page.loadingIssues')} />
-              ) : view === 'calendar' ? (
-                <CalendarView params={toQueryParams(filters)} canWrite={canWrite} />
-              ) : view === 'roadmap' ? (
-                <RoadmapView />
-              ) : view === 'reports' ? (
-                <ReportsView />
-              ) : view === 'board' ? (
-                <KanbanBoard
-                  issues={issues}
-                  grouping={grouping}
-                  onStatusChange={changeStatus}
-                  onMove={moveIssue}
-                  onProjectChange={(ids, projectId) => bulk.update(ids, { project_id: projectId })}
-                  estimates={teamData.estimates}
-                  selectedIds={selection.ids}
-                  onSelect={canWrite ? selectIssue : undefined}
-                  onBulkStatusChange={(ids, status) => bulk.update(ids, { status_id: status.id })}
-                />
-              ) : (
-                <IssueListView
-                  issues={issues}
-                  grouping={grouping}
-                  selectedIds={selection.ids}
-                  onSelect={canWrite ? selectIssue : undefined}
-                />
-              )}
-            </div>
+            <PeekContext.Provider value={peek}>
+              <div className="min-h-0 flex-1">
+                {searchQuery ? (
+                  <SearchResults
+                    query={searchQuery}
+                    hits={searchResults.data?.items ?? []}
+                    total={searchResults.data?.total ?? 0}
+                    isLoading={searchResults.isLoading}
+                    onOpen={leaveForIssue}
+                  />
+                ) : !filtersAreSettled || issuesQuery.isLoading ? (
+                  <Loading label={t('page.loadingIssues')} />
+                ) : view === 'calendar' ? (
+                  <CalendarView params={toQueryParams(filters)} canWrite={canWrite} />
+                ) : view === 'roadmap' ? (
+                  <RoadmapView />
+                ) : view === 'reports' ? (
+                  <ReportsView />
+                ) : view === 'board' ? (
+                  <KanbanBoard
+                    issues={issues}
+                    grouping={grouping}
+                    onStatusChange={changeStatus}
+                    onMove={moveIssue}
+                    onProjectChange={(ids, projectId) => bulk.update(ids, { project_id: projectId })}
+                    estimates={teamData.estimates}
+                    selectedIds={selection.ids}
+                    onSelect={canWrite ? selectIssue : undefined}
+                    onBulkStatusChange={(ids, status) => bulk.update(ids, { status_id: status.id })}
+                  />
+                ) : (
+                  <IssueListView
+                    issues={issues}
+                    grouping={grouping}
+                    selectedIds={selection.ids}
+                    onSelect={canWrite ? selectIssue : undefined}
+                  />
+                )}
+              </div>
+            </PeekContext.Provider>
           </div>
         )}
       </div>
@@ -491,6 +508,7 @@ export default function BoardPage() {
           }}
         />
       )}
+      <IssuePeekLayer peek={peek} issue={peekedIssue} onPromote={leaveForIssue} />
       {issueNumber && openIssue && (
         <IssueDetailPanel issueId={openIssue.id} onClose={() => navigate(`/${team.key}`)} />
       )}

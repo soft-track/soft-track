@@ -225,6 +225,21 @@ describe('leaving the board for an issue page', () => {
     expect(await screen.findByRole('button', { name: /matched in title/ })).toBeTruthy()
   })
 
+  it('promotes a quick peek to a page on Enter (#113), and Back returns to the list', async () => {
+    const user = renderApp()
+    await user.click(screen.getByRole('button', { name: 'list' }))
+    screen.getByRole('button', { name: /ENG-7.*Retry storm/ }).focus()
+    await user.keyboard(' ')
+    expect(screen.getByRole('tooltip', { name: 'Preview of ENG-7' })).toBeTruthy()
+
+    await user.keyboard('{Enter}')
+    expect(screen.getByText('Page for ENG-7')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByRole('button', { name: 'list' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
   it('opens a notification as a page', async () => {
     const user = renderApp()
     await user.click(screen.getByRole('button', { name: 'Open the notification' }))

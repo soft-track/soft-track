@@ -16,7 +16,7 @@ export const kanban = {
   theIssue: 'The issue',
   keyboard: {
     instructions:
-      'To move this issue, press Space to pick it up. The left and right arrow keys choose a column, up and down move it past the cards above and below, and Space drops it. Escape cancels. Enter opens the issue.',
+      'To move this issue, press Shift and Space to pick it up. The left and right arrow keys choose a column, up and down move it past the cards above and below, and Space drops it. Escape cancels. Enter opens the issue, and Space on its own shows a preview of it.',
     pickedUp:
       'Picked up {{issue}}. Use the arrow keys to move it, Space to drop, Escape to cancel.',
     pickedUpIn:

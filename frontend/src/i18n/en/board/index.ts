@@ -7,6 +7,7 @@ import { filters } from '@/i18n/en/board/filters'
 import { list } from '@/i18n/en/board/list'
 import { bulk } from '@/i18n/en/board/bulk'
 import { kanban } from '@/i18n/en/board/kanban'
+import { peek } from '@/i18n/en/board/peek'
 
 export const board = {
   page,
@@ -17,4 +18,5 @@ export const board = {
   list,
   bulk,
   kanban,
+  peek,
 } as const

@@ -11,14 +11,20 @@ status, priority, assignee, project, cycle or labels on all of them in one
 transactional request, or deletes them after a confirmation. Dragging a
 selected card moves the whole selection, and `Esc` clears it.
 
-**Cards move without a mouse.** On a focused card, Space picks it up. The
-left and right arrow keys carry it one column at a time, up and down move it
-past the cards above and below it in its column, and Space or Enter drops it. Escape puts it back where it was. Every step is
-read out to screen readers in plain words ("Moved ENG-42 to In Progress"),
-never as internal ids. Enter on a card that isn't picked up still opens the
-issue, which is why Enter doesn't pick cards up. Moving a card that's part
-of a selection moves the whole selection, just as dragging with the mouse
-does.
+**Space peeks.** On a focused card or list row, Space shows a quick,
+read-only preview of the issue beside it without opening anything; see
+[the quick peek](issue-views.md#the-quick-peek). Enter then opens the issue
+as a page, and Escape or Space again closes the preview.
+
+**Cards move without a mouse.** On a focused card, Shift+Space picks it up.
+(Before the quick peek it was plain Space, which now peeks.) The left and
+right arrow keys carry it one column at a time, up and down move it past the
+cards above and below it in its column, and Space or Enter drops it. Escape
+puts it back where it was. Every step is read out to screen readers in plain
+words ("Moved ENG-42 to In Progress"), never as internal ids. Enter on a card
+that isn't picked up still opens the issue, which is why Enter doesn't pick
+cards up. Moving a card that's part of a selection moves the whole selection,
+just as dragging with the mouse does.
 
 On an open issue, in the panel or on its page, `S`, `P`, `A` and `L` jump to
 status, priority, assignee and labels. The properties print those letters next
