@@ -15,6 +15,7 @@ import {
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 import type { EstimateSummary, IssueRead, StatusRead } from '@/api/generated/models'
+import { DropIsNotAClick } from '@/board/DropIsNotAClick'
 import { resolveDrop } from '@/board/dropTarget'
 import { type BoardGrouping, groupByProject, projectForDropTarget } from '@/board/grouping'
 import {
@@ -420,6 +421,7 @@ export function KanbanBoard({
         }),
       }}
     >
+      <DropIsNotAClick />
       <div
         className="scroll-thin flex h-full snap-x snap-mandatory gap-3 overflow-x-auto pb-1 lg:snap-none"
         onKeyDown={moveFocus}

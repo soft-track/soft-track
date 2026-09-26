@@ -304,8 +304,9 @@ export default function BoardPage() {
   /**
    * Leave the board for an issue's page (#112) -- the command palette, search
    * results and notifications all go there, where the board and the list
-   * open the panel instead. The view and the search go onto this history
-   * entry first, so Back comes back to them; see BoardReturn.
+   * open the panel instead, and the panel's own way out does too. The view
+   * and the search go onto this history entry first, so Back comes back to
+   * them; see BoardReturn.
    */
   const leaveForIssue = useCallback(
     (issue: IssueRef) => {
@@ -510,7 +511,12 @@ export default function BoardPage() {
       )}
       <IssuePeekLayer peek={peek} issue={peekedIssue} onPromote={leaveForIssue} />
       {issueNumber && openIssue && (
-        <IssueDetailPanel issueId={openIssue.id} onClose={() => navigate(`/${team.key}`)} />
+        <IssueDetailPanel
+          issueId={openIssue.id}
+          onClose={() => navigate(`/${team.key}`)}
+          // Back from the page is the panel again, over the same view.
+          onOpenAsPage={() => leaveForIssue(openIssue)}
+        />
       )}
     </TeamProvider>
   )

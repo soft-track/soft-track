@@ -3,17 +3,31 @@ import { useTranslation } from '@/i18n'
 import { useIssueShortcuts } from '@/issues/detail/useIssueShortcuts'
 import { IssueDetailBody } from '@/issues/IssueDetailBody'
 import { IssueHeaderActions } from '@/issues/IssueHeaderActions'
-import { IssueSurfaceContext } from '@/issues/surface'
+import { IssueSurfaceContext, isPlainClick, issuePath, useOpenIssue } from '@/issues/surface'
 import { Icon } from '@/ui/Icon'
 import { useFocusTrap } from '@/ui/useFocusTrap'
 
 /**
  * The slide-over for one issue, over the board: a glance, not a place to
- * work (#112). Its own chrome -- the scrim, the close button, the keys -- and
- * the shared body below it.
+ * work (#112). Its own chrome -- the scrim, the close button, the keys, the
+ * way out to the issue's page -- and the shared body below it.
  */
-export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClose: () => void }) {
+export function IssueDetailPanel({
+  issueId,
+  onClose,
+  onOpenAsPage,
+}: {
+  issueId: number
+  onClose: () => void
+  /**
+   * Trade the glance for the issue's own page. Straight there unless given;
+   * the board gives its own, which first keeps its view and search for Back,
+   * as it does for the command palette.
+   */
+  onOpenAsPage?: () => void
+}) {
   const { t } = useTranslation(['issues', 'common'])
+  const openIssue = useOpenIssue()
   const dialogRef = useFocusTrap<HTMLDivElement>()
   // The body reads the same query; React Query makes it one request.
   const { data: issue } = useGetIssueIssuesIssueIdGet(issueId)
@@ -54,6 +68,24 @@ export function IssueDetailPanel({ issueId, onClose }: { issueId: number; onClos
             </span>
             <span className="flex shrink-0 items-center gap-1">
               {issue && <IssueHeaderActions issue={issue} />}
+              {issue && (
+                // A link to the page it opens, so a middle click puts that
+                // page in a new tab and leaves the panel where it is.
+                <a
+                  href={issuePath(issue)}
+                  onClick={(e) => {
+                    if (!isPlainClick(e)) return
+                    e.preventDefault()
+                    if (onOpenAsPage) onOpenAsPage()
+                    else openIssue(issue, 'page')
+                  }}
+                  className="btn btn-ghost btn-icon btn-sm text-neutral-500"
+                  aria-label={t('panel.openAsPage')}
+                  title={t('panel.openAsPage')}
+                >
+                  <Icon name="expand" size={14} />
+                </a>
+              )}
               <button
                 type="button"
                 onClick={onClose}

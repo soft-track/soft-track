@@ -3,9 +3,10 @@
  * Which surface an issue opens on, by how you got there (#112).
  *
  * The board and the list keep the panel, and the board stays mounted under
- * it. Search results, notifications and the command palette go to the
- * issue's page instead -- and Back from there returns to the board as it
- * was, view and search included, although the board was unmounted.
+ * it. Search results, notifications, the command palette and the panel's own
+ * "Open as page" go to the issue's page instead -- and Back from there
+ * returns to the board as it was, view and search included, although the
+ * board was unmounted.
  *
  * Driven through the real routes, BoardPage and TeamRoute; the top bar and
  * the heavy views are stubbed down to the controls these journeys use.
@@ -142,7 +143,14 @@ vi.mock('@/board/TopBar', () => ({
 }))
 
 vi.mock('@/issues/IssueDetailPanel', () => ({
-  IssueDetailPanel: ({ issueId }: { issueId: number }) => <p>Panel for issue {issueId}</p>,
+  IssueDetailPanel: ({ issueId, onOpenAsPage }: { issueId: number; onOpenAsPage?: () => void }) => (
+    <div>
+      <p>Panel for issue {issueId}</p>
+      <button type="button" onClick={onOpenAsPage}>
+        Open as page
+      </button>
+    </div>
+  ),
 }))
 
 vi.mock('@/issues/IssuePage', () => ({
@@ -194,7 +202,7 @@ describe('opening an issue from the board', () => {
 
     // The stubbed board has no cards to click; the list does.
     await user.click(screen.getByRole('button', { name: 'list' }))
-    await user.click(screen.getByRole('button', { name: /ENG-7.*Retry storm/ }))
+    await user.click(screen.getByRole('link', { name: /ENG-7.*Retry storm/ }))
 
     expect(screen.getByText('Panel for issue 70')).toBeTruthy()
     // Still the list, so still the same BoardPage: remounting it would have
@@ -228,7 +236,7 @@ describe('leaving the board for an issue page', () => {
   it('promotes a quick peek to a page on Enter (#113), and Back returns to the list', async () => {
     const user = renderApp()
     await user.click(screen.getByRole('button', { name: 'list' }))
-    screen.getByRole('button', { name: /ENG-7.*Retry storm/ }).focus()
+    screen.getByRole('link', { name: /ENG-7.*Retry storm/ }).focus()
     await user.keyboard(' ')
     expect(screen.getByRole('tooltip', { name: 'Preview of ENG-7' })).toBeTruthy()
 
@@ -238,6 +246,21 @@ describe('leaving the board for an issue page', () => {
     await user.click(screen.getByRole('button', { name: 'Back' }))
     expect(screen.getByRole('button', { name: 'list' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
+  it('opens the panel’s issue as a page, and Back returns to the panel over the list', async () => {
+    const user = renderApp()
+    await user.click(screen.getByRole('button', { name: 'list' }))
+    await user.click(screen.getByRole('link', { name: /ENG-7.*Retry storm/ }))
+    await user.click(screen.getByRole('button', { name: 'Open as page' }))
+
+    expect(screen.getByText('Page for ENG-7')).toBeTruthy()
+    expect(screen.queryByText(/Panel for/)).toBeNull()
+
+    // The glance you left, over the view you left it on.
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByText('Panel for issue 70')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'list' }).getAttribute('aria-pressed')).toBe('true')
   })
 
   it('opens a notification as a page', async () => {

@@ -12,6 +12,10 @@ import { useNavigate } from 'react-router-dom'
  * palette, search and notifications arrive asking for nothing, and get the
  * page. A reload keeps whichever it was -- the state is part of the history
  * entry.
+ *
+ * A card and a list row are links to that address as well, so the browser's
+ * own ways of following a link -- a middle click, "Open in new tab" -- also
+ * arrive asking for nothing, and get the page.
  */
 export type IssueSurface = 'panel' | 'page'
 
@@ -19,6 +23,24 @@ export type IssueSurface = 'panel' | 'page'
 export type IssueRef = { team_key: string; number: number }
 
 export const issuePath = (issue: IssueRef) => `/${issue.team_key}/issue/${issue.number}`
+
+/**
+ * A plain click: the main button, with no modifier held. On a link to an
+ * issue, that is the app's to answer. A click the app has no other use for --
+ * ⌘ or Ctrl, Shift, Alt -- is left to the browser, which opens the link in a
+ * new tab or window as it would any other.
+ */
+export function isPlainClick(event: {
+  button: number
+  metaKey: boolean
+  ctrlKey: boolean
+  shiftKey: boolean
+  altKey: boolean
+}): boolean {
+  return (
+    event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey
+  )
+}
 
 /** The surface a location asks for. Anything but the panel's own state is the page. */
 export function surfaceFor(state: unknown): IssueSurface {

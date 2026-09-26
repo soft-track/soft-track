@@ -245,9 +245,9 @@ describe('peeking with the keyboard', () => {
     expect(peekCard()).toBeNull()
   })
 
-  it('peeks at a list row, which Space would otherwise have opened', async () => {
+  it('peeks at a list row, without opening it', async () => {
     renderBoard('list')
-    const row = screen.getByRole('button', { name: /ENG-42/ })
+    const row = screen.getByRole('link', { name: /ENG-42/ })
     row.focus()
     await userEvent.keyboard(' ')
 

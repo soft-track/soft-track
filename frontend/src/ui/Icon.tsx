@@ -44,6 +44,7 @@ export type IconName =
   | 'smile'
   | 'download'
   | 'calendar-grid'
+  | 'expand'
 
 const PATHS: Record<IconName, JSX.Element> = {
   search: (
@@ -87,6 +88,8 @@ const PATHS: Record<IconName, JSX.Element> = {
   ),
   upload: <path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />,
   download: <path d="M12 4v12m0 0-4-4m4 4 4-4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />,
+  // Out to the corners: the panel opened out into a page of its own (#112).
+  expand: <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />,
   logout: <path d="M10 17l5-5-5-5M15 12H3M13 4h6a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-6" />,
   sparkle: <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.3 6.3l2.8 2.8M14.9 14.9l2.8 2.8M6.3 17.7l2.8-2.8M14.9 9.1l2.8-2.8" />,
   command: (

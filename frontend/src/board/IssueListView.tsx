@@ -9,7 +9,7 @@ import { ProjectBadge } from '@/issues/IssueCard'
 import { isResolved } from '@/issues/issueMeta'
 import { IssueTypeIcon } from '@/issues/IssueTypeIcon'
 import { PriorityIcon } from '@/issues/PriorityIcon'
-import { useOpenIssue } from '@/issues/surface'
+import { isPlainClick, issuePath, useOpenIssue } from '@/issues/surface'
 import { isPlainKey } from '@/keyboard/typing'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
@@ -127,8 +127,10 @@ function IssueRow({
 
   return (
     <li>
-      <button
-        type="button"
+      {/* A link to the issue, as a card is: a middle click opens its page in
+          a new tab, and a plain click opens the panel (#112). */}
+      <a
+        href={issuePath(issue)}
         data-selected={selected || undefined}
         onPointerEnter={peek.onPointerEnter}
         onPointerLeave={peek.onPointerLeave}
@@ -141,17 +143,16 @@ function IssueRow({
             peek.toggle(e.currentTarget)
           }
         }}
-        // A button clicks itself when Space comes back up. Space is the
-        // peek's here, not a second way to open the issue.
-        onKeyUp={(e) => {
-          if (e.key === ' ') e.preventDefault()
-        }}
         onClick={(e) => {
           const gesture = selectionGesture(e)
           if (gesture && onSelect) {
+            // A selection, not a new tab.
+            e.preventDefault()
             onSelect(issue.id, gesture, order)
             return
           }
+          if (!isPlainClick(e)) return
+          e.preventDefault()
           // The panel, over the list, as from the board (#112).
           openIssue(issue, 'panel')
         }}
@@ -188,7 +189,7 @@ function IssueRow({
         ) : (
           <span className="h-[22px] w-[22px] shrink-0 rounded-full border border-dashed border-neutral-900/20" />
         )}
-      </button>
+      </a>
     </li>
   )
 }

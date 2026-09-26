@@ -10,7 +10,7 @@ import { EstimateBadge } from '@/issues/EstimateBadge'
 import { isResolved } from '@/issues/issueMeta'
 import { IssueTypeIcon } from '@/issues/IssueTypeIcon'
 import { PriorityIcon } from '@/issues/PriorityIcon'
-import { useOpenIssue } from '@/issues/surface'
+import { isPlainClick, issuePath, useOpenIssue } from '@/issues/surface'
 import { isPlainKey } from '@/keyboard/typing'
 import { useCanWrite } from '@/team/useCanWrite'
 import { useTeamContext } from '@/team/useTeamContext'
@@ -25,7 +25,10 @@ export function IssueCard({
 }: {
   issue: IssueRead
   selected?: boolean
-  /** A shift- or ⌘/Ctrl-click. Without it those clicks open the issue like any other. */
+  /**
+   * A shift- or ⌘/Ctrl-click. Without it those clicks are left to the browser,
+   * as on any link: the issue's page, in a new tab or window.
+   */
   onSelect?: (issueId: number, gesture: 'range' | 'toggle') => void
   /** For a board grouped by project, where the column no longer says it. */
   showStatus?: boolean
@@ -47,6 +50,8 @@ export function IssueCard({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: issue.id,
     disabled: !canWrite,
+    // A link that can be carried, not a button: dnd-kit says "button" unless told.
+    attributes: { role: 'link' },
   })
   // The quick peek (#113): Space, or a mouse resting on the card.
   const peek = usePeekTrigger(issue.id)
@@ -71,12 +76,18 @@ export function IssueCard({
   const open = () => openIssue(issue, 'panel')
 
   return (
-    <div
+    // A link to the issue's address, so the browser's own ways of following
+    // one -- a middle click, "Open in new tab" -- open its page (#112). A
+    // plain click stays on the board, in the panel.
+    <a
       ref={setNodeRef}
+      href={issuePath(issue)}
       style={style}
       {...(canWrite ? { ...listeners, ...attributes } : {})}
-      role="button"
-      tabIndex={0}
+      // Carried by dnd-kit, never dragged off by the browser as a URL. The
+      // click a drop can end in is kept from following the link by the
+      // board; see DropIsNotAClick.
+      draggable={false}
       data-card={issue.id}
       data-selected={selected || undefined}
       onPointerEnter={peek.onPointerEnter}
@@ -92,9 +103,13 @@ export function IssueCard({
       onClick={(e) => {
         const gesture = selectionGesture(e)
         if (gesture && onSelect) {
+          // A selection, not a new tab.
+          e.preventDefault()
           onSelect(issue.id, gesture)
           return
         }
+        if (!isPlainClick(e)) return
+        e.preventDefault()
         open()
       }}
       // Shift-click would otherwise extend a text selection across the board.
@@ -102,7 +117,7 @@ export function IssueCard({
         if (e.shiftKey) e.preventDefault()
       }}
       onKeyDown={(e) => {
-        // Enter opens the issue, as it would on a real button. Everything
+        // Enter opens the issue, as it does on any link. Everything
         // else goes to dnd-kit, which picks the card up on Shift+Space (#80)
         // -- this handler replaces the one spread in from `listeners`, so it
         // has to be handed on explicitly or the keyboard sensor never hears
@@ -132,7 +147,7 @@ export function IssueCard({
         }
         listeners?.onKeyDown?.(e)
       }}
-      className={`glass-card relative w-full cursor-grab touch-none rounded-card p-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/70 active:cursor-grabbing ${
+      className={`glass-card relative block w-full cursor-grab touch-none rounded-card p-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/70 active:cursor-grabbing ${
         selected ? 'bg-brand-500/10 ring-2 ring-brand-500/70' : ''
       }`}
     >
@@ -202,7 +217,7 @@ export function IssueCard({
           )}
         </div>
       </div>
-    </div>
+    </a>
   )
 }
 

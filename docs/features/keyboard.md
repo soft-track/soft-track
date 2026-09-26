@@ -9,7 +9,8 @@ the focused one. `⌘`/`Ctrl`-click adds a card or list row to a selection and
 `Shift`-click selects the range from the last one picked; a bar then sets
 status, priority, assignee, project, cycle or labels on all of them in one
 transactional request, or deletes them after a confirmation. Dragging a
-selected card moves the whole selection, and `Esc` clears it.
+selected card moves the whole selection, and `Esc` clears it. A card or row
+is also a link, so a middle click opens the issue's page in a new tab.
 
 **Space peeks.** On a focused card or list row, Space shows a quick,
 read-only preview of the issue beside it without opening anything; see

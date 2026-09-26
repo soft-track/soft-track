@@ -128,7 +128,7 @@ function renderBoard() {
   return userEvent.setup()
 }
 
-const row = (title: string) => screen.getByRole('button', { name: new RegExp(title) })
+const row = (title: string) => screen.getByRole('link', { name: new RegExp(title) })
 const bar = () => screen.getByRole('toolbar', { name: 'Bulk actions' })
 
 async function pick(user: ReturnType<typeof userEvent.setup>, ...titles: string[]) {

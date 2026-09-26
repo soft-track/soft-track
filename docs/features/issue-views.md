@@ -8,14 +8,24 @@ at all.
 - **The panel** slides over the board. Opening a card on the board, a row in
   the list or an issue in the calendar gives you the panel, with the board
   still under it. Close it (or press `Esc`) and you're back where you were,
-  same view, same scroll.
+  same view, same scroll. **Open as page**, the arrows beside the close
+  button, trades the panel for the page.
 - **The page** stands on its own, with no board loading behind it. A pasted
   link, the command palette, a search result and a notification all open
-  the page, and so does reloading a page.
+  the page, and so does reloading a page. So does a card or a list row
+  opened in a new tab.
 
 The choice lives in the browser's history entry rather than in the URL. That
 way the link you copy from either surface is the same link, and a reload
 keeps whichever surface you were on.
+
+Cards and list rows are links to that address, so the browser treats them
+like any other link: hovering one shows where it goes, and right-clicking it
+offers to copy the address or open it in a new tab. A plain click still opens
+the panel. `⌘`/`Ctrl`-click and `Shift`-click still select (see
+[Keyboard](keyboard.md)), so to open a card in a new tab, middle-click it. A
+guest has nothing to select, so for them `⌘`/`Ctrl`-click opens a new tab,
+as on any other link.
 
 ## The quick peek
 
@@ -72,7 +82,8 @@ you're on a page.
 unmounts it. The view you were on (board, list, calendar and so on) and your
 search text are saved to the board's history entry first, so pressing Back
 brings back the same view and the same search results. Filters were already
-in the board's URL.
+in the board's URL. Leaving by the panel's **Open as page** saves them the
+same way, and Back brings the panel back, over the view you left.
 
 ## For developers
 
@@ -87,6 +98,13 @@ in the board's URL.
 - `frontend/src/app/TeamRoute.tsx` picks the board or the page for every
   `/:teamKey` route. It's one element for all of them, which is what keeps
   the same board mounted when the panel opens over it.
+- Cards and list rows are `<a href>` elements pointing at the issue's
+  address. Their click handlers deal with a plain click (`isPlainClick` in
+  `surface.ts`) and the selection gestures, and leave every other click to
+  the browser. A card is also dnd-kit's drag handle, and it follows the
+  pointer, so a drop can end in a click on the card that was carried.
+  `frontend/src/board/DropIsNotAClick.tsx` stops that click from following
+  the link.
 - The page finds the issue with `GET /teams/{team_id}/issues/by-number/{number}`
   (#111), then reads it by id like the panel does.
 - The peek is `frontend/src/board/usePeek.ts` (state and the hover delay),

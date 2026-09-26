@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 /**
  * The panel is chrome around the shared body (#112): its own header, close
- * button and keys, and links followed inside it stay in the panel.
+ * button and keys, a way out to the issue's page, and links followed inside
+ * it stay in the panel.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -53,21 +54,28 @@ function Where() {
   )
 }
 
-function renderPanel(onClose = vi.fn()) {
-  render(
+/** The panel while the address asks for it, as TeamRoute has it; the page's stand-in otherwise. */
+function PanelOrPage(props: { onClose: () => void; onOpenAsPage?: () => void }) {
+  const location = useLocation()
+  if (surfaceFor(location.state) === 'page') return <p>The page for {location.pathname}</p>
+  return <IssueDetailPanel issueId={70} {...props} />
+}
+
+function renderPanel(onClose = vi.fn(), onOpenAsPage?: () => void) {
+  const { container } = render(
     <QueryClientProvider client={new QueryClient()}>
       <MemoryRouter initialEntries={[{ pathname: '/ENG/issue/7', state: { issueSurface: 'panel' } }]}>
         <Routes>
           <Route
             path="/ENG/issue/7"
-            element={<IssueDetailPanel issueId={70} onClose={onClose} />}
+            element={<PanelOrPage onClose={onClose} onOpenAsPage={onOpenAsPage} />}
           />
           <Route path="/ENG/issue/:n" element={<Where />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
   )
-  return onClose
+  return { onClose, container }
 }
 
 afterEach(cleanup)
@@ -89,8 +97,48 @@ describe('the issue panel', () => {
   })
 
   it('closes on Escape', async () => {
-    const onClose = renderPanel()
+    const { onClose } = renderPanel()
     await userEvent.keyboard('{Escape}')
     expect(onClose).toHaveBeenCalled()
+  })
+})
+
+describe('opening the panel’s issue as a page', () => {
+  it('is a link to the page, which a middle click opens in a new tab', () => {
+    renderPanel()
+    const link = screen.getByRole('link', { name: 'Open as page' })
+    expect(link.getAttribute('href')).toBe('/ENG/issue/7')
+  })
+
+  it('goes to the page on a plain click', async () => {
+    renderPanel()
+    await userEvent.click(screen.getByRole('link', { name: 'Open as page' }))
+    expect(screen.getByText('The page for /ENG/issue/7')).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('leaves the going to the board, when the board has a way of its own', async () => {
+    const onOpenAsPage = vi.fn()
+    renderPanel(vi.fn(), onOpenAsPage)
+    await userEvent.click(screen.getByRole('link', { name: 'Open as page' }))
+    expect(onOpenAsPage).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('dialog')).toBeTruthy()
+  })
+
+  it('leaves a modified click to the browser', () => {
+    const onOpenAsPage = vi.fn()
+    const { container } = renderPanel(vi.fn(), onOpenAsPage)
+    // Whether the click's default survived the panel's handler: read at the
+    // root React listens on, and stopped there, since jsdom cannot follow it.
+    let followed: boolean | undefined
+    container.addEventListener('click', (event) => {
+      followed = !event.defaultPrevented
+      event.preventDefault()
+    })
+    fireEvent.click(screen.getByRole('link', { name: 'Open as page' }), { ctrlKey: true })
+
+    expect(followed).toBe(true)
+    expect(onOpenAsPage).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog')).toBeTruthy()
   })
 })

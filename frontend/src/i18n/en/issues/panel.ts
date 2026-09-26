@@ -4,6 +4,8 @@ export const panel = {
   loading: 'Issue',
   importedKey: "This issue's key before it was imported",
   closeHint: 'Close (Esc)',
+  // The way out of the panel to the issue's own page (#112), beside Close.
+  openAsPage: 'Open as page',
   title: 'Title',
   files: 'Files',
   // The properties' own landmark: a column beside the reading on a wide page (#112).
