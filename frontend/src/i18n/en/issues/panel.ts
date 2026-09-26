@@ -6,6 +6,8 @@ export const panel = {
   closeHint: 'Close (Esc)',
   title: 'Title',
   files: 'Files',
+  // The properties' own landmark: a column beside the reading on a wide page (#112).
+  details: 'Details',
   createdBy: 'Created by {{name}} {{when}}',
   actions: {
     more: 'More actions',

@@ -13,7 +13,11 @@ import type { TeamRead } from '@/api/generated/models'
  * are all enabled together, all keyed on the team, and all consumed through
  * TeamContext, so they belong together.
  */
-export function useTeamData(team: TeamRead | undefined) {
+export function useTeamData(
+  team: TeamRead | undefined,
+  /** Off for an issue's page (#112), which has no columns to total. */
+  { estimates: withEstimates = true }: { estimates?: boolean } = {},
+) {
   const id = team?.id ?? 0
   const options = { query: { enabled: Boolean(team) } }
 
@@ -27,7 +31,9 @@ export function useTeamData(team: TeamRead | undefined) {
   // Rolled up on the server rather than summed from the issue list: that
   // list is one page, so a client-side total would be the total of whatever
   // happened to be loaded.
-  const estimates = useGetEstimateSummaryTeamsTeamIdEstimatesGet(id, options)
+  const estimates = useGetEstimateSummaryTeamsTeamIdEstimatesGet(id, {
+    query: { enabled: Boolean(team) && withEstimates },
+  })
 
   return {
     projects: projects.data ?? [],

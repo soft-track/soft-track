@@ -1,6 +1,5 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useNavigate } from 'react-router-dom'
 
 import type { IssueRead } from '@/api/generated/models'
 import { selectionGesture } from '@/board/selection'
@@ -10,6 +9,7 @@ import { EstimateBadge } from '@/issues/EstimateBadge'
 import { isResolved } from '@/issues/issueMeta'
 import { IssueTypeIcon } from '@/issues/IssueTypeIcon'
 import { PriorityIcon } from '@/issues/PriorityIcon'
+import { useOpenIssue } from '@/issues/surface'
 import { useCanWrite } from '@/team/useCanWrite'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
@@ -31,8 +31,8 @@ export function IssueCard({
   showProject?: boolean
 }) {
   const { t } = useTranslation('issues')
-  const navigate = useNavigate()
-  const { team, projects } = useTeamContext()
+  const openIssue = useOpenIssue()
+  const { projects } = useTeamContext()
   const project = showProject
     ? projects.find((candidate) => candidate.id === issue.project_id)
     : undefined
@@ -63,7 +63,8 @@ export function IssueCard({
       }
     : undefined
 
-  const open = () => navigate(`/${team.key}/issue/${issue.number}`)
+  // The panel, over the board: a card is opened for a glance (#112).
+  const open = () => openIssue(issue, 'panel')
 
   return (
     <div

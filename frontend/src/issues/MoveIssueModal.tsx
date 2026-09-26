@@ -1,7 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useId, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
 
 import {
   usePreviewTransferIssuesIssueIdTransferGet,
@@ -11,6 +10,7 @@ import type { IssueRead, TeamRead, TransferPlan } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useTranslation } from '@/i18n'
 import { formatList } from '@/i18n/format'
+import { useOpenRelatedIssue } from '@/issues/surface'
 import { Select } from '@/ui/Select'
 import { useFocusTrap } from '@/ui/useFocusTrap'
 
@@ -35,7 +35,8 @@ export function MoveIssueModal({
   const { t } = useTranslation(['issues', 'common'])
   const dialogRef = useFocusTrap<HTMLDivElement>()
   const titleId = useId()
-  const navigate = useNavigate()
+  // Its new address, on the surface it was moved from.
+  const openIssue = useOpenRelatedIssue()
   const queryClient = useQueryClient()
   const [teamId, setTeamId] = useState(teams.length === 1 ? String(teams[0].id) : '')
   const [error, setError] = useState<string | null>(null)
@@ -63,7 +64,7 @@ export function MoveIssueModal({
         })
       }
       onClose()
-      navigate(`/${result.issue.team_key}/issue/${result.issue.number}`)
+      openIssue(result.issue)
     } catch (err: unknown) {
       setError(errorDetail(err, t('move.errors.move')))
     }

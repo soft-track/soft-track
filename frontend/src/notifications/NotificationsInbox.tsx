@@ -1,5 +1,4 @@
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
 
 import { parseServerDate } from '@/api/dates'
 import type { NotificationRead } from '@/api/generated/models'
@@ -7,7 +6,6 @@ import { useTranslation } from '@/i18n'
 import { formatRelative } from '@/i18n/format'
 import {
   describe,
-  issueHref,
   KIND_META,
   panelPosition,
 } from '@/notifications/notificationMeta'
@@ -35,20 +33,26 @@ import { Loading } from '@/ui/Loading'
 export function NotificationsInbox({
   anchor,
   onClose,
+  onOpenIssue,
 }: {
   anchor: DOMRect
   onClose: () => void
+  /**
+   * Go to the issue a notification is about. The board's, since leaving it
+   * for the issue's page (#112) is the board's to do -- it keeps its own view
+   * for when you come back.
+   */
+  onOpenIssue: (issue: NotificationRead['issue']) => void
 }) {
   const { t } = useTranslation('notifications')
-  const navigate = useNavigate()
   const { notifications, isLoading, setRead, markAllRead } = useInbox()
   const unread = notifications.filter((item) => !item.read).length
 
   const open = async (notification: NotificationRead) => {
     onClose()
-    navigate(issueHref(notification))
+    onOpenIssue(notification.issue)
     // After navigating, not before: the row is about to disappear behind the
-    // issue panel either way, and a failed PATCH should not swallow the click.
+    // issue either way, and a failed PATCH should not swallow the click.
     if (!notification.read) await setRead(notification, true)
   }
 

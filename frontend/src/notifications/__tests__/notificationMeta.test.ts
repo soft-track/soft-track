@@ -1,7 +1,7 @@
 import { describe as group, expect, it } from 'vitest'
 
 import type { NotificationRead } from '@/api/generated/models'
-import { badgeLabel, describe, issueHref } from '@/notifications/notificationMeta'
+import { badgeLabel, describe } from '@/notifications/notificationMeta'
 
 const base: NotificationRead = {
   id: 1,
@@ -40,12 +40,6 @@ group('describe', () => {
     expect(describe({ ...base, kind: 'status_changed', actor: null })).toBe(
       'Changed the status',
     )
-  })
-})
-
-group('issueHref', () => {
-  it('points at the board route for the issue', () => {
-    expect(issueHref(base)).toBe('/ENG/issue/42')
   })
 })
 

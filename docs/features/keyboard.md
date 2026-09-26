@@ -20,9 +20,9 @@ issue, which is why Enter doesn't pick cards up. Moving a card that's part
 of a selection moves the whole selection, just as dragging with the mouse
 does.
 
-On an open issue, `S`, `P`, `A` and `L` jump to status, priority, assignee and
-labels — the panel prints those letters next to the
-fields, so the shortcut is discoverable from the thing it acts on.
+On an open issue, in the panel or on its page, `S`, `P`, `A` and `L` jump to
+status, priority, assignee and labels. The properties print those letters next
+to the fields, so the shortcut is discoverable from the thing it acts on.
 
 The shortcut table lives in one array in `frontend/src/keyboard/shortcuts.ts`,
 which is both what the handlers dispatch on and what the cheatsheet renders. A

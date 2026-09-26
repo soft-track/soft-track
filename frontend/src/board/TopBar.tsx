@@ -1,3 +1,5 @@
+import type { ComponentProps } from 'react'
+
 import { FilterBar } from '@/board/FilterBar'
 import type { BoardFilters } from '@/board/filters'
 import type { BoardGrouping } from '@/board/grouping'
@@ -36,6 +38,7 @@ export function TopBar({
   notificationsOpen,
   onToggleNotifications,
   onCloseNotifications,
+  onOpenNotifiedIssue,
 }: {
   view: BoardView
   onViewChange: (view: BoardView) => void
@@ -56,6 +59,8 @@ export function TopBar({
   notificationsOpen: boolean
   onToggleNotifications: () => void
   onCloseNotifications: () => void
+  /** Where a notification goes: the issue's page, by way of the board (#112). */
+  onOpenNotifiedIssue: ComponentProps<typeof NotificationsBell>['onOpenIssue']
 }) {
   const { team } = useTeamContext()
   const { t } = useTranslation(['board', 'common'])
@@ -182,6 +187,7 @@ export function TopBar({
           open={notificationsOpen}
           onToggle={onToggleNotifications}
           onClose={onCloseNotifications}
+          onOpenIssue={onOpenNotifiedIssue}
         />
 
         {onNewIssue ? (

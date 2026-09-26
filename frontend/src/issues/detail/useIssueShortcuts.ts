@@ -3,14 +3,16 @@ import { useEffect, useRef } from 'react'
 import { isPlainKey, isTypingTarget } from '@/keyboard/typing'
 
 /**
- * The keys that work while an issue panel is open: Escape, S, P, A, L.
+ * The keys that work while an issue is open: S, P, A, L, and -- on a surface
+ * with something to close, the panel -- Escape. The issue's page (#112) has
+ * nothing to close, so it passes no `onClose` and Escape is left alone.
  *
  * The listener is registered once and reads the latest `onClose` through a
  * ref. Re-registering it on every render put it *after* the board's global
  * listener, whose Escape handling re-rendered the board mid-dispatch and
  * removed this listener before it could run.
  */
-export function usePanelShortcuts(onClose: () => void) {
+export function useIssueShortcuts(onClose?: () => void) {
   const onCloseRef = useRef(onClose)
   useEffect(() => {
     onCloseRef.current = onClose
@@ -22,7 +24,7 @@ export function usePanelShortcuts(onClose: () => void) {
         // Anything inside the panel that consumes Escape (the mention menu,
         // a native select) stops propagation before this runs, so by the
         // time it reaches here the user does mean the panel.
-        onCloseRef.current()
+        onCloseRef.current?.()
         return
       }
 

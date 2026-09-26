@@ -1,10 +1,11 @@
-// Issues (#106): the issue card, the new-issue form and the issue panel.
+// Issues (#106): the issue card, the new-issue form, the issue panel and page.
 import { meta } from '@/i18n/en/issues/meta'
 import { history } from '@/i18n/en/issues/history'
 import { card } from '@/i18n/en/issues/card'
 import { newIssue } from '@/i18n/en/issues/newIssue'
 import { move } from '@/i18n/en/issues/move'
 import { panel } from '@/i18n/en/issues/panel'
+import { page } from '@/i18n/en/issues/page'
 import { properties } from '@/i18n/en/issues/properties'
 import { description } from '@/i18n/en/issues/description'
 import { comments } from '@/i18n/en/issues/comments'
@@ -20,6 +21,7 @@ export const issues = {
   newIssue,
   move,
   panel,
+  page,
   properties,
   description,
   comments,

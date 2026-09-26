@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { parseServerDate } from '@/api/dates'
 
 import type { SearchHit } from '@/api/generated/models'
@@ -22,14 +21,19 @@ export function SearchResults({
   hits,
   total,
   isLoading,
+  onOpen,
 }: {
   query: string
   hits: SearchHit[]
   total: number
   isLoading: boolean
+  /**
+   * Go to a result. The board's to do: a result opens the issue's page
+   * (#112), and the board keeps this search for when you come back.
+   */
+  onOpen: (hit: SearchHit) => void
 }) {
   const { t } = useTranslation('search')
-  const navigate = useNavigate()
 
   if (isLoading) {
     return <Loading label={t('searching')} />
@@ -75,7 +79,7 @@ export function SearchResults({
             <li key={hit.id}>
               <button
                 type="button"
-                onClick={() => navigate(`/${hit.team_key}/issue/${hit.number}`)}
+                onClick={() => onOpen(hit)}
                 className="w-full px-4 py-3 text-left transition-colors hover:bg-neutral-900/4 focus:outline-none focus-visible:bg-brand-500/10"
               >
                 <div className="flex items-center gap-2.5">

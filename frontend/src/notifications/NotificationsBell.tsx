@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState, type ComponentProps } from 'react'
 
 import { useTranslation } from '@/i18n'
 import { badgeLabel } from '@/notifications/notificationMeta'
@@ -21,10 +21,13 @@ export function NotificationsBell({
   open,
   onToggle,
   onClose,
+  onOpenIssue,
 }: {
   open: boolean
   onToggle: () => void
   onClose: () => void
+  /** See NotificationsInbox. */
+  onOpenIssue: ComponentProps<typeof NotificationsInbox>['onOpenIssue']
 }) {
   const { t } = useTranslation('notifications')
   const unread = useUnreadCount()
@@ -70,7 +73,9 @@ export function NotificationsBell({
         )}
       </button>
 
-      {open && anchor && <NotificationsInbox anchor={anchor} onClose={onClose} />}
+      {open && anchor && (
+        <NotificationsInbox anchor={anchor} onClose={onClose} onOpenIssue={onOpenIssue} />
+      )}
     </>
   )
 }

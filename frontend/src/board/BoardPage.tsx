@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import {
   useGetIssueByNumberTeamsTeamIdIssuesByNumberNumberGet,
   useListIssuesTeamsTeamIdIssuesGet,
 } from '@/api/generated/endpoints/issues/issues'
 import { useSearchSearchGet } from '@/api/generated/endpoints/search/search'
-import type { IssueRead, SavedViewRead } from '@/api/generated/models'
+import type { SavedViewRead } from '@/api/generated/models'
 import { useAuth } from '@/auth/useAuth'
 import { BulkActionBar } from '@/board/BulkActionBar'
 import {
@@ -41,10 +41,11 @@ import { NewCycleModal } from '@/cycles/NewCycleModal'
 import { useTranslation } from '@/i18n'
 import { ImportJiraModal } from '@/imports/ImportJiraModal'
 import { IssueDetailPanel } from '@/issues/IssueDetailPanel'
+import { type IssueRef, useOpenIssue } from '@/issues/surface'
 import { NewIssueModal } from '@/issues/NewIssueModal'
 import { CommandPalette } from '@/keyboard/CommandPalette'
 import { ShortcutsCheatsheet } from '@/keyboard/ShortcutsCheatsheet'
-import { type BoardView, useCommands } from '@/keyboard/useCommands'
+import { BOARD_VIEWS, type BoardView, useCommands } from '@/keyboard/useCommands'
 import { useGlobalShortcuts } from '@/keyboard/useGlobalShortcuts'
 import { isTypingTarget } from '@/keyboard/typing'
 import { ProjectPage } from '@/projects/ProjectPage'
@@ -61,6 +62,25 @@ import { Loading } from '@/ui/Loading'
 import { SaveViewModal } from '@/views/SaveViewModal'
 import { useSavedViews } from '@/views/useSavedViews'
 
+/**
+ * What the board looked like when it was left for an issue's page (#112).
+ *
+ * The view and the search are this page's own state rather than its URL, and
+ * the page is unmounted while an issue's page stands in for it. So on the way
+ * out they are written onto this history entry, and Back reads them from
+ * there: you return to the list you were on, with your search still in it.
+ */
+type BoardReturn = { view: BoardView; search: string }
+
+function boardReturnFrom(state: unknown): BoardReturn | null {
+  const saved = (state as { board?: { view?: unknown; search?: unknown } } | null)?.board
+  if (!saved) return null
+  return {
+    view: BOARD_VIEWS.find((view) => view === saved.view) ?? 'board',
+    search: typeof saved.search === 'string' ? saved.search : '',
+  }
+}
+
 export default function BoardPage() {
   const { teamKey, issueNumber, projectId } = useParams<{
     teamKey: string
@@ -70,12 +90,16 @@ export default function BoardPage() {
   // A project's own page, in place of the board -- same sidebar, same team.
   const projectPageId = projectId && Number.isInteger(Number(projectId)) ? Number(projectId) : null
   const navigate = useNavigate()
+  const location = useLocation()
+  const goToIssue = useOpenIssue()
   const { team, isLoading, teams } = useTeamByKey(teamKey)
   const { user } = useAuth()
   const { t } = useTranslation(['board', 'common'])
 
-  const [view, setView] = useState<BoardView>('board')
-  const [search, setSearch] = useState('')
+  // Read once, on mount: Back from an issue's page lands here.
+  const [returning] = useState(() => boardReturnFrom(location.state))
+  const [view, setView] = useState<BoardView>(returning?.view ?? 'board')
+  const [search, setSearch] = useState(returning?.search ?? '')
   // The sidebar is a drawer below the `lg` breakpoint.
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const overlays = useOverlays()
@@ -133,7 +157,9 @@ export default function BoardPage() {
   // landed -- it only stops the redirect happening a second time, which
   // matters when somebody clears the filters and the URL goes bare again.
   const urlIsBare = searchParams.toString() === ''
-  const hasLanded = useRef(false)
+  // Coming back is not landing: a bare URL then means the filters were
+  // cleared on purpose, and the default view should not put them back.
+  const hasLanded = useRef(returning !== null)
   useEffect(() => {
     if (hasLanded.current) return
     // Arriving with filters already in the URL -- a pasted link, or a reload
@@ -260,9 +286,24 @@ export default function BoardPage() {
     { query: { enabled: Boolean(team && issueNumber) && !loadedIssue } },
   )
 
-  const openIssueFromPalette = useCallback(
-    (issue: IssueRead) => navigate(`/${team?.key}/issue/${issue.number}`),
-    [navigate, team?.key],
+  /**
+   * Leave the board for an issue's page (#112) -- the command palette, search
+   * results and notifications all go there, where the board and the list
+   * open the panel instead. The view and the search go onto this history
+   * entry first, so Back comes back to them; see BoardReturn.
+   */
+  const leaveForIssue = useCallback(
+    (issue: IssueRef) => {
+      navigate(
+        { pathname: location.pathname, search: location.search },
+        {
+          replace: true,
+          state: { ...(location.state as object | null), board: { view, search } },
+        },
+      )
+      goToIssue(issue, 'page')
+    },
+    [navigate, location, goToIssue, view, search],
   )
 
   if (isLoading) {
@@ -369,6 +410,7 @@ export default function BoardPage() {
               notificationsOpen={overlays.isOpen('notifications')}
               onToggleNotifications={() => overlays.toggle('notifications')}
               onCloseNotifications={() => overlays.close('notifications')}
+              onOpenNotifiedIssue={leaveForIssue}
             />
             {selectedCycle && !searchQuery && <CycleBanner cycle={selectedCycle} />}
             <div className="min-h-0 flex-1">
@@ -378,6 +420,7 @@ export default function BoardPage() {
                   hits={searchResults.data?.items ?? []}
                   total={searchResults.data?.total ?? 0}
                   isLoading={searchResults.isLoading}
+                  onOpen={leaveForIssue}
                 />
               ) : !filtersAreSettled || issuesQuery.isLoading ? (
                 <Loading label={t('page.loadingIssues')} />
@@ -423,7 +466,7 @@ export default function BoardPage() {
           onClose={() => overlays.close('palette')}
           commands={commands}
           issues={issues}
-          onOpenIssue={openIssueFromPalette}
+          onOpenIssue={leaveForIssue}
         />
       )}
       {overlays.isOpen('shortcuts') && (

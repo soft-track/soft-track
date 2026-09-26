@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { IssueRead, StatusRead } from '@/api/generated/models'
 import { CalendarView } from '@/calendar/CalendarView'
+import { surfaceFor } from '@/issues/surface'
 import { TeamProvider } from '@/team/TeamContext'
 import type { TeamContextValue } from '@/team/useTeamContext'
 
@@ -43,6 +44,7 @@ const TEAM: TeamContextValue = {
 function issue(number: number, due_date: string, title = `Issue ${number}`): IssueRead {
   return {
     id: number,
+    team_key: 'ENG',
     number,
     identifier: `ENG-${number}`,
     title,
@@ -53,7 +55,11 @@ function issue(number: number, due_date: string, title = `Issue ${number}`): Iss
 
 function Where() {
   const location = useLocation()
-  return <output data-testid="where">{location.pathname + location.search}</output>
+  return (
+    <output data-testid="where" data-surface={surfaceFor(location.state)}>
+      {location.pathname + location.search}
+    </output>
+  )
 }
 
 function renderCalendar(url = '/ENG?month=2026-09', canWrite = true) {
@@ -128,6 +134,8 @@ describe('CalendarView', () => {
     const user = renderCalendar()
     await user.click(screen.getByRole('button', { name: /Ship the retry fix/ }))
     expect(where()).toBe('/ENG/issue/1')
+    // One of the board's views, so the board's panel rather than the page (#112).
+    expect(screen.getByTestId('where').dataset.surface).toBe('panel')
   })
 
   it('moves by day with the arrows, into the next month when the month ends', async () => {

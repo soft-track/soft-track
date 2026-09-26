@@ -24,7 +24,7 @@ import { Select } from '@/ui/Select'
  * labels.
  *
  * Each carries a `data-field` so the panel's single-key shortcuts can focus
- * it -- see usePanelShortcuts.
+ * it -- see useIssueShortcuts.
  */
 export function IssueProperties({
   issue,
@@ -45,10 +45,13 @@ export function IssueProperties({
 
   // A fieldset so one attribute disables every control in it -- including any
   // property added later -- while still showing each one's current value.
+  // Two columns when the space it is given is wide enough, whatever the
+  // window is: a container query, since the page puts this in a narrow
+  // column of its own (#112).
   return (
     <fieldset
       disabled={readOnly}
-      className="well mt-5 grid min-w-0 gap-x-4 gap-y-3 rounded-card border-0 p-3 sm:grid-cols-2"
+      className="well grid min-w-0 gap-x-4 gap-y-3 rounded-card border-0 p-3 @md:grid-cols-2"
     >
       <Row label={t('properties.status')} hint="S">
         <Select
@@ -181,7 +184,7 @@ export function IssueProperties({
         </Select>
       </Row>
 
-      <div className="sm:col-span-2">
+      <div className="@md:col-span-2">
         <span className="mb-1.5 flex items-center gap-1.5 text-xs text-neutral-500">
           {t('properties.labels')} <kbd className="kbd">L</kbd>
         </span>

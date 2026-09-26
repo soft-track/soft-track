@@ -5,7 +5,8 @@ import type { TeamRead, UserMe } from '@/api/generated/models'
 import { useTranslation } from '@/i18n'
 import type { Command } from '@/keyboard/CommandPalette'
 
-export type BoardView = 'board' | 'list' | 'calendar' | 'roadmap' | 'reports'
+export const BOARD_VIEWS = ['board', 'list', 'calendar', 'roadmap', 'reports'] as const
+export type BoardView = (typeof BOARD_VIEWS)[number]
 
 /** What the command palette can do from the board, beyond jumping to issues. */
 export function useCommands({

@@ -1,6 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 import {
   useCreateIssueLinkIssuesIssueIdLinksPost,
@@ -12,6 +11,7 @@ import { IssueLinkType, type IssueLinks, type IssueLinkRead } from '@/api/genera
 import { errorDetail } from '@/api/errors'
 import { useTranslation } from '@/i18n'
 import { isResolved } from '@/issues/issueMeta'
+import { useOpenRelatedIssue } from '@/issues/surface'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 
@@ -45,7 +45,8 @@ export function IssueLinksSection({
 }) {
   const { t } = useTranslation(['issues', 'common'])
   const { team } = useTeamContext()
-  const navigate = useNavigate()
+  // On whichever surface this issue is on: see issues/surface.ts.
+  const openIssue = useOpenRelatedIssue()
   const queryClient = useQueryClient()
 
   const [adding, setAdding] = useState(false)
@@ -196,7 +197,7 @@ export function IssueLinksSection({
                   <LinkRow
                     key={row.id}
                     row={row}
-                    onOpen={() => navigate(`/${row.issue.team_key}/issue/${row.issue.number}`)}
+                    onOpen={() => openIssue(row.issue)}
                     onRemove={readOnly ? undefined : () => remove(row.id)}
                   />
                 ))}

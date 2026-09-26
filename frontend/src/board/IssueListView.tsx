@@ -1,5 +1,3 @@
-import { useNavigate } from 'react-router-dom'
-
 import type { IssueRead } from '@/api/generated/models'
 import { type BoardGrouping, groupByProject } from '@/board/grouping'
 import { selectionGesture } from '@/board/selection'
@@ -10,6 +8,7 @@ import { ProjectBadge } from '@/issues/IssueCard'
 import { isResolved } from '@/issues/issueMeta'
 import { IssueTypeIcon } from '@/issues/IssueTypeIcon'
 import { PriorityIcon } from '@/issues/PriorityIcon'
+import { useOpenIssue } from '@/issues/surface'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
 
@@ -115,8 +114,8 @@ function IssueRow({
   showProject: boolean
 }) {
   const { t } = useTranslation(['board', 'common'])
-  const navigate = useNavigate()
-  const { team, projects } = useTeamContext()
+  const openIssue = useOpenIssue()
+  const { projects } = useTeamContext()
   const status = issue.status
   const project = showProject
     ? projects.find((candidate) => candidate.id === issue.project_id)
@@ -133,7 +132,8 @@ function IssueRow({
             onSelect(issue.id, gesture, order)
             return
           }
-          navigate(`/${team.key}/issue/${issue.number}`)
+          // The panel, over the list, as from the board (#112).
+          openIssue(issue, 'panel')
         }}
         // Shift-click would otherwise extend a text selection down the list.
         onMouseDown={(e) => {

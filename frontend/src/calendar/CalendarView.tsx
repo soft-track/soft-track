@@ -12,7 +12,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { isSameMonth, startOfMonth } from 'date-fns'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 
 import {
   useListIssuesTeamsTeamIdIssuesGet,
@@ -23,6 +23,7 @@ import { dayKey, monthGrid, monthParam, moveDay, parseMonth } from '@/calendar/m
 import { useTranslation } from '@/i18n'
 import { formatDate } from '@/i18n/format'
 import { localToday } from '@/issues/dueDate'
+import { useOpenIssue } from '@/issues/surface'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
@@ -52,7 +53,8 @@ export function CalendarView({
 }) {
   const { team, statuses } = useTeamContext()
   const { t } = useTranslation('calendar')
-  const navigate = useNavigate()
+  // One of the board's views, so an issue opens in the board's panel (#112).
+  const openIssue = useOpenIssue()
   const queryClient = useQueryClient()
   const titleId = useId()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -239,7 +241,7 @@ export function CalendarView({
                       statusColor={statusColor}
                       onFocus={() => setFocused(day)}
                       onOpenDay={() => setOpenDay(key)}
-                      onOpenIssue={(issue) => navigate(`/${team.key}/issue/${issue.number}`)}
+                      onOpenIssue={(issue) => openIssue(issue, 'panel')}
                     />
                   )
                 })}
@@ -260,7 +262,7 @@ export function CalendarView({
           }}
           onOpenIssue={(issue) => {
             setOpenDay(null)
-            navigate(`/${team.key}/issue/${issue.number}`)
+            openIssue(issue, 'panel')
           }}
         />
       )}

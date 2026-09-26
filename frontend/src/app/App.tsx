@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
+import TeamRoute from '@/app/TeamRoute'
 import { RequireAuth } from '@/auth/RequireAuth'
-import BoardPage from '@/board/BoardPage'
 import HomeRoute from '@/landing/HomeRoute'
 import ForgotPasswordPage from '@/auth/ForgotPasswordPage'
 import InvitePage from '@/auth/InvitePage'
@@ -90,9 +90,11 @@ export default function App() {
             </Route>
           </Route>
 
-          <Route path="/:teamKey" element={<BoardPage />} />
-          <Route path="/:teamKey/issue/:issueNumber" element={<BoardPage />} />
-          <Route path="/:teamKey/projects/:projectId" element={<BoardPage />} />
+          {/* The same element for all three, so the board survives an issue
+              panel opening over it; see TeamRoute. */}
+          <Route path="/:teamKey" element={<TeamRoute />} />
+          <Route path="/:teamKey/issue/:issueNumber" element={<TeamRoute />} />
+          <Route path="/:teamKey/projects/:projectId" element={<TeamRoute />} />
         </Route>
 
         {/* Still "/", which no longer means "go to login" for a signed-out

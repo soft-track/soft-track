@@ -1,6 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 import {
   useCreateIssueTeamsTeamIdIssuesPost,
@@ -9,6 +8,7 @@ import {
 } from '@/api/generated/endpoints/issues/issues'
 import type { IssueRead } from '@/api/generated/models'
 import { useTranslation } from '@/i18n'
+import { useOpenRelatedIssue } from '@/issues/surface'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 
@@ -28,7 +28,8 @@ export function SubIssuesSection({
 }) {
   const { t } = useTranslation(['issues', 'common'])
   const { team, statuses } = useTeamContext()
-  const navigate = useNavigate()
+  // On whichever surface this issue is on: see issues/surface.ts.
+  const openIssue = useOpenRelatedIssue()
   const queryClient = useQueryClient()
 
   const [adding, setAdding] = useState(false)
@@ -49,9 +50,6 @@ export function SubIssuesSection({
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/issues`] })
     queryClient.invalidateQueries({ queryKey: [`/issues/${issue.id}`] })
   }
-
-  const openIssue = ({ team_key, number }: Pick<IssueRead, 'team_key' | 'number'>) =>
-    navigate(`/${team_key}/issue/${number}`)
 
   const addChild = async () => {
     const trimmed = title.trim()

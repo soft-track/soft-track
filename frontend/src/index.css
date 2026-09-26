@@ -718,4 +718,47 @@
     from { background-position: 200% 0; }
     to   { background-position: -200% 0; }
   }
+
+  /* -- One issue, on whichever surface shows it (#112) --------------------
+     The panel, the issue's page and the linked-issue modal render the same
+     body, and it follows the width it is given rather than asking where it
+     is. Narrow -- the panel, a phone -- the properties sit between the
+     description and the rest, as the panel always had them. Wide -- the page
+     on a desktop -- they move to a column beside the reading instead of
+     interrupting it. A container query, not a media query, because it is the
+     body's own width that decides: a 576px panel on a 27-inch screen is
+     still narrow. */
+  .issue-body { container-type: inline-size; }
+  .issue-body-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "main" "aside" "rest" "activity";
+  }
+  .issue-body-main { grid-area: main; padding: 1rem 1.25rem 0; }
+  /* A container too, so the properties inside it lay out by the column's
+     width rather than the whole body's. */
+  .issue-body-aside { grid-area: aside; padding: 1.25rem 1.25rem 0; container-type: inline-size; }
+  .issue-body-rest { grid-area: rest; padding: 0 1.25rem 1.25rem; }
+  .issue-body-activity { grid-area: activity; }
+  .issue-body-title { font-size: 1.125rem; }
+
+  @container (min-width: 52rem) {
+    .issue-body-grid {
+      grid-template-columns: minmax(0, 1fr) 18rem;
+      /* A spanning item is sized against the flexible track it crosses, so
+         a column taller than the reading pads the bottom row rather than
+         opening gaps between the sections. */
+      grid-template-rows: auto auto 1fr;
+      grid-template-areas: "main aside" "rest aside" "activity aside";
+    }
+    /* Level with the Activity feed, whose sides are its own. */
+    .issue-body-main { padding-top: 1.5rem; }
+    .issue-body-aside {
+      align-self: start;
+      position: sticky;
+      top: 0.75rem;
+      padding: 1.5rem 1.25rem 1.25rem 0;
+    }
+    .issue-body-title { font-size: 1.5rem; }
+  }
 }

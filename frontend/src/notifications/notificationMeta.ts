@@ -35,11 +35,6 @@ export function describe(notification: NotificationRead): string {
     : i18n.t(`notifications:kinds.${kind}.noActor`)
 }
 
-/** The board route this notification points at. */
-export function issueHref(notification: NotificationRead): string {
-  return `/${notification.issue.team_key}/issue/${notification.issue.number}`
-}
-
 /** What the badge shows. Past 9 the exact number stops being actionable. */
 export function badgeLabel(unread: number): string {
   return unread > 9
