@@ -144,6 +144,13 @@ to join the list.
         <sub><b>Muhammad Ali Siddiqui</b></sub></a><br>
       <sub>Contributor</sub>
     </td>
+    <td align="center" width="150">
+    <a href="https://github.com/hamzi7">
+      <img src="https://github.com/hamzi7.png?size=96" width="96" height="96" alt=""><br>
+      <sub><b>Hamza Ahmad</b></sub>
+    </a><br>
+    <sub>Contributor</sub>
+  </td>
   </tr>
 </table>
 
