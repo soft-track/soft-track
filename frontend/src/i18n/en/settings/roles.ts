@@ -7,7 +7,7 @@ export const roles = {
   },
   hints: {
     admin: 'Can change anything, including who is on the team',
-    member: 'Can create and edit issues, comments and cycles',
+    member: 'Can create and edit tickets, comments and cycles',
     guest: 'Can see everything on the team and change nothing',
   },
   deactivated: 'Deactivated',

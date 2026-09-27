@@ -14,7 +14,7 @@ test('search finds an issue by a word in its description', async ({ page, reques
   await signIn(page, owner)
   await page.goto(`/${team.key}`)
 
-  await page.getByPlaceholder('Search issues…').fill(word)
+  await page.getByPlaceholder('Search tickets…').fill(word)
 
   const hit = page.getByText('Opaque title')
   await expect(hit).toBeVisible()

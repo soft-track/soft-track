@@ -1,11 +1,11 @@
 /** The new-issue form. */
 export const newIssue = {
-  title: 'New issue',
+  title: 'New ticket',
   replaceDescription:
     'Replace the description you have written with the “{{name}}” template?',
   template: 'Template',
   noTemplate: 'No template',
-  issueTitle: 'Issue title',
+  issueTitle: 'Ticket title',
   descriptionPlaceholder: 'Add a description… Markdown works here.',
   status: 'Status',
   type: 'Type',
@@ -16,13 +16,13 @@ export const newIssue = {
   // The cycle picker's empty choice: not in any cycle.
   noCycle: 'Backlog',
   dueDate: 'Due date',
-  project: 'Project',
-  noProject: 'No project',
+  project: 'Epic',
+  noProject: 'No epic',
   assignee: 'Assignee',
   unassigned: 'Unassigned',
-  create: 'Create issue',
+  create: 'Create ticket',
   creating: 'Creating…',
   errors: {
-    create: 'Could not create the issue. Please try again.',
+    create: 'Could not create the ticket. Please try again.',
   },
 } as const

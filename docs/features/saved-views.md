@@ -1,9 +1,9 @@
 # Saved views and shareable filters
 
-Six things narrow the board — status, priority, assignee, label, project and
+Six things narrow the board — status, priority, assignee, label, epic and
 cycle — and they compose. The **Filter** button in the top bar holds all of
 them; whatever is active shows as a chip beside it, because a board narrowed by
-a filter you cannot see is a board that looks like it has lost your issues.
+a filter you cannot see is a board that looks like it has lost your tickets.
 
 **Every filter is in the URL.** `/ENG?priority=urgent&label=3` is the whole
 state, so any board anyone is looking at is a link they can paste, the back
@@ -13,9 +13,9 @@ works for a colleague who cannot see that view, and it still lights up the
 matching row in the sidebar for someone who can.
 
 **Filtering happens on the server.** It used to run in the browser over the
-page that was already loaded, which quietly meant "urgent issues among the
+page that was already loaded, which quietly meant "urgent tickets among the
 fifty most recent" — a different and much less useful thing, and no way to
-tell from looking. This is the reason the issue list grew `label_id` and
+tell from looking. This is the reason the ticket list grew `label_id` and
 `unassigned` parameters.
 
 **Saving one.** With filters active, **Save view** names them. A view is
@@ -27,7 +27,7 @@ shared view does not become permanent when the person who made it leaves.
 
 **Where the board opens.** A team admin can make a shared view the team's
 default, and anyone can override that for themselves from the same menu. The
-precedence — your choice, else the team's, else all issues — is resolved by the
+precedence — your choice, else the team's, else all tickets — is resolved by the
 API and handed to the client as `effective_default_id`, so there is one place
 that rule lives. It applies when you arrive with no filters in the URL;
 clearing the filters yourself keeps them cleared.
@@ -37,25 +37,25 @@ a filter pointing at another team's label is refused when the view is saved
 rather than silently matching nothing for ever, and deleting a cycle clears it
 from the views that filtered on it.
 
-**A view also remembers how the board was grouped:** by status, or by project
+**A view also remembers how the board was grouped:** by status, or by epic
 (#63). The grouping is part of the link as `group=project`, next to the filter
 keys. It's left out for the default, so every link sent before grouping existed
 still opens exactly as it did. The `project` key still means "filter to this
-project", as it always has. A view is marked as showing only when both its
+epic", as it always has. A view is marked as showing only when both its
 filters and its grouping match what's on screen.
 
 **The list can be sorted** by created, updated, priority, estimate or title,
 in either direction (#88). "Descending" puts the newest, most urgent, largest
-or Z first. Unestimated issues come last either way, because "not sized yet"
+or Z first. Unestimated tickets come last either way, because "not sized yet"
 isn't a small estimate. Ties are broken newest first, so paging never splits
-or repeats issues. Like the grouping, the sort is in the link as `sort=` and
+or repeats tickets. Like the grouping, the sort is in the link as `sort=` and
 `dir=`, left out when it's the default (newest first), and saved views keep it.
 
 **The board's order is arranged by hand** (#88). Dragging a card within its
 column keeps it where it was dropped, and dropping it among another column's
-cards keeps its place there too. New issues start at the top of their
+cards keeps its place there too. New tickets start at the top of their
 column. Behind this is one order for the whole team, stored as a short key per
-issue (fractional indexing, `backend/lib_utils/ranking.py`). A move only
+ticket (fractional indexing, `backend/lib_utils/ranking.py`). A move only
 rewrites the moved card's key, between the keys of its new neighbours, so a
-reorder never renumbers the column. Upgrading gives every existing issue a key
+reorder never renumbers the column. Upgrading gives every existing ticket a key
 in the order the board already showed, so nothing moves.

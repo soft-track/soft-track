@@ -2,12 +2,12 @@
 export const integrations = {
   title: 'Repositories',
   adminsOnly:
-    'Connecting a repository is a team admin’s job — this page shows webhook secrets, so it is not readable by the whole team. The branches and pull requests themselves show up on the issues, for everybody.',
-  intro: 'Connect {{team}}’s code so its issues know about it.',
+    'Connecting a repository is a team admin’s job — this page shows webhook secrets, so it is not readable by the whole team. The branches and pull requests themselves show up on the tickets, for everybody.',
+  intro: 'Connect {{team}}’s code so its tickets know about it.',
   howItWorks:
-    'Put <issue>{{key}}-42</issue> in a branch name, a commit message or a pull request title, and that branch, commit or pull request shows up on issue {{key}}-42. Nothing else to fill in — the connection is already in the text you were going to write.',
+    'Put <issue>{{key}}-42</issue> in a branch name, a commit message or a pull request title, and that branch, commit or pull request shows up on ticket {{key}}-42. Nothing else to fill in — the connection is already in the text you were going to write.',
   automation:
-    'To move the issue as well — to In\u00a0Review when the pull request opens, to Done when it merges — write an <rule>automation rule</rule> with one of the repository triggers.',
+    'To move the ticket as well — to In\u00a0Review when the pull request opens, to Done when it merges — write an <rule>automation rule</rule> with one of the repository triggers.',
   privacy:
     'SoftTrack never clones your code and holds no access token. It is sent webhooks, verifies their signature, and reads the text.',
   empty: 'No repositories connected yet.',

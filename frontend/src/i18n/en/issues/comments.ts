@@ -3,7 +3,7 @@ export const comments = {
   title: 'Activity',
   empty: 'No comments yet. Start the conversation below.',
   emptyReadOnly: 'No comments yet.',
-  guest: 'You are a guest on this team, so you can follow this issue but not comment on it.',
+  guest: 'You are a guest on this team, so you can follow this ticket but not comment on it.',
   placeholder: 'Leave a comment…',
   // The two keys are drawn in code (⌘ ↵); only their places are the sentence's.
   toSend: '<mod /><enter /> to send',

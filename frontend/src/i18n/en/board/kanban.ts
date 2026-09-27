@@ -1,22 +1,22 @@
 /** The kanban board: its columns, and what a screen reader hears while moving a card. */
 export const kanban = {
-  noProject: 'No project',
+  noProject: 'No epic',
   pointsShort: '{{points}} pts',
   pointsTitle: '{{points}} points',
-  pointsTitleUnsized_one: '{{points}} points, with {{count}} issue not yet sized',
-  pointsTitleUnsized_other: '{{points}} points, with {{count}} issues not yet sized',
+  pointsTitleUnsized_one: '{{points}} points, with {{count}} ticket not yet sized',
+  pointsTitleUnsized_other: '{{points}} points, with {{count}} tickets not yet sized',
   collapseNamed: 'Collapse {{name}}',
   collapseColumn: 'Collapse column',
   dropHere: 'Drop here',
-  noIssues: 'No issues',
-  expandNamed_one: 'Expand {{name}}, {{count}} issue',
-  expandNamed_other: 'Expand {{name}}, {{count}} issues',
+  noIssues: 'No tickets',
+  expandNamed_one: 'Expand {{name}}, {{count}} ticket',
+  expandNamed_other: 'Expand {{name}}, {{count}} tickets',
   collapsedTitle: '{{name}} · {{count}}',
   /** An issue the board cannot name, in an announcement. */
-  theIssue: 'The issue',
+  theIssue: 'The ticket',
   keyboard: {
     instructions:
-      'To move this issue, press Shift and Space to pick it up. The left and right arrow keys choose a column, up and down move it past the cards above and below, and Space drops it. Escape cancels. Enter opens the issue, and Space on its own shows a preview of it.',
+      'To move this ticket, press Shift and Space to pick it up. The left and right arrow keys choose a column, up and down move it past the cards above and below, and Space drops it. Escape cancels. Enter opens the ticket, and Space on its own shows a preview of it.',
     pickedUp:
       'Picked up {{issue}}. Use the arrow keys to move it, Space to drop, Escape to cancel.',
     pickedUpIn:

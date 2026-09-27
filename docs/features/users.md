@@ -34,15 +34,15 @@ chat logs and browser history by the time anyone wants to rename it.
 
 ### Guests
 
-A guest sees what a member sees -- the board, the list, every issue and its
-comments, cycles, reports and search -- and changes none of it: no issues, no
+A guest sees what a member sees -- the board, the list, every ticket and its
+comments, cycles, reports and search -- and changes none of it: no tickets, no
 comments, no settings. It is the role for a stakeholder, a client, or a
 neighbouring team that needs visibility without write access, and it is the
 part of "granular permissions" that covers most of the need without committing
 to a permission model.
 
 What a guest *does* write is their own relationship to the team: watching an
-issue (so they are notified like anyone else), choosing their own default view,
+ticket (so they are notified like anyone else), choosing their own default view,
 and leaving. Admins make someone a guest from the invitation form or by
 changing an existing member's role.
 
@@ -54,11 +54,11 @@ PATCH and DELETE in the OpenAPI schema as a guest and expects a 403 with the
 code `team_read_only`, so a new route that forgets the guard fails the suite
 the day it is written. A route a guest is *meant* to reach is listed there
 with the reason. The browser hides the controls a guest cannot use -- the New
-issue button, dragging cards, the comment box -- but that is only so it does
+ticket button, dragging cards, the comment box -- but that is only so it does
 not offer what would fail.
 
-Linking issues across teams needs write access to both, because the link shows
-on both issues.
+Linking tickets across teams needs write access to both, because the link shows
+on both tickets.
 
 ### Invitations, with or without a mail server
 
@@ -94,11 +94,11 @@ instance up, register yourself, then close it.
 
 ### Deactivate, not delete
 
-Accounts are never deleted. Issues, comments and history all carry foreign keys
+Accounts are never deleted. Tickets, comments and history all carry foreign keys
 to users, so removing the row would either take that work with it or leave the
 tracker unable to say who did what. Deactivating an account signs it out
 immediately, refuses its next sign-in, and keeps it out of assignee pickers —
-while its issues stay assigned and its comments stay attributed. Reactivating
+while its tickets stay assigned and its comments stay attributed. Reactivating
 undoes all of it.
 
 "Immediately" is worth a sentence, because tokens live for a week. Every user

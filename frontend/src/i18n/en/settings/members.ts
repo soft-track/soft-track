@@ -38,8 +38,8 @@ export const members = {
     revoke: 'Revoke',
   },
   confirm: {
-    leave: 'Leave {{team}}? You will lose access to its issues.',
-    remove: 'Remove {{name}} from {{team}}? Their issues stay assigned to them.',
+    leave: 'Leave {{team}}? You will lose access to its tickets.',
+    remove: 'Remove {{name}} from {{team}}? Their tickets stay assigned to them.',
     revoke: 'Revoke the invitation to {{email}}?',
   },
   errors: {

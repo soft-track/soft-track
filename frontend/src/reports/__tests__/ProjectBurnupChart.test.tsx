@@ -34,8 +34,8 @@ afterEach(cleanup)
 describe('the burnup', () => {
   it('reads in issues by default, and in points on request', async () => {
     const user = chart([point('2026-09-20'), point('2026-09-21', { scope_issues: 4 })])
-    expect(screen.getByRole('img', { name: 'Burnup for Platform, in issues' })).toBeTruthy()
-    expect(screen.getByText(/1 of 4\s+issues/)).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'Burnup for Platform, in tickets' })).toBeTruthy()
+    expect(screen.getByText(/1 of 4\s+tickets/)).toBeTruthy()
 
     await user.click(screen.getByRole('tab', { name: 'Points' }))
     expect(screen.getByRole('img', { name: 'Burnup for Platform, in points' })).toBeTruthy()
@@ -53,13 +53,13 @@ describe('the burnup', () => {
     expect(screen.queryByRole('note')).toBeNull()
 
     await user.click(screen.getByRole('tab', { name: 'Points' }))
-    expect(screen.getByRole('note').textContent).toMatch(/2 issues in scope have no estimate/)
+    expect(screen.getByRole('note').textContent).toMatch(/2 tickets in scope have no estimate/)
     expect(screen.getByText(/3 of 8\+\s+pts/)).toBeTruthy()
   })
 
   it('draws nothing for a project with no history, and says why', () => {
     chart([], null)
-    expect(screen.getByText(/No history for this project yet/)).toBeTruthy()
+    expect(screen.getByText(/No history for this epic yet/)).toBeTruthy()
     expect(screen.queryByRole('img')).toBeNull()
   })
 })
@@ -71,7 +71,7 @@ describe('unestimatedNote', () => {
   })
 
   it('counts one and many', () => {
-    expect(unestimatedNote(point('d', { unestimated_issues: 1 }))).toMatch(/^1 issue in scope has/)
-    expect(unestimatedNote(point('d', { unestimated_issues: 3 }))).toMatch(/^3 issues in scope have/)
+    expect(unestimatedNote(point('d', { unestimated_issues: 1 }))).toMatch(/^1 ticket in scope has/)
+    expect(unestimatedNote(point('d', { unestimated_issues: 3 }))).toMatch(/^3 tickets in scope have/)
   })
 })

@@ -85,7 +85,7 @@ function renderDialog(team: TeamContextValue = TEAM) {
   return { onClose, user: userEvent.setup() }
 }
 
-const createButton = () => screen.getByRole('button', { name: 'Create project' })
+const createButton = () => screen.getByRole('button', { name: 'Create epic' })
 const swatch = (name: string) => screen.getByRole('button', { name: `Use ${name}` })
 
 beforeEach(() => {

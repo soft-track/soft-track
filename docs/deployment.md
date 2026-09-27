@@ -102,7 +102,7 @@ Set `OPEN_REGISTRATION=false` to require an invitation before registration is al
 
 ### Deactivate, not delete
 
-Accounts are never deleted; deactivation signs the user out immediately and prevents sign-in while preserving their issues and history. A deactivated account is refused however it signs in, including through a provider.
+Accounts are never deleted; deactivation signs the user out immediately and prevents sign-in while preserving their tickets and history. A deactivated account is refused however it signs in, including through a provider.
 
 ### Signing in with Google or GitHub
 
@@ -135,7 +135,7 @@ Two deployment caveats are important:
 
 ## Attachments and storage
 
-Files can be attached to issues and comments. Images render inline; other files become download links.
+Files can be attached to tickets and comments. Images render inline; other files become download links.
 
 **Where the bytes go.** The metadata is stored in the database and the file itself is not. `ATTACHMENT_STORAGE` selects the backend:
 
@@ -154,7 +154,7 @@ Three design constraints are intentional:
 - SVG is rejected because it is a document that can carry script.
 - Images are checked against their magic bytes before being accepted.
 
-Deleting an issue removes both its rows and the attached files.
+Deleting a ticket removes both its rows and the attached files.
 
 ## Reverse proxy and production notes
 

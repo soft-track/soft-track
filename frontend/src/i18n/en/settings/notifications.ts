@@ -4,7 +4,7 @@ export const notifications = {
   intro: 'What reaches you, and where.',
   inApp: {
     heading: 'In the app',
-    body: 'You are told when an issue is assigned to you, when someone mentions you, and when an issue you are watching gets a comment or changes status. You watch an issue automatically once you create it, comment on it, or are assigned it — and the Watch button on any issue overrides that either way.',
+    body: 'You are told when a ticket is assigned to you, when someone mentions you, and when a ticket you are watching gets a comment or changes status. You watch a ticket automatically once you create it, comment on it, or are assigned it — and the Watch button on any ticket overrides that either way.',
     alwaysOn: 'This cannot be turned off; the inbox is how the tracker reaches you at all.',
   },
   email: {

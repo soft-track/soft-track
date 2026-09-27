@@ -1,7 +1,7 @@
 /** The sign-in page, /login. */
 export const login = {
   title: 'Sign in to <brand>SoftTrack</brand>',
-  tagline: 'An open-source issue tracker for small teams.',
+  tagline: 'An open-source ticket tracker for small teams.',
   forgotPassword: 'Forgot password?',
   submit: 'Sign in',
   submitting: 'Signing in…',

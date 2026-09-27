@@ -7,7 +7,7 @@ export const createdResolved = {
   created: 'Created',
   resolved: 'Resolved',
   open: 'Open',
-  openIssues: 'Open issues',
-  chart: 'Issues created and resolved per day',
-  backlogChart: 'Open issues at the end of each day',
+  openIssues: 'Open tickets',
+  chart: 'Tickets created and resolved per day',
+  backlogChart: 'Open tickets at the end of each day',
 } as const

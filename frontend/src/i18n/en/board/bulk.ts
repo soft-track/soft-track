@@ -10,9 +10,9 @@ export const bulk = {
   setAssignee: 'Set assignee',
   assigneePlaceholder: 'Assignee…',
   unassigned: 'Unassigned',
-  setProject: 'Set project',
-  projectPlaceholder: 'Project…',
-  noProject: 'No project',
+  setProject: 'Set epic',
+  projectPlaceholder: 'Epic…',
+  noProject: 'No epic',
   setCycle: 'Set cycle',
   cyclePlaceholder: 'Cycle…',
   noCycle: 'No cycle',
@@ -21,11 +21,11 @@ export const bulk = {
   clearSelection: 'Clear selection',
   clearSelectionHint: 'Clear selection (Esc)',
   confirmDelete_one:
-    'Delete issue? This cannot be undone. Comments and attachments are deleted with them; sub-issues are kept and moved to the top level.',
+    'Delete ticket? This cannot be undone. Comments and attachments are deleted with them; sub-tickets are kept and moved to the top level.',
   confirmDelete_other:
-    'Delete {{count}} issues? This cannot be undone. Comments and attachments are deleted with them; sub-issues are kept and moved to the top level.',
+    'Delete {{count}} tickets? This cannot be undone. Comments and attachments are deleted with them; sub-tickets are kept and moved to the top level.',
   errors: {
-    update: 'Could not update those issues.',
-    delete: 'Could not delete those issues.',
+    update: 'Could not update those tickets.',
+    delete: 'Could not delete those tickets.',
   },
 } as const

@@ -1,6 +1,6 @@
 /** Views → the saved views in the sidebar, and each one's menu. */
 export const list = {
-  allIssues: 'All issues',
+  allIssues: 'All tickets',
   shared: 'Shared',
   private: 'Private',
   sharedBy: 'Shared by {{name}}',

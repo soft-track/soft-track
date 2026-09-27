@@ -172,8 +172,8 @@ describe('peeking with the keyboard', () => {
       'Urgent',
       'Launch',
       'Backend',
-      '1 of 3 sub-issues done',
-      'Blocked by 2 unresolved issues',
+      '1 of 3 sub-tickets done',
+      'Blocked by 2 unresolved tickets',
     ]) {
       expect(text).toContain(expected)
     }

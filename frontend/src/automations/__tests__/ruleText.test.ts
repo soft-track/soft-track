@@ -140,7 +140,7 @@ describe('describeRule', () => {
         vocabulary,
       ),
     ).toBe(
-      'When an issue changes status, if it is in In Review, assign it to Sam Rivera.',
+      'When a ticket changes status, if it is in In Review, assign it to Sam Rivera.',
     )
   })
 
@@ -150,7 +150,7 @@ describe('describeRule', () => {
         rule({ actions: { set_priority: 'urgent', move_to_active_cycle: false } }),
         vocabulary,
       ),
-    ).toBe('When an issue is created, set its priority to urgent.')
+    ).toBe('When a ticket is created, set its priority to urgent.')
   })
 
   it('says a stripped rule is empty rather than trailing off', () => {

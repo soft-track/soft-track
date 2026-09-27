@@ -25,8 +25,8 @@ export const statuses = {
   },
   deleteDialog: {
     title: 'Delete “{{name}}”',
-    body: 'Any issues in it have to go somewhere. Nothing is deleted but the column.',
-    moveTo: 'Move its issues to',
+    body: 'Any tickets in it have to go somewhere. Nothing is deleted but the column.',
+    moveTo: 'Move its tickets to',
     confirm: 'Delete the column',
   },
 } as const

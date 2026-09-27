@@ -1,7 +1,7 @@
 # Live updates
 
 Two people on the same board see each other's changes as they happen: a card
-someone drags moves on your screen, a new issue appears, a comment shows up
+someone drags moves on your screen, a new ticket appears, a comment shows up
 in the panel you have open, and the notification badge updates without
 waiting for its next poll.
 
@@ -12,7 +12,7 @@ The API sends **nudges, not data**. Each team has a server-sent event stream,
 
 | Event | Data | Means |
 |---|---|---|
-| `issue_changed` | `{"id": 42}` | Something about the issue changed — fields, labels, links, files, time. |
+| `issue_changed` | `{"id": 42}` | Something about the ticket changed — fields, labels, links, files, time. |
 | `comment_added` | `{"issue_id": 42}` | Its thread changed — a comment, or a reaction. |
 | `notification` | `{}` | *Your* inbox has something new. Only you receive these. |
 | `resync` | `{}` | You fell behind; refetch everything. |
@@ -25,7 +25,7 @@ permission checks; the stream itself never carries anything a member of the
 team could not already read.
 
 **Every change is announced, whoever made it.** Events come from a listener
-on the database session, not from the services, so an issue moved by an
+on the database session, not from the services, so a ticket moved by an
 automation rule, a GitHub webhook or a Jira import is announced exactly like
 one dragged by hand. They are sent only once the change commits.
 

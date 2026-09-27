@@ -4,7 +4,7 @@ A comment is no longer forever. Hover your own comment and open its **⋯** menu
 
 - **Edit** swaps the comment for the editor, with the text as you posted it.
   <kbd>⌘</kbd> <kbd>↵</kbd> or **Save** keeps the change; <kbd>Esc</kbd> or
-  **Cancel** drops it (and leaves the issue panel open).
+  **Cancel** drops it (and leaves the ticket panel open).
 - **Delete…** asks first, then removes it.
 
 An edited comment says **(edited)** beside its time, and the tooltip says when.
@@ -32,7 +32,7 @@ admin can delete it.
 
 - **Its attachments, rows and bytes.** Files posted with a comment are listed
   only on that comment, so keeping them would leave files nobody can see or
-  remove. The confirmation says how many files will go. The issue's own files
+  remove. The confirmation says how many files will go. The ticket's own files
   are untouched.
 - **Its reactions**, and **the notifications about it** — an inbox row quoting
   words their author took back is the one thing a delete should not leave.

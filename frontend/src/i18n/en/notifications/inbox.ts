@@ -4,7 +4,7 @@ export const inbox = {
   markAllRead: 'Mark all read',
   loading: 'Loading notifications…',
   empty: 'Nothing new.',
-  emptyHint: 'You will hear about issues you are assigned, mentioned on, or watching.',
+  emptyHint: 'You will hear about tickets you are assigned, mentioned on, or watching.',
   markRead: 'Mark as read',
   markUnread: 'Mark as unread',
 } as const

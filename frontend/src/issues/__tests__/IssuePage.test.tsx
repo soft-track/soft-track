@@ -159,7 +159,7 @@ describe('the issue page', () => {
     expect(back.getAttribute('href')).toBe('/ENG')
     const parent = screen.getByRole('link', { name: 'ENG-3' })
     expect(parent.getAttribute('href')).toBe('/ENG/issue/3')
-    expect(parent.getAttribute('title')).toBe('Parent issue: Retries')
+    expect(parent.getAttribute('title')).toBe('Parent ticket: Retries')
     const here = crumbs.querySelector('[aria-current="page"]')
     expect(here?.textContent).toContain('ENG-7')
   })
@@ -197,7 +197,7 @@ describe('the issue page', () => {
   it('says so when the team has no issue by that number', () => {
     renderPage('/ENG/issue/99')
 
-    expect(screen.getByRole('heading', { name: 'No such issue' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'No such ticket' })).toBeTruthy()
     expect(
       screen.getByText('ENG-99 does not exist, or it was moved to another team.'),
     ).toBeTruthy()
@@ -210,7 +210,7 @@ describe('the issue page', () => {
     renderPage('/ENG/issue/latest')
 
     expect(mocks.byNumber).not.toHaveBeenCalledWith(ENG.id, expect.anything(), true)
-    expect(screen.getByRole('heading', { name: 'No such issue' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'No such ticket' })).toBeTruthy()
   })
 
   it('says so for a team you are not on', () => {

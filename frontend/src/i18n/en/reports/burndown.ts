@@ -8,7 +8,7 @@ export const burndown = {
   ideal: 'Ideal',
   scopeChanged: 'Scope changed',
   scope: 'Scope',
-  issuesLeft: 'Issues left',
+  issuesLeft: 'Tickets left',
   chart: 'Burndown for {{cycle}}',
   /** The label on the last point. */
   left: '{{points}} left',

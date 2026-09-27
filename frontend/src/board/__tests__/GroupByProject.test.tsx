@@ -167,8 +167,8 @@ describe('the board', () => {
 
     expect(within(column('Todo')).getByText('Migrate the queue')).toBeTruthy()
     // The badge is the project's name, so the colour is never the only cue.
-    expect(within(column('Todo')).getByTitle('Project: Platform')).toBeTruthy()
-    expect(within(column('Doing')).getByTitle('Project: Billing')).toBeTruthy()
+    expect(within(column('Todo')).getByTitle('Epic: Platform')).toBeTruthy()
+    expect(within(column('Doing')).getByTitle('Epic: Billing')).toBeTruthy()
   })
 
   it('is one column per project when grouped by project, with no-project last', () => {
@@ -179,12 +179,12 @@ describe('the board', () => {
     const names = screen
       .getAllByRole('region')
       .map((region) => region.getAttribute('aria-label'))
-    expect(names).toEqual(['Billing', 'Platform', 'No project'])
-    expect(within(column('No project')).getByText('Loose end')).toBeTruthy()
+    expect(names).toEqual(['Billing', 'Platform', 'No epic'])
+    expect(within(column('No epic')).getByText('Loose end')).toBeTruthy()
 
     // The column says the project, so the card says the status instead.
     const card = within(column('Platform'))
-    expect(card.queryByTitle('Project: Platform')).toBeNull()
+    expect(card.queryByTitle('Epic: Platform')).toBeNull()
     expect(card.getByTitle('Todo')).toBeTruthy()
   })
 })
@@ -202,7 +202,7 @@ describe('the list', () => {
     const headings = screen
       .getAllByRole('heading', { level: 2 })
       .map((heading) => heading.textContent)
-    expect(headings).toEqual(['Platform1', 'No project1'])
+    expect(headings).toEqual(['Platform1', 'No epic1'])
   })
 })
 
@@ -273,7 +273,7 @@ describe('saved views carry the grouping', () => {
     const user = renderWith(
       <SaveViewModal filters={NO_FILTERS} grouping="project" onClose={() => {}} />,
     )
-    expect(screen.getByText('All issues · grouped by project')).toBeTruthy()
+    expect(screen.getByText('All tickets · grouped by epic')).toBeTruthy()
 
     await user.type(screen.getByRole('textbox'), 'Planning')
     await user.click(screen.getByRole('button', { name: 'Save view' }))

@@ -8,10 +8,10 @@ test('an issue is created, shown on the board, and retitled', async ({ page, req
   await signIn(page, owner)
   await page.goto(`/${team.key}`)
 
-  await page.getByRole('button', { name: 'New issue' }).click()
-  const dialog = page.getByRole('dialog', { name: 'New issue' })
-  await dialog.getByPlaceholder('Issue title').fill('Checkout button does nothing')
-  await dialog.getByRole('button', { name: 'Create issue' }).click()
+  await page.getByRole('button', { name: 'New ticket' }).click()
+  const dialog = page.getByRole('dialog', { name: 'New ticket' })
+  await dialog.getByPlaceholder('Ticket title').fill('Checkout button does nothing')
+  await dialog.getByRole('button', { name: 'Create ticket' }).click()
   await expect(dialog).toBeHidden()
 
   await expect(card(page, 'Checkout button does nothing')).toBeVisible()

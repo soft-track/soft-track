@@ -78,7 +78,7 @@ describe('the roadmap', () => {
 
   it('keeps undated projects visible, and says how many there are', () => {
     renderRoadmap([project(1, 'Someday'), project(2, 'Dated', { target_date: '2026-10-01' })])
-    expect(screen.getByText(/1 project has no target date/)).toBeTruthy()
+    expect(screen.getByText(/1 epic has no target date/)).toBeTruthy()
     const undated = screen.getByRole('region', { name: 'No target date' })
     expect(within(undated).getByText('Someday')).toBeTruthy()
   })
@@ -91,6 +91,6 @@ describe('the roadmap', () => {
 
   it('says where projects will appear on an empty team', () => {
     renderRoadmap([])
-    expect(screen.getByText('No projects on Engineering yet.')).toBeTruthy()
+    expect(screen.getByText('No epics on Engineering yet.')).toBeTruthy()
   })
 })

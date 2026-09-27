@@ -183,9 +183,9 @@ describe('what is in it and how far along', () => {
     showing({ ...PLATFORM, issue_count: 0, completed_issue_count: 0 }, [])
     renderPage()
 
-    expect(screen.getByText('No issues in this project yet')).toBeTruthy()
-    expect(screen.getByText(/Project field when creating an issue/)).toBeTruthy()
-    expect(screen.getByText('Nothing in this project yet')).toBeTruthy()
+    expect(screen.getByText('No tickets in this epic yet')).toBeTruthy()
+    expect(screen.getByText(/Epic field when creating a ticket/)).toBeTruthy()
+    expect(screen.getByText('Nothing in this epic yet')).toBeTruthy()
   })
 
   it('shows the burnup once it has loaded', () => {
@@ -206,7 +206,7 @@ describe('what is in it and how far along', () => {
       ],
     }
     renderPage()
-    expect(screen.getByRole('img', { name: 'Burnup for Platform, in issues' })).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'Burnup for Platform, in tickets' })).toBeTruthy()
   })
 
   it('treats another team’s project as missing', () => {
@@ -274,8 +274,8 @@ describe('moving issues in and out', () => {
     }
     const user = renderPage()
 
-    await user.click(screen.getAllByRole('button', { name: 'Add issues' })[0])
-    const dialog = screen.getByRole('dialog', { name: 'Add issues to Platform' })
+    await user.click(screen.getAllByRole('button', { name: 'Add tickets' })[0])
+    const dialog = screen.getByRole('dialog', { name: 'Add tickets to Platform' })
     await user.type(within(dialog).getByRole('searchbox'), 'task')
 
     // Already in the project, so shown as such rather than offered again.
@@ -284,7 +284,7 @@ describe('moving issues in and out', () => {
 
     await user.click(within(dialog).getByRole('checkbox', { name: /ENG-8/ }))
     await user.click(within(dialog).getByRole('checkbox', { name: /ENG-9/ }))
-    await user.click(within(dialog).getByRole('button', { name: 'Add 2 issues' }))
+    await user.click(within(dialog).getByRole('button', { name: 'Add 2 tickets' }))
 
     await waitFor(() =>
       expect(mocks.bulkUpdate.mutateAsync).toHaveBeenCalledWith({

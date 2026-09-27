@@ -38,7 +38,7 @@ export const history = {
   other: '<actor>{{actor}}</actor> changed this',
   formerMember: 'a former member',
   deletedCycle: 'a deleted cycle',
-  deletedProject: 'a deleted project',
+  deletedProject: 'a deleted epic',
   anotherTeam: 'another team',
   unknownStatus: 'an unknown status',
   noPriority: 'none',

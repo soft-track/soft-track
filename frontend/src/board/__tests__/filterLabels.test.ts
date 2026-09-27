@@ -42,7 +42,7 @@ describe('describeFilters', () => {
       'Priority: Urgent',
       'Assignee: Sam Rivera',
       'Label: Bug',
-      'Project: Platform',
+      'Epic: Platform',
       'Cycle: Cycle 5',
       'Type: Bug',
       'Due: Overdue',
@@ -87,7 +87,7 @@ describe('summarise', () => {
   })
 
   it('calls an empty view what it is', () => {
-    expect(summarise(NO_FILTERS, lookups)).toBe('All issues')
+    expect(summarise(NO_FILTERS, lookups)).toBe('All tickets')
   })
 })
 

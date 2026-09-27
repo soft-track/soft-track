@@ -1,8 +1,8 @@
 /** Settings → Team → Issue templates. */
 export const templates = {
-  title: 'Issue templates',
+  title: 'Ticket templates',
   intro:
-    'Starting points for a new issue’s description on {{team}}. Choosing one in the new-issue form fills the description, and it can be edited freely from there.',
+    'Starting points for a new ticket’s description on {{team}}. Choosing one in the new-ticket form fills the description, and it can be edited freely from there.',
   emptyAdmin: 'No templates yet. A bug report with repro steps is the usual first one.',
   emptyMember: 'This team has no templates.',
   moveUp: 'Move {{name}} up',
@@ -11,7 +11,7 @@ export const templates = {
   addTemplate: 'Add template',
   addATemplate: 'Add a template',
   adminsOnly: 'Only team admins can change the templates.',
-  confirmDelete: 'Delete the “{{name}}” template? Issues filed from it keep their text.',
+  confirmDelete: 'Delete the “{{name}}” template? Tickets filed from it keep their text.',
   form: {
     nameLabel: 'Name',
     namePlaceholder: 'Bug report',

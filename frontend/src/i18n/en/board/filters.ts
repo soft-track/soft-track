@@ -1,7 +1,7 @@
 /** Board → the Filter button and popover, the active-filter chips, a saved view's summary. */
 export const filters = {
   button: 'Filter',
-  dialogLabel: 'Filter issues',
+  dialogLabel: 'Filter tickets',
   clearAll: 'Clear',
   saveView: 'Save view',
   /** What is being filtered on: the popover's field labels and each chip's first word. */
@@ -10,7 +10,7 @@ export const filters = {
     priority: 'Priority',
     assignee: 'Assignee',
     label: 'Label',
-    project: 'Project',
+    project: 'Epic',
     cycle: 'Cycle',
     type: 'Type',
     due: 'Due',
@@ -21,7 +21,7 @@ export const filters = {
     priority: 'Clear priority filter',
     assignee: 'Clear assignee filter',
     labelId: 'Clear label filter',
-    projectId: 'Clear project filter',
+    projectId: 'Clear epic filter',
     cycleId: 'Clear cycle filter',
     type: 'Clear type filter',
     due: 'Clear due filter',
@@ -31,7 +31,7 @@ export const filters = {
     priority: 'Any priority',
     assignee: 'Anyone',
     label: 'Any label',
-    project: 'Any project',
+    project: 'Any epic',
     cycle: 'Any cycle',
     type: 'Any type',
     due: 'Any due date',
@@ -42,9 +42,9 @@ export const filters = {
     status: 'Deleted status',
     assignee: 'Someone else',
     label: 'Deleted label',
-    project: 'Deleted project',
+    project: 'Deleted epic',
     cycle: 'Deleted cycle',
   },
   /** A saved view with no filters, in the sidebar. */
-  allIssues: 'All issues',
+  allIssues: 'All tickets',
 } as const

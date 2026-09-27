@@ -2,6 +2,8 @@
 
 SoftTrack is a small full-stack application built around a FastAPI backend and a React/Vite/TypeScript frontend. The backend exposes a typed OpenAPI schema, and the frontend consumes it through an Orval-generated client with React Query hooks.
 
+The interface says *tickets* and *epics*; the code, the API and the database say *issues* and *projects* (#211). Only the words people read were renamed. Paths, fields, tables, webhook events and URLs kept their names, so nothing that talks to the API had to change.
+
 ## Stack
 
 - Backend: FastAPI, SQLModel (SQLAlchemy + Pydantic), SQLite by default, JWT auth

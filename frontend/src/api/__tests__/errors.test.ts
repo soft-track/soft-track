@@ -43,8 +43,14 @@ describe('errorCode', () => {
 
   it('reads its own words from the catalog, and has none for most codes (#106)', () => {
     expect(errorMessage('not_team_admin')).toBe('Only an admin of this team can do that.')
-    expect(errorMessage('issue_not_found')).toBeUndefined()
-    const err = { response: { data: { code: 'issue_not_found', detail: 'Issue not found' } } }
-    expect(errorDetail(err, 'fallback')).toBe('Issue not found')
+    expect(errorMessage('cycle_not_found')).toBeUndefined()
+    const err = { response: { data: { code: 'cycle_not_found', detail: 'Cycle not found' } } }
+    expect(errorDetail(err, 'fallback')).toBe('Cycle not found')
+  })
+
+  it('says ticket and epic where the API says issue and project (#211)', () => {
+    const err = failed({ code: 'issue_not_found', detail: 'Issue not found' })
+    expect(errorDetail(err, 'fallback')).toMatch(/^That ticket could not be found/)
+    expect(errorMessage('project_not_found')).toMatch(/^That epic could not be found/)
   })
 })

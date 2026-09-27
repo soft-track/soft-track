@@ -138,7 +138,7 @@ describe('PlanSummary', () => {
       'Loses frontend and design — no label by that name there.',
       'Leaves Sprint 4; cycles belong to one team.',
       'Is unassigned from Maya Chen, who is not on that team.',
-      'Takes its sub-issue ENG-43 with it.',
+      'Takes its sub-ticket ENG-43 with it.',
     ])
   })
 
@@ -158,6 +158,6 @@ describe('PlanSummary', () => {
       />,
     )
     expect(screen.getByText(/that team has no column like it/)).toBeTruthy()
-    expect(screen.getByText('Stops being a sub-issue of ENG-40.')).toBeTruthy()
+    expect(screen.getByText('Stops being a sub-ticket of ENG-40.')).toBeTruthy()
   })
 })

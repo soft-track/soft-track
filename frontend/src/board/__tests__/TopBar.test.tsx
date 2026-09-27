@@ -189,7 +189,7 @@ describe('TopBar export', () => {
     const button = exportButton()
     expect(button.textContent).toContain('Export CSV')
     expect(button.disabled).toBe(false)
-    expect(button.title).toBe('Download these issues as CSV')
+    expect(button.title).toBe('Download these tickets as CSV')
   })
 
   it("asks the export endpoint for the team's issues", async () => {
@@ -241,7 +241,7 @@ describe('TopBar export', () => {
     expect(createObjectURL).toHaveBeenCalledWith(csv)
     expect(downloads[0]).toEqual({
       href: OBJECT_URL,
-      download: 'issues.csv',
+      download: 'tickets.csv',
       // Firefox ignores a click on an anchor that is not in the document.
       mounted: true,
     })

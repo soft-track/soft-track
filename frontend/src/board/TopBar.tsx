@@ -234,6 +234,7 @@ function ExportCsvButton({
   filters: BoardFilters
   searching: boolean
 }) {
+  const { t } = useTranslation('board')
   const { team } = useTeamContext()
   const [loading, setLoading] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -258,7 +259,7 @@ function ExportCsvButton({
       const objectUrl = URL.createObjectURL(data)
       const link = document.createElement('a')
       link.href = objectUrl
-      link.download = 'issues.csv'
+      link.download = 'tickets.csv'
       document.body.appendChild(link)
       link.click()
       link.remove()
@@ -275,10 +276,10 @@ function ExportCsvButton({
 
   const disabled = loading || searching
   const title = searching
-    ? 'Clear the search to export. An export uses the board filters, not the search results.'
+    ? t('topBar.export.searchingHint')
     : failed
-      ? 'The export failed. Try again.'
-      : 'Download these issues as CSV'
+      ? t('topBar.export.failedHint')
+      : t('topBar.export.hint')
 
   return (
     <button
@@ -291,7 +292,11 @@ function ExportCsvButton({
     >
       <Icon name="download" size={14} />
       <span className="hidden sm:inline">
-        {loading ? 'Exporting…' : failed ? 'Export failed' : 'Export CSV'}
+        {loading
+          ? t('topBar.export.exporting')
+          : failed
+            ? t('topBar.export.failed')
+            : t('topBar.export.label')}
       </span>
     </button>
   )

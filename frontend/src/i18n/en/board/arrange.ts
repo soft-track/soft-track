@@ -2,7 +2,7 @@
 export const arrange = {
   grouping: {
     status: 'By status',
-    project: 'By project',
+    project: 'By epic',
   },
   sort: {
     created: 'Created',

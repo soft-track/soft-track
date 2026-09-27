@@ -154,7 +154,7 @@ afterEach(cleanup)
 describe('NewIssueModal', () => {
   it("renders the team's statuses and its active members", () => {
     renderModal()
-    expect(screen.getByRole('dialog', { name: 'New issue' })).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'New ticket' })).toBeTruthy()
     expect(screen.getByText('ENG')).toBeTruthy()
     expect(optionsOf('Status')).toEqual(['Todo', 'In Progress'])
     expect(optionsOf('Assignee')).toEqual(['Unassigned', 'Ada Lovelace', 'Grace Hopper'])
@@ -162,18 +162,18 @@ describe('NewIssueModal', () => {
 
   it('offers only the projects that are not archived', () => {
     renderModal()
-    expect(optionsOf('Project')).toEqual(['No project', 'Platform'])
+    expect(optionsOf('Epic')).toEqual(['No epic', 'Platform'])
   })
 
   it('submits the entered values to the create mutation, then closes', async () => {
     const { onClose, user } = renderModal()
 
-    await user.type(screen.getByRole('textbox', { name: 'Issue title' }), '  Fix the login form ')
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), '  Fix the login form ')
     await user.type(screen.getByRole('textbox', { name: 'Description' }), 'Steps to reproduce')
     await user.selectOptions(screen.getByRole('combobox', { name: 'Status' }), 'In Progress')
     await user.selectOptions(screen.getByRole('combobox', { name: 'Priority' }), 'high')
     await user.selectOptions(screen.getByRole('combobox', { name: 'Assignee' }), 'Grace Hopper')
-    await user.click(screen.getByRole('button', { name: 'Create issue' }))
+    await user.click(screen.getByRole('button', { name: 'Create ticket' }))
 
     expect(mutateAsync).toHaveBeenCalledTimes(1)
     expect(mutateAsync).toHaveBeenCalledWith({
@@ -197,14 +197,14 @@ describe('NewIssueModal', () => {
 
   it('is announced as a modal dialog, named by its heading', () => {
     renderModal()
-    const dialog = screen.getByRole('dialog', { name: 'New issue' })
+    const dialog = screen.getByRole('dialog', { name: 'New ticket' })
     expect(dialog.getAttribute('aria-modal')).toBe('true')
     expect(dialog.getAttribute('aria-labelledby')).toBeTruthy()
   })
 
   it('keeps Tab inside the dialog (#75)', async () => {
     const { user } = renderModal()
-    const dialog = screen.getByRole('dialog', { name: 'New issue' })
+    const dialog = screen.getByRole('dialog', { name: 'New ticket' })
     // Far more presses than there are controls: every one lands inside.
     for (let i = 0; i < 25; i++) {
       await user.tab()
@@ -218,9 +218,9 @@ describe('NewIssueModal', () => {
 
   it('sends the type picked, and task when nobody picks one (#89)', async () => {
     const { user } = renderModal()
-    await user.type(screen.getByPlaceholderText('Issue title'), 'It crashes')
+    await user.type(screen.getByPlaceholderText('Ticket title'), 'It crashes')
     await user.selectOptions(screen.getByLabelText('Type'), 'bug')
-    await user.click(screen.getByRole('button', { name: /create issue/i }))
+    await user.click(screen.getByRole('button', { name: /create ticket/i }))
     expect(mutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ type: 'bug' }) }),
     )
@@ -228,10 +228,10 @@ describe('NewIssueModal', () => {
 
   it('sends a due date when one is picked (#87)', async () => {
     const { user } = renderModal()
-    await user.type(screen.getByPlaceholderText('Issue title'), 'Ship it')
+    await user.type(screen.getByPlaceholderText('Ticket title'), 'Ship it')
     const due = screen.getByLabelText('Due date')
     await user.type(due, '2026-10-01')
-    await user.click(screen.getByRole('button', { name: /create issue/i }))
+    await user.click(screen.getByRole('button', { name: /create ticket/i }))
     expect(mutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ due_date: '2026-10-01' }) }),
     )
@@ -240,7 +240,7 @@ describe('NewIssueModal', () => {
   it('closes on Escape without creating anything', async () => {
     const { onClose, user } = renderModal()
 
-    await user.type(screen.getByRole('textbox', { name: 'Issue title' }), 'Half typed')
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'Half typed')
     await user.keyboard('{Escape}')
 
     expect(onClose).toHaveBeenCalledTimes(1)
@@ -253,11 +253,11 @@ describe('NewIssueModal', () => {
 
     // c opens a new issue and ? opens the cheatsheet -- from the board. In a
     // title they are just letters, which is the whole point of the guard.
-    await user.type(screen.getByRole('textbox', { name: 'Issue title' }), 'Cannot log in? see /docs')
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'Cannot log in? see /docs')
     await user.type(screen.getByRole('textbox', { name: 'Description' }), 'c ? /')
 
     expect(onShortcut).not.toHaveBeenCalled()
-    expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Issue title' }).value).toBe(
+    expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Ticket title' }).value).toBe(
       'Cannot log in? see /docs',
     )
   })
@@ -265,8 +265,8 @@ describe('NewIssueModal', () => {
   it('sends nothing for the fields left untouched', async () => {
     const { user } = renderModal()
 
-    await user.type(screen.getByRole('textbox', { name: 'Issue title' }), 'Just a title')
-    await user.click(screen.getByRole('button', { name: 'Create issue' }))
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'Just a title')
+    await user.click(screen.getByRole('button', { name: 'Create ticket' }))
 
     // Empty status and cycle are omitted rather than guessed, which is what
     // lets the API put the issue in the team's leftmost column.
@@ -291,13 +291,13 @@ describe('NewIssueModal', () => {
     const { user } = renderModal()
     // Re-queried every time: holding the node across a re-render would assert
     // against whatever React left behind.
-    const submit = () => screen.getByRole<HTMLButtonElement>('button', { name: 'Create issue' })
+    const submit = () => screen.getByRole<HTMLButtonElement>('button', { name: 'Create ticket' })
     expect(submit().disabled).toBe(true)
 
-    await user.type(screen.getByRole('textbox', { name: 'Issue title' }), '   ')
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), '   ')
     expect(submit().disabled).toBe(true)
 
-    await user.type(screen.getByRole('textbox', { name: 'Issue title' }), 'Real')
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'Real')
     expect(submit().disabled).toBe(false)
   })
 
@@ -307,36 +307,36 @@ describe('NewIssueModal', () => {
 
     const submit = screen.getByRole<HTMLButtonElement>('button', { name: 'Creating…' })
     expect(submit.disabled).toBe(true)
-    expect(screen.queryByRole('button', { name: 'Create issue' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Create ticket' })).toBeNull()
   })
 
   it('keeps everything typed when the create fails, and explains why', async () => {
     mutateAsync.mockRejectedValue(new Error('500'))
     const { onClose, user } = renderModal()
 
-    await user.type(screen.getByRole('textbox', { name: 'Issue title' }), 'Fix the login form')
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'Fix the login form')
     await user.type(screen.getByRole('textbox', { name: 'Description' }), 'Steps to reproduce')
-    await user.click(screen.getByRole('button', { name: 'Create issue' }))
+    await user.click(screen.getByRole('button', { name: 'Create ticket' }))
 
-    expect((await screen.findByRole('alert')).textContent).toMatch(/could not create the issue/i)
+    expect((await screen.findByRole('alert')).textContent).toMatch(/could not create the ticket/i)
     // The point of staying open: a failed request must not be a way to lose
     // a description somebody just wrote.
     expect(onClose).not.toHaveBeenCalled()
-    expect(screen.getByRole('dialog', { name: 'New issue' })).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'New ticket' })).toBeTruthy()
     expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Description' }).value).toBe(
       'Steps to reproduce',
     )
 
     // And a retry goes through from the state that is still on screen.
     mutateAsync.mockResolvedValue(undefined)
-    await user.click(screen.getByRole('button', { name: 'Create issue' }))
+    await user.click(screen.getByRole('button', { name: 'Create ticket' }))
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
     expect(mutateAsync).toHaveBeenCalledTimes(2)
   })
 
   it('closes on a scrim click, but not on a click inside the dialog', async () => {
     const { onClose, user } = renderModal()
-    const dialog = screen.getByRole('dialog', { name: 'New issue' })
+    const dialog = screen.getByRole('dialog', { name: 'New ticket' })
 
     await user.click(dialog)
     expect(onClose).not.toHaveBeenCalled()
@@ -369,8 +369,8 @@ describe('description templates (#97)', () => {
     expect(description.value).toBe('## Steps\n\n1. ')
 
     await user.type(description, 'open settings')
-    await user.type(screen.getByRole('textbox', { name: 'Issue title' }), 'Crash')
-    await user.click(screen.getByRole('button', { name: 'Create issue' }))
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'Crash')
+    await user.click(screen.getByRole('button', { name: 'Create ticket' }))
     expect(mutateAsync.mock.calls[0][0].data.description).toBe('## Steps\n\n1. open settings')
   })
 

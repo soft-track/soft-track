@@ -1,6 +1,6 @@
 # Attachments
 
-Files go on an issue or on one of its comments — paste a screenshot into the
+Files go on a ticket or on one of its comments — paste a screenshot into the
 description or the comment box, drop it in, or use **Attach**. Images render
 inline. PDFs and text files — logs, Markdown, CSV, JSON, patches, source code —
 open in a preview; everything else is a download.
@@ -61,6 +61,6 @@ always the whole file. The content endpoint answers single byte ranges with
 `206 Partial Content` and ignores anything more elaborate, which the HTTP spec
 allows.
 
-Deleting an issue deletes its attachments, rows and bytes both. The rows go
+Deleting a ticket deletes its attachments, rows and bytes both. The rows go
 first and the bytes after the commit: an orphaned file costs disk, while an
-orphaned row costs a broken image on somebody's issue.
+orphaned row costs a broken image on somebody's ticket.

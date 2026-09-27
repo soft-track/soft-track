@@ -67,7 +67,7 @@ function renderHome(config: Partial<AuthConfig> = {}) {
 describe('the signed-out /', () => {
   it('is the landing page, not a redirect to the sign-in form', () => {
     const html = renderHome()
-    expect(html).toContain('An issue tracker your team can')
+    expect(html).toContain('A ticket tracker your team can')
     expect(html).toContain('Run it yourself')
     // The thing this replaced: / used to render nothing but a bounce to /login.
     expect(html).not.toContain('Sign in to')
@@ -78,7 +78,7 @@ describe('the signed-out /', () => {
     // there -- <Navigate> redirects from an effect, and this renderer runs
     // none.
     expect(renderHome({ landing_page: false })).not.toContain(
-      'An issue tracker your team can',
+      'A ticket tracker your team can',
     )
   })
 

@@ -9,10 +9,10 @@ counted against its burndown, and a cycle that runs a day long completes itself
 overnight and carries work away while nobody is looking. The dates are the
 plan; the state is what actually happened.
 
-**Completing a cycle never deletes work.** Unfinished issues move to the next
+**Completing a cycle never deletes work.** Unfinished tickets move to the next
 upcoming cycle, or back to the backlog if there is none, and the completion
 response says how many moved and where they went. A cycle boundary is an
-accounting event, not a reason to lose anything. Cancelled issues count as
+accounting event, not a reason to lose anything. Cancelled tickets count as
 finished for this purpose — they are not outstanding work, and dragging them
 forward for ever would be wrong.
 
@@ -25,16 +25,16 @@ reports the unsized count alongside the totals, because a points total is only
 as honest as that number is small.
 
 Rollups per status and per assignee are computed in two grouped queries rather
-than by summing the issue list in the browser. The list is paginated, so a
+than by summing the ticket list in the browser. The list is paginated, so a
 client-side total would quietly be "the total of whatever page happened to be
 loaded" — a different and much less useful number, with nothing on screen to
 say so.
 
 ## Due dates
 
-An issue can have a due date, which is a day rather than a time, set from the
-new-issue form or the issue panel. Cards and list rows show it compactly
-("Sep 12"). Once the date has passed on an issue that's still open, it turns
+A ticket can have a due date, which is a day rather than a time, set from the
+new-ticket form or the ticket panel. Cards and list rows show it compactly
+("Sep 12"). Once the date has passed on a ticket that's still open, it turns
 red and reads as overdue in words too, so colour isn't the only signal. Finished
 or cancelled work is never overdue, however late it was finished.
 
@@ -44,7 +44,7 @@ goes in links as `?due=overdue` and saved views keep it. "Today" is the
 viewer's own date, which the browser sends along with the filter, so "this
 week" means their week and not the server's.
 
-Due-date changes appear in the issue's Activity feed. Deliberately not
+Due-date changes appear in the ticket's Activity feed. Deliberately not
 included yet: reminders, a calendar view, recurring dates, and automation on a
 date passing. SoftTrack has no scheduler, and "a date passed" is the one kind
 of event that needs one.

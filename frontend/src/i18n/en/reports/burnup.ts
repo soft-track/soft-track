@@ -2,34 +2,34 @@
 export const burnup = {
   title: 'Burnup',
   note:
-    'Scope against completed work since {{date}}, the first day history records anything about this project. Cancelled issues count as neither.',
+    'Scope against completed work since {{date}}, the first day history records anything about this epic. Cancelled tickets count as neither.',
   empty:
-    'No history for this project yet. The chart starts on the first day an issue is moved into it or out of it.',
+    'No history for this epic yet. The chart starts on the first day a ticket is moved into it or out of it.',
   scope: 'Scope',
   completed: 'Completed',
   unestimated: 'Unestimated',
   measure: 'Measure',
-  issues: 'Issues',
+  issues: 'Tickets',
   points: 'Points',
   chart: {
-    issues: 'Burnup for {{project}}, in issues',
+    issues: 'Burnup for {{project}}, in tickets',
     points: 'Burnup for {{project}}, in points',
   },
   /** The label on the latest day; a `+` scope is a floor, some of it unsized. */
   latest: {
-    issues_one: '{{done}} of {{count}} issue',
-    issues_other: '{{done}} of {{count}} issues',
+    issues_one: '{{done}} of {{count}} ticket',
+    issues_other: '{{done}} of {{count}} tickets',
     points: '{{done}} of {{scope}} pts',
     pointsFloor: '{{done}} of {{scope}}+ pts',
   },
   /** A tooltip value. */
   value: {
-    issues_one: '{{count}} issue',
-    issues_other: '{{count}} issues',
+    issues_one: '{{count}} ticket',
+    issues_other: '{{count}} tickets',
     points: '{{value}} pts',
   },
   floor_one:
-    '{{count}} issue in scope has no estimate, so the points scope is a floor, not the size of the project.',
+    '{{count}} ticket in scope has no estimate, so the points scope is a floor, not the size of the epic.',
   floor_other:
-    '{{count}} issues in scope have no estimate, so the points scope is a floor, not the size of the project.',
+    '{{count}} tickets in scope have no estimate, so the points scope is a floor, not the size of the epic.',
 } as const

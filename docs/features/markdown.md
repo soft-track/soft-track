@@ -8,11 +8,11 @@ to the markdown source at the exact offset of that `[ ]`, rather than
 re-serialising the parsed document. Round-tripping markdown through a parser
 normalises things the author chose on purpose — bullet characters, indentation,
 hard line breaks — so the edit changes one character and leaves every other
-byte where it was. The issue panel shows the resulting "2 of 4 tasks".
+byte where it was. The ticket panel shows the resulting "2 of 4 tasks".
 
 **`@mentions` resolve to a profile's `username`, and only to members of the
-issue's team.** A handle is instance-wide; resolving one against the whole
-instance would tell a stranger that a team they are not in has an issue, and
+ticket's team.** A handle is instance-wide; resolving one against the whole
+instance would tell a stranger that a team they are not in has a ticket, and
 what it is called.
 
 Handles inside code spans and fenced blocks are left alone, matching what the

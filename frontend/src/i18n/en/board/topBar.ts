@@ -15,10 +15,20 @@ export const topBar = {
   descending: 'Descending',
   switchToDescending: 'Ascending; switch to descending',
   switchToAscending: 'Descending; switch to ascending',
-  searchLabel: 'Search issues',
-  searchPlaceholder: 'Search issues…',
+  searchLabel: 'Search tickets',
+  searchPlaceholder: 'Search tickets…',
   clearSearch: 'Clear search',
-  newIssue: 'New issue',
+  newIssue: 'New ticket',
   viewOnly: 'View only',
   viewOnlyHint: 'You are a guest on this team: you can see everything and change nothing.',
+  /** The CSV export (#165): the button, and its tooltip for each state. */
+  export: {
+    label: 'Export CSV',
+    exporting: 'Exporting…',
+    failed: 'Export failed',
+    hint: 'Download these tickets as CSV',
+    failedHint: 'The export failed. Try again.',
+    searchingHint:
+      'Clear the search to export. An export uses the board filters, not the search results.',
+  },
 } as const

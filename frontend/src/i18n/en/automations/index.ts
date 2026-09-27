@@ -3,9 +3,9 @@ export const automations = {
   // Clauses rather than sentences: settings/automation slots them into its
   // "When {{trigger}}, if {{conditions}}, {{actions}}." templates.
   trigger: {
-    issue_created: 'an issue is created',
-    status_changed: 'an issue changes status',
-    issue_assigned: 'an issue is assigned',
+    issue_created: 'a ticket is created',
+    status_changed: 'a ticket changes status',
+    issue_assigned: 'a ticket is assigned',
     comment_added: 'a comment is added',
     cycle_completed: 'a cycle is completed',
     branch_created: 'a branch for it appears',
@@ -45,7 +45,7 @@ export const automations = {
   missing: {
     status: 'a deleted status',
     label: 'a deleted label',
-    project: 'a deleted project',
+    project: 'a deleted epic',
     person: 'someone who has left',
     cycle: 'a deleted cycle',
   },

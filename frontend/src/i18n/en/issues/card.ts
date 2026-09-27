@@ -2,15 +2,15 @@
 export const card = {
   // Screen-reader only, read before the rest of the card.
   selected: 'Selected. ',
-  subIssuesDone_one: '{{done}} of {{count}} sub-issues done',
-  subIssuesDone_other: '{{done}} of {{count}} sub-issues done',
+  subIssuesDone_one: '{{done}} of {{count}} sub-tickets done',
+  subIssuesDone_other: '{{done}} of {{count}} sub-tickets done',
   unassigned: 'Unassigned',
-  projectTitle: 'Project: {{name}}',
+  projectTitle: 'Epic: {{name}}',
   // Screen-reader only, after the project's name.
   /** What a screen reader hears for the badge: the name, and what it is. */
-  projectSpoken: '{{name}} (project)',
-  blockedBy_one: 'Blocked by {{count}} unresolved issue',
-  blockedBy_other: 'Blocked by {{count}} unresolved issues',
+  projectSpoken: '{{name}} (epic)',
+  blockedBy_one: 'Blocked by {{count}} unresolved ticket',
+  blockedBy_other: 'Blocked by {{count}} unresolved tickets',
   blocked: 'Blocked',
   due: 'Due {{date}}',
   dueOverdue: 'Due {{date}} — overdue',

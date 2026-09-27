@@ -3,7 +3,7 @@ export const save = {
   titleNew: 'Save this view',
   titleEdit: 'Edit view',
   // Facets of the summary line, each shown after the filters with a " · ".
-  grouped: 'grouped by project',
+  grouped: 'grouped by epic',
   sorted: {
     created: { asc: 'sorted by created, ascending', desc: 'sorted by created, descending' },
     updated: { asc: 'sorted by updated, ascending', desc: 'sorted by updated, descending' },

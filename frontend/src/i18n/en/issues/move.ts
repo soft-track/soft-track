@@ -12,7 +12,7 @@ export const move = {
   moving: 'Moving…',
   errors: {
     preview: 'Could not check that move.',
-    move: 'Could not move the issue.',
+    move: 'Could not move the ticket.',
   },
   plan: {
     becomes: '{{from}} becomes {{to}}.',
@@ -22,10 +22,10 @@ export const move = {
     keeps: 'Keeps {{labels}}.',
     loses: 'Loses {{labels}} — no label by that name there.',
     leavesCycle: 'Leaves {{cycle}}; cycles belong to one team.',
-    leavesProject: 'Leaves {{project}}; projects belong to one team.',
+    leavesProject: 'Leaves {{project}}; epics belong to one team.',
     unassigned: 'Is unassigned from {{name}}, who is not on that team.',
-    detached: 'Stops being a sub-issue of {{parent}}.',
-    takes_one: 'Takes its sub-issue {{list}} with it.',
-    takes_other: 'Takes its sub-issues {{list}} with it.',
+    detached: 'Stops being a sub-ticket of {{parent}}.',
+    takes_one: 'Takes its sub-ticket {{list}} with it.',
+    takes_other: 'Takes its sub-tickets {{list}} with it.',
   },
 } as const

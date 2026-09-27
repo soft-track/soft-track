@@ -2,7 +2,7 @@
 export const adminUsers = {
   title: 'Users',
   intro:
-    'Every account on this SoftTrack. Accounts are deactivated rather than deleted — issues, comments and history all point at them.',
+    'Every account on this SoftTrack. Accounts are deactivated rather than deleted — tickets, comments and history all point at them.',
   searchLabel: 'Search users',
   searchPlaceholder: 'Name, email or username',
   loading: 'Loading users…',
@@ -17,7 +17,7 @@ export const adminUsers = {
   reactivate: 'Reactivate',
   cannotDeactivateSelf: 'You cannot deactivate your own account',
   confirmDeactivate:
-    'Deactivate {{name}}? They will be signed out immediately and cannot sign in again. Their issues, comments and history are untouched.',
+    'Deactivate {{name}}? They will be signed out immediately and cannot sign in again. Their tickets, comments and history are untouched.',
   makeSiteAdmin: 'Make site admin',
   removeSiteAdmin: 'Remove site admin',
   cannotChangeOwnAdmin: 'You cannot change your own site admin access',

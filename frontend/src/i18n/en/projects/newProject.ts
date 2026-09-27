@@ -1,6 +1,6 @@
 /** Projects → the new project dialog, from the sidebar or the command palette (#210). */
 export const newProject = {
-  title: 'New project',
+  title: 'New epic',
   name: 'Name',
   namePlaceholder: 'Checkout redesign',
   colour: 'Colour',
@@ -9,6 +9,6 @@ export const newProject = {
   noLead: 'No lead',
   targetDate: 'Target date (optional)',
   creating: 'Creating…',
-  create: 'Create project',
-  error: 'Could not create that project.',
+  create: 'Create epic',
+  error: 'Could not create that epic.',
 } as const

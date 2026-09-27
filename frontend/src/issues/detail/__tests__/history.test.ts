@@ -78,7 +78,7 @@ describe('eventText', () => {
       'Automation moved this out of Sprint 7, back to the backlog',
     )
     expect(eventText(event('project', '5', null, { old_label: null }))).toBe(
-      'Automation removed this from a deleted project',
+      'Automation removed this from a deleted epic',
     )
   })
 })

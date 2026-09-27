@@ -2,17 +2,17 @@
 
 Repetitive bookkeeping — assigning, labelling, moving finished work — done by a
 rule instead of by hand. A rule is one **trigger**, any number of
-**conditions**, and the **actions** to take on an issue that matches. Team
+**conditions**, and the **actions** to take on a ticket that matches. Team
 admins write them under *Settings → your team → Automation*; any member can
 read them, and the log.
 
 | Trigger | Fires when |
 | --- | --- |
-| `issue_created` | An issue is filed |
+| `issue_created` | A ticket is filed |
 | `status_changed` | It moves to a different column |
 | `issue_assigned` | Somebody is put on it |
 | `comment_added` | A comment is posted |
-| `cycle_completed` | A cycle finishes, once per issue that was in it |
+| `cycle_completed` | A cycle finishes, once per ticket that was in it |
 | `branch_created` | A branch naming it appears in a connected repository |
 | `pull_request_opened` | A pull or merge request naming it opens |
 | `pull_request_merged` | ...and merges. Closed-without-merging is not this |
@@ -20,7 +20,7 @@ read them, and the log.
 The last three arrive from a connected repository rather than from somebody
 using the tracker — see [GitHub and GitLab](git-integrations.md).
 
-Conditions are status, priority, label, project and assignee (or "nobody is
+Conditions are status, priority, label, epic and assignee (or "nobody is
 assigned"). They are ANDed, and unset means "no opinion" — a rule with none of
 them fires on everything its trigger reaches. Actions set the status, priority,
 assignee or cycle, add a label, or post a comment; at least one is required,
@@ -29,7 +29,7 @@ negation and no branching. Two rules say "or" perfectly well, and each of the
 others is a step towards the workflow engine SoftTrack is trying not to become.
 It is the same line the five status categories draw.
 
-**A rule's own changes never fire another rule.** The engine writes to the issue
+**A rule's own changes never fire another rule.** The engine writes to the ticket
 row directly rather than going back through the update endpoint, so there is no
 path from an action to a trigger — not one broken by a depth counter, one that
 does not exist. Which rules match is also decided *before* any of them run, so
@@ -45,12 +45,12 @@ why such a comment renders as *Automation* rather than borrowing somebody's
 initials. Someone dragging a card should not find their name on four changes
 they did not make. The people a rule's change concerns are still told about it:
 "nobody is notified about their own action" is about recognising what you just
-did, and an issue that moved on its own is the opposite of that.
+did, and a ticket that moved on its own is the opposite of that.
 
 **Every automated change is logged, and the log outlives the rule.** The run
-log records what changed, on which issue, and who did the thing that set the
+log records what changed, on which ticket, and who did the thing that set the
 rule off — and only when something actually changed, so a rule setting a status
-to the one the issue was already in writes nothing. Deleting a rule keeps its
+to the one the ticket was already in writes nothing. Deleting a rule keeps its
 rows and nulls their link to it, because "which rule did this" is most often
 asked immediately before deleting the rule that did it. The log is capped per
 team and pruned as it is written; automation without a trace is a tracker that
@@ -61,9 +61,9 @@ Two things follow from rules being real rows rather than a blob of JSON, the
 same way they do for saved views. A rule naming another team's status is
 refused when it is saved, not left matching nothing for ever. And when
 something a rule names goes away, somebody has to decide what happens:
-**deleting a status sends the rules after the issues** to whichever column
+**deleting a status sends the rules after the tickets** to whichever column
 those moved to — clearing the reference would turn a condition into "no
-opinion" and quietly widen the rule to every issue on the team — while
+opinion" and quietly widen the rule to every ticket on the team — while
 **deleting a cycle switches off the rules that filled it**, since there is
 nowhere equivalent to send them and a rule left enabled would silently do less
 than it says.
