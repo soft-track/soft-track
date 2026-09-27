@@ -5,7 +5,7 @@ export const commands = {
     teams: 'Teams',
     account: 'Account',
   },
-  newIssue: 'Create a ticket',
+  newTicket: 'Create a ticket',
   newProject: 'Create an epic',
   switchToList: 'Switch to list view',
   switchToBoard: 'Switch to board view',

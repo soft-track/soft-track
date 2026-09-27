@@ -3,21 +3,21 @@
  *
  * The three gestures every file manager has taught people:
  *
- * - ⌘/Ctrl-click toggles one issue and makes it the anchor.
- * - Shift-click selects everything between the anchor and the clicked issue,
+ * - ⌘/Ctrl-click toggles one ticket and makes it the anchor.
+ * - Shift-click selects everything between the anchor and the clicked ticket,
  *   in the order the view shows them, adding to what was already selected.
- * - A plain click is not a selection gesture at all -- it opens the issue, as
+ * - A plain click is not a selection gesture at all -- it opens the ticket, as
  *   it always has -- so this module never sees one.
  *
  * "The order the view shows them" is passed in rather than derived here, and
- * that is the point: the board and the list order the same issues differently,
+ * that is the point: the board and the list order the same tickets differently,
  * and a range that skipped across a folded column would select cards nobody
  * could see. Each view hands over exactly what is on screen.
  *
  * Pure so it can be tested without React, like `overlays.ts`.
  */
 export type Selection = {
-  /** Selected issue ids, in the order they were picked. */
+  /** Selected ticket ids, in the order they were picked. */
   ids: readonly number[]
   /** Where the next shift-click range starts. Null until something is picked. */
   anchor: number | null
@@ -72,7 +72,7 @@ export function selectionReducer(state: Selection, action: SelectionAction): Sel
   }
 }
 
-/** Which gesture a click was, or null for a plain click that should open the issue. */
+/** Which gesture a click was, or null for a plain click that should open the ticket. */
 export function selectionGesture(event: {
   shiftKey: boolean
   metaKey: boolean

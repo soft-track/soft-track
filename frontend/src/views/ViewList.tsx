@@ -33,7 +33,7 @@ export function ViewList({
 }: {
   filters: BoardFilters
   arrangement: Arrangement
-  /** A view applies its grouping and sort too; "All issues" only clears filters. */
+  /** A view applies its grouping and sort too; "All tickets" only clears filters. */
   onApply: (filters: BoardFilters, arrangement?: Arrangement) => void
   onEdit: (view: SavedViewRead) => void
   isAdmin: boolean
@@ -54,7 +54,7 @@ export function ViewList({
         data-active={isEmpty(filters)}
       >
         <Icon name="board" size={15} className="opacity-70" />
-        {t('list.allIssues')}
+        {t('list.allTickets')}
       </button>
 
       {shared.length > 0 && <Group label={t('list.shared')} />}

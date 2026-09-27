@@ -30,7 +30,7 @@ export function TopBar({
   onGroupingChange,
   sort,
   onSortChange,
-  onNewIssue,
+  onNewTicket,
   onOpenSidebar,
   search,
   onSearchChange,
@@ -41,7 +41,7 @@ export function TopBar({
   notificationsOpen,
   onToggleNotifications,
   onCloseNotifications,
-  onOpenNotifiedIssue,
+  onOpenNotifiedTicket,
 }: {
   view: BoardView
   onViewChange: (view: BoardView) => void
@@ -50,7 +50,7 @@ export function TopBar({
   sort: BoardSort
   onSortChange: (sort: BoardSort) => void
   /** Absent for a guest (#104): the button is not shown. */
-  onNewIssue?: () => void
+  onNewTicket?: () => void
   onOpenSidebar: () => void
   search: string
   onSearchChange: (value: string) => void
@@ -62,8 +62,8 @@ export function TopBar({
   notificationsOpen: boolean
   onToggleNotifications: () => void
   onCloseNotifications: () => void
-  /** Where a notification goes: the issue's page, by way of the board (#112). */
-  onOpenNotifiedIssue: ComponentProps<typeof NotificationsBell>['onOpenIssue']
+  /** Where a notification goes: the ticket's page, by way of the board (#112). */
+  onOpenNotifiedTicket: ComponentProps<typeof NotificationsBell>['onOpenTicket']
 }) {
   const { team } = useTeamContext()
   const { t } = useTranslation(['board', 'common'])
@@ -190,7 +190,7 @@ export function TopBar({
           open={notificationsOpen}
           onToggle={onToggleNotifications}
           onClose={onCloseNotifications}
-          onOpenIssue={onOpenNotifiedIssue}
+          onOpenTicket={onOpenNotifiedTicket}
         />
 
         <ExportCsvButton
@@ -198,10 +198,10 @@ export function TopBar({
           searching={search.trim().length > 0}
         />
 
-        {onNewIssue ? (
-          <button type="button" onClick={onNewIssue} className="btn btn-primary">
+        {onNewTicket ? (
+          <button type="button" onClick={onNewTicket} className="btn btn-primary">
             <Icon name="plus" size={14} strokeWidth={2.2} />
-            <span className="hidden sm:inline">{t('topBar.newIssue')}</span>
+            <span className="hidden sm:inline">{t('topBar.newTicket')}</span>
           </button>
         ) : (
           <span
@@ -218,12 +218,12 @@ export function TopBar({
 }
 
 /**
- * Downloads the board's issues as a CSV, with the filters that are showing.
+ * Downloads the board's tickets as a CSV, with the filters that are showing.
  *
  * Disabled while a search is running, because search and the filters are two
  * different questions: search replaces the board with `/search` hits, which
  * the export endpoint knows nothing about. A button that stayed live would
- * hand back every issue matching the filters -- plausible, unrelated to what
+ * hand back every ticket matching the filters -- plausible, unrelated to what
  * is on screen, and wrong in a way nobody would notice until they had acted
  * on the spreadsheet. Clearing the search brings it back.
  */
@@ -252,7 +252,7 @@ function ExportCsvButton({
       // but its mutator resolves every response as JSON: a download needs
       // `responseType: 'blob'`, which only the instance takes.
       const { data } = await AXIOS_INSTANCE.get<Blob>(
-        `/teams/${team.id}/issues/export?${params.toString()}`,
+        `/teams/${team.id}/tickets/export?${params.toString()}`,
         { responseType: 'blob' },
       )
 

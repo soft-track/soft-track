@@ -31,9 +31,9 @@ export const automation = {
   runLog: {
     title: 'Recent activity',
     empty: 'Nothing yet. Every change a rule makes is recorded here.',
-    entry: '<rule>{{rule}}</rule> on <issue>{{identifier}}</issue> <muted>{{title}}</muted>',
+    entry: '<rule>{{rule}}</rule> on <ticket>{{identifier}}</ticket> <muted>{{title}}</muted>',
     entryDeleted:
-      '<rule>{{rule}}</rule><muted> (deleted)</muted> on <issue>{{identifier}}</issue> <muted>{{title}}</muted>',
+      '<rule>{{rule}}</rule><muted> (deleted)</muted> on <ticket>{{identifier}}</ticket> <muted>{{title}}</muted>',
     after: 'after {{name}}',
     noOne: 'no one',
   },

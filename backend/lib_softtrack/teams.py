@@ -17,8 +17,8 @@ from lib_softtrack.tables import (
     AutomationRule,
     Comment,
     Sprint,
-    Issue,
-    IssueTemplate,
+    Ticket,
+    TicketTemplate,
     OutboundWebhook,
     Worklog,
     Project,
@@ -93,8 +93,8 @@ def require_team_writer(team_id: int, user: User, session: Session) -> TeamMembe
     Admins and members pass; guests do not. Most routes get this from
     `app_softtrack.guards.team_writer`, which works out the team from the URL
     before the request body is even parsed. A service calls it directly only
-    when a request reaches a *second* team named in its body -- linking to an
-    issue elsewhere, or moving an issue to another team -- because the URL
+    when a request reaches a *second* team named in its body -- linking to a
+    ticket elsewhere, or moving a ticket to another team -- because the URL
     only says which team the request starts from.
     """
     membership = require_team_member(team_id, user, session)
@@ -111,9 +111,9 @@ def require_team_writer(team_id: int, user: User, session: Session) -> TeamMembe
 #: identifies, and what to answer when there is no such row -- the same code
 #: and sentence the route's own service would, so a guard running first does
 #: not change what a bad id gets back. Ordered: the first one present in a
-#: path wins, so `/issues/{issue_id}/links/{link_id}` resolves by the issue.
+#: path wins, so `/tickets/{ticket_id}/links/{link_id}` resolves by the ticket.
 _TEAM_OWNED_BY_PATH = (
-    ("issue_id", Issue, ErrorCode.issue_not_found, "Issue not found"),
+    ("ticket_id", Ticket, ErrorCode.ticket_not_found, "Ticket not found"),
     ("sprint_id", Sprint, ErrorCode.sprint_not_found, "Sprint not found"),
     ("project_id", Project, ErrorCode.project_not_found, "Project not found"),
     ("view_id", SavedView, ErrorCode.view_not_found, "View not found"),
@@ -128,7 +128,7 @@ _TEAM_OWNED_BY_PATH = (
     ("webhook_id", OutboundWebhook, ErrorCode.webhook_not_found, "Webhook not found"),
     (
         "template_id",
-        IssueTemplate,
+        TicketTemplate,
         ErrorCode.template_not_found,
         "Template not found",
     ),
@@ -160,7 +160,7 @@ def team_id_for_path(session: Session, path_params: Mapping[str, str]) -> int:
                 code=ErrorCode.attachment_not_found,
                 detail="Attachment not found",
             )
-        ids = {"issue_id": attachment.issue_id}
+        ids = {"ticket_id": attachment.ticket_id}
 
     if "worklog_id" in ids:
         worklog = session.get(Worklog, ids["worklog_id"])
@@ -170,7 +170,7 @@ def team_id_for_path(session: Session, path_params: Mapping[str, str]) -> int:
                 code=ErrorCode.worklog_not_found,
                 detail="Time entry not found",
             )
-        ids = {"issue_id": worklog.issue_id}
+        ids = {"ticket_id": worklog.ticket_id}
 
     if "comment_id" in ids:
         comment = session.get(Comment, ids["comment_id"])
@@ -180,7 +180,7 @@ def team_id_for_path(session: Session, path_params: Mapping[str, str]) -> int:
                 code=ErrorCode.comment_not_found,
                 detail="Comment not found",
             )
-        ids = {"issue_id": comment.issue_id}
+        ids = {"ticket_id": comment.ticket_id}
 
     for name, table, code, detail in _TEAM_OWNED_BY_PATH:
         if name in ids:
@@ -234,7 +234,7 @@ def create_team(session: Session, current_user: User, payload: TeamCreate) -> Te
     # Imported here rather than at module scope: the status service imports
     # this module for its permission guards, and at module level that is a
     # cycle. A team without statuses would have nowhere to put its first
-    # issue, so this is not optional setup.
+    # ticket, so this is not optional setup.
     from lib_softtrack.statuses import create_default_statuses
 
     create_default_statuses(session, team.id)
@@ -421,7 +421,7 @@ def remove_team_member(
     """Remove someone from a team, or leave it yourself.
 
     One function for both because they are the same row and the same guards --
-    only who is allowed to ask differs. Issues stay assigned to whoever left,
+    only who is allowed to ask differs. Tickets stay assigned to whoever left,
     the way Jira leaves them: unassigning them would quietly rewrite history
     and lose the one piece of information anybody still wants.
     """

@@ -28,7 +28,7 @@ export function SprintBanner({ sprint }: { sprint: SprintRead }) {
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/sprints`] })
-    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/issues`] })
+    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/tickets`] })
   }
 
   const run = async (action: () => Promise<unknown>, describe: (r: never) => string) => {
@@ -46,7 +46,7 @@ export function SprintBanner({ sprint }: { sprint: SprintRead }) {
   const { progress } = sprint
   const ends = parseServerDate(sprint.ends_at)
   const overdue = sprint.state === 'active' && isPast(ends)
-  const done = progress.issues_total > 0 ? progress.issues_completed / progress.issues_total : 0
+  const done = progress.tickets_total > 0 ? progress.tickets_completed / progress.tickets_total : 0
   const sprintRange = formatSprintRange(sprint.starts_at, sprint.ends_at)
 
   return (
@@ -76,14 +76,14 @@ export function SprintBanner({ sprint }: { sprint: SprintRead }) {
           <Trans
             t={t}
             i18nKey={
-              progress.issues_unestimated > 0 ? 'banner.progressUnsized' : 'banner.progress'
+              progress.tickets_unestimated > 0 ? 'banner.progressUnsized' : 'banner.progress'
             }
             values={{
-              issuesCompleted: progress.issues_completed,
-              count: progress.issues_total,
+              ticketsCompleted: progress.tickets_completed,
+              count: progress.tickets_total,
               pointsCompleted: progress.points_completed,
               pointsTotal: progress.points_total,
-              unsized: progress.issues_unestimated,
+              unsized: progress.tickets_unestimated,
             }}
             components={{
               num: <span className="identifier" />,
@@ -141,7 +141,7 @@ export function SprintBanner({ sprint }: { sprint: SprintRead }) {
       </div>
 
       {/* Say what happened to the carried-over work rather than leaving people
-          to wonder where their issues went. */}
+          to wonder where their tickets went. */}
       {message && <p className="mt-1.5 text-xs text-brand-700">{message}</p>}
       {error && <p className="mt-1.5 text-xs text-danger-600">{error}</p>}
     </div>

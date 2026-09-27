@@ -17,9 +17,9 @@ from lib_softtrack.models.comments import (
     ReactionSummary,
 )
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
-from lib_softtrack.issues import get_issue_or_404
+from lib_softtrack.tickets import get_ticket_or_404
 from lib_softtrack.storage import Storage
-from lib_softtrack.tables import Comment, Issue, TeamRole, User, WebhookEvent, utcnow
+from lib_softtrack.tables import Comment, Ticket, TeamRole, User, WebhookEvent, utcnow
 from lib_softtrack.teams import require_team_member, require_team_writer
 from lib_utils.errors import ErrorCode, api_error
 
@@ -32,7 +32,7 @@ def _comment_to_read(
 ) -> CommentRead:
     return CommentRead(
         id=comment.id,
-        issue_id=comment.issue_id,
+        ticket_id=comment.ticket_id,
         body=comment.body,
         author=UserPublic.model_validate(author) if author else None,
         attachments=attachments or [],
@@ -43,12 +43,12 @@ def _comment_to_read(
 
 
 def create_comment(
-    session: Session, current_user: User, issue_id: int, payload: CommentCreate
+    session: Session, current_user: User, ticket_id: int, payload: CommentCreate
 ) -> CommentRead:
-    issue = get_issue_or_404(session, issue_id)
-    require_team_member(issue.team_id, current_user, session)
+    ticket = get_ticket_or_404(session, ticket_id)
+    require_team_member(ticket.team_id, current_user, session)
 
-    comment = Comment(issue_id=issue_id, author_id=current_user.id, body=payload.body)
+    comment = Comment(ticket_id=ticket_id, author_id=current_user.id, body=payload.body)
     session.add(comment)
     # Flush rather than commit: the comment needs an id for the attachments to
     # point at, and a failed claim must take the comment down with it rather
@@ -56,16 +56,16 @@ def create_comment(
     session.flush()
     try:
         attachments_service.claim_for_comment(session, comment, payload.attachment_ids)
-        notifications_service.on_comment_created(session, issue, comment, current_user)
+        notifications_service.on_comment_created(session, ticket, comment, current_user)
         outbound.emit(
             session,
-            issue.team_id,
+            ticket.team_id,
             WebhookEvent.comment_created,
             lambda: {
-                "issue": {
-                    "id": issue.id,
-                    "number": issue.number,
-                    "title": issue.title,
+                "ticket": {
+                    "id": ticket.id,
+                    "number": ticket.number,
+                    "title": ticket.title,
                 },
                 "comment": {
                     "id": comment.id,
@@ -75,7 +75,7 @@ def create_comment(
             },
             current_user,
         )
-        rules_service.on_comment_created(session, issue, current_user)
+        rules_service.on_comment_created(session, ticket, current_user)
         session.commit()
     except Exception:
         # Roll back explicitly rather than leaving it to the session closing.
@@ -95,20 +95,20 @@ def create_comment(
 def list_comments(
     session: Session,
     current_user: User,
-    issue_id: int,
+    ticket_id: int,
     limit: int = DEFAULT_LIMIT,
     offset: int = 0,
 ) -> Page[CommentRead]:
-    issue = get_issue_or_404(session, issue_id)
-    require_team_member(issue.team_id, current_user, session)
+    ticket = get_ticket_or_404(session, ticket_id)
+    require_team_member(ticket.team_id, current_user, session)
 
     total = session.exec(
-        select(func.count()).select_from(Comment).where(Comment.issue_id == issue_id)
+        select(func.count()).select_from(Comment).where(Comment.ticket_id == ticket_id)
     ).one()
 
     comments = session.exec(
         select(Comment)
-        .where(Comment.issue_id == issue_id)
+        .where(Comment.ticket_id == ticket_id)
         .order_by(Comment.created_at)
         .offset(offset)
         .limit(limit)
@@ -139,8 +139,8 @@ def list_comments(
 
 def _comment_for_change(
     session: Session, current_user: User, comment_id: int
-) -> tuple[Comment, Issue, bool]:
-    """The comment, its issue, and whether the caller is a team admin.
+) -> tuple[Comment, Ticket, bool]:
+    """The comment, its ticket, and whether the caller is a team admin.
 
     Guests are refused here as well as by the route's guard, so the service is
     safe to call from anywhere.
@@ -152,9 +152,9 @@ def _comment_for_change(
             code=ErrorCode.comment_not_found,
             detail="Comment not found",
         )
-    issue = get_issue_or_404(session, comment.issue_id)
-    membership = require_team_writer(issue.team_id, current_user, session)
-    return comment, issue, membership.role == TeamRole.admin
+    ticket = get_ticket_or_404(session, comment.ticket_id)
+    membership = require_team_writer(ticket.team_id, current_user, session)
+    return comment, ticket, membership.role == TeamRole.admin
 
 
 def update_comment(
@@ -166,7 +166,7 @@ def update_comment(
     somebody's name should only ever be words they wrote. A comment an
     automation rule posted has no author, so nobody can edit it.
     """
-    comment, issue, _ = _comment_for_change(session, current_user, comment_id)
+    comment, ticket, _ = _comment_for_change(session, current_user, comment_id)
     if comment.author_id is None or comment.author_id != current_user.id:
         raise api_error(
             status_code=403,
@@ -181,7 +181,7 @@ def update_comment(
         comment.edited_at = utcnow()
         session.add(comment)
         notifications_service.on_comment_edited(
-            session, issue, comment, before, current_user
+            session, ticket, comment, before, current_user
         )
         session.commit()
         session.refresh(comment)
@@ -221,7 +221,7 @@ def delete_comment(
     notifications_service.delete_for_comment(session, comment.id)
     reactions_service.delete_for_comment(session, comment.id)
     storage_keys = attachments_service.take_keys_for_comment(session, comment.id)
-    # Flushed before the comment goes, for the reason `delete_issue` gives: no
+    # Flushed before the comment goes, for the reason `delete_ticket` gives: no
     # relationship ties these tables together, so nothing else orders the
     # DELETEs, and the comment's must come last.
     session.flush()

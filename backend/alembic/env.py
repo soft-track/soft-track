@@ -60,8 +60,8 @@ def run_migrations_online() -> None:
             """Batch mode rewrites a table by copying it, dropping the original
             and renaming -- and dropping a table other rows point at is a
             foreign key violation while enforcement is on. Any SQLite install
-            with issues in it would fail every migration that touches the
-            `issue` table, which is most of them.
+            with tickets in it would fail every migration that touches the
+            `ticket` table, which is most of them.
 
             On the connect event rather than as a statement, because SQLite
             ignores `PRAGMA foreign_keys` inside a transaction and SQLAlchemy

@@ -87,7 +87,7 @@ function RoadmapRow({ project, today }: { project: ProjectRead; today: string })
           {state.label}
         </span>
 
-        <span className="hidden w-36 shrink-0 md:block" title={progress ?? t('roadmap.noIssues')}>
+        <span className="hidden w-36 shrink-0 md:block" title={progress ?? t('roadmap.noTickets')}>
           <span className="block h-1.5 overflow-hidden rounded-full bg-neutral-900/8">
             <span
               className="block h-full rounded-full"
@@ -95,7 +95,7 @@ function RoadmapRow({ project, today }: { project: ProjectRead; today: string })
             />
           </span>
           <span className="mt-0.5 block text-[11px] text-neutral-400">
-            {progress ?? t('roadmap.noIssues')}
+            {progress ?? t('roadmap.noTickets')}
           </span>
         </span>
 

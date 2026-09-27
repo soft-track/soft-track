@@ -5,7 +5,7 @@
  *
  * The harness wires the real board, list, peek and layer together the way
  * BoardPage does, around a router whose second route says when something
- * opened an issue instead of peeking at it.
+ * opened a ticket instead of peeking at it.
  */
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -14,9 +14,9 @@ import type { AxiosAdapter } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 
 import { AXIOS_INSTANCE } from '@/api/client'
-import type { IssueRead, StatusRead, TeamMemberRead } from '@/api/generated/models'
-import { IssueListView } from '@/board/IssueListView'
-import { IssuePeekLayer } from '@/board/IssuePeek'
+import type { TicketRead, StatusRead, TeamMemberRead } from '@/api/generated/models'
+import { TicketListView } from '@/board/TicketListView'
+import { TicketPeekLayer } from '@/board/TicketPeek'
 import { KanbanBoard } from '@/board/KanbanBoard'
 import { PEEK_DELAY_MS } from '@/board/peek'
 import { PeekContext } from '@/board/peekContext'
@@ -46,14 +46,14 @@ const TEAM: TeamContextValue = {
   statuses: [TODO, DOING],
 }
 
-function issue(id: number, fields: Partial<IssueRead> = {}): IssueRead {
+function ticket(id: number, fields: Partial<TicketRead> = {}): TicketRead {
   return {
     id,
     team_id: 7,
     team_key: 'ENG',
     number: id,
     identifier: `ENG-${id}`,
-    title: `Issue ${id}`,
+    title: `Ticket ${id}`,
     status: TODO,
     priority: 'no_priority',
     type: 'task',
@@ -65,76 +65,76 @@ function issue(id: number, fields: Partial<IssueRead> = {}): IssueRead {
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     ...fields,
-  } as unknown as IssueRead
+  } as unknown as TicketRead
 }
 
-const STORM = issue(42, {
+const STORM = ticket(42, {
   title: 'Retry storm after deploy',
   description: '## What happens\n\nThe **queue** backs up.\n\n- [ ] Cap the retries',
   status: DOING,
   priority: 'urgent',
-  assignee: { id: 4, full_name: 'Maya Chen', avatar_color: '#123' } as IssueRead['assignee'],
+  assignee: { id: 4, full_name: 'Maya Chen', avatar_color: '#123' } as TicketRead['assignee'],
   estimate: 3,
   project_id: 3,
-  labels: [{ id: 9, name: 'Backend', color: '#0ea5e9' } as NonNullable<IssueRead['labels']>[number]],
+  labels: [{ id: 9, name: 'Backend', color: '#0ea5e9' } as NonNullable<TicketRead['labels']>[number]],
   child_count: 3,
   completed_child_count: 1,
   blocked_by_count: 2,
 })
 // In the same column as STORM, just under it.
-const BELOW = issue(43, { title: 'The one below', status: DOING })
+const BELOW = ticket(43, { title: 'The one below', status: DOING })
 
 function Harness({
-  issues,
+  tickets,
   view,
   onPromote,
   onSelect,
 }: {
-  issues: IssueRead[]
+  tickets: TicketRead[]
   view: 'board' | 'list'
-  onPromote: (issue: IssueRead) => void
+  onPromote: (ticket: TicketRead) => void
   onSelect: () => void
 }) {
   const peek = usePeek()
-  const peeked = peek.peeked ? issues.find((one) => one.id === peek.peeked?.id) : undefined
+  const peeked = peek.peeked ? tickets.find((one) => one.id === peek.peeked?.id) : undefined
   return (
     <>
       <PeekContext.Provider value={peek}>
         {view === 'board' ? (
-          <KanbanBoard issues={issues} onStatusChange={vi.fn()} onSelect={onSelect} />
+          <KanbanBoard tickets={tickets} onStatusChange={vi.fn()} onSelect={onSelect} />
         ) : (
-          <IssueListView issues={issues} onSelect={onSelect} />
+          <TicketListView tickets={tickets} onSelect={onSelect} />
         )}
       </PeekContext.Provider>
-      <IssuePeekLayer peek={peek} issue={peeked} onPromote={onPromote} />
+      <TicketPeekLayer peek={peek} ticket={peeked} onPromote={onPromote} />
     </>
   )
 }
 
 function renderBoard(
   view: 'board' | 'list' = 'board',
-  { team = TEAM, issues = [STORM, BELOW] }: { team?: TeamContextValue; issues?: IssueRead[] } = {},
+  { team = TEAM, tickets = [STORM, BELOW] }: { team?: TeamContextValue; tickets?: TicketRead[] } = {},
 ) {
   const onPromote = vi.fn()
   const onSelect = vi.fn()
-  const tree = (shown: IssueRead[]) => (
+  const tree = (shown: TicketRead[]) => (
     <TeamProvider value={team}>
       <MemoryRouter initialEntries={['/ENG']}>
         <Routes>
           <Route
             path="/ENG"
             element={
-              <Harness issues={shown} view={view} onPromote={onPromote} onSelect={onSelect} />
+              <Harness tickets={shown} view={view} onPromote={onPromote} onSelect={onSelect} />
             }
           />
-          <Route path="/ENG/issue/:n" element={<p>Opened the issue</p>} />
+          <Route path="/ENG/ticket/:n" element={<p>Opened the ticket</p>} />
         </Routes>
       </MemoryRouter>
     </TeamProvider>
   )
-  const { rerender } = render(tree(issues))
+  const { rerender } = render(tree(tickets))
   /** The board refetched, and now shows these. */
-  const refetched = (shown: IssueRead[]) => rerender(tree(shown))
+  const refetched = (shown: TicketRead[]) => rerender(tree(shown))
   return { onPromote, onSelect, refetched }
 }
 
@@ -184,7 +184,7 @@ describe('peeking with the keyboard', () => {
     // Focus and the selection stay where they were: a peek moves nothing.
     expect(document.activeElement).toBe(card(42))
     expect(onSelect).not.toHaveBeenCalled()
-    expect(screen.queryByText('Opened the issue')).toBeNull()
+    expect(screen.queryByText('Opened the ticket')).toBeNull()
   })
 
   it('tells a screen reader what it is showing, since focus stays on the card', async () => {
@@ -216,7 +216,7 @@ describe('peeking with the keyboard', () => {
     expect(boardHeard).not.toHaveBeenCalled()
   })
 
-  it('opens the issue as a page on Enter, not in the panel', async () => {
+  it('opens the ticket as a page on Enter, not in the panel', async () => {
     const { onPromote } = renderBoard()
     card(42).focus()
     await userEvent.keyboard(' ')
@@ -224,7 +224,7 @@ describe('peeking with the keyboard', () => {
 
     expect(onPromote).toHaveBeenCalledWith(STORM)
     expect(peekCard()).toBeNull()
-    expect(screen.queryByText('Opened the issue')).toBeNull()
+    expect(screen.queryByText('Opened the ticket')).toBeNull()
   })
 
   it('follows the focus from card to card', async () => {
@@ -252,10 +252,10 @@ describe('peeking with the keyboard', () => {
     await userEvent.keyboard(' ')
 
     expect(peekCard()?.getAttribute('aria-label')).toBe('Preview of ENG-42')
-    expect(screen.queryByText('Opened the issue')).toBeNull()
+    expect(screen.queryByText('Opened the ticket')).toBeNull()
   })
 
-  it('works for a guest (#104), who reads issues but moves none', async () => {
+  it('works for a guest (#104), who reads tickets but moves none', async () => {
     const guest = {
       ...TEAM,
       members: [

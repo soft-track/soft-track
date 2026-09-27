@@ -1,4 +1,4 @@
-// Projects (#106): a project's page, the roadmap, adding issues to a project, and creating one.
+// Projects (#106): a project's page, the roadmap, adding tickets to a project, and creating one.
 import { page } from '@/i18n/en/projects/page'
 import { roadmap } from '@/i18n/en/projects/roadmap'
 import { add } from '@/i18n/en/projects/add'

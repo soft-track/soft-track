@@ -16,54 +16,55 @@ import textwrap
 import pytest
 from sqlmodel import select
 
-from lib_softtrack.tables import Comment, IssueLabelLink, Label
+from lib_softtrack.tables import Comment, TicketLabelLink, Label
 
 
-def test_deleting_an_issue_that_has_a_label(client, team, session):
+def test_deleting_a_ticket_that_has_a_label(client, team, session):
     """Regression for soft-track#1."""
     label = client.post(
         f"/teams/{team['team']['id']}/labels",
         json={"name": "Bug", "color": "#e0424a"},
         headers=team["headers"],
     ).json()
-    issue = client.post(
-        f"/teams/{team['team']['id']}/issues",
+    ticket = client.post(
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": "has a label", "label_ids": [label["id"]]},
         headers=team["headers"],
     ).json()
 
-    response = client.delete(f"/issues/{issue['id']}", headers=team["headers"])
+    response = client.delete(f"/tickets/{ticket['id']}", headers=team["headers"])
     assert response.status_code == 204
 
     # the link row must be gone too, not merely orphaned
     assert (
         session.exec(
-            select(IssueLabelLink).where(IssueLabelLink.issue_id == issue["id"])
+            select(TicketLabelLink).where(TicketLabelLink.ticket_id == ticket["id"])
         ).all()
         == []
     )
-    # the label itself survives -- it belongs to the team, not the issue
+    # the label itself survives -- it belongs to the team, not the ticket
     assert session.get(Label, label["id"]) is not None
 
 
-def test_deleting_an_issue_that_has_a_comment(client, team, session):
+def test_deleting_a_ticket_that_has_a_comment(client, team, session):
     """Regression for soft-track#1."""
-    issue = client.post(
-        f"/teams/{team['team']['id']}/issues",
+    ticket = client.post(
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": "has a comment"},
         headers=team["headers"],
     ).json()
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "a comment"},
         headers=team["headers"],
     )
 
-    response = client.delete(f"/issues/{issue['id']}", headers=team["headers"])
+    response = client.delete(f"/tickets/{ticket['id']}", headers=team["headers"])
     assert response.status_code == 204
 
     assert (
-        session.exec(select(Comment).where(Comment.issue_id == issue["id"])).all() == []
+        session.exec(select(Comment).where(Comment.ticket_id == ticket["id"])).all()
+        == []
     )
 
 

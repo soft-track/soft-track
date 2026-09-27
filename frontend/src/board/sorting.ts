@@ -1,4 +1,4 @@
-import type { IssueSort, SortDirection } from '@/api/generated/models'
+import type { TicketSort, SortDirection } from '@/api/generated/models'
 import type { BoardGrouping } from '@/board/grouping'
 import { i18n } from '@/i18n'
 
@@ -7,12 +7,12 @@ import { i18n } from '@/i18n'
  * grouping: it narrows nothing, and a link without it means what it always
  * meant -- newest first.
  */
-export type BoardSort = { sort: IssueSort; direction: SortDirection }
+export type BoardSort = { sort: TicketSort; direction: SortDirection }
 
 export const DEFAULT_SORT: BoardSort = { sort: 'created', direction: 'desc' }
 
 // Labels are getters over the catalog (#106), so they are read when shown.
-export const SORT_OPTIONS: Array<{ sort: IssueSort; label: string }> = [
+export const SORT_OPTIONS: Array<{ sort: TicketSort; label: string }> = [
   {
     sort: 'created',
     get label() {
@@ -52,7 +52,7 @@ export function sortFromSearchParams(params: URLSearchParams): BoardSort {
   const direction = params.get('dir')
   if (!SORTS.includes(sort)) return DEFAULT_SORT
   return {
-    sort: sort as IssueSort,
+    sort: sort as TicketSort,
     direction: direction === 'asc' ? 'asc' : 'desc',
   }
 }
@@ -79,7 +79,7 @@ export function sameSort(a: BoardSort, b: BoardSort): boolean {
 
 /** A saved view's sort, where null means the default. */
 export function fromViewSort(
-  sort: IssueSort | null | undefined,
+  sort: TicketSort | null | undefined,
   direction: SortDirection | null | undefined,
 ): BoardSort {
   return sort ? { sort, direction: direction ?? 'desc' } : DEFAULT_SORT
@@ -87,7 +87,7 @@ export function fromViewSort(
 
 /** The board's sort as a view stores it: null for the default. */
 export function toViewSort(value: BoardSort): {
-  sort: IssueSort | null
+  sort: TicketSort | null
   sort_direction: SortDirection | null
 } {
   return isDefaultSort(value)

@@ -1,9 +1,9 @@
-"""A ceiling on query counts for the issue list.
+"""A ceiling on query counts for the ticket list.
 
 Asserting an exact number would break on any incidental change, so this asserts
 the property that actually matters: the cost does not grow with the page size.
 Before soft-track#10 a page of 50 cost ~58 queries and a page of 200 cost ~208,
-because each issue fetched its own label links.
+because each ticket fetched its own label links.
 """
 
 import pytest
@@ -11,11 +11,11 @@ from sqlalchemy import event
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
-from lib_softtrack.issues import list_issues
+from lib_softtrack.tickets import list_tickets
 from lib_softtrack.statuses import create_default_statuses
 from lib_softtrack.tables import (
-    Issue,
-    IssueLabelLink,
+    Ticket,
+    TicketLabelLink,
     Label,
     Team,
     TeamMember,
@@ -24,7 +24,7 @@ from lib_softtrack.tables import (
 )
 
 
-def _seeded_engine(issue_count: int):
+def _seeded_engine(ticket_count: int):
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
     )
@@ -68,27 +68,27 @@ def _seeded_engine(issue_count: int):
         statuses = create_default_statuses(session, team.id)
         session.commit()
 
-        for i in range(issue_count):
-            issue = Issue(
+        for i in range(ticket_count):
+            ticket = Ticket(
                 team_id=team.id,
                 number=i + 1,
-                title=f"issue {i}",
+                title=f"ticket {i}",
                 status_id=statuses[i % len(statuses)].id,
                 creator_id=users[i % 5].id,
                 assignee_id=users[(i + 1) % 5].id,
             )
-            session.add(issue)
+            session.add(ticket)
             session.commit()
-            session.refresh(issue)
+            session.refresh(ticket)
             for label in labels:
-                session.add(IssueLabelLink(issue_id=issue.id, label_id=label.id))
+                session.add(TicketLabelLink(ticket_id=ticket.id, label_id=label.id))
             session.commit()
         # ids, not ORM objects: instances detach when this session closes
         return engine, users[0].id, team.id
 
 
-def _queries_to_list(issue_count: int) -> int:
-    engine, actor_id, team_id = _seeded_engine(issue_count)
+def _queries_to_list(ticket_count: int) -> int:
+    engine, actor_id, team_id = _seeded_engine(ticket_count)
     counted: list[str] = []
 
     def _record(conn, cursor, statement, *args):
@@ -97,27 +97,27 @@ def _queries_to_list(issue_count: int) -> int:
     with Session(engine) as session:
         actor = session.get(User, actor_id)  # load before counting starts
         event.listen(engine, "before_cursor_execute", _record)
-        page = list_issues(session, actor, team_id, limit=200)
+        page = list_tickets(session, actor, team_id, limit=200)
         event.remove(engine, "before_cursor_execute", _record)
-        assert len(page.items) == issue_count
+        assert len(page.items) == ticket_count
     return len(counted)
 
 
-def test_listing_issues_does_not_scale_queries_with_page_size():
+def test_listing_tickets_does_not_scale_queries_with_page_size():
     small = _queries_to_list(5)
     large = _queries_to_list(60)
     assert small == large, (
-        f"query count grew with the page: {small} for 5 issues, {large} for 60. "
-        "Something in the list path is querying per issue again."
+        f"query count grew with the page: {small} for 5 tickets, {large} for 60. "
+        "Something in the list path is querying per ticket again."
     )
 
 
 #: Raised from 10 to 11 when statuses became rows (soft-track#22): a page of
-#: issues now loads the status rows it points at. One query for the page, not
-#: one per issue -- which is what the test above actually guards.
+#: tickets now loads the status rows it points at. One query for the page, not
+#: one per ticket -- which is what the test above actually guards.
 _CEILING = 11
 
 
-@pytest.mark.parametrize("issue_count", [5, 60])
-def test_the_issue_list_stays_under_a_query_ceiling(issue_count):
-    assert _queries_to_list(issue_count) <= _CEILING
+@pytest.mark.parametrize("ticket_count", [5, 60])
+def test_the_ticket_list_stays_under_a_query_ceiling(ticket_count):
+    assert _queries_to_list(ticket_count) <= _CEILING

@@ -51,8 +51,8 @@ function project(id: number, color: string): ProjectRead {
     state: 'planned',
     archived: false,
     created_at: '2026-01-01T00:00:00Z',
-    issue_count: 0,
-    completed_issue_count: 0,
+    ticket_count: 0,
+    completed_ticket_count: 0,
   }
 }
 

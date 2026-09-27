@@ -10,7 +10,7 @@ import {
   useUpdateViewViewsViewIdPatch,
 } from '@/api/generated/endpoints/views/views'
 import type {
-  IssueGrouping,
+  TicketGrouping,
   SavedViewCreate,
   SavedViewRead,
   SavedViewUpdate,
@@ -53,7 +53,7 @@ export function useSavedViews(teamId: number) {
       name: string,
       filters: ViewFilters,
       isShared: boolean,
-      groupBy: IssueGrouping,
+      groupBy: TicketGrouping,
       sort: Pick<SavedViewCreate, 'sort' | 'sort_direction'> = {},
     ) {
       const view = await create.mutateAsync({

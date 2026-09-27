@@ -35,8 +35,8 @@ async def team_events(
 ):
     """A server-sent event stream of what changes on the team (#103).
 
-    Events are invalidations -- `issue_changed {"id"}`, `comment_added
-    {"issue_id"}`, `notification {}` for the caller's own inbox, and `resync`
+    Events are invalidations -- `ticket_changed {"id"}`, `comment_added
+    {"ticket_id"}`, `notification {}` for the caller's own inbox, and `resync`
     when the stream fell behind -- and never data: the client refetches
     through the ordinary endpoints. `close` means the stream is over and must
     not be reopened as it was: the caller was signed out, deactivated or

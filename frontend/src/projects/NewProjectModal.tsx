@@ -17,7 +17,7 @@ import { useFocusTrap } from '@/ui/useFocusTrap'
  * Asks for the name and colour, which the project's page does not edit, and
  * the lead and target date, which planning wants up front. The state starts
  * at planned and the description is written on the page, which is where the
- * new project opens: adding issues is the next step, and it lives there.
+ * new project opens: adding tickets is the next step, and it lives there.
  */
 export function NewProjectModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation(['projects', 'common'])

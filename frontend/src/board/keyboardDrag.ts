@@ -15,7 +15,7 @@ import { i18n } from '@/i18n'
  * on a card that is not held is the quick peek (#113): the card's own key
  * handler keeps it from ever reaching the sensor, so `start` still names
  * Space -- a key code, which Shift does not change. Enter does not pick a
- * card up: Enter on a focused card already opens the issue, and a keyboard
+ * card up: Enter on a focused card already opens the ticket, and a keyboard
  * user relies on that far more often than on dragging.
  */
 export const KEYBOARD_CODES: NonNullable<KeyboardSensorOptions['keyboardCodes']> = {
@@ -109,12 +109,12 @@ export const instructions = (): ScreenReaderInstructions => ({
  * `status:3` strings nobody should have to hear.
  */
 export function announcements({
-  issueName,
+  ticketName,
   columnName,
   startColumn,
   drag,
 }: {
-  issueName: (id: UniqueIdentifier) => string
+  ticketName: (id: UniqueIdentifier) => string
   /**
    * The column a droppable stands for: a column's own id, or a card's, which
    * stands for the column the card is in.
@@ -134,10 +134,10 @@ export function announcements({
     onDragStart({ active }) {
       drag.moved = false
       const from = startColumn(active.id)
-      const issue = issueName(active.id)
+      const ticket = ticketName(active.id)
       return from
-        ? i18n.t('board:kanban.keyboard.pickedUpIn', { issue, column: from })
-        : i18n.t('board:kanban.keyboard.pickedUp', { issue })
+        ? i18n.t('board:kanban.keyboard.pickedUpIn', { ticket, column: from })
+        : i18n.t('board:kanban.keyboard.pickedUp', { ticket })
     },
     onDragOver({ active, over }) {
       const column = columnName(over?.id)
@@ -147,35 +147,35 @@ export function announcements({
         return undefined
       }
       drag.moved = true
-      const issue = issueName(active.id)
-      if (!column) return i18n.t('board:kanban.keyboard.notOverColumn', { issue })
+      const ticket = ticketName(active.id)
+      if (!column) return i18n.t('board:kanban.keyboard.notOverColumn', { ticket })
       // Over a card: say which, since that is where it will land (#88).
       if (typeof over?.id === 'number') {
         return i18n.t('board:kanban.keyboard.nextTo', {
-          issue,
+          ticket,
           column,
-          other: issueName(over.id),
+          other: ticketName(over.id),
         })
       }
-      return i18n.t('board:kanban.keyboard.over', { issue, column })
+      return i18n.t('board:kanban.keyboard.over', { ticket, column })
     },
     onDragEnd({ active, over }) {
       const to = columnName(over?.id)
       const from = startColumn(active.id)
-      const issue = issueName(active.id)
+      const ticket = ticketName(active.id)
       if (!to) {
-        return i18n.t('board:kanban.keyboard.notDropped', { issue, column: from ?? itsColumn() })
+        return i18n.t('board:kanban.keyboard.notDropped', { ticket, column: from ?? itsColumn() })
       }
       if (to === from) {
         return over?.id === active.id || typeof over?.id !== 'number'
-          ? i18n.t('board:kanban.keyboard.stays', { issue, column: to })
-          : i18n.t('board:kanban.keyboard.movedWithin', { issue, column: to })
+          ? i18n.t('board:kanban.keyboard.stays', { ticket, column: to })
+          : i18n.t('board:kanban.keyboard.movedWithin', { ticket, column: to })
       }
-      return i18n.t('board:kanban.keyboard.movedTo', { issue, column: to })
+      return i18n.t('board:kanban.keyboard.movedTo', { ticket, column: to })
     },
     onDragCancel({ active }) {
       return i18n.t('board:kanban.keyboard.cancelled', {
-        issue: issueName(active.id),
+        ticket: ticketName(active.id),
         column: startColumn(active.id) ?? itsColumn(),
       })
     },

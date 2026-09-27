@@ -16,7 +16,7 @@ import { Loading } from '@/ui/Loading'
  *
  * The list of events is deliberately not configurable. Four switches nobody
  * changes is worse than one sentence saying what the four are -- and the
- * per-issue mute (the Watch button) is the control people actually reach for.
+ * per-ticket mute (the Watch button) is the control people actually reach for.
  */
 export default function NotificationSettings() {
   const { t } = useTranslation(['settings', 'common'])

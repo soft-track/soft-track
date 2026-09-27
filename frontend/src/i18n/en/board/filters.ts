@@ -46,5 +46,5 @@ export const filters = {
     sprint: 'Deleted sprint',
   },
   /** A saved view with no filters, in the sidebar. */
-  allIssues: 'All tickets',
+  allTickets: 'All tickets',
 } as const

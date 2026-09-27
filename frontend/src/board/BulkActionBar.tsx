@@ -1,9 +1,9 @@
 import type { ChangeEvent } from 'react'
 
-import type { IssueBulkChanges } from '@/api/generated/models'
+import type { TicketBulkChanges } from '@/api/generated/models'
 import type { BulkEdit } from '@/board/useBulkEdit'
 import { useTranslation } from '@/i18n'
-import { PRIORITY_META, PRIORITY_ORDER } from '@/issues/issueMeta'
+import { PRIORITY_META, PRIORITY_ORDER } from '@/tickets/ticketMeta'
 import { activeMembers } from '@/team/members'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
@@ -13,11 +13,11 @@ import { Select } from '@/ui/Select'
 const NONE = 'none'
 
 /**
- * The bar that appears while issues are selected.
+ * The bar that appears while tickets are selected.
  *
  * Every control is a picker that acts the moment something is chosen, and
  * snaps back to its placeholder: there is no "current value" to show for
- * twenty issues that disagree, and a picker that displayed one of them would
+ * twenty tickets that disagree, and a picker that displayed one of them would
  * be claiming something about the other nineteen.
  */
 export function BulkActionBar({
@@ -33,7 +33,7 @@ export function BulkActionBar({
   const { statuses, members, projects, sprints, labels } = useTeamContext()
   const count = selectedIds.length
 
-  const apply = (changes: IssueBulkChanges) => bulk.update(selectedIds, changes)
+  const apply = (changes: TicketBulkChanges) => bulk.update(selectedIds, changes)
 
   /** Read a picker's choice as an id, a clear (null), or nothing chosen (undefined). */
   const idOrNull = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -152,7 +152,7 @@ export function BulkActionBar({
           <option value="">{t('bulk.sprintPlaceholder')}</option>
           <option value={NONE}>{t('bulk.noSprint')}</option>
           {sprints
-            // As in the issue panel: a completed sprint is history.
+            // As in the ticket panel: a completed sprint is history.
             .filter((sprint) => sprint.state !== 'completed')
             .map((sprint) => (
               <option key={sprint.id} value={sprint.id}>

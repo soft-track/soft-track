@@ -12,7 +12,7 @@ from lib_utils.errors import ErrorCode, api_error
 router = APIRouter(tags=["import"])
 
 #: Refused before reading, so a large upload cannot exhaust memory. A Jira
-#: export of 20,000 issues is comfortably under this.
+#: export of 20,000 tickets is comfortably under this.
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 
 

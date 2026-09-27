@@ -15,15 +15,15 @@ import { createPortal } from 'react-dom'
 import { useSearchParams } from 'react-router-dom'
 
 import {
-  useListIssuesTeamsTeamIdIssuesGet,
-  useUpdateIssueIssuesIssueIdPatch,
-} from '@/api/generated/endpoints/issues/issues'
-import type { IssueRead, ListIssuesTeamsTeamIdIssuesGetParams } from '@/api/generated/models'
+  useListTicketsTeamsTeamIdTicketsGet,
+  useUpdateTicketTicketsTicketIdPatch,
+} from '@/api/generated/endpoints/tickets/tickets'
+import type { TicketRead, ListTicketsTeamsTeamIdTicketsGetParams } from '@/api/generated/models'
 import { dayKey, monthGrid, monthParam, moveDay, parseMonth } from '@/calendar/month'
 import { useTranslation } from '@/i18n'
 import { formatDate } from '@/i18n/format'
-import { localToday } from '@/issues/dueDate'
-import { useOpenIssue } from '@/issues/surface'
+import { localToday } from '@/tickets/dueDate'
+import { useOpenTicket } from '@/tickets/surface'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
@@ -35,7 +35,7 @@ const CHIPS_PER_DAY = 3
 const MONTH_LIMIT = 200
 
 /**
- * Issues on the days they are due (#105): the third view beside board and
+ * Tickets on the days they are due (#105): the third view beside board and
  * list, answering "what's due this week" as a picture instead of a filter.
  *
  * It uses the board's filters and URL, so a saved view narrows it the same
@@ -47,14 +47,14 @@ export function CalendarView({
   canWrite,
 }: {
   /** The board's filters, as the list endpoint takes them. */
-  params: ListIssuesTeamsTeamIdIssuesGetParams
+  params: ListTicketsTeamsTeamIdTicketsGetParams
   /** Guests (#104) see the calendar and cannot drag on it. */
   canWrite: boolean
 }) {
   const { team, statuses } = useTeamContext()
   const { t } = useTranslation('calendar')
-  // One of the board's views, so an issue opens in the board's panel (#112).
-  const openIssue = useOpenIssue()
+  // One of the board's views, so a ticket opens in the board's panel (#112).
+  const openTicket = useOpenTicket()
   const queryClient = useQueryClient()
   const titleId = useId()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -66,21 +66,21 @@ export function CalendarView({
   const from = dayKey(weeks[0][0])
   const to = dayKey(weeks[weeks.length - 1][6])
 
-  const query = useListIssuesTeamsTeamIdIssuesGet(team.id, {
+  const query = useListTicketsTeamsTeamIdTicketsGet(team.id, {
     ...params,
     due_from: from,
     due_to: to,
     limit: MONTH_LIMIT,
   })
-  const issues = useMemo(() => query.data?.items ?? [], [query.data])
+  const tickets = useMemo(() => query.data?.items ?? [], [query.data])
   const byDay = useMemo(() => {
-    const days = new Map<string, IssueRead[]>()
-    for (const issue of issues) {
-      if (!issue.due_date) continue
-      days.set(issue.due_date, [...(days.get(issue.due_date) ?? []), issue])
+    const days = new Map<string, TicketRead[]>()
+    for (const ticket of tickets) {
+      if (!ticket.due_date) continue
+      days.set(ticket.due_date, [...(days.get(ticket.due_date) ?? []), ticket])
     }
     return days
-  }, [issues])
+  }, [tickets])
 
   const [chosen, setFocused] = useState(() =>
     isSameMonth(new Date(), month) ? new Date() : month,
@@ -116,18 +116,18 @@ export function CalendarView({
     grid.current?.querySelector<HTMLElement>(`[data-day="${dayKey(focused)}"]`)?.focus()
   }, [focused, monthKey])
 
-  const update = useUpdateIssueIssuesIssueIdPatch()
-  const listKey = [`/teams/${team.id}/issues`]
-  const reschedule = async (issue: IssueRead, due_date: string) => {
-    if (issue.due_date === due_date) return
+  const update = useUpdateTicketTicketsTicketIdPatch()
+  const listKey = [`/teams/${team.id}/tickets`]
+  const reschedule = async (ticket: TicketRead, due_date: string) => {
+    if (ticket.due_date === due_date) return
     // Moved at once; the server's answer replaces it, or the refetch undoes it.
-    queryClient.setQueriesData<{ items: IssueRead[] }>({ queryKey: listKey }, (page) =>
+    queryClient.setQueriesData<{ items: TicketRead[] }>({ queryKey: listKey }, (page) =>
       page
-        ? { ...page, items: page.items.map((i) => (i.id === issue.id ? { ...i, due_date } : i)) }
+        ? { ...page, items: page.items.map((i) => (i.id === ticket.id ? { ...i, due_date } : i)) }
         : page,
     )
     try {
-      await update.mutateAsync({ issueId: issue.id, data: { due_date } })
+      await update.mutateAsync({ ticketId: ticket.id, data: { due_date } })
     } finally {
       queryClient.invalidateQueries({ queryKey: listKey })
     }
@@ -135,13 +135,13 @@ export function CalendarView({
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
   const onDragEnd = ({ active, over }: DragEndEvent) => {
-    const issue = issues.find((candidate) => candidate.id === active.id)
-    if (issue && over) reschedule(issue, String(over.id))
+    const ticket = tickets.find((candidate) => candidate.id === active.id)
+    if (ticket && over) reschedule(ticket, String(over.id))
   }
 
-  const statusColor = (issue: IssueRead) =>
-    statuses.find((status) => status.id === issue.status.id)?.color ?? issue.status.color
-  const hidden = (query.data?.total ?? 0) - issues.length
+  const statusColor = (ticket: TicketRead) =>
+    statuses.find((status) => status.id === ticket.status.id)?.color ?? ticket.status.color
+  const hidden = (query.data?.total ?? 0) - tickets.length
 
   return (
     <div className="glass flex h-full flex-col overflow-hidden rounded-panel">
@@ -151,7 +151,7 @@ export function CalendarView({
         </h2>
         {hidden > 0 && (
           <span className="text-xs text-neutral-500">
-            {t('month.showing', { shown: issues.length, total: query.data?.total ?? 0 })}
+            {t('month.showing', { shown: tickets.length, total: query.data?.total ?? 0 })}
           </span>
         )}
         <button
@@ -233,7 +233,7 @@ export function CalendarView({
                       key={key}
                       day={day}
                       dayKey={key}
-                      issues={due}
+                      tickets={due}
                       inMonth={isSameMonth(day, month)}
                       isToday={key === today}
                       isFocused={isFocused}
@@ -241,7 +241,7 @@ export function CalendarView({
                       statusColor={statusColor}
                       onFocus={() => setFocused(day)}
                       onOpenDay={() => setOpenDay(key)}
-                      onOpenIssue={(issue) => openIssue(issue, 'panel')}
+                      onOpenTicket={(ticket) => openTicket(ticket, 'panel')}
                     />
                   )
                 })}
@@ -254,15 +254,15 @@ export function CalendarView({
       {openDay && (
         <DayDialog
           day={openDay}
-          issues={byDay.get(openDay) ?? []}
+          tickets={byDay.get(openDay) ?? []}
           onClose={() => {
             setOpenDay(null)
             focusFollows.current = true
             setFocused(new Date(`${openDay}T12:00:00`))
           }}
-          onOpenIssue={(issue) => {
+          onOpenTicket={(ticket) => {
             setOpenDay(null)
-            openIssue(issue, 'panel')
+            openTicket(ticket, 'panel')
           }}
         />
       )}
@@ -273,7 +273,7 @@ export function CalendarView({
 function DayCell({
   day,
   dayKey: key,
-  issues,
+  tickets,
   inMonth,
   isToday,
   isFocused,
@@ -281,27 +281,27 @@ function DayCell({
   statusColor,
   onFocus,
   onOpenDay,
-  onOpenIssue,
+  onOpenTicket,
 }: {
   day: Date
   dayKey: string
-  issues: IssueRead[]
+  tickets: TicketRead[]
   inMonth: boolean
   isToday: boolean
   isFocused: boolean
   canWrite: boolean
-  statusColor: (issue: IssueRead) => string
+  statusColor: (ticket: TicketRead) => string
   onFocus: () => void
   onOpenDay: () => void
-  onOpenIssue: (issue: IssueRead) => void
+  onOpenTicket: (ticket: TicketRead) => void
 }) {
   const { t } = useTranslation('calendar')
   const { setNodeRef, isOver } = useDroppable({ id: key, disabled: !canWrite })
-  const shown = issues.slice(0, CHIPS_PER_DAY)
-  const more = issues.length - shown.length
+  const shown = tickets.slice(0, CHIPS_PER_DAY)
+  const more = tickets.length - shown.length
   const label = t('month.dayLabel', {
     day: formatDate(day, 'EEEE d MMMM'),
-    count: issues.length,
+    count: tickets.length,
   })
 
   return (
@@ -332,14 +332,14 @@ function DayCell({
         </span>
       </div>
       <ul className="space-y-1">
-        {shown.map((issue) => (
-          <li key={issue.id}>
+        {shown.map((ticket) => (
+          <li key={ticket.id}>
             <Chip
-              issue={issue}
-              color={statusColor(issue)}
+              ticket={ticket}
+              color={statusColor(ticket)}
               draggable={canWrite}
               tabbable={isFocused}
-              onOpen={() => onOpenIssue(issue)}
+              onOpen={() => onOpenTicket(ticket)}
             />
           </li>
         ))}
@@ -359,13 +359,13 @@ function DayCell({
 }
 
 function Chip({
-  issue,
+  ticket,
   color,
   draggable,
   tabbable,
   onOpen,
 }: {
-  issue: IssueRead
+  ticket: TicketRead
   color: string
   draggable: boolean
   tabbable: boolean
@@ -373,7 +373,7 @@ function Chip({
 }) {
   const { t } = useTranslation('calendar')
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: issue.id,
+    id: ticket.id,
     disabled: !draggable,
   })
   return (
@@ -384,9 +384,9 @@ function Chip({
       tabIndex={tabbable ? 0 : -1}
       onClick={onOpen}
       title={t('month.chipTitle', {
-        identifier: issue.identifier,
-        title: issue.title,
-        status: issue.status.name,
+        identifier: ticket.identifier,
+        title: ticket.title,
+        status: ticket.status.name,
       })}
       style={{
         transform: CSS.Translate.toString(transform),
@@ -398,23 +398,23 @@ function Chip({
       } ${draggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
     >
       <span className="dot shrink-0" style={{ ['--dot' as string]: color }} aria-hidden="true" />
-      <span className="identifier shrink-0 text-neutral-400">{issue.identifier}</span>
-      <span className="truncate text-neutral-800">{issue.title}</span>
+      <span className="identifier shrink-0 text-neutral-400">{ticket.identifier}</span>
+      <span className="truncate text-neutral-800">{ticket.title}</span>
     </button>
   )
 }
 
-/** Every issue due on one day -- where "+3 more" and Enter lead. */
+/** Every ticket due on one day -- where "+3 more" and Enter lead. */
 function DayDialog({
   day,
-  issues,
+  tickets,
   onClose,
-  onOpenIssue,
+  onOpenTicket,
 }: {
   day: string
-  issues: IssueRead[]
+  tickets: TicketRead[]
   onClose: () => void
-  onOpenIssue: (issue: IssueRead) => void
+  onOpenTicket: (ticket: TicketRead) => void
 }) {
   const { t } = useTranslation(['calendar', 'common'])
   const dialogRef = useFocusTrap<HTMLDivElement>()
@@ -442,23 +442,23 @@ function DayDialog({
         <h2 id={titleId} className="text-sm font-semibold text-neutral-900">
           {t('month.dueOn', { day: formatDate(new Date(`${day}T12:00:00`), 'EEEE d MMMM') })}
         </h2>
-        {issues.length === 0 ? (
+        {tickets.length === 0 ? (
           <p className="mt-3 text-sm text-neutral-400">{t('month.nothingDue')}</p>
         ) : (
           <ul className="mt-3 space-y-1">
-            {issues.map((issue) => (
-              <li key={issue.id}>
+            {tickets.map((ticket) => (
+              <li key={ticket.id}>
                 <button
                   type="button"
-                  onClick={() => onOpenIssue(issue)}
+                  onClick={() => onOpenTicket(ticket)}
                   className="flex w-full items-baseline gap-2 rounded-control px-2 py-1.5 text-left text-sm hover:bg-neutral-900/5"
                 >
                   <span className="identifier shrink-0 text-xs text-neutral-400">
-                    {issue.identifier}
+                    {ticket.identifier}
                   </span>
-                  <span className="truncate text-neutral-800">{issue.title}</span>
+                  <span className="truncate text-neutral-800">{ticket.title}</span>
                   <span className="ml-auto shrink-0 text-xs text-neutral-400">
-                    {issue.status.name}
+                    {ticket.status.name}
                   </span>
                 </button>
               </li>

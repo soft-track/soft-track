@@ -35,7 +35,7 @@ def test_a_token_is_shown_once_and_acts_as_its_owner(client, team):
 
     # And it can do what its owner can.
     response = client.post(
-        f"/teams/{team['team']['id']}/issues",
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": "Filed by a cron job"},
         headers=bearer(secret),
     )

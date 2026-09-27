@@ -16,7 +16,7 @@ import {
  */
 export type PeekOpenedBy = 'keyboard' | 'pointer'
 
-/** The issue being peeked at, and the card or row it hangs off. */
+/** The ticket being peeked at, and the card or row it hangs off. */
 export type Peeked = { id: number; anchor: HTMLElement; via: PeekOpenedBy }
 
 export interface PeekController {
@@ -52,7 +52,7 @@ const NO_PEEK = {
  * `onPointerDown` is left to the caller to call `close` from, because a card
  * already has a pointer-down handler of its own: the drag's.
  */
-export function usePeekTrigger(issueId: number) {
+export function usePeekTrigger(ticketId: number) {
   const peek = useContext(PeekContext)
   return useMemo(() => {
     if (!peek) return NO_PEEK
@@ -61,13 +61,13 @@ export function usePeekTrigger(issueId: number) {
         // A mouse, resting. Touch has no hover to rest with (#113 leaves it
         // without a peek), and a pointer with a button held is dragging.
         if (event.pointerType !== 'mouse' || event.buttons !== 0) return
-        peek.hoverStart(issueId, event.currentTarget)
+        peek.hoverStart(ticketId, event.currentTarget)
       },
-      onPointerLeave: () => peek.hoverEnd(issueId),
-      onFocus: (event: FocusEvent<HTMLElement>) => peek.follow(issueId, event.currentTarget),
-      onBlur: () => peek.left(issueId),
+      onPointerLeave: () => peek.hoverEnd(ticketId),
+      onFocus: (event: FocusEvent<HTMLElement>) => peek.follow(ticketId, event.currentTarget),
+      onBlur: () => peek.left(ticketId),
       close: peek.close,
-      toggle: (anchor: HTMLElement) => peek.toggle(issueId, anchor),
+      toggle: (anchor: HTMLElement) => peek.toggle(ticketId, anchor),
     }
-  }, [peek, issueId])
+  }, [peek, ticketId])
 }

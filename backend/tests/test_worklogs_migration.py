@@ -38,15 +38,15 @@ def test_the_table_takes_an_entry_and_comes_off_cleanly(tmp_path):
     connection.close()
     command.upgrade(config, AFTER)
     # The rest of the way before writing through the models: a flush reads the
-    # issue a worklog is on, with every column today's `Issue` has
-    # (`sprint_id`, #214) -- names this revision predates. Nothing after it
-    # touches `worklog`, so the table checked is still this one's.
+    # ticket a worklog is on, with every column today's `Ticket` has, under
+    # names this revision predates (#214, #215). After it, `worklog` only has
+    # its `issue_id` renamed, so the table checked is still this one's.
     command.upgrade(config, "head")
 
     engine = create_engine(f"sqlite:///{db_path}")
     with Session(engine) as session:
         session.add(
-            Worklog(issue_id=1, user_id=1, minutes=90, worked_on=date(2026, 9, 1))
+            Worklog(ticket_id=1, user_id=1, minutes=90, worked_on=date(2026, 9, 1))
         )
         session.commit()
         assert session.exec(select(Worklog.minutes)).all() == [90]

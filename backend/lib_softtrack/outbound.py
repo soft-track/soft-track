@@ -175,7 +175,7 @@ def emit(
     """Queue `event` for every enabled webhook on the team that wants it.
 
     `data` is a callable, built only if somebody is listening: most teams have
-    no webhooks, and building an issue's full read for nobody is a waste of
+    no webhooks, and building a ticket's full read for nobody is a waste of
     queries on every change. Nothing is committed here -- the rows join the
     caller's transaction, which is what makes this an outbox. Returns how many
     deliveries were queued.
@@ -223,8 +223,8 @@ def emit(
     return len(listeners)
 
 
-#: The issue fields an `issue.updated` reports changes to.
-_ISSUE_FIELDS = (
+#: The ticket fields an `ticket.updated` reports changes to.
+_TICKET_FIELDS = (
     "title",
     "description",
     "status_id",
@@ -239,44 +239,46 @@ _ISSUE_FIELDS = (
 )
 
 
-def snapshot(issue) -> dict:
-    """The fields `issue_changed` compares, taken before an update."""
-    return {field: getattr(issue, field) for field in _ISSUE_FIELDS}
+def snapshot(ticket) -> dict:
+    """The fields `ticket_changed` compares, taken before an update."""
+    return {field: getattr(ticket, field) for field in _TICKET_FIELDS}
 
 
 def _plain(value):
     return getattr(value, "value", value)
 
 
-def issue_changed(session: Session, issue, before: dict, actor: Optional[User]) -> None:
-    """Emit `issue.updated` (and `issue.status_changed`) for what moved."""
+def ticket_changed(
+    session: Session, ticket, before: dict, actor: Optional[User]
+) -> None:
+    """Emit `ticket.updated` (and `ticket.status_changed`) for what moved."""
     changes = {
-        field: {"from": _plain(before[field]), "to": _plain(getattr(issue, field))}
-        for field in _ISSUE_FIELDS
-        if before[field] != getattr(issue, field)
+        field: {"from": _plain(before[field]), "to": _plain(getattr(ticket, field))}
+        for field in _TICKET_FIELDS
+        if before[field] != getattr(ticket, field)
     }
     if not changes:
         return
 
-    from lib_softtrack.issues import issue_to_read
+    from lib_softtrack.tickets import ticket_to_read
 
-    read = lambda: issue_to_read(issue, session)  # noqa: E731
+    read = lambda: ticket_to_read(ticket, session)  # noqa: E731
     emit(
         session,
-        issue.team_id,
-        WebhookEvent.issue_updated,
-        lambda: {"issue": read(), "changes": changes},
+        ticket.team_id,
+        WebhookEvent.ticket_updated,
+        lambda: {"ticket": read(), "changes": changes},
         actor,
     )
     if "status_id" in changes:
         old = session.get(WorkflowStatus, before["status_id"])
-        new = session.get(WorkflowStatus, issue.status_id)
+        new = session.get(WorkflowStatus, ticket.status_id)
         emit(
             session,
-            issue.team_id,
-            WebhookEvent.issue_status_changed,
+            ticket.team_id,
+            WebhookEvent.ticket_status_changed,
             lambda: {
-                "issue": read(),
+                "ticket": read(),
                 "from": (
                     {"id": old.id, "name": old.name, "category": old.category}
                     if old

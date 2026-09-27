@@ -7,11 +7,11 @@ from lib_identity.models.identity import UserPublic
 from lib_softtrack.tables import NotificationKind
 
 
-class NotificationIssue(BaseModel):
-    """Enough of the issue to render the row and navigate to it.
+class NotificationTicket(BaseModel):
+    """Enough of the ticket to render the row and navigate to it.
 
     `team_key` and `number` rather than a URL: the inbox links into the app's
-    own routes (`/:teamKey/issue/:issueNumber`), and a server-built path would
+    own routes (`/:teamKey/ticket/:ticketNumber`), and a server-built path would
     be a second place that has to change when they do.
     """
 
@@ -26,7 +26,7 @@ class NotificationIssue(BaseModel):
 class NotificationRead(BaseModel):
     id: int
     kind: NotificationKind
-    issue: NotificationIssue
+    ticket: NotificationTicket
     #: Absent for anything a person did not do -- see Notification.actor_id.
     actor: Optional[UserPublic] = None
     #: The first line or so of the comment, for `commented` and `mentioned`.

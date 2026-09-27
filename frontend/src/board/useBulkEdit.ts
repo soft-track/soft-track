@@ -3,17 +3,17 @@ import { useCallback, useState } from 'react'
 
 import { errorDetail } from '@/api/errors'
 import {
-  useBulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePost,
-  useBulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost,
-} from '@/api/generated/endpoints/issues/issues'
-import type { IssueBulkChanges, TeamRead } from '@/api/generated/models'
+  useBulkDeleteTicketsTeamsTeamIdTicketsBulkDeletePost,
+  useBulkUpdateTicketsTeamsTeamIdTicketsBulkUpdatePost,
+} from '@/api/generated/endpoints/tickets/tickets'
+import type { TicketBulkChanges, TeamRead } from '@/api/generated/models'
 import { useTranslation } from '@/i18n'
 import { invalidateProjects } from '@/team/projects'
 
 /**
- * Change or delete many issues in one request.
+ * Change or delete many tickets in one request.
  *
- * One call for the batch rather than one per issue, and the server applies it
+ * One call for the batch rather than one per ticket, and the server applies it
  * all-or-nothing -- so there is no partial state to reconcile here, and a
  * failure leaves the board exactly as it was. That is also why this refetches
  * rather than patching the cache optimistically: with one request there is
@@ -23,31 +23,31 @@ import { invalidateProjects } from '@/team/projects'
 export function useBulkEdit(team: TeamRead | undefined) {
   const { t } = useTranslation(['board', 'common'])
   const queryClient = useQueryClient()
-  const bulkUpdate = useBulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost()
-  const bulkDelete = useBulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePost()
+  const bulkUpdate = useBulkUpdateTicketsTeamsTeamIdTicketsBulkUpdatePost()
+  const bulkDelete = useBulkDeleteTicketsTeamsTeamIdTicketsBulkDeletePost()
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(() => {
     if (!team) return
-    // Prefixes: every filtered page of the list, and every open issue.
-    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/issues`] })
+    // Prefixes: every filtered page of the list, and every open ticket.
+    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/tickets`] })
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/sprints`] })
     invalidateProjects(queryClient, team.id)
     queryClient.invalidateQueries({
       predicate: (query) =>
-        typeof query.queryKey[0] === 'string' && query.queryKey[0].startsWith('/issues/'),
+        typeof query.queryKey[0] === 'string' && query.queryKey[0].startsWith('/tickets/'),
     })
   }, [queryClient, team])
 
   const update = useCallback(
-    async (issueIds: readonly number[], changes: IssueBulkChanges): Promise<boolean> => {
-      if (!team || issueIds.length === 0) return false
+    async (ticketIds: readonly number[], changes: TicketBulkChanges): Promise<boolean> => {
+      if (!team || ticketIds.length === 0) return false
       setError(null)
       try {
         await bulkUpdate.mutateAsync({
           teamId: team.id,
-          data: { issue_ids: [...issueIds], changes },
+          data: { ticket_ids: [...ticketIds], changes },
         })
         return true
       } catch (err: unknown) {
@@ -61,11 +61,11 @@ export function useBulkEdit(team: TeamRead | undefined) {
   )
 
   const remove = useCallback(
-    async (issueIds: readonly number[]): Promise<boolean> => {
-      if (!team || issueIds.length === 0) return false
+    async (ticketIds: readonly number[]): Promise<boolean> => {
+      if (!team || ticketIds.length === 0) return false
       setError(null)
       try {
-        await bulkDelete.mutateAsync({ teamId: team.id, data: { issue_ids: [...issueIds] } })
+        await bulkDelete.mutateAsync({ teamId: team.id, data: { ticket_ids: [...ticketIds] } })
         return true
       } catch (err: unknown) {
         setError(errorDetail(err, t('bulk.errors.delete')))

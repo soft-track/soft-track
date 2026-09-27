@@ -12,7 +12,7 @@ import { resources } from '@/i18n/resources'
  * language arrives it is a new folder rather than a pass over every
  * component.
  *
- * Namespaces follow the feature folders -- `settings`, then `issues`, then
+ * Namespaces follow the feature folders -- `settings`, then `tickets`, then
  * `board` -- and a folder is converted in one piece, with
  * `scripts/check-i18n.mjs` keeping it converted. `common` holds the words
  * every namespace uses: Cancel, Save, Delete.

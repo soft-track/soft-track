@@ -11,7 +11,7 @@ test('dragging a card to another column changes its status for good', async ({
   const team = await makeTeam(request, owner)
   const statuses = await api(request, owner, 'get', `/teams/${team.id}/statuses`)
   const todo = statuses.find((s: { name: string }) => s.name === 'Todo')
-  await api(request, owner, 'post', `/teams/${team.id}/issues`, {
+  await api(request, owner, 'post', `/teams/${team.id}/tickets`, {
     title: 'Move me along',
     status_id: todo.id,
   })

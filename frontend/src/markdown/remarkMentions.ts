@@ -10,7 +10,7 @@ import { MENTION_PATTERN, type Mentionable, peopleByHandle } from '@/markdown/me
  * that mentions inside code stay literal: the visitor only sees `text` nodes,
  * and `` `@demo` `` or a fenced block parses to `inlineCode` / `code`. A
  * regex over the raw markdown would rewrite those too, which is exactly the
- * wrong behaviour in an issue tracker full of shell snippets.
+ * wrong behaviour in a ticket tracker full of shell snippets.
  *
  * An `@handle` that matches nobody on the team is left as plain text.
  *

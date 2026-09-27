@@ -39,9 +39,9 @@ def update_project(client, team, project, expect=200, **fields):
     return response.json()
 
 
-def make_issue(client, team, title="Work", **fields):
+def make_ticket(client, team, title="Work", **fields):
     response = client.post(
-        f"/teams/{team['team']['id']}/issues",
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": title, **fields},
         headers=team["headers"],
     )
@@ -148,17 +148,17 @@ def test_a_missing_project_is_a_404(client, team):
 # --- archiving ---------------------------------------------------------------
 
 
-def test_an_archived_project_keeps_its_issues(client, team):
+def test_an_archived_project_keeps_its_tickets(client, team):
     project = make_project(client, team)
-    issue = make_issue(client, team, project_id=project["id"])
+    ticket = make_ticket(client, team, project_id=project["id"])
 
     assert update_project(client, team, project, archived=True)["archived"] is True
-    survivor = client.get(f"/issues/{issue['id']}", headers=team["headers"]).json()
+    survivor = client.get(f"/tickets/{ticket['id']}", headers=team["headers"]).json()
     assert survivor["project_id"] == project["id"]
 
 
 def test_an_archived_project_is_still_listed_and_readable(client, team):
-    """Issues pointing at it still need a name to show. Pickers filter on
+    """Tickets pointing at it still need a name to show. Pickers filter on
     `archived`; the list does not hide it."""
     project = make_project(client, team)
     update_project(client, team, project, archived=True)
@@ -184,11 +184,11 @@ def test_an_archived_project_can_be_restored(client, team):
 # --- deleting ------------------------------------------------------------------
 
 
-def test_deleting_a_project_keeps_its_issues_with_no_project(client, team):
-    """The issues are the work. The project was only a way of grouping it."""
+def test_deleting_a_project_keeps_its_tickets_with_no_project(client, team):
+    """The tickets are the work. The project was only a way of grouping it."""
     project = make_project(client, team)
-    inside = make_issue(client, team, "Inside", project_id=project["id"])
-    elsewhere = make_issue(client, team, "Elsewhere")
+    inside = make_ticket(client, team, "Inside", project_id=project["id"])
+    elsewhere = make_ticket(client, team, "Elsewhere")
 
     response = client.delete(f"/projects/{project['id']}", headers=team["headers"])
     assert response.status_code == 204
@@ -197,19 +197,19 @@ def test_deleting_a_project_keeps_its_issues_with_no_project(client, team):
         client.get(f"/projects/{project['id']}", headers=team["headers"]).status_code
         == 404
     )
-    for issue in (inside, elsewhere):
-        survivor = client.get(f"/issues/{issue['id']}", headers=team["headers"])
+    for ticket in (inside, elsewhere):
+        survivor = client.get(f"/tickets/{ticket['id']}", headers=team["headers"])
         assert survivor.status_code == 200
         assert survivor.json()["project_id"] is None
 
 
-def test_deleting_a_project_leaves_other_projects_issues_alone(client, team):
+def test_deleting_a_project_leaves_other_projects_tickets_alone(client, team):
     doomed = make_project(client, team, "Doomed")
     kept = make_project(client, team, "Kept")
-    issue = make_issue(client, team, project_id=kept["id"])
+    ticket = make_ticket(client, team, project_id=kept["id"])
 
     client.delete(f"/projects/{doomed['id']}", headers=team["headers"])
-    survivor = client.get(f"/issues/{issue['id']}", headers=team["headers"]).json()
+    survivor = client.get(f"/tickets/{ticket['id']}", headers=team["headers"]).json()
     assert survivor["project_id"] == kept["id"]
 
 
@@ -235,14 +235,14 @@ def test_deleting_a_project_clears_the_views_that_filtered_on_it(client, team):
 
 
 def test_deleting_a_project_switches_off_rules_conditioned_on_it(client, team):
-    """Clearing the condition alone would widen the rule to every issue the
+    """Clearing the condition alone would widen the rule to every ticket the
     team has -- a null condition means "no opinion"."""
     project = make_project(client, team)
     response = client.post(
         f"/teams/{team['team']['id']}/automation-rules",
         json={
             "name": "Platform is urgent",
-            "trigger": "issue_created",
+            "trigger": "ticket_created",
             "conditions": {"if_project_id": project["id"]},
             "actions": {"set_priority": "urgent"},
         },
@@ -258,6 +258,6 @@ def test_deleting_a_project_switches_off_rules_conditioned_on_it(client, team):
     assert [(r["is_enabled"], r["conditions"]["if_project_id"]) for r in rules] == [
         (False, None)
     ]
-    # And it really is off: a new issue is not made urgent by it.
-    issue = make_issue(client, team)
-    assert issue["priority"] == "no_priority"
+    # And it really is off: a new ticket is not made urgent by it.
+    ticket = make_ticket(client, team)
+    assert ticket["priority"] == "no_priority"

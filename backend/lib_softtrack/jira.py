@@ -22,8 +22,8 @@ import json
 from datetime import datetime
 from typing import Any, Iterable, Optional
 
-from lib_softtrack.models.imports import ParsedComment, ParsedIssue
-from lib_softtrack.tables import IssuePriority, IssueType, StatusCategory
+from lib_softtrack.models.imports import ParsedComment, ParsedTicket
+from lib_softtrack.tables import TicketPriority, TicketType, StatusCategory
 
 #: Jira's default workflow statuses, plus the ones teams most often add,
 #: mapped to what they *mean*. Matched case-insensitively after stripping, so
@@ -58,26 +58,26 @@ STATUS_MAP: dict[str, StatusCategory] = {
     "rejected": StatusCategory.cancelled,
 }
 
-PRIORITY_MAP: dict[str, IssuePriority] = {
-    "highest": IssuePriority.urgent,
-    "blocker": IssuePriority.urgent,
-    "critical": IssuePriority.urgent,
-    "urgent": IssuePriority.urgent,
-    "high": IssuePriority.high,
-    "major": IssuePriority.high,
-    "medium": IssuePriority.medium,
-    "normal": IssuePriority.medium,
-    "low": IssuePriority.low,
-    "minor": IssuePriority.low,
-    "lowest": IssuePriority.low,
-    "trivial": IssuePriority.low,
+PRIORITY_MAP: dict[str, TicketPriority] = {
+    "highest": TicketPriority.urgent,
+    "blocker": TicketPriority.urgent,
+    "critical": TicketPriority.urgent,
+    "urgent": TicketPriority.urgent,
+    "high": TicketPriority.high,
+    "major": TicketPriority.high,
+    "medium": TicketPriority.medium,
+    "normal": TicketPriority.medium,
+    "low": TicketPriority.low,
+    "minor": TicketPriority.low,
+    "lowest": TicketPriority.low,
+    "trivial": TicketPriority.low,
 }
 
 #: An unmapped status becomes backlog rather than being dropped. Losing an
 #: issue is far worse than putting it in the wrong column, and the report says
 #: which statuses fell back so they can be fixed in bulk afterwards.
 STATUS_FALLBACK = StatusCategory.backlog
-PRIORITY_FALLBACK = IssuePriority.no_priority
+PRIORITY_FALLBACK = TicketPriority.no_priority
 
 _LABEL_HEADERS = {"labels", "label"}
 _COMMENT_HEADERS = {"comment", "comments"}
@@ -100,19 +100,19 @@ def map_status(raw: Optional[str]) -> tuple[StatusCategory, Optional[str]]:
 #: Feature, a team's own invention -- is a task, SoftTrack's word for work that
 #: is neither a bug nor a story. An Epic row lands as a task too: epics
 #: themselves become projects, through each issue's epic link below.
-TYPE_MAP: dict[str, IssueType] = {
-    "bug": IssueType.bug,
-    "defect": IssueType.bug,
-    "story": IssueType.story,
-    "user story": IssueType.story,
+TYPE_MAP: dict[str, TicketType] = {
+    "bug": TicketType.bug,
+    "defect": TicketType.bug,
+    "story": TicketType.story,
+    "user story": TicketType.story,
 }
 
 
-def map_type(raw: Optional[str]) -> IssueType:
-    return TYPE_MAP.get((raw or "").strip().lower(), IssueType.task)
+def map_type(raw: Optional[str]) -> TicketType:
+    return TYPE_MAP.get((raw or "").strip().lower(), TicketType.task)
 
 
-def map_priority(raw: Optional[str]) -> tuple[IssuePriority, Optional[str]]:
+def map_priority(raw: Optional[str]) -> tuple[TicketPriority, Optional[str]]:
     if not raw:
         return PRIORITY_FALLBACK, None
     mapped = PRIORITY_MAP.get(raw.strip().lower())
@@ -185,7 +185,7 @@ def _all(row: dict[str, list[str]], names: Iterable[str]) -> list[str]:
     return collected
 
 
-def parse_csv(text: str) -> list[ParsedIssue]:
+def parse_csv(text: str) -> list[ParsedTicket]:
     rows = _rows(text)
     if not rows:
         raise JiraParseError("The file has a header but no issues.")
@@ -206,7 +206,7 @@ def parse_csv(text: str) -> list[ParsedIssue]:
         priority, unmapped_priority = map_priority(_first(row, "priority"))
 
         issues.append(
-            ParsedIssue(
+            ParsedTicket(
                 external_key=_first(row, "issue key", "key"),
                 title=summary,
                 description=_first(row, "description"),
@@ -254,7 +254,7 @@ def _parse_csv_comment(value: str) -> ParsedComment:
     return ParsedComment(body=value.strip())
 
 
-def parse_json(text: str) -> list[ParsedIssue]:
+def parse_json(text: str) -> list[ParsedTicket]:
     try:
         data: Any = json.loads(text)
     except json.JSONDecodeError as error:
@@ -290,7 +290,7 @@ def parse_json(text: str) -> list[ParsedIssue]:
         priority, unmapped_priority = map_priority(_name_of(fields.get("priority")))
 
         issues.append(
-            ParsedIssue(
+            ParsedTicket(
                 external_key=raw.get("key") or fields.get("key"),
                 title=str(summary),
                 description=_text_of(fields.get("description")),
@@ -385,7 +385,7 @@ def _json_comments(value: Any) -> list[ParsedComment]:
     return comments
 
 
-def parse(filename: str, text: str) -> list[ParsedIssue]:
+def parse(filename: str, text: str) -> list[ParsedTicket]:
     """Parse by extension, falling back to sniffing the content."""
     lowered = (filename or "").lower()
     if lowered.endswith(".json"):

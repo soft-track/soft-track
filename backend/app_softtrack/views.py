@@ -94,7 +94,7 @@ def set_my_default_view(
 ):
     """Where *you* land on this team, overriding the team's default.
 
-    Clearing it falls back to the team's rather than to all issues: no
+    Clearing it falls back to the team's rather than to all tickets: no
     override means no preference, not a preference for nothing.
     """
     return views_service.set_my_default(session, current_user, team_id, payload)

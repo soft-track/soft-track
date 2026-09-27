@@ -3,7 +3,7 @@ import { parseISO } from 'date-fns'
 import type { CumulativeFlow, StatusCategory } from '@/api/generated/models'
 import { useTranslation } from '@/i18n'
 import { formatDate } from '@/i18n/format'
-import { CATEGORY_META } from '@/issues/issueMeta'
+import { CATEGORY_META } from '@/tickets/ticketMeta'
 import { Figure, Key, Tooltip, XAxis, YAxis } from '@/reports/Chart'
 import { PAD, useCrosshair } from '@/reports/chartGeometry'
 import { FLOW_ORDER, FLOW_RAMP, INK } from '@/reports/chartTokens'
@@ -12,7 +12,7 @@ const W = 640
 const H = 220
 
 /**
- * Cumulative flow: how many issues sat in each stage, each day.
+ * Cumulative flow: how many tickets sat in each stage, each day.
  *
  * Stacked bottom-to-top in workflow order on a light-to-dark ramp, because
  * these bands are ordered stages rather than unrelated categories -- lightness

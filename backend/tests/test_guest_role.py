@@ -49,7 +49,7 @@ NOT_TEAM_WRITES = {
     ("POST", "/invites/{token}/decline"): "the invitation decides the role",
     # Your own relationship to the team -- the point of being a guest is to
     # follow along, and nobody else sees any of these.
-    ("PUT", "/issues/{issue_id}/watch"): "following an issue is how a guest keeps up",
+    ("PUT", "/tickets/{ticket_id}/watch"): "following a ticket is how a guest keeps up",
     ("PUT", "/teams/{team_id}/default-view/me"): "only changes what you see",
     (
         "DELETE",
@@ -86,9 +86,9 @@ def join(client, team, person, role):
     assert response.status_code == 200, response.text
 
 
-def make_issue(client, actor, team_id, title="Work"):
+def make_ticket(client, actor, team_id, title="Work"):
     response = client.post(
-        f"/teams/{team_id}/issues", json={"title": title}, headers=actor["headers"]
+        f"/teams/{team_id}/tickets", json={"title": title}, headers=actor["headers"]
     )
     assert response.status_code == 200, response.text
     return response.json()
@@ -118,14 +118,14 @@ def world(client, team, guest):
         assert response.status_code in (200, 201), (path, response.text)
         return response.json()
 
-    issue = make_issue(client, team, team_id)
-    other = make_issue(client, team, team_id, "Other")
+    ticket = make_ticket(client, team, team_id)
+    other = make_ticket(client, team, team_id, "Other")
     link = post(
-        f"/issues/{issue['id']}/links",
+        f"/tickets/{ticket['id']}/links",
         json={"target_id": other["id"], "type": "relates_to"},
     )
     attachment = post(
-        f"/issues/{issue['id']}/attachments",
+        f"/tickets/{ticket['id']}/attachments",
         files={"file": ("shot.png", io.BytesIO(PNG), "image/png")},
     )
     sprint = post(
@@ -145,7 +145,7 @@ def world(client, team, guest):
         f"/teams/{team_id}/automation-rules",
         json={
             "name": "Rule",
-            "trigger": "issue_created",
+            "trigger": "ticket_created",
             "conditions": {},
             "actions": {"set_priority": "high"},
         },
@@ -156,21 +156,21 @@ def world(client, team, guest):
     )
     webhook = post(
         f"/teams/{team_id}/outbound-webhooks",
-        json={"url": "https://93.184.216.34/hook", "events": ["issue.created"]},
+        json={"url": "https://93.184.216.34/hook", "events": ["ticket.created"]},
     )
     invite = post(
         f"/teams/{team_id}/invites",
         json={"email": "later@example.com", "role": "member"},
     )
-    comment = post(f"/issues/{issue['id']}/comments", json={"body": "Looks right"})
-    worklog = post(f"/issues/{issue['id']}/worklogs", json={"minutes": 30})
+    comment = post(f"/tickets/{ticket['id']}/comments", json={"body": "Looks right"})
+    worklog = post(f"/tickets/{ticket['id']}/worklogs", json={"minutes": 30})
     template = post(
-        f"/teams/{team_id}/issue-templates",
+        f"/teams/{team_id}/ticket-templates",
         json={"name": "Bug report", "body": "## Steps"},
     )
     return {
         "team_id": team_id,
-        "issue_id": issue["id"],
+        "ticket_id": ticket["id"],
         "link_id": link["id"],
         "attachment_id": attachment["id"],
         "sprint_id": sprint["id"],
@@ -217,8 +217,8 @@ def test_a_guest_is_refused_by_every_mutating_route(client, world, guest, method
 
 def test_the_sweep_is_not_vacuous():
     """The schema really is where the routes come from."""
-    assert ("POST", "/teams/{team_id}/issues") in TEAM_WRITES
-    assert ("PATCH", "/issues/{issue_id}") in TEAM_WRITES
+    assert ("POST", "/teams/{team_id}/tickets") in TEAM_WRITES
+    assert ("PATCH", "/tickets/{ticket_id}") in TEAM_WRITES
     assert len(TEAM_WRITES) > 40
 
 
@@ -233,18 +233,18 @@ def test_every_exemption_is_a_real_route():
 
 def test_a_guest_sees_what_a_member_sees(client, team, guest, world):
     team_id = team["team"]["id"]
-    issue_id = world["issue_id"]
+    ticket_id = world["ticket_id"]
     for path in (
         f"/teams/{team_id}",
-        f"/teams/{team_id}/issues",
+        f"/teams/{team_id}/tickets",
         f"/teams/{team_id}/members",
         f"/teams/{team_id}/sprints",
         f"/teams/{team_id}/statuses",
         f"/teams/{team_id}/velocity",
-        f"/issues/{issue_id}",
-        f"/issues/{issue_id}/comments",
-        f"/issues/{issue_id}/attachments",
-        f"/issues/{issue_id}/links",
+        f"/tickets/{ticket_id}",
+        f"/tickets/{ticket_id}/comments",
+        f"/tickets/{ticket_id}/attachments",
+        f"/tickets/{ticket_id}/links",
         f"/sprints/{world['sprint_id']}/burndown",
         f"/attachments/{world['attachment_id']}/content",
     ):
@@ -256,17 +256,17 @@ def test_a_guest_sees_what_a_member_sees(client, team, guest, world):
     assert found.json()["items"], found.json()
 
 
-def test_a_guest_can_watch_an_issue_and_is_notified(client, team, guest):
-    issue = make_issue(client, team, team["team"]["id"])
+def test_a_guest_can_watch_a_ticket_and_is_notified(client, team, guest):
+    ticket = make_ticket(client, team, team["team"]["id"])
     response = client.put(
-        f"/issues/{issue['id']}/watch",
+        f"/tickets/{ticket['id']}/watch",
         json={"watching": True},
         headers=guest["headers"],
     )
     assert response.status_code == 200, response.text
 
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "Shipped to staging"},
         headers=team["headers"],
     )
@@ -327,7 +327,7 @@ def test_an_invitation_can_make_someone_a_guest(client, team, auth):
         "stakeholder@example.com"
     ] == ("guest")
     refused = client.post(
-        f"/teams/{team['team']['id']}/issues",
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": "Can I?"},
         headers=stakeholder["headers"],
     )
@@ -340,7 +340,7 @@ def test_demoting_a_member_to_guest_takes_effect_at_once(client, team, auth, ses
     team_id = team["team"]["id"]
     assert (
         client.post(
-            f"/teams/{team_id}/issues",
+            f"/teams/{team_id}/tickets",
             json={"title": "Before"},
             headers=member["headers"],
         ).status_code
@@ -356,7 +356,7 @@ def test_demoting_a_member_to_guest_takes_effect_at_once(client, team, auth, ses
     assert response.json()["role"] == "guest"
 
     after = client.post(
-        f"/teams/{team_id}/issues", json={"title": "After"}, headers=member["headers"]
+        f"/teams/{team_id}/tickets", json={"title": "After"}, headers=member["headers"]
     )
     assert after.status_code == 403
     assert after.json()["code"] == "team_read_only"
@@ -402,11 +402,11 @@ def test_linking_into_a_team_you_only_guest_on_is_refused(client, team, auth):
         json={"email": team["user"]["email"], "role": "guest"},
         headers=other_owner["headers"],
     )
-    theirs = make_issue(client, other_owner, ops["id"], "Theirs")
-    mine = make_issue(client, team, team["team"]["id"], "Mine")
+    theirs = make_ticket(client, other_owner, ops["id"], "Theirs")
+    mine = make_ticket(client, team, team["team"]["id"], "Mine")
 
     response = client.post(
-        f"/issues/{mine['id']}/links",
+        f"/tickets/{mine['id']}/links",
         json={"target_id": theirs["id"], "type": "blocks"},
         headers=team["headers"],
     )
@@ -416,10 +416,10 @@ def test_linking_into_a_team_you_only_guest_on_is_refused(client, team, auth):
 
 def test_the_guard_answers_a_missing_row_the_way_the_route_would(client, guest):
     response = client.patch(
-        "/issues/999999", json={"title": "x"}, headers=guest["headers"]
+        "/tickets/999999", json={"title": "x"}, headers=guest["headers"]
     )
     assert response.status_code == 404
-    assert response.json()["code"] == "issue_not_found"
+    assert response.json()["code"] == "ticket_not_found"
 
     response = client.delete("/attachments/999999", headers=guest["headers"])
     assert response.status_code == 404
@@ -429,9 +429,9 @@ def test_the_guard_answers_a_missing_row_the_way_the_route_would(client, guest):
 def test_a_stranger_is_still_not_a_member(client, team, auth):
     """The guard is a stricter membership check, not a replacement for one."""
     stranger = auth(email="stranger@softtrack.dev", full_name="Stranger")
-    issue = make_issue(client, team, team["team"]["id"])
+    ticket = make_ticket(client, team, team["team"]["id"])
     response = client.patch(
-        f"/issues/{issue['id']}", json={"title": "x"}, headers=stranger["headers"]
+        f"/tickets/{ticket['id']}", json={"title": "x"}, headers=stranger["headers"]
     )
     assert response.status_code == 403
     assert response.json()["code"] == "not_team_member"
@@ -440,9 +440,9 @@ def test_a_stranger_is_still_not_a_member(client, team, auth):
 def test_members_are_unaffected(client, team, auth, session):
     member = auth(email="member@softtrack.dev", full_name="Plain Member")
     join(client, team, member, "member")
-    issue = make_issue(client, member, team["team"]["id"])
+    ticket = make_ticket(client, member, team["team"]["id"])
     response = client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "on it"},
         headers=member["headers"],
     )

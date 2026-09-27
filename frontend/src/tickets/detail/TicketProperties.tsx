@@ -1,0 +1,228 @@
+import type { ReactNode } from 'react'
+
+import {
+  type TicketPriority,
+  type TicketRead,
+  type TicketType,
+  type TicketUpdate,
+} from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
+import {
+  ESTIMATE_SCALE,
+  PRIORITY_META,
+  PRIORITY_ORDER,
+  TYPE_META,
+  TYPE_ORDER,
+} from '@/tickets/ticketMeta'
+import { activeMembers } from '@/team/members'
+import { pickableProjects } from '@/team/projects'
+import { useTeamContext } from '@/team/useTeamContext'
+import { Select } from '@/ui/Select'
+
+/**
+ * The block of selects: status, priority, estimate, sprint, project, assignee,
+ * labels.
+ *
+ * Each carries a `data-field` so the panel's single-key shortcuts can focus
+ * it -- see useTicketShortcuts.
+ */
+export function TicketProperties({
+  ticket,
+  patch,
+  currentLabelIds,
+  onToggleLabel,
+  readOnly = false,
+}: {
+  ticket: TicketRead
+  patch: (data: TicketUpdate) => Promise<void>
+  currentLabelIds: Set<number>
+  onToggleLabel: (labelId: number) => void
+  /** A guest's view (#104): every value shown, none of them changeable. */
+  readOnly?: boolean
+}) {
+  const { t } = useTranslation('tickets')
+  const { members, labels, sprints, statuses, projects } = useTeamContext()
+
+  // A fieldset so one attribute disables every control in it -- including any
+  // property added later -- while still showing each one's current value.
+  // Two columns when the space it is given is wide enough, whatever the
+  // window is: a container query, since the page puts this in a narrow
+  // column of its own (#112).
+  return (
+    <fieldset
+      disabled={readOnly}
+      className="well grid min-w-0 gap-x-4 gap-y-3 rounded-card border-0 p-3 @md:grid-cols-2"
+    >
+      <Row label={t('properties.status')} hint="S">
+        <Select
+          dense
+          data-field="status"
+          value={ticket.status.id}
+          onChange={(e) => patch({ status_id: Number(e.target.value) })}
+        >
+          {statuses.map((status) => (
+            <option key={status.id} value={status.id}>
+              {status.name}
+            </option>
+          ))}
+        </Select>
+      </Row>
+
+      <Row label={t('properties.priority')} hint="P">
+        <Select
+          dense
+          data-field="priority"
+          value={ticket.priority}
+          onChange={(e) => patch({ priority: e.target.value as TicketPriority })}
+        >
+          {PRIORITY_ORDER.map((p) => (
+            <option key={p} value={p}>
+              {PRIORITY_META[p].label}
+            </option>
+          ))}
+        </Select>
+      </Row>
+
+      <Row label={t('properties.type')}>
+        <Select
+          dense
+          data-field="type"
+          value={ticket.type}
+          onChange={(e) => patch({ type: e.target.value as TicketType })}
+        >
+          {TYPE_ORDER.map((type) => (
+            <option key={type} value={type}>
+              {TYPE_META[type].label}
+            </option>
+          ))}
+        </Select>
+      </Row>
+
+      <Row label={t('properties.estimate')}>
+        <Select
+          dense
+          value={ticket.estimate ?? ''}
+          onChange={(e) =>
+            // Read the value back out of the scale rather than casting a
+            // string to it, so the value is provably one the API accepts.
+            patch({ estimate: ESTIMATE_SCALE.find((p) => String(p) === e.target.value) ?? null })
+          }
+        >
+          <option value="">{t('properties.notSized')}</option>
+          {ESTIMATE_SCALE.map((points) => (
+            <option key={points} value={points}>
+              {t('properties.points', { count: points })}
+            </option>
+          ))}
+        </Select>
+      </Row>
+
+      <Row label={t('properties.sprint')}>
+        <Select
+          dense
+          data-field="sprint"
+          value={ticket.sprint_id ?? ''}
+          onChange={(e) => patch({ sprint_id: e.target.value ? Number(e.target.value) : null })}
+        >
+          <option value="">{t('properties.backlog')}</option>
+          {sprints
+            // A completed sprint is history; moving work into one would
+            // rewrite numbers already reported.
+            .filter((c) => c.state !== 'completed' || c.id === ticket.sprint_id)
+            .map((sprint) => (
+              <option key={sprint.id} value={sprint.id}>
+                {sprint.display_name}
+              </option>
+            ))}
+        </Select>
+      </Row>
+
+      <Row label={t('properties.dueDate')}>
+        <input
+          type="date"
+          data-field="due"
+          value={ticket.due_date ?? ''}
+          onChange={(e) => patch({ due_date: e.target.value || null })}
+          className="field field-sm"
+        />
+      </Row>
+
+      <Row label={t('properties.project')}>
+        <Select
+          dense
+          data-field="project"
+          value={ticket.project_id ?? ''}
+          onChange={(e) => patch({ project_id: e.target.value ? Number(e.target.value) : null })}
+        >
+          <option value="">{t('properties.noProject')}</option>
+          {/* An archived project is not offered for new work, but the one this
+              ticket is already in stays listed -- see pickableProjects. */}
+          {pickableProjects(projects, ticket.project_id).map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.name}
+            </option>
+          ))}
+        </Select>
+      </Row>
+
+      <Row label={t('properties.assignee')} hint="A">
+        <Select
+          dense
+          data-field="assignee"
+          value={ticket.assignee?.id ?? ''}
+          onChange={(e) => patch({ assignee_id: e.target.value ? Number(e.target.value) : null })}
+        >
+          <option value="">{t('properties.unassigned')}</option>
+          {/* The current assignee stays listed even if their account was
+              switched off, so opening the ticket does not quietly offer to
+              unassign it. */}
+          {activeMembers(members, ticket.assignee?.id).map((user) => (
+            <option key={user.id} value={user.id}>
+              {user.full_name}
+            </option>
+          ))}
+        </Select>
+      </Row>
+
+      <div className="@md:col-span-2">
+        <span className="mb-1.5 flex items-center gap-1.5 text-xs text-neutral-500">
+          {t('properties.labels')} <kbd className="kbd">L</kbd>
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {labels.map((label, index) => {
+            const active = currentLabelIds.has(label.id)
+            return (
+              <button
+                key={label.id}
+                type="button"
+                data-field={index === 0 ? 'labels' : undefined}
+                data-active={active}
+                aria-pressed={active}
+                onClick={() => onToggleLabel(label.id)}
+                className="chip chip-toggle"
+                style={{ ['--chip' as string]: label.color }}
+              >
+                {label.name}
+              </button>
+            )
+          })}
+          {labels.length === 0 && (
+            <span className="text-xs text-neutral-400">{t('properties.noLabels')}</span>
+          )}
+        </div>
+      </div>
+    </fieldset>
+  )
+}
+
+function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="flex items-center gap-1.5 text-xs text-neutral-500">
+        {label}
+        {hint && <kbd className="kbd hidden sm:inline-flex">{hint}</kbd>}
+      </span>
+      {children}
+    </div>
+  )
+}

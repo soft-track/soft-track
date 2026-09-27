@@ -946,7 +946,9 @@ def test_only_a_path_on_this_site_survives_as_a_destination(candidate):
 def test_a_real_destination_is_left_alone():
     from lib_identity.oauth import same_site_path
 
-    assert same_site_path("/ENG/issue/42?tab=activity") == "/ENG/issue/42?tab=activity"
+    assert (
+        same_site_path("/ENG/ticket/42?tab=activity") == "/ENG/ticket/42?tab=activity"
+    )
 
 
 def test_an_unusable_password_can_never_be_verified():

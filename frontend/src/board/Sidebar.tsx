@@ -41,7 +41,7 @@ export function Sidebar({
   const { user, logout } = useAuth()
   const { team, teams, projects: allProjects, sprints } = useTeamContext()
   // Archived projects leave the sidebar, unless one is the filter in force --
-  // the board is showing its issues, so the row that toggles it off stays.
+  // the board is showing its tickets, so the row that toggles it off stays.
   const projects = pickableProjects(allProjects, filters.projectId)
   const navigate = useNavigate()
   const { projectId: openProjectId } = useParams<{ projectId?: string }>()

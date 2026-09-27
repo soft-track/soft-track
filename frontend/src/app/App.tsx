@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
+import LegacyTicketRedirect from '@/app/LegacyTicketRedirect'
 import TeamRoute from '@/app/TeamRoute'
 import { RequireAuth } from '@/auth/RequireAuth'
 import HomeRoute from '@/landing/HomeRoute'
@@ -90,10 +91,12 @@ export default function App() {
             </Route>
           </Route>
 
-          {/* The same element for all three, so the board survives an issue
+          {/* The same element for all three, so the board survives a ticket
               panel opening over it; see TeamRoute. */}
           <Route path="/:teamKey" element={<TeamRoute />} />
-          <Route path="/:teamKey/issue/:issueNumber" element={<TeamRoute />} />
+          <Route path="/:teamKey/ticket/:ticketNumber" element={<TeamRoute />} />
+          {/* A ticket's address until #215, still in old links and emails. */}
+          <Route path="/:teamKey/issue/:ticketNumber" element={<LegacyTicketRedirect />} />
           <Route path="/:teamKey/projects/:projectId" element={<TeamRoute />} />
         </Route>
 
@@ -102,7 +105,7 @@ export default function App() {
             catches stale and truncated links, and a page saying what SoftTrack
             is with a way in recovers better than a dead end. Signed in it is
             unchanged -- their board, as always. Note that a deep link to a
-            real issue never reaches here; it matches /:teamKey/issue/... and
+            real ticket never reaches here; it matches /:teamKey/ticket/... and
             is handled by RequireAuth. */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

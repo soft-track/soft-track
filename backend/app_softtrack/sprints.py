@@ -80,10 +80,10 @@ def complete_sprint(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Close the sprint, carrying unfinished issues into the next one.
+    """Close the sprint, carrying unfinished tickets into the next one.
 
     Nothing is deleted: if there is no later sprint to carry into, the
-    unfinished issues go back to the backlog.
+    unfinished tickets go back to the backlog.
     """
     return sprints_service.complete_sprint(session, current_user, sprint_id)
 

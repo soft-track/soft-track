@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 /**
  * A drop is not a click.
  *
- * A card is a link to its issue (#112), and a carried card follows the
+ * A card is a link to its ticket (#112), and a carried card follows the
  * pointer -- there is no overlay -- so when the pointer comes back up over
  * the card it carried, the browser ends the drag with a click on that link.
  * dnd-kit stops the click reaching the card's own handler, which would open

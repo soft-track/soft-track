@@ -3,15 +3,15 @@ import { type FormEvent, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 import {
-  getListTemplatesTeamsTeamIdIssueTemplatesGetQueryKey,
-  useCreateTemplateTeamsTeamIdIssueTemplatesPost,
-  useDeleteTemplateIssueTemplatesTemplateIdDelete,
-  useListTemplatesTeamsTeamIdIssueTemplatesGet,
-  useReorderTemplatesTeamsTeamIdIssueTemplatesOrderPut,
-  useUpdateTemplateIssueTemplatesTemplateIdPatch,
+  getListTemplatesTeamsTeamIdTicketTemplatesGetQueryKey,
+  useCreateTemplateTeamsTeamIdTicketTemplatesPost,
+  useDeleteTemplateTicketTemplatesTemplateIdDelete,
+  useListTemplatesTeamsTeamIdTicketTemplatesGet,
+  useReorderTemplatesTeamsTeamIdTicketTemplatesOrderPut,
+  useUpdateTemplateTicketTemplatesTemplateIdPatch,
 } from '@/api/generated/endpoints/templates/templates'
 import { useListTeamMembersTeamsTeamIdMembersGet } from '@/api/generated/endpoints/teams/teams'
-import type { IssueTemplateRead, TeamRead } from '@/api/generated/models'
+import type { TicketTemplateRead, TeamRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { useTranslation } from '@/i18n'
@@ -20,9 +20,9 @@ import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 
 /**
- * A team's issue description templates (#97).
+ * A team's ticket description templates (#97).
  *
- * The new-issue form offers these as a starting point for the description.
+ * The new-ticket form offers these as a starting point for the description.
  * Admins write them; everyone else sees what the form will offer.
  */
 export default function TeamTemplateSettings() {
@@ -51,11 +51,11 @@ export default function TeamTemplateSettings() {
 function TemplateList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
   const { t } = useTranslation(['settings', 'common'])
   const queryClient = useQueryClient()
-  const query = useListTemplatesTeamsTeamIdIssueTemplatesGet(team.id)
-  const create = useCreateTemplateTeamsTeamIdIssueTemplatesPost()
-  const update = useUpdateTemplateIssueTemplatesTemplateIdPatch()
-  const reorder = useReorderTemplatesTeamsTeamIdIssueTemplatesOrderPut()
-  const remove = useDeleteTemplateIssueTemplatesTemplateIdDelete()
+  const query = useListTemplatesTeamsTeamIdTicketTemplatesGet(team.id)
+  const create = useCreateTemplateTeamsTeamIdTicketTemplatesPost()
+  const update = useUpdateTemplateTicketTemplatesTemplateIdPatch()
+  const reorder = useReorderTemplatesTeamsTeamIdTicketTemplatesOrderPut()
+  const remove = useDeleteTemplateTicketTemplatesTemplateIdDelete()
 
   const [error, setError] = useState<string | null>(null)
   // null: nothing open; 'new': the add form; a number: that template's editor.
@@ -69,7 +69,7 @@ function TemplateList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
     try {
       await work()
       await queryClient.invalidateQueries({
-        queryKey: getListTemplatesTeamsTeamIdIssueTemplatesGetQueryKey(team.id),
+        queryKey: getListTemplatesTeamsTeamIdTicketTemplatesGetQueryKey(team.id),
       })
       return true
     } catch (err: unknown) {
@@ -93,7 +93,7 @@ function TemplateList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
     )
   }
 
-  const onDelete = (template: IssueTemplateRead) => {
+  const onDelete = (template: TicketTemplateRead) => {
     if (!window.confirm(t('templates.confirmDelete', { name: template.name }))) {
       return
     }
@@ -233,7 +233,7 @@ function TemplateForm({
   onSubmit,
   onCancel,
 }: {
-  initial?: IssueTemplateRead
+  initial?: TicketTemplateRead
   submitLabel: string
   onSubmit: (data: { name: string; body: string }) => Promise<void>
   onCancel: () => void

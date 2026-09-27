@@ -19,8 +19,8 @@ function tabbables(root: HTMLElement): HTMLElement[] {
 
 /**
  * The open modal dialogs, innermost last. Only the innermost one traps Tab --
- * a dialog opened from inside another (adding issues from a project page
- * that has an issue open) takes over until it closes, then hands back.
+ * a dialog opened from inside another (adding tickets from a project page
+ * that has a ticket open) takes over until it closes, then hands back.
  */
 const open: HTMLElement[] = []
 

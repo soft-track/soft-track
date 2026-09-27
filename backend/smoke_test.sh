@@ -6,9 +6,9 @@
 #   ./smoke_test.sh
 #
 # Exercises: register -> login -> create team -> create project ->
-# create label -> read statuses -> create issue -> patch issue status ->
+# create label -> read statuses -> create ticket -> patch ticket status ->
 # add comment ->
-# list issues -> get issue -> attach a file -> delete the issue ->
+# list tickets -> get ticket -> attach a file -> delete the ticket ->
 # edit the profile -> invite a second person -> register through the invite ->
 # change their role -> have them leave.
 # Exits non-zero on the first failed assertion.
@@ -71,49 +71,49 @@ TODO_ID=$(echo "$statuses_resp" | jq -r '.[] | select(.name == "Todo") | .id')
 PROGRESS_ID=$(echo "$statuses_resp" | jq -r '.[] | select(.name == "In Progress") | .id')
 [ "$(echo "$statuses_resp" | jq -r '.[] | select(.name == "In Progress") | .category')" = "started" ] && pass "In Progress is in the started category" || fail "unexpected category for In Progress"
 
-echo "== create issue =="
-issue_resp=$(curl -sf -X POST "$BASE_URL/teams/$TEAM_ID/issues" \
+echo "== create ticket =="
+ticket_resp=$(curl -sf -X POST "$BASE_URL/teams/$TEAM_ID/tickets" \
   -H "$AUTH_HEADER" -H "Content-Type: application/json" \
-  -d "{\"title\":\"Smoke issue\",\"description\":\"created by smoke_test.sh\",\"project_id\":$PROJECT_ID,\"status_id\":$TODO_ID,\"priority\":\"high\",\"label_ids\":[$LABEL_ID]}")
-ISSUE_ID=$(echo "$issue_resp" | jq -r .id)
-IDENTIFIER=$(echo "$issue_resp" | jq -r .identifier)
-[ "$IDENTIFIER" = "$TEAM_KEY-1" ] && pass "POST issue got identifier $IDENTIFIER" || fail "expected identifier $TEAM_KEY-1, got $IDENTIFIER"
-[ "$(echo "$issue_resp" | jq -r '.labels | length')" = "1" ] && pass "issue has 1 label attached" || fail "issue label attachment failed"
+  -d "{\"title\":\"Smoke ticket\",\"description\":\"created by smoke_test.sh\",\"project_id\":$PROJECT_ID,\"status_id\":$TODO_ID,\"priority\":\"high\",\"label_ids\":[$LABEL_ID]}")
+TICKET_ID=$(echo "$ticket_resp" | jq -r .id)
+IDENTIFIER=$(echo "$ticket_resp" | jq -r .identifier)
+[ "$IDENTIFIER" = "$TEAM_KEY-1" ] && pass "POST ticket got identifier $IDENTIFIER" || fail "expected identifier $TEAM_KEY-1, got $IDENTIFIER"
+[ "$(echo "$ticket_resp" | jq -r '.labels | length')" = "1" ] && pass "ticket has 1 label attached" || fail "ticket label attachment failed"
 
-echo "== patch issue status =="
-patch_resp=$(curl -sf -X PATCH "$BASE_URL/issues/$ISSUE_ID" \
+echo "== patch ticket status =="
+patch_resp=$(curl -sf -X PATCH "$BASE_URL/tickets/$TICKET_ID" \
   -H "$AUTH_HEADER" -H "Content-Type: application/json" \
   -d "{\"status_id\":$PROGRESS_ID}")
-# The issue carries the whole status row, not a bare string: a search hit or a
-# linked issue is drawn outside any team's board, where there is no status
+# The ticket carries the whole status row, not a bare string: a search hit or a
+# linked ticket is drawn outside any team's board, where there is no status
 # list on hand to look an id up in.
-[ "$(echo "$patch_resp" | jq -r .status.name)" = "In Progress" ] && pass "PATCH /issues/$ISSUE_ID moved to In Progress" || fail "status patch failed"
+[ "$(echo "$patch_resp" | jq -r .status.name)" = "In Progress" ] && pass "PATCH /tickets/$TICKET_ID moved to In Progress" || fail "status patch failed"
 
 echo "== add comment =="
-comment_resp=$(curl -sf -X POST "$BASE_URL/issues/$ISSUE_ID/comments" \
+comment_resp=$(curl -sf -X POST "$BASE_URL/tickets/$TICKET_ID/comments" \
   -H "$AUTH_HEADER" -H "Content-Type: application/json" \
   -d '{"body":"Looks good to me."}')
 [ "$(echo "$comment_resp" | jq -r .body)" = "Looks good to me." ] && pass "POST comment stored correctly" || fail "comment body mismatch"
 
-echo "== list issues (filtered by status) =="
-list_resp=$(curl -sf "$BASE_URL/teams/$TEAM_ID/issues?status_id=$PROGRESS_ID" -H "$AUTH_HEADER")
+echo "== list tickets (filtered by status) =="
+list_resp=$(curl -sf "$BASE_URL/teams/$TEAM_ID/tickets?status_id=$PROGRESS_ID" -H "$AUTH_HEADER")
 # Collections are paginated: {"items": [...], "total": n, "limit": n, "offset": n}
-[ "$(echo "$list_resp" | jq '.items | length')" = "1" ] && pass "GET issues filtered by status returns 1 issue" || fail "status filter returned wrong count"
+[ "$(echo "$list_resp" | jq '.items | length')" = "1" ] && pass "GET tickets filtered by status returns 1 ticket" || fail "status filter returned wrong count"
 [ "$(echo "$list_resp" | jq -r '.total')" = "1" ] && pass "the page reports total=1 for the filter" || fail "total did not match the filter"
 
 echo "== pagination =="
-page_resp=$(curl -sf "$BASE_URL/teams/$TEAM_ID/issues?limit=1&offset=0" -H "$AUTH_HEADER")
+page_resp=$(curl -sf "$BASE_URL/teams/$TEAM_ID/tickets?limit=1&offset=0" -H "$AUTH_HEADER")
 [ "$(echo "$page_resp" | jq -r '.limit')" = "1" ] && pass "limit is echoed in the envelope" || fail "limit not echoed"
-capped=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/teams/$TEAM_ID/issues?limit=201" -H "$AUTH_HEADER")
+capped=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/teams/$TEAM_ID/tickets?limit=201" -H "$AUTH_HEADER")
 [ "$capped" = "422" ] && pass "a limit above the maximum is rejected" || fail "limit cap not enforced (got $capped)"
 
 echo "== comments are paginated too =="
-comments_resp=$(curl -sf "$BASE_URL/issues/$ISSUE_ID/comments" -H "$AUTH_HEADER")
+comments_resp=$(curl -sf "$BASE_URL/tickets/$TICKET_ID/comments" -H "$AUTH_HEADER")
 [ "$(echo "$comments_resp" | jq '.items | length')" = "1" ] && pass "GET comments returns the comment" || fail "comment list wrong"
 
-echo "== get single issue =="
-get_resp=$(curl -sf "$BASE_URL/issues/$ISSUE_ID" -H "$AUTH_HEADER")
-[ "$(echo "$get_resp" | jq -r .title)" = "Smoke issue" ] && pass "GET /issues/$ISSUE_ID returns correct title" || fail "get issue mismatch"
+echo "== get single ticket =="
+get_resp=$(curl -sf "$BASE_URL/tickets/$TICKET_ID" -H "$AUTH_HEADER")
+[ "$(echo "$get_resp" | jq -r .title)" = "Smoke ticket" ] && pass "GET /tickets/$TICKET_ID returns correct title" || fail "get ticket mismatch"
 
 echo "== attach a file =="
 # A real PNG header, because the API checks that an image is the image it
@@ -123,7 +123,7 @@ trap 'rm -f "$PNG_FILE"' EXIT
 printf '\211PNG\r\n\032\n' > "$PNG_FILE"
 head -c 64 /dev/zero >> "$PNG_FILE"
 
-attach_resp=$(curl -sf -X POST "$BASE_URL/issues/$ISSUE_ID/attachments" \
+attach_resp=$(curl -sf -X POST "$BASE_URL/tickets/$TICKET_ID/attachments" \
   -H "$AUTH_HEADER" -F "file=@$PNG_FILE;type=image/png")
 ATTACHMENT_ID=$(echo "$attach_resp" | jq -r .id)
 [ "$ATTACHMENT_ID" != "null" ] && pass "POST attachment created $ATTACHMENT_ID" || fail "attachment upload failed"
@@ -140,18 +140,18 @@ rm -f "$downloaded"
 echo "== a type that is not on the allowlist =="
 BAD_FILE=$(mktemp /tmp/softtrack-smoke-XXXXXX.html)
 echo '<script>alert(1)</script>' > "$BAD_FILE"
-bad_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/issues/$ISSUE_ID/attachments" \
+bad_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/tickets/$TICKET_ID/attachments" \
   -H "$AUTH_HEADER" -F "file=@$BAD_FILE;type=image/png")
 rm -f "$BAD_FILE"
 [ "$bad_code" = "415" ] && pass "an .html upload is refused with 415" || fail "expected 415, got $bad_code"
 
-echo "== deleting an issue that has a label, a comment and an attachment =="
-del_code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$BASE_URL/issues/$ISSUE_ID" -H "$AUTH_HEADER")
-[ "$del_code" = "204" ] && pass "DELETE removes the issue and its dependent rows" || fail "delete returned $del_code"
+echo "== deleting a ticket that has a label, a comment and an attachment =="
+del_code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$BASE_URL/tickets/$TICKET_ID" -H "$AUTH_HEADER")
+[ "$del_code" = "204" ] && pass "DELETE removes the ticket and its dependent rows" || fail "delete returned $del_code"
 
 gone_code=$(curl -s -o /dev/null -w "%{http_code}" \
   "$BASE_URL/attachments/$ATTACHMENT_ID/content" -H "$AUTH_HEADER")
-[ "$gone_code" = "404" ] && pass "the attachment went with the issue" || fail "attachment still readable ($gone_code)"
+[ "$gone_code" = "404" ] && pass "the attachment went with the ticket" || fail "attachment still readable ($gone_code)"
 
 echo "== edit the profile =="
 patch_me_resp=$(curl -sf -X PATCH "$BASE_URL/auth/me" \

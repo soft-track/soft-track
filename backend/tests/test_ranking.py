@@ -53,7 +53,7 @@ def test_a_key_between_two_others_sorts_between_them():
 
 
 def test_adding_at_the_top_again_and_again_stays_short():
-    """New issues always go on top of their column. Logarithmic growth is
+    """New tickets always go on top of their column. Logarithmic growth is
     what makes that affordable: a naive midpoint scheme would reach a
     thousand characters here."""
     key = "a0"

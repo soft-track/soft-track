@@ -64,7 +64,7 @@ function SprintRow({
 }) {
   const { t } = useTranslation(['sprints', 'common'])
   const { progress } = sprint
-  const done = progress.issues_total > 0 ? progress.issues_completed / progress.issues_total : 0
+  const done = progress.tickets_total > 0 ? progress.tickets_completed / progress.tickets_total : 0
   const ends = parseServerDate(sprint.ends_at)
   const overdue = sprint.state === 'active' && isPast(ends)
 
@@ -89,9 +89,9 @@ function SprintRow({
         >
           {sprint.display_name}
         </span>
-        {progress.issues_total > 0 && (
+        {progress.tickets_total > 0 && (
           <span className="identifier shrink-0 text-[11px] text-neutral-400">
-            {progress.issues_completed}/{progress.issues_total}
+            {progress.tickets_completed}/{progress.tickets_total}
           </span>
         )}
       </span>
@@ -109,7 +109,7 @@ function SprintRow({
               overdue ? 'text-danger-600' : 'text-neutral-400'
             }`}
           >
-            {/* Points, not just issues -- eight of ten issues done with two of
+            {/* Points, not just tickets -- eight of ten tickets done with two of
                 thirty points burned means the hard work is still ahead. */}
             {progress.points_total > 0
               ? t(overdue ? 'list.pointsEnded' : 'list.pointsEnds', {

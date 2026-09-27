@@ -32,7 +32,7 @@ is scope-based), no timers, no billing rates, no approvals.
 
 ## API
 
-- `GET /issues/{issue_id}/worklogs` — the total, per person, and every entry.
-- `POST /issues/{issue_id}/worklogs` — `{minutes, worked_on?, note?}`.
+- `GET /tickets/{ticket_id}/worklogs` — the total, per person, and every entry.
+- `POST /tickets/{ticket_id}/worklogs` — `{minutes, worked_on?, note?}`.
 - `PATCH /worklogs/{worklog_id}`, `DELETE /worklogs/{worklog_id}` — your own only.
 - `GET /sprints/{sprint_id}/time-spent`, `GET /teams/{team_id}/time-spent?days=30`.

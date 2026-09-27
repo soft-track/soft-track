@@ -25,11 +25,11 @@ def test_a_non_member_cannot_read_a_team(client, team, auth):
     assert response.status_code == 403
 
 
-def test_a_non_member_cannot_list_team_issues(client, team, auth):
+def test_a_non_member_cannot_list_team_tickets(client, team, auth):
     """The tenancy boundary. If this ever returns 200, teams leak into each other."""
     outsider = auth(email="outsider@softtrack.dev")
     response = client.get(
-        f"/teams/{team['team']['id']}/issues", headers=outsider["headers"]
+        f"/teams/{team['team']['id']}/tickets", headers=outsider["headers"]
     )
     assert response.status_code == 403
 

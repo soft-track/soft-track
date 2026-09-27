@@ -5,8 +5,8 @@ The two have to agree: a handle the renderer turns into a link and this module
 does not resolve is a mention that looks delivered and never arrives, and the
 reverse is a notification for something nobody can see they wrote.
 
-Only members of the issue's team are resolved. A handle is instance-wide, so
-without that check writing `@someone` in a private team's issue would tell a
+Only members of the ticket's team are resolved. A handle is instance-wide, so
+without that check writing `@someone` in a private team's ticket would tell a
 stranger it exists and what it is called.
 """
 
@@ -30,7 +30,7 @@ def handles_in(text: str | None) -> set[str]:
     """The lowercased handles mentioned in a body of markdown.
 
     Code is blanked out before the scan for the same reason the renderer
-    walks text nodes instead of the raw source: an issue tracker is full of
+    walks text nodes instead of the raw source: a ticket tracker is full of
     shell snippets, and `curl -u @admin` in a fenced block is not a mention of
     anybody. Blanking rather than deleting keeps the boundary character in
     front of the next mention intact.

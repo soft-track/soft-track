@@ -17,12 +17,12 @@ from sqlmodel import SQLModel, create_engine
 
 from lib_softtrack.search import _fts_ready
 from lib_softtrack.search_fts import OBJECTS
-from lib_softtrack.tables import Issue
+from lib_softtrack.tables import Ticket
 
 
-def make_issue(client, team, title, description=None):
+def make_ticket(client, team, title, description=None):
     response = client.post(
-        f"/teams/{team['team']['id']}/issues",
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": title, "description": description},
         headers=team["headers"],
     )
@@ -30,9 +30,11 @@ def make_issue(client, team, title, description=None):
     return response.json()
 
 
-def comment(client, team, issue, body):
+def comment(client, team, ticket, body):
     response = client.post(
-        f"/issues/{issue['id']}/comments", json={"body": body}, headers=team["headers"]
+        f"/tickets/{ticket['id']}/comments",
+        json={"body": body},
+        headers=team["headers"],
     )
     assert response.status_code == 200, response.text
 
@@ -57,14 +59,14 @@ def test_the_suite_is_on_the_fts5_path(session):
 
 def test_a_word_finds_its_other_forms(client, team):
     """Porter stemming, as Postgres's english configuration does."""
-    make_issue(client, team, "Opaque", "The websocket keeps connecting and dropping")
+    make_ticket(client, team, "Opaque", "The websocket keeps connecting and dropping")
     assert titles(search(client, team, "connection")) == ["Opaque"]
     assert titles(search(client, team, "connected")) == ["Opaque"]
 
 
 def test_a_comment_found_by_stem_is_the_one_quoted(client, team):
-    issue = make_issue(client, team, "Opaque", "Nothing here")
-    comment(client, team, issue, "Connection refused on port 5432")
+    ticket = make_ticket(client, team, "Opaque", "Nothing here")
+    comment(client, team, ticket, "Connection refused on port 5432")
 
     [hit] = search(client, team, "connecting")["items"]
     # Found by stem, so the substring check that attributes a hit cannot
@@ -73,15 +75,15 @@ def test_a_comment_found_by_stem_is_the_one_quoted(client, team):
 
 
 def test_accents_do_not_matter(client, team):
-    make_issue(client, team, "Café menu is wrong")
+    make_ticket(client, team, "Café menu is wrong")
     assert titles(search(client, team, "cafe")) == ["Café menu is wrong"]
 
 
 def test_relevance_beats_recency(client, team, session):
-    """bm25(): an issue about the word outranks one that mentions it once in
+    """bm25(): a ticket about the word outranks one that mentions it once in
     passing, even when the passing mention is newer."""
-    focused = make_issue(client, team, "Billing billing invoices")
-    passing = make_issue(
+    focused = make_ticket(client, team, "Billing billing invoices")
+    passing = make_ticket(
         client,
         team,
         "Quarterly planning",
@@ -90,7 +92,7 @@ def test_relevance_beats_recency(client, team, session):
     )
     # Make the passing mention the most recently touched of the two.
     older = datetime.now(timezone.utc) - timedelta(days=30)
-    row = session.get(Issue, focused["id"])
+    row = session.get(Ticket, focused["id"])
     row.updated_at = older
     session.add(row)
     session.commit()
@@ -102,8 +104,8 @@ def test_relevance_beats_recency(client, team, session):
 
 
 def test_every_word_must_appear_in_any_order(client, team):
-    make_issue(client, team, "Rate limit the auth endpoints")
-    make_issue(client, team, "Rate cards for sales")
+    make_ticket(client, team, "Rate limit the auth endpoints")
+    make_ticket(client, team, "Rate cards for sales")
     assert titles(search(client, team, "auth rate")) == [
         "Rate limit the auth endpoints"
     ]
@@ -120,26 +122,26 @@ def test_every_word_must_appear_in_any_order(client, team):
         '"',
         "foo OR",
         "NOT",
-        "'; DROP TABLE issue; --",
+        "'; DROP TABLE ticket; --",
         "a^b",
         "(((",
     ],
 )
 def test_fts5_syntax_in_the_query_is_just_text(client, team, hostile):
     """Raw FTS5 grammar raises on input like this; none of it may 500."""
-    make_issue(client, team, "Harmless")
+    make_ticket(client, team, "Harmless")
     response = client.get("/search", params={"q": hostile}, headers=team["headers"])
     assert response.status_code == 200, response.text
 
 
 def test_a_query_with_no_words_matches_nothing(client, team):
-    make_issue(client, team, "Anything")
+    make_ticket(client, team, "Anything")
     page = search(client, team, "!!! ???")
     assert page == {"items": [], "total": 0, "limit": page["limit"], "offset": 0}
 
 
 def test_a_quoted_word_is_still_found(client, team):
-    make_issue(client, team, 'The "deadline" field is ignored')
+    make_ticket(client, team, 'The "deadline" field is ignored')
     assert titles(search(client, team, '"deadline"')) == [
         'The "deadline" field is ignored'
     ]
@@ -148,10 +150,10 @@ def test_a_quoted_word_is_still_found(client, team):
 # --- the index follows the rows -----------------------------------------------
 
 
-def test_editing_an_issue_moves_it_in_the_index(client, team):
-    issue = make_issue(client, team, "Old wording")
+def test_editing_a_ticket_moves_it_in_the_index(client, team):
+    ticket = make_ticket(client, team, "Old wording")
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"title": "New phrasing"},
         headers=team["headers"],
     )
@@ -159,15 +161,15 @@ def test_editing_an_issue_moves_it_in_the_index(client, team):
     assert titles(search(client, team, "phrasing")) == ["New phrasing"]
 
 
-def test_a_deleted_issue_and_its_comments_leave_the_index(client, team, session):
-    issue = make_issue(client, team, "Doomed issue")
-    comment(client, team, issue, "Mentions zeppelins")
-    client.delete(f"/issues/{issue['id']}", headers=team["headers"])
+def test_a_deleted_ticket_and_its_comments_leave_the_index(client, team, session):
+    ticket = make_ticket(client, team, "Doomed ticket")
+    comment(client, team, ticket, "Mentions zeppelins")
+    client.delete(f"/tickets/{ticket['id']}", headers=team["headers"])
 
     assert search(client, team, "doomed")["items"] == []
     assert search(client, team, "zeppelins")["items"] == []
     # Nothing left in the index to find -- not merely filtered out.
-    for table in ("issue_fts", "comment_fts"):
+    for table in ("ticket_fts", "comment_fts"):
         found = session.exec(
             text(
                 f"SELECT count(*) FROM {table} WHERE {table} MATCH 'doomed OR zeppelins'"
@@ -182,7 +184,7 @@ def test_without_fts5_search_falls_back_to_like(client, team, session):
         session.exec(text(f"DROP {kind.upper()} IF EXISTS {name}"))
     session.commit()
 
-    make_issue(client, team, "Deployment checklist")
+    make_ticket(client, team, "Deployment checklist")
     # LIKE matches a fragment, which FTS5 would not.
     assert titles(search(client, team, "ployment check")) == ["Deployment checklist"]
 
@@ -192,6 +194,10 @@ def test_without_fts5_search_falls_back_to_like(client, team, session):
 BEFORE = "d3a8b1c5e270"
 AFTER = "5b8e2d4c9a17"
 
+#: The same objects under the names 5b8e2d4c9a17 gave them, which they kept
+#: until the database called tickets tickets too (#215).
+OLD_OBJECTS = {name.replace("ticket", "issue"): kind for name, kind in OBJECTS.items()}
+
 
 def _config(db_path) -> Config:
     config = Config("alembic.ini")
@@ -200,14 +206,14 @@ def _config(db_path) -> Config:
     return config
 
 
-def _schema(db_path) -> dict[str, str]:
+def _schema(db_path, objects=OBJECTS) -> dict[str, str]:
     """name -> normalised SQL for every FTS object in a database."""
     connection = sqlite3.connect(db_path)
     rows = connection.execute(
         "SELECT name, sql FROM sqlite_master WHERE name IN ({})".format(
-            ",".join("?" * len(OBJECTS))
+            ",".join("?" * len(objects))
         ),
-        list(OBJECTS),
+        list(objects),
     ).fetchall()
     connection.close()
     return {name: " ".join(sql.split()) for name, sql in rows}
@@ -215,7 +221,8 @@ def _schema(db_path) -> dict[str, str]:
 
 @pytest.fixture
 def upgraded(tmp_path):
-    """Issues and a comment written before the index existed, then upgraded."""
+    """Issues and a comment written before the index existed, then upgraded --
+    in the names the schema had at the time."""
     db_path = tmp_path / "fts.db"
     config = _config(db_path)
     command.upgrade(config, BEFORE)
@@ -269,8 +276,18 @@ def test_the_migration_indexes_what_was_already_there(upgraded):
     assert _match(db_path, "comment_fts", "zeppelins") == [1]
 
 
+def test_the_rename_to_tickets_carries_the_index_over(upgraded):
+    """#215 drops the index over `issue` and builds it again over `ticket`,
+    since an FTS5 table names its content table and cannot follow a rename.
+    What was found before is found after."""
+    db_path, config = upgraded
+    command.upgrade(config, "head")
+    assert _match(db_path, "ticket_fts", "connected") == [1]
+    assert _match(db_path, "comment_fts", "zeppelins") == [1]
+
+
 def test_every_trigger_survives_every_migration(tmp_path):
-    """The trap: a later SQLite batch migration on `issue` or `comment`
+    """The trap: a later SQLite batch migration on `ticket` or `comment`
     rebuilds the table and drops its triggers, and the index silently stops
     following edits. This fails if any migration up to head does that."""
     db_path = tmp_path / "head.db"
@@ -280,19 +297,21 @@ def test_every_trigger_survives_every_migration(tmp_path):
 
 def test_every_trigger_survives_stepping_back_down_to_the_index(tmp_path):
     """The same trap on the way down: a downgrade that drops a column from
-    `issue` or `comment` rebuilds the table on SQLite, and must put the
-    triggers back."""
+    `ticket` or `comment` rebuilds the table on SQLite, and must put the
+    triggers back -- under the names they had then."""
     db_path = tmp_path / "down.db"
     config = _config(db_path)
     command.upgrade(config, "head")
     command.downgrade(config, AFTER)
-    assert set(_schema(db_path)) == set(OBJECTS)
+    assert set(_schema(db_path, OLD_OBJECTS)) == set(OLD_OBJECTS)
 
 
 def test_the_migration_and_create_all_build_the_same_index(tmp_path, upgraded):
     """The suite builds its schema with create_all; real databases with the
-    migration. If the two drift, the suite tests an index nobody runs."""
-    migrated, _ = upgraded
+    migrations. If the two drift, the suite tests an index nobody runs. So
+    they are compared at head, where a real database ends up."""
+    migrated, config = upgraded
+    command.upgrade(config, "head")
     created = tmp_path / "created.db"
     SQLModel.metadata.create_all(create_engine(f"sqlite:///{created}"))
     assert _schema(created) == _schema(migrated)
@@ -301,7 +320,7 @@ def test_the_migration_and_create_all_build_the_same_index(tmp_path, upgraded):
 def test_a_rollback_removes_the_index_and_keeps_the_rows(upgraded):
     db_path, config = upgraded
     command.downgrade(config, BEFORE)
-    assert _schema(db_path) == {}
+    assert _schema(db_path, OLD_OBJECTS) == {}
     connection = sqlite3.connect(db_path)
     issues = connection.execute("SELECT count(*) FROM issue").fetchone()[0]
     connection.close()

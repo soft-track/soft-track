@@ -21,10 +21,10 @@ trace with `npx playwright show-trace path/to/trace.zip`.
 ## The journeys
 
 1. Sign up, create a team, land on its empty board.
-2. Create an issue, see it on the board, open it, edit its title.
+2. Create a ticket, see it on the board, open it, edit its title.
 3. Drag a card to another column; the status survives a reload.
 4. Comment with an @mention; the mentioned person's inbox shows it.
-5. Search finds an issue by a word only its description holds.
+5. Search finds a ticket by a word only its description holds.
 
 ## Conventions
 
@@ -33,7 +33,7 @@ trace with `npx playwright show-trace path/to/trace.zip`.
   `data-card`. Add a `data-testid` only where nothing a user could see names
   the element.
 - **Set up through the API, act through the UI.** Setting up a journey (the
-  team, a teammate, an issue to find) goes through `tests/helpers.ts`, so each
+  team, a teammate, a ticket to find) goes through `tests/helpers.ts`, so each
   journey only exercises its own subject.
 - **Mind the sign-up limit.** Registration is rate-limited per address, and
   every sign-up counts, successful ones included. The suite shares two accounts

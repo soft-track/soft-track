@@ -1,4 +1,4 @@
 /** The board page itself, around the board and the list. */
 export const page = {
-  loadingIssues: 'Loading tickets…',
+  loadingTickets: 'Loading tickets…',
 } as const

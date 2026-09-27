@@ -21,13 +21,13 @@ export function NotificationsBell({
   open,
   onToggle,
   onClose,
-  onOpenIssue,
+  onOpenTicket,
 }: {
   open: boolean
   onToggle: () => void
   onClose: () => void
   /** See NotificationsInbox. */
-  onOpenIssue: ComponentProps<typeof NotificationsInbox>['onOpenIssue']
+  onOpenTicket: ComponentProps<typeof NotificationsInbox>['onOpenTicket']
 }) {
   const { t } = useTranslation('notifications')
   const unread = useUnreadCount()
@@ -74,7 +74,7 @@ export function NotificationsBell({
       </button>
 
       {open && anchor && (
-        <NotificationsInbox anchor={anchor} onClose={onClose} onOpenIssue={onOpenIssue} />
+        <NotificationsInbox anchor={anchor} onClose={onClose} onOpenTicket={onOpenTicket} />
       )}
     </>
   )

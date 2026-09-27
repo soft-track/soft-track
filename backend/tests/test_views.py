@@ -109,7 +109,7 @@ def test_an_unknown_grouping_is_refused(client, pair):
     assert response.status_code == 422
 
 
-def test_a_view_with_no_filters_is_all_issues(client, pair):
+def test_a_view_with_no_filters_is_all_tickets(client, pair):
     view = create_view(client, pair, pair["team"]["id"], name="Everything")
     assert all(value in (None, False) for value in view["filters"].values())
 
@@ -369,7 +369,7 @@ def test_unsharing_a_view_withdraws_it_from_everyone_but_its_owner(client, pair)
     assert member_sees["effective_default_id"] is None
 
 
-def test_clearing_the_team_default_leaves_everyone_on_all_issues(client, pair):
+def test_clearing_the_team_default_leaves_everyone_on_all_tickets(client, pair):
     view = create_view(client, pair, pair["team"]["id"], name="Ours", shared=True)
     set_team_default(client, pair, pair["team"]["id"], view["id"])
 

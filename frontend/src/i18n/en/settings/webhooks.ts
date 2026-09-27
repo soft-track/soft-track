@@ -8,9 +8,9 @@ export const webhooks = {
   urlPlaceholder: 'https://example.com/softtrack-webhook',
   eventsLabel: 'Events',
   events: {
-    issueCreated: 'Ticket created',
-    issueUpdated: 'Ticket updated',
-    issueStatusChanged: 'Ticket status changed',
+    ticketCreated: 'Ticket created',
+    ticketUpdated: 'Ticket updated',
+    ticketStatusChanged: 'Ticket status changed',
     commentCreated: 'Comment added',
     sprintStarted: 'Sprint started',
     sprintCompleted: 'Sprint completed',

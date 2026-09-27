@@ -88,7 +88,7 @@ repository is never throttled for being busy.
 
 Webhooks are at-least-once, and both providers put a "redeliver" button in
 their UI that people press while debugging exactly this. So links are upserted
-on `(repository, kind, external id, issue)` and the automation triggers fire on
+on `(repository, kind, external id, ticket)` and the automation triggers fire on
 **transitions** — a branch row appearing, a pull request becoming merged —
 rather than on a payload arriving. Press redeliver ten times and the second
 through tenth change nothing, so no rule runs and no comment is posted ten

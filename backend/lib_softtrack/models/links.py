@@ -4,16 +4,16 @@ from typing import Optional
 from pydantic import BaseModel
 
 from lib_softtrack.models.statuses import StatusRead
-from lib_softtrack.tables import IssueLinkType, IssuePriority
+from lib_softtrack.tables import TicketLinkType, TicketPriority
 
 
-class IssueLinkCreate(BaseModel):
+class TicketLinkCreate(BaseModel):
     target_id: int
-    type: IssueLinkType
+    type: TicketLinkType
 
 
-class LinkedIssue(BaseModel):
-    """Just enough of the other issue to render a row and click through."""
+class LinkedTicket(BaseModel):
+    """Just enough of the other ticket to render a row and click through."""
 
     id: int
     team_key: str
@@ -21,26 +21,26 @@ class LinkedIssue(BaseModel):
     identifier: str
     title: str
     status: StatusRead
-    priority: IssuePriority
+    priority: TicketPriority
 
 
-class IssueLinkRead(BaseModel):
+class TicketLinkRead(BaseModel):
     id: int
-    #: How the relationship reads *from the issue that was asked about*. The
+    #: How the relationship reads *from the ticket that was asked about*. The
     #: stored row is one direction; this is the direction the caller sees, so
     #: a `blocks` row shows as "blocks" on the source and "blocked by" on the
     #: target without either side storing a second row.
     relation: str
-    issue: LinkedIssue
+    ticket: LinkedTicket
     created_at: datetime
 
 
-class IssueLinks(BaseModel):
-    blocks: list[IssueLinkRead] = []
-    blocked_by: list[IssueLinkRead] = []
-    relates_to: list[IssueLinkRead] = []
-    duplicates: list[IssueLinkRead] = []
-    duplicated_by: list[IssueLinkRead] = []
+class TicketLinks(BaseModel):
+    blocks: list[TicketLinkRead] = []
+    blocked_by: list[TicketLinkRead] = []
+    relates_to: list[TicketLinkRead] = []
+    duplicates: list[TicketLinkRead] = []
+    duplicated_by: list[TicketLinkRead] = []
 
 
 class BlockedSummary(BaseModel):

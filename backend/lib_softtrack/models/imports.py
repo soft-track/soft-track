@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from lib_softtrack.tables import IssuePriority, IssueType, StatusCategory
+from lib_softtrack.tables import TicketPriority, TicketType, StatusCategory
 
 
 class ParsedComment(BaseModel):
@@ -12,15 +12,15 @@ class ParsedComment(BaseModel):
     created_at: Optional[datetime] = None
 
 
-class ParsedIssue(BaseModel):
-    """One issue as read out of an export, before anything is written."""
+class ParsedTicket(BaseModel):
+    """One ticket as read out of an export, before anything is written."""
 
     external_key: Optional[str] = None
     title: str
     description: Optional[str] = None
     status: StatusCategory
-    priority: IssuePriority
-    type: IssueType = IssueType.task
+    priority: TicketPriority
+    type: TicketType = TicketType.task
     #: Raw values, kept so the report can say what a Jira status was called
     #: before it was mapped.
     raw_status: Optional[str] = None
@@ -52,10 +52,10 @@ class ImportReport(BaseModel):
     """
 
     dry_run: bool
-    issues_found: int
-    issues_created: int
-    #: Issues skipped because their external key is already in this team.
-    issues_skipped_existing: int
+    tickets_found: int
+    tickets_created: int
+    #: Tickets skipped because their external key is already in this team.
+    tickets_skipped_existing: int
     comments_created: int
     #: None of the lists below carry a default. The service always sets them,
     #: and defaulting them would make them optional in the schema, pushing an
@@ -68,5 +68,5 @@ class ImportReport(BaseModel):
     unmapped_priorities: list[str]
     #: Anything a person should read before trusting the result.
     warnings: list[str]
-    #: The first few issues, so a dry run shows what is actually coming.
-    preview: list[ParsedIssue]
+    #: The first few tickets, so a dry run shows what is actually coming.
+    preview: list[ParsedTicket]

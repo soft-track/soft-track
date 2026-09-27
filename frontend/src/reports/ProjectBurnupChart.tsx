@@ -12,12 +12,12 @@ import { INK } from '@/reports/chartTokens'
 const W = 640
 const H = 220
 
-type Unit = 'issues' | 'points'
+type Unit = 'tickets' | 'points'
 /** The per-day counts: every field of a point but its day. */
 type Count = Exclude<keyof ProjectBurnupPoint, 'day'>
 
 const SERIES: Record<Unit, { scope: Count; done: Count }> = {
-  issues: { scope: 'scope_issues', done: 'completed_issues' },
+  tickets: { scope: 'scope_tickets', done: 'completed_tickets' },
   points: { scope: 'scope_points', done: 'completed_points' },
 }
 
@@ -30,7 +30,7 @@ const SERIES: Record<Unit, { scope: Count; done: Count }> = {
  */
 export function ProjectBurnupChart({ data }: { data: ProjectBurnup }) {
   const { t } = useTranslation(['reports', 'common'])
-  const [unit, setUnit] = useState<Unit>('issues')
+  const [unit, setUnit] = useState<Unit>('tickets')
   const points = data.points
   const { index, onMove, onLeave } = useCrosshair(points.length)
   const series = SERIES[unit]
@@ -49,16 +49,16 @@ export function ProjectBurnupChart({ data }: { data: ProjectBurnup }) {
   const floor = unit === 'points' ? unestimatedNote(latest) : null
   const hovered = index !== null ? points[index] : null
   const value = (count: number) =>
-    unit === 'issues'
-      ? t('burnup.value.issues', { count })
+    unit === 'tickets'
+      ? t('burnup.value.tickets', { count })
       : t('burnup.value.points', { value: count })
   // The label on the latest day: a `+` says the points scope is only a floor.
   const latestLabel = (point: ProjectBurnupPoint) => {
     const counts = { done: read(point, series.done), scope: read(point, series.scope) }
-    if (unit === 'issues') {
-      return t('burnup.latest.issues', { done: counts.done, count: counts.scope })
+    if (unit === 'tickets') {
+      return t('burnup.latest.tickets', { done: counts.done, count: counts.scope })
     }
-    return point.unestimated_issues > 0
+    return point.unestimated_tickets > 0
       ? t('burnup.latest.pointsFloor', counts)
       : t('burnup.latest.points', counts)
   }
@@ -77,7 +77,7 @@ export function ProjectBurnupChart({ data }: { data: ProjectBurnup }) {
           <Key colour={INK.contrastSeries} label={t('burnup.scope')} />
           <Key colour={INK.measure} label={t('burnup.completed')} />
           <div className="segmented ml-auto" role="tablist" aria-label={t('burnup.measure')}>
-            {(['issues', 'points'] as const).map((option) => (
+            {(['tickets', 'points'] as const).map((option) => (
               <button
                 key={option}
                 type="button"
@@ -87,7 +87,7 @@ export function ProjectBurnupChart({ data }: { data: ProjectBurnup }) {
                 onClick={() => setUnit(option)}
                 className="segmented-item"
               >
-                {option === 'issues' ? t('burnup.issues') : t('burnup.points')}
+                {option === 'tickets' ? t('burnup.tickets') : t('burnup.points')}
               </button>
             ))}
           </div>
@@ -108,8 +108,8 @@ export function ProjectBurnupChart({ data }: { data: ProjectBurnup }) {
           className="w-full"
           role="img"
           aria-label={
-            unit === 'issues'
-              ? t('burnup.chart.issues', { project: data.project_name })
+            unit === 'tickets'
+              ? t('burnup.chart.tickets', { project: data.project_name })
               : t('burnup.chart.points', { project: data.project_name })
           }
           onMouseMove={(e) => onMove(e, W)}
@@ -173,8 +173,8 @@ export function ProjectBurnupChart({ data }: { data: ProjectBurnup }) {
                 label: t('burnup.completed'),
                 value: value(read(hovered, series.done)),
               },
-              ...(hovered.unestimated_issues > 0
-                ? [{ label: t('burnup.unestimated'), value: `${hovered.unestimated_issues}` }]
+              ...(hovered.unestimated_tickets > 0
+                ? [{ label: t('burnup.unestimated'), value: `${hovered.unestimated_tickets}` }]
                 : []),
             ]}
           />

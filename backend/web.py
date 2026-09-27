@@ -100,7 +100,7 @@ class Settings(BaseSettings):
     api_base_url: str = "http://localhost:8000"
 
     # --- Notifications --------------------------------------------------
-    #: Where this instance is reachable, used to build the issue links in a
+    #: Where this instance is reachable, used to build the ticket links in a
     #: digest email. A mail whose links point at localhost is worse than no
     #: mail, so leaving this wrong is worth noticing.
     app_base_url: str = "http://localhost:5173"
@@ -127,7 +127,7 @@ class Settings(BaseSettings):
     webhook_allow_private_targets: bool = False
     #: How long a notification waits before it can be emailed. This is what
     #: makes it a digest rather than a mail per event: someone triaging a
-    #: dozen issues generates one mail, not twelve.
+    #: dozen tickets generates one mail, not twelve.
     digest_delay_minutes: int = 10
 
     model_config = SettingsConfigDict(env_file=".env")

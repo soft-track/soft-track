@@ -38,9 +38,9 @@ def recorded(monkeypatch):
     return bus
 
 
-def make_issue(client, actor, team_id, **fields):
+def make_ticket(client, actor, team_id, **fields):
     response = client.post(
-        f"/teams/{team_id}/issues",
+        f"/teams/{team_id}/tickets",
         json={"title": "Flaky test", **fields},
         headers=actor["headers"],
     )
@@ -59,61 +59,61 @@ def join(client, team, person, role="member"):
 # --- what produces which nudge -----------------------------------------------
 
 
-def test_creating_and_editing_an_issue_announce_it_to_its_team(client, team, recorded):
+def test_creating_and_editing_a_ticket_announce_it_to_its_team(client, team, recorded):
     team_channel = f"team:{team['team']['id']}"
-    issue = make_issue(client, team, team["team"]["id"])
-    assert (team_channel, "issue_changed", {"id": issue["id"]}) in recorded.sent
+    ticket = make_ticket(client, team, team["team"]["id"])
+    assert (team_channel, "ticket_changed", {"id": ticket["id"]}) in recorded.sent
 
     recorded.sent.clear()
     client.patch(
-        f"/issues/{issue['id']}", json={"priority": "high"}, headers=team["headers"]
+        f"/tickets/{ticket['id']}", json={"priority": "high"}, headers=team["headers"]
     )
     assert recorded.names(team_channel) == [
-        (team_channel, "issue_changed", {"id": issue["id"]})
+        (team_channel, "ticket_changed", {"id": ticket["id"]})
     ]
 
 
-def test_one_transaction_announces_an_issue_once(client, team, recorded):
-    """Creating an issue flushes it more than once; the board refetches once."""
-    make_issue(client, team, team["team"]["id"], label_ids=[])
-    changed = [e for e in recorded.sent if e[1] == "issue_changed"]
+def test_one_transaction_announces_a_ticket_once(client, team, recorded):
+    """Creating a ticket flushes it more than once; the board refetches once."""
+    make_ticket(client, team, team["team"]["id"], label_ids=[])
+    changed = [e for e in recorded.sent if e[1] == "ticket_changed"]
     assert len(changed) == len({json.dumps(e) for e in changed})
 
 
 def test_a_comment_is_announced_as_one(client, team, recorded):
-    issue = make_issue(client, team, team["team"]["id"])
+    ticket = make_ticket(client, team, team["team"]["id"])
     recorded.sent.clear()
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "On it"},
         headers=team["headers"],
     )
     assert (
         f"team:{team['team']['id']}",
         "comment_added",
-        {"issue_id": issue["id"]},
+        {"ticket_id": ticket["id"]},
     ) in recorded.sent
 
 
 def test_a_reaction_refreshes_the_thread(client, team, recorded):
-    issue = make_issue(client, team, team["team"]["id"])
+    ticket = make_ticket(client, team, team["team"]["id"])
     comment = client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "On it"},
         headers=team["headers"],
     ).json()
     recorded.sent.clear()
     client.put(f"/comments/{comment['id']}/reactions/heart", headers=team["headers"])
     assert recorded.names() == [
-        (f"team:{team['team']['id']}", "comment_added", {"issue_id": issue["id"]})
+        (f"team:{team['team']['id']}", "comment_added", {"ticket_id": ticket["id"]})
     ]
 
 
-def test_time_labels_and_links_refresh_the_issue(client, team, recorded):
+def test_time_labels_and_links_refresh_the_ticket(client, team, recorded):
     team_id = team["team"]["id"]
     channel = f"team:{team_id}"
-    issue = make_issue(client, team, team_id)
-    other = make_issue(client, team, team_id, title="Other")
+    ticket = make_ticket(client, team, team_id)
+    other = make_ticket(client, team, team_id, title="Other")
     label = client.post(
         f"/teams/{team_id}/labels",
         json={"name": "ci", "color": "#123456"},
@@ -122,45 +122,45 @@ def test_time_labels_and_links_refresh_the_issue(client, team, recorded):
 
     for do in (
         lambda: client.post(
-            f"/issues/{issue['id']}/worklogs",
+            f"/tickets/{ticket['id']}/worklogs",
             json={"minutes": 5},
             headers=team["headers"],
         ),
         lambda: client.patch(
-            f"/issues/{issue['id']}",
+            f"/tickets/{ticket['id']}",
             json={"label_ids": [label["id"]]},
             headers=team["headers"],
         ),
     ):
         recorded.sent.clear()
         do()
-        assert (channel, "issue_changed", {"id": issue["id"]}) in recorded.sent
+        assert (channel, "ticket_changed", {"id": ticket["id"]}) in recorded.sent
 
     recorded.sent.clear()
     client.post(
-        f"/issues/{issue['id']}/links",
+        f"/tickets/{ticket['id']}/links",
         json={"target_id": other["id"], "type": "blocks"},
         headers=team["headers"],
     )
-    changed = {d["id"] for c, n, d in recorded.sent if n == "issue_changed"}
-    assert changed == {issue["id"], other["id"]}
+    changed = {d["id"] for c, n, d in recorded.sent if n == "ticket_changed"}
+    assert changed == {ticket["id"], other["id"]}
 
 
 def test_a_move_between_teams_reaches_both_boards(client, team, recorded):
     ops = client.post(
         "/teams", json={"name": "Ops", "key": "OPS"}, headers=team["headers"]
     ).json()
-    issue = make_issue(client, team, team["team"]["id"])
+    ticket = make_ticket(client, team, team["team"]["id"])
     recorded.sent.clear()
     client.post(
-        f"/issues/{issue['id']}/transfer",
+        f"/tickets/{ticket['id']}/transfer",
         json={"team_id": ops["id"]},
         headers=team["headers"],
     )
     channels = {
         c
         for c, n, d in recorded.sent
-        if n == "issue_changed" and d == {"id": issue["id"]}
+        if n == "ticket_changed" and d == {"id": ticket["id"]}
     }
     assert channels == {f"team:{team['team']['id']}", f"team:{ops['id']}"}
 
@@ -168,10 +168,10 @@ def test_a_move_between_teams_reaches_both_boards(client, team, recorded):
 def test_a_notification_goes_to_its_recipient_only(client, team, auth, recorded):
     maya = auth(email="maya@softtrack.dev", full_name="Maya Chen")
     join(client, team, maya)
-    issue = make_issue(client, team, team["team"]["id"])
+    ticket = make_ticket(client, team, team["team"]["id"])
     recorded.sent.clear()
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"assignee_id": maya["user"]["id"]},
         headers=team["headers"],
     )
@@ -180,11 +180,11 @@ def test_a_notification_goes_to_its_recipient_only(client, team, auth, recorded)
 
 
 def test_nothing_is_announced_for_a_write_that_failed(client, team, recorded):
-    issue = make_issue(client, team, team["team"]["id"])
+    ticket = make_ticket(client, team, team["team"]["id"])
     recorded.sent.clear()
     # A claim of someone else's attachment fails after the comment is flushed.
     response = client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "with a file", "attachment_ids": [999]},
         headers=team["headers"],
     )
@@ -224,12 +224,12 @@ def test_the_bus_delivers_across_threads_and_resyncs_a_stream_that_fell_behind(
         bus = InProcessBus()
         subscription = bus.subscribe(["team:1"])
         # Published from another thread, as a sync route handler would.
-        await asyncio.to_thread(bus.publish, "team:1", Event.of("issue_changed", id=7))
-        await asyncio.to_thread(bus.publish, "team:2", Event.of("issue_changed", id=8))
+        await asyncio.to_thread(bus.publish, "team:1", Event.of("ticket_changed", id=7))
+        await asyncio.to_thread(bus.publish, "team:2", Event.of("ticket_changed", id=8))
         first = await subscription.next(1)
 
         for number in range(10):
-            bus.publish("team:1", Event.of("issue_changed", id=number))
+            bus.publish("team:1", Event.of("ticket_changed", id=number))
         await asyncio.sleep(0)
         queued = [
             await subscription.next(0.1) for _ in range(subscription.queue.qsize())
@@ -238,7 +238,7 @@ def test_the_bus_delivers_across_threads_and_resyncs_a_stream_that_fell_behind(
         return first, queued, bus.subscriber_count(), await subscription.next(0.01)
 
     first, queued, remaining, after_close = asyncio.run(scenario())
-    assert first == Event.of("issue_changed", id=7)
+    assert first == Event.of("ticket_changed", id=7)
     assert realtime.RESYNC in queued
     assert len(queued) <= 3
     assert remaining == 0
@@ -329,8 +329,8 @@ def test_the_stream_carries_nudges_and_heartbeats_and_ends_on_close(
         task = asyncio.create_task(stream.run())
         opening = await stream.frames_until(lambda f: ": ping" in f)
 
-        realtime.bus.publish(f"team:{team_id}", Event.of("issue_changed", id=42))
-        realtime.bus.publish(f"team:{team_id + 99}", Event.of("issue_changed", id=43))
+        realtime.bus.publish(f"team:{team_id}", Event.of("ticket_changed", id=42))
+        realtime.bus.publish(f"team:{team_id + 99}", Event.of("ticket_changed", id=43))
         # Leaving some other team is not this stream's business.
         realtime.bus.publish(f"user:{user_id}", Event.of("close", team_id=team_id + 99))
         realtime.bus.publish(f"user:{user_id}", Event.of("close", team_id=team_id))
@@ -347,7 +347,7 @@ def test_the_stream_carries_nudges_and_heartbeats_and_ends_on_close(
     assert headers[b"x-accel-buffering"] == b"no"
     assert opening[0] == "retry: 5000\n: connected"
     assert [frame for frame in rest if frame.startswith("event:")] == [
-        'event: issue_changed\ndata: {"id": 42}',
+        'event: ticket_changed\ndata: {"id": 42}',
         f'event: close\ndata: {{"team_id": {team_id}}}',
     ]
     assert realtime.bus.subscriber_count() == 0

@@ -1,4 +1,4 @@
-"""File attachments on issues and comments (issue #15).
+"""File attachments on tickets and comments (issue #15).
 
 Two properties most of this file exists to protect.
 
@@ -6,7 +6,7 @@ Two properties most of this file exists to protect.
 upload claimed.** An attachment endpoint that echoes a client's Content-Type
 is a stored cross-site scripting bug wearing a paperclip.
 
-**Deleting an issue takes its attachments with it, rows and bytes.** That is
+**Deleting a ticket takes its attachments with it, rows and bytes.** That is
 the same class of bug as soft-track#1: a row pointing at something that is
 gone, or bytes on disk that nothing will ever reference again.
 """
@@ -30,9 +30,9 @@ PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
 JPEG = b"\xff\xd8\xff" + b"\x00" * 64
 
 
-def make_issue(client, team, title="Something is broken"):
+def make_ticket(client, team, title="Something is broken"):
     response = client.post(
-        f"/teams/{team['team']['id']}/issues",
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": title},
         headers=team["headers"],
     )
@@ -43,21 +43,21 @@ def make_issue(client, team, title="Something is broken"):
 def upload(
     client,
     headers,
-    issue,
+    ticket,
     body=PNG,
     name="screenshot.png",
     declared_type="image/png",
 ):
     return client.post(
-        f"/issues/{issue['id']}/attachments",
+        f"/tickets/{ticket['id']}/attachments",
         files={"file": (name, io.BytesIO(body), declared_type)},
         headers=headers,
     )
 
 
-def attach(client, team, issue, **kwargs):
+def attach(client, team, ticket, **kwargs):
     """Upload and assert it worked, for the tests that are about what happens next."""
-    response = upload(client, team["headers"], issue, **kwargs)
+    response = upload(client, team["headers"], ticket, **kwargs)
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -66,8 +66,8 @@ def attach(client, team, issue, **kwargs):
 
 
 def test_uploading_a_screenshot(client, team):
-    issue = make_issue(client, team)
-    body = attach(client, team, issue)
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket)
 
     assert body["filename"] == "screenshot.png"
     assert body["content_type"] == "image/png"
@@ -80,15 +80,15 @@ def test_uploading_a_screenshot(client, team):
 
 def test_the_url_is_relative_to_the_api(client, team):
     """It gets written into markdown, so it must not carry a hostname."""
-    issue = make_issue(client, team)
-    assert attach(client, team, issue)["url"].startswith("/attachments/")
+    ticket = make_ticket(client, team)
+    assert attach(client, team, ticket)["url"].startswith("/attachments/")
 
 
 def test_the_content_type_comes_from_the_name_not_the_upload(client, team):
     """The whole file is served back with this type, so it cannot be chosen
     by whoever is uploading."""
-    issue = make_issue(client, team)
-    body = attach(client, team, issue, declared_type="text/html")
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket, declared_type="text/html")
     assert body["content_type"] == "image/png"
 
 
@@ -97,8 +97,8 @@ def test_the_content_type_comes_from_the_name_not_the_upload(client, team):
     ["evil.html", "evil.svg", "run.sh", "payload.xhtml", "noextension"],
 )
 def test_types_that_are_not_on_the_allowlist_are_refused(client, team, name):
-    issue = make_issue(client, team)
-    response = upload(client, team["headers"], issue, name=name, body=b"<x>")
+    ticket = make_ticket(client, team)
+    response = upload(client, team["headers"], ticket, name=name, body=b"<x>")
     assert response.status_code == 415, response.text
     # the message has to say what would work
     assert ".png" in response.json()["detail"]
@@ -107,11 +107,11 @@ def test_types_that_are_not_on_the_allowlist_are_refused(client, team, name):
 def test_an_svg_is_refused_even_though_it_is_an_image(client, team):
     """An SVG is a document that can carry script. There is no way to serve
     one inline safely, so it is not accepted at all."""
-    issue = make_issue(client, team)
+    ticket = make_ticket(client, team)
     response = upload(
         client,
         team["headers"],
-        issue,
+        ticket,
         name="diagram.svg",
         body=b'<svg onload="alert(1)"/>',
         declared_type="image/svg+xml",
@@ -120,29 +120,29 @@ def test_an_svg_is_refused_even_though_it_is_an_image(client, team):
 
 
 def test_a_file_that_is_not_the_image_it_claims_to_be_is_refused(client, team):
-    issue = make_issue(client, team)
-    response = upload(client, team["headers"], issue, body=b"not a png at all")
+    ticket = make_ticket(client, team)
+    response = upload(client, team["headers"], ticket, body=b"not a png at all")
     assert response.status_code == 422
     assert "PNG" in response.json()["detail"]
 
 
 def test_a_jpeg_is_accepted(client, team):
-    issue = make_issue(client, team)
-    body = attach(client, team, issue, body=JPEG, name="photo.jpg")
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket, body=JPEG, name="photo.jpg")
     assert body["content_type"] == "image/jpeg"
 
 
 def test_a_non_image_is_not_signature_checked(client, team):
     """Only images are, because only images fail silently as a broken <img>."""
-    issue = make_issue(client, team)
-    body = attach(client, team, issue, body=b"line one\n", name="server.log")
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket, body=b"line one\n", name="server.log")
     assert body["content_type"] == "text/plain"
     assert body["is_image"] is False
 
 
 def test_an_empty_file_is_refused(client, team):
-    issue = make_issue(client, team)
-    response = upload(client, team["headers"], issue, body=b"")
+    ticket = make_ticket(client, team)
+    response = upload(client, team["headers"], ticket, body=b"")
     assert response.status_code == 422
 
 
@@ -150,8 +150,8 @@ def test_a_file_over_the_limit_is_refused(client, team, monkeypatch):
     from web import settings
 
     monkeypatch.setattr(settings, "attachment_max_bytes", 128)
-    issue = make_issue(client, team)
-    response = upload(client, team["headers"], issue, body=PNG + b"\x00" * 200)
+    ticket = make_ticket(client, team)
+    response = upload(client, team["headers"], ticket, body=PNG + b"\x00" * 200)
     assert response.status_code == 413
     assert "larger than" in response.json()["detail"]
 
@@ -162,13 +162,13 @@ def test_a_file_exactly_at_the_limit_is_accepted(client, team, monkeypatch):
 
     body = PNG + b"\x00" * (256 - len(PNG))
     monkeypatch.setattr(settings, "attachment_max_bytes", len(body))
-    issue = make_issue(client, team)
-    assert upload(client, team["headers"], issue, body=body).status_code == 200
+    ticket = make_ticket(client, team)
+    assert upload(client, team["headers"], ticket, body=body).status_code == 200
 
 
 def test_a_directory_in_the_filename_is_stripped(client, team):
-    issue = make_issue(client, team)
-    body = attach(client, team, issue, name="../../etc/passwd.png")
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket, name="../../etc/passwd.png")
     assert body["filename"] == "passwd.png"
 
 
@@ -188,18 +188,18 @@ def test_filenames_are_reduced_to_a_bare_name(raw, expected):
 
 
 def test_a_long_filename_is_truncated(client, team):
-    issue = make_issue(client, team)
-    body = attach(client, team, issue, name="a" * 500 + ".png")
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket, name="a" * 500 + ".png")
     assert len(body["filename"]) <= 200
 
 
-def test_uploading_to_an_issue_in_another_team_is_refused(client, team, auth):
-    issue = make_issue(client, team)
+def test_uploading_to_a_ticket_in_another_team_is_refused(client, team, auth):
+    ticket = make_ticket(client, team)
     outsider = auth(email="outsider@softtrack.dev", full_name="Outsider")
-    assert upload(client, outsider["headers"], issue).status_code == 403
+    assert upload(client, outsider["headers"], ticket).status_code == 403
 
 
-def test_uploading_to_an_issue_that_does_not_exist(client, team):
+def test_uploading_to_a_ticket_that_does_not_exist(client, team):
     assert upload(client, team["headers"], {"id": 9999}).status_code == 404
 
 
@@ -207,8 +207,8 @@ def test_uploading_to_an_issue_that_does_not_exist(client, team):
 
 
 def test_downloading_returns_the_bytes(client, team):
-    issue = make_issue(client, team)
-    body = attach(client, team, issue)
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket)
 
     response = client.get(body["url"], headers=team["headers"])
     assert response.status_code == 200
@@ -218,10 +218,10 @@ def test_downloading_returns_the_bytes(client, team):
 
 def test_what_can_be_previewed_is_inline_and_the_rest_a_download(client, team):
     """Images, PDFs and text are shown in place (#101); a zip is saved."""
-    issue = make_issue(client, team)
-    image = attach(client, team, issue)
-    log = attach(client, team, issue, body=b"log line", name="server.log")
-    archive = attach(client, team, issue, body=b"PK\x03\x04", name="dump.zip")
+    ticket = make_ticket(client, team)
+    image = attach(client, team, ticket)
+    log = attach(client, team, ticket, body=b"log line", name="server.log")
+    archive = attach(client, team, ticket, body=b"PK\x03\x04", name="dump.zip")
 
     for attachment, disposition in (
         (image, "inline;"),
@@ -234,8 +234,8 @@ def test_what_can_be_previewed_is_inline_and_the_rest_a_download(client, team):
 
 def test_the_response_forbids_content_sniffing(client, team):
     """The derived content type is only worth anything if the browser honours it."""
-    issue = make_issue(client, team)
-    body = attach(client, team, issue)
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket)
     response = client.get(body["url"], headers=team["headers"])
 
     assert response.headers["x-content-type-options"] == "nosniff"
@@ -243,8 +243,8 @@ def test_the_response_forbids_content_sniffing(client, team):
 
 
 def test_a_non_ascii_filename_survives_the_round_trip(client, team):
-    issue = make_issue(client, team)
-    body = attach(client, team, issue, name="ekran görüntüsü.png")
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket, name="ekran görüntüsü.png")
     assert body["filename"] == "ekran görüntüsü.png"
 
     disposition = client.get(body["url"], headers=team["headers"]).headers[
@@ -255,14 +255,14 @@ def test_a_non_ascii_filename_survives_the_round_trip(client, team):
 
 
 def test_downloading_needs_to_be_signed_in(client, team):
-    issue = make_issue(client, team)
-    body = attach(client, team, issue)
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket)
     assert client.get(body["url"]).status_code == 401
 
 
 def test_someone_outside_the_team_cannot_download(client, team, auth):
-    issue = make_issue(client, team)
-    body = attach(client, team, issue)
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket)
     outsider = auth(email="outsider@softtrack.dev", full_name="Outsider")
     assert client.get(body["url"], headers=outsider["headers"]).status_code == 403
 
@@ -270,8 +270,8 @@ def test_someone_outside_the_team_cannot_download(client, team, auth):
 def test_bytes_missing_under_a_live_row_report_gone_rather_than_broken(
     client, team, storage, session
 ):
-    issue = make_issue(client, team)
-    body = attach(client, team, issue)
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket)
     row = session.get(Attachment, body["id"])
     storage.delete(row.storage_key)
 
@@ -290,37 +290,39 @@ def test_downloading_an_attachment_that_does_not_exist(client, team):
 # --- listing -----------------------------------------------------------
 
 
-def test_the_issue_lists_its_own_files(client, team):
-    issue = make_issue(client, team)
-    first = attach(client, team, issue, name="one.png")
-    second = attach(client, team, issue, name="two.png")
+def test_the_ticket_lists_its_own_files(client, team):
+    ticket = make_ticket(client, team)
+    first = attach(client, team, ticket, name="one.png")
+    second = attach(client, team, ticket, name="two.png")
 
-    response = client.get(f"/issues/{issue['id']}/attachments", headers=team["headers"])
+    response = client.get(
+        f"/tickets/{ticket['id']}/attachments", headers=team["headers"]
+    )
     assert response.status_code == 200
     assert [a["id"] for a in response.json()] == [first["id"], second["id"]]
 
 
-def test_a_file_claimed_by_a_comment_leaves_the_issue_list(client, team):
+def test_a_file_claimed_by_a_comment_leaves_the_ticket_list(client, team):
     """Each file is listed in exactly one place, so the UI never dedupes."""
-    issue = make_issue(client, team)
-    body = attach(client, team, issue)
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket)
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "see this", "attachment_ids": [body["id"]]},
         headers=team["headers"],
     )
 
     listed = client.get(
-        f"/issues/{issue['id']}/attachments", headers=team["headers"]
+        f"/tickets/{ticket['id']}/attachments", headers=team["headers"]
     ).json()
     assert listed == []
 
 
 def test_listing_needs_team_membership(client, team, auth):
-    issue = make_issue(client, team)
+    ticket = make_ticket(client, team)
     outsider = auth(email="outsider@softtrack.dev", full_name="Outsider")
     response = client.get(
-        f"/issues/{issue['id']}/attachments", headers=outsider["headers"]
+        f"/tickets/{ticket['id']}/attachments", headers=outsider["headers"]
     )
     assert response.status_code == 403
 
@@ -329,11 +331,11 @@ def test_listing_needs_team_membership(client, team, auth):
 
 
 def test_a_comment_claims_the_files_uploaded_while_it_was_written(client, team):
-    issue = make_issue(client, team)
-    body = attach(client, team, issue)
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket)
 
     response = client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "Here is what I see", "attachment_ids": [body["id"]]},
         headers=team["headers"],
     )
@@ -344,32 +346,32 @@ def test_a_comment_claims_the_files_uploaded_while_it_was_written(client, team):
 
 
 def test_listing_comments_carries_their_attachments(client, team):
-    issue = make_issue(client, team)
-    body = attach(client, team, issue)
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket)
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "with a file", "attachment_ids": [body["id"]]},
         headers=team["headers"],
     )
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "without one"},
         headers=team["headers"],
     )
 
     items = client.get(
-        f"/issues/{issue['id']}/comments", headers=team["headers"]
+        f"/tickets/{ticket['id']}/comments", headers=team["headers"]
     ).json()["items"]
     assert [len(c["attachments"]) for c in items] == [1, 0]
 
 
-def test_a_comment_cannot_claim_a_file_from_another_issue(client, team):
-    """Otherwise a file walks to an issue its uploader never put it on."""
-    first, second = make_issue(client, team, "A"), make_issue(client, team, "B")
+def test_a_comment_cannot_claim_a_file_from_another_ticket(client, team):
+    """Otherwise a file walks to a ticket its uploader never put it on."""
+    first, second = make_ticket(client, team, "A"), make_ticket(client, team, "B")
     body = attach(client, team, first)
 
     response = client.post(
-        f"/issues/{second['id']}/comments",
+        f"/tickets/{second['id']}/comments",
         json={"body": "not mine", "attachment_ids": [body["id"]]},
         headers=team["headers"],
     )
@@ -377,16 +379,16 @@ def test_a_comment_cannot_claim_a_file_from_another_issue(client, team):
 
 
 def test_a_comment_cannot_claim_a_file_another_comment_already_has(client, team):
-    issue = make_issue(client, team)
-    body = attach(client, team, issue)
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket)
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "first", "attachment_ids": [body["id"]]},
         headers=team["headers"],
     )
 
     response = client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "second", "attachment_ids": [body["id"]]},
         headers=team["headers"],
     )
@@ -395,16 +397,16 @@ def test_a_comment_cannot_claim_a_file_another_comment_already_has(client, team)
 
 def test_a_rejected_claim_does_not_leave_the_comment_behind(client, team):
     """The claim is part of posting the comment, not a step after it."""
-    issue = make_issue(client, team)
-    before = client.get(f"/issues/{issue['id']}/comments", headers=team["headers"])
+    ticket = make_ticket(client, team)
+    before = client.get(f"/tickets/{ticket['id']}/comments", headers=team["headers"])
 
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "doomed", "attachment_ids": [9999]},
         headers=team["headers"],
     )
 
-    after = client.get(f"/issues/{issue['id']}/comments", headers=team["headers"])
+    after = client.get(f"/tickets/{ticket['id']}/comments", headers=team["headers"])
     assert after.json()["total"] == before.json()["total"]
 
 
@@ -412,8 +414,8 @@ def test_a_rejected_claim_does_not_leave_the_comment_behind(client, team):
 
 
 def test_deleting_an_attachment_removes_the_bytes_too(client, team, storage, session):
-    issue = make_issue(client, team)
-    body = attach(client, team, issue)
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket)
     key = session.get(Attachment, body["id"]).storage_key
 
     assert (
@@ -426,8 +428,8 @@ def test_deleting_an_attachment_removes_the_bytes_too(client, team, storage, ses
 
 
 def test_someone_outside_the_team_cannot_delete(client, team, auth):
-    issue = make_issue(client, team)
-    body = attach(client, team, issue)
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket)
     outsider = auth(email="outsider@softtrack.dev", full_name="Outsider")
     assert (
         client.delete(
@@ -437,26 +439,28 @@ def test_someone_outside_the_team_cannot_delete(client, team, auth):
     )
 
 
-def test_deleting_an_issue_deletes_its_attachments(client, team, storage, session):
+def test_deleting_a_ticket_deletes_its_attachments(client, team, storage, session):
     """The soft-track#1 shape: a row left pointing at something that is gone."""
-    issue = make_issue(client, team)
-    on_issue = attach(client, team, issue, name="one.png")
-    on_comment = attach(client, team, issue, name="two.png")
+    ticket = make_ticket(client, team)
+    on_ticket = attach(client, team, ticket, name="one.png")
+    on_comment = attach(client, team, ticket, name="two.png")
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "see attached", "attachment_ids": [on_comment["id"]]},
         headers=team["headers"],
     )
     keys = [
-        session.get(Attachment, on_issue["id"]).storage_key,
+        session.get(Attachment, on_ticket["id"]).storage_key,
         session.get(Attachment, on_comment["id"]).storage_key,
     ]
 
-    response = client.delete(f"/issues/{issue['id']}", headers=team["headers"])
+    response = client.delete(f"/tickets/{ticket['id']}", headers=team["headers"])
     assert response.status_code == 204, response.text
 
     assert (
-        session.exec(select(Attachment).where(Attachment.issue_id == issue["id"])).all()
+        session.exec(
+            select(Attachment).where(Attachment.ticket_id == ticket["id"])
+        ).all()
         == []
     )
     for key in keys:
@@ -641,8 +645,8 @@ def test_build_storage_passes_the_endpoint_and_region_to_the_client(monkeypatch)
 
 
 def test_a_filename_that_reduces_to_nothing_is_refused(client, team):
-    issue = make_issue(client, team)
-    response = upload(client, team["headers"], issue, name="...")
+    ticket = make_ticket(client, team)
+    response = upload(client, team["headers"], ticket, name="...")
     assert response.status_code == 422
     assert "name" in response.json()["detail"]
 
@@ -650,7 +654,7 @@ def test_a_filename_that_reduces_to_nothing_is_refused(client, team):
 def test_a_long_filename_keeps_its_extension(client, team):
     """Truncating past the extension would change what the file is -- the
     content type is derived from it -- and the upload would be refused."""
-    issue = make_issue(client, team)
-    body = attach(client, team, issue, name="a" * 500 + ".png")
+    ticket = make_ticket(client, team)
+    body = attach(client, team, ticket, name="a" * 500 + ".png")
     assert body["filename"].endswith(".png")
     assert body["content_type"] == "image/png"

@@ -9,7 +9,7 @@ ever rewrites the card, never its column.
 A key is an *integer part* followed by a *fraction*. The integer part's first
 character says how long it is (`a0` is zero, `a1` one, `b10` sixty-two, `Zz`
 minus one), which is what makes repeatedly adding at either end cost only
-logarithmic growth: a thousand new issues at the top of a column produce keys
+logarithmic growth: a thousand new tickets at the top of a column produce keys
 three characters long, not a thousand. Only repeated insertion into the *same*
 gap lengthens the fraction.
 

@@ -14,7 +14,7 @@ The properties most of these guard, in the order they would hurt if they broke:
 import pytest
 from sqlmodel import select
 
-from lib_softtrack.tables import IssueEvent
+from lib_softtrack.tables import TicketEvent
 
 
 @pytest.fixture
@@ -35,7 +35,7 @@ def create_rule(
     actor,
     team_id,
     name="A rule",
-    trigger="issue_created",
+    trigger="ticket_created",
     conditions=None,
     expect=200,
     **actions,
@@ -54,18 +54,18 @@ def create_rule(
     return response.json()
 
 
-def create_issue(client, actor, team_id, **fields):
+def create_ticket(client, actor, team_id, **fields):
     response = client.post(
-        f"/teams/{team_id}/issues",
-        json={"title": "An issue", **fields},
+        f"/teams/{team_id}/tickets",
+        json={"title": "A ticket", **fields},
         headers=actor["headers"],
     )
     assert response.status_code == 200, response.text
     return response.json()
 
 
-def get_issue(client, actor, issue_id):
-    response = client.get(f"/issues/{issue_id}", headers=actor["headers"])
+def get_ticket(client, actor, ticket_id):
+    response = client.get(f"/tickets/{ticket_id}", headers=actor["headers"])
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -78,8 +78,8 @@ def runs(client, actor, team_id, **params):
     return response.json()
 
 
-def comments(client, actor, issue_id):
-    response = client.get(f"/issues/{issue_id}/comments", headers=actor["headers"])
+def comments(client, actor, ticket_id):
+    response = client.get(f"/tickets/{ticket_id}/comments", headers=actor["headers"])
     assert response.status_code == 200, response.text
     return response.json()["items"]
 
@@ -93,12 +93,12 @@ def test_a_rule_round_trips_its_conditions_and_actions(client, pair):
         pair,
         pair["team"]["id"],
         name="Triage urgent bugs",
-        trigger="issue_created",
+        trigger="ticket_created",
         conditions={"if_priority": "urgent"},
         set_status_id=pair["status_ids"]["Todo"],
         set_assignee_id=pair["user"]["id"],
     )
-    assert rule["trigger"] == "issue_created"
+    assert rule["trigger"] == "ticket_created"
     assert rule["conditions"]["if_priority"] == "urgent"
     assert rule["actions"]["set_status_id"] == pair["status_ids"]["Todo"]
     assert rule["is_enabled"] is True
@@ -112,7 +112,7 @@ def test_a_rule_that_does_nothing_is_refused(client, pair):
     """It would sit in the list looking enabled and never do anything."""
     response = client.post(
         f"/teams/{pair['team']['id']}/automation-rules",
-        json={"name": "Inert", "trigger": "issue_created", "actions": {}},
+        json={"name": "Inert", "trigger": "ticket_created", "actions": {}},
         headers=pair["headers"],
     )
     assert response.status_code == 422
@@ -123,7 +123,7 @@ def test_matching_an_assignee_and_unassigned_is_refused(client, pair):
         f"/teams/{pair['team']['id']}/automation-rules",
         json={
             "name": "Impossible",
-            "trigger": "issue_created",
+            "trigger": "ticket_created",
             "conditions": {
                 "if_assignee_id": pair["user"]["id"],
                 "if_unassigned": True,
@@ -140,7 +140,7 @@ def test_a_named_sprint_and_the_active_one_is_refused(client, pair):
         f"/teams/{pair['team']['id']}/automation-rules",
         json={
             "name": "Both",
-            "trigger": "issue_created",
+            "trigger": "ticket_created",
             "actions": {"set_sprint_id": 1, "move_to_active_sprint": True},
         },
         headers=pair["headers"],
@@ -178,7 +178,7 @@ def test_only_admins_write_rules_but_anyone_reads_them(client, pair):
     )
     create_rule(client, pair, pair["team"]["id"], set_priority="high")
 
-    # A rule acts on your issues; being unable to find out what the rules are
+    # A rule acts on your tickets; being unable to find out what the rules are
     # is not a reasonable place to be.
     response = client.get(
         f"/teams/{pair['team']['id']}/automation-rules",
@@ -266,9 +266,9 @@ def test_the_log_can_be_narrowed_to_one_rule(client, pair):
         trigger="comment_added",
         set_priority="urgent",
     )
-    issue = create_issue(client, pair, pair["team"]["id"])
+    ticket = create_ticket(client, pair, pair["team"]["id"])
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "ping"},
         headers=pair["headers"],
     )
@@ -282,17 +282,17 @@ def test_the_log_can_be_narrowed_to_one_rule(client, pair):
 # --- triggers --------------------------------------------------------------
 
 
-def test_issue_created_fires_on_a_new_issue(client, pair):
+def test_ticket_created_fires_on_a_new_ticket(client, pair):
     create_rule(
         client,
         pair,
         pair["team"]["id"],
-        trigger="issue_created",
+        trigger="ticket_created",
         set_priority="urgent",
     )
-    issue = create_issue(client, pair, pair["team"]["id"])
-    assert issue["priority"] == "urgent" or (
-        get_issue(client, pair, issue["id"])["priority"] == "urgent"
+    ticket = create_ticket(client, pair, pair["team"]["id"])
+    assert ticket["priority"] == "urgent" or (
+        get_ticket(client, pair, ticket["id"])["priority"] == "urgent"
     )
 
 
@@ -306,40 +306,40 @@ def test_status_changed_fires_only_when_the_status_moved(client, pair):
         conditions={"if_status_id": pair["status_ids"]["Done"]},
         set_priority="low",
     )
-    issue = create_issue(client, pair, pair["team"]["id"], status_id=todo)
+    ticket = create_ticket(client, pair, pair["team"]["id"], status_id=todo)
 
     # A PATCH setting the status to what it already was is not a change.
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"status_id": todo},
         headers=pair["headers"],
     )
     assert runs(client, pair, pair["team"]["id"])["total"] == 0
 
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"status_id": pair["status_ids"]["Done"]},
         headers=pair["headers"],
     )
-    assert get_issue(client, pair, issue["id"])["priority"] == "low"
+    assert get_ticket(client, pair, ticket["id"])["priority"] == "low"
 
 
-def test_issue_assigned_does_not_fire_on_being_unassigned(client, pair):
+def test_ticket_assigned_does_not_fire_on_being_unassigned(client, pair):
     create_rule(
         client,
         pair,
         pair["team"]["id"],
-        trigger="issue_assigned",
+        trigger="ticket_assigned",
         set_priority="high",
     )
-    issue = create_issue(
+    ticket = create_ticket(
         client, pair, pair["team"]["id"], assignee_id=pair["user"]["id"]
     )
-    assert get_issue(client, pair, issue["id"])["priority"] == "high"
+    assert get_ticket(client, pair, ticket["id"])["priority"] == "high"
 
     before = runs(client, pair, pair["team"]["id"])["total"]
     client.patch(
-        f"/issues/{issue['id']}", json={"assignee_id": None}, headers=pair["headers"]
+        f"/tickets/{ticket['id']}", json={"assignee_id": None}, headers=pair["headers"]
     )
     assert runs(client, pair, pair["team"]["id"])["total"] == before
 
@@ -352,15 +352,15 @@ def test_comment_added_fires_on_a_comment(client, pair):
         trigger="comment_added",
         set_status_id=pair["status_ids"]["In Progress"],
     )
-    issue = create_issue(client, pair, pair["team"]["id"])
+    ticket = create_ticket(client, pair, pair["team"]["id"])
     response = client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "Looking at this"},
         headers=pair["headers"],
     )
     assert response.status_code == 200, response.text
     assert (
-        get_issue(client, pair, issue["id"])["status"]["id"]
+        get_ticket(client, pair, ticket["id"])["status"]["id"]
         == pair["status_ids"]["In Progress"]
     )
 
@@ -379,14 +379,14 @@ def test_sprint_completed_fires_on_everything_that_was_in_the_sprint(client, pai
     sprint = response.json()
     client.post(f"/sprints/{sprint['id']}/start", headers=pair["headers"])
 
-    finished = create_issue(
+    finished = create_ticket(
         client,
         pair,
         pair["team"]["id"],
         sprint_id=sprint["id"],
         status_id=pair["status_ids"]["Done"],
     )
-    unfinished = create_issue(client, pair, pair["team"]["id"], sprint_id=sprint["id"])
+    unfinished = create_ticket(client, pair, pair["team"]["id"], sprint_id=sprint["id"])
 
     create_rule(
         client,
@@ -397,8 +397,8 @@ def test_sprint_completed_fires_on_everything_that_was_in_the_sprint(client, pai
     )
     client.post(f"/sprints/{sprint['id']}/complete", headers=pair["headers"])
 
-    assert get_issue(client, pair, finished["id"])["priority"] == "medium"
-    assert get_issue(client, pair, unfinished["id"])["priority"] == "medium"
+    assert get_ticket(client, pair, finished["id"])["priority"] == "medium"
+    assert get_ticket(client, pair, unfinished["id"])["priority"] == "medium"
 
 
 # --- conditions ------------------------------------------------------------
@@ -406,8 +406,8 @@ def test_sprint_completed_fires_on_everything_that_was_in_the_sprint(client, pai
 
 def test_a_rule_with_no_conditions_matches_everything(client, pair):
     create_rule(client, pair, pair["team"]["id"], set_priority="low")
-    issue = create_issue(client, pair, pair["team"]["id"])
-    assert get_issue(client, pair, issue["id"])["priority"] == "low"
+    ticket = create_ticket(client, pair, pair["team"]["id"])
+    assert get_ticket(client, pair, ticket["id"])["priority"] == "low"
 
 
 def test_conditions_are_anded(client, pair):
@@ -425,17 +425,17 @@ def test_conditions_are_anded(client, pair):
     )
 
     # Priority but no label: no match.
-    only_priority = create_issue(client, pair, pair["team"]["id"], priority="urgent")
+    only_priority = create_ticket(client, pair, pair["team"]["id"], priority="urgent")
     assert (
-        get_issue(client, pair, only_priority["id"])["status"]["id"]
+        get_ticket(client, pair, only_priority["id"])["status"]["id"]
         != pair["status_ids"]["Todo"]
     )
 
-    both = create_issue(
+    both = create_ticket(
         client, pair, pair["team"]["id"], priority="urgent", label_ids=[label["id"]]
     )
     assert (
-        get_issue(client, pair, both["id"])["status"]["id"]
+        get_ticket(client, pair, both["id"])["status"]["id"]
         == pair["status_ids"]["Todo"]
     )
 
@@ -448,13 +448,13 @@ def test_unassigned_is_not_the_same_as_any_assignee(client, pair):
         conditions={"if_unassigned": True},
         set_priority="urgent",
     )
-    assigned = create_issue(
+    assigned = create_ticket(
         client, pair, pair["team"]["id"], assignee_id=pair["user"]["id"]
     )
-    nobody = create_issue(client, pair, pair["team"]["id"])
+    nobody = create_ticket(client, pair, pair["team"]["id"])
 
-    assert get_issue(client, pair, assigned["id"])["priority"] == "no_priority"
-    assert get_issue(client, pair, nobody["id"])["priority"] == "urgent"
+    assert get_ticket(client, pair, assigned["id"])["priority"] == "no_priority"
+    assert get_ticket(client, pair, nobody["id"])["priority"] == "urgent"
 
 
 def test_a_disabled_rule_does_nothing(client, pair):
@@ -464,8 +464,8 @@ def test_a_disabled_rule_does_nothing(client, pair):
         json={"is_enabled": False},
         headers=pair["headers"],
     )
-    issue = create_issue(client, pair, pair["team"]["id"])
-    assert get_issue(client, pair, issue["id"])["priority"] == "no_priority"
+    ticket = create_ticket(client, pair, pair["team"]["id"])
+    assert get_ticket(client, pair, ticket["id"])["priority"] == "no_priority"
     assert runs(client, pair, pair["team"]["id"])["total"] == 0
 
 
@@ -485,9 +485,11 @@ def test_a_label_action_adds_rather_than_replaces(client, pair):
     ).json()
 
     create_rule(client, pair, pair["team"]["id"], add_label_id=added["id"])
-    issue = create_issue(client, pair, pair["team"]["id"], label_ids=[keep["id"]])
+    ticket = create_ticket(client, pair, pair["team"]["id"], label_ids=[keep["id"]])
 
-    names = {label["name"] for label in get_issue(client, pair, issue["id"])["labels"]}
+    names = {
+        label["name"] for label in get_ticket(client, pair, ticket["id"])["labels"]
+    }
     assert names == {"keep", "triaged"}
 
 
@@ -498,12 +500,12 @@ def test_a_comment_action_posts_with_no_author(client, pair):
         pair["team"]["id"],
         comment_body="Filed outside a sprint -- please size it.",
     )
-    issue = create_issue(client, pair, pair["team"]["id"])
+    ticket = create_ticket(client, pair, pair["team"]["id"])
 
-    posted = comments(client, pair, issue["id"])
+    posted = comments(client, pair, ticket["id"])
     assert len(posted) == 1
     assert posted[0]["body"].startswith("Filed outside a sprint")
-    # Not attributed to whoever filed the issue. Nobody wrote it.
+    # Not attributed to whoever filed the ticket. Nobody wrote it.
     assert posted[0]["author"] is None
 
 
@@ -528,19 +530,19 @@ def test_the_active_sprint_is_resolved_when_the_rule_fires(client, pair):
     )
 
     # Nothing running yet: the rule matches and quietly has nowhere to move it.
-    before = create_issue(client, pair, pair["team"]["id"], priority="urgent")
-    assert get_issue(client, pair, before["id"])["sprint_id"] is None
+    before = create_ticket(client, pair, pair["team"]["id"], priority="urgent")
+    assert get_ticket(client, pair, before["id"])["sprint_id"] is None
 
     client.post(f"/sprints/{sprint['id']}/start", headers=pair["headers"])
-    after = create_issue(client, pair, pair["team"]["id"], priority="urgent")
-    assert get_issue(client, pair, after["id"])["sprint_id"] == sprint["id"]
+    after = create_ticket(client, pair, pair["team"]["id"], priority="urgent")
+    assert get_ticket(client, pair, after["id"])["sprint_id"] == sprint["id"]
 
 
 def test_rules_run_in_the_order_they_were_written(client, pair):
     create_rule(client, pair, pair["team"]["id"], name="First", set_priority="low")
     create_rule(client, pair, pair["team"]["id"], name="Second", set_priority="urgent")
-    issue = create_issue(client, pair, pair["team"]["id"])
-    assert get_issue(client, pair, issue["id"])["priority"] == "urgent"
+    ticket = create_ticket(client, pair, pair["team"]["id"])
+    assert get_ticket(client, pair, ticket["id"])["priority"] == "urgent"
 
 
 def test_a_project_condition_narrows_to_that_project(client, pair):
@@ -557,10 +559,10 @@ def test_a_project_condition_narrows_to_that_project(client, pair):
         set_priority="urgent",
     )
 
-    elsewhere = create_issue(client, pair, pair["team"]["id"])
-    inside = create_issue(client, pair, pair["team"]["id"], project_id=platform["id"])
-    assert get_issue(client, pair, elsewhere["id"])["priority"] == "no_priority"
-    assert get_issue(client, pair, inside["id"])["priority"] == "urgent"
+    elsewhere = create_ticket(client, pair, pair["team"]["id"])
+    inside = create_ticket(client, pair, pair["team"]["id"], project_id=platform["id"])
+    assert get_ticket(client, pair, elsewhere["id"])["priority"] == "no_priority"
+    assert get_ticket(client, pair, inside["id"])["priority"] == "urgent"
 
 
 def test_an_assignee_condition_narrows_to_that_person(client, pair):
@@ -571,17 +573,17 @@ def test_an_assignee_condition_narrows_to_that_person(client, pair):
         conditions={"if_assignee_id": pair["member"]["user"]["id"]},
         set_priority="urgent",
     )
-    mine = create_issue(
+    mine = create_ticket(
         client, pair, pair["team"]["id"], assignee_id=pair["user"]["id"]
     )
-    theirs = create_issue(
+    theirs = create_ticket(
         client, pair, pair["team"]["id"], assignee_id=pair["member"]["user"]["id"]
     )
-    assert get_issue(client, pair, mine["id"])["priority"] == "no_priority"
-    assert get_issue(client, pair, theirs["id"])["priority"] == "urgent"
+    assert get_ticket(client, pair, mine["id"])["priority"] == "no_priority"
+    assert get_ticket(client, pair, theirs["id"])["priority"] == "urgent"
 
 
-def test_a_named_sprint_action_moves_the_issue_into_it(client, pair):
+def test_a_named_sprint_action_moves_the_ticket_into_it(client, pair):
     """The other half of the sprint action -- `move_to_active_sprint` is above."""
     sprint = client.post(
         f"/teams/{pair['team']['id']}/sprints",
@@ -594,8 +596,8 @@ def test_a_named_sprint_action_moves_the_issue_into_it(client, pair):
     ).json()
     create_rule(client, pair, pair["team"]["id"], set_sprint_id=sprint["id"])
 
-    issue = create_issue(client, pair, pair["team"]["id"])
-    assert get_issue(client, pair, issue["id"])["sprint_id"] == sprint["id"]
+    ticket = create_ticket(client, pair, pair["team"]["id"])
+    assert get_ticket(client, pair, ticket["id"])["sprint_id"] == sprint["id"]
     assert (
         "Moved to Sprint 1"
         in runs(client, pair, pair["team"]["id"])["items"][0]["summary"]
@@ -609,12 +611,12 @@ def test_the_log_is_capped_so_it_cannot_grow_without_bound(client, pair, monkeyp
     create_rule(client, pair, pair["team"]["id"], set_priority="urgent")
 
     for _ in range(5):
-        create_issue(client, pair, pair["team"]["id"])
+        create_ticket(client, pair, pair["team"]["id"])
 
     log = runs(client, pair, pair["team"]["id"])
     assert log["total"] == 3
     # The three kept are the most recent, not the first three.
-    identifiers = [entry["issue_identifier"] for entry in log["items"]]
+    identifiers = [entry["ticket_identifier"] for entry in log["items"]]
     assert identifiers == ["ENG-5", "ENG-4", "ENG-3"]
 
 
@@ -624,8 +626,8 @@ def test_the_log_is_capped_so_it_cannot_grow_without_bound(client, pair, monkeyp
 def test_a_rules_own_change_does_not_fire_another_rule(client, pair):
     """The whole safety story: one event is one pass over the rules.
 
-    Without it these two rules push the issue back and forth until the request
-    dies, and a team finds out by watching an issue's history fill up.
+    Without it these two rules push the ticket back and forth until the request
+    dies, and a team finds out by watching a ticket's history fill up.
     """
     todo = pair["status_ids"]["Todo"]
     done = pair["status_ids"]["Done"]
@@ -648,24 +650,24 @@ def test_a_rules_own_change_does_not_fire_another_rule(client, pair):
         set_status_id=todo,
     )
 
-    issue = create_issue(
+    ticket = create_ticket(
         client, pair, pair["team"]["id"], status_id=pair["status_ids"]["Backlog"]
     )
     response = client.patch(
-        f"/issues/{issue['id']}", json={"status_id": todo}, headers=pair["headers"]
+        f"/tickets/{ticket['id']}", json={"status_id": todo}, headers=pair["headers"]
     )
     assert response.status_code == 200
 
     # One pass: "To done" moved it, and "Back to todo" was not reconsidered.
-    assert get_issue(client, pair, issue["id"])["status"]["id"] == done
+    assert get_ticket(client, pair, ticket["id"])["status"]["id"] == done
     assert runs(client, pair, pair["team"]["id"])["total"] == 1
 
 
 def test_one_trigger_does_not_set_off_another(client, pair):
     """The same guarantee across triggers, not only within one.
 
-    An `issue_created` rule that assigns the issue must not go on to fire the
-    `issue_assigned` rules -- that is the one door a "rules never fire rules"
+    An `ticket_created` rule that assigns the ticket must not go on to fire the
+    `ticket_assigned` rules -- that is the one door a "rules never fire rules"
     engine would otherwise leave open, and it is not obvious from either hook
     on its own.
     """
@@ -674,7 +676,7 @@ def test_one_trigger_does_not_set_off_another(client, pair):
         pair,
         pair["team"]["id"],
         name="Auto-assign",
-        trigger="issue_created",
+        trigger="ticket_created",
         set_assignee_id=pair["member"]["user"]["id"],
     )
     create_rule(
@@ -682,17 +684,17 @@ def test_one_trigger_does_not_set_off_another(client, pair):
         pair,
         pair["team"]["id"],
         name="On assignment",
-        trigger="issue_assigned",
+        trigger="ticket_assigned",
         set_priority="urgent",
     )
 
-    issue = create_issue(client, pair, pair["team"]["id"])
+    ticket = create_ticket(client, pair, pair["team"]["id"])
     assert (
-        get_issue(client, pair, issue["id"])["assignee"]["id"]
+        get_ticket(client, pair, ticket["id"])["assignee"]["id"]
         == pair["member"]["user"]["id"]
     )
     # Assigned by a rule, so the assignment rules were not reconsidered.
-    assert get_issue(client, pair, issue["id"])["priority"] == "no_priority"
+    assert get_ticket(client, pair, ticket["id"])["priority"] == "no_priority"
 
     log = runs(client, pair, pair["team"]["id"])
     assert [entry["rule_name"] for entry in log["items"]] == ["Auto-assign"]
@@ -713,21 +715,21 @@ def test_a_status_rule_that_assigns_does_not_fire_the_assignment_rules(client, p
         pair,
         pair["team"]["id"],
         name="On assignment",
-        trigger="issue_assigned",
+        trigger="ticket_assigned",
         set_priority="urgent",
     )
 
-    issue = create_issue(client, pair, pair["team"]["id"])
+    ticket = create_ticket(client, pair, pair["team"]["id"])
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"status_id": pair["status_ids"]["Done"]},
         headers=pair["headers"],
     )
 
-    assert get_issue(client, pair, issue["id"])["priority"] == "no_priority"
+    assert get_ticket(client, pair, ticket["id"])["priority"] == "no_priority"
 
 
-def test_filing_an_issue_already_assigned_fires_both(client, pair):
+def test_filing_a_ticket_already_assigned_fires_both(client, pair):
     """The other side of it: two things really did happen, and a team with a
     rule about each means both."""
     create_rule(
@@ -735,7 +737,7 @@ def test_filing_an_issue_already_assigned_fires_both(client, pair):
         pair,
         pair["team"]["id"],
         name="On creation",
-        trigger="issue_created",
+        trigger="ticket_created",
         set_status_id=pair["status_ids"]["Todo"],
     )
     create_rule(
@@ -743,14 +745,14 @@ def test_filing_an_issue_already_assigned_fires_both(client, pair):
         pair,
         pair["team"]["id"],
         name="On assignment",
-        trigger="issue_assigned",
+        trigger="ticket_assigned",
         set_priority="urgent",
     )
 
-    issue = create_issue(
+    ticket = create_ticket(
         client, pair, pair["team"]["id"], assignee_id=pair["member"]["user"]["id"]
     )
-    read = get_issue(client, pair, issue["id"])
+    read = get_ticket(client, pair, ticket["id"])
     assert read["status"]["id"] == pair["status_ids"]["Todo"]
     assert read["priority"] == "urgent"
 
@@ -763,14 +765,14 @@ def test_an_automated_comment_does_not_fire_the_comment_trigger(client, pair):
         trigger="comment_added",
         comment_body="Thanks!",
     )
-    issue = create_issue(client, pair, pair["team"]["id"])
+    ticket = create_ticket(client, pair, pair["team"]["id"])
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "Any update?"},
         headers=pair["headers"],
     )
     # The person's comment, and exactly one from the rule.
-    assert len(comments(client, pair, issue["id"])) == 2
+    assert len(comments(client, pair, ticket["id"])) == 2
 
 
 # --- the run log -----------------------------------------------------------
@@ -785,14 +787,14 @@ def test_the_log_says_what_changed_and_who_set_it_off(client, pair):
         set_priority="urgent",
         set_status_id=pair["status_ids"]["Todo"],
     )
-    issue = create_issue(client, pair, pair["team"]["id"])
+    ticket = create_ticket(client, pair, pair["team"]["id"])
 
     log = runs(client, pair, pair["team"]["id"])
     assert log["total"] == 1
     entry = log["items"][0]
     assert entry["rule_name"] == "Triage"
-    assert entry["trigger"] == "issue_created"
-    assert entry["issue_identifier"] == issue["identifier"]
+    assert entry["trigger"] == "ticket_created"
+    assert entry["ticket_identifier"] == ticket["identifier"]
     assert entry["actor"]["id"] == pair["user"]["id"]
     assert "Set priority to urgent" in entry["summary"]
     assert "Set status to Todo" in entry["summary"]
@@ -802,7 +804,7 @@ def test_a_rule_that_had_nothing_left_to_do_writes_no_row(client, pair):
     """A log row saying "set the priority to the one it already had" is the
     log lying on the one occasion somebody reads it closely."""
     create_rule(client, pair, pair["team"]["id"], set_priority="urgent")
-    create_issue(client, pair, pair["team"]["id"], priority="urgent")
+    create_ticket(client, pair, pair["team"]["id"], priority="urgent")
     assert runs(client, pair, pair["team"]["id"])["total"] == 0
 
 
@@ -812,7 +814,7 @@ def test_the_log_outlives_the_rule(client, pair):
     rule = create_rule(
         client, pair, pair["team"]["id"], name="Surprising", set_priority="urgent"
     )
-    create_issue(client, pair, pair["team"]["id"])
+    create_ticket(client, pair, pair["team"]["id"])
 
     response = client.delete(f"/automation-rules/{rule['id']}", headers=pair["headers"])
     assert response.status_code == 204
@@ -823,32 +825,32 @@ def test_the_log_outlives_the_rule(client, pair):
     assert log["items"][0]["rule_name"] == "Surprising"
 
 
-def test_the_log_can_be_narrowed_to_one_issue(client, pair):
+def test_the_log_can_be_narrowed_to_one_ticket(client, pair):
     create_rule(client, pair, pair["team"]["id"], set_priority="urgent")
-    first = create_issue(client, pair, pair["team"]["id"])
-    create_issue(client, pair, pair["team"]["id"])
+    first = create_ticket(client, pair, pair["team"]["id"])
+    create_ticket(client, pair, pair["team"]["id"])
 
     assert runs(client, pair, pair["team"]["id"])["total"] == 2
-    assert runs(client, pair, pair["team"]["id"], issue_id=first["id"])["total"] == 1
+    assert runs(client, pair, pair["team"]["id"], ticket_id=first["id"])["total"] == 1
 
 
-def test_deleting_an_issue_takes_its_log_rows_with_it(client, pair):
-    """They hold a foreign key to it, and a row about an issue that no longer
+def test_deleting_a_ticket_takes_its_log_rows_with_it(client, pair):
+    """They hold a foreign key to it, and a row about a ticket that no longer
     exists is a link to a 404."""
     create_rule(client, pair, pair["team"]["id"], set_priority="urgent")
-    issue = create_issue(client, pair, pair["team"]["id"])
+    ticket = create_ticket(client, pair, pair["team"]["id"])
     assert runs(client, pair, pair["team"]["id"])["total"] == 1
 
-    response = client.delete(f"/issues/{issue['id']}", headers=pair["headers"])
+    response = client.delete(f"/tickets/{ticket['id']}", headers=pair["headers"])
     assert response.status_code == 204
     assert runs(client, pair, pair["team"]["id"])["total"] == 0
 
 
 def test_a_member_can_read_the_log(client, pair):
-    """It answers "why did my issue move", and the person asking is the one it
+    """It answers "why did my ticket move", and the person asking is the one it
     moved out from under."""
     create_rule(client, pair, pair["team"]["id"], set_priority="urgent")
-    create_issue(client, pair, pair["team"]["id"])
+    create_ticket(client, pair, pair["team"]["id"])
     assert runs(client, pair["member"], pair["team"]["id"])["total"] == 1
 
 
@@ -866,16 +868,16 @@ def test_an_automated_change_is_recorded_with_no_actor(client, pair, session):
         client,
         pair,
         pair["team"]["id"],
-        trigger="issue_created",
+        trigger="ticket_created",
         set_status_id=pair["status_ids"]["Done"],
     )
-    issue = create_issue(
+    ticket = create_ticket(
         client, pair, pair["team"]["id"], status_id=pair["status_ids"]["Backlog"]
     )
 
     events = sorted(
         session.exec(
-            select(IssueEvent).where(IssueEvent.issue_id == issue["id"])
+            select(TicketEvent).where(TicketEvent.ticket_id == ticket["id"])
         ).all(),
         key=lambda row: row.id,
     )
@@ -895,9 +897,9 @@ def test_an_automated_assignment_still_tells_the_assignee(client, pair):
         trigger="comment_added",
         set_assignee_id=pair["member"]["user"]["id"],
     )
-    issue = create_issue(client, pair, pair["team"]["id"])
+    ticket = create_ticket(client, pair, pair["team"]["id"])
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "Over to you"},
         headers=pair["headers"],
     )
@@ -913,8 +915,8 @@ def test_an_automated_assignment_still_tells_the_assignee(client, pair):
 # --- keeping rules honest when what they name goes away --------------------
 
 
-def test_deleting_a_status_sends_the_rules_after_the_issues(client, pair):
-    """Clearing the condition instead would widen the rule to every issue on
+def test_deleting_a_status_sends_the_rules_after_the_tickets(client, pair):
+    """Clearing the condition instead would widen the rule to every ticket on
     the team, which is the opposite of what the team asked for."""
     qa = client.post(
         f"/teams/{pair['team']['id']}/statuses",

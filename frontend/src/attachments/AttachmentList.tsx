@@ -8,7 +8,7 @@ import { useTranslation } from '@/i18n'
 import { Icon } from '@/ui/Icon'
 
 /**
- * The files on an issue or a comment.
+ * The files on a ticket or a comment.
  *
  * Images get a thumbnail because "was it the login screen or the settings
  * one" is answered by looking rather than by reading a filename. Everything

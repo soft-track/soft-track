@@ -1,34 +1,34 @@
 import { useQueryClient } from '@tanstack/react-query'
 
 import {
-  getGetWatchStateIssuesIssueIdWatchGetQueryKey,
-  useGetWatchStateIssuesIssueIdWatchGet,
-  useSetWatchStateIssuesIssueIdWatchPut,
+  getGetWatchStateTicketsTicketIdWatchGetQueryKey,
+  useGetWatchStateTicketsTicketIdWatchGet,
+  useSetWatchStateTicketsTicketIdWatchPut,
 } from '@/api/generated/endpoints/notifications/notifications'
 import { useTranslation } from '@/i18n'
 import { Icon } from '@/ui/Icon'
 
 /**
- * Follow or mute one issue.
+ * Follow or mute one ticket.
  *
- * Filing an issue, commenting on it or being assigned it already turns this
- * on, so for most issues the button is showing a state somebody else's
+ * Filing a ticket, commenting on it or being assigned it already turns this
+ * on, so for most tickets the button is showing a state somebody else's
  * actions put it in -- which is why it says what it will do next rather than
  * only what it currently is.
  */
-export function WatchToggle({ issueId }: { issueId: number }) {
+export function WatchToggle({ ticketId }: { ticketId: number }) {
   const { t } = useTranslation('notifications')
   const queryClient = useQueryClient()
-  const watchQuery = useGetWatchStateIssuesIssueIdWatchGet(issueId)
-  const setWatch = useSetWatchStateIssuesIssueIdWatchPut()
+  const watchQuery = useGetWatchStateTicketsTicketIdWatchGet(ticketId)
+  const setWatch = useSetWatchStateTicketsTicketIdWatchPut()
 
   const watching = watchQuery.data?.watching ?? false
   const label = watching ? t('watch.watching') : t('watch.watch')
 
   const toggle = async () => {
-    await setWatch.mutateAsync({ issueId, data: { watching: !watching } })
+    await setWatch.mutateAsync({ ticketId, data: { watching: !watching } })
     queryClient.invalidateQueries({
-      queryKey: getGetWatchStateIssuesIssueIdWatchGetQueryKey(issueId),
+      queryKey: getGetWatchStateTicketsTicketIdWatchGetQueryKey(ticketId),
     })
   }
 

@@ -8,14 +8,14 @@ import type { Command } from '@/keyboard/CommandPalette'
 export const BOARD_VIEWS = ['board', 'list', 'calendar', 'roadmap', 'reports'] as const
 export type BoardView = (typeof BOARD_VIEWS)[number]
 
-/** What the command palette can do from the board, beyond jumping to issues. */
+/** What the command palette can do from the board, beyond jumping to tickets. */
 export function useCommands({
   view,
   setView,
   team,
   teams,
   user,
-  openNewIssue,
+  openNewTicket,
   openNewProject,
   openShortcuts,
 }: {
@@ -25,7 +25,7 @@ export function useCommands({
   teams: TeamRead[]
   user: UserMe | null
   /** Absent for a guest (#104), who has nothing to create. */
-  openNewIssue?: () => void
+  openNewTicket?: () => void
   /** Absent for a guest, the same way. */
   openNewProject?: () => void
   openShortcuts: () => void
@@ -37,14 +37,14 @@ export function useCommands({
     const actions = t('commands.groups.actions')
     const account = t('commands.groups.account')
     const list: Command[] = [
-      ...(openNewIssue
+      ...(openNewTicket
         ? [
             {
-              id: 'new-issue',
-              label: t('commands.newIssue'),
+              id: 'new-ticket',
+              label: t('commands.newTicket'),
               hint: 'C',
               group: actions,
-              run: openNewIssue,
+              run: openNewTicket,
             },
           ]
         : []),
@@ -116,7 +116,7 @@ export function useCommands({
     team,
     user?.is_site_admin,
     navigate,
-    openNewIssue,
+    openNewTicket,
     openNewProject,
     openShortcuts,
     t,

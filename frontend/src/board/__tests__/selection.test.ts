@@ -13,7 +13,7 @@ const run = (state: Selection, ...actions: Parameters<typeof selectionReducer>[1
   actions.reduce(selectionReducer, state)
 
 describe('selectionReducer', () => {
-  it('toggles an issue in and out, moving the anchor each time', () => {
+  it('toggles a ticket in and out, moving the anchor each time', () => {
     const once = run(EMPTY_SELECTION, { type: 'toggle', id: 20 })
     expect(once).toEqual({ ids: [20], anchor: 20 })
     expect(run(once, { type: 'toggle', id: 20 })).toEqual({ ids: [], anchor: 20 })
@@ -44,14 +44,14 @@ describe('selectionReducer', () => {
     expect(state.anchor).toBe(30)
   })
 
-  it('treats a shift-click with no anchor as picking that one issue', () => {
+  it('treats a shift-click with no anchor as picking that one ticket', () => {
     expect(run(EMPTY_SELECTION, { type: 'range', id: 30, order })).toEqual({
       ids: [30],
       anchor: 30,
     })
   })
 
-  it('drops issues that left the view, and the anchor with them', () => {
+  it('drops tickets that left the view, and the anchor with them', () => {
     const state = run(
       EMPTY_SELECTION,
       { type: 'toggle', id: 10 },
@@ -77,7 +77,7 @@ describe('selectionGesture', () => {
     expect(selectionGesture({ ...click, ctrlKey: true })).toBe('toggle')
   })
 
-  it('leaves a plain click alone, so it still opens the issue', () => {
+  it('leaves a plain click alone, so it still opens the ticket', () => {
     expect(selectionGesture(click)).toBeNull()
   })
 })

@@ -4,7 +4,7 @@
  * The point of this file is the routing decision: an attachment URL must go
  * through the authenticated loader, and anything else must not. Getting that
  * backwards either shows a permanently broken image or sends the user's
- * session to whatever host an issue description names.
+ * session to whatever host a ticket description names.
  */
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'

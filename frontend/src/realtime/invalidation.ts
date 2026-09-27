@@ -16,21 +16,21 @@ export function invalidationFor(
 ): ((query: Query) => boolean) | 'all' | null {
   const path = (query: Query) => String(query.queryKey[0] ?? '')
   const team = `/teams/${teamId}`
-  const issue = (id: unknown) => {
-    const root = `/issues/${Number(id)}`
+  const ticket = (id: unknown) => {
+    const root = `/tickets/${Number(id)}`
     return (p: string) => p === root || p.startsWith(`${root}/`)
   }
 
   switch (event.event) {
-    case 'issue_changed': {
+    case 'ticket_changed': {
       const id = parse(event.data)?.id
-      const thisIssue = issue(id)
+      const thisTicket = ticket(id)
       return (query) => {
         const p = path(query)
         return (
-          thisIssue(p) ||
+          thisTicket(p) ||
           // The board and list, and what is counted from them.
-          p.startsWith(`${team}/issues`) ||
+          p.startsWith(`${team}/tickets`) ||
           p === `${team}/estimates` ||
           p === `${team}/sprints` ||
           p === `${team}/projects` ||
@@ -39,8 +39,8 @@ export function invalidationFor(
       }
     }
     case 'comment_added': {
-      const id = parse(event.data)?.issue_id
-      const root = `/issues/${Number(id)}`
+      const id = parse(event.data)?.ticket_id
+      const root = `/tickets/${Number(id)}`
       return (query) =>
         [`${root}/comments`, `${root}/events`, `${root}/attachments`].includes(path(query))
     }

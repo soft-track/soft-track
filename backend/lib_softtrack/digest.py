@@ -7,7 +7,7 @@ adds a nudge for the ones nobody has read yet.
 Batched rather than one mail per event, which is the difference between a
 useful notification and a filter rule. A notification has to sit unread for
 `digest_delay_minutes` before it is eligible, so somebody triaging a dozen
-issues in one sitting produces one email rather than twelve, and anybody
+tickets in one sitting produces one email rather than twelve, and anybody
 already reading the inbox gets no email at all.
 """
 
@@ -34,12 +34,12 @@ MAX_LINES = 20
 def _sentence(item: NotificationRead) -> str:
     who = item.actor.full_name if item.actor else "Someone"
     if item.kind == NotificationKind.assigned:
-        return f"{who} assigned {item.issue.identifier} to you"
+        return f"{who} assigned {item.ticket.identifier} to you"
     if item.kind == NotificationKind.mentioned:
-        return f"{who} mentioned you on {item.issue.identifier}"
+        return f"{who} mentioned you on {item.ticket.identifier}"
     if item.kind == NotificationKind.commented:
-        return f"{who} commented on {item.issue.identifier}"
-    return f"{who} changed the status of {item.issue.identifier}"
+        return f"{who} commented on {item.ticket.identifier}"
+    return f"{who} changed the status of {item.ticket.identifier}"
 
 
 def render_digest(items: list[NotificationRead], base_url: str) -> tuple[str, str]:
@@ -59,10 +59,10 @@ def render_digest(items: list[NotificationRead], base_url: str) -> tuple[str, st
     lines: list[str] = []
     for item in items[:MAX_LINES]:
         lines.append(f"* {_sentence(item)}")
-        lines.append(f"  {item.issue.title}")
+        lines.append(f"  {item.ticket.title}")
         if item.excerpt:
             lines.append(f"  “{item.excerpt}”")
-        lines.append(f"  {base}/{item.issue.team_key}/issue/{item.issue.number}")
+        lines.append(f"  {base}/{item.ticket.team_key}/ticket/{item.ticket.number}")
         lines.append("")
 
     if count > MAX_LINES:

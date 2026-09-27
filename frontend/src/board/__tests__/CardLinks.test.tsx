@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 /**
- * A card on the board and a row in the list are links to their issue (#112).
+ * A card on the board and a row in the list are links to their ticket (#112).
  *
- * A plain click is the app's: the issue in the panel, over the board. The rest
+ * A plain click is the app's: the ticket in the panel, over the board. The rest
  * of what a link does -- a middle click, "Open in new tab", a modified click
- * with nothing to select -- is left to the browser, which opens the issue's
+ * with nothing to select -- is left to the browser, which opens the ticket's
  * page. And a card carried across the board does not follow its link when it
  * is put down.
  *
@@ -15,10 +15,10 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { IssueRead, StatusRead, TeamMemberRead } from '@/api/generated/models'
-import { IssueListView } from '@/board/IssueListView'
+import type { TicketRead, StatusRead, TeamMemberRead } from '@/api/generated/models'
+import { TicketListView } from '@/board/TicketListView'
 import { KanbanBoard } from '@/board/KanbanBoard'
-import { surfaceFor } from '@/issues/surface'
+import { surfaceFor } from '@/tickets/surface'
 import { TeamProvider } from '@/team/TeamContext'
 import type { TeamContextValue } from '@/team/useTeamContext'
 
@@ -44,7 +44,7 @@ const TEAM: TeamContextValue = {
   statuses: [TODO, DOING],
 }
 
-// Reads every issue, moves and selects none (#104).
+// Reads every ticket, moves and selects none (#104).
 const GUEST: TeamContextValue = {
   ...TEAM,
   members: [
@@ -52,7 +52,7 @@ const GUEST: TeamContextValue = {
   ],
 }
 
-const ISSUE = {
+const TICKET = {
   id: 42,
   team_id: 7,
   team_key: 'ENG',
@@ -69,7 +69,7 @@ const ISSUE = {
   labels: [],
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
-} as unknown as IssueRead
+} as unknown as TicketRead
 
 function box(left: number, top: number, width: number, height: number) {
   return { left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON() {} } as DOMRect
@@ -97,7 +97,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-/** Where opening the issue went, and as which surface. */
+/** Where opening the ticket went, and as which surface. */
 function Where() {
   const location = useLocation()
   return (
@@ -119,13 +119,13 @@ function renderView(view: 'board' | 'list', { guest = false } = {}) {
             path="/ENG"
             element={
               view === 'board' ? (
-                <KanbanBoard issues={[ISSUE]} onStatusChange={onStatusChange} onSelect={onSelect} />
+                <KanbanBoard tickets={[TICKET]} onStatusChange={onStatusChange} onSelect={onSelect} />
               ) : (
-                <IssueListView issues={[ISSUE]} onSelect={onSelect} />
+                <TicketListView tickets={[TICKET]} onSelect={onSelect} />
               )
             }
           />
-          <Route path="/ENG/issue/:n" element={<Where />} />
+          <Route path="/ENG/ticket/:n" element={<Where />} />
         </Routes>
       </MemoryRouter>
     </TeamProvider>,
@@ -155,17 +155,17 @@ function renderView(view: 'board' | 'list', { guest = false } = {}) {
 const where = () => screen.queryByTestId('where')
 
 describe('a card on the board', () => {
-  it('is a link to its issue, which a middle click opens in a new tab', () => {
+  it('is a link to its ticket, which a middle click opens in a new tab', () => {
     renderView('board')
     const card = screen.getByRole('link', { name: /ENG-42/ })
-    expect(card.getAttribute('href')).toBe('/ENG/issue/42')
+    expect(card.getAttribute('href')).toBe('/ENG/ticket/42')
     expect(card.getAttribute('data-card')).toBe('42')
   })
 
   it('opens the panel on a plain click, rather than following the link', () => {
     const { follows } = renderView('board')
     expect(follows(screen.getByRole('link', { name: /ENG-42/ }))).toBe(false)
-    expect(where()?.textContent).toBe('/ENG/issue/42')
+    expect(where()?.textContent).toBe('/ENG/ticket/42')
     expect(where()?.dataset.surface).toBe('panel')
   })
 
@@ -213,10 +213,10 @@ describe('a card carried across the board', () => {
 })
 
 describe('a row in the list', () => {
-  it('is a link to its issue, and opens the panel on a plain click', () => {
+  it('is a link to its ticket, and opens the panel on a plain click', () => {
     const { follows } = renderView('list')
     const row = screen.getByRole('link', { name: /ENG-42/ })
-    expect(row.getAttribute('href')).toBe('/ENG/issue/42')
+    expect(row.getAttribute('href')).toBe('/ENG/ticket/42')
 
     expect(follows(row)).toBe(false)
     expect(where()?.dataset.surface).toBe('panel')

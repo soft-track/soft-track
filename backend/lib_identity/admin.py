@@ -3,7 +3,7 @@
 Instance-wide, and deliberately narrow. It can list accounts, turn them off
 and back on, hand out its own privilege, and set a password for someone locked
 out -- the four things a self-hosted install needs from somebody when there is
-no support desk to call. It cannot delete a user: issues, comments and history
+no support desk to call. It cannot delete a user: tickets, comments and history
 all point at the row, so removing it would either take that work with it or
 leave the tracker unable to say who did what. Deactivation is the delete.
 """

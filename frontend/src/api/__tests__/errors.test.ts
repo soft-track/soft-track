@@ -36,7 +36,7 @@ describe('errorDetail', () => {
 
 describe('errorCode', () => {
   it('reads the code, and only a string one', () => {
-    expect(errorCode(failed({ code: 'issue_not_found' }))).toBe('issue_not_found')
+    expect(errorCode(failed({ code: 'ticket_not_found' }))).toBe('ticket_not_found')
     expect(errorCode(failed({ code: 42 }))).toBeNull()
     expect(errorCode(undefined)).toBeNull()
   })
@@ -48,8 +48,8 @@ describe('errorCode', () => {
     expect(errorDetail(err, 'fallback')).toBe('Sprint not found')
   })
 
-  it('says ticket and epic where the API says issue and project (#211)', () => {
-    const err = failed({ code: 'issue_not_found', detail: 'Issue not found' })
+  it('says ticket and epic where the API says ticket and project (#211)', () => {
+    const err = failed({ code: 'ticket_not_found', detail: 'Ticket not found' })
     expect(errorDetail(err, 'fallback')).toMatch(/^That ticket could not be found/)
     expect(errorMessage('project_not_found')).toMatch(/^That epic could not be found/)
   })

@@ -4,7 +4,7 @@ import { formatNumber } from '@/i18n/format'
 
 /**
  * The shape the API hands back in `AttachmentRead.url` and the shape that ends
- * up written into issue descriptions and comment bodies.
+ * up written into ticket descriptions and comment bodies.
  *
  * Matching on it is how the markdown renderer tells "this image is ours, fetch
  * it with the user's token" from "this image is somewhere on the internet".
@@ -24,7 +24,7 @@ export function isAttachmentUrl(url: string | undefined): url is string {
  *
  * The cache is keyed on the API path and never evicted. That is deliberate:
  * revoking a URL breaks every `<img>` still pointing at it, and the same
- * screenshot is rendered again every time its issue is reopened. The cost is
+ * screenshot is rendered again every time its ticket is reopened. The cost is
  * bounded by the number of distinct attachments viewed before a reload.
  */
 const objectUrls = new Map<string, Promise<string>>()

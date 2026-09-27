@@ -10,7 +10,7 @@ class BurndownPoint(BaseModel):
     day: date
     #: Points still outstanding at the end of this day.
     points_remaining: int
-    issues_remaining: int
+    tickets_remaining: int
     #: Points completed so far -- the burnup line, from the same data.
     points_completed: int
     #: Total points in the sprint on this day. It moves when scope changes,
@@ -25,17 +25,17 @@ class ProjectBurnupPoint(BaseModel):
     """What one project -- an epic -- held at the end of one day (#64)."""
 
     day: date
-    #: Issues in the project that day, cancelled ones left out -- the same
+    #: Tickets in the project that day, cancelled ones left out -- the same
     #: rule progress follows (#13): cancelled work was neither done nor owed.
-    scope_issues: int
-    completed_issues: int
-    #: Points across the sized issues only. An unsized issue is not zero,
+    scope_tickets: int
+    completed_tickets: int
+    #: Points across the sized tickets only. An unsized ticket is not zero,
     #: so it is counted below instead of being summed in as one.
     scope_points: int
     completed_points: int
     #: In scope that day with no estimate. Non-zero means `scope_points` is a
     #: floor, not the size of the epic.
-    unestimated_issues: int
+    unestimated_tickets: int
 
 
 class ProjectBurnup(BaseModel):
@@ -51,8 +51,8 @@ class ProjectBurnup(BaseModel):
 
 class ScopeChange(BaseModel):
     day: date
-    issues_added: int
-    issues_removed: int
+    tickets_added: int
+    tickets_removed: int
     points_added: int
     points_removed: int
 
@@ -73,7 +73,7 @@ class VelocitySprint(BaseModel):
     completed_at: Optional[date] = None
     points_committed: int
     points_completed: int
-    issues_completed: int
+    tickets_completed: int
 
 
 class Velocity(BaseModel):
@@ -88,7 +88,7 @@ class FlowPoint(BaseModel):
     #: Keyed by category, not by status. A chart of the past has to keep
     #: meaning something after a team renames, merges or deletes a
     #: column, and the five categories are the only vocabulary that
-    #: survives that. See IssueEvent in tables.py.
+    #: survives that. See TicketEvent in tables.py.
     counts: dict[StatusCategory, int]
 
 

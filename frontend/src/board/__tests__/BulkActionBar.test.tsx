@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Selecting issues in the list and acting on them from the bulk bar.
+ * Selecting tickets in the list and acting on them from the bulk bar.
  *
  * The harness wires the list, the selection reducer, `useBulkEdit` and the
  * bar together the way BoardPage does, so a test clicks rows and picks from
@@ -14,9 +14,9 @@ import { useReducer } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { IssueRead, StatusRead, TeamMemberRead } from '@/api/generated/models'
+import type { TicketRead, StatusRead, TeamMemberRead } from '@/api/generated/models'
 import { BulkActionBar } from '@/board/BulkActionBar'
-import { IssueListView } from '@/board/IssueListView'
+import { TicketListView } from '@/board/TicketListView'
 import { EMPTY_SELECTION, selectionReducer } from '@/board/selection'
 import { useBulkEdit } from '@/board/useBulkEdit'
 import { TeamProvider } from '@/team/TeamContext'
@@ -27,10 +27,10 @@ const { update, remove } = vi.hoisted(() => ({
   remove: { mutateAsync: vi.fn(), isPending: false },
 }))
 
-vi.mock('@/api/generated/endpoints/issues/issues', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/api/generated/endpoints/issues/issues')>()),
-  useBulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost: () => update,
-  useBulkDeleteIssuesTeamsTeamIdIssuesBulkDeletePost: () => remove,
+vi.mock('@/api/generated/endpoints/tickets/tickets', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/generated/endpoints/tickets/tickets')>()),
+  useBulkUpdateTicketsTeamsTeamIdTicketsBulkUpdatePost: () => update,
+  useBulkDeleteTicketsTeamsTeamIdTicketsBulkDeletePost: () => remove,
 }))
 
 function status(id: number, name: string): StatusRead {
@@ -64,7 +64,7 @@ const TEAM: TeamContextValue = {
   statuses: [TODO, status(2, 'In Progress')],
 }
 
-function issue(id: number, title: string): IssueRead {
+function ticket(id: number, title: string): TicketRead {
   const user = member(10, 'Ada Lovelace').user
   return {
     id,
@@ -87,15 +87,15 @@ function issue(id: number, title: string): IssueRead {
   }
 }
 
-const ISSUES = [issue(1, 'First'), issue(2, 'Second'), issue(3, 'Third'), issue(4, 'Fourth')]
+const TICKETS = [ticket(1, 'First'), ticket(2, 'Second'), ticket(3, 'Third'), ticket(4, 'Fourth')]
 
 function Board() {
   const [selection, dispatch] = useReducer(selectionReducer, EMPTY_SELECTION)
   const bulk = useBulkEdit(TEAM.team)
   return (
     <>
-      <IssueListView
-        issues={ISSUES}
+      <TicketListView
+        tickets={TICKETS}
         selectedIds={selection.ids}
         onSelect={(id, gesture, order) =>
           dispatch(gesture === 'range' ? { type: 'range', id, order } : { type: 'toggle', id })
@@ -119,7 +119,7 @@ function renderBoard() {
         <MemoryRouter initialEntries={['/ENG']}>
           <Routes>
             <Route path="/ENG" element={<Board />} />
-            <Route path="/ENG/issue/:number" element={<p>Opened an issue</p>} />
+            <Route path="/ENG/ticket/:number" element={<p>Opened a ticket</p>} />
           </Routes>
         </MemoryRouter>
       </TeamProvider>
@@ -147,7 +147,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('selecting issues', () => {
+describe('selecting tickets', () => {
   it('ctrl-click toggles rows in and out of the selection', async () => {
     const user = renderBoard()
     await pick(user, 'First', 'Third')
@@ -168,10 +168,10 @@ describe('selecting issues', () => {
     expect(row('Fourth').hasAttribute('data-selected')).toBe(false)
   })
 
-  it('a plain click still opens the issue', async () => {
+  it('a plain click still opens the ticket', async () => {
     const user = renderBoard()
     await user.click(row('Second'))
-    expect(screen.getByText('Opened an issue')).toBeTruthy()
+    expect(screen.getByText('Opened a ticket')).toBeTruthy()
   })
 
   it('shows no bar until something is selected', () => {
@@ -189,7 +189,7 @@ describe('the bulk bar', () => {
     expect(update.mutateAsync).toHaveBeenCalledTimes(1)
     expect(update.mutateAsync).toHaveBeenCalledWith({
       teamId: 7,
-      data: { issue_ids: [1, 2, 4], changes: { status_id: 2 } },
+      data: { ticket_ids: [1, 2, 4], changes: { status_id: 2 } },
     })
   })
 
@@ -200,7 +200,7 @@ describe('the bulk bar', () => {
 
     expect(update.mutateAsync).toHaveBeenCalledWith({
       teamId: 7,
-      data: { issue_ids: [1], changes: { assignee_id: null } },
+      data: { ticket_ids: [1], changes: { assignee_id: null } },
     })
   })
 
@@ -250,7 +250,7 @@ describe('bulk delete', () => {
     await user.click(within(bar()).getByRole('button', { name: /Delete/ }))
 
     expect(remove.mutateAsync).toHaveBeenCalledTimes(1)
-    expect(remove.mutateAsync).toHaveBeenCalledWith({ teamId: 7, data: { issue_ids: [1, 3] } })
+    expect(remove.mutateAsync).toHaveBeenCalledWith({ teamId: 7, data: { ticket_ids: [1, 3] } })
     await waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull())
   })
 })

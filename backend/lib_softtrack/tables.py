@@ -25,7 +25,7 @@ class StatusCategory(str, enum.Enum):
 
     Fixed on purpose, and the reason per-team statuses are safe to allow at
     all. Everything that has to reason about work -- burndown, velocity, "is
-    this sprint finished", "3 of 5 sub-issues done", whether a blocker still
+    this sprint finished", "3 of 5 sub-tickets done", whether a blocker still
     blocks -- asks the category, never the name. A team can add "Blocked" or
     "QA" without any of that having an opinion about it.
 
@@ -58,10 +58,10 @@ DEFAULT_STATUSES: tuple[tuple[str, "StatusCategory", str], ...] = (
 class ProjectState(str, enum.Enum):
     """Where a project -- which is what SoftTrack calls an epic -- is in its life.
 
-    Set by hand, like SprintState and for the same reason: "every issue is
+    Set by hand, like SprintState and for the same reason: "every ticket is
     done" is evidence a project is finished, not a decision that it is. A
     project can be complete with a stray follow-up still open, or have every
-    issue closed and still be waiting on a launch.
+    ticket closed and still be waiting on a launch.
     """
 
     planned = "planned"
@@ -72,7 +72,7 @@ class ProjectState(str, enum.Enum):
     cancelled = "cancelled"
 
 
-class IssueGrouping(str, enum.Enum):
+class TicketGrouping(str, enum.Enum):
     """What the board's columns, and the list's sections, are made of.
 
     A saved view stores one (#63), so "the planning view" can open grouped by
@@ -84,13 +84,13 @@ class IssueGrouping(str, enum.Enum):
     project = "project"
 
 
-class IssueType(str, enum.Enum):
-    """What kind of work an issue is (#89).
+class TicketType(str, enum.Enum):
+    """What kind of work a ticket is (#89).
 
     A fixed three, deliberately: per-team custom types are how Jira's type
     list grew until nobody could say what a "Sub-task (Technical)" was.
 
-    There is no `epic`. An epic is a Project (#60-#64) -- a grouping of issues
+    There is no `epic`. An epic is a Project (#60-#64) -- a grouping of tickets
     with a lead, a target date and progress -- and making it a type as well
     would give the tracker two competing ways to say "these belong together".
     """
@@ -103,15 +103,15 @@ class IssueType(str, enum.Enum):
     story = "story"
 
 
-class IssueSort(str, enum.Enum):
-    """What the issue list can be ordered by (#88)."""
+class TicketSort(str, enum.Enum):
+    """What the ticket list can be ordered by (#88)."""
 
     #: When it was filed. The default, and what the list always did.
     created = "created"
     updated = "updated"
     #: Urgent first when descending; "no priority" is the lowest of all.
     priority = "priority"
-    #: Largest first when descending. Unsized issues come last either way.
+    #: Largest first when descending. Unsized tickets come last either way.
     estimate = "estimate"
     #: Alphabetical, ignoring case.
     title = "title"
@@ -124,7 +124,7 @@ class SortDirection(str, enum.Enum):
     desc = "desc"
 
 
-class IssuePriority(str, enum.Enum):
+class TicketPriority(str, enum.Enum):
     no_priority = "no_priority"
     urgent = "urgent"
     high = "high"
@@ -132,15 +132,15 @@ class IssuePriority(str, enum.Enum):
     low = "low"
 
 
-class IssueLinkType(str, enum.Enum):
-    """How one issue relates to another.
+class TicketLinkType(str, enum.Enum):
+    """How one ticket relates to another.
 
     Only three are stored. "Blocked by" and "duplicated by" are not types --
     they are the same rows read from the other end, which is what keeps the
-    two issues from ever disagreeing about their relationship.
+    two tickets from ever disagreeing about their relationship.
 
     `relates_to` is symmetric, so it is stored once and shown identically on
-    both issues.
+    both tickets.
     """
 
     blocks = "blocks"
@@ -150,7 +150,7 @@ class IssueLinkType(str, enum.Enum):
 
 #: The types where direction carries meaning, and so where the same pair
 #: cannot be linked both ways round.
-DIRECTED_LINK_TYPES = (IssueLinkType.blocks, IssueLinkType.duplicates)
+DIRECTED_LINK_TYPES = (TicketLinkType.blocks, TicketLinkType.duplicates)
 
 
 class SprintState(str, enum.Enum):
@@ -167,13 +167,13 @@ class SprintState(str, enum.Enum):
     completed = "completed"
 
 
-class IssueEventField(str, enum.Enum):
-    """Which field an IssueEvent records a change to."""
+class TicketEventField(str, enum.Enum):
+    """Which field a TicketEvent records a change to."""
 
     status = "status"
     sprint = "sprint"
     estimate = "estimate"
-    #: Which project -- epic -- the issue is in (#64). What makes "how much
+    #: Which project -- epic -- the ticket is in (#64). What makes "how much
     #: did this epic grow after work started" answerable, and scope added late
     #: is what explains most missed dates.
     project = "project"
@@ -182,7 +182,7 @@ class IssueEventField(str, enum.Enum):
     #: "who gave me this?", "who made it urgent?".
     assignee = "assignee"
     priority = "priority"
-    #: When the issue is due (#87).
+    #: When the ticket is due (#87).
     due_date = "due_date"
     #: Which team it is on, recorded as its key -- `ENG-42` to `OPS-17` (#98).
     #: The key rather than the team id because the key is what changed from
@@ -211,9 +211,9 @@ class TeamRole(str, enum.Enum):
     """What someone may do inside one team.
 
     Ordered from most to least power. `guest` (#104) sees everything a member
-    sees -- board, list, issues, comments, sprints, reports, search -- and
-    changes nothing: no issues, no comments, no settings. The one thing a guest
-    does write is their own relationship to the team: watching an issue,
+    sees -- board, list, tickets, comments, sprints, reports, search -- and
+    changes nothing: no tickets, no comments, no settings. The one thing a guest
+    does write is their own relationship to the team: watching a ticket,
     choosing their own default view, and leaving.
     """
 
@@ -246,7 +246,7 @@ class NotificationKind(str, enum.Enum):
 
     Deliberately about *what happened*, not about how the recipient came to
     care -- "someone commented" reads the same whether you are watching the
-    issue because you filed it or because you were assigned it. Which of
+    ticket because you filed it or because you were assigned it. Which of
     those is true is not information the inbox has any use for.
     """
 
@@ -257,7 +257,7 @@ class NotificationKind(str, enum.Enum):
 
 
 class AutomationTrigger(str, enum.Enum):
-    """What makes an automation rule look at an issue.
+    """What makes an automation rule look at a ticket.
 
     Eight, and not extensible by a team. Every one of them is something
     SoftTrack already writes down as it happens, which is what keeps the
@@ -270,29 +270,29 @@ class AutomationTrigger(str, enum.Enum):
     somebody using the tracker. They are triggers rather than a settings pair
     of their own -- "which status means in review", "which means shipped" --
     because that pair is a second engine for "when X happens, change the
-    issue", and this one already exists, already has conditions, and already
+    ticket", and this one already exists, already has conditions, and already
     writes down what it did.
     """
 
-    issue_created = "issue_created"
-    #: The issue moved to a different column. Conditions are read against the
+    ticket_created = "ticket_created"
+    #: The ticket moved to a different column. Conditions are read against the
     #: status it moved *to* -- see AutomationRule.if_status_id.
     status_changed = "status_changed"
-    #: Somebody was put on it. Not fired by an issue being *un*assigned, which
+    #: Somebody was put on it. Not fired by a ticket being *un*assigned, which
     #: is a different event and leaves nobody to act on.
-    issue_assigned = "issue_assigned"
+    ticket_assigned = "ticket_assigned"
     comment_added = "comment_added"
-    #: Once per issue that was in the sprint, after the unfinished work has
+    #: Once per ticket that was in the sprint, after the unfinished work has
     #: carried over -- see lib_softtrack/sprints.py.
     sprint_completed = "sprint_completed"
 
-    #: A branch naming this issue appeared. Fires the first time the branch is
+    #: A branch naming this ticket appeared. Fires the first time the branch is
     #: seen, not on every push to it.
     branch_created = "branch_created"
-    #: A pull or merge request naming this issue was opened.
+    #: A pull or merge request naming this ticket was opened.
     pull_request_opened = "pull_request_opened"
     #: ...and merged. Closed-without-merging is not this trigger: the work did
-    #: not ship, and a rule moving the issue to Done would be wrong about the
+    #: not ship, and a rule moving the ticket to Done would be wrong about the
     #: one thing it is for.
     pull_request_merged = "pull_request_merged"
 
@@ -317,12 +317,12 @@ class OAuthProvider(str, enum.Enum):
 
 
 class CodeLinkKind(str, enum.Enum):
-    """What kind of thing in a repository is linked to an issue."""
+    """What kind of thing in a repository is linked to a ticket."""
 
     branch = "branch"
     commit = "commit"
     #: A GitHub pull request or a GitLab merge request. One name here because
-    #: they are the same object with two vendors' words for it, and an issue
+    #: they are the same object with two vendors' words for it, and a ticket
     #: page that said "merge requests" to half its readers would be worse than
     #: one that picks a word.
     pull_request = "pull_request"
@@ -353,8 +353,8 @@ class TeamMember(SQLModel, table=True):
     joined_at: datetime = Field(default_factory=utcnow)
 
 
-class IssueLabelLink(SQLModel, table=True):
-    issue_id: int = Field(foreign_key="issue.id", primary_key=True)
+class TicketLabelLink(SQLModel, table=True):
+    ticket_id: int = Field(foreign_key="ticket.id", primary_key=True)
     label_id: int = Field(foreign_key="label.id", primary_key=True)
 
 
@@ -373,7 +373,7 @@ class User(SQLModel, table=True):
     hashed_password: str
     full_name: str
     avatar_color: str = Field(default="#6366f1")
-    #: Deactivated rather than deleted. Issues, comments and history all carry
+    #: Deactivated rather than deleted. Tickets, comments and history all carry
     #: foreign keys to users, so removing the row would either cascade away
     #: someone's work or leave the tracker unable to say who did it.
     is_active: bool = Field(default=True)
@@ -454,11 +454,11 @@ class WebhookEvent(str, enum.Enum):
     way most senders name theirs: `resource.verb`.
     """
 
-    issue_created = "issue.created"
-    #: Any change to an issue's fields. A status change sends this *and*
-    #: `issue.status_changed`, so a consumer can listen to only the latter.
-    issue_updated = "issue.updated"
-    issue_status_changed = "issue.status_changed"
+    ticket_created = "ticket.created"
+    #: Any change to a ticket's fields. A status change sends this *and*
+    #: `ticket.status_changed`, so a consumer can listen to only the latter.
+    ticket_updated = "ticket.updated"
+    ticket_status_changed = "ticket.status_changed"
     comment_created = "comment.created"
     sprint_started = "sprint.started"
     sprint_completed = "sprint.completed"
@@ -606,7 +606,7 @@ class Team(SQLModel, table=True):
     name: str
     key: str = Field(index=True, unique=True, description="Short prefix, e.g. ENG")
     description: Optional[str] = None
-    next_issue_number: int = Field(default=1)
+    next_ticket_number: int = Field(default=1)
     next_sprint_number: int = Field(default=1)
     #: The view everyone on this team lands on, unless they have chosen their
     #: own -- see UserDefaultView. Only a shared view may hold it, since a
@@ -620,11 +620,11 @@ class Team(SQLModel, table=True):
 
 
 class Project(SQLModel, table=True):
-    """A group of issues working towards one outcome. An epic, in Jira terms.
+    """A group of tickets working towards one outcome. An epic, in Jira terms.
 
     The Jira importer maps `Epic Link` here, and there is deliberately no
     separate Epic entity: projects, `parent_id` and sprints already group
-    issues three ways, and a fourth that overlapped them would be sprawl.
+    tickets three ways, and a fourth that overlapped them would be sprawl.
     """
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -638,7 +638,7 @@ class Project(SQLModel, table=True):
     #: shift it across midnight for anybody in another timezone.
     target_date: Optional[date] = None
     state: ProjectState = Field(default=ProjectState.planned)
-    #: Retired from the pickers, not deleted. Issues that already point here
+    #: Retired from the pickers, not deleted. Tickets that already point here
     #: keep pointing here, and the project still reads back by id and in the
     #: team's list, so nothing that references it goes blank.
     archived: bool = Field(default=False)
@@ -652,8 +652,8 @@ class Label(SQLModel, table=True):
     color: str = Field(default="#94a3b8")
 
 
-class Issue(SQLModel, table=True):
-    __table_args__ = (Index("ix_issue_team_number", "team_id", "number", unique=True),)
+class Ticket(SQLModel, table=True):
+    __table_args__ = (Index("ix_ticket_team_number", "team_id", "number", unique=True),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
     team_id: int = Field(foreign_key="team.id", index=True)
@@ -663,22 +663,22 @@ class Issue(SQLModel, table=True):
     number: int
     title: str
     description: Optional[str] = None
-    #: The team's own status row, not a fixed enum. What the issue *means* --
+    #: The team's own status row, not a fixed enum. What the ticket *means* --
     #: started, done -- is the status's category; see StatusCategory.
     status_id: int = Field(foreign_key="workflowstatus.id", index=True)
-    priority: IssuePriority = Field(default=IssuePriority.no_priority)
-    type: IssueType = Field(default=IssueType.task, index=True)
+    priority: TicketPriority = Field(default=TicketPriority.no_priority)
+    type: TicketType = Field(default=TicketType.task, index=True)
     #: Where it sits on the board, as a fractional-indexing key compared by
     #: code point -- see lib_softtrack/ranks.py. Set on creation (top of the
     #: team) and by dragging; nothing else touches it.
     rank: str = Field(default="", index=True)
     assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
-    # One level of nesting only -- an issue with a parent may not itself be a
-    # parent. See lib_softtrack/subissues.py for why that limit is enforced
+    # One level of nesting only -- a ticket with a parent may not itself be a
+    # parent. See lib_softtrack/subtickets.py for why that limit is enforced
     # rather than left to convention.
-    parent_id: Optional[int] = Field(default=None, foreign_key="issue.id", index=True)
+    parent_id: Optional[int] = Field(default=None, foreign_key="ticket.id", index=True)
     sprint_id: Optional[int] = Field(default=None, foreign_key="sprint.id", index=True)
-    #: The identifier this issue had in the system it was imported from, e.g.
+    #: The identifier this ticket had in the system it was imported from, e.g.
     #: a Jira key like "PROJ-142". Kept so links in old documents, commit
     #: messages and chat history stay traceable after a migration -- which is
     #: most of what makes a migration survivable.
@@ -695,8 +695,8 @@ class Issue(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=utcnow)
 
 
-class IssueLink(SQLModel, table=True):
-    """A relationship between two issues, stored once and read from both ends.
+class TicketLink(SQLModel, table=True):
+    """A relationship between two tickets, stored once and read from both ends.
 
     The unique constraint is what enforces "no duplicate links" -- doing it in
     the database rather than only in the service means two simultaneous
@@ -705,13 +705,13 @@ class IssueLink(SQLModel, table=True):
     """
 
     __table_args__ = (
-        UniqueConstraint("source_id", "target_id", "type", name="uq_issue_link"),
+        UniqueConstraint("source_id", "target_id", "type", name="uq_ticket_link"),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    source_id: int = Field(foreign_key="issue.id", index=True)
-    target_id: int = Field(foreign_key="issue.id", index=True)
-    type: IssueLinkType
+    source_id: int = Field(foreign_key="ticket.id", index=True)
+    target_id: int = Field(foreign_key="ticket.id", index=True)
+    type: TicketLinkType
     created_by_id: int = Field(foreign_key="user.id")
     created_at: datetime = Field(default_factory=utcnow)
 
@@ -732,8 +732,8 @@ class Sprint(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow)
 
 
-class IssueEvent(SQLModel, table=True):
-    """One recorded change to an issue field.
+class TicketEvent(SQLModel, table=True):
+    """One recorded change to a ticket field.
 
     This table is why reporting is possible at all. A burndown asks what the
     board looked like on the ninth of the month, and no amount of querying the
@@ -744,32 +744,32 @@ class IssueEvent(SQLModel, table=True):
     Deliberately generic (field/old/new as text) rather than one table per
     field. The alternative is a new table and a new migration every time
     something else turns out to be worth charting, and the read patterns --
-    "changes to this issue, in order" -- are identical whatever the field.
+    "changes to this ticket, in order" -- are identical whatever the field.
     """
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    issue_id: int = Field(foreign_key="issue.id", index=True)
-    #: Denormalised from the issue so a report can filter a date range by team
-    #: without joining, and so the row survives as history if the issue moves.
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
+    #: Denormalised from the ticket so a report can filter a date range by team
+    #: without joining, and so the row survives as history if the ticket moves.
     team_id: int = Field(foreign_key="team.id", index=True)
-    field: IssueEventField = Field(index=True)
+    field: TicketEventField = Field(index=True)
     #: Null on the creation event for a field, and for a value being cleared.
     old_value: Optional[str] = None
     new_value: Optional[str] = None
     actor_id: Optional[int] = Field(default=None, foreign_key="user.id")
     created_at: datetime = Field(default_factory=utcnow, index=True)
-    #: The value a field started with, written when the issue was created or
+    #: The value a field started with, written when the ticket was created or
     #: imported -- not a change to it. The reports need these (a chart has to
-    #: know where an issue began); the Activity feed leaves them out (#81).
+    #: know where a ticket began); the Activity feed leaves them out (#81).
     #: Marked when written rather than inferred afterwards: "old value null,
     #: soon after creation" also describes a real change made quickly, such
-    #: as an automation assigning a new issue.
+    #: as an automation assigning a new ticket.
     opening: bool = Field(default=False)
 
 
 class Comment(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    issue_id: int = Field(foreign_key="issue.id", index=True)
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
     #: Null when an automation rule wrote it. The alternative was to author
     #: those as whoever happened to trip the rule, which puts words in a
     #: person's mouth on the one kind of comment nobody wrote -- and the
@@ -785,7 +785,7 @@ class Comment(SQLModel, table=True):
 
 
 class Worklog(SQLModel, table=True):
-    """Time somebody spent on an issue, on one day (#102).
+    """Time somebody spent on a ticket, on one day (#102).
 
     Minutes as an integer rather than an interval type: every question asked
     of this table is a sum, and integers sum exactly and identically on SQLite
@@ -796,7 +796,7 @@ class Worklog(SQLModel, table=True):
     """
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    issue_id: int = Field(foreign_key="issue.id", index=True)
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
     user_id: int = Field(foreign_key="user.id", index=True)
     minutes: int
     #: The day the work happened, in the logger's own calendar. Defaults to
@@ -807,8 +807,8 @@ class Worklog(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=utcnow)
 
 
-class IssueTemplate(SQLModel, table=True):
-    """A starting point for a new issue's description (#97).
+class TicketTemplate(SQLModel, table=True):
+    """A starting point for a new ticket's description (#97).
 
     Per team and admin-managed: "Bug report" means repro steps on one team and
     a customer ticket number on another. Only the description -- a default
@@ -816,12 +816,12 @@ class IssueTemplate(SQLModel, table=True):
     template that set them would be a second engine for the same job.
 
     Choosing one fills the description field and nothing else holds on to it:
-    the issue does not remember which template it came from, so editing or
-    deleting a template never changes an issue that already exists.
+    the ticket does not remember which template it came from, so editing or
+    deleting a template never changes a ticket that already exists.
     """
 
     __table_args__ = (
-        UniqueConstraint("team_id", "name", name="uq_issue_template_team_name"),
+        UniqueConstraint("team_id", "name", name="uq_ticket_template_team_name"),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -837,7 +837,7 @@ class IssueTemplate(SQLModel, table=True):
 class CommentReaction(SQLModel, table=True):
     """One person's one reaction to one comment (#96).
 
-    The primary key is the whole row, the way `IssueLabelLink` is: the same
+    The primary key is the whole row, the way `TicketLabelLink` is: the same
     person can give a comment several different reactions, and never the same
     one twice. That is also what makes adding one idempotent -- a double click
     is a second insert of a row that exists.
@@ -852,10 +852,10 @@ class CommentReaction(SQLModel, table=True):
 class Attachment(SQLModel, table=True):
     """One uploaded file. The bytes live in storage; this is the metadata.
 
-    Every attachment belongs to an issue, and *optionally* to one comment on
-    that issue. Two reasons for the issue_id being mandatory rather than one
+    Every attachment belongs to a ticket, and *optionally* to one comment on
+    that ticket. Two reasons for the ticket_id being mandatory rather than one
     nullable owner column: it is the only path to a team, so it is what every
-    permission check reads; and it is what makes deleting an issue able to
+    permission check reads; and it is what makes deleting a ticket able to
     clean up in one query rather than walking its comments.
 
     A file is uploaded before the comment it belongs to exists -- you paste a
@@ -864,7 +864,7 @@ class Attachment(SQLModel, table=True):
     """
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    issue_id: int = Field(foreign_key="issue.id", index=True)
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
     comment_id: Optional[int] = Field(
         default=None, foreign_key="comment.id", index=True
     )
@@ -882,18 +882,18 @@ class Attachment(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow)
 
 
-class IssueWatch(SQLModel, table=True):
-    """Whether one person is following one issue.
+class TicketWatch(SQLModel, table=True):
+    """Whether one person is following one ticket.
 
-    A row exists as soon as SoftTrack has an opinion about someone and an
-    issue, and `watching` says which way. Storing "no" rather than deleting
-    the row is the whole point: creating, commenting on or being assigned an
-    issue auto-watches it, so a deleted row would be silently recreated by the
+    A row exists as soon as SoftTrack has an opinion about someone and a
+    ticket, and `watching` says which way. Storing "no" rather than deleting
+    the row is the whole point: creating, commenting on or being assigned a
+    ticket auto-watches it, so a deleted row would be silently recreated by the
     next thing the person did and the unwatch would not survive the afternoon.
     A mute that does not stick is not a mute.
     """
 
-    issue_id: int = Field(foreign_key="issue.id", primary_key=True)
+    ticket_id: int = Field(foreign_key="ticket.id", primary_key=True)
     user_id: int = Field(foreign_key="user.id", primary_key=True)
     watching: bool = Field(default=True)
     created_at: datetime = Field(default_factory=utcnow)
@@ -907,9 +907,9 @@ class Notification(SQLModel, table=True):
     "which of these have already been emailed" -- both of which a shared event
     row would have to carry in a side table keyed by exactly this pair.
 
-    Nothing about the event is denormalised into it. The issue's title and the
+    Nothing about the event is denormalised into it. The ticket's title and the
     comment's body are read through the foreign keys when the inbox is built,
-    so an issue renamed after the fact shows up under the name it has now,
+    so a ticket renamed after the fact shows up under the name it has now,
     which is the one the reader will recognise.
     """
 
@@ -918,7 +918,7 @@ class Notification(SQLModel, table=True):
     #: table is "my unread ones" or "my recent ones".
     user_id: int = Field(foreign_key="user.id", index=True)
     kind: NotificationKind
-    issue_id: int = Field(foreign_key="issue.id", index=True)
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
     #: Set when the event was a comment, so the inbox can quote it and link
     #: straight to it. Null for assignment and status changes.
     comment_id: Optional[int] = Field(
@@ -937,7 +937,7 @@ class Notification(SQLModel, table=True):
 
 
 class SavedView(SQLModel, table=True):
-    """A named set of filters over one team's issues.
+    """A named set of filters over one team's tickets.
 
     The filters are columns rather than a JSON blob. The set is small, fixed
     and already described by enums the API publishes, so columns get typed
@@ -948,7 +948,7 @@ class SavedView(SQLModel, table=True):
     skips.
 
     Every field is nullable and null means "no opinion", so a view with
-    nothing set is "all issues" rather than a contradiction that matches
+    nothing set is "all tickets" rather than a contradiction that matches
     nothing.
     """
 
@@ -963,7 +963,7 @@ class SavedView(SQLModel, table=True):
 
     #: Cleared when the status is deleted -- see lib_softtrack/statuses.py.
     status_id: Optional[int] = Field(default=None, foreign_key="workflowstatus.id")
-    priority: Optional[IssuePriority] = None
+    priority: Optional[TicketPriority] = None
     assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
     #: Distinct from `assignee_id is None`, which means "any assignee". The two
     #: are mutually exclusive and the request model rejects setting both.
@@ -975,14 +975,14 @@ class SavedView(SQLModel, table=True):
     #: broken rather than empty.
     sprint_id: Optional[int] = Field(default=None, foreign_key="sprint.id")
     due: Optional[DueFilter] = None
-    type: Optional[IssueType] = None
+    type: Optional[TicketType] = None
 
     #: Not a filter -- it narrows nothing -- but part of what a view *is*: the
-    #: same issues read very differently by column and by project.
-    group_by: IssueGrouping = Field(default=IssueGrouping.status)
+    #: same tickets read very differently by column and by project.
+    group_by: TicketGrouping = Field(default=TicketGrouping.status)
     #: How the list is ordered (#88). Null is the default, newest first --
     #: which is what every view saved before this column existed showed.
-    sort: Optional[IssueSort] = None
+    sort: Optional[TicketSort] = None
     sort_direction: Optional[SortDirection] = None
 
     created_at: datetime = Field(default_factory=utcnow)
@@ -1006,7 +1006,7 @@ class UserDefaultView(SQLModel, table=True):
 class WorkflowStatus(SQLModel, table=True):
     """One column on one team's board.
 
-    Replaces the fixed `IssueStatus` enum. A team can add "Blocked" or "QA"
+    Replaces the fixed `TicketStatus` enum. A team can add "Blocked" or "QA"
     and order its board how it likes; what none of them can do is invent a new
     *meaning*, because every status maps to one of the five fixed
     StatusCategory values and that is what the rest of the app reads.
@@ -1045,7 +1045,7 @@ class AutomationRule(SQLModel, table=True):
     opinion". A rule with none of them set fires on every event of its
     trigger, which is what an unconditioned rule should do. They are the same
     vocabulary a saved view filters on, deliberately: a team that can describe
-    the issues it means in the filter bar can describe them here.
+    the tickets it means in the filter bar can describe them here.
 
     **Actions** are the rest. At least one is required -- a rule that does
     nothing is a rule that will be read as broken -- and they are applied
@@ -1071,12 +1071,12 @@ class AutomationRule(SQLModel, table=True):
     trigger: AutomationTrigger = Field(index=True)
 
     # --- Conditions: all optional, ANDed, null means "no opinion" ---------
-    #: For `status_changed`, the status the issue moved *to*. For every other
+    #: For `status_changed`, the status the ticket moved *to*. For every other
     #: trigger, the status it is in when the rule looks at it -- which is the
     #: same column read the same way, so there is one rule to remember.
     if_status_id: Optional[int] = Field(default=None, foreign_key="workflowstatus.id")
-    if_priority: Optional[IssuePriority] = None
-    if_type: Optional[IssueType] = None
+    if_priority: Optional[TicketPriority] = None
+    if_type: Optional[TicketType] = None
     if_label_id: Optional[int] = Field(default=None, foreign_key="label.id")
     if_project_id: Optional[int] = Field(default=None, foreign_key="project.id")
     if_assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
@@ -1087,8 +1087,8 @@ class AutomationRule(SQLModel, table=True):
 
     # --- Actions ---------------------------------------------------------
     set_status_id: Optional[int] = Field(default=None, foreign_key="workflowstatus.id")
-    set_priority: Optional[IssuePriority] = None
-    set_type: Optional[IssueType] = None
+    set_priority: Optional[TicketPriority] = None
+    set_type: Optional[TicketType] = None
     set_assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
     #: Added, never replacing what is there. Labels are additive everywhere
     #: else in SoftTrack, and a rule that silently stripped the ones somebody
@@ -1110,7 +1110,7 @@ class AutomationRule(SQLModel, table=True):
 
 
 class AutomationRun(SQLModel, table=True):
-    """One time a rule matched an issue and changed it.
+    """One time a rule matched a ticket and changed it.
 
     This exists so a change nobody remembers making can be traced back to the
     rule that made it. That is the whole feature: automation without a log is
@@ -1124,8 +1124,8 @@ class AutomationRun(SQLModel, table=True):
     `rule_name` and the summary are copied so the log survives the rule, since
     "which rule did this" is most often asked immediately before deleting the
     rule that did it -- `rule_id` goes null and the row stays readable. The
-    issue is *not* denormalised: a log entry about an issue that no longer
-    exists is a link to a 404, so those rows go when the issue does, the same
+    ticket is *not* denormalised: a log entry about a ticket that no longer
+    exists is a link to a 404, so those rows go when the ticket does, the same
     way its notifications do.
     """
 
@@ -1139,7 +1139,7 @@ class AutomationRun(SQLModel, table=True):
     #: does not rewrite what the log says it did.
     rule_name: str
     trigger: AutomationTrigger
-    issue_id: int = Field(foreign_key="issue.id", index=True)
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
     #: Who did the thing that fired the rule. Null for a sprint completing
     #: under a scheduled process, and for anything an earlier automation
     #: caused.
@@ -1157,9 +1157,9 @@ class Repository(SQLModel, table=True):
 
     Connected per team, not per instance. The team is the tenancy boundary
     everywhere else in SoftTrack, and it is what makes the identifier scan
-    safe: text arriving from this repository can only ever resolve to issues
+    safe: text arriving from this repository can only ever resolve to tickets
     on the team that connected it, so a webhook nobody on the DES team set up
-    cannot move a DES issue. A repository two teams both work in is connected
+    cannot move a DES ticket. A repository two teams both work in is connected
     twice, with a webhook each -- which is more setup, and the alternative is
     one team's CI able to reach another team's board.
 
@@ -1193,7 +1193,7 @@ class Repository(SQLModel, table=True):
     #:
     #: Stored readable, and that is a real cost worth naming: anyone who can
     #: read this table can forge deliveries for this repository, which means
-    #: moving issues on its team's board. It cannot be hashed -- an HMAC needs
+    #: moving tickets on its team's board. It cannot be hashed -- an HMAC needs
     #: the key itself, not a digest of it -- so the honest options were this
     #: or a key management service SoftTrack does not have and would not be
     #: self-hostable without. It is scoped to one repository on one team, and
@@ -1209,15 +1209,15 @@ class Repository(SQLModel, table=True):
 
 
 class CodeLink(SQLModel, table=True):
-    """One branch, commit or pull request that names an issue.
+    """One branch, commit or pull request that names a ticket.
 
-    Created by the identifier scan, never by hand: the connection between an
-    issue and the code that implements it is already written down in the
+    Created by the identifier scan, never by hand: the connection between a
+    ticket and the code that implements it is already written down in the
     branch name and the commit message, and asking somebody to record it a
     second time is how it stops being recorded at all.
 
-    One table with a `kind` rather than three, for the reason IssueEvent gives:
-    the read pattern is "everything linked to this issue, in one list", which
+    One table with a `kind` rather than three, for the reason TicketEvent gives:
+    the read pattern is "everything linked to this ticket, in one list", which
     is one query here and a three-way union otherwise, and the columns the
     three kinds do not share are all nullable facts rather than different
     shapes.
@@ -1230,12 +1230,12 @@ class CodeLink(SQLModel, table=True):
 
     __table_args__ = (
         UniqueConstraint(
-            "repository_id", "kind", "external_id", "issue_id", name="uq_code_link"
+            "repository_id", "kind", "external_id", "ticket_id", name="uq_code_link"
         ),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    issue_id: int = Field(foreign_key="issue.id", index=True)
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
     repository_id: int = Field(foreign_key="repository.id", index=True)
     kind: CodeLinkKind = Field(index=True)
     external_id: str

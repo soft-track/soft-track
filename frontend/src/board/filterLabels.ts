@@ -8,8 +8,8 @@ import type {
 import type { BoardFilters } from '@/board/filters'
 import { NO_FILTERS } from '@/board/filters'
 import { i18n } from '@/i18n'
-import { DUE_FILTER_LABEL } from '@/issues/dueDate'
-import { PRIORITY_META, TYPE_META } from '@/issues/issueMeta'
+import { DUE_FILTER_LABEL } from '@/tickets/dueDate'
+import { PRIORITY_META, TYPE_META } from '@/tickets/ticketMeta'
 
 /** What the filter bar needs in order to name an id. */
 export type FilterLookups = {
@@ -125,7 +125,7 @@ export function describeFilters(
 /** A one-line summary, for a saved view's row in the sidebar. */
 export function summarise(filters: BoardFilters, lookups?: FilterLookups): string {
   const chips = describeFilters(filters, lookups)
-  if (chips.length === 0) return i18n.t('board:filters.allIssues')
+  if (chips.length === 0) return i18n.t('board:filters.allTickets')
   return chips.map((chip) => chip.value).join(' · ')
 }
 

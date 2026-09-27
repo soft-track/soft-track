@@ -1,4 +1,4 @@
-/** Issue panel → the button that follows or mutes one issue. */
+/** Ticket panel → the button that follows or mutes one ticket. */
 export const watch = {
   watching: 'Watching',
   watch: 'Watch',

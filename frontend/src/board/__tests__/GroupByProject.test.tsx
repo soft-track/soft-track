@@ -14,7 +14,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type {
-  IssueRead,
+  TicketRead,
   ProjectRead,
   SavedViewRead,
   StatusRead,
@@ -22,7 +22,7 @@ import type {
 } from '@/api/generated/models'
 import { NO_FILTERS } from '@/board/filters'
 import { DEFAULT_SORT } from '@/board/sorting'
-import { IssueListView } from '@/board/IssueListView'
+import { TicketListView } from '@/board/TicketListView'
 import { KanbanBoard } from '@/board/KanbanBoard'
 import { TeamProvider } from '@/team/TeamContext'
 import type { TeamContextValue } from '@/team/useTeamContext'
@@ -61,8 +61,8 @@ function project(id: number, name: string, color: string): ProjectRead {
     state: 'in_progress',
     archived: false,
     created_at: '2026-01-01T00:00:00Z',
-    issue_count: 0,
-    completed_issue_count: 0,
+    ticket_count: 0,
+    completed_ticket_count: 0,
   }
 }
 
@@ -94,7 +94,7 @@ const TEAM: TeamContextValue = {
   statuses: [TODO, DOING],
 }
 
-function issue(id: number, title: string, inStatus: StatusRead, projectId: number | null) {
+function ticket(id: number, title: string, inStatus: StatusRead, projectId: number | null) {
   return {
     id,
     team_id: 7,
@@ -114,13 +114,13 @@ function issue(id: number, title: string, inStatus: StatusRead, projectId: numbe
     labels: [],
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
-  } as IssueRead
+  } as TicketRead
 }
 
-const ISSUES = [
-  issue(1, 'Migrate the queue', TODO, PLATFORM.id),
-  issue(2, 'Invoice PDFs', DOING, BILLING.id),
-  issue(3, 'Loose end', DOING, null),
+const TICKETS = [
+  ticket(1, 'Migrate the queue', TODO, PLATFORM.id),
+  ticket(2, 'Invoice PDFs', DOING, BILLING.id),
+  ticket(3, 'Loose end', DOING, null),
 ]
 
 function renderWith(children: ReactNode) {
@@ -163,7 +163,7 @@ afterEach(() => {
 
 describe('the board', () => {
   it('is one column per status, with a project badge on each card', () => {
-    renderWith(<KanbanBoard issues={ISSUES} onStatusChange={() => {}} />)
+    renderWith(<KanbanBoard tickets={TICKETS} onStatusChange={() => {}} />)
 
     expect(within(column('Todo')).getByText('Migrate the queue')).toBeTruthy()
     // The badge is the project's name, so the colour is never the only cue.
@@ -173,7 +173,7 @@ describe('the board', () => {
 
   it('is one column per project when grouped by project, with no-project last', () => {
     renderWith(
-      <KanbanBoard issues={ISSUES} grouping="project" onStatusChange={() => {}} />,
+      <KanbanBoard tickets={TICKETS} grouping="project" onStatusChange={() => {}} />,
     )
 
     const names = screen
@@ -191,13 +191,13 @@ describe('the board', () => {
 
 describe('the list', () => {
   it('stays one flat list by status', () => {
-    renderWith(<IssueListView issues={ISSUES} />)
+    renderWith(<TicketListView tickets={TICKETS} />)
     expect(screen.queryAllByRole('heading', { level: 2 })).toEqual([])
   })
 
   it('splits into a section per project, leaving empty ones out', () => {
     renderWith(
-      <IssueListView issues={[ISSUES[0], ISSUES[2]]} grouping="project" />,
+      <TicketListView tickets={[TICKETS[0], TICKETS[2]]} grouping="project" />,
     )
     const headings = screen
       .getAllByRole('heading', { level: 2 })

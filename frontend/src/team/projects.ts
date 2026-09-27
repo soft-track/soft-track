@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query'
 
 import type {
-  IssueRead,
+  TicketRead,
   ProjectRead,
   ProjectState,
   StatusRead,
@@ -11,7 +11,7 @@ import { i18n } from '@/i18n'
 /**
  * The projects a picker should offer.
  *
- * Archived projects stay in the team's list -- issues still point at them and
+ * Archived projects stay in the team's list -- tickets still point at them and
  * need a name to show -- but nobody should be filing new work into one.
  * `keepId` is the same exception `activeMembers` makes: a filter or a rule
  * already set to an archived project has to keep showing it, or the dropdown
@@ -79,7 +79,7 @@ function projectColour(
 /**
  * The colour a new project starts with: the first no project on the team is
  * wearing, so two can be told apart on the board without anyone choosing.
- * Archived projects count, since the issues still in them show the colour.
+ * Archived projects count, since the tickets still in them show the colour.
  * Once every colour is taken they are handed round again in order.
  */
 export function nextProjectColour(projects: ProjectRead[]): string {
@@ -91,43 +91,43 @@ export function nextProjectColour(projects: ProjectRead[]): string {
 /**
  * "3 of 5 done", or null for a project with nothing in it yet.
  *
- * The counts come from the server, already excluding cancelled issues -- the
- * same rule sub-issues follow (#13) -- so this only ever formats them.
+ * The counts come from the server, already excluding cancelled tickets -- the
+ * same rule sub-tickets follow (#13) -- so this only ever formats them.
  */
 export function progressLabel(project: ProjectRead): string | null {
-  if (project.issue_count === 0) return null
+  if (project.ticket_count === 0) return null
   return i18n.t('team:projects.progress', {
-    completed: project.completed_issue_count,
-    total: project.issue_count,
+    completed: project.completed_ticket_count,
+    total: project.ticket_count,
   })
 }
 
 export function progressRatio(project: ProjectRead): number {
-  return project.issue_count === 0 ? 0 : project.completed_issue_count / project.issue_count
+  return project.ticket_count === 0 ? 0 : project.completed_ticket_count / project.ticket_count
 }
 
 /**
- * The team's statuses that hold any of these issues, each with its issues, in
+ * The team's statuses that hold any of these tickets, each with its tickets, in
  * board order. Empty columns are left out: on a project page they are noise,
  * where on the board they are somewhere to drag to.
  */
 export function groupByStatus(
-  issues: IssueRead[],
+  tickets: TicketRead[],
   statuses: StatusRead[],
-): Array<{ status: StatusRead; issues: IssueRead[] }> {
+): Array<{ status: StatusRead; tickets: TicketRead[] }> {
   return statuses
     .map((status) => ({
       status,
-      issues: issues.filter((issue) => issue.status.id === status.id),
+      tickets: tickets.filter((ticket) => ticket.status.id === status.id),
     }))
-    .filter((group) => group.issues.length > 0)
+    .filter((group) => group.tickets.length > 0)
 }
 
 /**
  * Refetch everything that shows project progress.
  *
- * Progress moves with any write to an issue -- its status, its project, or
- * the issue going away -- so every such write calls this, the same way they
+ * Progress moves with any write to a ticket -- its status, its project, or
+ * the ticket going away -- so every such write calls this, the same way they
  * already refresh the sprint and estimate rollups.
  */
 export function invalidateProjects(queryClient: QueryClient, teamId: number) {

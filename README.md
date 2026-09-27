@@ -38,7 +38,7 @@ README, which show a team several sprints in.
   [statuses](#statuses-and-categories) ·
   [sprints and estimates](#sprints-and-estimates) ·
   [reports](#reports) ·
-  [sub-tickets and links](#sub-issues-and-links) ·
+  [sub-tickets and links](#sub-tickets-and-links) ·
   [markdown and mentions](#markdown-mentions-and-task-lists) ·
   [saved views](#saved-views-and-shareable-filters) ·
   [search](#search) ·
@@ -56,10 +56,10 @@ README, which show a team several sprints in.
 
 ## Documentation
 
-The interface calls work items *tickets* and groups them into *epics*. The
-API, the database and the code still say *issues* and *projects*
-(`/teams/{team_id}/issues`, `project_id`), so those are the names to search
-for there.
+The interface calls work items *tickets*, plans them in *sprints* and groups
+them into *epics*. The API, the database and the code say tickets and sprints
+too, but still call an epic a *project* (`/teams/{team_id}/projects`,
+`project_id`), so that is the name to search for there.
 
 - [Architecture](docs/architecture.md)
 - [Deployment and operations](docs/deployment.md)
@@ -68,12 +68,12 @@ for there.
 - [Sprints and estimates](docs/features/sprints.md)
 - [Reports](docs/features/reports.md)
 - [Time tracking](docs/features/time-tracking.md)
-- [Opening a ticket: the peek, the panel and the page](docs/features/issue-views.md)
-- [Sub-tickets and links](docs/features/sub-issues.md)
-- [Moving a ticket to another team](docs/features/moving-issues.md)
+- [Opening a ticket: the peek, the panel and the page](docs/features/ticket-views.md)
+- [Sub-tickets and links](docs/features/sub-tickets.md)
+- [Moving a ticket to another team](docs/features/moving-tickets.md)
 - [Epics](docs/features/projects.md)
-- [Ticket types](docs/features/issue-types.md)
-- [Ticket templates](docs/features/issue-templates.md)
+- [Ticket types](docs/features/ticket-types.md)
+- [Ticket templates](docs/features/ticket-templates.md)
 - [Markdown, mentions and task lists](docs/features/markdown.md)
 - [Saved views and shareable filters](docs/features/saved-views.md)
 - [Calendar](docs/features/calendar.md)

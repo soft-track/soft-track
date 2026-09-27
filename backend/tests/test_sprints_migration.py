@@ -118,10 +118,10 @@ def test_everything_that_named_a_cycle_names_a_sprint(tmp_path):
     from lib_softtrack.tables import (
         AutomationRule,
         AutomationTrigger,
-        Issue,
         OutboundWebhook,
         Sprint,
         SprintState,
+        Ticket,
         WebhookEvent,
     )
 
@@ -165,17 +165,20 @@ def test_everything_that_named_a_cycle_names_a_sprint(tmp_path):
 
     # Read back through the models, so a name the migration spelled
     # differently from the table classes fails here rather than in production.
+    # At head, since they describe today's schema -- tickets included (#215).
+    command.upgrade(config, "head")
     engine = create_engine(f"sqlite:///{db_path}")
     with Session(engine) as session:
         assert session.get(Sprint, 1).state is SprintState.active
-        assert session.get(Issue, 1).sprint_id == 1
+        assert session.get(Ticket, 1).sprint_id == 1
         rule = session.get(AutomationRule, 1)
         assert rule.trigger is AutomationTrigger.sprint_completed
         assert rule.set_sprint_id == 1
+        # issue.created went on to be ticket.created, in 06abb8eb700e.
         assert parse_events(session.get(OutboundWebhook, 1).events) == [
-            WebhookEvent.issue_created,
             WebhookEvent.sprint_completed,
             WebhookEvent.sprint_started,
+            WebhookEvent.ticket_created,
         ]
     engine.dispose()
 

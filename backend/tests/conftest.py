@@ -173,10 +173,10 @@ def auth(client):
 
 @pytest.fixture
 def team(client, auth):
-    """A user who owns one team, ready for issue tests.
+    """A user who owns one team, ready for ticket tests.
 
     Carries the team's own statuses as `status_ids`, keyed by name. Statuses
-    are rows per team rather than a fixed enum, so a test that wants an issue
+    are rows per team rather than a fixed enum, so a test that wants a ticket
     in "Done" has to say which team's Done it means. The names here are the
     default workflow every team is created with.
     """

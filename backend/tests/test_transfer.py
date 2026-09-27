@@ -1,11 +1,11 @@
-"""Moving an issue to another team (#98)."""
+"""Moving a ticket to another team (#98)."""
 
 from datetime import date, timedelta
 
 import pytest
 from sqlmodel import select
 
-from lib_softtrack.tables import IssueEvent, IssueEventField, Notification
+from lib_softtrack.tables import TicketEvent, TicketEventField, Notification
 from tests.conftest import status_ids
 
 
@@ -18,7 +18,9 @@ def two_teams(client, team):
     # Some history on OPS, so its next number is not ENG's.
     for title in ("Rotate keys", "Patch hosts"):
         client.post(
-            f"/teams/{ops['id']}/issues", json={"title": title}, headers=team["headers"]
+            f"/teams/{ops['id']}/tickets",
+            json={"title": title},
+            headers=team["headers"],
         )
     return {
         **team,
@@ -27,9 +29,9 @@ def two_teams(client, team):
     }
 
 
-def make_issue(client, actor, team_id, **fields):
+def make_ticket(client, actor, team_id, **fields):
     response = client.post(
-        f"/teams/{team_id}/issues",
+        f"/teams/{team_id}/tickets",
         json={"title": "Pager fires twice", **fields},
         headers=actor["headers"],
     )
@@ -37,9 +39,9 @@ def make_issue(client, actor, team_id, **fields):
     return response.json()
 
 
-def transfer(client, actor, issue, team_id, expect=200):
+def transfer(client, actor, ticket, team_id, expect=200):
     response = client.post(
-        f"/issues/{issue['id']}/transfer",
+        f"/tickets/{ticket['id']}/transfer",
         json={"team_id": team_id},
         headers=actor["headers"],
     )
@@ -47,9 +49,9 @@ def transfer(client, actor, issue, team_id, expect=200):
     return response.json()
 
 
-def preview(client, actor, issue, team_id, expect=200):
+def preview(client, actor, ticket, team_id, expect=200):
     response = client.get(
-        f"/issues/{issue['id']}/transfer",
+        f"/tickets/{ticket['id']}/transfer",
         params={"team_id": team_id},
         headers=actor["headers"],
     )
@@ -79,42 +81,42 @@ def join(client, owner, team_id, person, role="member"):
 # --- the move itself ---------------------------------------------------------
 
 
-def test_the_issue_takes_the_target_teams_next_key(client, two_teams):
-    issue = make_issue(client, two_teams, two_teams["team"]["id"])
-    assert issue["identifier"] == "ENG-1"
+def test_the_ticket_takes_the_target_teams_next_key(client, two_teams):
+    ticket = make_ticket(client, two_teams, two_teams["team"]["id"])
+    assert ticket["identifier"] == "ENG-1"
 
-    moved = transfer(client, two_teams, issue, two_teams["ops"]["id"])["issue"]
-    assert moved["id"] == issue["id"]
+    moved = transfer(client, two_teams, ticket, two_teams["ops"]["id"])["ticket"]
+    assert moved["id"] == ticket["id"]
     assert moved["identifier"] == "OPS-3"
     assert moved["team_id"] == two_teams["ops"]["id"]
 
-    # ENG never hands out 1 again: the old key means only this issue, forever.
-    again = make_issue(client, two_teams, two_teams["team"]["id"])
+    # ENG never hands out 1 again: the old key means only this ticket, forever.
+    again = make_ticket(client, two_teams, two_teams["team"]["id"])
     assert again["identifier"] == "ENG-2"
 
 
 def test_it_says_where_it_came_from(client, two_teams, session):
-    issue = make_issue(client, two_teams, two_teams["team"]["id"])
-    transfer(client, two_teams, issue, two_teams["ops"]["id"])
+    ticket = make_ticket(client, two_teams, two_teams["team"]["id"])
+    transfer(client, two_teams, ticket, two_teams["ops"]["id"])
 
     comments = client.get(
-        f"/issues/{issue['id']}/comments", headers=two_teams["headers"]
+        f"/tickets/{ticket['id']}/comments", headers=two_teams["headers"]
     ).json()
     assert [c["body"] for c in comments["items"]] == ["Moved from ENG-1."]
     assert comments["items"][0]["author"]["id"] == two_teams["user"]["id"]
 
     events = client.get(
-        f"/issues/{issue['id']}/events", headers=two_teams["headers"]
+        f"/tickets/{ticket['id']}/events", headers=two_teams["headers"]
     ).json()
     [moved] = [e for e in events if e["field"] == "team"]
     assert (moved["old_value"], moved["new_value"]) == ("ENG-1", "OPS-3")
 
 
 def test_the_old_key_is_found_by_search(client, two_teams):
-    issue = make_issue(
+    ticket = make_ticket(
         client, two_teams, two_teams["team"]["id"], title="Pager fires twice"
     )
-    transfer(client, two_teams, issue, two_teams["ops"]["id"])
+    transfer(client, two_teams, ticket, two_teams["ops"]["id"])
 
     hits = client.get(
         "/search", params={"q": "ENG-1"}, headers=two_teams["headers"]
@@ -126,53 +128,53 @@ def test_the_move_notifies_nobody(client, two_teams, auth, session):
     watcher = auth(email="watcher@softtrack.dev", full_name="Watcher")
     join(client, two_teams, two_teams["team"]["id"], watcher)
     join(client, two_teams, two_teams["ops"]["id"], watcher)
-    issue = make_issue(client, two_teams, two_teams["team"]["id"])
+    ticket = make_ticket(client, two_teams, two_teams["team"]["id"])
     client.put(
-        f"/issues/{issue['id']}/watch",
+        f"/tickets/{ticket['id']}/watch",
         json={"watching": True},
         headers=watcher["headers"],
     )
     before = len(session.exec(select(Notification)).all())
-    transfer(client, two_teams, issue, two_teams["ops"]["id"])
+    transfer(client, two_teams, ticket, two_teams["ops"]["id"])
     assert len(session.exec(select(Notification)).all()) == before
 
 
-def test_everything_keyed_by_the_issue_comes_along(client, two_teams):
-    issue = make_issue(client, two_teams, two_teams["team"]["id"])
-    other = make_issue(client, two_teams, two_teams["team"]["id"], title="Other")
+def test_everything_keyed_by_the_ticket_comes_along(client, two_teams):
+    ticket = make_ticket(client, two_teams, two_teams["team"]["id"])
+    other = make_ticket(client, two_teams, two_teams["team"]["id"], title="Other")
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "First look"},
         headers=two_teams["headers"],
     )
     client.post(
-        f"/issues/{issue['id']}/links",
+        f"/tickets/{ticket['id']}/links",
         json={"target_id": other["id"], "type": "blocks"},
         headers=two_teams["headers"],
     )
-    transfer(client, two_teams, issue, two_teams["ops"]["id"])
+    transfer(client, two_teams, ticket, two_teams["ops"]["id"])
 
     comments = client.get(
-        f"/issues/{issue['id']}/comments", headers=two_teams["headers"]
+        f"/tickets/{ticket['id']}/comments", headers=two_teams["headers"]
     ).json()
     assert [c["body"] for c in comments["items"]] == ["First look", "Moved from ENG-1."]
     links = client.get(
-        f"/issues/{issue['id']}/links", headers=two_teams["headers"]
+        f"/tickets/{ticket['id']}/links", headers=two_teams["headers"]
     ).json()
-    assert [row["issue"]["identifier"] for row in links["blocks"]] == ["ENG-2"]
+    assert [row["ticket"]["identifier"] for row in links["blocks"]] == ["ENG-2"]
 
 
 # --- remapping ---------------------------------------------------------------
 
 
 def test_status_maps_by_category(client, two_teams):
-    issue = make_issue(
+    ticket = make_ticket(
         client,
         two_teams,
         two_teams["team"]["id"],
         status_id=two_teams["status_ids"]["In Review"],
     )
-    moved = transfer(client, two_teams, issue, two_teams["ops"]["id"])["issue"]
+    moved = transfer(client, two_teams, ticket, two_teams["ops"]["id"])["ticket"]
     # "In Review" is `started`; OPS's first `started` column is "In Progress".
     assert moved["status"]["id"] == two_teams["ops_status_ids"]["In Progress"]
 
@@ -189,20 +191,21 @@ def test_status_falls_back_to_the_first_column(client, two_teams):
         )
         assert response.status_code == 200, response.text
 
-    issue = make_issue(
+    ticket = make_ticket(
         client,
         two_teams,
         two_teams["team"]["id"],
         status_id=two_teams["status_ids"]["In Progress"],
     )
-    plan = preview(client, two_teams, issue, ops)
+    plan = preview(client, two_teams, ticket, ops)
     assert plan["status"] == {
         "from_name": "In Progress",
         "to_name": "Backlog",
         "same_category": False,
     }
     assert (
-        transfer(client, two_teams, issue, ops)["issue"]["status"]["name"] == "Backlog"
+        transfer(client, two_teams, ticket, ops)["ticket"]["status"]["name"]
+        == "Backlog"
     )
 
 
@@ -211,13 +214,13 @@ def test_labels_are_kept_by_name_and_dropped_otherwise(client, two_teams):
     bug = label(client, two_teams, eng, "Bug")
     frontend = label(client, two_teams, eng, "frontend")
     ops_bug = label(client, two_teams, ops, "bug")
-    issue = make_issue(client, two_teams, eng, label_ids=[bug["id"], frontend["id"]])
+    ticket = make_ticket(client, two_teams, eng, label_ids=[bug["id"], frontend["id"]])
 
-    plan = preview(client, two_teams, issue, ops)
+    plan = preview(client, two_teams, ticket, ops)
     assert plan["labels_kept"] == ["bug"]
     assert plan["labels_dropped"] == ["frontend"]
 
-    moved = transfer(client, two_teams, issue, ops)["issue"]
+    moved = transfer(client, two_teams, ticket, ops)["ticket"]
     assert [lab["id"] for lab in moved["labels"]] == [ops_bug["id"]]
 
 
@@ -238,25 +241,25 @@ def test_sprint_and_project_are_cleared_and_the_sprint_sees_it_leave(
     project = client.post(
         f"/teams/{eng}/projects", json={"name": "Launch"}, headers=two_teams["headers"]
     ).json()
-    issue = make_issue(
+    ticket = make_ticket(
         client, two_teams, eng, sprint_id=sprint["id"], project_id=project["id"]
     )
 
-    plan = preview(client, two_teams, issue, two_teams["ops"]["id"])
+    plan = preview(client, two_teams, ticket, two_teams["ops"]["id"])
     assert (plan["sprint_cleared"], plan["project_cleared"]) == ("Sprint 4", "Launch")
 
-    moved = transfer(client, two_teams, issue, two_teams["ops"]["id"])["issue"]
+    moved = transfer(client, two_teams, ticket, two_teams["ops"]["id"])["ticket"]
     assert moved["sprint_id"] is None and moved["project_id"] is None
 
-    # The burndown reads sprint events: without this row the issue would stay
+    # The burndown reads sprint events: without this row the ticket would stay
     # in Sprint 4's scope forever.
     left = session.exec(
-        select(IssueEvent)
+        select(TicketEvent)
         .where(
-            IssueEvent.issue_id == issue["id"],
-            IssueEvent.field == IssueEventField.sprint,
+            TicketEvent.ticket_id == ticket["id"],
+            TicketEvent.field == TicketEventField.sprint,
         )
-        .order_by(IssueEvent.id)
+        .order_by(TicketEvent.id)
     ).all()[-1]
     assert (left.old_value, left.new_value) == (str(sprint["id"]), None)
 
@@ -267,55 +270,57 @@ def test_the_assignee_stays_only_if_they_are_on_the_target_team(
     eng, ops = two_teams["team"]["id"], two_teams["ops"]["id"]
     maya = auth(email="maya@softtrack.dev", full_name="Maya Chen")
     join(client, two_teams, eng, maya)
-    theirs = make_issue(client, two_teams, eng, assignee_id=maya["user"]["id"])
-    mine = make_issue(client, two_teams, eng, assignee_id=two_teams["user"]["id"])
+    theirs = make_ticket(client, two_teams, eng, assignee_id=maya["user"]["id"])
+    mine = make_ticket(client, two_teams, eng, assignee_id=two_teams["user"]["id"])
 
     assert preview(client, two_teams, theirs, ops)["assignee_cleared"] == "Maya Chen"
-    assert transfer(client, two_teams, theirs, ops)["issue"]["assignee"] is None
+    assert transfer(client, two_teams, theirs, ops)["ticket"]["assignee"] is None
     assert preview(client, two_teams, mine, ops)["assignee_cleared"] is None
     assert (
-        transfer(client, two_teams, mine, ops)["issue"]["assignee"]["id"]
+        transfer(client, two_teams, mine, ops)["ticket"]["assignee"]["id"]
         == two_teams["user"]["id"]
     )
 
 
-# --- sub-issues --------------------------------------------------------------
+# --- sub-tickets --------------------------------------------------------------
 
 
-def test_sub_issues_move_with_their_parent(client, two_teams):
+def test_sub_tickets_move_with_their_parent(client, two_teams):
     eng = two_teams["team"]["id"]
-    parent = make_issue(client, two_teams, eng, title="Parent")
-    first = make_issue(client, two_teams, eng, title="First", parent_id=parent["id"])
-    second = make_issue(client, two_teams, eng, title="Second", parent_id=parent["id"])
+    parent = make_ticket(client, two_teams, eng, title="Parent")
+    first = make_ticket(client, two_teams, eng, title="First", parent_id=parent["id"])
+    second = make_ticket(client, two_teams, eng, title="Second", parent_id=parent["id"])
 
-    assert preview(client, two_teams, parent, two_teams["ops"]["id"])["sub_issues"] == [
+    assert preview(client, two_teams, parent, two_teams["ops"]["id"])[
+        "sub_tickets"
+    ] == [
         "ENG-2",
         "ENG-3",
     ]
     result = transfer(client, two_teams, parent, two_teams["ops"]["id"])
-    assert result["issue"]["identifier"] == "OPS-3"
-    assert [c["identifier"] for c in result["sub_issues"]] == ["OPS-4", "OPS-5"]
+    assert result["ticket"]["identifier"] == "OPS-3"
+    assert [c["identifier"] for c in result["sub_tickets"]] == ["OPS-4", "OPS-5"]
     for child in (first, second):
         moved = client.get(
-            f"/issues/{child['id']}", headers=two_teams["headers"]
+            f"/tickets/{child['id']}", headers=two_teams["headers"]
         ).json()
         assert moved["team_id"] == two_teams["ops"]["id"]
         assert moved["parent"]["identifier"] == "OPS-3"
 
 
-def test_a_sub_issue_moved_alone_leaves_its_parent(client, two_teams):
+def test_a_sub_ticket_moved_alone_leaves_its_parent(client, two_teams):
     eng = two_teams["team"]["id"]
-    parent = make_issue(client, two_teams, eng, title="Parent")
-    child = make_issue(client, two_teams, eng, title="Child", parent_id=parent["id"])
+    parent = make_ticket(client, two_teams, eng, title="Parent")
+    child = make_ticket(client, two_teams, eng, title="Child", parent_id=parent["id"])
 
     assert (
         preview(client, two_teams, child, two_teams["ops"]["id"])["parent_detached"]
         == "ENG-1"
     )
-    moved = transfer(client, two_teams, child, two_teams["ops"]["id"])["issue"]
+    moved = transfer(client, two_teams, child, two_teams["ops"]["id"])["ticket"]
     assert moved["parent"] is None
     assert (
-        client.get(f"/issues/{parent['id']}", headers=two_teams["headers"]).json()[
+        client.get(f"/tickets/{parent['id']}", headers=two_teams["headers"]).json()[
             "child_count"
         ]
         == 0
@@ -326,17 +331,17 @@ def test_a_sub_issue_moved_alone_leaves_its_parent(client, two_teams):
 
 
 def test_the_preview_changes_nothing_and_predicts_the_key(client, two_teams):
-    issue = make_issue(client, two_teams, two_teams["team"]["id"])
-    plan = preview(client, two_teams, issue, two_teams["ops"]["id"])
+    ticket = make_ticket(client, two_teams, two_teams["team"]["id"])
+    plan = preview(client, two_teams, ticket, two_teams["ops"]["id"])
     assert (plan["from_identifier"], plan["to_identifier"]) == ("ENG-1", "OPS-3")
     assert (
-        client.get(f"/issues/{issue['id']}", headers=two_teams["headers"]).json()[
+        client.get(f"/tickets/{ticket['id']}", headers=two_teams["headers"]).json()[
             "identifier"
         ]
         == "ENG-1"
     )
     assert (
-        transfer(client, two_teams, issue, two_teams["ops"]["id"])["issue"][
+        transfer(client, two_teams, ticket, two_teams["ops"]["id"])["ticket"][
             "identifier"
         ]
         == plan["to_identifier"]
@@ -347,9 +352,9 @@ def test_the_preview_changes_nothing_and_predicts_the_key(client, two_teams):
 
 
 def test_the_same_team_is_refused(client, two_teams):
-    issue = make_issue(client, two_teams, two_teams["team"]["id"])
+    ticket = make_ticket(client, two_teams, two_teams["team"]["id"])
     response = client.post(
-        f"/issues/{issue['id']}/transfer",
+        f"/tickets/{ticket['id']}/transfer",
         json={"team_id": two_teams["team"]["id"]},
         headers=two_teams["headers"],
     )
@@ -360,15 +365,15 @@ def test_the_same_team_is_refused(client, two_teams):
 def test_you_must_be_on_the_target_team(client, two_teams, auth):
     maya = auth(email="maya@softtrack.dev", full_name="Maya Chen")
     join(client, two_teams, two_teams["team"]["id"], maya)
-    issue = make_issue(client, maya, two_teams["team"]["id"])
+    ticket = make_ticket(client, maya, two_teams["team"]["id"])
     for response in (
         client.get(
-            f"/issues/{issue['id']}/transfer",
+            f"/tickets/{ticket['id']}/transfer",
             params={"team_id": two_teams["ops"]["id"]},
             headers=maya["headers"],
         ),
         client.post(
-            f"/issues/{issue['id']}/transfer",
+            f"/tickets/{ticket['id']}/transfer",
             json={"team_id": two_teams["ops"]["id"]},
             headers=maya["headers"],
         ),
@@ -381,9 +386,9 @@ def test_a_guest_of_the_target_team_cannot_move_work_into_it(client, two_teams, 
     maya = auth(email="maya@softtrack.dev", full_name="Maya Chen")
     join(client, two_teams, two_teams["team"]["id"], maya)
     join(client, two_teams, two_teams["ops"]["id"], maya, role="guest")
-    issue = make_issue(client, maya, two_teams["team"]["id"])
+    ticket = make_ticket(client, maya, two_teams["team"]["id"])
     response = client.post(
-        f"/issues/{issue['id']}/transfer",
+        f"/tickets/{ticket['id']}/transfer",
         json={"team_id": two_teams["ops"]["id"]},
         headers=maya["headers"],
     )
@@ -392,9 +397,9 @@ def test_a_guest_of_the_target_team_cannot_move_work_into_it(client, two_teams, 
 
 
 def test_a_missing_team_is_a_404(client, two_teams):
-    issue = make_issue(client, two_teams, two_teams["team"]["id"])
+    ticket = make_ticket(client, two_teams, two_teams["team"]["id"])
     response = client.post(
-        f"/issues/{issue['id']}/transfer",
+        f"/tickets/{ticket['id']}/transfer",
         json={"team_id": 999},
         headers=two_teams["headers"],
     )

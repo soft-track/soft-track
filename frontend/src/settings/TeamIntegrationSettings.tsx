@@ -141,7 +141,7 @@ function Repositories({ team }: { team: TeamRead }) {
           i18nKey="integrations.howItWorks"
           values={{ key: team.key }}
           {...userText}
-          components={{ issue: <span className="identifier" /> }}
+          components={{ ticket: <span className="identifier" /> }}
         />
       </p>
       <p className="mt-2 text-sm text-neutral-600">

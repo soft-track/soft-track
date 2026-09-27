@@ -52,7 +52,7 @@ def update_project(
 ):
     """Rename, re-date, re-lead or move a project through its states.
 
-    Setting `archived` retires it from pickers without touching the issues
+    Setting `archived` retires it from pickers without touching the tickets
     already in it.
     """
     return projects_service.update_project(session, current_user, project_id, payload)
@@ -64,9 +64,9 @@ def delete_project(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Delete a project. Its issues are kept and left with no project.
+    """Delete a project. Its tickets are kept and left with no project.
 
     Saved views that filtered on it stop filtering on it, and automation rules
-    conditioned on it are switched off rather than widened to every issue.
+    conditioned on it are switched off rather than widened to every ticket.
     """
     projects_service.delete_project(session, current_user, project_id)

@@ -6,7 +6,7 @@ import { badgeLabel, describe } from '@/notifications/notificationMeta'
 const base: NotificationRead = {
   id: 1,
   kind: 'commented',
-  issue: {
+  ticket: {
     id: 7,
     team_id: 1,
     team_key: 'ENG',

@@ -14,7 +14,7 @@ import pytest
 from lib_softtrack.storage import copy_range
 from lib_utils.errors import ApiError
 from lib_utils.ranges import parse_range
-from tests.test_attachments import PNG, attach, make_issue, upload
+from tests.test_attachments import PNG, attach, make_ticket, upload
 
 PDF = b"%PDF-1.7\n%\xe2\xe3\xcf\xd3\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n"
 
@@ -35,8 +35,8 @@ PDF = b"%PDF-1.7\n%\xe2\xe3\xcf\xd3\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF
     ],
 )
 def test_each_file_says_how_it_can_be_previewed(client, team, name, body, preview):
-    issue = make_issue(client, team)
-    assert attach(client, team, issue, body=body, name=name)["preview"] == preview
+    ticket = make_ticket(client, team)
+    assert attach(client, team, ticket, body=body, name=name)["preview"] == preview
 
 
 @pytest.mark.parametrize(
@@ -44,9 +44,9 @@ def test_each_file_says_how_it_can_be_previewed(client, team, name, body, previe
 )
 def test_text_is_always_served_as_plain_text(client, team, name):
     """Markdown or JSON served as itself is something a browser may render."""
-    issue = make_issue(client, team)
+    ticket = make_ticket(client, team)
     attachment = attach(
-        client, team, issue, body=b"<script>alert(1)</script>", name=name
+        client, team, ticket, body=b"<script>alert(1)</script>", name=name
     )
     response = client.get(attachment["url"], headers=team["headers"])
 
@@ -59,17 +59,17 @@ def test_text_is_always_served_as_plain_text(client, team, name):
 
 
 def test_a_pdf_is_served_as_a_pdf_inline(client, team):
-    issue = make_issue(client, team)
-    attachment = attach(client, team, issue, body=PDF, name="spec.pdf")
+    ticket = make_ticket(client, team)
+    attachment = attach(client, team, ticket, body=PDF, name="spec.pdf")
     response = client.get(attachment["url"], headers=team["headers"])
     assert response.headers["content-type"] == "application/pdf"
     assert response.headers["content-disposition"].startswith("inline;")
 
 
 def test_a_pdf_has_to_be_one(client, team):
-    issue = make_issue(client, team)
+    ticket = make_ticket(client, team)
     response = upload(
-        client, team["headers"], issue, body=b"<html>not a pdf", name="spec.pdf"
+        client, team["headers"], ticket, body=b"<html>not a pdf", name="spec.pdf"
     )
     assert response.status_code == 422
     assert response.json()["code"] == "attachment_content_mismatch"
@@ -77,17 +77,17 @@ def test_a_pdf_has_to_be_one(client, team):
 
 def test_a_pdf_may_have_a_little_junk_before_its_header(client, team):
     """Readers allow it, so refusing it would refuse PDFs people can open."""
-    issue = make_issue(client, team)
+    ticket = make_ticket(client, team)
     response = upload(
-        client, team["headers"], issue, body=b"\x00" * 100 + PDF, name="spec.pdf"
+        client, team["headers"], ticket, body=b"\x00" * 100 + PDF, name="spec.pdf"
     )
     assert response.status_code == 200, response.text
 
 
 @pytest.mark.parametrize("name", ["evil.html", "evil.svg", "run.sh", "page.xml"])
 def test_markup_and_scripts_stay_refused(client, team, name):
-    issue = make_issue(client, team)
-    response = upload(client, team["headers"], issue, body=b"<x/>", name=name)
+    ticket = make_ticket(client, team)
+    response = upload(client, team["headers"], ticket, body=b"<x/>", name=name)
     assert response.status_code == 415
 
 
@@ -96,8 +96,8 @@ def test_markup_and_scripts_stay_refused(client, team, name):
 
 @pytest.fixture
 def log(client, team):
-    issue = make_issue(client, team)
-    return attach(client, team, issue, body=b"0123456789abcdef", name="server.log")
+    ticket = make_ticket(client, team)
+    return attach(client, team, ticket, body=b"0123456789abcdef", name="server.log")
 
 
 def fetch(client, team, log, range_header=None):

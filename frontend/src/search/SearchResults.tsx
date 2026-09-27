@@ -3,7 +3,7 @@ import { parseServerDate } from '@/api/dates'
 import type { SearchHit } from '@/api/generated/models'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { formatRelative } from '@/i18n/format'
-import { PriorityIcon } from '@/issues/PriorityIcon'
+import { PriorityIcon } from '@/tickets/PriorityIcon'
 import { Loading } from '@/ui/Loading'
 
 /** Where the match was found, said plainly. Anything else is named as the server sent it. */
@@ -28,7 +28,7 @@ export function SearchResults({
   total: number
   isLoading: boolean
   /**
-   * Go to a result. The board's to do: a result opens the issue's page
+   * Go to a result. The board's to do: a result opens the ticket's page
    * (#112), and the board keeps this search for when you come back.
    */
   onOpen: (hit: SearchHit) => void

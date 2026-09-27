@@ -34,7 +34,7 @@ function handlers() {
 describe('keepStreamOpen (#103)', () => {
   it('sends the bearer header, delivers events, and stops on close', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      streamOf('retry: 5000\n: connected\n\n', 'event: issue_changed\ndata: {"id": 4', '2}\n\n', 'event: close\ndata: {}\n\n'),
+      streamOf('retry: 5000\n: connected\n\n', 'event: ticket_changed\ndata: {"id": 4', '2}\n\n', 'event: close\ndata: {}\n\n'),
     )
     vi.stubGlobal('fetch', fetchMock)
     const h = handlers()
@@ -45,7 +45,7 @@ describe('keepStreamOpen (#103)', () => {
     const [url, init] = fetchMock.mock.calls[0]
     expect(String(url)).toMatch(/\/teams\/7\/events$/)
     expect(init.headers.Authorization).toBe('Bearer tok')
-    expect(h.onEvent).toHaveBeenCalledWith({ event: 'issue_changed', data: '{"id": 42}' })
+    expect(h.onEvent).toHaveBeenCalledWith({ event: 'ticket_changed', data: '{"id": 42}' })
     expect(h.onOpen).toHaveBeenCalledWith(false)
     expect(h.onClose).toHaveBeenCalledTimes(1)
   })

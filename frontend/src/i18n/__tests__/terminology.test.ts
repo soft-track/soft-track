@@ -3,15 +3,15 @@ import { describe, expect, it } from 'vitest'
 import { resources } from '@/i18n/resources'
 
 /**
- * The interface says ticket, epic and sprint (#211, #214). The API, the
- * database, URLs and the code still say issue and project, which is exactly
- * why the old words keep trying to come back: this fails when new text in the
- * catalog uses them, or calls a sprint a cycle.
+ * The interface says ticket, epic and sprint (#211, #214, #215). The code
+ * still calls an epic a project, and people arrive from trackers that say
+ * issue and cycle, which is why the old words keep trying to come back: this
+ * fails when new text in the catalog uses them.
  *
  * Other products' words stay theirs -- Jira's issues and its Issue key
  * column, GitHub issues, GitLab projects -- and "Issues a new secret" is a
- * verb. Placeholders and tag names are code, so `{{project}}` and `<issue>`
- * are left alone too.
+ * verb. Placeholders and tag names are code, so `{{project}}` is left alone
+ * too.
  */
 const THEIRS = [
   /\bIssue key\b/g,
@@ -35,7 +35,7 @@ function* strings(node: unknown, path: string): Generator<[string, string]> {
   }
 }
 
-describe('what the interface calls things (#211, #214)', () => {
+describe('what the interface calls things (#211, #214, #215)', () => {
   it('says ticket, epic and sprint, not issue, project and cycle', () => {
     const offenders = Object.entries(resources.en)
       .flatMap(([namespace, catalog]) => [...strings(catalog, namespace)])

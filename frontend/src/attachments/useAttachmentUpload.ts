@@ -1,21 +1,21 @@
 import { useCallback, useState } from 'react'
 
-import { useUploadAttachmentIssuesIssueIdAttachmentsPost } from '@/api/generated/endpoints/attachments/attachments'
+import { useUploadAttachmentTicketsTicketIdAttachmentsPost } from '@/api/generated/endpoints/attachments/attachments'
 import type { AttachmentRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useTranslation } from '@/i18n'
 
 /**
- * Uploading files against an issue.
+ * Uploading files against a ticket.
  *
  * Files are uploaded one at a time rather than in parallel: the server rejects
  * an oversized or unsupported file individually, and a serial loop means the
  * first refusal is reported against the file that caused it instead of
  * arriving alongside three other results.
  */
-export function useAttachmentUpload(issueId: number) {
+export function useAttachmentUpload(ticketId: number) {
   const { t } = useTranslation('attachments')
-  const upload = useUploadAttachmentIssuesIssueIdAttachmentsPost()
+  const upload = useUploadAttachmentTicketsTicketIdAttachmentsPost()
   const [uploading, setUploading] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
@@ -28,7 +28,7 @@ export function useAttachmentUpload(issueId: number) {
       const uploaded: AttachmentRead[] = []
       try {
         for (const file of files) {
-          uploaded.push(await upload.mutateAsync({ issueId, data: { file } }))
+          uploaded.push(await upload.mutateAsync({ ticketId, data: { file } }))
           setUploading((n) => n - 1)
         }
       } catch (err) {
@@ -39,7 +39,7 @@ export function useAttachmentUpload(issueId: number) {
       }
       return uploaded
     },
-    [issueId, upload, t],
+    [ticketId, upload, t],
   )
 
   return { uploadFiles, uploading, error, clearError: () => setError(null) }

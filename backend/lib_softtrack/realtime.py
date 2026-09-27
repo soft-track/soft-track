@@ -1,15 +1,15 @@
 """Real-time invalidation events over server-sent events (#103).
 
-What gets sent is a nudge, not data: `issue_changed {"id": 42}`,
-`comment_added {"issue_id": 42}`, `notification {}`. The browser answers a
+What gets sent is a nudge, not data: `ticket_changed {"id": 42}`,
+`comment_added {"ticket_id": 42}`, `notification {}`. The browser answers a
 nudge by refetching through the same REST endpoints it already uses, so there
 is one way data reaches the page, one set of permission checks, and nothing
 here that can drift from what the API would have returned.
 
 **Where events come from: the ORM, not the services.** A session listener
-watches what each flush writes -- issues, comments, reactions, links, time
+watches what each flush writes -- tickets, comments, reactions, links, time
 entries, notifications -- and publishes once the transaction commits. One
-place rather than a publish call in every service, so an issue moved by an
+place rather than a publish call in every service, so a ticket moved by an
 automation rule, a webhook from GitHub or a Jira import is announced exactly
 like one dragged on the board, and a code path added next year is announced
 without anyone remembering to. Publishing waits for the commit: a nudge sent
@@ -39,9 +39,9 @@ from lib_softtrack.tables import (
     Attachment,
     Comment,
     CommentReaction,
-    Issue,
-    IssueLabelLink,
-    IssueLink,
+    Ticket,
+    TicketLabelLink,
+    TicketLink,
     Notification,
     TeamMember,
     User,
@@ -61,7 +61,7 @@ class Event:
     """One nudge: its name and a small JSON body of ids.
 
     The body is kept as its JSON text so an event is hashable, which is what
-    lets one transaction that touches an issue five times announce it once.
+    lets one transaction that touches a ticket five times announce it once.
     """
 
     name: str
@@ -179,9 +179,9 @@ def _pending(session: Session) -> set[tuple[str, Event]]:
     return session.info.setdefault(_PENDING, set())
 
 
-def _issue_team(session: Session, issue_id: int) -> Optional[int]:
-    issue = session.get(Issue, issue_id)
-    return issue.team_id if issue is not None else None
+def _ticket_team(session: Session, ticket_id: int) -> Optional[int]:
+    ticket = session.get(Ticket, ticket_id)
+    return ticket.team_id if ticket is not None else None
 
 
 def _collect(session: Session, flush_context) -> None:
@@ -195,45 +195,47 @@ def _collect(session: Session, flush_context) -> None:
 
 
 def _collect_from(session: Session, pending: set[tuple[str, Event]]) -> None:
-    def issue_changed(team_id: Optional[int], issue_id: int) -> None:
+    def ticket_changed(team_id: Optional[int], ticket_id: int) -> None:
         if team_id is not None:
-            pending.add((team_channel(team_id), Event.of("issue_changed", id=issue_id)))
+            pending.add(
+                (team_channel(team_id), Event.of("ticket_changed", id=ticket_id))
+            )
 
     for obj in list(session.new) + list(session.dirty) + list(session.deleted):
-        if isinstance(obj, Issue):
-            issue_changed(obj.team_id, obj.id)
-            # An issue moving teams (#98) leaves one board as well as joining
+        if isinstance(obj, Ticket):
+            ticket_changed(obj.team_id, obj.id)
+            # A ticket moving teams (#98) leaves one board as well as joining
             # another, and both boards have to hear about it.
             history = inspect(obj).attrs.team_id.history
             for old_team in history.deleted or ():
-                issue_changed(old_team, obj.id)
+                ticket_changed(old_team, obj.id)
         elif isinstance(obj, Comment):
-            team = _issue_team(session, obj.issue_id)
+            team = _ticket_team(session, obj.ticket_id)
             if team is not None:
                 pending.add(
                     (
                         team_channel(team),
-                        Event.of("comment_added", issue_id=obj.issue_id),
+                        Event.of("comment_added", ticket_id=obj.ticket_id),
                     )
                 )
         elif isinstance(obj, CommentReaction):
             comment = session.get(Comment, obj.comment_id)
             if comment is not None:
-                team = _issue_team(session, comment.issue_id)
+                team = _ticket_team(session, comment.ticket_id)
                 if team is not None:
                     pending.add(
                         (
                             team_channel(team),
-                            Event.of("comment_added", issue_id=comment.issue_id),
+                            Event.of("comment_added", ticket_id=comment.ticket_id),
                         )
                     )
-        elif isinstance(obj, (Worklog, Attachment, IssueLabelLink)):
-            # Rows that change what an issue shows without touching the
-            # issue row: its time, its files, its labels.
-            issue_changed(_issue_team(session, obj.issue_id), obj.issue_id)
-        elif isinstance(obj, IssueLink):
-            for issue_id in (obj.source_id, obj.target_id):
-                issue_changed(_issue_team(session, issue_id), issue_id)
+        elif isinstance(obj, (Worklog, Attachment, TicketLabelLink)):
+            # Rows that change what a ticket shows without touching the
+            # ticket row: its time, its files, its labels.
+            ticket_changed(_ticket_team(session, obj.ticket_id), obj.ticket_id)
+        elif isinstance(obj, TicketLink):
+            for ticket_id in (obj.source_id, obj.target_id):
+                ticket_changed(_ticket_team(session, ticket_id), ticket_id)
         elif isinstance(obj, Notification) and obj in session.new:
             pending.add((user_channel(obj.user_id), Event.of("notification")))
         elif isinstance(obj, TeamMember) and obj in session.deleted:

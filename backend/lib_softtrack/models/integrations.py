@@ -57,7 +57,7 @@ class RepositoryRead(BaseModel):
 
 
 class RepositoryLinkedItem(BaseModel):
-    """Which repository a link came from, for an issue that has several."""
+    """Which repository a link came from, for a ticket that has several."""
 
     id: int
     provider: GitProvider
@@ -82,10 +82,10 @@ class CodeLinkRead(BaseModel):
 
 
 class CodeLinks(BaseModel):
-    """Everything connected to one issue, in the three groups it reads as.
+    """Everything connected to one ticket, in the three groups it reads as.
 
     Grouped in the response rather than sorted in the browser, the same way
-    IssueLinks is: the three have different shapes on the page -- a pull
+    TicketLinks is: the three have different shapes on the page -- a pull
     request has a state, a commit has a sha -- so a flat list would be
     regrouped by every client that rendered it.
     """
@@ -102,7 +102,7 @@ class WebhookReceipt(BaseModel):
     in their delivery log, and that log is the entire debugging surface for
     whoever is setting this up -- "accepted, matched nothing" is the answer to
     the question they are about to ask, and it is much cheaper to read there
-    than to work out from an issue page that did not change.
+    than to work out from a ticket page that did not change.
     """
 
     #: Events in the delivery that this integration understands. Zero is
@@ -110,6 +110,6 @@ class WebhookReceipt(BaseModel):
     events: int
     #: Links created or updated as a result.
     links: int
-    #: The issues the delivery named, e.g. `["ENG-42"]`. Empty means nothing
-    #: in the text resolved to an issue on this team.
-    issues: list[str] = []
+    #: The tickets the delivery named, e.g. `["ENG-42"]`. Empty means nothing
+    #: in the text resolved to a ticket on this team.
+    tickets: list[str] = []

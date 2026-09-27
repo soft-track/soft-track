@@ -4,11 +4,11 @@ The properties these guard, in the order they would hurt:
 
 * A delivery nobody could sign changes nothing, and a delivery about another
   repository changes nothing either.
-* Text from one team's repository can never reach another team's issues.
+* Text from one team's repository can never reach another team's tickets.
 * A redelivery -- the button both providers put in their UI -- is harmless.
   Links are upserted and triggers fire on transitions, so pressing it ten
   times does not post ten comments.
-* A merged pull request moves the issue, and a closed one does not.
+* A merged pull request moves the ticket, and a closed one does not.
 """
 
 import hashlib
@@ -57,9 +57,9 @@ def deliver(client, repo, event, payload, provider="github", secret=None):
     return client.post(hook_path(repo, provider), content=body, headers=headers)
 
 
-def make_issue(client, actor, team_id, title="Work", **fields):
+def make_ticket(client, actor, team_id, title="Work", **fields):
     response = client.post(
-        f"/teams/{team_id}/issues",
+        f"/teams/{team_id}/tickets",
         json={"title": title, **fields},
         headers=actor["headers"],
     )
@@ -67,14 +67,14 @@ def make_issue(client, actor, team_id, title="Work", **fields):
     return response.json()
 
 
-def code_links(client, actor, issue_id):
-    response = client.get(f"/issues/{issue_id}/code-links", headers=actor["headers"])
+def code_links(client, actor, ticket_id):
+    response = client.get(f"/tickets/{ticket_id}/code-links", headers=actor["headers"])
     assert response.status_code == 200, response.text
     return response.json()
 
 
-def get_issue(client, actor, issue_id):
-    response = client.get(f"/issues/{issue_id}", headers=actor["headers"])
+def get_ticket(client, actor, ticket_id):
+    response = client.get(f"/tickets/{ticket_id}", headers=actor["headers"])
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -177,12 +177,12 @@ def test_rotating_moves_the_secret_and_the_url_together(client, connected):
 
 
 def test_a_delivery_with_a_bad_signature_changes_nothing(client, connected):
-    issue = make_issue(client, connected, connected["team"]["id"])
+    ticket = make_ticket(client, connected, connected["team"]["id"])
     response = deliver(
         client, connected["repo"], "push", push(), secret="not-the-secret"
     )
     assert response.status_code == 401
-    assert code_links(client, connected, issue["id"])["branches"] == []
+    assert code_links(client, connected, ticket["id"])["branches"] == []
 
 
 def test_an_unsigned_delivery_is_refused(client, connected):
@@ -208,14 +208,14 @@ def test_an_unknown_webhook_token_is_a_404(client, connected):
 def test_a_delivery_about_another_repository_is_refused(client, connected):
     """The webhook pasted onto the wrong repository. The signature proves who
     sent it; this proves what it is about."""
-    issue = make_issue(client, connected, connected["team"]["id"])
+    ticket = make_ticket(client, connected, connected["team"]["id"])
     payload = push()
     payload["repository"]["full_name"] = "acme/www"
 
     response = deliver(client, connected["repo"], "push", payload)
     assert response.status_code == 400
     assert "acme/www" in json.dumps(response.json())
-    assert code_links(client, connected, issue["id"])["branches"] == []
+    assert code_links(client, connected, ticket["id"])["branches"] == []
 
 
 def test_a_gitlab_secret_is_not_accepted_on_the_github_route(client, connected):
@@ -233,7 +233,7 @@ def test_a_gitlab_secret_is_not_accepted_on_the_github_route(client, connected):
 
 
 def test_a_push_links_the_branch_and_the_commit(client, connected):
-    issue = make_issue(client, connected, connected["team"]["id"])
+    ticket = make_ticket(client, connected, connected["team"]["id"])
     response = deliver(
         client,
         connected["repo"],
@@ -250,9 +250,9 @@ def test_a_push_links_the_branch_and_the_commit(client, connected):
         ),
     )
     assert response.status_code == 200, response.text
-    assert response.json()["issues"] == ["ENG-1"]
+    assert response.json()["tickets"] == ["ENG-1"]
 
-    links = code_links(client, connected, issue["id"])
+    links = code_links(client, connected, ticket["id"])
     assert [b["external_id"] for b in links["branches"]] == ["eng-1-fix"]
     assert [c["external_id"] for c in links["commits"]] == ["abc123"]
     assert links["commits"][0]["author_name"] == "Sam"
@@ -260,10 +260,10 @@ def test_a_push_links_the_branch_and_the_commit(client, connected):
 
 
 def test_a_pull_request_is_linked_with_its_state(client, connected):
-    issue = make_issue(client, connected, connected["team"]["id"])
+    ticket = make_ticket(client, connected, connected["team"]["id"])
     deliver(client, connected["repo"], "pull_request", pull_request())
 
-    links = code_links(client, connected, issue["id"])
+    links = code_links(client, connected, ticket["id"])
     assert [p["external_id"] for p in links["pull_requests"]] == ["7"]
     assert links["pull_requests"][0]["state"] == "open"
 
@@ -271,12 +271,12 @@ def test_a_pull_request_is_linked_with_its_state(client, connected):
 def test_a_delivery_naming_nothing_is_accepted_and_says_so(client, connected):
     """`events: 1, links: 0` in the provider's delivery log is the answer to
     the question somebody debugging this is about to ask."""
-    make_issue(client, connected, connected["team"]["id"])
+    make_ticket(client, connected, connected["team"]["id"])
     response = deliver(
         client, connected["repo"], "push", push(ref="refs/heads/no-identifier-here")
     )
     assert response.status_code == 200
-    assert response.json() == {"events": 1, "links": 0, "issues": []}
+    assert response.json() == {"events": 1, "links": 0, "tickets": []}
 
 
 def test_a_ping_is_accepted(client, connected):
@@ -292,9 +292,9 @@ def test_a_ping_is_accepted(client, connected):
     assert repos[0]["last_delivery_at"] is not None
 
 
-def test_a_pull_request_naming_two_issues_links_both(client, connected):
-    first = make_issue(client, connected, connected["team"]["id"])
-    second = make_issue(client, connected, connected["team"]["id"])
+def test_a_pull_request_naming_two_tickets_links_both(client, connected):
+    first = make_ticket(client, connected, connected["team"]["id"])
+    second = make_ticket(client, connected, connected["team"]["id"])
     deliver(
         client,
         connected["repo"],
@@ -305,14 +305,14 @@ def test_a_pull_request_naming_two_issues_links_both(client, connected):
     assert len(code_links(client, connected, second["id"])["pull_requests"]) == 1
 
 
-def test_a_repository_cannot_reach_another_teams_issues(client, connected, auth):
+def test_a_repository_cannot_reach_another_teams_tickets(client, connected, auth):
     """The boundary, over HTTP this time. A commit message in acme/api that
-    deliberately names a DES issue must not touch it."""
+    deliberately names a DES ticket must not touch it."""
     other = auth(email="other@softtrack.dev", full_name="Other Person")
     other_team = client.post(
         "/teams", json={"name": "Design", "key": "DES"}, headers=other["headers"]
     ).json()
-    theirs = make_issue(client, other, other_team["id"], title="Theirs")
+    theirs = make_ticket(client, other, other_team["id"], title="Theirs")
 
     response = deliver(
         client, connected["repo"], "push", push(ref="refs/heads/des-1-sneaky")
@@ -323,11 +323,11 @@ def test_a_repository_cannot_reach_another_teams_issues(client, connected, auth)
 
 
 def test_a_flood_of_commits_is_capped(client, connected):
-    """A rebase of a long-lived branch can carry hundreds, and an issue page
+    """A rebase of a long-lived branch can carry hundreds, and a ticket page
     listing three hundred commits is one nobody reads past the first screen."""
     from lib_softtrack.integrations import MAX_COMMITS_PER_DELIVERY
 
-    issue = make_issue(client, connected, connected["team"]["id"])
+    ticket = make_ticket(client, connected, connected["team"]["id"])
     commits = [
         {
             "id": f"sha{n:03d}",
@@ -339,7 +339,7 @@ def test_a_flood_of_commits_is_capped(client, connected):
     ]
     deliver(client, connected["repo"], "push", push(commits=commits))
 
-    links = code_links(client, connected, issue["id"])
+    links = code_links(client, connected, ticket["id"])
     assert len(links["commits"]) == MAX_COMMITS_PER_DELIVERY
     # The branch is not sacrificed to the cap.
     assert len(links["branches"]) == 1
@@ -351,7 +351,7 @@ def test_a_flood_of_commits_is_capped(client, connected):
 def test_redelivering_the_same_push_does_not_duplicate_anything(client, connected):
     """Both providers put a "redeliver" button in the UI, and people press it
     while they are debugging exactly this."""
-    issue = make_issue(client, connected, connected["team"]["id"])
+    ticket = make_ticket(client, connected, connected["team"]["id"])
     payload = push(
         commits=[
             {
@@ -365,13 +365,13 @@ def test_redelivering_the_same_push_does_not_duplicate_anything(client, connecte
     for _ in range(3):
         assert deliver(client, connected["repo"], "push", payload).status_code == 200
 
-    links = code_links(client, connected, issue["id"])
+    links = code_links(client, connected, ticket["id"])
     assert len(links["branches"]) == 1
     assert len(links["commits"]) == 1
 
 
 def test_a_pull_request_title_edit_updates_the_link(client, connected):
-    issue = make_issue(client, connected, connected["team"]["id"])
+    ticket = make_ticket(client, connected, connected["team"]["id"])
     deliver(client, connected["repo"], "pull_request", pull_request())
     deliver(
         client,
@@ -380,7 +380,7 @@ def test_a_pull_request_title_edit_updates_the_link(client, connected):
         pull_request(title="ENG-1 Fix it properly"),
     )
 
-    links = code_links(client, connected, issue["id"])
+    links = code_links(client, connected, ticket["id"])
     assert len(links["pull_requests"]) == 1
     assert links["pull_requests"][0]["title"] == "ENG-1 Fix it properly"
 
@@ -405,7 +405,7 @@ def runs(client, actor, team_id):
 
 
 def test_a_branch_sets_off_a_branch_rule(client, connected):
-    """The problem the issue opens with: the status had to be moved by hand
+    """The problem the ticket opens with: the status had to be moved by hand
     the moment work started."""
     create_rule(
         client,
@@ -415,11 +415,11 @@ def test_a_branch_sets_off_a_branch_rule(client, connected):
         "branch_created",
         set_status_id=connected["status_ids"]["In Progress"],
     )
-    issue = make_issue(client, connected, connected["team"]["id"])
+    ticket = make_ticket(client, connected, connected["team"]["id"])
     deliver(client, connected["repo"], "push", push())
 
     assert (
-        get_issue(client, connected, issue["id"])["status"]["id"]
+        get_ticket(client, connected, ticket["id"])["status"]["id"]
         == connected["status_ids"]["In Progress"]
     )
 
@@ -444,11 +444,11 @@ def test_a_pull_request_moves_it_to_review_and_a_merge_moves_it_to_done(
         "pull_request_merged",
         set_status_id=connected["status_ids"]["Done"],
     )
-    issue = make_issue(client, connected, team_id)
+    ticket = make_ticket(client, connected, team_id)
 
     deliver(client, connected["repo"], "pull_request", pull_request())
     assert (
-        get_issue(client, connected, issue["id"])["status"]["id"]
+        get_ticket(client, connected, ticket["id"])["status"]["id"]
         == connected["status_ids"]["In Review"]
     )
 
@@ -459,18 +459,18 @@ def test_a_pull_request_moves_it_to_review_and_a_merge_moves_it_to_done(
         pull_request(state="closed", merged=True),
     )
     assert (
-        get_issue(client, connected, issue["id"])["status"]["id"]
+        get_ticket(client, connected, ticket["id"])["status"]["id"]
         == connected["status_ids"]["Done"]
     )
     assert (
-        code_links(client, connected, issue["id"])["pull_requests"][0]["state"]
+        code_links(client, connected, ticket["id"])["pull_requests"][0]["state"]
         == "merged"
     )
 
 
-def test_abandoning_a_pull_request_does_not_move_the_issue(client, connected):
+def test_abandoning_a_pull_request_does_not_move_the_ticket(client, connected):
     """`closed` covers both merging and giving up, and only one of them
-    shipped anything. A rule moving the issue to Done on the other would be
+    shipped anything. A rule moving the ticket to Done on the other would be
     wrong about the one thing it is for."""
     team_id = connected["team"]["id"]
     create_rule(
@@ -481,7 +481,7 @@ def test_abandoning_a_pull_request_does_not_move_the_issue(client, connected):
         "pull_request_merged",
         set_status_id=connected["status_ids"]["Done"],
     )
-    issue = make_issue(client, connected, team_id)
+    ticket = make_ticket(client, connected, team_id)
 
     deliver(client, connected["repo"], "pull_request", pull_request())
     deliver(
@@ -491,7 +491,7 @@ def test_abandoning_a_pull_request_does_not_move_the_issue(client, connected):
         pull_request(state="closed", merged=False),
     )
     assert (
-        get_issue(client, connected, issue["id"])["status"]["id"]
+        get_ticket(client, connected, ticket["id"])["status"]["id"]
         != connected["status_ids"]["Done"]
     )
 
@@ -509,7 +509,7 @@ def test_a_redelivered_merge_does_not_run_the_rule_twice(client, connected):
         "pull_request_merged",
         comment_body="Shipped.",
     )
-    issue = make_issue(client, connected, team_id)
+    ticket = make_ticket(client, connected, team_id)
 
     merged = pull_request(state="closed", merged=True)
     for _ in range(3):
@@ -517,14 +517,14 @@ def test_a_redelivered_merge_does_not_run_the_rule_twice(client, connected):
 
     assert runs(client, connected, team_id)["total"] == 1
     comments = client.get(
-        f"/issues/{issue['id']}/comments", headers=connected["headers"]
+        f"/tickets/{ticket['id']}/comments", headers=connected["headers"]
     ).json()
     assert len(comments["items"]) == 1
 
 
 def test_a_pull_request_first_seen_already_merged_is_a_merge(client, connected):
     """A webhook added after the fact, or an old event redelivered. Reporting
-    it as "opened" would move the issue to In Review and leave it there."""
+    it as "opened" would move the ticket to In Review and leave it there."""
     team_id = connected["team"]["id"]
     create_rule(
         client,
@@ -542,7 +542,7 @@ def test_a_pull_request_first_seen_already_merged_is_a_merge(client, connected):
         "pull_request_merged",
         set_status_id=connected["status_ids"]["Done"],
     )
-    issue = make_issue(client, connected, team_id)
+    ticket = make_ticket(client, connected, team_id)
 
     deliver(
         client,
@@ -551,7 +551,7 @@ def test_a_pull_request_first_seen_already_merged_is_a_merge(client, connected):
         pull_request(state="closed", merged=True),
     )
     assert (
-        get_issue(client, connected, issue["id"])["status"]["id"]
+        get_ticket(client, connected, ticket["id"])["status"]["id"]
         == connected["status_ids"]["Done"]
     )
 
@@ -568,7 +568,7 @@ def test_the_run_log_records_an_automated_move_with_no_actor(client, connected):
         "branch_created",
         set_status_id=connected["status_ids"]["In Progress"],
     )
-    make_issue(client, connected, team_id)
+    make_ticket(client, connected, team_id)
     deliver(client, connected["repo"], "push", push())
 
     log = runs(client, connected, team_id)
@@ -601,7 +601,7 @@ def test_a_gitlab_merge_request_links_and_merges(client, connected_gitlab):
         "pull_request_merged",
         set_status_id=connected_gitlab["status_ids"]["Done"],
     )
-    issue = make_issue(client, connected_gitlab, team_id)
+    ticket = make_ticket(client, connected_gitlab, team_id)
 
     def merge_request(state):
         return {
@@ -625,7 +625,7 @@ def test_a_gitlab_merge_request_links_and_merges(client, connected_gitlab):
         merge_request("opened"),
         provider="gitlab",
     )
-    assert len(code_links(client, connected_gitlab, issue["id"])["pull_requests"]) == 1
+    assert len(code_links(client, connected_gitlab, ticket["id"])["pull_requests"]) == 1
 
     deliver(
         client,
@@ -635,7 +635,7 @@ def test_a_gitlab_merge_request_links_and_merges(client, connected_gitlab):
         provider="gitlab",
     )
     assert (
-        get_issue(client, connected_gitlab, issue["id"])["status"]["id"]
+        get_ticket(client, connected_gitlab, ticket["id"])["status"]["id"]
         == connected_gitlab["status_ids"]["Done"]
     )
 
@@ -643,26 +643,26 @@ def test_a_gitlab_merge_request_links_and_merges(client, connected_gitlab):
 # --- cleaning up -----------------------------------------------------------
 
 
-def test_disconnecting_takes_the_links_off_the_issues(client, connected, session):
-    """A branch shown on an issue is a link somebody is meant to click, and
+def test_disconnecting_takes_the_links_off_the_tickets(client, connected, session):
+    """A branch shown on a ticket is a link somebody is meant to click, and
     one from a repository the team no longer has connected goes nowhere."""
-    issue = make_issue(client, connected, connected["team"]["id"])
+    ticket = make_ticket(client, connected, connected["team"]["id"])
     deliver(client, connected["repo"], "push", push())
-    assert len(code_links(client, connected, issue["id"])["branches"]) == 1
+    assert len(code_links(client, connected, ticket["id"])["branches"]) == 1
 
     response = client.delete(
         f"/repositories/{connected['repo']['id']}", headers=connected["headers"]
     )
     assert response.status_code == 204
-    assert code_links(client, connected, issue["id"])["branches"] == []
+    assert code_links(client, connected, ticket["id"])["branches"] == []
     assert session.get(Repository, connected["repo"]["id"]) is None
 
 
-def test_deleting_an_issue_takes_its_code_links_with_it(client, connected):
+def test_deleting_a_ticket_takes_its_code_links_with_it(client, connected):
     """They hold a foreign key to it -- Postgres rejects the delete otherwise,
     and SQLite does too with foreign keys on, which the suite turns on."""
-    issue = make_issue(client, connected, connected["team"]["id"])
+    ticket = make_ticket(client, connected, connected["team"]["id"])
     deliver(client, connected["repo"], "push", push())
 
-    response = client.delete(f"/issues/{issue['id']}", headers=connected["headers"])
+    response = client.delete(f"/tickets/{ticket['id']}", headers=connected["headers"])
     assert response.status_code == 204

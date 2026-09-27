@@ -44,7 +44,7 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
       setReport(data)
       if (!dryRun) {
         setDone(true)
-        queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/issues`] })
+        queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/tickets`] })
         queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/labels`] })
         queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/projects`] })
       }
@@ -120,11 +120,11 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
                 </p>
                 <ul className="mt-1 space-y-0.5 text-sm text-neutral-600">
                   <li>
-                    <Count i18nKey="jira.issues" n={report.issues_created} />
-                    {report.issues_skipped_existing > 0 && (
+                    <Count i18nKey="jira.tickets" n={report.tickets_created} />
+                    {report.tickets_skipped_existing > 0 && (
                       <span className="text-neutral-400">
                         {' '}
-                        {t('jira.skipped', { count: report.issues_skipped_existing })}
+                        {t('jira.skipped', { count: report.tickets_skipped_existing })}
                       </span>
                     )}
                   </li>
@@ -188,21 +188,21 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
                   <p className="eyebrow mb-1">
                     {t('jira.previewTitle', {
                       shown: report.preview.length,
-                      total: report.issues_found,
+                      total: report.tickets_found,
                     })}
                   </p>
                   <ul className="space-y-0.5">
-                    {report.preview.map((issue, i) => (
+                    {report.preview.map((ticket, i) => (
                       <li
-                        key={`${issue.external_key ?? i}`}
+                        key={`${ticket.external_key ?? i}`}
                         className="flex items-baseline gap-2 text-xs"
                       >
                         <span className="identifier shrink-0 text-neutral-400">
-                          {issue.external_key ?? '—'}
+                          {ticket.external_key ?? '—'}
                         </span>
-                        <span className="truncate text-neutral-700">{issue.title}</span>
+                        <span className="truncate text-neutral-700">{ticket.title}</span>
                         <span className="ml-auto shrink-0 text-neutral-400">
-                          {issue.status}
+                          {ticket.status}
                         </span>
                       </li>
                     ))}
@@ -227,7 +227,7 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
               {busy
                 ? t('jira.working')
                 : report
-                  ? t('jira.confirm', { count: report.issues_created })
+                  ? t('jira.confirm', { count: report.tickets_created })
                   : t('jira.check')}
             </button>
           )}
@@ -242,7 +242,7 @@ function Count({
   i18nKey,
   n,
 }: {
-  i18nKey: 'jira.issues' | 'jira.comments' | 'jira.labels' | 'jira.projects'
+  i18nKey: 'jira.tickets' | 'jira.comments' | 'jira.labels' | 'jira.projects'
   n: number
 }) {
   const { t } = useTranslation('imports')

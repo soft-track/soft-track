@@ -11,7 +11,7 @@ not on the list are refused outright rather than stored as
 
 **Deletion goes row first, bytes after the commit.** The two orders fail
 differently: a blob whose row is gone costs disk, while a row whose blob is
-gone costs a broken image on somebody's issue. Only one of those is worth
+gone costs a broken image on somebody's ticket. Only one of those is worth
 risking.
 """
 
@@ -27,7 +27,7 @@ from sqlmodel import Session, select
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.attachments import AttachmentPreview, AttachmentRead
 from lib_softtrack.storage import ObjectNotFound, Storage
-from lib_softtrack.tables import Attachment, Comment, Issue, User
+from lib_softtrack.tables import Attachment, Comment, Ticket, User
 from lib_softtrack.teams import require_team_member
 from lib_utils.errors import ErrorCode, api_error
 
@@ -207,7 +207,7 @@ def content_disposition(attachment: Attachment) -> str:
 def to_read(attachment: Attachment, uploader: User) -> AttachmentRead:
     return AttachmentRead(
         id=attachment.id,
-        issue_id=attachment.issue_id,
+        ticket_id=attachment.ticket_id,
         comment_id=attachment.comment_id,
         filename=attachment.filename,
         content_type=attachment.content_type,
@@ -232,13 +232,13 @@ def _expand(session: Session, attachments: list[Attachment]) -> list[AttachmentR
     return [to_read(a, uploaders[a.uploaded_by_id]) for a in attachments]
 
 
-def _issue_or_404(session: Session, issue_id: int) -> Issue:
-    issue = session.get(Issue, issue_id)
-    if issue is None:
+def _ticket_or_404(session: Session, ticket_id: int) -> Ticket:
+    ticket = session.get(Ticket, ticket_id)
+    if ticket is None:
         raise api_error(
-            status_code=404, code=ErrorCode.issue_not_found, detail="Issue not found"
+            status_code=404, code=ErrorCode.ticket_not_found, detail="Ticket not found"
         )
-    return issue
+    return ticket
 
 
 def get_attachment_for_read(
@@ -246,7 +246,7 @@ def get_attachment_for_read(
 ) -> Attachment:
     """An attachment the caller is allowed to see, or 404/403.
 
-    The issue is the only route to a team, which is why every attachment has
+    The ticket is the only route to a team, which is why every attachment has
     one even when a comment owns it.
     """
     attachment = session.get(Attachment, attachment_id)
@@ -256,8 +256,8 @@ def get_attachment_for_read(
             code=ErrorCode.attachment_not_found,
             detail="Attachment not found",
         )
-    issue = _issue_or_404(session, attachment.issue_id)
-    require_team_member(issue.team_id, current_user, session)
+    ticket = _ticket_or_404(session, attachment.ticket_id)
+    require_team_member(ticket.team_id, current_user, session)
     return attachment
 
 
@@ -265,18 +265,18 @@ def create_attachment(
     session: Session,
     storage: Storage,
     current_user: User,
-    issue_id: int,
+    ticket_id: int,
     upload: UploadFile,
     data: bytes,
 ) -> AttachmentRead:
-    """Store an uploaded file against an issue.
+    """Store an uploaded file against a ticket.
 
     `data` is read by the router, which is where the size limit is enforced --
     a limit is only worth anything if it is applied before the whole body is
     in hand.
     """
-    issue = _issue_or_404(session, issue_id)
-    require_team_member(issue.team_id, current_user, session)
+    ticket = _ticket_or_404(session, ticket_id)
+    require_team_member(ticket.team_id, current_user, session)
 
     filename = safe_filename(upload.filename or "")
     if not filename:
@@ -321,7 +321,7 @@ def create_attachment(
     storage.write(key, data)
 
     attachment = Attachment(
-        issue_id=issue_id,
+        ticket_id=ticket_id,
         filename=filename,
         content_type=content_type,
         size_bytes=len(data),
@@ -340,20 +340,20 @@ def create_attachment(
     return to_read(attachment, current_user)
 
 
-def list_for_issue(
-    session: Session, current_user: User, issue_id: int
+def list_for_ticket(
+    session: Session, current_user: User, ticket_id: int
 ) -> list[AttachmentRead]:
-    """The issue's own files -- the ones no comment has claimed.
+    """The ticket's own files -- the ones no comment has claimed.
 
     Comment attachments come back on the comment, so each file has exactly one
     place it is listed and the UI never has to dedupe.
     """
-    issue = _issue_or_404(session, issue_id)
-    require_team_member(issue.team_id, current_user, session)
+    ticket = _ticket_or_404(session, ticket_id)
+    require_team_member(ticket.team_id, current_user, session)
 
     attachments = session.exec(
         select(Attachment)
-        .where(Attachment.issue_id == issue_id, Attachment.comment_id.is_(None))
+        .where(Attachment.ticket_id == ticket_id, Attachment.comment_id.is_(None))
         .order_by(Attachment.created_at, Attachment.id)
     ).all()
     return _expand(session, list(attachments))
@@ -382,8 +382,8 @@ def claim_for_comment(
 ) -> None:
     """Hand a comment the files that were uploaded while it was being written.
 
-    Only unclaimed attachments on the same issue can be claimed, so a comment
-    cannot adopt a file out of someone else's comment or off another issue and
+    Only unclaimed attachments on the same ticket can be claimed, so a comment
+    cannot adopt a file out of someone else's comment or off another ticket and
     thereby carry it somewhere the uploader never put it.
     """
     if not attachment_ids:
@@ -399,7 +399,7 @@ def claim_for_comment(
         attachment = found.get(attachment_id)
         if (
             attachment is None
-            or attachment.issue_id != comment.issue_id
+            or attachment.ticket_id != comment.ticket_id
             or attachment.comment_id is not None
         ):
             raise api_error(
@@ -421,15 +421,15 @@ def delete_attachment(
     purge(storage, [key])
 
 
-def take_keys_for_issue(session: Session, issue_id: int) -> list[str]:
-    """Delete an issue's attachment rows, returning the keys still to purge.
+def take_keys_for_ticket(session: Session, ticket_id: int) -> list[str]:
+    """Delete a ticket's attachment rows, returning the keys still to purge.
 
-    Called while deleting an issue. The rows go now, inside the caller's
+    Called while deleting a ticket. The rows go now, inside the caller's
     transaction; the bytes go after it commits, which is why the keys come
     back rather than being deleted here.
     """
     attachments = session.exec(
-        select(Attachment).where(Attachment.issue_id == issue_id)
+        select(Attachment).where(Attachment.ticket_id == ticket_id)
     ).all()
     keys = [attachment.storage_key for attachment in attachments]
     for attachment in attachments:
@@ -441,7 +441,7 @@ def take_keys_for_comment(session: Session, comment_id: int) -> list[str]:
     """Delete a comment's attachment rows, returning the keys still to purge.
 
     Called while deleting a comment (#93), for the reasons and in the order
-    `take_keys_for_issue` gives: rows now, bytes after the commit.
+    `take_keys_for_ticket` gives: rows now, bytes after the commit.
     """
     attachments = session.exec(
         select(Attachment).where(Attachment.comment_id == comment_id)

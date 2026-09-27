@@ -23,7 +23,7 @@ only through a comment, and the most recently updated first among equals.
 
 Anyone writing a migration should know one thing. SQLite batch migrations
 rebuild a table by copying it, and that drops the table's triggers. A
-migration that batch-alters `issue` or `comment` must recreate the index
+migration that batch-alters `ticket` or `comment` must recreate the index
 triggers (see `backend/lib_softtrack/search_fts.py`).
 `test_every_trigger_survives_every_migration` fails if one doesn't.
 

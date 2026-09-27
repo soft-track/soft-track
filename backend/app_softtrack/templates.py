@@ -5,10 +5,10 @@ from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import templates as templates_service
 from lib_softtrack.models.templates import (
-    IssueTemplateCreate,
-    IssueTemplateOrder,
-    IssueTemplateRead,
-    IssueTemplateUpdate,
+    TicketTemplateCreate,
+    TicketTemplateOrder,
+    TicketTemplateRead,
+    TicketTemplateUpdate,
 )
 from lib_softtrack.tables import User
 from web import get_session
@@ -16,7 +16,9 @@ from web import get_session
 router = APIRouter(tags=["templates"])
 
 
-@router.get("/teams/{team_id}/issue-templates", response_model=list[IssueTemplateRead])
+@router.get(
+    "/teams/{team_id}/ticket-templates", response_model=list[TicketTemplateRead]
+)
 def list_templates(
     team_id: int,
     session: Session = Depends(get_session),
@@ -27,13 +29,13 @@ def list_templates(
 
 
 @router.post(
-    "/teams/{team_id}/issue-templates",
-    response_model=IssueTemplateRead,
+    "/teams/{team_id}/ticket-templates",
+    response_model=TicketTemplateRead,
     dependencies=[team_writer],
 )
 def create_template(
     team_id: int,
-    payload: IssueTemplateCreate,
+    payload: TicketTemplateCreate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
@@ -42,13 +44,13 @@ def create_template(
 
 
 @router.put(
-    "/teams/{team_id}/issue-templates/order",
-    response_model=list[IssueTemplateRead],
+    "/teams/{team_id}/ticket-templates/order",
+    response_model=list[TicketTemplateRead],
     dependencies=[team_writer],
 )
 def reorder_templates(
     team_id: int,
-    payload: IssueTemplateOrder,
+    payload: TicketTemplateOrder,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
@@ -57,13 +59,13 @@ def reorder_templates(
 
 
 @router.patch(
-    "/issue-templates/{template_id}",
-    response_model=IssueTemplateRead,
+    "/ticket-templates/{template_id}",
+    response_model=TicketTemplateRead,
     dependencies=[team_writer],
 )
 def update_template(
     template_id: int,
-    payload: IssueTemplateUpdate,
+    payload: TicketTemplateUpdate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
@@ -73,7 +75,7 @@ def update_template(
 
 
 @router.delete(
-    "/issue-templates/{template_id}", status_code=204, dependencies=[team_writer]
+    "/ticket-templates/{template_id}", status_code=204, dependencies=[team_writer]
 )
 def delete_template(
     template_id: int,

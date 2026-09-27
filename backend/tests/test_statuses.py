@@ -1,7 +1,7 @@
 """Per-team custom statuses (issue #22).
 
 The property most of these guard: **a team can invent a column, and nothing
-that reasons about work notices.** Burndown, sprint completion, sub-issue
+that reasons about work notices.** Burndown, sprint completion, sub-ticket
 progress and blocker counting all read the fixed category, so a status called
 "Blocked" behaves exactly like the "In Progress" it was cloned from -- and one
 called "Shipped" counts as finished everywhere without a single call site
@@ -11,7 +11,7 @@ learning its name.
 import pytest
 from sqlmodel import select
 
-from lib_softtrack.tables import IssueEvent, IssueEventField
+from lib_softtrack.tables import TicketEvent, TicketEventField
 
 
 @pytest.fixture
@@ -41,9 +41,9 @@ def add_status(client, actor, team_id, name, category="started", color="#123456"
     )
 
 
-def make_issue(client, actor, team_id, title="Some work", **fields):
+def make_ticket(client, actor, team_id, title="Some work", **fields):
     response = client.post(
-        f"/teams/{team_id}/issues",
+        f"/teams/{team_id}/tickets",
         json={"title": title, **fields},
         headers=actor["headers"],
     )
@@ -51,9 +51,9 @@ def make_issue(client, actor, team_id, title="Some work", **fields):
     return response.json()
 
 
-def move(client, actor, issue, status_id):
+def move(client, actor, ticket, status_id):
     response = client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"status_id": status_id},
         headers=actor["headers"],
     )
@@ -77,9 +77,9 @@ def test_a_new_team_gets_the_workflow_the_enum_used_to_describe(client, pair):
     assert [row["position"] for row in rows] == [0, 1, 2, 3, 4, 5]
 
 
-def test_a_new_issue_lands_in_the_leftmost_column(client, pair):
-    issue = make_issue(client, pair, pair["team"]["id"])
-    assert issue["status"]["name"] == "Backlog"
+def test_a_new_ticket_lands_in_the_leftmost_column(client, pair):
+    ticket = make_ticket(client, pair, pair["team"]["id"])
+    assert ticket["status"]["name"] == "Backlog"
 
 
 def test_a_member_can_read_the_workflow_but_not_change_it(client, pair):
@@ -146,16 +146,16 @@ def test_renaming_recolouring_and_recategorising(client, pair):
     assert response.json()["color"] == "#abcdef"
 
 
-def test_an_issue_cannot_be_moved_into_another_teams_column(client, pair):
+def test_a_ticket_cannot_be_moved_into_another_teams_column(client, pair):
     """It would vanish from its own board."""
     other = client.post(
         "/teams", json={"name": "Design", "key": "DSG"}, headers=pair["headers"]
     ).json()
     foreign = statuses(client, pair, other["id"])[0]
-    issue = make_issue(client, pair, pair["team"]["id"])
+    ticket = make_ticket(client, pair, pair["team"]["id"])
 
     response = client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"status_id": foreign["id"]},
         headers=pair["headers"],
     )
@@ -217,37 +217,37 @@ def delete_status(client, actor, status_id, move_to_id):
     )
 
 
-def test_deleting_a_status_moves_its_issues(client, pair):
+def test_deleting_a_status_moves_its_tickets(client, pair):
     ids = {row["name"]: row["id"] for row in statuses(client, pair, pair["team"]["id"])}
-    issue = make_issue(client, pair, pair["team"]["id"], status_id=ids["In Review"])
+    ticket = make_ticket(client, pair, pair["team"]["id"], status_id=ids["In Review"])
 
     response = delete_status(client, pair, ids["In Review"], ids["In Progress"])
     assert response.status_code == 200, response.text
     assert "In Review" not in [row["name"] for row in response.json()]
 
-    moved = client.get(f"/issues/{issue['id']}", headers=pair["headers"]).json()
+    moved = client.get(f"/tickets/{ticket['id']}", headers=pair["headers"]).json()
     assert moved["status"]["name"] == "In Progress"
 
 
 def test_deleting_a_status_writes_no_history(client, pair, session):
     """The work did not change state -- the column under it was removed. A
-    status event per issue would put a step in every cumulative flow diagram
+    status event per ticket would put a step in every cumulative flow diagram
     on the day an admin tidied up the board."""
     ids = {row["name"]: row["id"] for row in statuses(client, pair, pair["team"]["id"])}
-    issue = make_issue(client, pair, pair["team"]["id"], status_id=ids["In Review"])
+    ticket = make_ticket(client, pair, pair["team"]["id"], status_id=ids["In Review"])
     before = len(
         session.exec(
-            select(IssueEvent).where(IssueEvent.field == IssueEventField.status)
+            select(TicketEvent).where(TicketEvent.field == TicketEventField.status)
         ).all()
     )
 
     delete_status(client, pair, ids["In Review"], ids["Todo"])
 
     after = session.exec(
-        select(IssueEvent).where(IssueEvent.field == IssueEventField.status)
+        select(TicketEvent).where(TicketEvent.field == TicketEventField.status)
     ).all()
     assert len(after) == before
-    assert issue["id"]
+    assert ticket["id"]
 
 
 def test_the_last_status_cannot_be_deleted(client, pair):
@@ -262,13 +262,13 @@ def test_the_last_status_cannot_be_deleted(client, pair):
     assert "at least one status" in response.json()["detail"]
 
 
-def test_issues_cannot_be_moved_to_the_status_being_deleted(client, pair):
+def test_tickets_cannot_be_moved_to_the_status_being_deleted(client, pair):
     ids = {row["name"]: row["id"] for row in statuses(client, pair, pair["team"]["id"])}
     response = delete_status(client, pair, ids["Todo"], ids["Todo"])
     assert response.status_code == 400
 
 
-def test_issues_cannot_be_moved_to_another_teams_status(client, pair):
+def test_tickets_cannot_be_moved_to_another_teams_status(client, pair):
     other = client.post(
         "/teams", json={"name": "Design", "key": "DSG"}, headers=pair["headers"]
     ).json()
@@ -310,11 +310,11 @@ def test_a_member_cannot_delete_a_status(client, pair):
 def test_a_custom_started_column_is_not_finished(client, pair):
     """ "Blocked" is a column a team invents; nothing treats it as done."""
     blocked = add_status(client, pair, pair["team"]["id"], "Blocked", "started").json()
-    parent = make_issue(client, pair, pair["team"]["id"], "P")
-    child = make_issue(client, pair, pair["team"]["id"], "C", parent_id=parent["id"])
+    parent = make_ticket(client, pair, pair["team"]["id"], "P")
+    child = make_ticket(client, pair, pair["team"]["id"], "C", parent_id=parent["id"])
     move(client, pair, child, blocked["id"])
 
-    fetched = client.get(f"/issues/{parent['id']}", headers=pair["headers"]).json()
+    fetched = client.get(f"/tickets/{parent['id']}", headers=pair["headers"]).json()
     assert (fetched["completed_child_count"], fetched["child_count"]) == (0, 1)
 
 
@@ -322,29 +322,29 @@ def test_a_custom_done_column_counts_as_finished_everywhere(client, pair):
     """The name is the team's business; `done` is what the tracker reads."""
     shipped = add_status(client, pair, pair["team"]["id"], "Shipped", "done").json()
 
-    parent = make_issue(client, pair, pair["team"]["id"], "P")
-    child = make_issue(client, pair, pair["team"]["id"], "C", parent_id=parent["id"])
+    parent = make_ticket(client, pair, pair["team"]["id"], "P")
+    child = make_ticket(client, pair, pair["team"]["id"], "C", parent_id=parent["id"])
     move(client, pair, child, shipped["id"])
-    fetched = client.get(f"/issues/{parent['id']}", headers=pair["headers"]).json()
+    fetched = client.get(f"/tickets/{parent['id']}", headers=pair["headers"]).json()
     assert (fetched["completed_child_count"], fetched["child_count"]) == (1, 1)
 
     # And a blocker in it stops blocking.
-    blocker = make_issue(client, pair, pair["team"]["id"], "Blocker")
-    blocked = make_issue(client, pair, pair["team"]["id"], "Blocked by it")
+    blocker = make_ticket(client, pair, pair["team"]["id"], "Blocker")
+    blocked = make_ticket(client, pair, pair["team"]["id"], "Blocked by it")
     client.post(
-        f"/issues/{blocker['id']}/links",
+        f"/tickets/{blocker['id']}/links",
         json={"target_id": blocked["id"], "type": "blocks"},
         headers=pair["headers"],
     )
     assert (
-        client.get(f"/issues/{blocked['id']}", headers=pair["headers"]).json()[
+        client.get(f"/tickets/{blocked['id']}", headers=pair["headers"]).json()[
             "blocked_by_count"
         ]
         == 1
     )
     move(client, pair, blocker, shipped["id"])
     assert (
-        client.get(f"/issues/{blocked['id']}", headers=pair["headers"]).json()[
+        client.get(f"/tickets/{blocked['id']}", headers=pair["headers"]).json()[
             "blocked_by_count"
         ]
         == 0
@@ -356,31 +356,31 @@ def test_moving_between_two_started_columns_records_no_history(client, pair, ses
     report is concerned. A row here would put a phantom step in the
     cumulative flow diagram."""
     ids = {row["name"]: row["id"] for row in statuses(client, pair, pair["team"]["id"])}
-    issue = make_issue(client, pair, pair["team"]["id"], status_id=ids["In Progress"])
+    ticket = make_ticket(client, pair, pair["team"]["id"], status_id=ids["In Progress"])
 
     before = len(
         session.exec(
-            select(IssueEvent).where(
-                IssueEvent.issue_id == issue["id"],
-                IssueEvent.field == IssueEventField.status,
+            select(TicketEvent).where(
+                TicketEvent.ticket_id == ticket["id"],
+                TicketEvent.field == TicketEventField.status,
             )
         ).all()
     )
-    move(client, pair, issue, ids["In Review"])
+    move(client, pair, ticket, ids["In Review"])
     after = session.exec(
-        select(IssueEvent).where(
-            IssueEvent.issue_id == issue["id"],
-            IssueEvent.field == IssueEventField.status,
+        select(TicketEvent).where(
+            TicketEvent.ticket_id == ticket["id"],
+            TicketEvent.field == TicketEventField.status,
         )
     ).all()
     assert len(after) == before
 
     # But moving to a column that means something else does record one.
-    move(client, pair, issue, ids["Done"])
+    move(client, pair, ticket, ids["Done"])
     recorded = session.exec(
-        select(IssueEvent).where(
-            IssueEvent.issue_id == issue["id"],
-            IssueEvent.field == IssueEventField.status,
+        select(TicketEvent).where(
+            TicketEvent.ticket_id == ticket["id"],
+            TicketEvent.field == TicketEventField.status,
         )
     ).all()
     assert len(recorded) == before + 1

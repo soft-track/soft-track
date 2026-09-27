@@ -6,13 +6,13 @@ import { isPlainKey, isTypingTarget } from '@/keyboard/typing'
  * The app-wide keys: ⌘K, C, ?, / and Escape.
  *
  * Every single-key binding is gated on `isTypingTarget` first. Without that
- * guard, typing an issue title containing "c" fires "create issue" -- which
+ * guard, typing a ticket title containing "c" fires "create ticket" -- which
  * is how keyboard shortcuts get added and then quietly turned off again.
  */
 export function useGlobalShortcuts({
   togglePalette,
   closeTop,
-  openNewIssue,
+  openNewTicket,
   openShortcuts,
   suppressed,
 }: {
@@ -20,7 +20,7 @@ export function useGlobalShortcuts({
   /** Escape: close the shallowest open layer, never two at once. */
   closeTop: () => void
   /** Absent for a guest (#104), who has nothing to create. */
-  openNewIssue?: () => void
+  openNewTicket?: () => void
   openShortcuts: () => void
   /** True while the palette or the cheatsheet is up, so C and ? stay quiet. */
   suppressed: boolean
@@ -41,9 +41,9 @@ export function useGlobalShortcuts({
       if (!isPlainKey(event) || isTypingTarget(event.target)) return
       if (suppressed) return
 
-      if (event.key === 'c' && openNewIssue) {
+      if (event.key === 'c' && openNewTicket) {
         event.preventDefault()
-        openNewIssue()
+        openNewTicket()
       } else if (event.key === '?') {
         event.preventDefault()
         openShortcuts()
@@ -58,5 +58,5 @@ export function useGlobalShortcuts({
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [togglePalette, closeTop, openNewIssue, openShortcuts, suppressed])
+  }, [togglePalette, closeTop, openNewTicket, openShortcuts, suppressed])
 }

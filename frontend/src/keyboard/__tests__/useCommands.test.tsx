@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { useCommands } from '@/keyboard/useCommands'
 
-function commandIds(creators: { openNewIssue?: () => void; openNewProject?: () => void }) {
+function commandIds(creators: { openNewTicket?: () => void; openNewProject?: () => void }) {
   const { result } = renderHook(
     () =>
       useCommands({
@@ -29,14 +29,14 @@ function commandIds(creators: { openNewIssue?: () => void; openNewProject?: () =
 afterEach(cleanup)
 
 describe('useCommands', () => {
-  it('offers creating an issue and a project to someone who can write', () => {
-    const ids = commandIds({ openNewIssue: vi.fn(), openNewProject: vi.fn() })
-    expect(ids.slice(0, 2)).toEqual(['new-issue', 'new-project'])
+  it('offers creating a ticket and a project to someone who can write', () => {
+    const ids = commandIds({ openNewTicket: vi.fn(), openNewProject: vi.fn() })
+    expect(ids.slice(0, 2)).toEqual(['new-ticket', 'new-project'])
   })
 
   it('offers a guest neither', () => {
     const ids = commandIds({})
-    expect(ids).not.toContain('new-issue')
+    expect(ids).not.toContain('new-ticket')
     expect(ids).not.toContain('new-project')
   })
 })

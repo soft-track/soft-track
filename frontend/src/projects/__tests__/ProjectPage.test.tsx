@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 /**
  * A project's own page (issue #61): what is in it, how far along it is, and
- * moving issues in and out.
+ * moving tickets in and out.
  *
  * The generated query and mutation hooks are replaced at the module boundary,
- * so a test sees exactly what the page would send. The issue panel is stubbed:
+ * so a test sees exactly what the page would send. The ticket panel is stubbed:
  * it has its own tests, and here only whether it opens matters.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -14,7 +14,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type {
-  IssueRead,
+  TicketRead,
   ProjectRead,
   StatusRead,
   TeamMemberRead,
@@ -25,11 +25,11 @@ import type { TeamContextValue } from '@/team/useTeamContext'
 
 const mocks = vi.hoisted(() => ({
   project: { data: undefined as unknown, isLoading: false },
-  issues: { data: undefined as unknown, isLoading: false },
+  tickets: { data: undefined as unknown, isLoading: false },
   search: { data: undefined as unknown, isLoading: false },
   burnup: { data: undefined as unknown },
   updateProject: { mutateAsync: vi.fn(), isPending: false },
-  updateIssue: { mutateAsync: vi.fn(), isPending: false },
+  updateTicket: { mutateAsync: vi.fn(), isPending: false },
   bulkUpdate: { mutateAsync: vi.fn(), isPending: false },
 }))
 
@@ -39,11 +39,11 @@ vi.mock('@/api/generated/endpoints/projects/projects', async (importOriginal) =>
   useUpdateProjectProjectsProjectIdPatch: () => mocks.updateProject,
 }))
 
-vi.mock('@/api/generated/endpoints/issues/issues', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/api/generated/endpoints/issues/issues')>()),
-  useListIssuesTeamsTeamIdIssuesGet: () => mocks.issues,
-  useUpdateIssueIssuesIssueIdPatch: () => mocks.updateIssue,
-  useBulkUpdateIssuesTeamsTeamIdIssuesBulkUpdatePost: () => mocks.bulkUpdate,
+vi.mock('@/api/generated/endpoints/tickets/tickets', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/generated/endpoints/tickets/tickets')>()),
+  useListTicketsTeamsTeamIdTicketsGet: () => mocks.tickets,
+  useUpdateTicketTicketsTicketIdPatch: () => mocks.updateTicket,
+  useBulkUpdateTicketsTeamsTeamIdTicketsBulkUpdatePost: () => mocks.bulkUpdate,
 }))
 
 vi.mock('@/api/generated/endpoints/reports/reports', async (importOriginal) => ({
@@ -56,8 +56,8 @@ vi.mock('@/api/generated/endpoints/search/search', async (importOriginal) => ({
   useSearchSearchGet: () => mocks.search,
 }))
 
-vi.mock('@/issues/IssueDetailPanel', () => ({
-  IssueDetailPanel: ({ issueId }: { issueId: number }) => <p>Panel for issue {issueId}</p>,
+vi.mock('@/tickets/TicketDetailPanel', () => ({
+  TicketDetailPanel: ({ ticketId }: { ticketId: number }) => <p>Panel for ticket {ticketId}</p>,
 }))
 
 function status(id: number, name: string, category: StatusRead['category']): StatusRead {
@@ -102,11 +102,11 @@ const PLATFORM: ProjectRead = {
   state: 'in_progress',
   archived: false,
   created_at: '2026-01-01T00:00:00Z',
-  issue_count: 3,
-  completed_issue_count: 1,
+  ticket_count: 3,
+  completed_ticket_count: 1,
 }
 
-function issue(id: number, title: string, inStatus: StatusRead): IssueRead {
+function ticket(id: number, title: string, inStatus: StatusRead): TicketRead {
   return {
     id,
     team_id: 7,
@@ -129,9 +129,9 @@ function issue(id: number, title: string, inStatus: StatusRead): IssueRead {
   }
 }
 
-function showing(project: ProjectRead | undefined, issues: IssueRead[]) {
+function showing(project: ProjectRead | undefined, tickets: TicketRead[]) {
   mocks.project.data = project
-  mocks.issues.data = { items: issues, total: issues.length, limit: 200, offset: 0 }
+  mocks.tickets.data = { items: tickets, total: tickets.length, limit: 200, offset: 0 }
 }
 
 function renderPage() {
@@ -151,7 +151,7 @@ beforeEach(() => {
   mocks.search.data = undefined
   mocks.burnup.data = undefined
   mocks.updateProject.mutateAsync.mockReset().mockResolvedValue(PLATFORM)
-  mocks.updateIssue.mutateAsync.mockReset().mockResolvedValue({})
+  mocks.updateTicket.mutateAsync.mockReset().mockResolvedValue({})
   mocks.bulkUpdate.mutateAsync.mockReset().mockResolvedValue([])
 })
 
@@ -161,11 +161,11 @@ afterEach(() => {
 })
 
 describe('what is in it and how far along', () => {
-  it('shows progress and the issues grouped by column, in board order', () => {
+  it('shows progress and the tickets grouped by column, in board order', () => {
     showing(PLATFORM, [
-      issue(1, 'Ship it', DONE),
-      issue(2, 'Write it', TODO),
-      issue(3, 'Test it', DOING),
+      ticket(1, 'Ship it', DONE),
+      ticket(2, 'Write it', TODO),
+      ticket(3, 'Test it', DOING),
     ])
     renderPage()
 
@@ -179,8 +179,8 @@ describe('what is in it and how far along', () => {
     expect(headings).toEqual(['Todo1', 'In Progress1', 'Done1'])
   })
 
-  it('says how issues get in, when nothing has yet', () => {
-    showing({ ...PLATFORM, issue_count: 0, completed_issue_count: 0 }, [])
+  it('says how tickets get in, when nothing has yet', () => {
+    showing({ ...PLATFORM, ticket_count: 0, completed_ticket_count: 0 }, [])
     renderPage()
 
     expect(screen.getByText('No tickets in this epic yet')).toBeTruthy()
@@ -197,11 +197,11 @@ describe('what is in it and how far along', () => {
       points: [
         {
           day: '2026-09-20',
-          scope_issues: 2,
-          completed_issues: 1,
+          scope_tickets: 2,
+          completed_tickets: 1,
           scope_points: 5,
           completed_points: 3,
-          unestimated_issues: 0,
+          unestimated_tickets: 0,
         },
       ],
     }
@@ -242,28 +242,28 @@ describe('changing the project', () => {
   })
 })
 
-describe('moving issues in and out', () => {
-  it('removes an issue by clearing its project, not by deleting it', async () => {
-    showing(PLATFORM, [issue(2, 'Write it', TODO)])
+describe('moving tickets in and out', () => {
+  it('removes a ticket by clearing its project, not by deleting it', async () => {
+    showing(PLATFORM, [ticket(2, 'Write it', TODO)])
     const user = renderPage()
 
     await user.click(screen.getByRole('button', { name: 'Remove ENG-2 from Platform' }))
-    expect(mocks.updateIssue.mutateAsync).toHaveBeenCalledWith({
-      issueId: 2,
+    expect(mocks.updateTicket.mutateAsync).toHaveBeenCalledWith({
+      ticketId: 2,
       data: { project_id: null },
     })
   })
 
-  it('opens an issue in the panel without leaving the page', async () => {
-    showing(PLATFORM, [issue(2, 'Write it', TODO)])
+  it('opens a ticket in the panel without leaving the page', async () => {
+    showing(PLATFORM, [ticket(2, 'Write it', TODO)])
     const user = renderPage()
 
     await user.click(screen.getByRole('button', { name: /Write it/ }))
-    expect(screen.getByText('Panel for issue 2')).toBeTruthy()
+    expect(screen.getByText('Panel for ticket 2')).toBeTruthy()
   })
 
-  it('adds the issues ticked in search, in one bulk edit', async () => {
-    showing(PLATFORM, [issue(2, 'Write it', TODO)])
+  it('adds the tickets ticked in search, in one bulk edit', async () => {
+    showing(PLATFORM, [ticket(2, 'Write it', TODO)])
     mocks.search.data = {
       items: [
         { id: 2, identifier: 'ENG-2', title: 'Write it' },
@@ -289,7 +289,7 @@ describe('moving issues in and out', () => {
     await waitFor(() =>
       expect(mocks.bulkUpdate.mutateAsync).toHaveBeenCalledWith({
         teamId: 7,
-        data: { issue_ids: [8, 9], changes: { project_id: 5 } },
+        data: { ticket_ids: [8, 9], changes: { project_id: 5 } },
       }),
     )
   })

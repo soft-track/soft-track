@@ -55,10 +55,10 @@ describe('useTeamEvents', () => {
     act(() => handlers.onOpen(false))
     expect(invalidate).not.toHaveBeenCalled()
 
-    act(() => handlers.onEvent({ event: 'issue_changed', data: '{"id": 42}' }))
+    act(() => handlers.onEvent({ event: 'ticket_changed', data: '{"id": 42}' }))
     const [{ predicate }] = invalidate.mock.calls[0] as [{ predicate: (q: unknown) => boolean }]
-    expect(predicate({ queryKey: ['/issues/42'] })).toBe(true)
-    expect(predicate({ queryKey: ['/issues/43'] })).toBe(false)
+    expect(predicate({ queryKey: ['/tickets/42'] })).toBe(true)
+    expect(predicate({ queryKey: ['/tickets/43'] })).toBe(false)
 
     act(() => handlers.onEvent({ event: 'resync', data: '{}' }))
     expect(invalidate).toHaveBeenLastCalledWith()

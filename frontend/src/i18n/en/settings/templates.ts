@@ -1,4 +1,4 @@
-/** Settings → Team → Issue templates. */
+/** Settings → Team → Ticket templates. */
 export const templates = {
   title: 'Ticket templates',
   intro:

@@ -1,4 +1,4 @@
-"""Time tracking: worklogs on issues (#102)."""
+"""Time tracking: worklogs on tickets (#102)."""
 
 from datetime import date, timedelta
 
@@ -17,9 +17,9 @@ def join(client, team, person, role="member"):
     assert response.status_code == 200, response.text
 
 
-def make_issue(client, actor, team_id, **fields):
+def make_ticket(client, actor, team_id, **fields):
     response = client.post(
-        f"/teams/{team_id}/issues",
+        f"/teams/{team_id}/tickets",
         json={"title": "Retry storm", **fields},
         headers=actor["headers"],
     )
@@ -27,9 +27,9 @@ def make_issue(client, actor, team_id, **fields):
     return response.json()
 
 
-def log(client, actor, issue, minutes=90, expect=200, **fields):
+def log(client, actor, ticket, minutes=90, expect=200, **fields):
     response = client.post(
-        f"/issues/{issue['id']}/worklogs",
+        f"/tickets/{ticket['id']}/worklogs",
         json={"minutes": minutes, **fields},
         headers=actor["headers"],
     )
@@ -37,8 +37,8 @@ def log(client, actor, issue, minutes=90, expect=200, **fields):
     return response.json()
 
 
-def time_on(client, actor, issue):
-    response = client.get(f"/issues/{issue['id']}/worklogs", headers=actor["headers"])
+def time_on(client, actor, ticket):
+    response = client.get(f"/tickets/{ticket['id']}/worklogs", headers=actor["headers"])
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -51,43 +51,45 @@ def maya(client, team, auth):
 
 
 @pytest.fixture
-def issue(client, team):
-    return make_issue(client, team, team["team"]["id"])
+def ticket(client, team):
+    return make_ticket(client, team, team["team"]["id"])
 
 
-def test_an_issue_starts_with_no_time(client, team, issue):
-    assert time_on(client, team, issue) == {
+def test_a_ticket_starts_with_no_time(client, team, ticket):
+    assert time_on(client, team, ticket) == {
         "total_minutes": 0,
         "by_person": [],
         "entries": [],
     }
 
 
-def test_logging_time_defaults_to_today(client, team, issue):
-    entry = log(client, team, issue, minutes=150, note="  debugging the webhook retry ")
+def test_logging_time_defaults_to_today(client, team, ticket):
+    entry = log(
+        client, team, ticket, minutes=150, note="  debugging the webhook retry "
+    )
     assert entry["minutes"] == 150
     assert entry["worked_on"] == date.today().isoformat()
     assert entry["note"] == "debugging the webhook retry"
     assert entry["user"]["id"] == team["user"]["id"]
 
 
-def test_a_day_can_be_chosen(client, team, issue):
+def test_a_day_can_be_chosen(client, team, ticket):
     yesterday = (date.today() - timedelta(days=1)).isoformat()
-    assert log(client, team, issue, worked_on=yesterday)["worked_on"] == yesterday
+    assert log(client, team, ticket, worked_on=yesterday)["worked_on"] == yesterday
 
 
-def test_the_issue_totals_it_and_says_whose_it_was(client, team, maya, issue):
-    log(client, team, issue, minutes=30)
-    log(client, maya, issue, minutes=120)
+def test_the_ticket_totals_it_and_says_whose_it_was(client, team, maya, ticket):
+    log(client, team, ticket, minutes=30)
+    log(client, maya, ticket, minutes=120)
     log(
         client,
         team,
-        issue,
+        ticket,
         minutes=45,
         worked_on=(date.today() - timedelta(days=2)).isoformat(),
     )
 
-    time = time_on(client, team, issue)
+    time = time_on(client, team, ticket)
     assert time["total_minutes"] == 195
     assert [(p["user"]["full_name"], p["minutes"]) for p in time["by_person"]] == [
         ("Maya Chen", 120),
@@ -98,17 +100,17 @@ def test_the_issue_totals_it_and_says_whose_it_was(client, team, maya, issue):
 
 
 @pytest.mark.parametrize("minutes", [0, -5, 24 * 60 + 1])
-def test_an_entry_is_between_a_minute_and_a_day(client, team, issue, minutes):
-    log(client, team, issue, minutes=minutes, expect=422)
+def test_an_entry_is_between_a_minute_and_a_day(client, team, ticket, minutes):
+    log(client, team, ticket, minutes=minutes, expect=422)
 
 
-def test_a_whole_day_is_allowed(client, team, issue):
-    log(client, team, issue, minutes=24 * 60)
+def test_a_whole_day_is_allowed(client, team, ticket):
+    log(client, team, ticket, minutes=24 * 60)
 
 
-def test_the_future_is_refused(client, team, issue):
+def test_the_future_is_refused(client, team, ticket):
     response = client.post(
-        f"/issues/{issue['id']}/worklogs",
+        f"/tickets/{ticket['id']}/worklogs",
         json={
             "minutes": 30,
             "worked_on": (date.today() + timedelta(days=3)).isoformat(),
@@ -119,13 +121,13 @@ def test_the_future_is_refused(client, team, issue):
     assert response.json()["code"] == "worklog_in_future"
 
 
-def test_tomorrow_is_allowed_for_whoever_is_already_there(client, team, issue):
+def test_tomorrow_is_allowed_for_whoever_is_already_there(client, team, ticket):
     """Somebody's today is UTC's tomorrow for half of every day."""
-    log(client, team, issue, worked_on=(date.today() + timedelta(days=1)).isoformat())
+    log(client, team, ticket, worked_on=(date.today() + timedelta(days=1)).isoformat())
 
 
-def test_editing_your_own_entry(client, team, issue):
-    entry = log(client, team, issue, minutes=30, note="first go")
+def test_editing_your_own_entry(client, team, ticket):
+    entry = log(client, team, ticket, minutes=30, note="first go")
     response = client.patch(
         f"/worklogs/{entry['id']}",
         json={"minutes": 45, "note": ""},
@@ -136,15 +138,15 @@ def test_editing_your_own_entry(client, team, issue):
     assert response.json()["note"] is None
 
 
-def test_deleting_your_own_entry(client, team, issue):
-    entry = log(client, team, issue)
+def test_deleting_your_own_entry(client, team, ticket):
+    entry = log(client, team, ticket)
     response = client.delete(f"/worklogs/{entry['id']}", headers=team["headers"])
     assert response.status_code == 204
-    assert time_on(client, team, issue)["total_minutes"] == 0
+    assert time_on(client, team, ticket)["total_minutes"] == 0
 
 
-def test_nobody_else_can_touch_your_entry_not_even_an_admin(client, team, maya, issue):
-    theirs = log(client, maya, issue)
+def test_nobody_else_can_touch_your_entry_not_even_an_admin(client, team, maya, ticket):
+    theirs = log(client, maya, ticket)
     for method, body in (("PATCH", {"minutes": 1}), ("DELETE", None)):
         response = client.request(
             method, f"/worklogs/{theirs['id']}", json=body, headers=team["headers"]
@@ -153,13 +155,13 @@ def test_nobody_else_can_touch_your_entry_not_even_an_admin(client, team, maya, 
         assert response.json()["code"] == "not_your_worklog"
 
 
-def test_guests_see_time_but_cannot_log_it(client, team, auth, issue):
+def test_guests_see_time_but_cannot_log_it(client, team, auth, ticket):
     guest = auth(email="guest@softtrack.dev", full_name="Guest")
     join(client, team, guest, "guest")
-    log(client, team, issue, minutes=60)
-    assert time_on(client, guest, issue)["total_minutes"] == 60
+    log(client, team, ticket, minutes=60)
+    assert time_on(client, guest, ticket)["total_minutes"] == 60
     response = client.post(
-        f"/issues/{issue['id']}/worklogs",
+        f"/tickets/{ticket['id']}/worklogs",
         json={"minutes": 10},
         headers=guest["headers"],
     )
@@ -167,35 +169,35 @@ def test_guests_see_time_but_cannot_log_it(client, team, auth, issue):
     assert response.json()["code"] == "team_read_only"
 
 
-def test_outsiders_see_nothing(client, auth, issue):
+def test_outsiders_see_nothing(client, auth, ticket):
     stranger = auth(email="stranger@softtrack.dev", full_name="Stranger")
     response = client.get(
-        f"/issues/{issue['id']}/worklogs", headers=stranger["headers"]
+        f"/tickets/{ticket['id']}/worklogs", headers=stranger["headers"]
     )
     assert response.status_code == 403
 
 
-def test_deleting_the_issue_deletes_its_time(client, team, issue, session):
-    log(client, team, issue)
+def test_deleting_the_ticket_deletes_its_time(client, team, ticket, session):
+    log(client, team, ticket)
     assert (
-        client.delete(f"/issues/{issue['id']}", headers=team["headers"]).status_code
+        client.delete(f"/tickets/{ticket['id']}", headers=team["headers"]).status_code
         == 204
     )
     assert session.exec(select(Worklog)).all() == []
 
 
-def test_time_travels_with_an_issue_to_another_team(client, team, issue):
-    """Worklogs belong to the issue, not the team (#98)."""
-    log(client, team, issue, minutes=40)
+def test_time_travels_with_a_ticket_to_another_team(client, team, ticket):
+    """Worklogs belong to the ticket, not the team (#98)."""
+    log(client, team, ticket, minutes=40)
     ops = client.post(
         "/teams", json={"name": "Ops", "key": "OPS"}, headers=team["headers"]
     ).json()
     client.post(
-        f"/issues/{issue['id']}/transfer",
+        f"/tickets/{ticket['id']}/transfer",
         json={"team_id": ops["id"]},
         headers=team["headers"],
     )
-    assert time_on(client, team, issue)["total_minutes"] == 40
+    assert time_on(client, team, ticket)["total_minutes"] == 40
 
 
 # --- reports -----------------------------------------------------------------
@@ -219,8 +221,8 @@ def test_a_sprint_counts_time_logged_during_it_on_its_work(client, team, maya):
     team_id = team["team"]["id"]
     start = date.today() - timedelta(days=5)
     sprint = make_sprint(client, team, start)
-    inside = make_issue(client, team, team_id, sprint_id=sprint["id"])
-    outside = make_issue(client, team, team_id, title="Not in the sprint")
+    inside = make_ticket(client, team, team_id, sprint_id=sprint["id"])
+    outside = make_ticket(client, team, team_id, title="Not in the sprint")
 
     log(client, team, inside, minutes=60, worked_on=date.today().isoformat())
     log(
@@ -250,17 +252,17 @@ def test_a_sprint_counts_time_logged_during_it_on_its_work(client, team, maya):
     ]
 
 
-def test_carrying_an_issue_over_keeps_its_hours_with_the_sprint_they_were_spent_in(
+def test_carrying_a_ticket_over_keeps_its_hours_with_the_sprint_they_were_spent_in(
     client, team
 ):
     team_id = team["team"]["id"]
     sprint = make_sprint(client, team, date.today() - timedelta(days=3))
-    issue = make_issue(client, team, team_id, sprint_id=sprint["id"])
-    log(client, team, issue, minutes=120)
+    ticket = make_ticket(client, team, team_id, sprint_id=sprint["id"])
+    log(client, team, ticket, minutes=120)
 
     # Moved out of the sprint afterwards -- the time was still spent in it.
     client.patch(
-        f"/issues/{issue['id']}", json={"sprint_id": None}, headers=team["headers"]
+        f"/tickets/{ticket['id']}", json={"sprint_id": None}, headers=team["headers"]
     )
     report = client.get(
         f"/sprints/{sprint['id']}/time-spent", headers=team["headers"]
@@ -270,19 +272,19 @@ def test_carrying_an_issue_over_keeps_its_hours_with_the_sprint_they_were_spent_
 
 def test_a_team_rollup_over_recent_days(client, team, maya):
     team_id = team["team"]["id"]
-    issue = make_issue(client, team, team_id)
-    log(client, team, issue, minutes=60)
+    ticket = make_ticket(client, team, team_id)
+    log(client, team, ticket, minutes=60)
     log(
         client,
         maya,
-        issue,
+        ticket,
         minutes=90,
         worked_on=(date.today() - timedelta(days=6)).isoformat(),
     )
     log(
         client,
         maya,
-        issue,
+        ticket,
         minutes=45,
         worked_on=(date.today() - timedelta(days=40)).isoformat(),
     )

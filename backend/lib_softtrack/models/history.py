@@ -4,11 +4,11 @@ from typing import Optional
 from pydantic import BaseModel
 
 from lib_identity.models.identity import UserPublic
-from lib_softtrack.tables import IssueEventField
+from lib_softtrack.tables import TicketEventField
 
 
-class IssueEventRead(BaseModel):
-    """One change to one field of an issue, as the Activity feed shows it (#81).
+class TicketEventRead(BaseModel):
+    """One change to one field of a ticket, as the Activity feed shows it (#81).
 
     `old_value`/`new_value` are what the history stores: a status *category*
     (see `_status_category` in history.py), a priority, an estimate, or a
@@ -17,7 +17,7 @@ class IssueEventRead(BaseModel):
     """
 
     id: int
-    field: IssueEventField
+    field: TicketEventField
     old_value: Optional[str] = None
     new_value: Optional[str] = None
     old_label: Optional[str] = None

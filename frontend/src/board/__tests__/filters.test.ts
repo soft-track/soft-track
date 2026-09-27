@@ -64,7 +64,7 @@ describe('the URL round trip', () => {
 })
 
 describe('toQueryParams', () => {
-  it('maps the board onto what the issue endpoint asks for', () => {
+  it('maps the board onto what the ticket endpoint asks for', () => {
     expect(toQueryParams(some, '2026-09-23')).toEqual({
       status_id: 9,
       priority: 'urgent',

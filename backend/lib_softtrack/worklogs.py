@@ -1,9 +1,9 @@
-"""Time tracking: worklogs on issues (#102).
+"""Time tracking: worklogs on tickets (#102).
 
-Jira-lite on purpose. A person logs how long they spent on an issue on a
-given day, with an optional note; the issue shows the total and who spent it;
+Jira-lite on purpose. A person logs how long they spent on a ticket on a
+given day, with an optional note; the ticket shows the total and who spent it;
 the reports roll it up per sprint and per person. No remaining-estimate
-burndown, timers, billing rates or approvals -- see the issue for why.
+burndown, timers, billing rates or approvals -- see the ticket for why.
 
 Only the person who logged an entry can change or delete it. Time is a claim
 somebody made about their own day, and an admin quietly editing it is the
@@ -17,9 +17,9 @@ from typing import Iterable, Optional
 from sqlmodel import Session, delete, select
 
 from lib_identity.models.identity import UserPublic
-from lib_softtrack.issues import get_issue_or_404
+from lib_softtrack.tickets import get_ticket_or_404
 from lib_softtrack.models.worklogs import (
-    IssueTime,
+    TicketTime,
     PersonTime,
     TimeSpent,
     WorklogCreate,
@@ -34,7 +34,7 @@ from lib_utils.errors import ErrorCode, api_error
 def _read(worklog: Worklog, user: User) -> WorklogRead:
     return WorklogRead(
         id=worklog.id,
-        issue_id=worklog.issue_id,
+        ticket_id=worklog.ticket_id,
         user=UserPublic.model_validate(user),
         minutes=worklog.minutes,
         worked_on=worklog.worked_on,
@@ -76,17 +76,17 @@ def rollup(rows: Iterable[tuple[Worklog, User]]) -> TimeSpent:
     )
 
 
-def issue_time(session: Session, current_user: User, issue_id: int) -> IssueTime:
-    issue = get_issue_or_404(session, issue_id)
-    require_team_member(issue.team_id, current_user, session)
+def ticket_time(session: Session, current_user: User, ticket_id: int) -> TicketTime:
+    ticket = get_ticket_or_404(session, ticket_id)
+    require_team_member(ticket.team_id, current_user, session)
     rows = session.exec(
         select(Worklog, User)
         .join(User, User.id == Worklog.user_id)
-        .where(Worklog.issue_id == issue_id)
+        .where(Worklog.ticket_id == ticket_id)
         .order_by(Worklog.worked_on.desc(), Worklog.created_at.desc())
     ).all()
     totals = rollup(rows)
-    return IssueTime(
+    return TicketTime(
         total_minutes=totals.total_minutes,
         by_person=totals.by_person,
         entries=[_read(worklog, user) for worklog, user in rows],
@@ -94,15 +94,15 @@ def issue_time(session: Session, current_user: User, issue_id: int) -> IssueTime
 
 
 def log_time(
-    session: Session, current_user: User, issue_id: int, payload: WorklogCreate
+    session: Session, current_user: User, ticket_id: int, payload: WorklogCreate
 ) -> WorklogRead:
-    issue = get_issue_or_404(session, issue_id)
-    require_team_writer(issue.team_id, current_user, session)
+    ticket = get_ticket_or_404(session, ticket_id)
+    require_team_writer(ticket.team_id, current_user, session)
     worked_on = payload.worked_on or date.today()
     _check_date(worked_on)
 
     worklog = Worklog(
-        issue_id=issue_id,
+        ticket_id=ticket_id,
         user_id=current_user.id,
         minutes=payload.minutes,
         worked_on=worked_on,
@@ -122,8 +122,8 @@ def _own_worklog(session: Session, current_user: User, worklog_id: int) -> Workl
             code=ErrorCode.worklog_not_found,
             detail="Time entry not found",
         )
-    issue = get_issue_or_404(session, worklog.issue_id)
-    require_team_writer(issue.team_id, current_user, session)
+    ticket = get_ticket_or_404(session, worklog.ticket_id)
+    require_team_writer(ticket.team_id, current_user, session)
     if worklog.user_id != current_user.id:
         raise api_error(
             status_code=403,
@@ -156,6 +156,6 @@ def delete_worklog(session: Session, current_user: User, worklog_id: int) -> Non
     session.commit()
 
 
-def delete_for_issue(session: Session, issue_id: int) -> None:
-    """Remove an issue's time entries, ahead of the issue itself."""
-    session.exec(delete(Worklog).where(Worklog.issue_id == issue_id))
+def delete_for_ticket(session: Session, ticket_id: int) -> None:
+    """Remove a ticket's time entries, ahead of the ticket itself."""
+    session.exec(delete(Worklog).where(Worklog.ticket_id == ticket_id))

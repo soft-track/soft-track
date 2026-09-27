@@ -12,8 +12,8 @@ from lib_softtrack import automations as automations_service
 from lib_softtrack import views as views_service
 from lib_softtrack.history import record_changes, snapshot
 from lib_softtrack.models.projects import ProjectCreate, ProjectRead, ProjectUpdate
-from lib_softtrack.subissues import progress_by
-from lib_softtrack.tables import Issue, Project, TeamMember, User
+from lib_softtrack.subtickets import progress_by
+from lib_softtrack.tables import Ticket, Project, TeamMember, User
 from lib_softtrack.teams import get_team_or_404, require_team_member
 from lib_utils.errors import ErrorCode, api_error
 
@@ -47,13 +47,13 @@ def projects_to_read(session: Session, projects: list[Project]) -> list[ProjectR
     The roadmap and the sidebar read every project's progress at once, and a
     count per project would be one query per row.
     """
-    progress = progress_by(session, Issue.project_id, [p.id for p in projects])
+    progress = progress_by(session, Ticket.project_id, [p.id for p in projects])
     reads = []
     for project in projects:
         done, total = progress.get(project.id, (0, 0))
         reads.append(
             ProjectRead(
-                **project.model_dump(), issue_count=total, completed_issue_count=done
+                **project.model_dump(), ticket_count=total, completed_ticket_count=done
             )
         )
     return reads
@@ -93,7 +93,7 @@ def list_projects(
 ) -> list[ProjectRead]:
     """Every project, archived ones included.
 
-    Archived projects stay in the list because issues still point at them and
+    Archived projects stay in the list because tickets still point at them and
     need a name to show. Leaving them out of *pickers* is the client's call,
     made by reading `archived`.
     """
@@ -131,11 +131,11 @@ def update_project(
 
 
 def delete_project(session: Session, current_user: User, project_id: int) -> None:
-    """Delete a project, keeping every issue that was in it.
+    """Delete a project, keeping every ticket that was in it.
 
-    The issues are the work; the project was only a way of grouping it. They
+    The tickets are the work; the project was only a way of grouping it. They
     are released back to "no project" -- the same answer #13 gives a parent's
-    sub-issues -- rather than deleted along with it. Archiving is the gentler
+    sub-tickets -- rather than deleted along with it. Archiving is the gentler
     option and the one the UI offers first; this is for a project that should
     never have existed.
     """
@@ -143,15 +143,15 @@ def delete_project(session: Session, current_user: User, project_id: int) -> Non
     require_team_member(project.team_id, current_user, session)
 
     now = datetime.now(timezone.utc)
-    for issue in session.exec(select(Issue).where(Issue.project_id == project_id)):
-        before = snapshot(issue)
-        issue.project_id = None
-        issue.updated_at = now
-        session.add(issue)
+    for ticket in session.exec(select(Ticket).where(Ticket.project_id == project_id)):
+        before = snapshot(ticket)
+        ticket.project_id = None
+        ticket.updated_at = now
+        session.add(ticket)
         # Leaving the project is a change like any other, and history is
-        # what the burnup replays -- an issue released silently would still
+        # what the burnup replays -- a ticket released silently would still
         # be "in" the deleted project for ever as far as the events know.
-        record_changes(session, issue, before, current_user)
+        record_changes(session, ticket, before, current_user)
 
     # A view left filtering on a project that no longer exists matches
     # nothing, which reads as broken rather than empty.

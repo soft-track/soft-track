@@ -14,7 +14,7 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
-import type { EstimateSummary, IssueRead, StatusRead } from '@/api/generated/models'
+import type { EstimateSummary, TicketRead, StatusRead } from '@/api/generated/models'
 import { DropIsNotAClick } from '@/board/DropIsNotAClick'
 import { resolveDrop } from '@/board/dropTarget'
 import { type BoardGrouping, groupByProject, projectForDropTarget } from '@/board/grouping'
@@ -24,9 +24,9 @@ import {
   instructions,
   KEYBOARD_CODES,
 } from '@/board/keyboardDrag'
-import type { Placement } from '@/board/useMoveIssue'
+import type { Placement } from '@/board/useMoveTicket'
 import { useTranslation } from '@/i18n'
-import { IssueCard } from '@/issues/IssueCard'
+import { TicketCard } from '@/tickets/TicketCard'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 
@@ -52,7 +52,7 @@ type BoardColumn = {
   id: string
   name: string
   color: string
-  issues: IssueRead[]
+  tickets: TicketRead[]
   /** Points in the column, rolled up on the server. Status columns only. */
   load?: Load
 }
@@ -84,10 +84,10 @@ function Column({
   grouping: BoardGrouping
   onCollapse: () => void
   selectedIds: readonly number[]
-  onSelect?: (issueId: number, gesture: 'range' | 'toggle') => void
+  onSelect?: (ticketId: number, gesture: 'range' | 'toggle') => void
 }) {
   const { t } = useTranslation(['board', 'common'])
-  const { id, name, color, issues, load } = column
+  const { id, name, color, tickets, load } = column
   const { setNodeRef, isOver } = useDroppable({ id })
 
   return (
@@ -103,7 +103,7 @@ function Column({
         <span className="dot" style={{ ['--dot' as string]: color }} aria-hidden="true" />
         <h2 className="truncate text-[13px] font-semibold text-neutral-800">{name}</h2>
         <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
-          {issues.length}
+          {tickets.length}
         </span>
         {load && load.points > 0 && (
           <span
@@ -118,7 +118,7 @@ function Column({
             }
           >
             {t('kanban.pointsShort', { points: load.points })}
-            {/* An unsized issue is not worth zero, so say so rather than let
+            {/* An unsized ticket is not worth zero, so say so rather than let
                 the total read as complete. */}
             {load.unestimated_count > 0 && <span className="text-neutral-300"> +?</span>}
           </span>
@@ -138,14 +138,14 @@ function Column({
 
       <div className="scroll-thin flex-1 space-y-2 overflow-y-auto px-2 pb-2">
         <SortableContext
-          items={issues.map((issue) => issue.id)}
+          items={tickets.map((ticket) => ticket.id)}
           strategy={verticalListSortingStrategy}
         >
-          {issues.map((issue) => (
-            <IssueCard
-              key={issue.id}
-              issue={issue}
-              selected={selectedIds.includes(issue.id)}
+          {tickets.map((ticket) => (
+            <TicketCard
+              key={ticket.id}
+              ticket={ticket}
+              selected={selectedIds.includes(ticket.id)}
               onSelect={onSelect}
               // Whichever the columns already say is left off the card.
               showStatus={grouping === 'project'}
@@ -153,9 +153,9 @@ function Column({
             />
           ))}
         </SortableContext>
-        {issues.length === 0 && (
+        {tickets.length === 0 && (
           <div className="flex h-24 items-center justify-center rounded-card border border-dashed border-neutral-900/10 text-xs text-neutral-400">
-            {isOver ? t('kanban.dropHere') : t('kanban.noIssues')}
+            {isOver ? t('kanban.dropHere') : t('kanban.noTickets')}
           </div>
         )}
       </div>
@@ -167,7 +167,7 @@ function Column({
 function CollapsedColumn({ column, onExpand }: { column: BoardColumn; onExpand: () => void }) {
   const { id, name, color } = column
   const { t } = useTranslation(['board', 'common'])
-  const count = column.issues.length
+  const count = column.tickets.length
   const { setNodeRef, isOver } = useDroppable({ id })
 
   return (
@@ -198,7 +198,7 @@ function CollapsedColumn({ column, onExpand }: { column: BoardColumn; onExpand: 
 }
 
 export function KanbanBoard({
-  issues,
+  tickets,
   grouping = 'status',
   onStatusChange,
   onMove,
@@ -208,28 +208,28 @@ export function KanbanBoard({
   onSelect,
   onBulkStatusChange,
 }: {
-  issues: IssueRead[]
+  tickets: TicketRead[]
   /** Status columns, as the board always had, or one column per project (#63). */
   grouping?: BoardGrouping
-  onStatusChange: (issueId: number, status: StatusRead) => void
+  onStatusChange: (ticketId: number, status: StatusRead) => void
   /**
    * A card dropped among other cards (#88): where it now sits in the board's
    * order, and its new column when it changed one. Without it, cards can
    * still change column but their order is not kept.
    */
-  onMove?: (issueId: number, placement: Placement) => void
+  onMove?: (ticketId: number, placement: Placement) => void
   /**
    * A card dropped on another project's column, or a selection dragged there
    * together. Null is the "No project" column.
    */
-  onProjectChange?: (issueIds: readonly number[], projectId: number | null) => void
+  onProjectChange?: (ticketIds: readonly number[], projectId: number | null) => void
   /** Server-side point rollups. Undefined while they load. */
   estimates?: EstimateSummary
   selectedIds?: readonly number[]
   /** `order` is the cards on screen, column by column, for a shift-click range. */
-  onSelect?: (issueId: number, gesture: 'range' | 'toggle', order: readonly number[]) => void
+  onSelect?: (ticketId: number, gesture: 'range' | 'toggle', order: readonly number[]) => void
   /** Dropping one card of a selection moves all of it, in one request. */
-  onBulkStatusChange?: (issueIds: readonly number[], status: StatusRead) => void
+  onBulkStatusChange?: (ticketIds: readonly number[], status: StatusRead) => void
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -271,17 +271,17 @@ export function KanbanBoard({
 
   const columns: BoardColumn[] =
     grouping === 'project'
-      ? groupByProject(issues, projects, { includeEmpty: true }).map((group) => ({
+      ? groupByProject(tickets, projects, { includeEmpty: true }).map((group) => ({
           id: group.key,
           name: group.project?.name ?? t('kanban.noProject'),
           color: group.project?.color ?? 'var(--color-neutral-300)',
-          issues: group.issues,
+          tickets: group.tickets,
         }))
       : statuses.map((status) => ({
           id: statusColumnId(status),
           name: status.name,
           color: status.color,
-          issues: issues.filter((issue) => issue.status.id === status.id),
+          tickets: tickets.filter((ticket) => ticket.status.id === status.id),
           load: estimates?.by_status?.[String(status.id)],
         }))
 
@@ -336,15 +336,15 @@ export function KanbanBoard({
     setDragging(false)
     const { active, over } = event
     if (!over) return
-    const issueId = Number(active.id)
+    const ticketId = Number(active.id)
 
-    const drop = resolveDrop(columns, issueId, over.id)
-    const carriesSelection = selectedIds.length > 1 && selectedIds.includes(issueId)
+    const drop = resolveDrop(columns, ticketId, over.id)
+    const carriesSelection = selectedIds.length > 1 && selectedIds.includes(ticketId)
 
     // Reordering within a column. The same in either grouping: the order is
     // one order for the whole team.
     if (drop.kind === 'place' && !drop.changesColumn) {
-      onMove?.(issueId, { aboveId: drop.aboveId, belowId: drop.belowId })
+      onMove?.(ticketId, { aboveId: drop.aboveId, belowId: drop.belowId })
       return
     }
 
@@ -355,9 +355,9 @@ export function KanbanBoard({
       // The same rule as status: a selection moves together, a lone card
       // moves alone, and nothing already there is sent again.
       const carried =
-        selectedIds.length > 1 && selectedIds.includes(issueId) ? selectedIds : [issueId]
+        selectedIds.length > 1 && selectedIds.includes(ticketId) ? selectedIds : [ticketId]
       const moving = carried.filter(
-        (id) => (issues.find((i) => i.id === id)?.project_id ?? null) !== projectId,
+        (id) => (tickets.find((i) => i.id === id)?.project_id ?? null) !== projectId,
       )
       if (moving.length > 0) onProjectChange(moving, projectId)
       return
@@ -371,19 +371,19 @@ export function KanbanBoard({
     // selected them. A card outside the selection moves on its own.
     if (onBulkStatusChange && carriesSelection) {
       const moving = selectedIds.filter(
-        (id) => issues.find((i) => i.id === id)?.status.id !== target.id,
+        (id) => tickets.find((i) => i.id === id)?.status.id !== target.id,
       )
       if (moving.length > 0) onBulkStatusChange(moving, target)
       return
     }
     // Dropped among the target column's cards: its place is kept as well.
     if (drop.kind === 'place' && onMove) {
-      onMove(issueId, { aboveId: drop.aboveId, belowId: drop.belowId, status: target })
+      onMove(ticketId, { aboveId: drop.aboveId, belowId: drop.belowId, status: target })
       return
     }
-    const issue = issues.find((i) => i.id === issueId)
-    if (issue && issue.status.id !== target.id) {
-      onStatusChange(issueId, target)
+    const ticket = tickets.find((i) => i.id === ticketId)
+    if (ticket && ticket.status.id !== target.id) {
+      onStatusChange(ticketId, target)
     }
   }
 
@@ -392,9 +392,9 @@ export function KanbanBoard({
   // select something nobody could see.
   const visibleOrder = columns
     .filter((column) => !folded.has(column.id))
-    .flatMap((column) => column.issues.map((issue) => issue.id))
+    .flatMap((column) => column.tickets.map((ticket) => ticket.id))
   const selectCard = onSelect
-    ? (issueId: number, gesture: 'range' | 'toggle') => onSelect(issueId, gesture, visibleOrder)
+    ? (ticketId: number, gesture: 'range' | 'toggle') => onSelect(ticketId, gesture, visibleOrder)
     : undefined
 
   return (
@@ -407,15 +407,15 @@ export function KanbanBoard({
       accessibility={{
         screenReaderInstructions: instructions(),
         announcements: announcements({
-          issueName: (id) =>
-            issues.find((issue) => issue.id === Number(id))?.identifier ?? t('kanban.theIssue'),
+          ticketName: (id) =>
+            tickets.find((ticket) => ticket.id === Number(id))?.identifier ?? t('kanban.theTicket'),
           columnName: (id) =>
             columns.find(
               (column) =>
-                column.id === id || column.issues.some((issue) => issue.id === id),
+                column.id === id || column.tickets.some((ticket) => ticket.id === id),
             )?.name ?? null,
           startColumn: (id) =>
-            columns.find((column) => column.issues.some((issue) => issue.id === Number(id)))
+            columns.find((column) => column.tickets.some((ticket) => ticket.id === Number(id)))
               ?.name ?? null,
           drag,
         }),

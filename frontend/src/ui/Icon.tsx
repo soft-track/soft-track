@@ -189,7 +189,7 @@ const PATHS: Record<IconName, JSX.Element> = {
       <path d="M3 12h6M15 12h6" />
     </>
   ),
-  // Issue types (#89). Three different outlines -- a rounded body with legs, a
+  // Ticket types (#89). Three different outlines -- a rounded body with legs, a
   // square with a tick, a bookmark -- so they are told apart by shape, not by
   // the colour they are drawn in.
   bug: (

@@ -4,11 +4,11 @@ export const shortcuts = {
   groups: {
     anywhere: 'Anywhere',
     board: 'On the board',
-    issue: 'On an open ticket',
+    ticket: 'On an open ticket',
   },
   descriptions: {
     openPalette: 'Open the command palette',
-    createIssue: 'Create a ticket',
+    createTicket: 'Create a ticket',
     focusSearch: 'Focus search',
     showList: 'Show this list',
     closeTop: 'Close whatever is open',

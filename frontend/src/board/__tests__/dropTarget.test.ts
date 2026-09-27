@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { resolveDrop } from '@/board/dropTarget'
 
 const columns = [
-  { id: 'status:1', issues: [{ id: 1 }, { id: 2 }, { id: 3 }] },
-  { id: 'status:2', issues: [{ id: 4 }, { id: 5 }] },
-  { id: 'status:3', issues: [] },
+  { id: 'status:1', tickets: [{ id: 1 }, { id: 2 }, { id: 3 }] },
+  { id: 'status:2', tickets: [{ id: 4 }, { id: 5 }] },
+  { id: 'status:3', tickets: [] },
 ]
 
 describe('resolveDrop', () => {

@@ -1,4 +1,4 @@
-/** Projects → the dialog that files existing issues into a project, found by search. */
+/** Projects → the dialog that files existing tickets into a project, found by search. */
 export const add = {
   title: 'Add tickets to {{project}}',
   intro:

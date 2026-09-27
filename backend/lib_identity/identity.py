@@ -111,7 +111,7 @@ def get_current_user(
     return user
 
 
-def issue_token(user: User) -> Token:
+def ticket_token(user: User) -> Token:
     """A signed-in session for `user`: the bearer token plus their own record.
 
     Public because signing in with Google or GitHub ends the same way an
@@ -211,7 +211,7 @@ def register_user(
         except HTTPException:
             pass
 
-    return issue_token(user)
+    return ticket_token(user)
 
 
 @lru_cache(maxsize=1)
@@ -266,7 +266,7 @@ def login_user(session: Session, email: str, password: str) -> Token:
     session.add(user)
     session.commit()
     session.refresh(user)
-    return issue_token(user)
+    return ticket_token(user)
 
 
 def update_profile(session: Session, user: User, payload: UserUpdate) -> User:
@@ -356,7 +356,7 @@ def change_password(
     session.refresh(user)
     # A fresh token for the tab that made the change, so the person who just
     # secured their account is not the one thrown out of it.
-    return issue_token(user)
+    return ticket_token(user)
 
 
 def sign_out_everywhere(session: Session, user: User) -> Token:
@@ -364,7 +364,7 @@ def sign_out_everywhere(session: Session, user: User) -> Token:
     session.add(user)
     session.commit()
     session.refresh(user)
-    return issue_token(user)
+    return ticket_token(user)
 
 
 def list_my_invites(session: Session, user: User):

@@ -8,13 +8,13 @@
  *
  * Every action that changes nothing returns the *same* array. That is not a
  * micro-optimisation: a fresh empty array on Escape re-rendered the board
- * between window listeners, which unregistered the issue panel's own Escape
- * handler before it ran, so Escape silently did nothing on an open issue.
+ * between window listeners, which unregistered the ticket panel's own Escape
+ * handler before it ran, so Escape silently did nothing on an open ticket.
  *
  * Pure so it can be tested without React.
  */
 export type Overlay =
-  | 'newIssue'
+  | 'newTicket'
   | 'palette'
   | 'shortcuts'
   | 'newSprint'

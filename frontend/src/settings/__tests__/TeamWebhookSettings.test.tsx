@@ -60,7 +60,7 @@ const HOOK = {
   id: 4,
   team_id: 7,
   url: 'https://hooks.example.com/softtrack',
-  events: ['issue.created'],
+  events: ['ticket.created'],
   is_enabled: true,
   consecutive_failures: 0,
   disabled_reason: null,
@@ -118,7 +118,7 @@ describe('webhooks settings', () => {
       teamId: 7,
       data: {
         url: 'https://hooks.example.com/softtrack',
-        events: ['issue.created', 'comment.created'],
+        events: ['ticket.created', 'comment.created'],
       },
     })
     await waitFor(() =>

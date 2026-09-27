@@ -28,7 +28,7 @@ vi.mock('@/attachments/urls', async (importOriginal) => ({
 function file(overrides: Partial<AttachmentRead>): AttachmentRead {
   return {
     id: 3,
-    issue_id: 1,
+    ticket_id: 1,
     filename: 'server.log',
     content_type: 'text/plain',
     size_bytes: 12,

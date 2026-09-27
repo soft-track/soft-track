@@ -12,10 +12,10 @@ const H = 180
 const BACKLOG_H = 90
 
 /**
- * Issues opened against issues closed, with the resulting backlog below.
+ * Tickets opened against tickets closed, with the resulting backlog below.
  *
  * Two plots sharing one x-axis rather than one plot with two y-scales. A
- * handful of issues a day and a backlog of several hundred do not belong on
+ * handful of tickets a day and a backlog of several hundred do not belong on
  * the same scale -- putting them there needs a second axis, and a dual-axis
  * chart lets the author decide which line looks like it is winning.
  */
@@ -108,7 +108,7 @@ export function CreatedResolvedChart({ data }: { data: CreatedVsResolved }) {
         </svg>
 
         <p className="mt-1 mb-0.5 text-[11px] uppercase tracking-wide text-neutral-400">
-          {t('createdResolved.openIssues')}
+          {t('createdResolved.openTickets')}
         </p>
         <svg
           viewBox={`0 0 ${W} ${BACKLOG_H}`}

@@ -4,19 +4,19 @@ import { parseSse } from '@/realtime/sse'
 
 describe('parseSse (#103)', () => {
   it('reads named events and their data', () => {
-    const parsed = parseSse('event: issue_changed\ndata: {"id": 42}\n\nevent: notification\ndata: {}\n\n')
+    const parsed = parseSse('event: ticket_changed\ndata: {"id": 42}\n\nevent: notification\ndata: {}\n\n')
     expect(parsed.events).toEqual([
-      { event: 'issue_changed', data: '{"id": 42}' },
+      { event: 'ticket_changed', data: '{"id": 42}' },
       { event: 'notification', data: '{}' },
     ])
     expect(parsed.rest).toBe('')
   })
 
   it('keeps a frame that is still arriving for the next chunk', () => {
-    const first = parseSse('event: issue_changed\ndata: {"id"')
+    const first = parseSse('event: ticket_changed\ndata: {"id"')
     expect(first.events).toEqual([])
     const second = parseSse(first.rest + ': 7}\n\n')
-    expect(second.events).toEqual([{ event: 'issue_changed', data: '{"id": 7}' }])
+    expect(second.events).toEqual([{ event: 'ticket_changed', data: '{"id": 7}' }])
   })
 
   it('treats comments -- heartbeats -- as nothing, and reads retry', () => {

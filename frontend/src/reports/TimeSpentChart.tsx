@@ -1,6 +1,6 @@
 import type { TimeSpent } from '@/api/generated/models'
 import { useTranslation } from '@/i18n'
-import { formatDuration } from '@/issues/duration'
+import { formatDuration } from '@/tickets/duration'
 import { Figure } from '@/reports/Chart'
 import { INK } from '@/reports/chartTokens'
 

@@ -48,11 +48,11 @@ describe('startUrl', () => {
   it('carries the destination, the invitation and a connect ticket', () => {
     const url = startUrl('github', {
       handshake: HANDSHAKE,
-      next: '/ENG/issue/42',
+      next: '/ENG/ticket/42',
       invite: 'tok en',
       ticket: 'link-ticket',
     })
-    expect(url).toContain('next=%2FENG%2Fissue%2F42')
+    expect(url).toContain('next=%2FENG%2Fticket%2F42')
     expect(url).toContain('invite=tok+en')
     expect(url).toContain('ticket=link-ticket')
   })

@@ -27,18 +27,18 @@ class SprintUpdate(BaseModel):
 class SprintProgress(BaseModel):
     """How much of the sprint's work is done.
 
-    Issues and points are reported separately because they disagree, and the
-    disagreement is the interesting part: eight of ten issues done with two
+    Tickets and points are reported separately because they disagree, and the
+    disagreement is the interesting part: eight of ten tickets done with two
     points of thirty burned means the hard work is all still ahead.
     """
 
-    issues_total: int
-    issues_completed: int
+    tickets_total: int
+    tickets_completed: int
     points_total: int
     points_completed: int
-    #: Issues in the sprint carrying no estimate. Points totals are only as
+    #: Tickets in the sprint carrying no estimate. Points totals are only as
     #: honest as this number is small.
-    issues_unestimated: int
+    tickets_unestimated: int
 
 
 class SprintRead(BaseModel):
@@ -59,7 +59,7 @@ class SprintCompletion(BaseModel):
     """The result of completing a sprint."""
 
     sprint: SprintRead
-    #: Unfinished issues moved out of the completed sprint.
+    #: Unfinished tickets moved out of the completed sprint.
     carried_over: int
     #: Where they went: the next upcoming sprint, or null if they went back to
     #: the backlog because there was no sprint to carry them into.

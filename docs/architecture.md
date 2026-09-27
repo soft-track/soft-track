@@ -2,7 +2,7 @@
 
 SoftTrack is a small full-stack application built around a FastAPI backend and a React/Vite/TypeScript frontend. The backend exposes a typed OpenAPI schema, and the frontend consumes it through an Orval-generated client with React Query hooks.
 
-The interface says *tickets* and *epics*; the code, the API and the database say *issues* and *projects* (#211). Only the words people read were renamed. Paths, fields, tables, webhook events and URLs kept their names, so nothing that talks to the API had to change.
+The interface says *tickets*, *sprints* and *epics*. Tickets and sprints were renamed all the way down (#215, #214): the code, the API, the database and the URLs use those words too. Epics were renamed in the interface only (#211), so everywhere else an epic is still a *project*.
 
 ## Stack
 
@@ -19,13 +19,13 @@ soft_track/
 │   ├── web.py                # settings, database engine, request session
 │   ├── app_identity/         # auth routes (register, login, me, profile, admin)
 │   ├── lib_identity/         # auth, usernames, site admin + models/ (schemas)
-│   ├── app_softtrack/        # routes: teams, projects, labels, issues, comments,
+│   ├── app_softtrack/        # routes: teams, projects, labels, tickets, comments,
 │   │                         #   invites, notifications, views, statuses
 │   ├── lib_softtrack/        # services per domain, tables.py (SQLModel),
 │   │                         #   and models/ (pydantic request/response schemas)
 │   ├── lib_utils/            # shared helpers: password hashing, JWT tokens
 │   ├── tests/                # pytest suite (in-memory SQLite, FKs enforced)
-│   ├── seed.py               # populates demo user/team/project/issues
+│   ├── seed.py               # populates demo user/team/project/tickets
 │   ├── export_openapi.py     # writes openapi.json (no server needed)
 │   ├── smoke_test.sh         # curl-based end-to-end API test
 │   └── requirements.txt
@@ -41,7 +41,7 @@ soft_track/
     │   │                     #   invitations, the site admin user directory
     │   ├── team/             # TeamContext, useTeams, useTeamData, team pages
     │   ├── board/            # BoardPage + its hooks (filters, overlays, status change)
-    │   ├── issues/           # IssueCard, NewIssueModal, issueMeta, and detail/
+    │   ├── tickets/           # TicketCard, NewTicketModal, ticketMeta, and detail/
     │   ├── sprints/           # SprintList, SprintBanner, NewSprintModal
     │   ├── search/           # SearchResults, useDebounced
     │   ├── imports/          # ImportJiraModal

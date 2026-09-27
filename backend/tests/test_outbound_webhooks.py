@@ -39,7 +39,7 @@ class FakeReceiver:
         return [json.loads(call["body"]) for call in self.calls]
 
 
-def make_hook(client, team, events=("issue.created",), expect=200, **fields):
+def make_hook(client, team, events=("ticket.created",), expect=200, **fields):
     response = client.post(
         f"/teams/{team['team']['id']}/outbound-webhooks",
         json={"url": PUBLIC, "events": list(events), **fields},
@@ -49,9 +49,9 @@ def make_hook(client, team, events=("issue.created",), expect=200, **fields):
     return response.json()
 
 
-def make_issue(client, team, title="Work", **fields):
+def make_ticket(client, team, title="Work", **fields):
     response = client.post(
-        f"/teams/{team['team']['id']}/issues",
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": title, **fields},
         headers=team["headers"],
     )
@@ -86,7 +86,7 @@ def test_only_team_admins_manage_webhooks(client, team, auth):
     )
     response = client.post(
         f"/teams/{team['team']['id']}/outbound-webhooks",
-        json={"url": PUBLIC, "events": ["issue.created"]},
+        json={"url": PUBLIC, "events": ["ticket.created"]},
         headers=member["headers"],
     )
     assert response.status_code == 403
@@ -112,7 +112,7 @@ def test_at_least_one_event(client, team):
 def test_private_targets_are_refused(client, team, url):
     response = client.post(
         f"/teams/{team['team']['id']}/outbound-webhooks",
-        json={"url": url, "events": ["issue.created"]},
+        json={"url": url, "events": ["ticket.created"]},
         headers=team["headers"],
     )
     assert response.status_code == 422, response.text
@@ -122,7 +122,7 @@ def test_private_targets_are_refused(client, team, url):
 def test_only_http_and_https(client, team):
     response = client.post(
         f"/teams/{team['team']['id']}/outbound-webhooks",
-        json={"url": "file:///etc/passwd", "events": ["issue.created"]},
+        json={"url": "file:///etc/passwd", "events": ["ticket.created"]},
         headers=team["headers"],
     )
     assert response.status_code == 422
@@ -139,7 +139,7 @@ def test_the_escape_hatch_allows_an_internal_target(client, team, monkeypatch):
 
 def test_an_event_is_signed_and_delivered_off_the_request(client, team, session):
     hook = make_hook(client, team)
-    issue = make_issue(client, team, "Ship it")
+    ticket = make_ticket(client, team, "Ship it")
     receiver = FakeReceiver()
 
     # Nothing has gone anywhere during the request itself.
@@ -153,14 +153,14 @@ def test_an_event_is_signed_and_delivered_off_the_request(client, team, session)
         "sha256=" + hmac.new(hook["secret"].encode(), body, hashlib.sha256).hexdigest()
     )
     assert headers["X-SoftTrack-Signature"] == expected
-    assert headers["X-SoftTrack-Event"] == "issue.created"
+    assert headers["X-SoftTrack-Event"] == "ticket.created"
     assert headers["Content-Type"] == "application/json"
 
     payload = json.loads(body)
-    assert payload["event"] == "issue.created"
+    assert payload["event"] == "ticket.created"
     assert payload["team"]["key"] == "ENG"
     assert payload["actor"]["id"] == team["user"]["id"]
-    assert payload["data"]["issue"]["identifier"] == issue["identifier"]
+    assert payload["data"]["ticket"]["identifier"] == ticket["identifier"]
 
     [row] = session.exec(select(WebhookDelivery)).all()
     assert (row.status, row.attempts, row.response_status) == ("succeeded", 1, 200)
@@ -168,38 +168,40 @@ def test_an_event_is_signed_and_delivered_off_the_request(client, team, session)
 
 def test_only_subscribed_events_are_queued(client, team, session):
     make_hook(client, team, events=("comment.created",))
-    make_issue(client, team)
+    make_ticket(client, team)
     assert session.exec(select(WebhookDelivery)).all() == []
 
 
 def test_an_update_says_what_changed_and_a_status_change_says_so_too(
     client, team, session
 ):
-    make_hook(client, team, events=("issue.updated", "issue.status_changed"))
-    issue = make_issue(client, team)
+    make_hook(client, team, events=("ticket.updated", "ticket.status_changed"))
+    ticket = make_ticket(client, team)
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"status_id": team["status_ids"]["Done"], "priority": "high"},
         headers=team["headers"],
     )
     receiver = FakeReceiver()
     deliver(session, receiver)
 
-    assert sorted(receiver.events()) == ["issue.status_changed", "issue.updated"]
-    updated = next(p for p in receiver.payloads() if p["event"] == "issue.updated")
+    assert sorted(receiver.events()) == ["ticket.status_changed", "ticket.updated"]
+    updated = next(p for p in receiver.payloads() if p["event"] == "ticket.updated")
     assert updated["data"]["changes"]["priority"] == {
         "from": "no_priority",
         "to": "high",
     }
-    moved = next(p for p in receiver.payloads() if p["event"] == "issue.status_changed")
+    moved = next(
+        p for p in receiver.payloads() if p["event"] == "ticket.status_changed"
+    )
     assert moved["data"]["to"]["name"] == "Done"
 
 
 def test_a_patch_that_changes_nothing_sends_nothing(client, team, session):
-    make_hook(client, team, events=("issue.updated",))
-    issue = make_issue(client, team, priority="high")
+    make_hook(client, team, events=("ticket.updated",))
+    ticket = make_ticket(client, team, priority="high")
     client.patch(
-        f"/issues/{issue['id']}", json={"priority": "high"}, headers=team["headers"]
+        f"/tickets/{ticket['id']}", json={"priority": "high"}, headers=team["headers"]
     )
     assert session.exec(select(WebhookDelivery)).all() == []
 
@@ -210,9 +212,9 @@ def test_comments_and_sprints(client, team, session):
         team,
         events=("comment.created", "sprint.started", "sprint.completed"),
     )
-    issue = make_issue(client, team)
+    ticket = make_ticket(client, team)
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "Looks good"},
         headers=team["headers"],
     )
@@ -235,7 +237,7 @@ def test_comments_and_sprints(client, team, session):
 
 
 def test_a_rules_change_arrives_separately_with_no_actor(client, team, session):
-    make_hook(client, team, events=("issue.updated",))
+    make_hook(client, team, events=("ticket.updated",))
     client.post(
         f"/teams/{team['team']['id']}/automation-rules",
         json={
@@ -246,9 +248,9 @@ def test_a_rules_change_arrives_separately_with_no_actor(client, team, session):
         },
         headers=team["headers"],
     )
-    issue = make_issue(client, team)
+    ticket = make_ticket(client, team)
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"status_id": team["status_ids"]["In Progress"]},
         headers=team["headers"],
     )
@@ -265,7 +267,7 @@ def test_a_rules_change_arrives_separately_with_no_actor(client, team, session):
 
 def test_a_failure_is_retried_with_backoff_then_given_up(client, team, session):
     make_hook(client, team)
-    make_issue(client, team)
+    make_ticket(client, team)
     failing = FakeReceiver(status=500, text="boom")
     start = utcnow()
 
@@ -299,7 +301,7 @@ def test_repeated_failure_switches_the_webhook_off_visibly(client, team, session
     hook = make_hook(client, team)
     failing = FakeReceiver(status=503)
     for n in range(outbound.DISABLE_AFTER):
-        make_issue(client, team, f"#{n}")
+        make_ticket(client, team, f"#{n}")
         _fail_completely(session, failing, utcnow())
 
     [listed] = client.get(
@@ -309,7 +311,7 @@ def test_repeated_failure_switches_the_webhook_off_visibly(client, team, session
     assert "failed every retry" in listed["disabled_reason"]
 
     # Switched off: nothing more is queued.
-    make_issue(client, team, "After")
+    make_ticket(client, team, "After")
     session.expire_all()
     pending = session.exec(
         select(WebhookDelivery).where(WebhookDelivery.status == "pending")
@@ -330,9 +332,9 @@ def test_repeated_failure_switches_the_webhook_off_visibly(client, team, session
 
 def test_a_success_resets_the_failure_count(client, team, session):
     make_hook(client, team)
-    make_issue(client, team, "Fails")
+    make_ticket(client, team, "Fails")
     _fail_completely(session, FakeReceiver(status=500), utcnow())
-    make_issue(client, team, "Works")
+    make_ticket(client, team, "Works")
     deliver(session, FakeReceiver())
     session.expire_all()
     assert session.exec(select(OutboundWebhook)).one().consecutive_failures == 0
@@ -347,7 +349,7 @@ def test_a_host_that_turns_private_after_saving_is_not_sent_to(
     ]
     monkeypatch.setattr(outbound.socket, "getaddrinfo", public)
     make_hook(client, team, url="https://hooks.example.com/softtrack")
-    make_issue(client, team)
+    make_ticket(client, team)
 
     rebound = lambda host, port, **kw: [  # noqa: E731
         (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("10.0.0.7", port))
@@ -362,7 +364,7 @@ def test_a_host_that_turns_private_after_saving_is_not_sent_to(
 
 def test_two_workers_never_send_the_same_delivery(client, team, session):
     make_hook(client, team)
-    make_issue(client, team)
+    make_ticket(client, team)
     [row] = session.exec(select(WebhookDelivery)).all()
     now = utcnow()
     assert outbound._claim(session, [row.id], now) == [row.id]
@@ -374,12 +376,12 @@ def test_two_workers_never_send_the_same_delivery(client, team, session):
 
 def test_the_log_shows_what_the_receiver_said(client, team, session):
     hook = make_hook(client, team)
-    make_issue(client, team)
+    make_ticket(client, team)
     deliver(session, FakeReceiver(status=410, text="Gone for good"))
     [entry] = client.get(
         f"/outbound-webhooks/{hook['id']}/deliveries", headers=team["headers"]
     ).json()
-    assert (entry["event"], entry["response_status"]) == ("issue.created", 410)
+    assert (entry["event"], entry["response_status"]) == ("ticket.created", 410)
     assert entry["response_excerpt"] == "Gone for good"
 
 
@@ -396,7 +398,7 @@ def test_a_ping_checks_the_url_and_secret(client, team, session):
 
 def test_deleting_a_webhook_takes_its_log(client, team, session):
     hook = make_hook(client, team)
-    make_issue(client, team)
+    make_ticket(client, team)
     response = client.delete(
         f"/outbound-webhooks/{hook['id']}", headers=team["headers"]
     )
@@ -451,7 +453,7 @@ def local_receiver(monkeypatch):
 def test_a_real_delivery_arrives_signed(client, team, session, local_receiver):
     base, received = local_receiver
     hook = make_hook(client, team, url=f"{base}/hook")
-    make_issue(client, team)
+    make_ticket(client, team)
     session.expire_all()
     outbound.deliver_due(session)
 
@@ -471,7 +473,7 @@ def test_a_redirect_is_not_followed(client, team, session, local_receiver):
     address check, so it is a failed attempt, never a second request."""
     base, received = local_receiver
     make_hook(client, team, url=f"{base}/redirect")
-    make_issue(client, team)
+    make_ticket(client, team)
     session.expire_all()
     outbound.deliver_due(session)
 

@@ -8,7 +8,7 @@ Monday has Monday counted against its burndown, and a sprint that runs a day
 long silently completes itself and carries work away while nobody is looking.
 The dates are the plan; the state is what actually happened.
 
-**Completing a sprint never deletes work.** Unfinished issues move to the next
+**Completing a sprint never deletes work.** Unfinished tickets move to the next
 upcoming sprint, or back to the backlog if there is none. A sprint boundary is
 an accounting event, not a reason to lose anything.
 """
@@ -35,7 +35,7 @@ from lib_softtrack.statuses import in_category
 from lib_softtrack.tables import (
     Sprint,
     SprintState,
-    Issue,
+    Ticket,
     StatusCategory,
     User,
     WebhookEvent,
@@ -72,26 +72,26 @@ def sprint_progress(
     completed = case((in_category(_COMPLETED), 1), else_=0)
     rows = session.exec(
         select(
-            Issue.sprint_id,
+            Ticket.sprint_id,
             func.count(),
             func.coalesce(func.sum(completed), 0),
-            func.coalesce(func.sum(Issue.estimate), 0),
+            func.coalesce(func.sum(Ticket.estimate), 0),
             func.coalesce(
-                func.sum(case((in_category(_COMPLETED), Issue.estimate), else_=0)), 0
+                func.sum(case((in_category(_COMPLETED), Ticket.estimate), else_=0)), 0
             ),
-            func.count(Issue.estimate),
+            func.count(Ticket.estimate),
         )
-        .where(Issue.sprint_id.in_(sprint_ids))
-        .group_by(Issue.sprint_id)
+        .where(Ticket.sprint_id.in_(sprint_ids))
+        .group_by(Ticket.sprint_id)
     ).all()
 
     progress = {
         sprint_id: SprintProgress(
-            issues_total=int(total),
-            issues_completed=int(done),
+            tickets_total=int(total),
+            tickets_completed=int(done),
             points_total=int(points),
             points_completed=int(points_done),
-            issues_unestimated=int(total) - int(sized),
+            tickets_unestimated=int(total) - int(sized),
         )
         for sprint_id, total, done, points, points_done, sized in rows
     }
@@ -100,11 +100,11 @@ def sprint_progress(
         progress.setdefault(
             sprint_id,
             SprintProgress(
-                issues_total=0,
-                issues_completed=0,
+                tickets_total=0,
+                tickets_completed=0,
                 points_total=0,
                 points_completed=0,
-                issues_unestimated=0,
+                tickets_unestimated=0,
             ),
         )
     return progress
@@ -270,13 +270,15 @@ def complete_sprint(
 
     # Read before anything moves: a `sprint_completed` rule is about the work
     # that was in this sprint, which after the carry-over below is no longer a
-    # question the issue rows can answer.
+    # question the ticket rows can answer.
     members = list(
-        session.exec(select(Issue).where(Issue.sprint_id == sprint.id)).all()
+        session.exec(select(Ticket).where(Ticket.sprint_id == sprint.id)).all()
     )
 
     unfinished = session.exec(
-        select(Issue).where(Issue.sprint_id == sprint.id, ~in_category(*DONE_STATUSES))
+        select(Ticket).where(
+            Ticket.sprint_id == sprint.id, ~in_category(*DONE_STATUSES)
+        )
     ).all()
 
     # The next sprint by number that has not been completed. Carrying into an
@@ -291,22 +293,22 @@ def complete_sprint(
         .order_by(Sprint.number)
     ).first()
 
-    for issue in unfinished:
-        # No successor means the backlog, not limbo -- an issue must never end
+    for ticket in unfinished:
+        # No successor means the backlog, not limbo -- a ticket must never end
         # up pointing at a sprint that is over.
-        before = snapshot(issue)
-        issue.sprint_id = successor.id if successor else None
-        session.add(issue)
+        before = snapshot(ticket)
+        ticket.sprint_id = successor.id if successor else None
+        session.add(ticket)
         # Carry-over is a scope change like any other, and a report that
         # cannot see it would show work vanishing from one sprint and
         # appearing in the next with no explanation.
-        record_changes(session, issue, before, current_user)
+        record_changes(session, ticket, before, current_user)
 
     sprint.state = SprintState.completed
     sprint.completed_at = datetime.now(timezone.utc)
     session.add(sprint)
 
-    # After the carry-over, so a rule can act on the issues that came out of
+    # After the carry-over, so a rule can act on the tickets that came out of
     # the sprint unfinished as well as the ones that stayed.
     rules_service.on_sprint_completed(session, sprint, members, current_user)
     outbound.emit(
@@ -342,13 +344,15 @@ def delete_sprint(session: Session, current_user: User, sprint_id: int) -> None:
             detail="A completed sprint cannot be deleted; its numbers are history.",
         )
 
-    # Its issues go back to the backlog rather than being deleted with it, and
+    # Its tickets go back to the backlog rather than being deleted with it, and
     # they hold a foreign key here either way.
-    for issue in session.exec(select(Issue).where(Issue.sprint_id == sprint_id)).all():
-        before = snapshot(issue)
-        issue.sprint_id = None
-        session.add(issue)
-        record_changes(session, issue, before, current_user)
+    for ticket in session.exec(
+        select(Ticket).where(Ticket.sprint_id == sprint_id)
+    ).all():
+        before = snapshot(ticket)
+        ticket.sprint_id = None
+        session.add(ticket)
+        record_changes(session, ticket, before, current_user)
 
     # Saved views hold one too. A view left filtering on a sprint that no
     # longer exists matches nothing, which reads as broken rather than empty.

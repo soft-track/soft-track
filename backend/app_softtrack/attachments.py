@@ -24,20 +24,20 @@ router = APIRouter(tags=["attachments"])
 
 
 @router.post(
-    "/issues/{issue_id}/attachments",
+    "/tickets/{ticket_id}/attachments",
     response_model=AttachmentRead,
     dependencies=[team_writer],
 )
 async def upload_attachment(
-    issue_id: int,
+    ticket_id: int,
     file: UploadFile = File(..., description="The file to attach."),
     session: Session = Depends(get_session),
     storage: Storage = Depends(get_storage),
     current_user: User = Depends(get_current_user),
 ):
-    """Attach a file to an issue.
+    """Attach a file to a ticket.
 
-    The file starts out belonging to the issue. Posting a comment with its id
+    The file starts out belonging to the ticket. Posting a comment with its id
     in `attachment_ids` moves it to that comment -- which is the order the
     interface needs, because a screenshot is pasted before the sentence about
     it is written.
@@ -54,22 +54,22 @@ async def upload_attachment(
         )
 
     return attachments_service.create_attachment(
-        session, storage, current_user, issue_id, file, data
+        session, storage, current_user, ticket_id, file, data
     )
 
 
-@router.get("/issues/{issue_id}/attachments", response_model=list[AttachmentRead])
-def list_issue_attachments(
-    issue_id: int,
+@router.get("/tickets/{ticket_id}/attachments", response_model=list[AttachmentRead])
+def list_ticket_attachments(
+    ticket_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Files attached to the issue itself.
+    """Files attached to the ticket itself.
 
     Files belonging to a comment are returned with that comment instead, so
     nothing appears twice.
     """
-    return attachments_service.list_for_issue(session, current_user, issue_id)
+    return attachments_service.list_for_ticket(session, current_user, ticket_id)
 
 
 @router.get("/attachments/{attachment_id}/content")
@@ -86,7 +86,7 @@ def download_attachment(
     fetch it directly -- the browser sends no Authorization header. The
     frontend loads images through the API client and renders the result as a
     blob URL. The alternative, a token in the URL, would put a credential into
-    every issue description that embeds an image and into every log line that
+    every ticket description that embeds an image and into every log line that
     records the request.
     """
     attachment = attachments_service.get_attachment_for_read(
@@ -150,7 +150,7 @@ def delete_attachment(
     """Remove an attachment and its bytes.
 
     Any member of the team may, which matches how the rest of the app treats
-    issues and comments: membership is the boundary, and there is no
+    tickets and comments: membership is the boundary, and there is no
     per-object ownership anywhere else to be consistent with.
     """
     attachments_service.delete_attachment(session, storage, current_user, attachment_id)

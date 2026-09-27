@@ -9,8 +9,8 @@ class StatusLoad(BaseModel):
     """The work sitting in one board column."""
 
     points: int
-    issue_count: int
-    # Issues in this column with no estimate. Reported rather than folded into
+    ticket_count: int
+    # Tickets in this column with no estimate. Reported rather than folded into
     # `points` as zero, because "nobody has sized these" and "these are free"
     # are different facts and a column of unsized work should look unfinished.
     unestimated_count: int
@@ -21,14 +21,14 @@ class AssigneeLoad(BaseModel):
 
     user: Optional[UserPublic] = None
     points: int
-    issue_count: int
+    ticket_count: int
     unestimated_count: int
 
 
 class EstimateSummary(BaseModel):
     total_points: int
-    total_issues: int
-    unestimated_issues: int
+    total_tickets: int
+    unestimated_tickets: int
     #: Keyed by status id as a string, because JSON object keys are
     #: strings and a numeric key would arrive as one anyway. Every one of
     #: the team's statuses is present, including the empty columns.

@@ -2,7 +2,7 @@
 
 A move writes one row -- the moved card's key -- and every other card keeps
 its key. These pin that, the placement rules, and the migration that gives
-every existing issue a key without anything visibly moving.
+every existing ticket a key without anything visibly moving.
 """
 
 import itertools
@@ -12,13 +12,13 @@ from alembic import command
 from alembic.config import Config
 from sqlmodel import select
 
-from lib_softtrack.tables import Issue, IssueEvent, IssueEventField
+from lib_softtrack.tables import Ticket, TicketEvent, TicketEventField
 from lib_utils.ranking import keys_in_order
 
 
-def make_issue(client, team, title, **fields):
+def make_ticket(client, team, title, **fields):
     response = client.post(
-        f"/teams/{team['team']['id']}/issues",
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": title, **fields},
         headers=team["headers"],
     )
@@ -28,17 +28,17 @@ def make_issue(client, team, title, **fields):
 
 def board(client, team, **params):
     response = client.get(
-        f"/teams/{team['team']['id']}/issues",
+        f"/teams/{team['team']['id']}/tickets",
         params={"sort": "rank", "direction": "asc", **params},
         headers=team["headers"],
     )
     assert response.status_code == 200, response.text
-    return [issue["title"] for issue in response.json()["items"]]
+    return [ticket["title"] for ticket in response.json()["items"]]
 
 
-def move(client, team, issue, expect=200, **placement):
+def move(client, team, ticket, expect=200, **placement):
     response = client.post(
-        f"/issues/{issue['id']}/move", json=placement, headers=team["headers"]
+        f"/tickets/{ticket['id']}/move", json=placement, headers=team["headers"]
     )
     assert response.status_code == expect, response.text
     return response.json()
@@ -46,19 +46,19 @@ def move(client, team, issue, expect=200, **placement):
 
 def ranks(client, team):
     response = client.get(
-        f"/teams/{team['team']['id']}/issues", headers=team["headers"]
+        f"/teams/{team['team']['id']}/tickets", headers=team["headers"]
     ).json()["items"]
-    return {issue["title"]: issue["rank"] for issue in response}
+    return {ticket["title"]: ticket["rank"] for ticket in response}
 
 
-def test_a_new_issue_goes_on_top(client, team):
+def test_a_new_ticket_goes_on_top(client, team):
     for title in "ABC":
-        make_issue(client, team, title)
+        make_ticket(client, team, title)
     assert board(client, team) == ["C", "B", "A"]
 
 
 def test_a_move_rewrites_only_the_moved_card(client, team):
-    a, b, c = (make_issue(client, team, title) for title in "ABC")
+    a, b, c = (make_ticket(client, team, title) for title in "ABC")
     before = ranks(client, team)
 
     # Drop A between C (above) and B (below).
@@ -71,7 +71,7 @@ def test_a_move_rewrites_only_the_moved_card(client, team):
 
 
 def test_to_the_top_and_to_the_bottom(client, team):
-    a, b, c = (make_issue(client, team, title) for title in "ABC")
+    a, b, c = (make_ticket(client, team, title) for title in "ABC")
     move(client, team, a, below_id=c["id"])
     assert board(client, team) == ["A", "C", "B"]
     move(client, team, a, above_id=b["id"])
@@ -80,7 +80,7 @@ def test_to_the_top_and_to_the_bottom(client, team):
 
 def test_with_no_neighbours_it_goes_on_top(client, team):
     """An empty column: nothing to be between."""
-    a, _ = make_issue(client, team, "A"), make_issue(client, team, "B")
+    a, _ = make_ticket(client, team, "A"), make_ticket(client, team, "B")
     move(client, team, a)
     assert board(client, team) == ["A", "B"]
 
@@ -88,8 +88,8 @@ def test_with_no_neighbours_it_goes_on_top(client, team):
 def test_into_another_column_changes_status_through_the_usual_path(
     client, team, session
 ):
-    a = make_issue(client, team, "A")
-    done = make_issue(
+    a = make_ticket(client, team, "A")
+    done = make_ticket(
         client, team, "Done already", status_id=team["status_ids"]["Done"]
     )
     moved = move(
@@ -104,29 +104,29 @@ def test_into_another_column_changes_status_through_the_usual_path(
     # History, as for any other status change.
     session.expire_all()
     fields = session.exec(
-        select(IssueEvent.field).where(
-            IssueEvent.issue_id == a["id"], IssueEvent.opening == False  # noqa: E712
+        select(TicketEvent.field).where(
+            TicketEvent.ticket_id == a["id"], TicketEvent.opening == False  # noqa: E712
         )
     ).all()
-    assert IssueEventField.status in fields
+    assert TicketEventField.status in fields
 
 
 def test_a_neighbour_must_be_on_the_team_and_not_the_card(client, team, auth):
-    a = make_issue(client, team, "A")
+    a = make_ticket(client, team, "A")
     assert move(client, team, a, expect=400, above_id=a["id"])["code"] == (
         "rank_neighbour_is_self"
     )
     assert move(client, team, a, expect=404, below_id=999999)["code"] == (
-        "issue_not_found"
+        "ticket_not_found"
     )
 
 
 def test_tied_keys_are_repaired_rather_than_refused(client, team, session):
     """Two cards with one key leave no key between them; the team is
     renumbered in its current order and the move goes ahead."""
-    a, b, c = (make_issue(client, team, title) for title in "ABC")
-    for issue_id in (b["id"], c["id"]):
-        row = session.get(Issue, issue_id)
+    a, b, c = (make_ticket(client, team, title) for title in "ABC")
+    for ticket_id in (b["id"], c["id"]):
+        row = session.get(Ticket, ticket_id)
         row.rank = "a5"
         session.add(row)
     session.commit()
@@ -137,7 +137,7 @@ def test_tied_keys_are_repaired_rather_than_refused(client, team, session):
     assert len(set(ranks(client, team).values())) == 3
 
 
-def test_imported_issues_get_keys_too(client, team):
+def test_imported_tickets_get_keys_too(client, team):
     export = (
         "Summary,Issue key,Status,Priority\n"
         "First,J-1,To Do,High\n"
@@ -206,7 +206,7 @@ def test_upgrading_keeps_the_order_the_board_already_showed(tmp_path):
         "INSERT INTO workflowstatus (id, team_id, name, category, position,"
         f" color, created_at) VALUES (1, 1, 'Todo', 'unstarted', 0, '#888', {stamp})"
     )
-    # 65 issues, so the keys cross from `az` into `b00`.
+    # 65 tickets, so the keys cross from `az` into `b00`.
     connection.executemany(
         "INSERT INTO issue (team_id, number, title, status_id, priority, type,"
         f" creator_id, created_at, updated_at) VALUES (1, ?, ?, 1, 'no_priority',"

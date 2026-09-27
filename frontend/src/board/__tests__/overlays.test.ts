@@ -7,14 +7,14 @@ const run = (start: OverlayStack, ...actions: Parameters<typeof overlayReducer>[
 
 describe('overlayReducer', () => {
   it('opens onto the top of the stack', () => {
-    expect(run([], { type: 'open', overlay: 'newIssue' }, { type: 'open', overlay: 'palette' }))
-      .toEqual(['newIssue', 'palette'])
+    expect(run([], { type: 'open', overlay: 'newTicket' }, { type: 'open', overlay: 'palette' }))
+      .toEqual(['newTicket', 'palette'])
   })
 
   it('closeTop closes the most recently opened thing and nothing else', () => {
     // The old if/else chain would have closed the palette first regardless
     // of order; a stack makes "shallowest" mean what it says.
-    expect(run(['newIssue', 'palette'], { type: 'closeTop' })).toEqual(['newIssue'])
+    expect(run(['newTicket', 'palette'], { type: 'closeTop' })).toEqual(['newTicket'])
   })
 
   it('closeTop on an empty stack is a no-op rather than an error', () => {
@@ -22,7 +22,7 @@ describe('overlayReducer', () => {
   })
 
   it('closes a specific overlay wherever it sits', () => {
-    expect(run(['newIssue', 'palette'], { type: 'close', overlay: 'newIssue' })).toEqual(['palette'])
+    expect(run(['newTicket', 'palette'], { type: 'close', overlay: 'newTicket' })).toEqual(['palette'])
   })
 
   it('closing something not open changes nothing', () => {
@@ -30,8 +30,8 @@ describe('overlayReducer', () => {
   })
 
   it('re-opening brings to the top instead of duplicating', () => {
-    expect(run(['palette', 'newIssue'], { type: 'open', overlay: 'palette' }))
-      .toEqual(['newIssue', 'palette'])
+    expect(run(['palette', 'newTicket'], { type: 'open', overlay: 'palette' }))
+      .toEqual(['newTicket', 'palette'])
   })
 
   it('toggle opens when closed and closes when open', () => {
@@ -40,8 +40,8 @@ describe('overlayReducer', () => {
   })
 
   it('never mutates the previous stack', () => {
-    const start: OverlayStack = ['newIssue']
+    const start: OverlayStack = ['newTicket']
     run(start, { type: 'open', overlay: 'palette' }, { type: 'closeTop' })
-    expect(start).toEqual(['newIssue'])
+    expect(start).toEqual(['newTicket'])
   })
 })

@@ -56,7 +56,7 @@ async def _receive(
         # an exception in the logs -- these arrive from the internet, and a
         # stack trace per forged request is a way to fill a disk.
         response.status_code = error.status
-        return WebhookReceipt(events=0, links=0, issues=[error.detail])
+        return WebhookReceipt(events=0, links=0, tickets=[error.detail])
 
     webhook_by_address.forgive(address)
     return receipt

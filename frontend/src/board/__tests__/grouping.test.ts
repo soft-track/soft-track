@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { IssueRead, ProjectRead } from '@/api/generated/models'
+import type { TicketRead, ProjectRead } from '@/api/generated/models'
 import {
   groupByProject,
   groupingFromSearchParams,
@@ -19,12 +19,12 @@ function project(id: number, name: string, archived = false): ProjectRead {
     state: 'planned',
     archived,
     created_at: '2026-01-01T00:00:00Z',
-    issue_count: 0,
-    completed_issue_count: 0,
+    ticket_count: 0,
+    completed_ticket_count: 0,
   }
 }
 
-const issue = (id: number, project_id: number | null) => ({ id, project_id }) as IssueRead
+const ticket = (id: number, project_id: number | null) => ({ id, project_id }) as TicketRead
 const keys = (groups: ReturnType<typeof groupByProject>) => groups.map((g) => g.key)
 
 describe('the grouping in the URL', () => {
@@ -56,8 +56,8 @@ describe('the grouping in the URL', () => {
 describe('groupByProject', () => {
   const projects = [project(2, 'Zeta'), project(1, 'Alpha'), project(3, 'Retired', true)]
 
-  it('orders projects by name and puts issues in no project last', () => {
-    const groups = groupByProject([issue(10, 2), issue(11, null), issue(12, 1)], projects, {
+  it('orders projects by name and puts tickets in no project last', () => {
+    const groups = groupByProject([ticket(10, 2), ticket(11, null), ticket(12, 1)], projects, {
       includeEmpty: false,
     })
     expect(keys(groups)).toEqual(['project:1', 'project:2', NO_PROJECT_KEY])
@@ -68,14 +68,14 @@ describe('groupByProject', () => {
     expect(keys(groups)).toEqual(['project:1', 'project:2', NO_PROJECT_KEY])
   })
 
-  it('still shows an archived project that holds some of these issues', () => {
-    const groups = groupByProject([issue(10, 3)], projects, { includeEmpty: false })
+  it('still shows an archived project that holds some of these tickets', () => {
+    const groups = groupByProject([ticket(10, 3)], projects, { includeEmpty: false })
     expect(keys(groups)).toEqual(['project:3'])
   })
 
-  it('files an issue whose project is unknown under no project, rather than dropping it', () => {
-    const groups = groupByProject([issue(10, 99)], projects, { includeEmpty: false })
-    expect(groups).toEqual([{ key: NO_PROJECT_KEY, project: null, issues: [issue(10, 99)] }])
+  it('files a ticket whose project is unknown under no project, rather than dropping it', () => {
+    const groups = groupByProject([ticket(10, 99)], projects, { includeEmpty: false })
+    expect(groups).toEqual([{ key: NO_PROJECT_KEY, project: null, tickets: [ticket(10, 99)] }])
   })
 })
 

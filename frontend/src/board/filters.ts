@@ -1,11 +1,11 @@
 import type {
   DueFilter,
-  IssuePriority,
-  IssueType,
-  ListIssuesTeamsTeamIdIssuesGetParams,
+  TicketPriority,
+  TicketType,
+  ListTicketsTeamsTeamIdTicketsGetParams,
   ViewFilters,
 } from '@/api/generated/models'
-import { localToday } from '@/issues/dueDate'
+import { localToday } from '@/tickets/dueDate'
 
 /** Someone in particular, nobody at all, or no opinion. */
 export type AssigneeFilter = number | 'unassigned' | null
@@ -13,7 +13,7 @@ export type AssigneeFilter = number | 'unassigned' | null
 /**
  * What the board is narrowed to.
  *
- * Null everywhere means "all issues" rather than a filter matching nothing,
+ * Null everywhere means "all tickets" rather than a filter matching nothing,
  * which is what makes an empty saved view sensible.
  *
  * `unassigned` is deliberately a value of `assignee` rather than a flag beside
@@ -22,7 +22,7 @@ export type AssigneeFilter = number | 'unassigned' | null
  */
 export type BoardFilters = {
   statusId: number | null
-  priority: IssuePriority | null
+  priority: TicketPriority | null
   assignee: AssigneeFilter
   labelId: number | null
   projectId: number | null
@@ -30,7 +30,7 @@ export type BoardFilters = {
   /** Overdue, due this week, or no due date (#87). */
   due: DueFilter | null
   /** Bug, task or story (#89). */
-  type: IssueType | null
+  type: TicketType | null
 }
 
 export const NO_FILTERS: BoardFilters = {
@@ -90,7 +90,7 @@ export function fromSearchParams(params: URLSearchParams): BoardFilters {
     // rule covers it -- a link naming a status another team deleted shows an
     // unfiltered board rather than an error.
     statusId: readNumber(params.get(KEYS.statusId)),
-    priority: (params.get(KEYS.priority) as IssuePriority | null) ?? null,
+    priority: (params.get(KEYS.priority) as TicketPriority | null) ?? null,
     assignee: assignee === 'unassigned' ? 'unassigned' : readNumber(assignee),
     labelId: readNumber(params.get(KEYS.labelId)),
     projectId: readNumber(params.get(KEYS.projectId)),
@@ -99,7 +99,7 @@ export function fromSearchParams(params: URLSearchParams): BoardFilters {
       ? (params.get(KEYS.due) as DueFilter)
       : null,
     type: TYPE_VALUES.includes(params.get(KEYS.type) ?? '')
-      ? (params.get(KEYS.type) as IssueType)
+      ? (params.get(KEYS.type) as TicketType)
       : null,
   }
 }
@@ -124,7 +124,7 @@ export function toSearchParams(filters: BoardFilters): URLSearchParams {
 }
 
 /**
- * The same filters as the issue list endpoint wants them.
+ * The same filters as the ticket list endpoint wants them.
  *
  * `today` goes with a due filter so "this week" is the viewer's week, not
  * the server's.
@@ -132,7 +132,7 @@ export function toSearchParams(filters: BoardFilters): URLSearchParams {
 export function toQueryParams(
   filters: BoardFilters,
   today = localToday(),
-): ListIssuesTeamsTeamIdIssuesGetParams {
+): ListTicketsTeamsTeamIdTicketsGetParams {
   return {
     status_id: filters.statusId ?? undefined,
     priority: filters.priority ?? undefined,

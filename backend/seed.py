@@ -1,4 +1,4 @@
-"""Seed the database with a demo user, team, project, labels, and issues.
+"""Seed the database with a demo user, team, project, labels, and tickets.
 
 Run with:  python seed.py
 """
@@ -10,9 +10,9 @@ from lib_utils.password import hash_password
 from lib_softtrack import statuses as statuses_service
 from lib_softtrack.ranks import top_rank
 from lib_softtrack.tables import (
-    Issue,
-    IssueLabelLink,
-    IssuePriority,
+    Ticket,
+    TicketLabelLink,
+    TicketPriority,
     Label,
     Project,
     Team,
@@ -55,7 +55,7 @@ def run():
         session.add(TeamMember(team_id=team.id, user_id=user.id, role=TeamRole.admin))
         # This script writes rows directly rather than going through
         # `create_team`, so it has to create the default workflow itself. A
-        # team with no statuses has nowhere to put an issue.
+        # team with no statuses has nowhere to put a ticket.
         statuses_service.create_default_statuses(session, team.id)
         session.commit()
 
@@ -86,58 +86,58 @@ def run():
             for status in statuses_service.team_statuses(session, team.id)
         }
 
-        demo_issues = [
+        demo_tickets = [
             (
                 "Set up CI pipeline",
                 "Done",
-                IssuePriority.high,
+                TicketPriority.high,
                 [label_feature],
             ),
             (
                 "Design the kanban board layout",
                 "Done",
-                IssuePriority.medium,
+                TicketPriority.medium,
                 [label_design],
             ),
             (
                 "Implement JWT auth",
                 "In Progress",
-                IssuePriority.urgent,
+                TicketPriority.urgent,
                 [label_feature],
             ),
             (
-                "Drag and drop issue cards",
+                "Drag and drop ticket cards",
                 "In Progress",
-                IssuePriority.high,
+                TicketPriority.high,
                 [label_feature],
             ),
             (
                 "Fix avatar color hashing bug",
                 "Todo",
-                IssuePriority.low,
+                TicketPriority.low,
                 [label_bug],
             ),
-            ("Write onboarding docs", "Todo", IssuePriority.medium, []),
+            ("Write onboarding docs", "Todo", TicketPriority.medium, []),
             (
                 "Add keyboard shortcuts",
                 "Backlog",
-                IssuePriority.no_priority,
+                TicketPriority.no_priority,
                 [label_feature],
             ),
             (
                 "Dark mode support",
                 "Backlog",
-                IssuePriority.low,
+                TicketPriority.low,
                 [label_design],
             ),
         ]
 
-        for title, status, priority, labels in demo_issues:
-            number = team.next_issue_number
-            team.next_issue_number += 1
+        for title, status, priority, labels in demo_tickets:
+            number = team.next_ticket_number
+            team.next_ticket_number += 1
             session.add(team)
 
-            issue = Issue(
+            ticket = Ticket(
                 team_id=team.id,
                 project_id=project.id,
                 number=number,
@@ -148,19 +148,19 @@ def run():
                 creator_id=user.id,
                 rank=top_rank(session, team.id),
             )
-            session.add(issue)
+            session.add(ticket)
             session.commit()
-            session.refresh(issue)
+            session.refresh(ticket)
 
             for label in labels:
-                session.add(IssueLabelLink(issue_id=issue.id, label_id=label.id))
+                session.add(TicketLabelLink(ticket_id=ticket.id, label_id=label.id))
             session.commit()
 
         print("Seeded demo data:")
         print(f"  Login: {DEMO_EMAIL} / {DEMO_PASSWORD}")
         print(f"  Team: {team.name} ({team.key})")
         print(f"  Project: {project.name}")
-        print(f"  Issues: {len(demo_issues)}")
+        print(f"  Tickets: {len(demo_tickets)}")
 
 
 if __name__ == "__main__":

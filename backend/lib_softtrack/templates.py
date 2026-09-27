@@ -1,7 +1,7 @@
-"""Issue description templates (#97).
+"""Ticket description templates (#97).
 
 A team admin keeps a short list -- "Bug report", "Feature request" -- and the
-new-issue form offers them. Choosing one fills the description; it is a
+new-ticket form offers them. Choosing one fills the description; it is a
 prefill, not a form, so everything after that is ordinary editing. Teams opt
 in by writing their own: nothing is seeded, because a template nobody on the
 team wrote is one nobody on the team fills in.
@@ -12,33 +12,33 @@ from typing import Optional
 from sqlmodel import Session, select
 
 from lib_softtrack.models.templates import (
-    IssueTemplateCreate,
-    IssueTemplateOrder,
-    IssueTemplateRead,
-    IssueTemplateUpdate,
+    TicketTemplateCreate,
+    TicketTemplateOrder,
+    TicketTemplateRead,
+    TicketTemplateUpdate,
 )
-from lib_softtrack.tables import IssueTemplate, User, utcnow
+from lib_softtrack.tables import TicketTemplate, User, utcnow
 from lib_softtrack.teams import get_team_or_404, require_team_admin, require_team_member
 from lib_utils.errors import ErrorCode, api_error
 
 
-def _team_templates(session: Session, team_id: int) -> list[IssueTemplate]:
+def _team_templates(session: Session, team_id: int) -> list[TicketTemplate]:
     return session.exec(
-        select(IssueTemplate)
-        .where(IssueTemplate.team_id == team_id)
-        .order_by(IssueTemplate.position, IssueTemplate.id)
+        select(TicketTemplate)
+        .where(TicketTemplate.team_id == team_id)
+        .order_by(TicketTemplate.position, TicketTemplate.id)
     ).all()
 
 
-def _read_all(session: Session, team_id: int) -> list[IssueTemplateRead]:
+def _read_all(session: Session, team_id: int) -> list[TicketTemplateRead]:
     return [
-        IssueTemplateRead.model_validate(template)
+        TicketTemplateRead.model_validate(template)
         for template in _team_templates(session, team_id)
     ]
 
 
-def _template_or_404(session: Session, template_id: int) -> IssueTemplate:
-    template = session.get(IssueTemplate, template_id)
+def _template_or_404(session: Session, template_id: int) -> TicketTemplate:
+    template = session.get(TicketTemplate, template_id)
     if template is None:
         raise api_error(
             status_code=404,
@@ -66,8 +66,8 @@ def _assert_name_free(
 ) -> None:
     # Case-insensitively: "Bug report" and "bug report" side by side in a
     # picker is two entries somebody will choose between by guessing.
-    statement = select(IssueTemplate.id, IssueTemplate.name).where(
-        IssueTemplate.team_id == team_id
+    statement = select(TicketTemplate.id, TicketTemplate.name).where(
+        TicketTemplate.team_id == team_id
     )
     for template_id, existing in session.exec(statement).all():
         if template_id != except_id and existing.casefold() == name.casefold():
@@ -80,24 +80,24 @@ def _assert_name_free(
 
 def list_templates(
     session: Session, current_user: User, team_id: int
-) -> list[IssueTemplateRead]:
-    """Any member may read them -- they are what the new-issue form offers."""
+) -> list[TicketTemplateRead]:
+    """Any member may read them -- they are what the new-ticket form offers."""
     get_team_or_404(team_id, session)
     require_team_member(team_id, current_user, session)
     return _read_all(session, team_id)
 
 
 def create_template(
-    session: Session, current_user: User, team_id: int, payload: IssueTemplateCreate
-) -> IssueTemplateRead:
+    session: Session, current_user: User, team_id: int, payload: TicketTemplateCreate
+) -> TicketTemplateRead:
     get_team_or_404(team_id, session)
-    # Admin-only: a template decides what every issue on the team starts as.
+    # Admin-only: a template decides what every ticket on the team starts as.
     require_team_admin(team_id, current_user, session)
 
     name = _clean(payload.name, "name")
     _assert_name_free(session, team_id, name)
     existing = _team_templates(session, team_id)
-    template = IssueTemplate(
+    template = TicketTemplate(
         team_id=team_id,
         name=name,
         body=_clean(payload.body, "body"),
@@ -107,12 +107,15 @@ def create_template(
     session.add(template)
     session.commit()
     session.refresh(template)
-    return IssueTemplateRead.model_validate(template)
+    return TicketTemplateRead.model_validate(template)
 
 
 def update_template(
-    session: Session, current_user: User, template_id: int, payload: IssueTemplateUpdate
-) -> IssueTemplateRead:
+    session: Session,
+    current_user: User,
+    template_id: int,
+    payload: TicketTemplateUpdate,
+) -> TicketTemplateRead:
     template = _template_or_404(session, template_id)
     require_team_admin(template.team_id, current_user, session)
 
@@ -127,12 +130,12 @@ def update_template(
     session.add(template)
     session.commit()
     session.refresh(template)
-    return IssueTemplateRead.model_validate(template)
+    return TicketTemplateRead.model_validate(template)
 
 
 def reorder_templates(
-    session: Session, current_user: User, team_id: int, payload: IssueTemplateOrder
-) -> list[IssueTemplateRead]:
+    session: Session, current_user: User, team_id: int, payload: TicketTemplateOrder
+) -> list[TicketTemplateRead]:
     get_team_or_404(team_id, session)
     require_team_admin(team_id, current_user, session)
 
@@ -153,7 +156,7 @@ def reorder_templates(
 
 
 def delete_template(session: Session, current_user: User, template_id: int) -> None:
-    """Gone from the picker. Issues already filed from it keep their text."""
+    """Gone from the picker. Tickets already filed from it keep their text."""
     template = _template_or_404(session, template_id)
     require_team_admin(template.team_id, current_user, session)
     session.delete(template)

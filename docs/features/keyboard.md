@@ -14,7 +14,7 @@ is also a link, so a middle click opens the ticket's page in a new tab.
 
 **Space peeks.** On a focused card or list row, Space shows a quick,
 read-only preview of the ticket beside it without opening anything; see
-[the quick peek](issue-views.md#the-quick-peek). Enter then opens the ticket
+[the quick peek](ticket-views.md#the-quick-peek). Enter then opens the ticket
 as a page, and Escape or Space again closes the preview.
 
 **Cards move without a mouse.** On a focused card, Shift+Space picks it up.

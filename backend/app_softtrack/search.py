@@ -24,12 +24,12 @@ def search(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Search issue titles, descriptions and comments.
+    """Search ticket titles, descriptions and comments.
 
     Always scoped to the teams the caller belongs to. Postgres uses full-text
     search with stemming and relevance ranking; SQLite falls back to a
     substring match.
     """
-    return search_service.search_issues(
+    return search_service.search_tickets(
         session, current_user, q, team_id=team_id, limit=limit, offset=offset
     )

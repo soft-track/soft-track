@@ -1,4 +1,4 @@
-/** The bar across the top of the board: views, arrangement, search, new issue. */
+/** The bar across the top of the board: views, arrangement, search, new ticket. */
 export const topBar = {
   openNavigation: 'Open navigation',
   viewLabel: 'View',
@@ -18,7 +18,7 @@ export const topBar = {
   searchLabel: 'Search tickets',
   searchPlaceholder: 'Search tickets…',
   clearSearch: 'Clear search',
-  newIssue: 'New ticket',
+  newTicket: 'New ticket',
   viewOnly: 'View only',
   viewOnlyHint: 'You are a guest on this team: you can see everything and change nothing.',
   /** The CSV export (#165): the button, and its tooltip for each state. */

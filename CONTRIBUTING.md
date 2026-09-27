@@ -77,8 +77,8 @@ disagree about a payload fail confusingly at runtime rather than loudly at
 build time.
 
 **Business logic goes in the service layer.** The backend is thin routers over
-services: `app_softtrack/issues.py` parses the request and calls
-`lib_softtrack/issues.py`, which does the work. A route handler should be
+services: `app_softtrack/tickets.py` parses the request and calls
+`lib_softtrack/tickets.py`, which does the work. A route handler should be
 short enough to read in one go. Errors are raised with
 `api_error(status, ErrorCode.…, "sentence")` rather than a bare
 `HTTPException`, so clients get a code to branch on (see
@@ -163,7 +163,7 @@ replaces, so anything else it claims to be can drift without the build
 noticing. Where a key is handled by more than one layer, wire the harness to
 the board's real overlay stack: with a single boolean, "closed the dialog" and
 "closed the dialog and the panel behind it" look identical.
-`frontend/src/issues/__tests__/NewIssueModal.test.tsx` and
+`frontend/src/tickets/__tests__/NewTicketModal.test.tsx` and
 `frontend/src/keyboard/__tests__/CommandPalette.test.tsx` are the pattern to
 copy.
 

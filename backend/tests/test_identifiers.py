@@ -1,8 +1,8 @@
-"""Finding issue identifiers in text people wrote for another purpose (issue #25).
+"""Finding ticket identifiers in text people wrote for another purpose (issue #25).
 
 The scanner is the piece most likely to be wrong in a way nothing else
-notices. Too eager and a pull request links to an issue nobody meant, after
-which a rule moves that issue to Done -- so most of these are about what it
+notices. Too eager and a pull request links to a ticket nobody meant, after
+which a rule moves that ticket to Done -- so most of these are about what it
 must *not* match.
 """
 
@@ -31,7 +31,7 @@ def test_it_finds_several_in_the_order_they_are_written():
 
 
 def test_it_deduplicates_across_the_texts_it_is_given():
-    # A pull request usually names the issue in its title *and* its branch.
+    # A pull request usually names the ticket in its title *and* its branch.
     assert find_identifiers("ENG-42 Fix it", "eng-42-fix-it", "Closes ENG-42") == [
         ("ENG", 42)
     ]
@@ -54,7 +54,7 @@ def test_a_none_text_is_skipped_rather_than_crashing():
 
 def test_it_does_not_split_a_longer_number():
     """`ENG-4295` is one identifier. Stopping at `ENG-42` would link a real
-    but entirely unrelated issue, which is the worst failure this can have."""
+    but entirely unrelated ticket, which is the worst failure this can have."""
     assert find_identifiers("ENG-4295") == [("ENG", 4295)]
 
 
@@ -96,7 +96,7 @@ def test_it_stops_scanning_a_runaway_payload():
 
 @pytest.fixture
 def two_teams(client, team, auth):
-    """One team's issue, and another team's, to check the boundary holds."""
+    """One team's ticket, and another team's, to check the boundary holds."""
     other = auth(email="other@softtrack.dev", full_name="Other Person")
     created = client.post(
         "/teams", json={"name": "Design", "key": "DES"}, headers=other["headers"]
@@ -104,18 +104,18 @@ def two_teams(client, team, auth):
     return {**team, "other": other, "other_team": created}
 
 
-def make_issue(client, actor, team_id, title="Work"):
+def make_ticket(client, actor, team_id, title="Work"):
     response = client.post(
-        f"/teams/{team_id}/issues", json={"title": title}, headers=actor["headers"]
+        f"/teams/{team_id}/tickets", json={"title": title}, headers=actor["headers"]
     )
     assert response.status_code == 200, response.text
     return response.json()
 
 
-def test_resolve_finds_the_issue_the_text_names(client, team, session):
-    issue = make_issue(client, team, team["team"]["id"])
+def test_resolve_finds_the_ticket_the_text_names(client, team, session):
+    ticket = make_ticket(client, team, team["team"]["id"])
     found = resolve(session, team["team"]["id"], "eng-1-fix")
-    assert [i.id for i in found] == [issue["id"]]
+    assert [i.id for i in found] == [ticket["id"]]
 
 
 def test_resolve_will_not_cross_a_team_boundary(client, two_teams, session):
@@ -125,12 +125,12 @@ def test_resolve_will_not_cross_a_team_boundary(client, two_teams, session):
     repository must not be able to reach another team's board -- however
     deliberately it names it.
     """
-    make_issue(client, two_teams, two_teams["team"]["id"])
-    theirs = make_issue(
+    make_ticket(client, two_teams, two_teams["team"]["id"])
+    theirs = make_ticket(
         client, two_teams["other"], two_teams["other_team"]["id"], title="Theirs"
     )
 
-    # Scanning on behalf of team ENG, with text that names a real DES issue.
+    # Scanning on behalf of team ENG, with text that names a real DES ticket.
     found = resolve(session, two_teams["team"]["id"], f"DES-{theirs['number']} done")
     assert found == []
 
@@ -141,18 +141,18 @@ def test_resolve_makes_the_false_friends_harmless(client, team, session):
     `utf-8` is a candidate identifier; it links nothing, because no team on
     this instance is keyed UTF. That is where the eagerness gets paid for.
     """
-    make_issue(client, team, team["team"]["id"])
+    make_ticket(client, team, team["team"]["id"])
     assert resolve(session, team["team"]["id"], "encoded as utf-8, sha-1 digest") == []
 
 
-def test_resolve_ignores_a_number_that_is_not_an_issue(client, team, session):
-    make_issue(client, team, team["team"]["id"])
+def test_resolve_ignores_a_number_that_is_not_a_ticket(client, team, session):
+    make_ticket(client, team, team["team"]["id"])
     assert resolve(session, team["team"]["id"], "ENG-999 fixed") == []
 
 
 def test_resolve_returns_them_in_the_order_the_text_reads(client, team, session):
-    first = make_issue(client, team, team["team"]["id"])
-    second = make_issue(client, team, team["team"]["id"])
+    first = make_ticket(client, team, team["team"]["id"])
+    second = make_ticket(client, team, team["team"]["id"])
     found = resolve(
         session,
         team["team"]["id"],

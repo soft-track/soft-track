@@ -1,13 +1,13 @@
-"""SQLite's full-text index: FTS5 tables over issues and comments (#85).
+"""SQLite's full-text index: FTS5 tables over tickets and comments (#85).
 
 Postgres searches with `to_tsvector` and GIN indexes; this is the SQLite
 equivalent, so local and small self-hosted instances get ranked, stemmed
 search too instead of `LIKE '%query%'`.
 
-Two external-content FTS5 tables mirror `issue` (title, description) and
+Two external-content FTS5 tables mirror `ticket` (title, description) and
 `comment` (body). "External content" means they hold only the index, not a
 second copy of the text; triggers keep them in step with every write, from
-whichever path -- the issue service, bulk edits, the Jira importer, a rule.
+whichever path -- the ticket service, bulk edits, the Jira importer, a rule.
 
 The same DDL is created two ways, and the two must agree:
 
@@ -19,7 +19,7 @@ A test compares the two, so one cannot drift from the other unnoticed.
 
 One trap worth knowing. A SQLite batch migration rebuilds a table by copying
 it and dropping the original -- and the triggers go with the original. Any
-future migration that batch-alters `issue` or `comment` must recreate the
+future migration that batch-alters `ticket` or `comment` must recreate the
 triggers below, or the index silently stops following edits. A test that
 runs every migration and then checks the triggers exist is there to catch it.
 """
@@ -39,24 +39,24 @@ logger = logging.getLogger(__name__)
 TOKENIZER = "porter unicode61"
 
 DDL = [
-    f"""CREATE VIRTUAL TABLE issue_fts USING fts5(
-        title, description, content='issue', content_rowid='id',
+    f"""CREATE VIRTUAL TABLE ticket_fts USING fts5(
+        title, description, content='ticket', content_rowid='id',
         tokenize='{TOKENIZER}')""",
     f"""CREATE VIRTUAL TABLE comment_fts USING fts5(
         body, content='comment', content_rowid='id', tokenize='{TOKENIZER}')""",
-    """CREATE TRIGGER issue_fts_insert AFTER INSERT ON issue BEGIN
-        INSERT INTO issue_fts(rowid, title, description)
+    """CREATE TRIGGER ticket_fts_insert AFTER INSERT ON ticket BEGIN
+        INSERT INTO ticket_fts(rowid, title, description)
         VALUES (new.id, new.title, new.description);
     END""",
-    """CREATE TRIGGER issue_fts_delete AFTER DELETE ON issue BEGIN
-        INSERT INTO issue_fts(issue_fts, rowid, title, description)
+    """CREATE TRIGGER ticket_fts_delete AFTER DELETE ON ticket BEGIN
+        INSERT INTO ticket_fts(ticket_fts, rowid, title, description)
         VALUES ('delete', old.id, old.title, old.description);
     END""",
-    """CREATE TRIGGER issue_fts_update AFTER UPDATE OF title, description ON issue
+    """CREATE TRIGGER ticket_fts_update AFTER UPDATE OF title, description ON ticket
     BEGIN
-        INSERT INTO issue_fts(issue_fts, rowid, title, description)
+        INSERT INTO ticket_fts(ticket_fts, rowid, title, description)
         VALUES ('delete', old.id, old.title, old.description);
-        INSERT INTO issue_fts(rowid, title, description)
+        INSERT INTO ticket_fts(rowid, title, description)
         VALUES (new.id, new.title, new.description);
     END""",
     """CREATE TRIGGER comment_fts_insert AFTER INSERT ON comment BEGIN
@@ -75,11 +75,11 @@ DDL = [
 
 #: The objects above, by name, for checking they exist.
 OBJECTS = {
-    "issue_fts": "table",
+    "ticket_fts": "table",
     "comment_fts": "table",
-    "issue_fts_insert": "trigger",
-    "issue_fts_delete": "trigger",
-    "issue_fts_update": "trigger",
+    "ticket_fts_insert": "trigger",
+    "ticket_fts_delete": "trigger",
+    "ticket_fts_update": "trigger",
     "comment_fts_insert": "trigger",
     "comment_fts_delete": "trigger",
     "comment_fts_update": "trigger",

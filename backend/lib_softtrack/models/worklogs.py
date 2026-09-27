@@ -26,7 +26,7 @@ class WorklogUpdate(BaseModel):
 
 class WorklogRead(BaseModel):
     id: int
-    issue_id: int
+    ticket_id: int
     user: UserPublic
     minutes: int
     worked_on: date
@@ -40,8 +40,8 @@ class PersonTime(BaseModel):
     minutes: int
 
 
-class IssueTime(BaseModel):
-    """Everything the issue panel shows about time spent on one issue."""
+class TicketTime(BaseModel):
+    """Everything the ticket panel shows about time spent on one ticket."""
 
     total_minutes: int
     #: Most time first.

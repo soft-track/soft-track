@@ -12,36 +12,36 @@ function hits(event: string, data: string, keys: string[]) {
 }
 
 const KEYS = [
-  '/teams/7/issues',
+  '/teams/7/tickets',
   '/teams/7/estimates',
   '/teams/7/sprints',
-  '/teams/8/issues',
-  '/issues/42',
-  '/issues/42/comments',
-  '/issues/42/events',
-  '/issues/420',
-  '/issues/4',
+  '/teams/8/tickets',
+  '/tickets/42',
+  '/tickets/42/comments',
+  '/tickets/42/events',
+  '/tickets/420',
+  '/tickets/4',
   '/notifications',
   '/notifications/unread-count',
   '/search',
 ]
 
 describe('invalidationFor (#103)', () => {
-  it('refreshes the board and the one issue, not its neighbours by prefix', () => {
-    expect(hits('issue_changed', '{"id": 42}', KEYS)).toEqual([
-      '/teams/7/issues',
+  it('refreshes the board and the one ticket, not its neighbours by prefix', () => {
+    expect(hits('ticket_changed', '{"id": 42}', KEYS)).toEqual([
+      '/teams/7/tickets',
       '/teams/7/estimates',
       '/teams/7/sprints',
-      '/issues/42',
-      '/issues/42/comments',
-      '/issues/42/events',
+      '/tickets/42',
+      '/tickets/42/comments',
+      '/tickets/42/events',
     ])
   })
 
   it('refreshes only the thread for a comment', () => {
-    expect(hits('comment_added', '{"issue_id": 42}', KEYS)).toEqual([
-      '/issues/42/comments',
-      '/issues/42/events',
+    expect(hits('comment_added', '{"ticket_id": 42}', KEYS)).toEqual([
+      '/tickets/42/comments',
+      '/tickets/42/events',
     ])
   })
 

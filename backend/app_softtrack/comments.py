@@ -20,29 +20,29 @@ router = APIRouter(tags=["comments"])
 
 
 @router.post(
-    "/issues/{issue_id}/comments",
+    "/tickets/{ticket_id}/comments",
     response_model=CommentRead,
     dependencies=[team_writer],
 )
 def create_comment(
-    issue_id: int,
+    ticket_id: int,
     payload: CommentCreate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    return comments_service.create_comment(session, current_user, issue_id, payload)
+    return comments_service.create_comment(session, current_user, ticket_id, payload)
 
 
-@router.get("/issues/{issue_id}/comments", response_model=Page[CommentRead])
+@router.get("/tickets/{ticket_id}/comments", response_model=Page[CommentRead])
 def list_comments(
-    issue_id: int,
+    ticket_id: int,
     limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(0, ge=0),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
     return comments_service.list_comments(
-        session, current_user, issue_id, limit=limit, offset=offset
+        session, current_user, ticket_id, limit=limit, offset=offset
     )
 
 

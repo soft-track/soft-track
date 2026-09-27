@@ -46,9 +46,9 @@ def test_a_permission_error_carries_its_code_and_the_same_sentence(client, team,
 
 
 def test_a_missing_thing_says_which(client, team):
-    response = client.get("/issues/999999", headers=team["headers"])
+    response = client.get("/tickets/999999", headers=team["headers"])
     assert response.status_code == 404
-    assert response.json() == {"detail": "Issue not found", "code": "issue_not_found"}
+    assert response.json() == {"detail": "Ticket not found", "code": "ticket_not_found"}
 
 
 def test_a_failed_sign_in(client, auth):
@@ -83,7 +83,7 @@ def test_request_validation_keeps_its_own_shape(client, team):
     """422s from FastAPI's request checking already say what was wrong,
     field by field, and are left exactly as they were."""
     response = client.post(
-        f"/teams/{team['team']['id']}/issues", json={}, headers=team["headers"]
+        f"/teams/{team['team']['id']}/tickets", json={}, headers=team["headers"]
     )
     assert response.status_code == 422
     assert "code" not in response.json()

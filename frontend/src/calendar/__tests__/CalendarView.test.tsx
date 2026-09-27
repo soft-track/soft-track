@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * The calendar (#105): issues on their due days, overflow, the keyboard, and
+ * The calendar (#105): tickets on their due days, overflow, the keyboard, and
  * the month in the URL.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -9,9 +9,9 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { IssueRead, StatusRead } from '@/api/generated/models'
+import type { TicketRead, StatusRead } from '@/api/generated/models'
 import { CalendarView } from '@/calendar/CalendarView'
-import { surfaceFor } from '@/issues/surface'
+import { surfaceFor } from '@/tickets/surface'
 import { TeamProvider } from '@/team/TeamContext'
 import type { TeamContextValue } from '@/team/useTeamContext'
 
@@ -21,13 +21,13 @@ const mocks = vi.hoisted(() => ({
   update: { mutateAsync: vi.fn() },
 }))
 
-vi.mock('@/api/generated/endpoints/issues/issues', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/api/generated/endpoints/issues/issues')>()),
-  useListIssuesTeamsTeamIdIssuesGet: (...args: unknown[]) => {
+vi.mock('@/api/generated/endpoints/tickets/tickets', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/generated/endpoints/tickets/tickets')>()),
+  useListTicketsTeamsTeamIdTicketsGet: (...args: unknown[]) => {
     mocks.params = args
     return { data: { items: mocks.items, total: mocks.items.length }, isLoading: false }
   },
-  useUpdateIssueIssuesIssueIdPatch: () => mocks.update,
+  useUpdateTicketTicketsTicketIdPatch: () => mocks.update,
 }))
 
 const TODO: StatusRead = { id: 1, team_id: 7, name: 'Todo', category: 'unstarted', position: 0, color: '#888' }
@@ -41,7 +41,7 @@ const TEAM: TeamContextValue = {
   statuses: [TODO],
 }
 
-function issue(number: number, due_date: string, title = `Issue ${number}`): IssueRead {
+function ticket(number: number, due_date: string, title = `Ticket ${number}`): TicketRead {
   return {
     id: number,
     team_key: 'ENG',
@@ -50,7 +50,7 @@ function issue(number: number, due_date: string, title = `Issue ${number}`): Iss
     title,
     due_date,
     status: TODO,
-  } as unknown as IssueRead
+  } as unknown as TicketRead
 }
 
 function Where() {
@@ -77,7 +77,7 @@ function renderCalendar(url = '/ENG?month=2026-09', canWrite = true) {
                 </>
               }
             />
-            <Route path="/ENG/issue/:n" element={<Where />} />
+            <Route path="/ENG/ticket/:n" element={<Where />} />
           </Routes>
         </MemoryRouter>
       </TeamProvider>
@@ -90,8 +90,8 @@ const where = () => screen.getByTestId('where').textContent
 
 beforeEach(() => {
   mocks.items = [
-    issue(1, '2026-09-15', 'Ship the retry fix'),
-    ...[2, 3, 4, 5].map((n) => issue(n, '2026-09-30')),
+    ticket(1, '2026-09-15', 'Ship the retry fix'),
+    ...[2, 3, 4, 5].map((n) => ticket(n, '2026-09-30')),
   ]
 })
 
@@ -108,7 +108,7 @@ describe('CalendarView', () => {
     expect(screen.getByRole('heading', { name: 'September 2026' })).toBeTruthy()
   })
 
-  it('puts each issue on its due day', () => {
+  it('puts each ticket on its due day', () => {
     renderCalendar()
     const day = screen.getByRole('gridcell', { name: /Tuesday 15 September, 1 due/ })
     expect(within(day).getByText('Ship the retry fix')).toBeTruthy()
@@ -130,10 +130,10 @@ describe('CalendarView', () => {
     expect(screen.getByRole('dialog', { name: 'Due Wednesday 30 September' })).toBeTruthy()
   })
 
-  it('opens an issue from its chip', async () => {
+  it('opens a ticket from its chip', async () => {
     const user = renderCalendar()
     await user.click(screen.getByRole('button', { name: /Ship the retry fix/ }))
-    expect(where()).toBe('/ENG/issue/1')
+    expect(where()).toBe('/ENG/ticket/1')
     // One of the board's views, so the board's panel rather than the page (#112).
     expect(screen.getByTestId('where').dataset.surface).toBe('panel')
   })

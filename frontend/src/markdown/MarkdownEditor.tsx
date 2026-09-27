@@ -41,7 +41,7 @@ export function MarkdownEditor({
    * Store files and return what to write into the text, in the same order.
    *
    * Deliberately not typed as attachments: this component knows about
-   * markdown and a caret, and nothing about issues. Omit it and paste, drop
+   * markdown and a caret, and nothing about tickets. Omit it and paste, drop
    * and the attach button all disappear rather than failing when used.
    */
   onUploadFiles?: (files: File[]) => Promise<Array<{ markdown: string }>>

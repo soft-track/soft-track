@@ -4,21 +4,21 @@ import { Link } from 'react-router-dom'
 
 import { errorDetail } from '@/api/errors'
 import {
-  useListIssuesTeamsTeamIdIssuesGet,
-  useUpdateIssueIssuesIssueIdPatch,
-} from '@/api/generated/endpoints/issues/issues'
+  useListTicketsTeamsTeamIdTicketsGet,
+  useUpdateTicketTicketsTicketIdPatch,
+} from '@/api/generated/endpoints/tickets/tickets'
 import {
   useGetProjectProjectsProjectIdGet,
   useUpdateProjectProjectsProjectIdPatch,
 } from '@/api/generated/endpoints/projects/projects'
 import { useProjectBurnupProjectsProjectIdBurnupGet } from '@/api/generated/endpoints/reports/reports'
-import type { IssueRead, ProjectRead, ProjectUpdate } from '@/api/generated/models'
+import type { TicketRead, ProjectRead, ProjectUpdate } from '@/api/generated/models'
 import { useTranslation } from '@/i18n'
 import { formatNumber } from '@/i18n/format'
-import { EstimateBadge } from '@/issues/EstimateBadge'
-import { IssueDetailPanel } from '@/issues/IssueDetailPanel'
-import { PriorityIcon } from '@/issues/PriorityIcon'
-import { AddIssuesModal } from '@/projects/AddIssuesModal'
+import { EstimateBadge } from '@/tickets/EstimateBadge'
+import { TicketDetailPanel } from '@/tickets/TicketDetailPanel'
+import { PriorityIcon } from '@/tickets/PriorityIcon'
+import { AddTicketsModal } from '@/projects/AddTicketsModal'
 import { ProjectBurnupChart } from '@/reports/ProjectBurnupChart'
 import { activeMembers } from '@/team/members'
 import {
@@ -34,7 +34,7 @@ import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 import { Select } from '@/ui/Select'
 
-/** The most issues one page of the list endpoint returns. */
+/** The most tickets one page of the list endpoint returns. */
 const PAGE = 200
 
 /**
@@ -42,13 +42,13 @@ const PAGE = 200
  *
  * Answers the question an epic exists for: what is in it, and how far along
  * is it. The header is the project's own fields, editable in place; below it
- * the issues, grouped by the team's columns.
+ * the tickets, grouped by the team's columns.
  */
 export function ProjectPage({ projectId }: { projectId: number }) {
   const { t } = useTranslation(['projects', 'common'])
   const { team } = useTeamContext()
   const project = useGetProjectProjectsProjectIdGet(projectId)
-  const issues = useListIssuesTeamsTeamIdIssuesGet(
+  const tickets = useListTicketsTeamsTeamIdTicketsGet(
     team.id,
     { project_id: projectId, limit: PAGE },
     { query: { enabled: project.data?.team_id === team.id } },
@@ -57,7 +57,7 @@ export function ProjectPage({ projectId }: { projectId: number }) {
   if (project.isLoading) return <Loading label={t('page.loading')} />
 
   // A project id from another team's URL is as missing as a deleted one: its
-  // issues are not on this board, and nothing here could act on them.
+  // tickets are not on this board, and nothing here could act on them.
   if (!project.data || project.data.team_id !== team.id) {
     return (
       <div className="glass flex h-full flex-col items-center justify-center gap-3 rounded-panel text-sm text-neutral-500">
@@ -72,33 +72,33 @@ export function ProjectPage({ projectId }: { projectId: number }) {
   return (
     <ProjectDetail
       project={project.data}
-      issues={issues.data?.items ?? []}
-      total={issues.data?.total ?? 0}
-      isLoadingIssues={issues.isLoading}
+      tickets={tickets.data?.items ?? []}
+      total={tickets.data?.total ?? 0}
+      isLoadingTickets={tickets.isLoading}
     />
   )
 }
 
 function ProjectDetail({
   project,
-  issues,
+  tickets,
   total,
-  isLoadingIssues,
+  isLoadingTickets,
 }: {
   project: ProjectRead
-  issues: IssueRead[]
+  tickets: TicketRead[]
   total: number
-  isLoadingIssues: boolean
+  isLoadingTickets: boolean
 }) {
   const { t } = useTranslation(['projects', 'common'])
   const { team, members, statuses } = useTeamContext()
   const queryClient = useQueryClient()
   const updateProject = useUpdateProjectProjectsProjectIdPatch()
-  const updateIssue = useUpdateIssueIssuesIssueIdPatch()
+  const updateTicket = useUpdateTicketTicketsTicketIdPatch()
   const burnup = useProjectBurnupProjectsProjectIdBurnupGet(project.id)
 
   const [adding, setAdding] = useState(false)
-  const [openIssueId, setOpenIssueId] = useState<number | null>(null)
+  const [openTicketId, setOpenTicketId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const patch = async (data: ProjectUpdate) => {
@@ -111,19 +111,19 @@ function ProjectDetail({
     }
   }
 
-  const remove = async (issue: IssueRead) => {
+  const remove = async (ticket: TicketRead) => {
     setError(null)
     try {
-      await updateIssue.mutateAsync({ issueId: issue.id, data: { project_id: null } })
-      queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/issues`] })
+      await updateTicket.mutateAsync({ ticketId: ticket.id, data: { project_id: null } })
+      queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/tickets`] })
       invalidateProjects(queryClient, team.id)
     } catch (err: unknown) {
-      setError(errorDetail(err, t('page.errors.remove', { identifier: issue.identifier })))
+      setError(errorDetail(err, t('page.errors.remove', { identifier: ticket.identifier })))
     }
   }
 
   const progress = progressLabel(project)
-  const groups = groupByStatus(issues, statuses)
+  const groups = groupByStatus(tickets, statuses)
 
   return (
     <div className="glass scroll-thin h-full overflow-y-auto rounded-panel">
@@ -161,7 +161,7 @@ function ProjectDetail({
               className="btn btn-primary btn-sm"
             >
               <Icon name="plus" size={13} strokeWidth={2.2} />
-              {t('page.addIssues')}
+              {t('page.addTickets')}
             </button>
           </div>
         </div>
@@ -180,8 +180,8 @@ function ProjectDetail({
             role="progressbar"
             aria-label={t('page.progress')}
             aria-valuemin={0}
-            aria-valuemax={project.issue_count}
-            aria-valuenow={project.completed_issue_count}
+            aria-valuemax={project.ticket_count}
+            aria-valuenow={project.completed_ticket_count}
           >
             <div
               className="h-full rounded-full"
@@ -261,20 +261,20 @@ function ProjectDetail({
         </div>
       )}
 
-      <section className="px-5 py-4" aria-label={t('page.issues')}>
-        {isLoadingIssues ? (
-          <p className="py-10 text-center text-sm text-neutral-400">{t('page.loadingIssues')}</p>
-        ) : issues.length === 0 ? (
+      <section className="px-5 py-4" aria-label={t('page.tickets')}>
+        {isLoadingTickets ? (
+          <p className="py-10 text-center text-sm text-neutral-400">{t('page.loadingTickets')}</p>
+        ) : tickets.length === 0 ? (
           <EmptyState onAdd={() => setAdding(true)} />
         ) : (
           <>
-            {total > issues.length && (
+            {total > tickets.length && (
               <p className="mb-3 text-xs text-neutral-500">
-                {t('page.showing', { shown: issues.length, count: total })}
+                {t('page.showing', { shown: tickets.length, count: total })}
               </p>
             )}
             <div className="space-y-5">
-              {groups.map(({ status, issues: inStatus }) => (
+              {groups.map(({ status, tickets: inStatus }) => (
                 <div key={status.id}>
                   <h2 className="mb-1.5 flex items-center gap-2 px-1 text-[13px] font-semibold text-neutral-800">
                     <span
@@ -288,12 +288,12 @@ function ProjectDetail({
                     </span>
                   </h2>
                   <ul className="divide-y divide-neutral-900/8 rounded-card border border-neutral-900/8">
-                    {inStatus.map((issue) => (
-                      <IssueRow
-                        key={issue.id}
-                        issue={issue}
-                        onOpen={() => setOpenIssueId(issue.id)}
-                        onRemove={() => remove(issue)}
+                    {inStatus.map((ticket) => (
+                      <TicketRow
+                        key={ticket.id}
+                        ticket={ticket}
+                        onOpen={() => setOpenTicketId(ticket.id)}
+                        onRemove={() => remove(ticket)}
                         projectName={project.name}
                       />
                     ))}
@@ -306,14 +306,14 @@ function ProjectDetail({
       </section>
 
       {adding && (
-        <AddIssuesModal
+        <AddTicketsModal
           project={project}
-          alreadyIn={new Set(issues.map((issue) => issue.id))}
+          alreadyIn={new Set(tickets.map((ticket) => ticket.id))}
           onClose={() => setAdding(false)}
         />
       )}
-      {openIssueId !== null && (
-        <IssueDetailPanel issueId={openIssueId} onClose={() => setOpenIssueId(null)} />
+      {openTicketId !== null && (
+        <TicketDetailPanel ticketId={openTicketId} onClose={() => setOpenTicketId(null)} />
       )}
     </div>
   )
@@ -328,7 +328,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-/** Saved on blur, like an issue's title: no separate save button to forget. */
+/** Saved on blur, like a ticket's title: no separate save button to forget. */
 function Description({
   project,
   onSave,
@@ -357,13 +357,13 @@ function Description({
   )
 }
 
-function IssueRow({
-  issue,
+function TicketRow({
+  ticket,
   onOpen,
   onRemove,
   projectName,
 }: {
-  issue: IssueRead
+  ticket: TicketRead
   onOpen: () => void
   onRemove: () => void
   projectName: string
@@ -376,17 +376,17 @@ function IssueRow({
         onClick={onOpen}
         className="flex min-w-0 flex-1 items-center gap-3 text-left focus:outline-none focus-visible:underline"
       >
-        <PriorityIcon priority={issue.priority} />
+        <PriorityIcon priority={ticket.priority} />
         <span className="identifier w-16 shrink-0 text-xs font-medium text-neutral-400">
-          {issue.identifier}
+          {ticket.identifier}
         </span>
         <span className="min-w-0 flex-1 truncate font-medium text-neutral-900">
-          {issue.title}
+          {ticket.title}
         </span>
       </button>
-      {issue.estimate != null && <EstimateBadge points={issue.estimate} />}
-      {issue.assignee ? (
-        <Avatar user={issue.assignee} size={22} />
+      {ticket.estimate != null && <EstimateBadge points={ticket.estimate} />}
+      {ticket.assignee ? (
+        <Avatar user={ticket.assignee} size={22} />
       ) : (
         <span
           className="h-[22px] w-[22px] shrink-0 rounded-full border border-dashed border-neutral-900/20"
@@ -396,7 +396,7 @@ function IssueRow({
       <button
         type="button"
         onClick={onRemove}
-        aria-label={t('page.removeIssue', { identifier: issue.identifier, project: projectName })}
+        aria-label={t('page.removeTicket', { identifier: ticket.identifier, project: projectName })}
         title={t('page.removeFromProject')}
         className="btn btn-ghost btn-icon btn-xs text-neutral-400 opacity-0 transition group-hover/row:opacity-100 focus-visible:opacity-100"
       >
@@ -406,7 +406,7 @@ function IssueRow({
   )
 }
 
-/** How issues get into a project, since nothing on an empty page says so. */
+/** How tickets get into a project, since nothing on an empty page says so. */
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   const { t } = useTranslation(['projects', 'common'])
   return (
@@ -419,7 +419,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       </ul>
       <button type="button" onClick={onAdd} className="btn btn-primary btn-sm">
         <Icon name="plus" size={13} strokeWidth={2.2} />
-        {t('page.addIssues')}
+        {t('page.addTickets')}
       </button>
     </div>
   )

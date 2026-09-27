@@ -11,7 +11,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { IssueRead, StatusRead, TeamMemberRead } from '@/api/generated/models'
+import type { TicketRead, StatusRead, TeamMemberRead } from '@/api/generated/models'
 import { KanbanBoard } from '@/board/KanbanBoard'
 import { TeamProvider } from '@/team/TeamContext'
 import type { TeamContextValue } from '@/team/useTeamContext'
@@ -39,7 +39,7 @@ const TEAM: TeamContextValue = {
   statuses: [TODO, DOING, DONE],
 }
 
-const ISSUE = {
+const TICKET = {
   id: 42,
   team_id: 7,
   team_key: 'ENG',
@@ -56,7 +56,7 @@ const ISSUE = {
   labels: [],
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
-} as unknown as IssueRead
+} as unknown as TicketRead
 
 function box(left: number, top: number, width: number, height: number) {
   return { left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON() {} } as DOMRect
@@ -85,7 +85,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function renderBoard(issues: IssueRead[] = [ISSUE], team: TeamContextValue = TEAM) {
+function renderBoard(tickets: TicketRead[] = [TICKET], team: TeamContextValue = TEAM) {
   const onStatusChange = vi.fn()
   const onMove = vi.fn()
   render(
@@ -95,10 +95,10 @@ function renderBoard(issues: IssueRead[] = [ISSUE], team: TeamContextValue = TEA
           <Route
             path="/ENG"
             element={
-              <KanbanBoard issues={issues} onStatusChange={onStatusChange} onMove={onMove} />
+              <KanbanBoard tickets={tickets} onStatusChange={onStatusChange} onMove={onMove} />
             }
           />
-          <Route path="/ENG/issue/:n" element={<p>Opened the issue</p>} />
+          <Route path="/ENG/ticket/:n" element={<p>Opened the ticket</p>} />
         </Routes>
       </MemoryRouter>
     </TeamProvider>,
@@ -143,14 +143,14 @@ describe('keyboard drag and drop', () => {
     expect(announced()).toMatch(/Moved ENG-42 to In Progress/)
   })
 
-  it('drops with Enter too, without opening the issue', async () => {
+  it('drops with Enter too, without opening the ticket', async () => {
     const { onStatusChange, user } = renderBoard()
     await user.keyboard('{Shift>} {/Shift}')
     await user.keyboard('{ArrowRight}{ArrowRight}')
     await user.keyboard('{Enter}')
 
     await waitFor(() => expect(onStatusChange).toHaveBeenCalledWith(42, DONE))
-    expect(screen.queryByText('Opened the issue')).toBeNull()
+    expect(screen.queryByText('Opened the ticket')).toBeNull()
   })
 
   it('puts the card back on Escape', async () => {
@@ -179,15 +179,15 @@ describe('keyboard drag and drop', () => {
     expect(announced()).not.toMatch(/Picked up/)
   })
 
-  it('still opens the issue on Enter when nothing is picked up', async () => {
+  it('still opens the ticket on Enter when nothing is picked up', async () => {
     const { user } = renderBoard()
     await user.keyboard('{Enter}')
-    expect(screen.getByText('Opened the issue')).toBeTruthy()
+    expect(screen.getByText('Opened the ticket')).toBeTruthy()
   })
 
   it('moves a card down past the next one in its column with the arrows (#88)', async () => {
-    const below = { ...ISSUE, id: 43, number: 43, identifier: 'ENG-43', title: 'Below' }
-    const { onMove, onStatusChange, user } = renderBoard([ISSUE, below])
+    const below = { ...TICKET, id: 43, number: 43, identifier: 'ENG-43', title: 'Below' }
+    const { onMove, onStatusChange, user } = renderBoard([TICKET, below])
 
     await user.keyboard('{Shift>} {/Shift}')
     await user.keyboard('{ArrowDown}')
@@ -221,7 +221,7 @@ describe('keyboard drag and drop', () => {
         } as unknown as TeamMemberRead,
       ],
     }
-    const { onStatusChange, onMove, user } = renderBoard([ISSUE], guest)
+    const { onStatusChange, onMove, user } = renderBoard([TICKET], guest)
 
     const card = document.querySelector('[data-card="42"]')!
     // No "sortable" role description and no pick-up instructions: nothing
@@ -236,8 +236,8 @@ describe('keyboard drag and drop', () => {
     expect(onStatusChange).not.toHaveBeenCalled()
     expect(onMove).not.toHaveBeenCalled()
 
-    // Opening it still works: a guest reads issues.
+    // Opening it still works: a guest reads tickets.
     await user.keyboard('{Enter}')
-    expect(screen.getByText('Opened the issue')).toBeTruthy()
+    expect(screen.getByText('Opened the ticket')).toBeTruthy()
   })
 })

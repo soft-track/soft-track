@@ -8,7 +8,7 @@ import { isAttachmentUrl } from '@/attachments/urls'
 import { useTranslation } from '@/i18n'
 import type { Mentionable } from '@/markdown/mentions'
 import { remarkMentions } from '@/markdown/remarkMentions'
-import { remarkIssueKeys } from '@/markdown/remarkIssueKeys'
+import { remarkTicketKeys } from '@/markdown/remarkTicketKeys'
 
 /**
  * Rendered markdown.
@@ -39,7 +39,7 @@ export function Markdown({
 }) {
   const { t } = useTranslation('markdown')
   const plugins = useMemo(
-    () => [remarkGfm, [remarkMentions, { people }], [remarkIssueKeys, { teamKeys }]] as PluggableList,
+    () => [remarkGfm, [remarkMentions, { people }], [remarkTicketKeys, { teamKeys }]] as PluggableList,
     [people, teamKeys],
   )
 

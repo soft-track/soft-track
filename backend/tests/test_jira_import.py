@@ -23,9 +23,9 @@ def upload(client, team, body=CSV, name="jira.csv", dry_run=True):
     return response
 
 
-def issues(client, team):
+def tickets(client, team):
     return client.get(
-        f"/teams/{team['team']['id']}/issues", headers=team["headers"]
+        f"/teams/{team['team']['id']}/tickets", headers=team["headers"]
     ).json()["items"]
 
 
@@ -35,8 +35,8 @@ def issues(client, team):
 def test_a_dry_run_writes_nothing(client, team):
     report = upload(client, team).json()
     assert report["dry_run"] is True
-    assert report["issues_created"] == 2
-    assert issues(client, team) == []
+    assert report["tickets_created"] == 2
+    assert tickets(client, team) == []
 
 
 def test_a_dry_run_and_a_real_run_report_the_same_thing(client, team):
@@ -46,8 +46,8 @@ def test_a_dry_run_and_a_real_run_report_the_same_thing(client, team):
     real = upload(client, team, dry_run=False).json()
 
     for field in (
-        "issues_found",
-        "issues_created",
+        "tickets_found",
+        "tickets_created",
         "comments_created",
         "labels_created",
         "projects_created",
@@ -56,9 +56,9 @@ def test_a_dry_run_and_a_real_run_report_the_same_thing(client, team):
         assert preview[field] == real[field], field
 
 
-def test_a_real_run_creates_the_issues(client, team):
+def test_a_real_run_creates_the_tickets(client, team):
     upload(client, team, dry_run=False)
-    titles = sorted(issue["title"] for issue in issues(client, team))
+    titles = sorted(ticket["title"] for ticket in tickets(client, team))
     assert titles == ["Add logout", "Fix login"]
 
 
@@ -67,20 +67,20 @@ def test_a_real_run_creates_the_issues(client, team):
 
 def test_status_priority_and_assignee_are_carried_over(client, team):
     upload(client, team, dry_run=False)
-    issue = next(i for i in issues(client, team) if i["title"] == "Fix login")
+    ticket = next(i for i in tickets(client, team) if i["title"] == "Fix login")
 
     # The importer prefers a column the team already calls the same
     # thing, so "In Progress" lands in "In Progress" rather than merging
     # into whatever else is `started`.
-    assert issue["status"]["name"] == "In Progress"
-    assert issue["priority"] == "high"
-    assert issue["assignee"]["email"] == "demo@softtrack.dev"
+    assert ticket["status"]["name"] == "In Progress"
+    assert ticket["priority"] == "high"
+    assert ticket["assignee"]["email"] == "demo@softtrack.dev"
 
 
 def test_the_jira_key_is_preserved(client, team):
     """So links in old documents and commit messages stay traceable."""
     upload(client, team, dry_run=False)
-    keys = sorted(issue["external_key"] for issue in issues(client, team))
+    keys = sorted(ticket["external_key"] for ticket in tickets(client, team))
     assert keys == ["PROJ-1", "PROJ-2"]
 
 
@@ -88,23 +88,23 @@ def test_labels_are_created_and_attached(client, team):
     report = upload(client, team, dry_run=False).json()
     assert sorted(report["labels_created"]) == ["backend", "frontend", "urgent"]
 
-    issue = next(i for i in issues(client, team) if i["title"] == "Fix login")
-    assert sorted(label["name"] for label in issue["labels"]) == ["backend", "urgent"]
+    ticket = next(i for i in tickets(client, team) if i["title"] == "Fix login")
+    assert sorted(label["name"] for label in ticket["labels"]) == ["backend", "urgent"]
 
 
-def test_an_epic_becomes_a_project_shared_by_its_issues(client, team):
+def test_an_epic_becomes_a_project_shared_by_its_tickets(client, team):
     report = upload(client, team, dry_run=False).json()
     assert report["projects_created"] == ["Checkout revamp"]
 
-    project_ids = {issue["project_id"] for issue in issues(client, team)}
+    project_ids = {ticket["project_id"] for ticket in tickets(client, team)}
     assert len(project_ids) == 1 and None not in project_ids
 
 
 def test_comments_are_imported(client, team):
     upload(client, team, dry_run=False)
-    issue = next(i for i in issues(client, team) if i["title"] == "Fix login")
+    ticket = next(i for i in tickets(client, team) if i["title"] == "Fix login")
     comments = client.get(
-        f"/issues/{issue['id']}/comments", headers=team["headers"]
+        f"/tickets/{ticket['id']}/comments", headers=team["headers"]
     ).json()
     assert [c["body"] for c in comments["items"]] == ["Looking at it"]
 
@@ -143,10 +143,10 @@ def test_an_unmatched_person_is_reported_for_review(client, team):
     assert any("not members of this team" in w for w in report["warnings"])
 
 
-def test_an_unmatched_assignee_leaves_the_issue_unassigned(client, team):
+def test_an_unmatched_assignee_leaves_the_ticket_unassigned(client, team):
     csv = "Issue key,Summary,Assignee\nPROJ-1,Fix,departed@elsewhere.com\n"
     upload(client, team, csv, dry_run=False)
-    assert issues(client, team)[0]["assignee"] is None
+    assert tickets(client, team)[0]["assignee"] is None
 
 
 def test_an_unmatched_comment_author_is_named_in_the_comment(client, team):
@@ -157,9 +157,9 @@ def test_an_unmatched_comment_author_is_named_in_the_comment(client, team):
         'PROJ-1,Fix,"12/Mar/24 9:00 AM;departed@elsewhere.com;My analysis"\n'
     )
     upload(client, team, csv, dry_run=False)
-    issue = issues(client, team)[0]
+    ticket = tickets(client, team)[0]
     body = client.get(
-        f"/issues/{issue['id']}/comments", headers=team["headers"]
+        f"/tickets/{ticket['id']}/comments", headers=team["headers"]
     ).json()["items"][0]["body"]
 
     assert "departed@elsewhere.com" in body
@@ -174,12 +174,12 @@ def test_importing_the_same_file_twice_does_not_duplicate_the_board(client, team
     upload(client, team, dry_run=False)
     second = upload(client, team, dry_run=False).json()
 
-    assert second["issues_created"] == 0
-    assert second["issues_skipped_existing"] == 2
-    assert len(issues(client, team)) == 2
+    assert second["tickets_created"] == 0
+    assert second["tickets_skipped_existing"] == 2
+    assert len(tickets(client, team)) == 2
 
 
-def test_issues_without_a_key_are_flagged_as_not_repeatable(client, team):
+def test_tickets_without_a_key_are_flagged_as_not_repeatable(client, team):
     report = upload(client, team, "Summary\nFix\n").json()
     assert any("no Jira key" in warning for warning in report["warnings"])
 
@@ -187,8 +187,8 @@ def test_issues_without_a_key_are_flagged_as_not_repeatable(client, team):
 def test_a_duplicate_key_inside_one_file_is_imported_once(client, team):
     csv = "Issue key,Summary\nPROJ-1,Fix\nPROJ-1,Fix again\n"
     report = upload(client, team, csv, dry_run=False).json()
-    assert report["issues_created"] == 1
-    assert report["issues_skipped_existing"] == 1
+    assert report["tickets_created"] == 1
+    assert report["tickets_skipped_existing"] == 1
 
 
 # --- reporting ----------------------------------------------------------
@@ -206,7 +206,7 @@ def test_unmapped_statuses_are_listed_so_they_can_be_fixed_in_bulk(client, team)
 
 def test_the_preview_shows_what_is_coming(client, team):
     report = upload(client, team).json()
-    assert [issue["title"] for issue in report["preview"]] == [
+    assert [ticket["title"] for ticket in report["preview"]] == [
         "Fix login",
         "Add logout",
     ]
@@ -230,8 +230,8 @@ def test_json_exports_work_too(client, team):
         {"issues": [{"key": "PROJ-3", "fields": {"summary": "From JSON"}}]}
     )
     report = upload(client, team, payload, name="export.json", dry_run=False).json()
-    assert report["issues_created"] == 1
-    assert issues(client, team)[0]["external_key"] == "PROJ-3"
+    assert report["tickets_created"] == 1
+    assert tickets(client, team)[0]["external_key"] == "PROJ-3"
 
 
 def test_a_utf8_bom_does_not_break_the_header(client, team):
@@ -250,8 +250,8 @@ def test_a_utf8_bom_does_not_break_the_header(client, team):
         headers=team["headers"],
     )
     assert response.status_code == 200
-    assert response.json()["issues_created"] == 1
-    assert issues(client, team)[0]["external_key"] == "PROJ-1"
+    assert response.json()["tickets_created"] == 1
+    assert tickets(client, team)[0]["external_key"] == "PROJ-1"
 
 
 def test_importing_into_another_team_is_refused(client, team, auth):

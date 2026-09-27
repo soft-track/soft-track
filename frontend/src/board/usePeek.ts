@@ -4,7 +4,7 @@ import { PEEK_DELAY_MS } from '@/board/peek'
 import type { PeekController, Peeked } from '@/board/peekContext'
 
 /**
- * The board's one quick peek (#113): which issue, anchored where, and the
+ * The board's one quick peek (#113): which ticket, anchored where, and the
  * hover-intent timer. See peekContext.ts for what it is and is not.
  *
  * The current peek is mirrored in a ref for the timers, which fire outside

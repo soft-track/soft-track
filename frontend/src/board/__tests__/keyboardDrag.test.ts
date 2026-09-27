@@ -74,7 +74,7 @@ describe('columnCoordinates', () => {
 
 describe('announcements', () => {
   const said = announcements({
-    issueName: (id) => `ENG-${id}`,
+    ticketName: (id) => `ENG-${id}`,
     columnName: (id) =>
       ({ 'status:1': 'Todo', 'status:2': 'In Progress', 7: 'Todo' })[String(id)] ?? null,
     startColumn: () => 'Todo',

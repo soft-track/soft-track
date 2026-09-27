@@ -1,8 +1,8 @@
-"""Charts, reconstructed from issue history.
+"""Charts, reconstructed from ticket history.
 
 Every report here answers a question about the past -- "how many points were
 outstanding on the ninth?" -- and no query over the current rows can answer
-that. The `issueevent` table is the only source, and the shape of the work is
+that. The `ticketevent` table is the only source, and the shape of the work is
 always the same: take the events, replay them up to the end of each day, and
 count what the board looked like then.
 
@@ -36,16 +36,16 @@ from lib_softtrack.statuses import in_category
 from lib_softtrack.tables import (
     Sprint,
     SprintState,
-    Issue,
-    IssueEvent,
-    IssueEventField,
+    Ticket,
+    TicketEvent,
+    TicketEventField,
     StatusCategory,
     User,
     Worklog,
 )
 from lib_softtrack.teams import get_team_or_404, require_team_member
 
-#: Categories that take an issue off the burndown.
+#: Categories that take a ticket off the burndown.
 #:
 #: Every report here reads categories rather than statuses, and the history it
 #: replays stores categories too -- see `_status_category` in history.py. That
@@ -71,32 +71,32 @@ def _days_between(start: date, end: date) -> list[date]:
 
 
 class _Timeline:
-    """The value of one tracked field, per issue, over time.
+    """The value of one tracked field, per ticket, over time.
 
     Built once from the event rows and then asked `value_at` repeatedly, which
     keeps every report to a single pass over the history rather than a query
     per day.
     """
 
-    def __init__(self, events: Iterable[IssueEvent]):
-        self._by_issue: dict[int, list[tuple[datetime, Optional[str]]]] = defaultdict(
+    def __init__(self, events: Iterable[TicketEvent]):
+        self._by_ticket: dict[int, list[tuple[datetime, Optional[str]]]] = defaultdict(
             list
         )
         for event in events:
-            self._by_issue[event.issue_id].append(
+            self._by_ticket[event.ticket_id].append(
                 (_as_utc(event.created_at), event.new_value)
             )
-        for entries in self._by_issue.values():
+        for entries in self._by_ticket.values():
             entries.sort(key=lambda entry: entry[0])
 
     @property
-    def issue_ids(self) -> set[int]:
-        return set(self._by_issue)
+    def ticket_ids(self) -> set[int]:
+        return set(self._by_ticket)
 
-    def value_at(self, issue_id: int, moment: datetime) -> Optional[str]:
+    def value_at(self, ticket_id: int, moment: datetime) -> Optional[str]:
         """The last value set at or before `moment`, or None if never set."""
         current = None
-        for when, value in self._by_issue.get(issue_id, ()):
+        for when, value in self._by_ticket.get(ticket_id, ()):
             if when > moment:
                 break
             current = value
@@ -104,25 +104,25 @@ class _Timeline:
 
 
 def _timelines(
-    session: Session, issue_ids: set[int]
+    session: Session, ticket_ids: set[int]
 ) -> tuple[_Timeline, _Timeline, _Timeline]:
-    if not issue_ids:
-        empty: list[IssueEvent] = []
+    if not ticket_ids:
+        empty: list[TicketEvent] = []
         return _Timeline(empty), _Timeline(empty), _Timeline(empty)
 
     events = session.exec(
-        select(IssueEvent)
-        .where(IssueEvent.issue_id.in_(issue_ids))
-        .order_by(IssueEvent.created_at)
+        select(TicketEvent)
+        .where(TicketEvent.ticket_id.in_(ticket_ids))
+        .order_by(TicketEvent.created_at)
     ).all()
 
-    def of(field: IssueEventField) -> _Timeline:
+    def of(field: TicketEventField) -> _Timeline:
         return _Timeline(event for event in events if event.field is field)
 
     return (
-        of(IssueEventField.status),
-        of(IssueEventField.sprint),
-        of(IssueEventField.estimate),
+        of(TicketEventField.status),
+        of(TicketEventField.sprint),
+        of(TicketEventField.estimate),
     )
 
 
@@ -133,21 +133,21 @@ def burndown(session: Session, current_user: User, sprint_id: int) -> Burndown:
     sprint = get_sprint_or_404(session, sprint_id)
     require_team_member(sprint.team_id, current_user, session)
 
-    # Every issue that was ever in this sprint, not just the ones in it now --
+    # Every ticket that was ever in this sprint, not just the ones in it now --
     # work that was pulled out mid-sprint still shaped the line while it was in.
     ever_in = {
-        event.issue_id
+        event.ticket_id
         for event in session.exec(
-            select(IssueEvent).where(
-                IssueEvent.field == IssueEventField.sprint,
-                IssueEvent.new_value == str(sprint_id),
+            select(TicketEvent).where(
+                TicketEvent.field == TicketEventField.sprint,
+                TicketEvent.new_value == str(sprint_id),
             )
         ).all()
     }
     ever_in |= {
-        issue.id
-        for issue in session.exec(
-            select(Issue).where(Issue.sprint_id == sprint_id)
+        ticket.id
+        for ticket in session.exec(
+            select(Ticket).where(Ticket.sprint_id == sprint_id)
         ).all()
     }
 
@@ -169,23 +169,23 @@ def burndown(session: Session, current_user: User, sprint_id: int) -> Burndown:
     for offset, day in enumerate(_days_between(start, max(last, start))):
         moment = _end_of(day)
         in_sprint: set[int] = set()
-        total = remaining = completed = issues_remaining = 0
+        total = remaining = completed = tickets_remaining = 0
 
-        for issue_id in ever_in:
-            if sprint_at.value_at(issue_id, moment) != str(sprint_id):
+        for ticket_id in ever_in:
+            if sprint_at.value_at(ticket_id, moment) != str(sprint_id):
                 continue
-            in_sprint.add(issue_id)
+            in_sprint.add(ticket_id)
 
-            raw_estimate = estimate_at.value_at(issue_id, moment)
+            raw_estimate = estimate_at.value_at(ticket_id, moment)
             estimate = int(raw_estimate) if raw_estimate else 0
-            status = status_at.value_at(issue_id, moment)
+            status = status_at.value_at(ticket_id, moment)
 
             total += estimate
             if status == DELIVERED.value:
                 completed += estimate
             elif status not in {category.value for category in RESOLVED}:
                 remaining += estimate
-                issues_remaining += 1
+                tickets_remaining += 1
 
         if opening_total is None:
             opening_total = total
@@ -194,7 +194,7 @@ def burndown(session: Session, current_user: User, sprint_id: int) -> Burndown:
             BurndownPoint(
                 day=day,
                 points_remaining=remaining,
-                issues_remaining=issues_remaining,
+                tickets_remaining=tickets_remaining,
                 points_completed=completed,
                 points_total=total,
                 # Straight from the opening scope to zero across the planned
@@ -212,8 +212,8 @@ def burndown(session: Session, current_user: User, sprint_id: int) -> Burndown:
                 scope_changes.append(
                     ScopeChange(
                         day=day,
-                        issues_added=len(added),
-                        issues_removed=len(removed),
+                        tickets_added=len(added),
+                        tickets_removed=len(removed),
                         points_added=max(total - before_points, 0),
                         points_removed=max(before_points - total, 0),
                     )
@@ -243,7 +243,7 @@ def project_burnup(
     is scope added after work started -- the thing that explains most missed
     dates, and the thing a burndown hides.
 
-    Replayed from `issueevent` like every other report. Issues count while
+    Replayed from `ticketevent` like every other report. Tickets count while
     their project event says they were in this project, so one moved out
     mid-way stops counting from that day. The chart starts on the first day
     history mentions the project and runs to today.
@@ -253,9 +253,9 @@ def project_burnup(
     key = str(project_id)
 
     mentions = session.exec(
-        select(IssueEvent).where(
-            IssueEvent.field == IssueEventField.project,
-            or_(IssueEvent.new_value == key, IssueEvent.old_value == key),
+        select(TicketEvent).where(
+            TicketEvent.field == TicketEventField.project,
+            or_(TicketEvent.new_value == key, TicketEvent.old_value == key),
         )
     ).all()
     if not mentions:
@@ -263,20 +263,20 @@ def project_burnup(
             project_id=project.id, project_name=project.name, points=[]
         )
 
-    ever_in = {event.issue_id for event in mentions}
+    ever_in = {event.ticket_id for event in mentions}
     events = session.exec(
-        select(IssueEvent)
-        .where(IssueEvent.issue_id.in_(ever_in))
-        .order_by(IssueEvent.created_at)
+        select(TicketEvent)
+        .where(TicketEvent.ticket_id.in_(ever_in))
+        .order_by(TicketEvent.created_at)
     ).all()
 
-    def of(field: IssueEventField) -> _Timeline:
+    def of(field: TicketEventField) -> _Timeline:
         return _Timeline(event for event in events if event.field is field)
 
     status_at, project_at, estimate_at = (
-        of(IssueEventField.status),
-        of(IssueEventField.project),
-        of(IssueEventField.estimate),
+        of(TicketEventField.status),
+        of(TicketEventField.project),
+        of(TicketEventField.estimate),
     )
 
     start = min(_as_utc(event.created_at) for event in mentions).date()
@@ -286,35 +286,35 @@ def project_burnup(
     points: list[ProjectBurnupPoint] = []
     for day in _days_between(start, max(today, start)):
         moment = _end_of(day)
-        scope_issues = completed_issues = scope_points = completed_points = 0
+        scope_tickets = completed_tickets = scope_points = completed_points = 0
         unestimated = 0
 
-        for issue_id in ever_in:
-            if project_at.value_at(issue_id, moment) != key:
+        for ticket_id in ever_in:
+            if project_at.value_at(ticket_id, moment) != key:
                 continue
-            status = status_at.value_at(issue_id, moment)
+            status = status_at.value_at(ticket_id, moment)
             if status == StatusCategory.cancelled.value:
                 continue
-            raw_estimate = estimate_at.value_at(issue_id, moment)
+            raw_estimate = estimate_at.value_at(ticket_id, moment)
             estimate = int(raw_estimate) if raw_estimate else None
 
-            scope_issues += 1
+            scope_tickets += 1
             if estimate is None:
                 unestimated += 1
             else:
                 scope_points += estimate
             if status == DELIVERED.value:
-                completed_issues += 1
+                completed_tickets += 1
                 completed_points += estimate or 0
 
         points.append(
             ProjectBurnupPoint(
                 day=day,
-                scope_issues=scope_issues,
-                completed_issues=completed_issues,
+                scope_tickets=scope_tickets,
+                completed_tickets=completed_tickets,
                 scope_points=scope_points,
                 completed_points=completed_points,
-                unestimated_issues=unestimated,
+                unestimated_tickets=unestimated,
             )
         )
 
@@ -345,30 +345,32 @@ def velocity(
 
     rows: list[VelocitySprint] = []
     for sprint in completed_sprints:
-        issues = session.exec(select(Issue).where(Issue.sprint_id == sprint.id)).all()
+        tickets = session.exec(
+            select(Ticket).where(Ticket.sprint_id == sprint.id)
+        ).all()
         delivered_ids = {
-            issue_id
-            for issue_id in session.exec(
-                select(Issue.id).where(
-                    Issue.sprint_id == sprint.id, in_category(DELIVERED)
+            ticket_id
+            for ticket_id in session.exec(
+                select(Ticket.id).where(
+                    Ticket.sprint_id == sprint.id, in_category(DELIVERED)
                 )
             ).all()
         }
-        delivered = [issue for issue in issues if issue.id in delivered_ids]
+        delivered = [ticket for ticket in tickets if ticket.id in delivered_ids]
 
         # Committed is the scope at the moment the sprint started, not what it
         # ended with. A team that finished everything it added late did not
         # commit to it.
         _, sprint_at, estimate_at = _timelines(
             session,
-            {issue.id for issue in issues} | _ever_in_sprint(session, sprint.id),
+            {ticket.id for ticket in tickets} | _ever_in_sprint(session, sprint.id),
         )
         opened = _end_of(_as_utc(sprint.starts_at).date())
         committed = 0
-        for issue_id in sprint_at.issue_ids:
-            if sprint_at.value_at(issue_id, opened) != str(sprint.id):
+        for ticket_id in sprint_at.ticket_ids:
+            if sprint_at.value_at(ticket_id, opened) != str(sprint.id):
                 continue
-            raw = estimate_at.value_at(issue_id, opened)
+            raw = estimate_at.value_at(ticket_id, opened)
             committed += int(raw) if raw else 0
 
         rows.append(
@@ -379,8 +381,8 @@ def velocity(
                     _as_utc(sprint.completed_at).date() if sprint.completed_at else None
                 ),
                 points_committed=committed,
-                points_completed=sum(issue.estimate or 0 for issue in delivered),
-                issues_completed=len(delivered),
+                points_completed=sum(ticket.estimate or 0 for ticket in delivered),
+                tickets_completed=len(delivered),
             )
         )
 
@@ -398,11 +400,11 @@ def velocity(
 
 def _ever_in_sprint(session: Session, sprint_id: int) -> set[int]:
     return {
-        event.issue_id
+        event.ticket_id
         for event in session.exec(
-            select(IssueEvent).where(
-                IssueEvent.field == IssueEventField.sprint,
-                IssueEvent.new_value == str(sprint_id),
+            select(TicketEvent).where(
+                TicketEvent.field == TicketEventField.sprint,
+                TicketEvent.new_value == str(sprint_id),
             )
         ).all()
     }
@@ -417,11 +419,13 @@ def cumulative_flow(
     get_team_or_404(team_id, session)
     require_team_member(team_id, current_user, session)
 
-    issue_ids = {
-        issue.id
-        for issue in session.exec(select(Issue).where(Issue.team_id == team_id)).all()
+    ticket_ids = {
+        ticket.id
+        for ticket in session.exec(
+            select(Ticket).where(Ticket.team_id == team_id)
+        ).all()
     }
-    status_at, _, _ = _timelines(session, issue_ids)
+    status_at, _, _ = _timelines(session, ticket_ids)
 
     today = datetime.now(timezone.utc).date()
     start = today - timedelta(days=days - 1)
@@ -430,10 +434,10 @@ def cumulative_flow(
     for day in _days_between(start, today):
         moment = _end_of(day)
         counts = {category: 0 for category in StatusCategory}
-        for issue_id in issue_ids:
-            value = status_at.value_at(issue_id, moment)
+        for ticket_id in ticket_ids:
+            value = status_at.value_at(ticket_id, moment)
             if value is None:
-                # No status event at or before this day means the issue did
+                # No status event at or before this day means the ticket did
                 # not exist yet. Counting it in `backlog` would draw work that
                 # had not been created.
                 continue
@@ -457,8 +461,8 @@ def created_vs_resolved(
 
     created_on: dict[date, int] = defaultdict(int)
     open_before_window = 0
-    for issue in session.exec(select(Issue).where(Issue.team_id == team_id)).all():
-        day = _as_utc(issue.created_at).date()
+    for ticket in session.exec(select(Ticket).where(Ticket.team_id == team_id)).all():
+        day = _as_utc(ticket.created_at).date()
         if day >= start:
             created_on[day] += 1
         else:
@@ -467,9 +471,9 @@ def created_vs_resolved(
     resolved_on: dict[date, int] = defaultdict(int)
     resolved_values = {category.value for category in RESOLVED}
     for event in session.exec(
-        select(IssueEvent).where(
-            IssueEvent.team_id == team_id,
-            IssueEvent.field == IssueEventField.status,
+        select(TicketEvent).where(
+            TicketEvent.team_id == team_id,
+            TicketEvent.field == TicketEventField.status,
         )
     ).all():
         day = _as_utc(event.created_at).date()
@@ -511,24 +515,24 @@ def sprint_time_spent(
 ) -> TimeSpent:
     """Time logged during the sprint on the sprint's work, by person.
 
-    "During" is the sprint's dates and "the sprint's work" is any issue that was
-    ever in it -- so time spent before an issue was carried over to the next
+    "During" is the sprint's dates and "the sprint's work" is any ticket that was
+    ever in it -- so time spent before a ticket was carried over to the next
     sprint stays with this one, and time spent on it afterwards goes with it.
-    Taking the issues currently in the sprint instead would move a finished
+    Taking the tickets currently in the sprint instead would move a finished
     sprint's hours every time somebody tidied the backlog.
     """
     from lib_softtrack.worklogs import rollup
 
     sprint = get_sprint_or_404(session, sprint_id)
     require_team_member(sprint.team_id, current_user, session)
-    issue_ids = _ever_in_sprint(session, sprint_id)
-    if not issue_ids:
+    ticket_ids = _ever_in_sprint(session, sprint_id)
+    if not ticket_ids:
         return TimeSpent(total_minutes=0, by_person=[])
     rows = session.exec(
         select(Worklog, User)
         .join(User, User.id == Worklog.user_id)
         .where(
-            Worklog.issue_id.in_(issue_ids),
+            Worklog.ticket_id.in_(ticket_ids),
             Worklog.worked_on >= sprint.starts_at.date(),
             Worklog.worked_on <= sprint.ends_at.date(),
         )
@@ -539,7 +543,7 @@ def sprint_time_spent(
 def team_time_spent(
     session: Session, current_user: User, team_id: int, days: int = 30
 ) -> TimeSpent:
-    """Time logged on the team's issues over the last `days` days, by person."""
+    """Time logged on the team's tickets over the last `days` days, by person."""
     from lib_softtrack.worklogs import rollup
 
     get_team_or_404(team_id, session)
@@ -548,7 +552,7 @@ def team_time_spent(
     rows = session.exec(
         select(Worklog, User)
         .join(User, User.id == Worklog.user_id)
-        .join(Issue, Issue.id == Worklog.issue_id)
-        .where(Issue.team_id == team_id, Worklog.worked_on >= since)
+        .join(Ticket, Ticket.id == Worklog.ticket_id)
+        .where(Ticket.team_id == team_id, Worklog.worked_on >= since)
     ).all()
     return rollup(rows)

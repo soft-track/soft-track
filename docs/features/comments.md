@@ -50,7 +50,7 @@ comment when it was posted — the same rule as editing a description.
 - `DELETE /comments/{comment_id}` — author or team admin; `204`.
 
 Refusals carry the code `not_your_comment` (403). Every comment from
-`GET /issues/{issue_id}/comments` has `edited_at`, null if it was never edited.
+`GET /tickets/{ticket_id}/comments` has `edited_at`, null if it was never edited.
 
 Edits and deletes are not sent as [outbound webhooks](outbound-webhooks.md) yet;
 only `comment.created` is.

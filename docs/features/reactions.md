@@ -22,7 +22,7 @@ client's business.
 - `DELETE /comments/{comment_id}/reactions/{emoji}` takes yours back, and only ever yours. Taking back one you never gave is a no-op.
 
 Both return the comment's reactions as they now stand. Reading them needs no
-extra request: each comment from `GET /issues/{issue_id}/comments` carries a
+extra request: each comment from `GET /tickets/{ticket_id}/comments` carries a
 `reactions` list, one entry per emoji anybody used, with the count, who, and
 whether you are one of them.
 

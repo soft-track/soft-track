@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "SoftTrack",
-    "description": "An open-source, self-hostable issue tracker inspired by Linear.",
+    "description": "An open-source, self-hostable ticket tracker inspired by Linear.",
     "version": "0.1.0"
   },
   "paths": {
@@ -1702,7 +1702,7 @@
           "projects"
         ],
         "summary": "Update Project",
-        "description": "Rename, re-date, re-lead or move a project through its states.\n\nSetting `archived` retires it from pickers without touching the issues\nalready in it.",
+        "description": "Rename, re-date, re-lead or move a project through its states.\n\nSetting `archived` retires it from pickers without touching the tickets\nalready in it.",
         "operationId": "update_project_projects__project_id__patch",
         "security": [
           {
@@ -1758,7 +1758,7 @@
           "projects"
         ],
         "summary": "Delete Project",
-        "description": "Delete a project. Its issues are kept and left with no project.\n\nSaved views that filtered on it stop filtering on it, and automation rules\nconditioned on it are switched off rather than widened to every issue.",
+        "description": "Delete a project. Its tickets are kept and left with no project.\n\nSaved views that filtered on it stop filtering on it, and automation rules\nconditioned on it are switched off rather than widened to every ticket.",
         "operationId": "delete_project_projects__project_id__delete",
         "security": [
           {
@@ -1899,13 +1899,13 @@
         }
       }
     },
-    "/teams/{team_id}/issues": {
+    "/teams/{team_id}/tickets": {
       "post": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "Create Issue",
-        "operationId": "create_issue_teams__team_id__issues_post",
+        "summary": "Create Ticket",
+        "operationId": "create_ticket_teams__team_id__tickets_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -1927,7 +1927,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IssueCreate"
+                "$ref": "#/components/schemas/TicketCreate"
               }
             }
           }
@@ -1938,7 +1938,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IssueRead"
+                  "$ref": "#/components/schemas/TicketRead"
                 }
               }
             }
@@ -1957,10 +1957,10 @@
       },
       "get": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "List Issues",
-        "operationId": "list_issues_teams__team_id__issues_get",
+        "summary": "List Tickets",
+        "operationId": "list_tickets_teams__team_id__tickets_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2005,10 +2005,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Only issues in this status.",
+              "description": "Only tickets in this status.",
               "title": "Status Id"
             },
-            "description": "Only issues in this status."
+            "description": "Only tickets in this status."
           },
           {
             "name": "priority",
@@ -2017,7 +2017,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/IssuePriority"
+                  "$ref": "#/components/schemas/TicketPriority"
                 },
                 {
                   "type": "null"
@@ -2048,11 +2048,11 @@
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "Only issues with nobody assigned. Overrides assignee_id.",
+              "description": "Only tickets with nobody assigned. Overrides assignee_id.",
               "default": false,
               "title": "Unassigned"
             },
-            "description": "Only issues with nobody assigned. Overrides assignee_id."
+            "description": "Only tickets with nobody assigned. Overrides assignee_id."
           },
           {
             "name": "label_id",
@@ -2067,10 +2067,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Only issues with this label.",
+              "description": "Only tickets with this label.",
               "title": "Label Id"
             },
-            "description": "Only issues with this label."
+            "description": "Only tickets with this label."
           },
           {
             "name": "parent_id",
@@ -2085,10 +2085,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Only sub-issues of this issue.",
+              "description": "Only sub-tickets of this ticket.",
               "title": "Parent Id"
             },
-            "description": "Only sub-issues of this issue."
+            "description": "Only sub-tickets of this ticket."
           },
           {
             "name": "sprint_id",
@@ -2103,10 +2103,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Only issues in this sprint.",
+              "description": "Only tickets in this sprint.",
               "title": "Sprint Id"
             },
-            "description": "Only issues in this sprint."
+            "description": "Only tickets in this sprint."
           },
           {
             "name": "due",
@@ -2159,10 +2159,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Only issues due on or after this day.",
+              "description": "Only tickets due on or after this day.",
               "title": "Due From"
             },
-            "description": "Only issues due on or after this day."
+            "description": "Only tickets due on or after this day."
           },
           {
             "name": "due_to",
@@ -2178,10 +2178,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Only issues due on or before this day.",
+              "description": "Only tickets due on or before this day.",
               "title": "Due To"
             },
-            "description": "Only issues due on or before this day."
+            "description": "Only tickets due on or before this day."
           },
           {
             "name": "type",
@@ -2190,23 +2190,23 @@
             "schema": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/IssueType"
+                  "$ref": "#/components/schemas/TicketType"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "description": "Only issues of this type.",
+              "description": "Only tickets of this type.",
               "title": "Type"
             },
-            "description": "Only issues of this type."
+            "description": "Only tickets of this type."
           },
           {
             "name": "sort",
             "in": "query",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/IssueSort",
+              "$ref": "#/components/schemas/TicketSort",
               "description": "What to order by.",
               "default": "created"
             },
@@ -2253,7 +2253,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page_IssueRead_"
+                  "$ref": "#/components/schemas/Page_TicketRead_"
                 }
               }
             }
@@ -2271,14 +2271,14 @@
         }
       }
     },
-    "/teams/{team_id}/issues/bulk-update": {
+    "/teams/{team_id}/tickets/bulk-update": {
       "post": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "Bulk Update Issues",
-        "description": "Apply one set of changes to up to 200 of the team's issues.\n\nTransactional: every issue changes or none does. Returns the issues as the\nbatch left them, in the order they were asked for.",
-        "operationId": "bulk_update_issues_teams__team_id__issues_bulk_update_post",
+        "summary": "Bulk Update Tickets",
+        "description": "Apply one set of changes to up to 200 of the team's tickets.\n\nTransactional: every ticket changes or none does. Returns the tickets as the\nbatch left them, in the order they were asked for.",
+        "operationId": "bulk_update_tickets_teams__team_id__tickets_bulk_update_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2300,7 +2300,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IssueBulkUpdate"
+                "$ref": "#/components/schemas/TicketBulkUpdate"
               }
             }
           }
@@ -2313,9 +2313,9 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/IssueRead"
+                    "$ref": "#/components/schemas/TicketRead"
                   },
-                  "title": "Response Bulk Update Issues Teams  Team Id  Issues Bulk Update Post"
+                  "title": "Response Bulk Update Tickets Teams  Team Id  Tickets Bulk Update Post"
                 }
               }
             }
@@ -2333,14 +2333,14 @@
         }
       }
     },
-    "/teams/{team_id}/issues/bulk-delete": {
+    "/teams/{team_id}/tickets/bulk-delete": {
       "post": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "Bulk Delete Issues",
-        "description": "Delete up to 200 of the team's issues, all of them or none.\n\nA POST rather than a DELETE with a body, which too many clients and\nproxies drop. Each issue goes the way a single delete takes it --\nattachments with it, sub-issues promoted.",
-        "operationId": "bulk_delete_issues_teams__team_id__issues_bulk_delete_post",
+        "summary": "Bulk Delete Tickets",
+        "description": "Delete up to 200 of the team's tickets, all of them or none.\n\nA POST rather than a DELETE with a body, which too many clients and\nproxies drop. Each ticket goes the way a single delete takes it --\nattachments with it, sub-tickets promoted.",
+        "operationId": "bulk_delete_tickets_teams__team_id__tickets_bulk_delete_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2362,7 +2362,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IssueBulkDelete"
+                "$ref": "#/components/schemas/TicketBulkDelete"
               }
             }
           }
@@ -2384,14 +2384,14 @@
         }
       }
     },
-    "/teams/{team_id}/issues/export": {
+    "/teams/{team_id}/tickets/export": {
       "get": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "Export Issues Csv",
-        "description": "Stream matching issues as a CSV file.\n\nThe same filters as the issue list, and deliberately no `limit`: an export\nof the first page would be a worse spreadsheet than the board it came\nfrom. The service hands back batches rather than rows so that stays\naffordable -- nothing here, or under it, holds the whole team's issues.",
-        "operationId": "export_issues_csv_teams__team_id__issues_export_get",
+        "summary": "Export Tickets Csv",
+        "description": "Stream matching tickets as a CSV file.\n\nThe same filters as the ticket list, and deliberately no `limit`: an export\nof the first page would be a worse spreadsheet than the board it came\nfrom. The service hands back batches rather than rows so that stays\naffordable -- nothing here, or under it, holds the whole team's tickets.",
+        "operationId": "export_tickets_csv_teams__team_id__tickets_export_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2436,10 +2436,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Only issues in this status.",
+              "description": "Only tickets in this status.",
               "title": "Status Id"
             },
-            "description": "Only issues in this status."
+            "description": "Only tickets in this status."
           },
           {
             "name": "priority",
@@ -2448,7 +2448,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/IssuePriority"
+                  "$ref": "#/components/schemas/TicketPriority"
                 },
                 {
                   "type": "null"
@@ -2479,11 +2479,11 @@
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "Only issues with nobody assigned. Overrides assignee_id.",
+              "description": "Only tickets with nobody assigned. Overrides assignee_id.",
               "default": false,
               "title": "Unassigned"
             },
-            "description": "Only issues with nobody assigned. Overrides assignee_id."
+            "description": "Only tickets with nobody assigned. Overrides assignee_id."
           },
           {
             "name": "label_id",
@@ -2498,10 +2498,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Only issues with this label.",
+              "description": "Only tickets with this label.",
               "title": "Label Id"
             },
-            "description": "Only issues with this label."
+            "description": "Only tickets with this label."
           },
           {
             "name": "parent_id",
@@ -2516,10 +2516,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Only sub-issues of this issue.",
+              "description": "Only sub-tickets of this ticket.",
               "title": "Parent Id"
             },
-            "description": "Only sub-issues of this issue."
+            "description": "Only sub-tickets of this ticket."
           },
           {
             "name": "sprint_id",
@@ -2534,15 +2534,15 @@
                   "type": "null"
                 }
               ],
-              "description": "Only issues in this sprint.",
+              "description": "Only tickets in this sprint.",
               "title": "Sprint Id"
             },
-            "description": "Only issues in this sprint."
+            "description": "Only tickets in this sprint."
           }
         ],
         "responses": {
           "200": {
-            "description": "The matching issues as a CSV file.",
+            "description": "The matching tickets as a CSV file.",
             "content": {
               "text/csv": {
                 "schema": {
@@ -2568,10 +2568,10 @@
     "/teams/{team_id}/estimates": {
       "get": {
         "tags": [
-          "issues"
+          "tickets"
         ],
         "summary": "Get Estimate Summary",
-        "description": "Story-point rollups by column and by assignee for the whole team.\n\nSeparate from the issue list because the list is paginated: summing a page\nwould silently report the total of whatever the client happened to load.",
+        "description": "Story-point rollups by column and by assignee for the whole team.\n\nSeparate from the ticket list because the list is paginated: summing a page\nwould silently report the total of whatever the client happened to load.",
         "operationId": "get_estimate_summary_teams__team_id__estimates_get",
         "security": [
           {
@@ -2613,13 +2613,13 @@
         }
       }
     },
-    "/teams/{team_id}/issues/by-number/{number}": {
+    "/teams/{team_id}/tickets/by-number/{number}": {
       "get": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "Get Issue By Number",
-        "operationId": "get_issue_by_number_teams__team_id__issues_by_number__number__get",
+        "summary": "Get Ticket By Number",
+        "operationId": "get_ticket_by_number_teams__team_id__tickets_by_number__number__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2651,7 +2651,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IssueRead"
+                  "$ref": "#/components/schemas/TicketRead"
                 }
               }
             }
@@ -2669,14 +2669,14 @@
         }
       }
     },
-    "/issues/{issue_id}/move": {
+    "/tickets/{ticket_id}/move": {
       "post": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "Move Issue",
+        "summary": "Move Ticket",
         "description": "Place a card between two others on the board, optionally in another\ncolumn. Its neighbours are named, never its new position's key -- the\nserver works that out, so a client never has to.",
-        "operationId": "move_issue_issues__issue_id__move_post",
+        "operationId": "move_ticket_tickets__ticket_id__move_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2684,12 +2684,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -2698,7 +2698,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IssueMove"
+                "$ref": "#/components/schemas/TicketMove"
               }
             }
           }
@@ -2709,7 +2709,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IssueRead"
+                  "$ref": "#/components/schemas/TicketRead"
                 }
               }
             }
@@ -2727,14 +2727,14 @@
         }
       }
     },
-    "/issues/{issue_id}/events": {
+    "/tickets/{ticket_id}/events": {
       "get": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "List Issue Events",
-        "description": "What has happened to an issue: status, priority, assignee, estimate,\nsprint and project changes, oldest first, with who made each one.\n\nThe latest 100 changes. The values an issue was created with are its\nstarting point rather than changes, and are left out.",
-        "operationId": "list_issue_events_issues__issue_id__events_get",
+        "summary": "List Ticket Events",
+        "description": "What has happened to a ticket: status, priority, assignee, estimate,\nsprint and project changes, oldest first, with who made each one.\n\nThe latest 100 changes. The values a ticket was created with are its\nstarting point rather than changes, and are left out.",
+        "operationId": "list_ticket_events_tickets__ticket_id__events_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2742,12 +2742,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -2759,9 +2759,9 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/IssueEventRead"
+                    "$ref": "#/components/schemas/TicketEventRead"
                   },
-                  "title": "Response List Issue Events Issues  Issue Id  Events Get"
+                  "title": "Response List Ticket Events Tickets  Ticket Id  Events Get"
                 }
               }
             }
@@ -2779,13 +2779,13 @@
         }
       }
     },
-    "/issues/{issue_id}": {
+    "/tickets/{ticket_id}": {
       "get": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "Get Issue",
-        "operationId": "get_issue_issues__issue_id__get",
+        "summary": "Get Ticket",
+        "operationId": "get_ticket_tickets__ticket_id__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2793,12 +2793,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -2808,7 +2808,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IssueRead"
+                  "$ref": "#/components/schemas/TicketRead"
                 }
               }
             }
@@ -2827,10 +2827,10 @@
       },
       "patch": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "Update Issue",
-        "operationId": "update_issue_issues__issue_id__patch",
+        "summary": "Update Ticket",
+        "operationId": "update_ticket_tickets__ticket_id__patch",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2838,12 +2838,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -2852,7 +2852,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IssueUpdate"
+                "$ref": "#/components/schemas/TicketUpdate"
               }
             }
           }
@@ -2863,7 +2863,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IssueRead"
+                  "$ref": "#/components/schemas/TicketRead"
                 }
               }
             }
@@ -2882,11 +2882,11 @@
       },
       "delete": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "Delete Issue",
-        "description": "Delete an issue and everything that only existed because of it.\n\nAttachments go with it, bytes included -- see\n`lib_softtrack/issues.py`. Sub-issues do not: they are promoted to top\nlevel rather than destroyed.",
-        "operationId": "delete_issue_issues__issue_id__delete",
+        "summary": "Delete Ticket",
+        "description": "Delete a ticket and everything that only existed because of it.\n\nAttachments go with it, bytes included -- see\n`lib_softtrack/tickets.py`. Sub-tickets do not: they are promoted to top\nlevel rather than destroyed.",
+        "operationId": "delete_ticket_tickets__ticket_id__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2894,12 +2894,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -2920,14 +2920,14 @@
         }
       }
     },
-    "/issues/{issue_id}/links": {
+    "/tickets/{ticket_id}/links": {
       "get": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "List Issue Links",
-        "description": "Every relationship this issue has, grouped by how it reads from here.\n\nA `blocks` row appears under `blocks` for the source issue and under\n`blocked_by` for the target -- one stored row, two readings.",
-        "operationId": "list_issue_links_issues__issue_id__links_get",
+        "summary": "List Ticket Links",
+        "description": "Every relationship this ticket has, grouped by how it reads from here.\n\nA `blocks` row appears under `blocks` for the source ticket and under\n`blocked_by` for the target -- one stored row, two readings.",
+        "operationId": "list_ticket_links_tickets__ticket_id__links_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2935,12 +2935,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -2950,7 +2950,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IssueLinks"
+                  "$ref": "#/components/schemas/TicketLinks"
                 }
               }
             }
@@ -2969,10 +2969,10 @@
       },
       "post": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "Create Issue Link",
-        "operationId": "create_issue_link_issues__issue_id__links_post",
+        "summary": "Create Ticket Link",
+        "operationId": "create_ticket_link_tickets__ticket_id__links_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2980,12 +2980,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -2994,7 +2994,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IssueLinkCreate"
+                "$ref": "#/components/schemas/TicketLinkCreate"
               }
             }
           }
@@ -3005,7 +3005,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IssueLinkRead"
+                  "$ref": "#/components/schemas/TicketLinkRead"
                 }
               }
             }
@@ -3023,13 +3023,13 @@
         }
       }
     },
-    "/issues/{issue_id}/links/{link_id}": {
+    "/tickets/{ticket_id}/links/{link_id}": {
       "delete": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "Delete Issue Link",
-        "operationId": "delete_issue_link_issues__issue_id__links__link_id__delete",
+        "summary": "Delete Ticket Link",
+        "operationId": "delete_ticket_link_tickets__ticket_id__links__link_id__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3037,12 +3037,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           },
           {
@@ -3072,14 +3072,14 @@
         }
       }
     },
-    "/issues/{issue_id}/transfer": {
+    "/tickets/{ticket_id}/transfer": {
       "get": {
         "tags": [
-          "issues"
+          "tickets"
         ],
         "summary": "Preview Transfer",
-        "description": "What moving the issue to `team_id` would change, without changing it.",
-        "operationId": "preview_transfer_issues__issue_id__transfer_get",
+        "description": "What moving the ticket to `team_id` would change, without changing it.",
+        "operationId": "preview_transfer_tickets__ticket_id__transfer_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3087,12 +3087,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           },
           {
@@ -3130,11 +3130,11 @@
       },
       "post": {
         "tags": [
-          "issues"
+          "tickets"
         ],
-        "summary": "Transfer Issue",
-        "description": "Move the issue, and its sub-issues, to another team (#98).\n\nIt takes the target team's next number, and whatever does not exist on the\ntarget team is remapped or cleared -- see `lib_softtrack/transfers.py`.\nNeeds write access to both teams.",
-        "operationId": "transfer_issue_issues__issue_id__transfer_post",
+        "summary": "Transfer Ticket",
+        "description": "Move the ticket, and its sub-tickets, to another team (#98).\n\nIt takes the target team's next number, and whatever does not exist on the\ntarget team is remapped or cleared -- see `lib_softtrack/transfers.py`.\nNeeds write access to both teams.",
+        "operationId": "transfer_ticket_tickets__ticket_id__transfer_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3142,12 +3142,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -3156,7 +3156,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IssueTransfer"
+                "$ref": "#/components/schemas/TicketTransfer"
               }
             }
           }
@@ -3185,13 +3185,13 @@
         }
       }
     },
-    "/issues/{issue_id}/comments": {
+    "/tickets/{ticket_id}/comments": {
       "post": {
         "tags": [
           "comments"
         ],
         "summary": "Create Comment",
-        "operationId": "create_comment_issues__issue_id__comments_post",
+        "operationId": "create_comment_tickets__ticket_id__comments_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3199,12 +3199,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -3246,7 +3246,7 @@
           "comments"
         ],
         "summary": "List Comments",
-        "operationId": "list_comments_issues__issue_id__comments_get",
+        "operationId": "list_comments_tickets__ticket_id__comments_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3254,12 +3254,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           },
           {
@@ -3525,14 +3525,14 @@
         }
       }
     },
-    "/issues/{issue_id}/attachments": {
+    "/tickets/{ticket_id}/attachments": {
       "post": {
         "tags": [
           "attachments"
         ],
         "summary": "Upload Attachment",
-        "description": "Attach a file to an issue.\n\nThe file starts out belonging to the issue. Posting a comment with its id\nin `attachment_ids` moves it to that comment -- which is the order the\ninterface needs, because a screenshot is pasted before the sentence about\nit is written.",
-        "operationId": "upload_attachment_issues__issue_id__attachments_post",
+        "description": "Attach a file to a ticket.\n\nThe file starts out belonging to the ticket. Posting a comment with its id\nin `attachment_ids` moves it to that comment -- which is the order the\ninterface needs, because a screenshot is pasted before the sentence about\nit is written.",
+        "operationId": "upload_attachment_tickets__ticket_id__attachments_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3540,12 +3540,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -3554,7 +3554,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_upload_attachment_issues__issue_id__attachments_post"
+                "$ref": "#/components/schemas/Body_upload_attachment_tickets__ticket_id__attachments_post"
               }
             }
           }
@@ -3586,9 +3586,9 @@
         "tags": [
           "attachments"
         ],
-        "summary": "List Issue Attachments",
-        "description": "Files attached to the issue itself.\n\nFiles belonging to a comment are returned with that comment instead, so\nnothing appears twice.",
-        "operationId": "list_issue_attachments_issues__issue_id__attachments_get",
+        "summary": "List Ticket Attachments",
+        "description": "Files attached to the ticket itself.\n\nFiles belonging to a comment are returned with that comment instead, so\nnothing appears twice.",
+        "operationId": "list_ticket_attachments_tickets__ticket_id__attachments_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3596,12 +3596,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -3615,7 +3615,7 @@
                   "items": {
                     "$ref": "#/components/schemas/AttachmentRead"
                   },
-                  "title": "Response List Issue Attachments Issues  Issue Id  Attachments Get"
+                  "title": "Response List Ticket Attachments Tickets  Ticket Id  Attachments Get"
                 }
               }
             }
@@ -3639,7 +3639,7 @@
           "attachments"
         ],
         "summary": "Download Attachment",
-        "description": "The bytes.\n\nAuthenticated like every other route, which means an `<img src>` cannot\nfetch it directly -- the browser sends no Authorization header. The\nfrontend loads images through the API client and renders the result as a\nblob URL. The alternative, a token in the URL, would put a credential into\nevery issue description that embeds an image and into every log line that\nrecords the request.",
+        "description": "The bytes.\n\nAuthenticated like every other route, which means an `<img src>` cannot\nfetch it directly -- the browser sends no Authorization header. The\nfrontend loads images through the API client and renders the result as a\nblob URL. The alternative, a token in the URL, would put a credential into\nevery ticket description that embeds an image and into every log line that\nrecords the request.",
         "operationId": "download_attachment_attachments__attachment_id__content_get",
         "security": [
           {
@@ -3701,7 +3701,7 @@
           "attachments"
         ],
         "summary": "Delete Attachment",
-        "description": "Remove an attachment and its bytes.\n\nAny member of the team may, which matches how the rest of the app treats\nissues and comments: membership is the boundary, and there is no\nper-object ownership anywhere else to be consistent with.",
+        "description": "Remove an attachment and its bytes.\n\nAny member of the team may, which matches how the rest of the app treats\ntickets and comments: membership is the boundary, and there is no\nper-object ownership anywhere else to be consistent with.",
         "operationId": "delete_attachment_attachments__attachment_id__delete",
         "security": [
           {
@@ -4036,7 +4036,7 @@
           "sprints"
         ],
         "summary": "Complete Sprint",
-        "description": "Close the sprint, carrying unfinished issues into the next one.\n\nNothing is deleted: if there is no later sprint to carry into, the\nunfinished issues go back to the backlog.",
+        "description": "Close the sprint, carrying unfinished tickets into the next one.\n\nNothing is deleted: if there is no later sprint to carry into, the\nunfinished tickets go back to the backlog.",
         "operationId": "complete_sprint_sprints__sprint_id__complete_post",
         "security": [
           {
@@ -4084,7 +4084,7 @@
           "reports"
         ],
         "summary": "Sprint Burndown",
-        "description": "Points and issues outstanding on each day of the sprint.\n\nCarries the burnup line and the days scope moved, from the same data --\na burndown that hides scope changes makes a team look slow when what\nactually happened is that the sprint grew.",
+        "description": "Points and tickets outstanding on each day of the sprint.\n\nCarries the burnup line and the days scope moved, from the same data --\na burndown that hides scope changes makes a team look slow when what\nactually happened is that the sprint grew.",
         "operationId": "sprint_burndown_sprints__sprint_id__burndown_get",
         "security": [
           {
@@ -4132,7 +4132,7 @@
           "reports"
         ],
         "summary": "Project Burnup",
-        "description": "A project's scope against its completed work, each day, in issues and points.\n\nStarts on the first day history records anything about the project. Points\nonly cover sized issues; `unestimated_issues` says how many are not sized,\nso the points total is not mistaken for the whole epic.",
+        "description": "A project's scope against its completed work, each day, in tickets and points.\n\nStarts on the first day history records anything about the project. Points\nonly cover sized tickets; `unestimated_tickets` says how many are not sized,\nso the points total is not mistaken for the whole epic.",
         "operationId": "project_burnup_projects__project_id__burnup_get",
         "security": [
           {
@@ -4242,7 +4242,7 @@
           "reports"
         ],
         "summary": "Team Cumulative Flow",
-        "description": "Issue counts per status per day. Widening bands mean work is piling up.",
+        "description": "Ticket counts per status per day. Widening bands mean work is piling up.",
         "operationId": "team_cumulative_flow_teams__team_id__cumulative_flow_get",
         "security": [
           {
@@ -4302,7 +4302,7 @@
           "reports"
         ],
         "summary": "Team Created Vs Resolved",
-        "description": "Issues opened against issues closed, with the running backlog.",
+        "description": "Tickets opened against tickets closed, with the running backlog.",
         "operationId": "team_created_vs_resolved_teams__team_id__created_vs_resolved_get",
         "security": [
           {
@@ -4362,7 +4362,7 @@
           "reports"
         ],
         "summary": "Sprint Time Spent",
-        "description": "Time logged during the sprint on issues that were ever in it, by person (#102).",
+        "description": "Time logged during the sprint on tickets that were ever in it, by person (#102).",
         "operationId": "sprint_time_spent_sprints__sprint_id__time_spent_get",
         "security": [
           {
@@ -4410,7 +4410,7 @@
           "reports"
         ],
         "summary": "Team Time Spent",
-        "description": "Time logged on the team's issues over the last `days` days, by person (#102).",
+        "description": "Time logged on the team's tickets over the last `days` days, by person (#102).",
         "operationId": "team_time_spent_teams__team_id__time_spent_get",
         "security": [
           {
@@ -4528,7 +4528,7 @@
           "search"
         ],
         "summary": "Search",
-        "description": "Search issue titles, descriptions and comments.\n\nAlways scoped to the teams the caller belongs to. Postgres uses full-text\nsearch with stemming and relevance ranking; SQLite falls back to a\nsubstring match.",
+        "description": "Search ticket titles, descriptions and comments.\n\nAlways scoped to the teams the caller belongs to. Postgres uses full-text\nsearch with stemming and relevance ranking; SQLite falls back to a\nsubstring match.",
         "operationId": "search_search_get",
         "security": [
           {
@@ -4865,13 +4865,13 @@
         }
       }
     },
-    "/issues/{issue_id}/watch": {
+    "/tickets/{ticket_id}/watch": {
       "get": {
         "tags": [
           "notifications"
         ],
         "summary": "Get Watch State",
-        "operationId": "get_watch_state_issues__issue_id__watch_get",
+        "operationId": "get_watch_state_tickets__ticket_id__watch_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4879,12 +4879,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -4916,7 +4916,7 @@
           "notifications"
         ],
         "summary": "Set Watch State",
-        "operationId": "set_watch_state_issues__issue_id__watch_put",
+        "operationId": "set_watch_state_tickets__ticket_id__watch_put",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4924,12 +4924,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -5229,7 +5229,7 @@
           "views"
         ],
         "summary": "Set My Default View",
-        "description": "Where *you* land on this team, overriding the team's default.\n\nClearing it falls back to the team's rather than to all issues: no\noverride means no preference, not a preference for nothing.",
+        "description": "Where *you* land on this team, overriding the team's default.\n\nClearing it falls back to the team's rather than to all tickets: no\noverride means no preference, not a preference for nothing.",
         "operationId": "set_my_default_view_teams__team_id__default_view_me_put",
         "security": [
           {
@@ -5281,14 +5281,14 @@
         }
       }
     },
-    "/teams/{team_id}/issue-templates": {
+    "/teams/{team_id}/ticket-templates": {
       "get": {
         "tags": [
           "templates"
         ],
         "summary": "List Templates",
         "description": "The team's description templates, in picker order. Any member may read.",
-        "operationId": "list_templates_teams__team_id__issue_templates_get",
+        "operationId": "list_templates_teams__team_id__ticket_templates_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -5313,9 +5313,9 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/IssueTemplateRead"
+                    "$ref": "#/components/schemas/TicketTemplateRead"
                   },
-                  "title": "Response List Templates Teams  Team Id  Issue Templates Get"
+                  "title": "Response List Templates Teams  Team Id  Ticket Templates Get"
                 }
               }
             }
@@ -5338,7 +5338,7 @@
         ],
         "summary": "Create Template",
         "description": "Add a template. Team admins only.",
-        "operationId": "create_template_teams__team_id__issue_templates_post",
+        "operationId": "create_template_teams__team_id__ticket_templates_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -5360,7 +5360,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IssueTemplateCreate"
+                "$ref": "#/components/schemas/TicketTemplateCreate"
               }
             }
           }
@@ -5371,7 +5371,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IssueTemplateRead"
+                  "$ref": "#/components/schemas/TicketTemplateRead"
                 }
               }
             }
@@ -5389,14 +5389,14 @@
         }
       }
     },
-    "/teams/{team_id}/issue-templates/order": {
+    "/teams/{team_id}/ticket-templates/order": {
       "put": {
         "tags": [
           "templates"
         ],
         "summary": "Reorder Templates",
         "description": "Set the picker's order. Takes every template at once.",
-        "operationId": "reorder_templates_teams__team_id__issue_templates_order_put",
+        "operationId": "reorder_templates_teams__team_id__ticket_templates_order_put",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -5418,7 +5418,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IssueTemplateOrder"
+                "$ref": "#/components/schemas/TicketTemplateOrder"
               }
             }
           }
@@ -5431,9 +5431,9 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/IssueTemplateRead"
+                    "$ref": "#/components/schemas/TicketTemplateRead"
                   },
-                  "title": "Response Reorder Templates Teams  Team Id  Issue Templates Order Put"
+                  "title": "Response Reorder Templates Teams  Team Id  Ticket Templates Order Put"
                 }
               }
             }
@@ -5451,13 +5451,13 @@
         }
       }
     },
-    "/issue-templates/{template_id}": {
+    "/ticket-templates/{template_id}": {
       "patch": {
         "tags": [
           "templates"
         ],
         "summary": "Update Template",
-        "operationId": "update_template_issue_templates__template_id__patch",
+        "operationId": "update_template_ticket_templates__template_id__patch",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -5479,7 +5479,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IssueTemplateUpdate"
+                "$ref": "#/components/schemas/TicketTemplateUpdate"
               }
             }
           }
@@ -5490,7 +5490,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IssueTemplateRead"
+                  "$ref": "#/components/schemas/TicketTemplateRead"
                 }
               }
             }
@@ -5512,7 +5512,7 @@
           "templates"
         ],
         "summary": "Delete Template",
-        "operationId": "delete_template_issue_templates__template_id__delete",
+        "operationId": "delete_template_ticket_templates__template_id__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -5546,14 +5546,14 @@
         }
       }
     },
-    "/issues/{issue_id}/worklogs": {
+    "/tickets/{ticket_id}/worklogs": {
       "get": {
         "tags": [
           "worklogs"
         ],
-        "summary": "Issue Time",
-        "description": "Time spent on the issue: the total, who spent it, and every entry.",
-        "operationId": "issue_time_issues__issue_id__worklogs_get",
+        "summary": "Ticket Time",
+        "description": "Time spent on the ticket: the total, who spent it, and every entry.",
+        "operationId": "ticket_time_tickets__ticket_id__worklogs_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -5561,12 +5561,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -5576,7 +5576,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IssueTime"
+                  "$ref": "#/components/schemas/TicketTime"
                 }
               }
             }
@@ -5598,8 +5598,8 @@
           "worklogs"
         ],
         "summary": "Log Time",
-        "description": "Log time you spent on the issue, on one day.",
-        "operationId": "log_time_issues__issue_id__worklogs_post",
+        "description": "Log time you spent on the ticket, on one day.",
+        "operationId": "log_time_tickets__ticket_id__worklogs_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -5607,12 +5607,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -5753,7 +5753,7 @@
           "realtime"
         ],
         "summary": "Team Events",
-        "description": "A server-sent event stream of what changes on the team (#103).\n\nEvents are invalidations -- `issue_changed {\"id\"}`, `comment_added\n{\"issue_id\"}`, `notification {}` for the caller's own inbox, and `resync`\nwhen the stream fell behind -- and never data: the client refetches\nthrough the ordinary endpoints. `close` means the stream is over and must\nnot be reopened as it was: the caller was signed out, deactivated or\nremoved from the team. A `: ping` comment every 25 seconds keeps proxies\nfrom dropping it.\n\nAuthenticated with the usual bearer header, which is why the browser\nreads this with `fetch` rather than `EventSource`: EventSource cannot send\none, and a token in the URL is exactly what this API refuses to do.",
+        "description": "A server-sent event stream of what changes on the team (#103).\n\nEvents are invalidations -- `ticket_changed {\"id\"}`, `comment_added\n{\"ticket_id\"}`, `notification {}` for the caller's own inbox, and `resync`\nwhen the stream fell behind -- and never data: the client refetches\nthrough the ordinary endpoints. `close` means the stream is over and must\nnot be reopened as it was: the caller was signed out, deactivated or\nremoved from the team. A `: ping` comment every 25 seconds keeps proxies\nfrom dropping it.\n\nAuthenticated with the usual bearer header, which is why the browser\nreads this with `fetch` rather than `EventSource`: EventSource cannot send\none, and a token in the URL is exactly what this API refuses to do.",
         "operationId": "team_events_teams__team_id__events_get",
         "security": [
           {
@@ -6022,7 +6022,7 @@
           "statuses"
         ],
         "summary": "Delete Status",
-        "description": "Remove a column, moving its issues to another one.\n\nReturns the remaining statuses, because deleting one is the only operation\nwhose result the board cannot work out for itself -- the issues moved.",
+        "description": "Remove a column, moving its tickets to another one.\n\nReturns the remaining statuses, because deleting one is the only operation\nwhose result the board cannot work out for itself -- the tickets moved.",
         "operationId": "delete_status_statuses__status_id__delete",
         "security": [
           {
@@ -6084,7 +6084,7 @@
           "automations"
         ],
         "summary": "List Rules",
-        "description": "Every rule on the team, enabled or not, in the order they run.\n\nReadable by any member even though only admins may write one: a rule acts\non your issues, so being unable to find out what the rules are is not a\nreasonable place to be.",
+        "description": "Every rule on the team, enabled or not, in the order they run.\n\nReadable by any member even though only admins may write one: a rule acts\non your tickets, so being unable to find out what the rules are is not a\nreasonable place to be.",
         "operationId": "list_rules_teams__team_id__automation_rules_get",
         "security": [
           {
@@ -6192,7 +6192,7 @@
           "automations"
         ],
         "summary": "List Runs",
-        "description": "What the team's rules have actually done, newest first.\n\nFilterable by rule and by issue, which are the two forms the question\ntakes: \"what has this rule been doing\" and \"why did this issue move\".",
+        "description": "What the team's rules have actually done, newest first.\n\nFilterable by rule and by ticket, which are the two forms the question\ntakes: \"what has this rule been doing\" and \"why did this ticket move\".",
         "operationId": "list_runs_teams__team_id__automation_runs_get",
         "security": [
           {
@@ -6226,7 +6226,7 @@
             }
           },
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "query",
             "required": false,
             "schema": {
@@ -6238,7 +6238,7 @@
                   "type": "null"
                 }
               ],
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           },
           {
@@ -6547,7 +6547,7 @@
           "integrations"
         ],
         "summary": "Delete Repository",
-        "description": "Disconnect a repository. Its links come off the issues with it.",
+        "description": "Disconnect a repository. Its links come off the tickets with it.",
         "operationId": "delete_repository_repositories__repository_id__delete",
         "security": [
           {
@@ -6582,14 +6582,14 @@
         }
       }
     },
-    "/issues/{issue_id}/code-links": {
+    "/tickets/{ticket_id}/code-links": {
       "get": {
         "tags": [
           "integrations"
         ],
         "summary": "List Code Links",
-        "description": "The branches, commits and pull requests that name this issue.\n\nAny member, unlike the repository list above: this carries no secrets, and\n\"where is the code for this\" is the question the whole feature exists to\nanswer.",
-        "operationId": "list_code_links_issues__issue_id__code_links_get",
+        "description": "The branches, commits and pull requests that name this ticket.\n\nAny member, unlike the repository list above: this carries no secrets, and\n\"where is the code for this\" is the question the whole feature exists to\nanswer.",
+        "operationId": "list_code_links_tickets__ticket_id__code_links_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -6597,12 +6597,12 @@
         ],
         "parameters": [
           {
-            "name": "issue_id",
+            "name": "ticket_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Issue Id"
+              "title": "Ticket Id"
             }
           }
         ],
@@ -7320,9 +7320,9 @@
             "type": "integer",
             "title": "Points"
           },
-          "issue_count": {
+          "ticket_count": {
             "type": "integer",
-            "title": "Issue Count"
+            "title": "Ticket Count"
           },
           "unestimated_count": {
             "type": "integer",
@@ -7332,7 +7332,7 @@
         "type": "object",
         "required": [
           "points",
-          "issue_count",
+          "ticket_count",
           "unestimated_count"
         ],
         "title": "AssigneeLoad",
@@ -7354,9 +7354,9 @@
             "type": "integer",
             "title": "Id"
           },
-          "issue_id": {
+          "ticket_id": {
             "type": "integer",
-            "title": "Issue Id"
+            "title": "Ticket Id"
           },
           "comment_id": {
             "anyOf": [
@@ -7411,7 +7411,7 @@
         "type": "object",
         "required": [
           "id",
-          "issue_id",
+          "ticket_id",
           "filename",
           "content_type",
           "size_bytes",
@@ -7634,17 +7634,17 @@
           "trigger": {
             "$ref": "#/components/schemas/AutomationTrigger"
           },
-          "issue_id": {
+          "ticket_id": {
             "type": "integer",
-            "title": "Issue Id"
+            "title": "Ticket Id"
           },
-          "issue_identifier": {
+          "ticket_identifier": {
             "type": "string",
-            "title": "Issue Identifier"
+            "title": "Ticket Identifier"
           },
-          "issue_title": {
+          "ticket_title": {
             "type": "string",
-            "title": "Issue Title"
+            "title": "Ticket Title"
           },
           "actor": {
             "anyOf": [
@@ -7672,9 +7672,9 @@
           "rule_id",
           "rule_name",
           "trigger",
-          "issue_id",
-          "issue_identifier",
-          "issue_title",
+          "ticket_id",
+          "ticket_identifier",
+          "ticket_title",
           "actor",
           "summary",
           "created_at"
@@ -7685,9 +7685,9 @@
       "AutomationTrigger": {
         "type": "string",
         "enum": [
-          "issue_created",
+          "ticket_created",
           "status_changed",
-          "issue_assigned",
+          "ticket_assigned",
           "comment_added",
           "sprint_completed",
           "branch_created",
@@ -7695,7 +7695,7 @@
           "pull_request_merged"
         ],
         "title": "AutomationTrigger",
-        "description": "What makes an automation rule look at an issue.\n\nEight, and not extensible by a team. Every one of them is something\nSoftTrack already writes down as it happens, which is what keeps the\nengine to \"read the event, read the rules, apply them\" instead of a\nscheduler with a clock of its own. There is deliberately no \"every\nMonday\": a rule that fires while nobody is doing anything is a rule\nnobody remembers exists when it surprises them.\n\nThe last three arrive from a connected repository rather than from\nsomebody using the tracker. They are triggers rather than a settings pair\nof their own -- \"which status means in review\", \"which means shipped\" --\nbecause that pair is a second engine for \"when X happens, change the\nissue\", and this one already exists, already has conditions, and already\nwrites down what it did."
+        "description": "What makes an automation rule look at a ticket.\n\nEight, and not extensible by a team. Every one of them is something\nSoftTrack already writes down as it happens, which is what keeps the\nengine to \"read the event, read the rules, apply them\" instead of a\nscheduler with a clock of its own. There is deliberately no \"every\nMonday\": a rule that fires while nobody is doing anything is a rule\nnobody remembers exists when it surprises them.\n\nThe last three arrive from a connected repository rather than from\nsomebody using the tracker. They are triggers rather than a settings pair\nof their own -- \"which status means in review\", \"which means shipped\" --\nbecause that pair is a second engine for \"when X happens, change the\nticket\", and this one already exists, already has conditions, and already\nwrites down what it did."
       },
       "Body_import_jira_teams__team_id__import_jira_post": {
         "properties": {
@@ -7777,7 +7777,7 @@
         ],
         "title": "Body_login_auth_login_post"
       },
-      "Body_upload_attachment_issues__issue_id__attachments_post": {
+      "Body_upload_attachment_tickets__ticket_id__attachments_post": {
         "properties": {
           "file": {
             "type": "string",
@@ -7790,7 +7790,7 @@
         "required": [
           "file"
         ],
-        "title": "Body_upload_attachment_issues__issue_id__attachments_post"
+        "title": "Body_upload_attachment_tickets__ticket_id__attachments_post"
       },
       "Burndown": {
         "properties": {
@@ -7849,9 +7849,9 @@
             "type": "integer",
             "title": "Points Remaining"
           },
-          "issues_remaining": {
+          "tickets_remaining": {
             "type": "integer",
-            "title": "Issues Remaining"
+            "title": "Tickets Remaining"
           },
           "points_completed": {
             "type": "integer",
@@ -7870,7 +7870,7 @@
         "required": [
           "day",
           "points_remaining",
-          "issues_remaining",
+          "tickets_remaining",
           "points_completed",
           "points_total",
           "ideal_remaining"
@@ -7885,7 +7885,7 @@
           "pull_request"
         ],
         "title": "CodeLinkKind",
-        "description": "What kind of thing in a repository is linked to an issue."
+        "description": "What kind of thing in a repository is linked to a ticket."
       },
       "CodeLinkRead": {
         "properties": {
@@ -7994,7 +7994,7 @@
         },
         "type": "object",
         "title": "CodeLinks",
-        "description": "Everything connected to one issue, in the three groups it reads as.\n\nGrouped in the response rather than sorted in the browser, the same way\nIssueLinks is: the three have different shapes on the page -- a pull\nrequest has a state, a commit has a sha -- so a flat list would be\nregrouped by every client that rendered it."
+        "description": "Everything connected to one ticket, in the three groups it reads as.\n\nGrouped in the response rather than sorted in the browser, the same way\nTicketLinks is: the three have different shapes on the page -- a pull\nrequest has a state, a commit has a sha -- so a flat list would be\nregrouped by every client that rendered it."
       },
       "CommentCreate": {
         "properties": {
@@ -8024,9 +8024,9 @@
             "type": "integer",
             "title": "Id"
           },
-          "issue_id": {
+          "ticket_id": {
             "type": "integer",
-            "title": "Issue Id"
+            "title": "Ticket Id"
           },
           "body": {
             "type": "string",
@@ -8079,7 +8079,7 @@
         "type": "object",
         "required": [
           "id",
-          "issue_id",
+          "ticket_id",
           "body",
           "author",
           "created_at"
@@ -8248,13 +8248,13 @@
             "type": "integer",
             "title": "Total Points"
           },
-          "total_issues": {
+          "total_tickets": {
             "type": "integer",
-            "title": "Total Issues"
+            "title": "Total Tickets"
           },
-          "unestimated_issues": {
+          "unestimated_tickets": {
             "type": "integer",
-            "title": "Unestimated Issues"
+            "title": "Unestimated Tickets"
           },
           "by_status": {
             "additionalProperties": {
@@ -8274,8 +8274,8 @@
         "type": "object",
         "required": [
           "total_points",
-          "total_issues",
-          "unestimated_issues",
+          "total_tickets",
+          "unestimated_tickets",
           "by_status",
           "by_assignee"
         ],
@@ -8347,17 +8347,17 @@
             "type": "boolean",
             "title": "Dry Run"
           },
-          "issues_found": {
+          "tickets_found": {
             "type": "integer",
-            "title": "Issues Found"
+            "title": "Tickets Found"
           },
-          "issues_created": {
+          "tickets_created": {
             "type": "integer",
-            "title": "Issues Created"
+            "title": "Tickets Created"
           },
-          "issues_skipped_existing": {
+          "tickets_skipped_existing": {
             "type": "integer",
-            "title": "Issues Skipped Existing"
+            "title": "Tickets Skipped Existing"
           },
           "comments_created": {
             "type": "integer",
@@ -8407,7 +8407,7 @@
           },
           "preview": {
             "items": {
-              "$ref": "#/components/schemas/ParsedIssue"
+              "$ref": "#/components/schemas/ParsedTicket"
             },
             "type": "array",
             "title": "Preview"
@@ -8416,9 +8416,9 @@
         "type": "object",
         "required": [
           "dry_run",
-          "issues_found",
-          "issues_created",
-          "issues_skipped_existing",
+          "tickets_found",
+          "tickets_created",
+          "tickets_skipped_existing",
           "comments_created",
           "labels_created",
           "projects_created",
@@ -8564,1017 +8564,6 @@
         "title": "InviteRead",
         "description": "A pending invitation, as an admin of the team (or its recipient) sees it.\n\nCarries the token so the link can be copied out of this response and sent\nby whatever the team already uses -- which works on every instance, with\nor without a mail server. Only ever returned to a team admin or to the\nperson the invite is addressed to."
       },
-      "IssueBulkChanges": {
-        "properties": {
-          "status_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status Id"
-          },
-          "priority": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/IssuePriority"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "assignee_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Assignee Id"
-          },
-          "project_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Project Id"
-          },
-          "sprint_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sprint Id"
-          },
-          "add_label_ids": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Add Label Ids",
-            "default": []
-          },
-          "remove_label_ids": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Remove Label Ids",
-            "default": []
-          }
-        },
-        "type": "object",
-        "title": "IssueBulkChanges",
-        "description": "What to do to every issue in the batch. Omitted fields are left alone.\n\nThe same unset-versus-null distinction as `IssueUpdate`: an explicit null\nassignee, project or sprint clears it on every issue."
-      },
-      "IssueBulkDelete": {
-        "properties": {
-          "issue_ids": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "maxItems": 200,
-            "minItems": 1,
-            "title": "Issue Ids",
-            "description": "Between 1 and 200 issues, all on this team."
-          }
-        },
-        "type": "object",
-        "required": [
-          "issue_ids"
-        ],
-        "title": "IssueBulkDelete"
-      },
-      "IssueBulkUpdate": {
-        "properties": {
-          "issue_ids": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "maxItems": 200,
-            "minItems": 1,
-            "title": "Issue Ids",
-            "description": "Between 1 and 200 issues, all on this team."
-          },
-          "changes": {
-            "$ref": "#/components/schemas/IssueBulkChanges"
-          }
-        },
-        "type": "object",
-        "required": [
-          "issue_ids",
-          "changes"
-        ],
-        "title": "IssueBulkUpdate"
-      },
-      "IssueCreate": {
-        "properties": {
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "project_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Project Id"
-          },
-          "status_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status Id"
-          },
-          "priority": {
-            "$ref": "#/components/schemas/IssuePriority",
-            "default": "no_priority"
-          },
-          "type": {
-            "$ref": "#/components/schemas/IssueType",
-            "default": "task"
-          },
-          "assignee_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Assignee Id"
-          },
-          "estimate": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "enum": [
-              null,
-              1,
-              2,
-              3,
-              5,
-              8
-            ],
-            "title": "Estimate",
-            "description": "Story points on the scale 1, 2, 3, 5, 8. Null means not sized yet, which is distinct from an estimate of zero."
-          },
-          "parent_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent Id"
-          },
-          "sprint_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sprint Id"
-          },
-          "due_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Due Date"
-          },
-          "label_ids": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Label Ids",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "title"
-        ],
-        "title": "IssueCreate"
-      },
-      "IssueEventField": {
-        "type": "string",
-        "enum": [
-          "status",
-          "sprint",
-          "estimate",
-          "project",
-          "assignee",
-          "priority",
-          "due_date",
-          "team"
-        ],
-        "title": "IssueEventField",
-        "description": "Which field an IssueEvent records a change to."
-      },
-      "IssueEventRead": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "field": {
-            "$ref": "#/components/schemas/IssueEventField"
-          },
-          "old_value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Old Value"
-          },
-          "new_value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "New Value"
-          },
-          "old_label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Old Label"
-          },
-          "new_label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "New Label"
-          },
-          "actor": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/UserPublic"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "field",
-          "created_at"
-        ],
-        "title": "IssueEventRead",
-        "description": "One change to one field of an issue, as the Activity feed shows it (#81).\n\n`old_value`/`new_value` are what the history stores: a status *category*\n(see `_status_category` in history.py), a priority, an estimate, or a\nrow id. For the id fields -- assignee, sprint, project -- the labels carry\nthe name it has now, or null when that row has since been deleted."
-      },
-      "IssueGrouping": {
-        "type": "string",
-        "enum": [
-          "status",
-          "project"
-        ],
-        "title": "IssueGrouping",
-        "description": "What the board's columns, and the list's sections, are made of.\n\nA saved view stores one (#63), so \"the planning view\" can open grouped by\nproject while \"my bugs\" opens by status. Status is the default because it\nis what the board always was."
-      },
-      "IssueLinkCreate": {
-        "properties": {
-          "target_id": {
-            "type": "integer",
-            "title": "Target Id"
-          },
-          "type": {
-            "$ref": "#/components/schemas/IssueLinkType"
-          }
-        },
-        "type": "object",
-        "required": [
-          "target_id",
-          "type"
-        ],
-        "title": "IssueLinkCreate"
-      },
-      "IssueLinkRead": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "relation": {
-            "type": "string",
-            "title": "Relation"
-          },
-          "issue": {
-            "$ref": "#/components/schemas/LinkedIssue"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "relation",
-          "issue",
-          "created_at"
-        ],
-        "title": "IssueLinkRead"
-      },
-      "IssueLinkType": {
-        "type": "string",
-        "enum": [
-          "blocks",
-          "relates_to",
-          "duplicates"
-        ],
-        "title": "IssueLinkType",
-        "description": "How one issue relates to another.\n\nOnly three are stored. \"Blocked by\" and \"duplicated by\" are not types --\nthey are the same rows read from the other end, which is what keeps the\ntwo issues from ever disagreeing about their relationship.\n\n`relates_to` is symmetric, so it is stored once and shown identically on\nboth issues."
-      },
-      "IssueLinks": {
-        "properties": {
-          "blocks": {
-            "items": {
-              "$ref": "#/components/schemas/IssueLinkRead"
-            },
-            "type": "array",
-            "title": "Blocks",
-            "default": []
-          },
-          "blocked_by": {
-            "items": {
-              "$ref": "#/components/schemas/IssueLinkRead"
-            },
-            "type": "array",
-            "title": "Blocked By",
-            "default": []
-          },
-          "relates_to": {
-            "items": {
-              "$ref": "#/components/schemas/IssueLinkRead"
-            },
-            "type": "array",
-            "title": "Relates To",
-            "default": []
-          },
-          "duplicates": {
-            "items": {
-              "$ref": "#/components/schemas/IssueLinkRead"
-            },
-            "type": "array",
-            "title": "Duplicates",
-            "default": []
-          },
-          "duplicated_by": {
-            "items": {
-              "$ref": "#/components/schemas/IssueLinkRead"
-            },
-            "type": "array",
-            "title": "Duplicated By",
-            "default": []
-          }
-        },
-        "type": "object",
-        "title": "IssueLinks"
-      },
-      "IssueMove": {
-        "properties": {
-          "above_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Above Id"
-          },
-          "below_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Below Id"
-          },
-          "status_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status Id"
-          }
-        },
-        "type": "object",
-        "title": "IssueMove",
-        "description": "Where a card was dropped on the board (#88).\n\nThe cards it landed between, as the board showed them: `above_id` is the\none now above it, `below_id` the one below. Either is null at the top or\nbottom of a column, and both are null in an empty one. `status_id` moves\nit to another column at the same time."
-      },
-      "IssuePriority": {
-        "type": "string",
-        "enum": [
-          "no_priority",
-          "urgent",
-          "high",
-          "medium",
-          "low"
-        ],
-        "title": "IssuePriority"
-      },
-      "IssueRead": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "team_id": {
-            "type": "integer",
-            "title": "Team Id"
-          },
-          "team_key": {
-            "type": "string",
-            "title": "Team Key"
-          },
-          "project_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Project Id"
-          },
-          "number": {
-            "type": "integer",
-            "title": "Number"
-          },
-          "identifier": {
-            "type": "string",
-            "title": "Identifier"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "status": {
-            "$ref": "#/components/schemas/StatusRead"
-          },
-          "priority": {
-            "$ref": "#/components/schemas/IssuePriority"
-          },
-          "type": {
-            "$ref": "#/components/schemas/IssueType"
-          },
-          "rank": {
-            "type": "string",
-            "title": "Rank"
-          },
-          "assignee": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/UserPublic"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "estimate": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Estimate"
-          },
-          "blocked_by_count": {
-            "type": "integer",
-            "title": "Blocked By Count"
-          },
-          "sprint_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sprint Id"
-          },
-          "due_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Due Date"
-          },
-          "external_key": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "External Key"
-          },
-          "parent": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ParentRef"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "child_count": {
-            "type": "integer",
-            "title": "Child Count"
-          },
-          "completed_child_count": {
-            "type": "integer",
-            "title": "Completed Child Count"
-          },
-          "creator": {
-            "$ref": "#/components/schemas/UserPublic"
-          },
-          "labels": {
-            "items": {
-              "$ref": "#/components/schemas/LabelRead"
-            },
-            "type": "array",
-            "title": "Labels",
-            "default": []
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Updated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "team_id",
-          "team_key",
-          "number",
-          "identifier",
-          "title",
-          "status",
-          "priority",
-          "type",
-          "rank",
-          "blocked_by_count",
-          "child_count",
-          "completed_child_count",
-          "creator",
-          "created_at",
-          "updated_at"
-        ],
-        "title": "IssueRead"
-      },
-      "IssueSort": {
-        "type": "string",
-        "enum": [
-          "created",
-          "updated",
-          "priority",
-          "estimate",
-          "title",
-          "rank"
-        ],
-        "title": "IssueSort",
-        "description": "What the issue list can be ordered by (#88)."
-      },
-      "IssueTemplateCreate": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "maxLength": 60,
-            "minLength": 1,
-            "title": "Name"
-          },
-          "body": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Body"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "body"
-        ],
-        "title": "IssueTemplateCreate"
-      },
-      "IssueTemplateOrder": {
-        "properties": {
-          "template_ids": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Template Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "template_ids"
-        ],
-        "title": "IssueTemplateOrder",
-        "description": "Every template on the team, in the order the picker should list them.\n\nAll of them at once, like `StatusOrder` and for the same reason: two admins\ndragging would otherwise interleave into an order neither chose."
-      },
-      "IssueTemplateRead": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "team_id": {
-            "type": "integer",
-            "title": "Team Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "body": {
-            "type": "string",
-            "title": "Body"
-          },
-          "position": {
-            "type": "integer",
-            "title": "Position"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Updated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "team_id",
-          "name",
-          "body",
-          "position",
-          "created_at",
-          "updated_at"
-        ],
-        "title": "IssueTemplateRead"
-      },
-      "IssueTemplateUpdate": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 60,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "body": {
-            "anyOf": [
-              {
-                "type": "string",
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Body"
-          }
-        },
-        "type": "object",
-        "title": "IssueTemplateUpdate"
-      },
-      "IssueTime": {
-        "properties": {
-          "total_minutes": {
-            "type": "integer",
-            "title": "Total Minutes"
-          },
-          "by_person": {
-            "items": {
-              "$ref": "#/components/schemas/PersonTime"
-            },
-            "type": "array",
-            "title": "By Person"
-          },
-          "entries": {
-            "items": {
-              "$ref": "#/components/schemas/WorklogRead"
-            },
-            "type": "array",
-            "title": "Entries"
-          }
-        },
-        "type": "object",
-        "required": [
-          "total_minutes",
-          "by_person",
-          "entries"
-        ],
-        "title": "IssueTime",
-        "description": "Everything the issue panel shows about time spent on one issue."
-      },
-      "IssueTransfer": {
-        "properties": {
-          "team_id": {
-            "type": "integer",
-            "title": "Team Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "team_id"
-        ],
-        "title": "IssueTransfer",
-        "description": "Where to move an issue (#98)."
-      },
-      "IssueType": {
-        "type": "string",
-        "enum": [
-          "bug",
-          "task",
-          "story"
-        ],
-        "title": "IssueType",
-        "description": "What kind of work an issue is (#89).\n\nA fixed three, deliberately: per-team custom types are how Jira's type\nlist grew until nobody could say what a \"Sub-task (Technical)\" was.\n\nThere is no `epic`. An epic is a Project (#60-#64) -- a grouping of issues\nwith a lead, a target date and progress -- and making it a type as well\nwould give the tracker two competing ways to say \"these belong together\"."
-      },
-      "IssueUpdate": {
-        "properties": {
-          "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "project_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Project Id"
-          },
-          "status_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status Id"
-          },
-          "priority": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/IssuePriority"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "type": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/IssueType"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "assignee_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Assignee Id"
-          },
-          "estimate": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "enum": [
-              null,
-              1,
-              2,
-              3,
-              5,
-              8
-            ],
-            "title": "Estimate",
-            "description": "Story points on the scale 1, 2, 3, 5, 8. Null means not sized yet, which is distinct from an estimate of zero."
-          },
-          "parent_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent Id"
-          },
-          "sprint_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sprint Id"
-          },
-          "due_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Due Date"
-          },
-          "label_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "integer"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label Ids"
-          }
-        },
-        "type": "object",
-        "title": "IssueUpdate"
-      },
       "LabelCreate": {
         "properties": {
           "name": {
@@ -9621,7 +8610,7 @@
         ],
         "title": "LabelRead"
       },
-      "LinkedIssue": {
+      "LinkedTicket": {
         "properties": {
           "id": {
             "type": "integer",
@@ -9647,7 +8636,7 @@
             "$ref": "#/components/schemas/StatusRead"
           },
           "priority": {
-            "$ref": "#/components/schemas/IssuePriority"
+            "$ref": "#/components/schemas/TicketPriority"
           }
         },
         "type": "object",
@@ -9660,47 +8649,8 @@
           "status",
           "priority"
         ],
-        "title": "LinkedIssue",
-        "description": "Just enough of the other issue to render a row and click through."
-      },
-      "NotificationIssue": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "team_id": {
-            "type": "integer",
-            "title": "Team Id"
-          },
-          "team_key": {
-            "type": "string",
-            "title": "Team Key"
-          },
-          "number": {
-            "type": "integer",
-            "title": "Number"
-          },
-          "identifier": {
-            "type": "string",
-            "title": "Identifier"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "team_id",
-          "team_key",
-          "number",
-          "identifier",
-          "title"
-        ],
-        "title": "NotificationIssue",
-        "description": "Enough of the issue to render the row and navigate to it.\n\n`team_key` and `number` rather than a URL: the inbox links into the app's\nown routes (`/:teamKey/issue/:issueNumber`), and a server-built path would\nbe a second place that has to change when they do."
+        "title": "LinkedTicket",
+        "description": "Just enough of the other ticket to render a row and click through."
       },
       "NotificationKind": {
         "type": "string",
@@ -9711,7 +8661,7 @@
           "status_changed"
         ],
         "title": "NotificationKind",
-        "description": "Why a notification was raised.\n\nDeliberately about *what happened*, not about how the recipient came to\ncare -- \"someone commented\" reads the same whether you are watching the\nissue because you filed it or because you were assigned it. Which of\nthose is true is not information the inbox has any use for."
+        "description": "Why a notification was raised.\n\nDeliberately about *what happened*, not about how the recipient came to\ncare -- \"someone commented\" reads the same whether you are watching the\nticket because you filed it or because you were assigned it. Which of\nthose is true is not information the inbox has any use for."
       },
       "NotificationRead": {
         "properties": {
@@ -9722,8 +8672,8 @@
           "kind": {
             "$ref": "#/components/schemas/NotificationKind"
           },
-          "issue": {
-            "$ref": "#/components/schemas/NotificationIssue"
+          "ticket": {
+            "$ref": "#/components/schemas/NotificationTicket"
           },
           "actor": {
             "anyOf": [
@@ -9760,7 +8710,7 @@
         "required": [
           "id",
           "kind",
-          "issue",
+          "ticket",
           "read",
           "created_at"
         ],
@@ -9796,6 +8746,45 @@
           "email_notifications"
         ],
         "title": "NotificationSettingsUpdate"
+      },
+      "NotificationTicket": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "team_key": {
+            "type": "string",
+            "title": "Team Key"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "team_key",
+          "number",
+          "identifier",
+          "title"
+        ],
+        "title": "NotificationTicket",
+        "description": "Enough of the ticket to render the row and navigate to it.\n\n`team_key` and `number` rather than a URL: the inbox links into the app's\nown routes (`/:teamKey/ticket/:ticketNumber`), and a server-built path would\nbe a second place that has to change when they do."
       },
       "NotificationUpdate": {
         "properties": {
@@ -10191,37 +9180,6 @@
         ],
         "title": "Page[CommentRead]"
       },
-      "Page_IssueRead_": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/IssueRead"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "limit": {
-            "type": "integer",
-            "title": "Limit"
-          },
-          "offset": {
-            "type": "integer",
-            "title": "Offset"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "total",
-          "limit",
-          "offset"
-        ],
-        "title": "Page[IssueRead]"
-      },
       "Page_NotificationRead_": {
         "properties": {
           "items": {
@@ -10283,6 +9241,37 @@
           "offset"
         ],
         "title": "Page[SearchHit]"
+      },
+      "Page_TicketRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TicketRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[TicketRead]"
       },
       "ParentRef": {
         "properties": {
@@ -10354,7 +9343,7 @@
         ],
         "title": "ParsedComment"
       },
-      "ParsedIssue": {
+      "ParsedTicket": {
         "properties": {
           "external_key": {
             "anyOf": [
@@ -10386,10 +9375,10 @@
             "$ref": "#/components/schemas/StatusCategory"
           },
           "priority": {
-            "$ref": "#/components/schemas/IssuePriority"
+            "$ref": "#/components/schemas/TicketPriority"
           },
           "type": {
-            "$ref": "#/components/schemas/IssueType",
+            "$ref": "#/components/schemas/TicketType",
             "default": "task"
           },
           "raw_status": {
@@ -10494,8 +9483,8 @@
           "status",
           "priority"
         ],
-        "title": "ParsedIssue",
-        "description": "One issue as read out of an export, before anything is written."
+        "title": "ParsedTicket",
+        "description": "One ticket as read out of an export, before anything is written."
       },
       "PasswordChange": {
         "properties": {
@@ -10584,13 +9573,13 @@
             "format": "date",
             "title": "Day"
           },
-          "scope_issues": {
+          "scope_tickets": {
             "type": "integer",
-            "title": "Scope Issues"
+            "title": "Scope Tickets"
           },
-          "completed_issues": {
+          "completed_tickets": {
             "type": "integer",
-            "title": "Completed Issues"
+            "title": "Completed Tickets"
           },
           "scope_points": {
             "type": "integer",
@@ -10600,19 +9589,19 @@
             "type": "integer",
             "title": "Completed Points"
           },
-          "unestimated_issues": {
+          "unestimated_tickets": {
             "type": "integer",
-            "title": "Unestimated Issues"
+            "title": "Unestimated Tickets"
           }
         },
         "type": "object",
         "required": [
           "day",
-          "scope_issues",
-          "completed_issues",
+          "scope_tickets",
+          "completed_tickets",
           "scope_points",
           "completed_points",
-          "unestimated_issues"
+          "unestimated_tickets"
         ],
         "title": "ProjectBurnupPoint",
         "description": "What one project -- an epic -- held at the end of one day (#64)."
@@ -10738,13 +9727,13 @@
             "format": "date-time",
             "title": "Created At"
           },
-          "issue_count": {
+          "ticket_count": {
             "type": "integer",
-            "title": "Issue Count"
+            "title": "Ticket Count"
           },
-          "completed_issue_count": {
+          "completed_ticket_count": {
             "type": "integer",
-            "title": "Completed Issue Count"
+            "title": "Completed Ticket Count"
           }
         },
         "type": "object",
@@ -10756,8 +9745,8 @@
           "state",
           "archived",
           "created_at",
-          "issue_count",
-          "completed_issue_count"
+          "ticket_count",
+          "completed_ticket_count"
         ],
         "title": "ProjectRead"
       },
@@ -10770,7 +9759,7 @@
           "cancelled"
         ],
         "title": "ProjectState",
-        "description": "Where a project -- which is what SoftTrack calls an epic -- is in its life.\n\nSet by hand, like SprintState and for the same reason: \"every issue is\ndone\" is evidence a project is finished, not a decision that it is. A\nproject can be complete with a stray follow-up still open, or have every\nissue closed and still be waiting on a launch."
+        "description": "Where a project -- which is what SoftTrack calls an epic -- is in its life.\n\nSet by hand, like SprintState and for the same reason: \"every ticket is\ndone\" is evidence a project is finished, not a decision that it is. A\nproject can be complete with a stray follow-up still open, or have every\nticket closed and still be waiting on a launch."
       },
       "ProjectUpdate": {
         "properties": {
@@ -10953,7 +9942,7 @@
           "full_name"
         ],
         "title": "RepositoryLinkedItem",
-        "description": "Which repository a link came from, for an issue that has several."
+        "description": "Which repository a link came from, for a ticket that has several."
       },
       "RepositoryRead": {
         "properties": {
@@ -11053,7 +10042,7 @@
           "set_priority": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IssuePriority"
+                "$ref": "#/components/schemas/TicketPriority"
               },
               {
                 "type": "null"
@@ -11063,7 +10052,7 @@
           "set_type": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IssueType"
+                "$ref": "#/components/schemas/TicketType"
               },
               {
                 "type": "null"
@@ -11123,7 +10112,7 @@
         },
         "type": "object",
         "title": "RuleActions",
-        "description": "What a rule does to an issue it matched.\n\nEvery field is optional and this model asserts nothing about the\ncombination, because it is also the shape a *stored* rule is read back in\n-- and a stored rule can be left with no actions at all. Deleting a sprint\nstrips `set_sprint_id` out of the rules that filled it and switches them\noff, and a rule in that state has to survive being listed so that somebody\ncan see it and decide what it should say instead.\n\nThe two things a rule being *written* may not do -- nothing at all, and\nnaming both a sprint and the active one -- are checked on\nAutomationRuleCreate and AutomationRuleUpdate, which is where writing\nhappens."
+        "description": "What a rule does to a ticket it matched.\n\nEvery field is optional and this model asserts nothing about the\ncombination, because it is also the shape a *stored* rule is read back in\n-- and a stored rule can be left with no actions at all. Deleting a sprint\nstrips `set_sprint_id` out of the rules that filled it and switches them\noff, and a rule in that state has to survive being listed so that somebody\ncan see it and decide what it should say instead.\n\nThe two things a rule being *written* may not do -- nothing at all, and\nnaming both a sprint and the active one -- are checked on\nAutomationRuleCreate and AutomationRuleUpdate, which is where writing\nhappens."
       },
       "RuleConditions": {
         "properties": {
@@ -11141,7 +10130,7 @@
           "if_priority": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IssuePriority"
+                "$ref": "#/components/schemas/TicketPriority"
               },
               {
                 "type": "null"
@@ -11151,7 +10140,7 @@
           "if_type": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IssueType"
+                "$ref": "#/components/schemas/TicketType"
               },
               {
                 "type": "null"
@@ -11199,7 +10188,7 @@
         },
         "type": "object",
         "title": "RuleConditions",
-        "description": "Which issues a rule acts on, out of the ones its trigger reaches.\n\nNested rather than flattened into the rule models so that \"what a rule\nmatches\" is one shape wherever it appears -- the same reason ViewFilters\nis nested, and near enough the same vocabulary. Null everywhere means\n\"every issue this trigger sees\", which is what an unconditioned rule\nshould do rather than one that matches nothing."
+        "description": "Which tickets a rule acts on, out of the ones its trigger reaches.\n\nNested rather than flattened into the rule models so that \"what a rule\nmatches\" is one shape wherever it appears -- the same reason ViewFilters\nis nested, and near enough the same vocabulary. Null everywhere means\n\"every ticket this trigger sees\", which is what an unconditioned rule\nshould do rather than one that matches nothing."
       },
       "SavedViewCreate": {
         "properties": {
@@ -11221,13 +10210,13 @@
             }
           },
           "group_by": {
-            "$ref": "#/components/schemas/IssueGrouping",
+            "$ref": "#/components/schemas/TicketGrouping",
             "default": "status"
           },
           "sort": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IssueSort"
+                "$ref": "#/components/schemas/TicketSort"
               },
               {
                 "type": "null"
@@ -11276,12 +10265,12 @@
             "$ref": "#/components/schemas/ViewFilters"
           },
           "group_by": {
-            "$ref": "#/components/schemas/IssueGrouping"
+            "$ref": "#/components/schemas/TicketGrouping"
           },
           "sort": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IssueSort"
+                "$ref": "#/components/schemas/TicketSort"
               },
               {
                 "type": "null"
@@ -11362,7 +10351,7 @@
           "group_by": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IssueGrouping"
+                "$ref": "#/components/schemas/TicketGrouping"
               },
               {
                 "type": "null"
@@ -11372,7 +10361,7 @@
           "sort": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IssueSort"
+                "$ref": "#/components/schemas/TicketSort"
               },
               {
                 "type": "null"
@@ -11451,13 +10440,13 @@
             "format": "date",
             "title": "Day"
           },
-          "issues_added": {
+          "tickets_added": {
             "type": "integer",
-            "title": "Issues Added"
+            "title": "Tickets Added"
           },
-          "issues_removed": {
+          "tickets_removed": {
             "type": "integer",
-            "title": "Issues Removed"
+            "title": "Tickets Removed"
           },
           "points_added": {
             "type": "integer",
@@ -11471,8 +10460,8 @@
         "type": "object",
         "required": [
           "day",
-          "issues_added",
-          "issues_removed",
+          "tickets_added",
+          "tickets_removed",
           "points_added",
           "points_removed"
         ],
@@ -11496,7 +10485,7 @@
             "$ref": "#/components/schemas/StatusRead"
           },
           "priority": {
-            "$ref": "#/components/schemas/IssuePriority"
+            "$ref": "#/components/schemas/TicketPriority"
           },
           "team_id": {
             "type": "integer",
@@ -11610,13 +10599,13 @@
       },
       "SprintProgress": {
         "properties": {
-          "issues_total": {
+          "tickets_total": {
             "type": "integer",
-            "title": "Issues Total"
+            "title": "Tickets Total"
           },
-          "issues_completed": {
+          "tickets_completed": {
             "type": "integer",
-            "title": "Issues Completed"
+            "title": "Tickets Completed"
           },
           "points_total": {
             "type": "integer",
@@ -11626,21 +10615,21 @@
             "type": "integer",
             "title": "Points Completed"
           },
-          "issues_unestimated": {
+          "tickets_unestimated": {
             "type": "integer",
-            "title": "Issues Unestimated"
+            "title": "Tickets Unestimated"
           }
         },
         "type": "object",
         "required": [
-          "issues_total",
-          "issues_completed",
+          "tickets_total",
+          "tickets_completed",
           "points_total",
           "points_completed",
-          "issues_unestimated"
+          "tickets_unestimated"
         ],
         "title": "SprintProgress",
-        "description": "How much of the sprint's work is done.\n\nIssues and points are reported separately because they disagree, and the\ndisagreement is the interesting part: eight of ten issues done with two\npoints of thirty burned means the hard work is all still ahead."
+        "description": "How much of the sprint's work is done.\n\nTickets and points are reported separately because they disagree, and the\ndisagreement is the interesting part: eight of ten tickets done with two\npoints of thirty burned means the hard work is all still ahead."
       },
       "SprintRead": {
         "properties": {
@@ -11774,7 +10763,7 @@
           "cancelled"
         ],
         "title": "StatusCategory",
-        "description": "What a status *means*, as opposed to what a team calls it.\n\nFixed on purpose, and the reason per-team statuses are safe to allow at\nall. Everything that has to reason about work -- burndown, velocity, \"is\nthis sprint finished\", \"3 of 5 sub-issues done\", whether a blocker still\nblocks -- asks the category, never the name. A team can add \"Blocked\" or\n\"QA\" without any of that having an opinion about it.\n\nUnconstrained workflow states are how Jira became Jira. These five are the\nline."
+        "description": "What a status *means*, as opposed to what a team calls it.\n\nFixed on purpose, and the reason per-team statuses are safe to allow at\nall. Everything that has to reason about work -- burndown, velocity, \"is\nthis sprint finished\", \"3 of 5 sub-tickets done\", whether a blocker still\nblocks -- asks the category, never the name. A team can add \"Blocked\" or\n\"QA\" without any of that having an opinion about it.\n\nUnconstrained workflow states are how Jira became Jira. These five are the\nline."
       },
       "StatusChange": {
         "properties": {
@@ -11835,7 +10824,7 @@
           "move_to_id"
         ],
         "title": "StatusDelete",
-        "description": "Where the issues in the status being deleted should go.\n\nRequired rather than defaulted. Issues are the point of the tracker, and\nguessing which column somebody's work should land in is not a decision to\nmake on their behalf."
+        "description": "Where the tickets in the status being deleted should go.\n\nRequired rather than defaulted. Tickets are the point of the tracker, and\nguessing which column somebody's work should land in is not a decision to\nmake on their behalf."
       },
       "StatusLoad": {
         "properties": {
@@ -11843,9 +10832,9 @@
             "type": "integer",
             "title": "Points"
           },
-          "issue_count": {
+          "ticket_count": {
             "type": "integer",
-            "title": "Issue Count"
+            "title": "Ticket Count"
           },
           "unestimated_count": {
             "type": "integer",
@@ -11855,7 +10844,7 @@
         "type": "object",
         "required": [
           "points",
-          "issue_count",
+          "ticket_count",
           "unestimated_count"
         ],
         "title": "StatusLoad",
@@ -11914,7 +10903,7 @@
           "color"
         ],
         "title": "StatusRead",
-        "description": "A team's status, as everything that renders an issue receives it.\n\nEmbedded in IssueRead rather than referenced by id: a search hit and a\nlinked issue are both drawn outside any team's board, where there is no\nstatus list on hand to look the id up in."
+        "description": "A team's status, as everything that renders a ticket receives it.\n\nEmbedded in TicketRead rather than referenced by id: a search hit and a\nlinked ticket are both drawn outside any team's board, where there is no\nstatus list on hand to look the id up in."
       },
       "StatusUpdate": {
         "properties": {
@@ -12088,7 +11077,7 @@
           "guest"
         ],
         "title": "TeamRole",
-        "description": "What someone may do inside one team.\n\nOrdered from most to least power. `guest` (#104) sees everything a member\nsees -- board, list, issues, comments, sprints, reports, search -- and\nchanges nothing: no issues, no comments, no settings. The one thing a guest\ndoes write is their own relationship to the team: watching an issue,\nchoosing their own default view, and leaving."
+        "description": "What someone may do inside one team.\n\nOrdered from most to least power. `guest` (#104) sees everything a member\nsees -- board, list, tickets, comments, sprints, reports, search -- and\nchanges nothing: no tickets, no comments, no settings. The one thing a guest\ndoes write is their own relationship to the team: watching a ticket,\nchoosing their own default view, and leaving."
       },
       "TeamUpdate": {
         "properties": {
@@ -12118,6 +11107,1017 @@
         "type": "object",
         "title": "TeamUpdate",
         "description": "What an admin may change about a team.\n\nNo `key`: identifiers like ENG-42 are already in commit messages, chat\nlogs and browser history, and renaming the prefix would strand every one\nof them. See README."
+      },
+      "TicketBulkChanges": {
+        "properties": {
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketPriority"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assignee_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Id"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "sprint_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sprint Id"
+          },
+          "add_label_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Add Label Ids",
+            "default": []
+          },
+          "remove_label_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Remove Label Ids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "TicketBulkChanges",
+        "description": "What to do to every ticket in the batch. Omitted fields are left alone.\n\nThe same unset-versus-null distinction as `TicketUpdate`: an explicit null\nassignee, project or sprint clears it on every ticket."
+      },
+      "TicketBulkDelete": {
+        "properties": {
+          "ticket_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Ticket Ids",
+            "description": "Between 1 and 200 tickets, all on this team."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket_ids"
+        ],
+        "title": "TicketBulkDelete"
+      },
+      "TicketBulkUpdate": {
+        "properties": {
+          "ticket_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Ticket Ids",
+            "description": "Between 1 and 200 tickets, all on this team."
+          },
+          "changes": {
+            "$ref": "#/components/schemas/TicketBulkChanges"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket_ids",
+          "changes"
+        ],
+        "title": "TicketBulkUpdate"
+      },
+      "TicketCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TicketPriority",
+            "default": "no_priority"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TicketType",
+            "default": "task"
+          },
+          "assignee_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Id"
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              null,
+              1,
+              2,
+              3,
+              5,
+              8
+            ],
+            "title": "Estimate",
+            "description": "Story points on the scale 1, 2, 3, 5, 8. Null means not sized yet, which is distinct from an estimate of zero."
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "sprint_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sprint Id"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "label_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Label Ids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "TicketCreate"
+      },
+      "TicketEventField": {
+        "type": "string",
+        "enum": [
+          "status",
+          "sprint",
+          "estimate",
+          "project",
+          "assignee",
+          "priority",
+          "due_date",
+          "team"
+        ],
+        "title": "TicketEventField",
+        "description": "Which field a TicketEvent records a change to."
+      },
+      "TicketEventRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "field": {
+            "$ref": "#/components/schemas/TicketEventField"
+          },
+          "old_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Value"
+          },
+          "new_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Value"
+          },
+          "old_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Label"
+          },
+          "new_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Label"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "field",
+          "created_at"
+        ],
+        "title": "TicketEventRead",
+        "description": "One change to one field of a ticket, as the Activity feed shows it (#81).\n\n`old_value`/`new_value` are what the history stores: a status *category*\n(see `_status_category` in history.py), a priority, an estimate, or a\nrow id. For the id fields -- assignee, sprint, project -- the labels carry\nthe name it has now, or null when that row has since been deleted."
+      },
+      "TicketGrouping": {
+        "type": "string",
+        "enum": [
+          "status",
+          "project"
+        ],
+        "title": "TicketGrouping",
+        "description": "What the board's columns, and the list's sections, are made of.\n\nA saved view stores one (#63), so \"the planning view\" can open grouped by\nproject while \"my bugs\" opens by status. Status is the default because it\nis what the board always was."
+      },
+      "TicketLinkCreate": {
+        "properties": {
+          "target_id": {
+            "type": "integer",
+            "title": "Target Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TicketLinkType"
+          }
+        },
+        "type": "object",
+        "required": [
+          "target_id",
+          "type"
+        ],
+        "title": "TicketLinkCreate"
+      },
+      "TicketLinkRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "relation": {
+            "type": "string",
+            "title": "Relation"
+          },
+          "ticket": {
+            "$ref": "#/components/schemas/LinkedTicket"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "relation",
+          "ticket",
+          "created_at"
+        ],
+        "title": "TicketLinkRead"
+      },
+      "TicketLinkType": {
+        "type": "string",
+        "enum": [
+          "blocks",
+          "relates_to",
+          "duplicates"
+        ],
+        "title": "TicketLinkType",
+        "description": "How one ticket relates to another.\n\nOnly three are stored. \"Blocked by\" and \"duplicated by\" are not types --\nthey are the same rows read from the other end, which is what keeps the\ntwo tickets from ever disagreeing about their relationship.\n\n`relates_to` is symmetric, so it is stored once and shown identically on\nboth tickets."
+      },
+      "TicketLinks": {
+        "properties": {
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/TicketLinkRead"
+            },
+            "type": "array",
+            "title": "Blocks",
+            "default": []
+          },
+          "blocked_by": {
+            "items": {
+              "$ref": "#/components/schemas/TicketLinkRead"
+            },
+            "type": "array",
+            "title": "Blocked By",
+            "default": []
+          },
+          "relates_to": {
+            "items": {
+              "$ref": "#/components/schemas/TicketLinkRead"
+            },
+            "type": "array",
+            "title": "Relates To",
+            "default": []
+          },
+          "duplicates": {
+            "items": {
+              "$ref": "#/components/schemas/TicketLinkRead"
+            },
+            "type": "array",
+            "title": "Duplicates",
+            "default": []
+          },
+          "duplicated_by": {
+            "items": {
+              "$ref": "#/components/schemas/TicketLinkRead"
+            },
+            "type": "array",
+            "title": "Duplicated By",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "TicketLinks"
+      },
+      "TicketMove": {
+        "properties": {
+          "above_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Above Id"
+          },
+          "below_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Below Id"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          }
+        },
+        "type": "object",
+        "title": "TicketMove",
+        "description": "Where a card was dropped on the board (#88).\n\nThe cards it landed between, as the board showed them: `above_id` is the\none now above it, `below_id` the one below. Either is null at the top or\nbottom of a column, and both are null in an empty one. `status_id` moves\nit to another column at the same time."
+      },
+      "TicketPriority": {
+        "type": "string",
+        "enum": [
+          "no_priority",
+          "urgent",
+          "high",
+          "medium",
+          "low"
+        ],
+        "title": "TicketPriority"
+      },
+      "TicketRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "team_key": {
+            "type": "string",
+            "title": "Team Key"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusRead"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TicketPriority"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TicketType"
+          },
+          "rank": {
+            "type": "string",
+            "title": "Rank"
+          },
+          "assignee": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimate"
+          },
+          "blocked_by_count": {
+            "type": "integer",
+            "title": "Blocked By Count"
+          },
+          "sprint_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sprint Id"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "external_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Key"
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParentRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "child_count": {
+            "type": "integer",
+            "title": "Child Count"
+          },
+          "completed_child_count": {
+            "type": "integer",
+            "title": "Completed Child Count"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/UserPublic"
+          },
+          "labels": {
+            "items": {
+              "$ref": "#/components/schemas/LabelRead"
+            },
+            "type": "array",
+            "title": "Labels",
+            "default": []
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "team_key",
+          "number",
+          "identifier",
+          "title",
+          "status",
+          "priority",
+          "type",
+          "rank",
+          "blocked_by_count",
+          "child_count",
+          "completed_child_count",
+          "creator",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TicketRead"
+      },
+      "TicketSort": {
+        "type": "string",
+        "enum": [
+          "created",
+          "updated",
+          "priority",
+          "estimate",
+          "title",
+          "rank"
+        ],
+        "title": "TicketSort",
+        "description": "What the ticket list can be ordered by (#88)."
+      },
+      "TicketTemplateCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Body"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "body"
+        ],
+        "title": "TicketTemplateCreate"
+      },
+      "TicketTemplateOrder": {
+        "properties": {
+          "template_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Template Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_ids"
+        ],
+        "title": "TicketTemplateOrder",
+        "description": "Every template on the team, in the order the picker should list them.\n\nAll of them at once, like `StatusOrder` and for the same reason: two admins\ndragging would otherwise interleave into an order neither chose."
+      },
+      "TicketTemplateRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "name",
+          "body",
+          "position",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TicketTemplateRead"
+      },
+      "TicketTemplateUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          }
+        },
+        "type": "object",
+        "title": "TicketTemplateUpdate"
+      },
+      "TicketTime": {
+        "properties": {
+          "total_minutes": {
+            "type": "integer",
+            "title": "Total Minutes"
+          },
+          "by_person": {
+            "items": {
+              "$ref": "#/components/schemas/PersonTime"
+            },
+            "type": "array",
+            "title": "By Person"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/WorklogRead"
+            },
+            "type": "array",
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_minutes",
+          "by_person",
+          "entries"
+        ],
+        "title": "TicketTime",
+        "description": "Everything the ticket panel shows about time spent on one ticket."
+      },
+      "TicketTransfer": {
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team_id"
+        ],
+        "title": "TicketTransfer",
+        "description": "Where to move a ticket (#98)."
+      },
+      "TicketType": {
+        "type": "string",
+        "enum": [
+          "bug",
+          "task",
+          "story"
+        ],
+        "title": "TicketType",
+        "description": "What kind of work a ticket is (#89).\n\nA fixed three, deliberately: per-team custom types are how Jira's type\nlist grew until nobody could say what a \"Sub-task (Technical)\" was.\n\nThere is no `epic`. An epic is a Project (#60-#64) -- a grouping of tickets\nwith a lead, a target date and progress -- and making it a type as well\nwould give the tracker two competing ways to say \"these belong together\"."
+      },
+      "TicketUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketPriority"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assignee_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Id"
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              null,
+              1,
+              2,
+              3,
+              5,
+              8
+            ],
+            "title": "Estimate",
+            "description": "Story points on the scale 1, 2, 3, 5, 8. Null means not sized yet, which is distinct from an estimate of zero."
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "sprint_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sprint Id"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "label_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label Ids"
+          }
+        },
+        "type": "object",
+        "title": "TicketUpdate"
       },
       "TimeSpent": {
         "properties": {
@@ -12234,12 +12234,12 @@
             ],
             "title": "Parent Detached"
           },
-          "sub_issues": {
+          "sub_tickets": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Sub Issues"
+            "title": "Sub Tickets"
           }
         },
         "type": "object",
@@ -12249,28 +12249,28 @@
           "status",
           "labels_kept",
           "labels_dropped",
-          "sub_issues"
+          "sub_tickets"
         ],
         "title": "TransferPlan",
-        "description": "What moving an issue to another team would change, before it does.\n\nThe confirmation dialog shows this, and `transfer_issue` carries out the\nsame plan -- they are computed by one function, so the summary a person\nagreed to is the change they get."
+        "description": "What moving a ticket to another team would change, before it does.\n\nThe confirmation dialog shows this, and `transfer_ticket` carries out the\nsame plan -- they are computed by one function, so the summary a person\nagreed to is the change they get."
       },
       "TransferResult": {
         "properties": {
-          "issue": {
-            "$ref": "#/components/schemas/IssueRead"
+          "ticket": {
+            "$ref": "#/components/schemas/TicketRead"
           },
-          "sub_issues": {
+          "sub_tickets": {
             "items": {
-              "$ref": "#/components/schemas/IssueRead"
+              "$ref": "#/components/schemas/TicketRead"
             },
             "type": "array",
-            "title": "Sub Issues"
+            "title": "Sub Tickets"
           }
         },
         "type": "object",
         "required": [
-          "issue",
-          "sub_issues"
+          "ticket",
+          "sub_tickets"
         ],
         "title": "TransferResult"
       },
@@ -12634,9 +12634,9 @@
             "type": "integer",
             "title": "Points Completed"
           },
-          "issues_completed": {
+          "tickets_completed": {
             "type": "integer",
-            "title": "Issues Completed"
+            "title": "Tickets Completed"
           }
         },
         "type": "object",
@@ -12645,7 +12645,7 @@
           "sprint_name",
           "points_committed",
           "points_completed",
-          "issues_completed"
+          "tickets_completed"
         ],
         "title": "VelocitySprint"
       },
@@ -12665,7 +12665,7 @@
           "priority": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IssuePriority"
+                "$ref": "#/components/schemas/TicketPriority"
               },
               {
                 "type": "null"
@@ -12734,7 +12734,7 @@
           "type": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IssueType"
+                "$ref": "#/components/schemas/TicketType"
               },
               {
                 "type": "null"
@@ -12744,7 +12744,7 @@
         },
         "type": "object",
         "title": "ViewFilters",
-        "description": "What a view narrows the issue list to.\n\nNested rather than flattened into the view models so that the same shape\nis what the board sends, what a view stores, and what the frontend keeps\nin the URL -- one type to keep in step instead of three.\n\nNull everywhere means \"all issues\", which is what an empty view is."
+        "description": "What a view narrows the ticket list to.\n\nNested rather than flattened into the view models so that the same shape\nis what the board sends, what a view stores, and what the frontend keeps\nin the URL -- one type to keep in step instead of three.\n\nNull everywhere means \"all tickets\", which is what an empty view is."
       },
       "WatchState": {
         "properties": {
@@ -12842,9 +12842,9 @@
       "WebhookEvent": {
         "type": "string",
         "enum": [
-          "issue.created",
-          "issue.updated",
-          "issue.status_changed",
+          "ticket.created",
+          "ticket.updated",
+          "ticket.status_changed",
           "comment.created",
           "sprint.started",
           "sprint.completed",
@@ -12863,12 +12863,12 @@
             "type": "integer",
             "title": "Links"
           },
-          "issues": {
+          "tickets": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Issues",
+            "title": "Tickets",
             "default": []
           }
         },
@@ -12878,7 +12878,7 @@
           "links"
         ],
         "title": "WebhookReceipt",
-        "description": "What the webhook endpoint answers with.\n\nMore than an empty 200 on purpose. Both providers show the response body\nin their delivery log, and that log is the entire debugging surface for\nwhoever is setting this up -- \"accepted, matched nothing\" is the answer to\nthe question they are about to ask, and it is much cheaper to read there\nthan to work out from an issue page that did not change."
+        "description": "What the webhook endpoint answers with.\n\nMore than an empty 200 on purpose. Both providers show the response body\nin their delivery log, and that log is the entire debugging surface for\nwhoever is setting this up -- \"accepted, matched nothing\" is the answer to\nthe question they are about to ask, and it is much cheaper to read there\nthan to work out from a ticket page that did not change."
       },
       "WorklogCreate": {
         "properties": {
@@ -12925,9 +12925,9 @@
             "type": "integer",
             "title": "Id"
           },
-          "issue_id": {
+          "ticket_id": {
             "type": "integer",
-            "title": "Issue Id"
+            "title": "Ticket Id"
           },
           "user": {
             "$ref": "#/components/schemas/UserPublic"
@@ -12966,7 +12966,7 @@
         "type": "object",
         "required": [
           "id",
-          "issue_id",
+          "ticket_id",
           "user",
           "minutes",
           "worked_on",
@@ -13031,8 +13031,8 @@
           "not_site_admin",
           "invite_only",
           "team_not_found",
-          "issue_not_found",
-          "issues_not_found",
+          "ticket_not_found",
+          "tickets_not_found",
           "parent_not_found",
           "project_not_found",
           "sprint_not_found",
@@ -13074,8 +13074,8 @@
           "link_to_self",
           "parent_is_self",
           "parent_other_team",
-          "parent_is_subissue",
-          "issue_has_subissues",
+          "parent_is_subticket",
+          "ticket_has_subtickets",
           "labels_conflict",
           "status_order_incomplete",
           "template_order_incomplete",

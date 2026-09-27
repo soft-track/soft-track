@@ -1,4 +1,4 @@
-/** Importing issues: the Jira import dialog, its dry-run report and its errors. */
+/** Importing tickets: the Jira import dialog, its dry-run report and its errors. */
 export const imports = {
   jira: {
     title: 'Import from Jira',
@@ -11,8 +11,8 @@ export const imports = {
     // The report: first as a promise (the dry run), then as a receipt.
     wouldCreate: 'This import would create',
     imported: 'Imported',
-    issues_one: '<n>{{count}}</n> ticket',
-    issues_other: '<n>{{count}}</n> tickets',
+    tickets_one: '<n>{{count}}</n> ticket',
+    tickets_other: '<n>{{count}}</n> tickets',
     skipped_one: '· {{count}} already imported, left alone',
     skipped_other: '· {{count}} already imported, left alone',
     comments_one: '<n>{{count}}</n> comment',

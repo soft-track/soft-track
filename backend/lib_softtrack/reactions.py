@@ -2,7 +2,7 @@
 
 The quieter alternative to a "+1" comment: a reaction raises no notification,
 sends no webhook and runs no automation rule. Saying "agreed" should not ping
-everybody watching the issue, and not doing so is the whole reason reactions
+everybody watching the ticket, and not doing so is the whole reason reactions
 exist rather than one more comment.
 """
 
@@ -16,7 +16,7 @@ from lib_softtrack.models.comments import ReactionSummary
 from lib_softtrack.tables import (
     Comment,
     CommentReaction,
-    Issue,
+    Ticket,
     ReactionEmoji,
     User,
 )
@@ -73,7 +73,7 @@ def _authorised_comment(session: Session, user: User, comment_id: int) -> Commen
     comment = _comment_or_404(session, comment_id)
     # The route's guard has already done this; repeated here so the service is
     # safe to call from anywhere, which is what a service is for.
-    require_team_writer(session.get(Issue, comment.issue_id).team_id, user, session)
+    require_team_writer(session.get(Ticket, comment.ticket_id).team_id, user, session)
     return comment
 
 
@@ -119,12 +119,12 @@ def delete_for_comment(session: Session, comment_id: int) -> None:
     )
 
 
-def delete_for_issue(session: Session, issue_id: int) -> None:
-    """Remove every reaction on an issue's comments, ahead of the comments."""
+def delete_for_ticket(session: Session, ticket_id: int) -> None:
+    """Remove every reaction on a ticket's comments, ahead of the comments."""
     session.exec(
         delete(CommentReaction).where(
             CommentReaction.comment_id.in_(
-                select(Comment.id).where(Comment.issue_id == issue_id)
+                select(Comment.id).where(Comment.ticket_id == ticket_id)
             )
         )
     )

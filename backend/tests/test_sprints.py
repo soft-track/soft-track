@@ -21,9 +21,9 @@ def make_sprint(client, team, name=None, start=START, days=14):
     return response.json()
 
 
-def make_issue(client, team, title="Work", **fields):
+def make_ticket(client, team, title="Work", **fields):
     response = client.post(
-        f"/teams/{team['team']['id']}/issues",
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": title, **fields},
         headers=team["headers"],
     )
@@ -145,18 +145,18 @@ def test_a_completed_sprint_cannot_be_restarted_or_edited_or_deleted(client, tea
 # --- carry-over ---------------------------------------------------------
 
 
-def test_unfinished_issues_carry_into_the_next_sprint(client, team):
+def test_unfinished_tickets_carry_into_the_next_sprint(client, team):
     first = make_sprint(client, team)
     second = make_sprint(client, team, start=START + timedelta(days=14))
 
-    done = make_issue(
+    done = make_ticket(
         client,
         team,
         "Done",
         sprint_id=first["id"],
         status_id=team["status_ids"]["Done"],
     )
-    unfinished = make_issue(client, team, "Not done", sprint_id=first["id"])
+    unfinished = make_ticket(client, team, "Not done", sprint_id=first["id"])
 
     result = client.post(
         f"/sprints/{first['id']}/complete", headers=team["headers"]
@@ -169,17 +169,17 @@ def test_unfinished_issues_carry_into_the_next_sprint(client, team):
     assert _sprint_of(client, team, done) == first["id"]
 
 
-def test_with_no_later_sprint_unfinished_issues_go_to_the_backlog(client, team):
+def test_with_no_later_sprint_unfinished_tickets_go_to_the_backlog(client, team):
     """Never to a sprint that is over, and never nowhere."""
     only = make_sprint(client, team)
-    issue = make_issue(client, team, "Not done", sprint_id=only["id"])
+    ticket = make_ticket(client, team, "Not done", sprint_id=only["id"])
 
     result = client.post(
         f"/sprints/{only['id']}/complete", headers=team["headers"]
     ).json()
     assert result["carried_over"] == 1
     assert result["carried_into_sprint_id"] is None
-    assert _sprint_of(client, team, issue) is None
+    assert _sprint_of(client, team, ticket) is None
 
 
 def test_carry_over_skips_completed_sprints(client, team):
@@ -189,13 +189,13 @@ def test_carry_over_skips_completed_sprints(client, team):
     third = make_sprint(client, team, start=START + timedelta(days=28))
 
     client.post(f"/sprints/{second['id']}/complete", headers=team["headers"])
-    issue = make_issue(client, team, "Not done", sprint_id=first["id"])
+    ticket = make_ticket(client, team, "Not done", sprint_id=first["id"])
 
     result = client.post(
         f"/sprints/{first['id']}/complete", headers=team["headers"]
     ).json()
     assert result["carried_into_sprint_id"] == third["id"]
-    assert _sprint_of(client, team, issue) == third["id"]
+    assert _sprint_of(client, team, ticket) == third["id"]
 
 
 @pytest.mark.parametrize("status", ["Done", "Cancelled"])
@@ -203,7 +203,7 @@ def test_finished_work_does_not_carry(client, team, status):
     """Cancelled counts as finished -- dragging it forward forever is wrong."""
     first = make_sprint(client, team)
     make_sprint(client, team, start=START + timedelta(days=14))
-    make_issue(
+    make_ticket(
         client,
         team,
         "Finished",
@@ -217,15 +217,15 @@ def test_finished_work_does_not_carry(client, team, status):
     assert result["carried_over"] == 0
 
 
-def test_deleting_a_sprint_returns_its_issues_to_the_backlog(client, team):
+def test_deleting_a_sprint_returns_its_tickets_to_the_backlog(client, team):
     sprint = make_sprint(client, team)
-    issue = make_issue(client, team, "Work", sprint_id=sprint["id"])
+    ticket = make_ticket(client, team, "Work", sprint_id=sprint["id"])
 
     assert (
         client.delete(f"/sprints/{sprint['id']}", headers=team["headers"]).status_code
         == 204
     )
-    survivor = client.get(f"/issues/{issue['id']}", headers=team["headers"])
+    survivor = client.get(f"/tickets/{ticket['id']}", headers=team["headers"])
     assert survivor.status_code == 200
     assert survivor.json()["sprint_id"] is None
 
@@ -233,10 +233,10 @@ def test_deleting_a_sprint_returns_its_issues_to_the_backlog(client, team):
 # --- progress -----------------------------------------------------------
 
 
-def test_progress_counts_issues_and_points_separately(client, team):
+def test_progress_counts_tickets_and_points_separately(client, team):
     """They disagree, and the disagreement is the interesting part."""
     sprint = make_sprint(client, team)
-    make_issue(
+    make_ticket(
         client,
         team,
         "A",
@@ -244,7 +244,7 @@ def test_progress_counts_issues_and_points_separately(client, team):
         estimate=1,
         status_id=team["status_ids"]["Done"],
     )
-    make_issue(
+    make_ticket(
         client,
         team,
         "B",
@@ -252,11 +252,11 @@ def test_progress_counts_issues_and_points_separately(client, team):
         estimate=1,
         status_id=team["status_ids"]["Done"],
     )
-    make_issue(client, team, "C", sprint_id=sprint["id"], estimate=8)
+    make_ticket(client, team, "C", sprint_id=sprint["id"], estimate=8)
 
     progress = get_sprint(client, team, sprint)["progress"]
-    assert progress["issues_total"] == 3
-    assert progress["issues_completed"] == 2
+    assert progress["tickets_total"] == 3
+    assert progress["tickets_completed"] == 2
     assert progress["points_total"] == 10
     assert progress["points_completed"] == 2
 
@@ -264,7 +264,7 @@ def test_progress_counts_issues_and_points_separately(client, team):
 def test_cancelled_work_is_not_counted_as_completed(client, team):
     """It was not delivered, so counting it would flatter the burndown."""
     sprint = make_sprint(client, team)
-    make_issue(
+    make_ticket(
         client,
         team,
         "A",
@@ -274,52 +274,52 @@ def test_cancelled_work_is_not_counted_as_completed(client, team):
     )
 
     progress = get_sprint(client, team, sprint)["progress"]
-    assert progress["issues_completed"] == 0
+    assert progress["tickets_completed"] == 0
     assert progress["points_completed"] == 0
 
 
-def test_unestimated_issues_in_a_sprint_are_reported(client, team):
+def test_unestimated_tickets_in_a_sprint_are_reported(client, team):
     """A points total is only as honest as this number is small."""
     sprint = make_sprint(client, team)
-    make_issue(client, team, "Sized", sprint_id=sprint["id"], estimate=3)
-    make_issue(client, team, "Unsized", sprint_id=sprint["id"])
+    make_ticket(client, team, "Sized", sprint_id=sprint["id"], estimate=3)
+    make_ticket(client, team, "Unsized", sprint_id=sprint["id"])
 
-    assert get_sprint(client, team, sprint)["progress"]["issues_unestimated"] == 1
+    assert get_sprint(client, team, sprint)["progress"]["tickets_unestimated"] == 1
 
 
 def test_an_empty_sprint_reports_zeroes(client, team):
     progress = get_sprint(client, team, make_sprint(client, team))["progress"]
     assert progress == {
-        "issues_total": 0,
-        "issues_completed": 0,
+        "tickets_total": 0,
+        "tickets_completed": 0,
         "points_total": 0,
         "points_completed": 0,
-        "issues_unestimated": 0,
+        "tickets_unestimated": 0,
     }
 
 
-# --- issues in sprints ---------------------------------------------------
+# --- tickets in sprints ---------------------------------------------------
 
 
-def test_issues_can_be_filtered_to_a_sprint(client, team):
+def test_tickets_can_be_filtered_to_a_sprint(client, team):
     sprint = make_sprint(client, team)
-    make_issue(client, team, "In sprint", sprint_id=sprint["id"])
-    make_issue(client, team, "In backlog")
+    make_ticket(client, team, "In sprint", sprint_id=sprint["id"])
+    make_ticket(client, team, "In backlog")
 
     page = client.get(
-        f"/teams/{team['team']['id']}/issues",
+        f"/teams/{team['team']['id']}/tickets",
         params={"sprint_id": sprint["id"]},
         headers=team["headers"],
     ).json()
     assert [item["title"] for item in page["items"]] == ["In sprint"]
 
 
-def test_an_issue_can_be_moved_out_of_a_sprint(client, team):
+def test_a_ticket_can_be_moved_out_of_a_sprint(client, team):
     sprint = make_sprint(client, team)
-    issue = make_issue(client, team, "Work", sprint_id=sprint["id"])
+    ticket = make_ticket(client, team, "Work", sprint_id=sprint["id"])
 
     moved = client.patch(
-        f"/issues/{issue['id']}", json={"sprint_id": None}, headers=team["headers"]
+        f"/tickets/{ticket['id']}", json={"sprint_id": None}, headers=team["headers"]
     )
     assert moved.json()["sprint_id"] is None
 
@@ -339,7 +339,7 @@ def test_sprints_are_not_visible_across_teams(client, team, auth):
     ).status_code in (403, 404)
 
 
-def _sprint_of(client, team, issue):
-    return client.get(f"/issues/{issue['id']}", headers=team["headers"]).json()[
+def _sprint_of(client, team, ticket):
+    return client.get(f"/tickets/{ticket['id']}", headers=team["headers"]).json()[
         "sprint_id"
     ]

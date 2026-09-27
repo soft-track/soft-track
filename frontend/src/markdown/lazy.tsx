@@ -7,7 +7,7 @@ import type { MarkdownEditor as MarkdownEditorComponent } from '@/markdown/Markd
  * The markdown renderer and its editor, split out of the initial bundle.
  *
  * react-markdown and remark-gfm are about 160 kB raw, and nothing on the board
- * needs them until someone opens an issue or starts writing one. Loading them
+ * needs them until someone opens a ticket or starts writing one. Loading them
  * on that interaction keeps the first paint the size it was before markdown
  * existed.
  *

@@ -148,7 +148,7 @@ export function BurndownChart({ data }: { data: Burndown }) {
                 label: t('burndown.scope'),
                 value: t('burndown.points', { points: hovered.points_total }),
               },
-              { label: t('burndown.issuesLeft'), value: `${hovered.issues_remaining}` },
+              { label: t('burndown.ticketsLeft'), value: `${hovered.tickets_remaining}` },
             ]}
           />
         )}

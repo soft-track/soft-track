@@ -71,20 +71,20 @@ def delete_repository(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Disconnect a repository. Its links come off the issues with it."""
+    """Disconnect a repository. Its links come off the tickets with it."""
     integrations_service.delete_repository(session, current_user, repository_id)
 
 
-@router.get("/issues/{issue_id}/code-links", response_model=CodeLinks)
+@router.get("/tickets/{ticket_id}/code-links", response_model=CodeLinks)
 def list_code_links(
-    issue_id: int,
+    ticket_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """The branches, commits and pull requests that name this issue.
+    """The branches, commits and pull requests that name this ticket.
 
     Any member, unlike the repository list above: this carries no secrets, and
     "where is the code for this" is the question the whole feature exists to
     answer.
     """
-    return integrations_service.list_code_links(session, current_user, issue_id)
+    return integrations_service.list_code_links(session, current_user, ticket_id)

@@ -19,7 +19,7 @@ import { Loading } from '@/ui/Loading'
  *
  * A panel rather than a page: everything in it is a link to somewhere else,
  * and a full route would put a navigation between "something happened" and
- * the issue it happened on. Opening one marks it read, which is the only
+ * the ticket it happened on. Opening one marks it read, which is the only
  * read-state change most people will ever make deliberately.
  *
  * Rendered into a portal, and positioned from a measured rect rather than by
@@ -33,16 +33,16 @@ import { Loading } from '@/ui/Loading'
 export function NotificationsInbox({
   anchor,
   onClose,
-  onOpenIssue,
+  onOpenTicket,
 }: {
   anchor: DOMRect
   onClose: () => void
   /**
-   * Go to the issue a notification is about. The board's, since leaving it
-   * for the issue's page (#112) is the board's to do -- it keeps its own view
+   * Go to the ticket a notification is about. The board's, since leaving it
+   * for the ticket's page (#112) is the board's to do -- it keeps its own view
    * for when you come back.
    */
-  onOpenIssue: (issue: NotificationRead['issue']) => void
+  onOpenTicket: (ticket: NotificationRead['ticket']) => void
 }) {
   const { t } = useTranslation('notifications')
   const { notifications, isLoading, setRead, markAllRead } = useInbox()
@@ -50,9 +50,9 @@ export function NotificationsInbox({
 
   const open = async (notification: NotificationRead) => {
     onClose()
-    onOpenIssue(notification.issue)
+    onOpenTicket(notification.ticket)
     // After navigating, not before: the row is about to disappear behind the
-    // issue either way, and a failed PATCH should not swallow the click.
+    // ticket either way, and a failed PATCH should not swallow the click.
     if (!notification.read) await setRead(notification, true)
   }
 
@@ -154,10 +154,10 @@ function NotificationRow({
           </span>
           <span className="mt-0.5 flex items-baseline gap-1.5">
             <span className="identifier shrink-0 text-[11px] text-neutral-400">
-              {notification.issue.identifier}
+              {notification.ticket.identifier}
             </span>
             <span className="truncate text-[13px] text-neutral-900">
-              {notification.issue.title}
+              {notification.ticket.title}
             </span>
           </span>
           {notification.excerpt && (

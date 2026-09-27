@@ -12,8 +12,8 @@ The API sends **nudges, not data**. Each team has a server-sent event stream,
 
 | Event | Data | Means |
 |---|---|---|
-| `issue_changed` | `{"id": 42}` | Something about the ticket changed — fields, labels, links, files, time. |
-| `comment_added` | `{"issue_id": 42}` | Its thread changed — a comment, or a reaction. |
+| `ticket_changed` | `{"id": 42}` | Something about the ticket changed — fields, labels, links, files, time. |
+| `comment_added` | `{"ticket_id": 42}` | Its thread changed — a comment, or a reaction. |
 | `notification` | `{}` | *Your* inbox has something new. Only you receive these. |
 | `resync` | `{}` | You fell behind; refetch everything. |
 | `close` | `{}` or `{"team_id": 7}` | Stop, and do not reconnect: you were signed out, deactivated or removed from the team. |

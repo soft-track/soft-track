@@ -18,9 +18,9 @@ class AttachmentPreview(str, enum.Enum):
 
 class AttachmentRead(BaseModel):
     id: int
-    issue_id: int
+    ticket_id: int
     #: Set once a comment has claimed this file. Null means it belongs to the
-    #: issue itself -- typically embedded in the description.
+    #: ticket itself -- typically embedded in the description.
     comment_id: Optional[int] = None
     filename: str
     content_type: str
@@ -34,7 +34,7 @@ class AttachmentRead(BaseModel):
     preview: Optional[AttachmentPreview] = None
     #: Where the bytes are, relative to the API root. Relative on purpose: it
     #: is what gets written into markdown, and an absolute URL would bake this
-    #: deployment's hostname into the issue text forever.
+    #: deployment's hostname into the ticket text forever.
     url: str
     uploaded_by: UserPublic
     created_at: datetime

@@ -52,7 +52,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, select
 
 from lib_identity import oauth_providers
-from lib_identity.identity import create_user, find_user_by_email, issue_token
+from lib_identity.identity import create_user, find_user_by_email, ticket_token
 from lib_identity.models.identity import Token
 from lib_identity.models.oauth import ConnectedIdentity
 from lib_identity.oauth_providers import OAuthError, OAuthIdentity, Provider
@@ -674,7 +674,7 @@ def exchange(session: Session, ticket: str, handshake: str) -> Token:
             detail="That sign-in has expired",
         )
 
-    return issue_token(user)
+    return ticket_token(user)
 
 
 # ---------------------------------------------------------------------------

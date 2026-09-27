@@ -9,7 +9,7 @@ export const roadmap = {
   undated_one: '{{count}} epic has no target date — listed at the bottom.',
   undated_other: '{{count}} epics have no target date — listed at the bottom.',
   thisMonth: 'This month',
-  noIssues: 'No tickets yet',
+  noTickets: 'No tickets yet',
   noLead: 'No lead',
   overdue: 'Overdue',
 } as const

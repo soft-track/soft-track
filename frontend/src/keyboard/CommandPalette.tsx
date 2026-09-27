@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import type { IssueRead } from '@/api/generated/models'
+import type { TicketRead } from '@/api/generated/models'
 import { useTranslation } from '@/i18n'
 import { Icon } from '@/ui/Icon'
 import { useFocusTrap } from '@/ui/useFocusTrap'
@@ -9,7 +9,7 @@ export type Command = {
   id: string
   label: string
   hint?: string
-  /** Grouping header. Issues come last so commands stay reachable by typing. */
+  /** Grouping header. Tickets come last so commands stay reachable by typing. */
   group: string
   run: () => void
 }
@@ -23,13 +23,13 @@ export type Command = {
 export function CommandPalette({
   onClose,
   commands,
-  issues,
-  onOpenIssue,
+  tickets,
+  onOpenTicket,
 }: {
   onClose: () => void
   commands: Command[]
-  issues: IssueRead[]
-  onOpenIssue: (issue: IssueRead) => void
+  tickets: TicketRead[]
+  onOpenTicket: (ticket: TicketRead) => void
 }) {
   const { t } = useTranslation('keyboard')
   const dialogRef = useFocusTrap<HTMLDivElement>()
@@ -40,31 +40,31 @@ export function CommandPalette({
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase()
 
-    const issueCommands: Command[] = issues
-      .filter((issue) =>
+    const ticketCommands: Command[] = tickets
+      .filter((ticket) =>
         !needle
           ? true
-          : issue.identifier.toLowerCase().includes(needle) ||
-            issue.title.toLowerCase().includes(needle),
+          : ticket.identifier.toLowerCase().includes(needle) ||
+            ticket.title.toLowerCase().includes(needle),
       )
       .slice(0, 8)
-      .map((issue) => ({
-        id: `issue-${issue.id}`,
-        label: issue.title,
-        hint: t('palette.issueHint', {
-          identifier: issue.identifier,
-          status: issue.status.name,
+      .map((ticket) => ({
+        id: `ticket-${ticket.id}`,
+        label: ticket.title,
+        hint: t('palette.ticketHint', {
+          identifier: ticket.identifier,
+          status: ticket.status.name,
         }),
-        group: t('palette.issuesGroup'),
-        run: () => onOpenIssue(issue),
+        group: t('palette.ticketsGroup'),
+        run: () => onOpenTicket(ticket),
       }))
 
     const matching = commands.filter((command) =>
       !needle ? true : command.label.toLowerCase().includes(needle),
     )
 
-    return [...matching, ...issueCommands]
-  }, [query, commands, issues, onOpenIssue, t])
+    return [...matching, ...ticketCommands]
+  }, [query, commands, tickets, onOpenTicket, t])
 
   // Clamped during render rather than corrected in an effect: typing can
   // shorten the list under a highlight that is already past the end, and a

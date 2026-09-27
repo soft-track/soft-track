@@ -1,4 +1,4 @@
-/** Board → the bar that appears while issues are selected, and its errors. */
+/** Board → the bar that appears while tickets are selected, and its errors. */
 export const bulk = {
   toolbarLabel: 'Bulk actions',
   selected_one: '{{count}} selected',

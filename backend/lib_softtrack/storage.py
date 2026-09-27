@@ -80,7 +80,7 @@ class S3Storage:
 
     boto3 is imported here rather than at module scope because it is an
     optional dependency: a self-hoster using the local backend should not have
-    to install an AWS SDK to run an issue tracker.
+    to install an AWS SDK to run a ticket tracker.
 
     Credentials are deliberately not settings of this application. boto3's
     default chain (environment, shared config, instance role) already solves

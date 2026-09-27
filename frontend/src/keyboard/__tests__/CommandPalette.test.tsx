@@ -16,7 +16,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { IssueRead } from '@/api/generated/models'
+import type { TicketRead } from '@/api/generated/models'
 import { useOverlays } from '@/board/useOverlays'
 import { CommandPalette, type Command } from '@/keyboard/CommandPalette'
 import { useGlobalShortcuts } from '@/keyboard/useGlobalShortcuts'
@@ -24,7 +24,7 @@ import { useGlobalShortcuts } from '@/keyboard/useGlobalShortcuts'
 const run = { create: vi.fn(), shortcuts: vi.fn(), theme: vi.fn() }
 
 const COMMANDS: Command[] = [
-  { id: 'new-issue', label: 'Create issue', hint: 'C', group: 'Actions', run: run.create },
+  { id: 'new-ticket', label: 'Create ticket', hint: 'C', group: 'Actions', run: run.create },
   { id: 'shortcuts', label: 'Show keyboard shortcuts', hint: '?', group: 'Actions', run: run.shortcuts },
   { id: 'theme', label: 'Toggle theme', group: 'Actions', run: run.theme },
 ]
@@ -38,7 +38,7 @@ const ADA = {
   is_active: true,
 }
 
-const ISSUE: IssueRead = {
+const TICKET: TicketRead = {
   id: 1,
   team_id: 7,
   team_key: 'ENG',
@@ -57,27 +57,27 @@ const ISSUE: IssueRead = {
   updated_at: '2026-01-01T00:00:00Z',
 }
 
-function Harness({ onOpenIssue }: { onOpenIssue: (issue: IssueRead) => void }) {
+function Harness({ onOpenTicket }: { onOpenTicket: (ticket: TicketRead) => void }) {
   const overlays = useOverlays()
   const open = overlays.isOpen('palette')
   useGlobalShortcuts({
     togglePalette: () => overlays.toggle('palette'),
     closeTop: overlays.closeTop,
-    openNewIssue: () => overlays.open('newIssue'),
+    openNewTicket: () => overlays.open('newTicket'),
     openShortcuts: () => {},
     suppressed: open,
   })
   return (
     <>
       {/* Stands in for the layers the board can have open underneath -- the
-          issue detail panel, the new-issue modal. Only its presence matters. */}
-      {overlays.isOpen('newIssue') && <div role="dialog" aria-label="Layer underneath" />}
+          ticket detail panel, the new-ticket modal. Only its presence matters. */}
+      {overlays.isOpen('newTicket') && <div role="dialog" aria-label="Layer underneath" />}
       {open && (
         <CommandPalette
           onClose={() => overlays.close('palette')}
           commands={COMMANDS}
-          issues={[ISSUE]}
-          onOpenIssue={onOpenIssue}
+          tickets={[TICKET]}
+          onOpenTicket={onOpenTicket}
         />
       )}
     </>
@@ -85,9 +85,9 @@ function Harness({ onOpenIssue }: { onOpenIssue: (issue: IssueRead) => void }) {
 }
 
 function renderPalette() {
-  const onOpenIssue = vi.fn()
-  render(<Harness onOpenIssue={onOpenIssue} />)
-  return { onOpenIssue, user: userEvent.setup() }
+  const onOpenTicket = vi.fn()
+  render(<Harness onOpenTicket={onOpenTicket} />)
+  return { onOpenTicket, user: userEvent.setup() }
 }
 
 const dialog = () => screen.queryByRole('dialog', { name: 'Command palette' })
@@ -122,10 +122,10 @@ describe('CommandPalette', () => {
     expect(dialog()).toBeNull()
   })
 
-  it('lists every command and the issues until you type, then filters both', async () => {
+  it('lists every command and the tickets until you type, then filters both', async () => {
     const { user } = renderPalette()
     await user.keyboard('{Meta>}k{/Meta}')
-    expect(labels()).toEqual(['Create issue', 'Show keyboard shortcuts', 'Toggle theme', 'Fix login'])
+    expect(labels()).toEqual(['Create ticket', 'Show keyboard shortcuts', 'Toggle theme', 'Fix login'])
 
     await user.keyboard('theme')
     expect(labels()).toEqual(['Toggle theme'])
@@ -148,25 +148,25 @@ describe('CommandPalette', () => {
     expect(dialog()).toBeNull()
   })
 
-  it('opens a highlighted issue on Enter', async () => {
-    const { onOpenIssue, user } = renderPalette()
+  it('opens a highlighted ticket on Enter', async () => {
+    const { onOpenTicket, user } = renderPalette()
     await user.keyboard('{Meta>}k{/Meta}fix{Enter}')
 
-    expect(onOpenIssue).toHaveBeenCalledWith(ISSUE)
+    expect(onOpenTicket).toHaveBeenCalledWith(TICKET)
     expect(dialog()).toBeNull()
   })
 
   it('closes on Escape without running anything', async () => {
-    const { onOpenIssue, user } = renderPalette()
+    const { onOpenTicket, user } = renderPalette()
     await user.keyboard('{Meta>}k{/Meta}{Escape}')
 
     expect(dialog()).toBeNull()
     for (const fn of Object.values(run)) expect(fn).not.toHaveBeenCalled()
-    expect(onOpenIssue).not.toHaveBeenCalled()
+    expect(onOpenTicket).not.toHaveBeenCalled()
   })
 
   it('runs the result you click, and highlights the one under the pointer', async () => {
-    const { onOpenIssue, user } = renderPalette()
+    const { onOpenTicket, user } = renderPalette()
     await user.keyboard('{Meta>}k{/Meta}')
 
     await user.hover(screen.getByRole('option', { name: /Fix login/ }))
@@ -174,7 +174,7 @@ describe('CommandPalette', () => {
 
     await user.click(screen.getByRole('option', { name: /Toggle theme/ }))
     expect(run.theme).toHaveBeenCalledTimes(1)
-    expect(onOpenIssue).not.toHaveBeenCalled()
+    expect(onOpenTicket).not.toHaveBeenCalled()
     expect(dialog()).toBeNull()
   })
 
@@ -216,7 +216,7 @@ describe('CommandPalette', () => {
   it('moves the highlight with the arrow keys, wrapping at both ends', async () => {
     const { user } = renderPalette()
     await user.keyboard('{Meta>}k{/Meta}')
-    expect(highlighted()).toBe('Create issue')
+    expect(highlighted()).toBe('Create ticket')
 
     await user.keyboard('{ArrowDown}')
     expect(highlighted()).toBe('Show keyboard shortcuts')

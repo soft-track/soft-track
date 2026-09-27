@@ -124,8 +124,8 @@ def test_a_push_yields_the_branch_and_its_commits():
     branch, commit = events
     assert branch.external_id == "eng-42-fix"
     assert branch.url == "https://gh/acme/api/tree/eng-42-fix"
-    # Only the subject. An issue page showing a forty-line commit message is
-    # an issue page nobody scrolls past.
+    # Only the subject. A ticket page showing a forty-line commit message is
+    # a ticket page nobody scrolls past.
     assert commit.title == "ENG-42 fix it"
     assert commit.text.startswith("ENG-42 fix it")
 
@@ -137,7 +137,7 @@ def test_a_force_push_with_no_commits_is_still_the_branch():
 
 def test_a_tag_push_is_not_a_branch():
     """Same payload shape, none of the meaning -- and "v1.2.0" rendered as a
-    branch on an issue page is a link that cannot be checked out."""
+    branch on a ticket page is a link that cannot be checked out."""
     assert parse(GitProvider.github, "push", github_push(ref="refs/tags/v1.2.0")) == []
 
 
@@ -197,7 +197,7 @@ def test_events_github_does_not_describe_are_accepted_and_ignored():
     """Including `ping`, which is the first thing GitHub ever sends. A 400
     here fills the delivery log with red and teaches people to ignore it."""
     assert parse(GitProvider.github, "ping", {"zen": "..."}) == []
-    assert parse(GitProvider.github, "issues", {}) == []
+    assert parse(GitProvider.github, "tickets", {}) == []
 
 
 # --- GitLab ----------------------------------------------------------------
@@ -254,7 +254,7 @@ def test_a_gitlab_push_yields_the_branch_and_its_commits():
 
 def test_a_merge_request_uses_the_number_people_see():
     """`iid` is what is in the URL and on the page. `id` is a global database
-    key that means nothing to anybody reading the issue."""
+    key that means nothing to anybody reading the ticket."""
     (event,) = parse(
         GitProvider.gitlab, "Merge Request Hook", gitlab_merge_request(id=99999, iid=3)
     )
@@ -274,4 +274,4 @@ def test_gitlab_states_map_onto_the_same_three():
 
 
 def test_gitlab_events_that_are_not_described_are_ignored():
-    assert parse(GitProvider.gitlab, "Issue Hook", {}) == []
+    assert parse(GitProvider.gitlab, "Ticket Hook", {}) == []

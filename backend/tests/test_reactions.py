@@ -19,20 +19,20 @@ def join(client, team, person, role="member"):
 
 @pytest.fixture
 def thread(client, team, auth):
-    """An issue with one comment, and a second member to react alongside."""
-    issue = client.post(
-        f"/teams/{team['team']['id']}/issues",
+    """A ticket with one comment, and a second member to react alongside."""
+    ticket = client.post(
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": "Retry storm"},
         headers=team["headers"],
     ).json()
     comment = client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "Fixed by backing off."},
         headers=team["headers"],
     ).json()
     maya = auth(email="maya@softtrack.dev", full_name="Maya Chen")
     join(client, team, maya)
-    return {"issue": issue, "comment": comment, "maya": maya}
+    return {"ticket": ticket, "comment": comment, "maya": maya}
 
 
 def react(client, actor, comment, emoji, method="PUT"):
@@ -43,8 +43,8 @@ def react(client, actor, comment, emoji, method="PUT"):
     )
 
 
-def comments(client, actor, issue):
-    response = client.get(f"/issues/{issue['id']}/comments", headers=actor["headers"])
+def comments(client, actor, ticket):
+    response = client.get(f"/tickets/{ticket['id']}/comments", headers=actor["headers"])
     assert response.status_code == 200, response.text
     return response.json()["items"]
 
@@ -67,7 +67,7 @@ def test_reactions_come_back_embedded_in_the_comment_list(client, team, thread):
     react(client, team, thread["comment"], "heart")
     react(client, thread["maya"], thread["comment"], "heart")
 
-    [comment] = comments(client, team, thread["issue"])
+    [comment] = comments(client, team, thread["ticket"])
     [chip] = comment["reactions"]
     assert chip["count"] == 2
     # In the order they reacted: the tooltip reads as a timeline.
@@ -77,8 +77,8 @@ def test_reactions_come_back_embedded_in_the_comment_list(client, team, thread):
 def test_reacted_is_about_whoever_is_asking(client, team, auth, thread):
     react(client, thread["maya"], thread["comment"], "rocket")
 
-    [mine] = comments(client, thread["maya"], thread["issue"])[0]["reactions"]
-    [theirs] = comments(client, team, thread["issue"])[0]["reactions"]
+    [mine] = comments(client, thread["maya"], thread["ticket"])[0]["reactions"]
+    [theirs] = comments(client, team, thread["ticket"])[0]["reactions"]
     assert mine["reacted"] is True
     assert theirs["reacted"] is False
 
@@ -98,7 +98,7 @@ def test_one_person_can_give_several_reactions_shown_in_a_fixed_order(
     for emoji in ("eyes", "heart", "thumbs_up"):
         react(client, team, thread["comment"], emoji)
 
-    chips = comments(client, team, thread["issue"])[0]["reactions"]
+    chips = comments(client, team, thread["ticket"])[0]["reactions"]
     assert [chip["emoji"] for chip in chips] == ["thumbs_up", "heart", "eyes"]
 
 
@@ -107,7 +107,7 @@ def test_taking_a_reaction_back(client, team, thread):
     response = react(client, team, thread["comment"], "laugh", method="DELETE")
     assert response.status_code == 200
     assert response.json() == []
-    assert comments(client, team, thread["issue"])[0]["reactions"] == []
+    assert comments(client, team, thread["ticket"])[0]["reactions"] == []
 
 
 def test_you_can_only_take_back_your_own(client, team, thread):
@@ -148,7 +148,7 @@ def test_guests_see_reactions_but_cannot_react(client, team, auth, thread):
     join(client, team, guest, "guest")
     react(client, team, thread["comment"], "heart")
 
-    assert comments(client, guest, thread["issue"])[0]["reactions"][0]["count"] == 1
+    assert comments(client, guest, thread["ticket"])[0]["reactions"][0]["count"] == 1
     response = react(client, guest, thread["comment"], "heart")
     assert response.status_code == 403
     assert response.json()["code"] == "team_read_only"
@@ -156,18 +156,18 @@ def test_guests_see_reactions_but_cannot_react(client, team, auth, thread):
 
 def test_reacting_notifies_nobody(client, team, thread, session):
     """The whole point: quieter than a comment."""
-    # The issue's creator watches it, so a comment from Maya would notify them.
+    # The ticket's creator watches it, so a comment from Maya would notify them.
     before = len(session.exec(select(Notification)).all())
     react(client, thread["maya"], thread["comment"], "thumbs_up")
     assert len(session.exec(select(Notification)).all()) == before
 
 
-def test_an_issue_with_reactions_can_still_be_deleted(client, team, thread, session):
+def test_a_ticket_with_reactions_can_still_be_deleted(client, team, thread, session):
     react(client, team, thread["comment"], "thumbs_up")
     react(client, thread["maya"], thread["comment"], "heart")
 
     response = client.delete(
-        f"/issues/{thread['issue']['id']}", headers=team["headers"]
+        f"/tickets/{thread['ticket']['id']}", headers=team["headers"]
     )
     assert response.status_code == 204, response.text
     assert session.exec(select(CommentReaction)).all() == []
@@ -176,8 +176,8 @@ def test_an_issue_with_reactions_can_still_be_deleted(client, team, thread, sess
 def test_bulk_delete_clears_reactions_too(client, team, thread, session):
     react(client, team, thread["comment"], "thumbs_up")
     response = client.post(
-        f"/teams/{team['team']['id']}/issues/bulk-delete",
-        json={"issue_ids": [thread["issue"]["id"]]},
+        f"/teams/{team['team']['id']}/tickets/bulk-delete",
+        json={"ticket_ids": [thread["ticket"]["id"]]},
         headers=team["headers"],
     )
     assert response.status_code == 204, response.text
@@ -194,7 +194,7 @@ def test_reactions_cost_one_query_however_long_the_thread(
     def count_queries(n_comments):
         for index in range(n_comments):
             comment = client.post(
-                f"/issues/{thread['issue']['id']}/comments",
+                f"/tickets/{thread['ticket']['id']}/comments",
                 json={"body": f"note {index}"},
                 headers=team["headers"],
             ).json()
@@ -206,7 +206,7 @@ def test_reactions_cost_one_query_however_long_the_thread(
         engine = session.get_bind()
         event.listen(engine, "before_cursor_execute", listener)
         try:
-            page = list_comments(session, owner, thread["issue"]["id"], limit=200)
+            page = list_comments(session, owner, thread["ticket"]["id"], limit=200)
         finally:
             event.remove(engine, "before_cursor_execute", listener)
         assert all(len(item.reactions) == 2 for item in page.items[1:])

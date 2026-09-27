@@ -34,7 +34,7 @@ written for the move: the work did not change state, the column under it was
 removed, and a status event per ticket would put a step in every cumulative flow
 diagram on the day an admin tidied up the board.
 
-**History records categories, not statuses.** An `issueevent` row for a status
+**History records categories, not statuses.** An `ticketevent` row for a status
 change stores `started`, not "In Review". A chart of the past has to keep
 meaning something after a team renames a column, merges two, or deletes one —
 and the five categories are the only vocabulary that survives all of that. The

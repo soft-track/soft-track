@@ -90,7 +90,7 @@ export function AttachmentPreviewDialog({
       className="scrim fixed inset-0 z-40 flex items-center justify-center p-3 sm:p-6"
       onClick={(event) => {
         // A portal moves the DOM, not the React tree: stop here, or the click
-        // reaches the issue panel's backdrop and closes that too.
+        // reaches the ticket panel's backdrop and closes that too.
         event.stopPropagation()
         onClose()
       }}

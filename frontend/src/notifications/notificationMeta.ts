@@ -23,7 +23,7 @@ export const KIND_META: Record<NotificationKind, { icon: IconName; color: string
   status_changed: { icon: 'board', color: 'var(--color-accent-amber)' },
 }
 
-/** "Sam mentioned you" — the line above the issue title. */
+/** "Sam mentioned you" — the line above the ticket title. */
 export function describe(notification: NotificationRead): string {
   // Null actor is reserved for things no person did: a Jira import, and
   // whatever automation lands later. "Someone" is wrong for those, and the

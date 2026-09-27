@@ -1,4 +1,4 @@
-"""Search across issues and comments (issue #19).
+"""Search across tickets and comments (issue #19).
 
 These run on SQLite, which takes the FTS5 path (#85; see
 tests/test_search_fts.py for what is specific to it). The Postgres path is
@@ -8,9 +8,9 @@ attribution, snippets, paging) are dialect-independent by design.
 """
 
 
-def make_issue(client, team, title, description=None, **fields):
+def make_ticket(client, team, title, description=None, **fields):
     response = client.post(
-        f"/teams/{team['team']['id']}/issues",
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": title, "description": description, **fields},
         headers=team["headers"],
     )
@@ -32,23 +32,23 @@ def titles(page):
 
 
 def test_it_finds_a_word_in_the_title(client, team):
-    make_issue(client, team, "Fix the avatar colour bug")
-    make_issue(client, team, "Something else entirely")
+    make_ticket(client, team, "Fix the avatar colour bug")
+    make_ticket(client, team, "Something else entirely")
 
     assert titles(find(client, team, "avatar")) == ["Fix the avatar colour bug"]
 
 
 def test_it_finds_a_word_only_in_the_description(client, team):
     """The old client-side filter could not do this at all."""
-    make_issue(client, team, "Opaque title", "The migration deadlocks on startup")
+    make_ticket(client, team, "Opaque title", "The migration deadlocks on startup")
 
     assert titles(find(client, team, "deadlocks")) == ["Opaque title"]
 
 
 def test_it_finds_a_word_only_in_a_comment(client, team):
-    issue = make_issue(client, team, "Opaque title", "Nothing useful here")
+    ticket = make_ticket(client, team, "Opaque title", "Nothing useful here")
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "Turned out to be a stale nginx cache"},
         headers=team["headers"],
     )
@@ -57,20 +57,20 @@ def test_it_finds_a_word_only_in_a_comment(client, team):
 
 
 def test_it_is_case_insensitive(client, team):
-    make_issue(client, team, "Fix the Avatar bug")
+    make_ticket(client, team, "Fix the Avatar bug")
     assert len(find(client, team, "AVATAR")["items"]) == 1
     assert len(find(client, team, "avatar")["items"]) == 1
 
 
 def test_it_matches_a_phrase_across_words(client, team):
-    make_issue(client, team, "Rate limit the auth endpoints")
+    make_ticket(client, team, "Rate limit the auth endpoints")
     assert len(find(client, team, "limit the auth")["items"]) == 1
 
 
-def test_an_issue_matching_in_two_places_appears_once(client, team):
-    issue = make_issue(client, team, "Cache invalidation", "The cache is stale")
+def test_a_ticket_matching_in_two_places_appears_once(client, team):
+    ticket = make_ticket(client, team, "Cache invalidation", "The cache is stale")
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "cache again"},
         headers=team["headers"],
     )
@@ -79,7 +79,7 @@ def test_an_issue_matching_in_two_places_appears_once(client, team):
 
 
 def test_no_matches_is_an_empty_page_not_an_error(client, team):
-    make_issue(client, team, "Something")
+    make_ticket(client, team, "Something")
     page = find(client, team, "nothingmatchesthis")
     assert page["items"] == []
     assert page["total"] == 0
@@ -94,12 +94,12 @@ def test_a_blank_query_is_rejected(client, team):
 
 
 def test_a_title_match_is_attributed_to_the_title(client, team):
-    make_issue(client, team, "Avatar colours", "Some description")
+    make_ticket(client, team, "Avatar colours", "Some description")
     assert find(client, team, "Avatar")["items"][0]["matched_in"] == "title"
 
 
 def test_a_description_match_is_attributed_and_snippeted(client, team):
-    make_issue(client, team, "Opaque", "The deploy script deletes the volume")
+    make_ticket(client, team, "Opaque", "The deploy script deletes the volume")
     hit = find(client, team, "volume")["items"][0]
 
     assert hit["matched_in"] == "description"
@@ -109,9 +109,9 @@ def test_a_description_match_is_attributed_and_snippeted(client, team):
 def test_a_comment_match_says_so(client, team):
     """Otherwise a result whose title has nothing to do with the query
     looks like a bug in the search."""
-    issue = make_issue(client, team, "Opaque", "Nothing here")
+    ticket = make_ticket(client, team, "Opaque", "Nothing here")
     client.post(
-        f"/issues/{issue['id']}/comments",
+        f"/tickets/{ticket['id']}/comments",
         json={"body": "the culprit was a stale nginx cache"},
         headers=team["headers"],
     )
@@ -123,7 +123,7 @@ def test_a_comment_match_says_so(client, team):
 
 def test_a_snippet_is_a_window_not_the_whole_description(client, team):
     filler = "padding " * 200
-    make_issue(client, team, "Opaque", f"{filler} THENEEDLE {filler}")
+    make_ticket(client, team, "Opaque", f"{filler} THENEEDLE {filler}")
 
     hit = find(client, team, "THENEEDLE")["items"][0]
     assert "THENEEDLE" in hit["snippet"]
@@ -132,7 +132,7 @@ def test_a_snippet_is_a_window_not_the_whole_description(client, team):
 
 
 def test_the_hit_carries_what_a_result_row_needs(client, team):
-    make_issue(
+    make_ticket(
         client,
         team,
         "Avatar",
@@ -150,8 +150,8 @@ def test_the_hit_carries_what_a_result_row_needs(client, team):
 # --- tenancy -----------------------------------------------------------
 
 
-def test_it_never_returns_an_issue_from_a_team_you_are_not_in(client, team, auth):
-    make_issue(client, team, "Secret roadmap plans")
+def test_it_never_returns_a_ticket_from_a_team_you_are_not_in(client, team, auth):
+    make_ticket(client, team, "Secret roadmap plans")
 
     outsider = auth(email="outsider@softtrack.dev", full_name="Outsider")
     client.post(
@@ -165,13 +165,13 @@ def test_it_never_returns_an_issue_from_a_team_you_are_not_in(client, team, auth
 
 
 def test_it_searches_every_team_you_are_in(client, team, auth):
-    make_issue(client, team, "Shared word here")
+    make_ticket(client, team, "Shared word here")
 
     second = client.post(
         "/teams", json={"name": "Second", "key": "SEC"}, headers=team["headers"]
     ).json()
     client.post(
-        f"/teams/{second['id']}/issues",
+        f"/teams/{second['id']}/tickets",
         json={"title": "Shared word too"},
         headers=team["headers"],
     )
@@ -180,12 +180,12 @@ def test_it_searches_every_team_you_are_in(client, team, auth):
 
 
 def test_it_can_be_narrowed_to_one_team(client, team, auth):
-    make_issue(client, team, "Shared word here")
+    make_ticket(client, team, "Shared word here")
     second = client.post(
         "/teams", json={"name": "Second", "key": "SEC"}, headers=team["headers"]
     ).json()
     client.post(
-        f"/teams/{second['id']}/issues",
+        f"/teams/{second['id']}/tickets",
         json={"title": "Shared word too"},
         headers=team["headers"],
     )
@@ -201,7 +201,7 @@ def test_narrowing_to_a_team_you_are_not_in_returns_nothing(client, team, auth):
         "/teams", json={"name": "Other", "key": "OTH"}, headers=outsider["headers"]
     ).json()
     client.post(
-        f"/teams/{other['id']}/issues",
+        f"/teams/{other['id']}/tickets",
         json={"title": "Their secret"},
         headers=outsider["headers"],
     )
@@ -213,20 +213,20 @@ def test_narrowing_to_a_team_you_are_not_in_returns_nothing(client, team, auth):
 
 
 def test_a_title_match_outranks_a_comment_match(client, team):
-    buried = make_issue(client, team, "Unrelated title", "nothing")
+    buried = make_ticket(client, team, "Unrelated title", "nothing")
     client.post(
-        f"/issues/{buried['id']}/comments",
+        f"/tickets/{buried['id']}/comments",
         json={"body": "mentions webhooks in passing"},
         headers=team["headers"],
     )
-    make_issue(client, team, "Webhooks are broken")
+    make_ticket(client, team, "Webhooks are broken")
 
     assert titles(find(client, team, "webhooks"))[0] == "Webhooks are broken"
 
 
 def test_results_are_paginated(client, team):
     for i in range(5):
-        make_issue(client, team, f"Paginated match {i}")
+        make_ticket(client, team, f"Paginated match {i}")
 
     page = find(client, team, "Paginated", limit=2)
     assert len(page["items"]) == 2

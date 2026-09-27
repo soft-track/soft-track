@@ -2,7 +2,7 @@ import type {
   AutomationRuleRead,
   AutomationTrigger,
   SprintRead,
-  IssuePriority,
+  TicketPriority,
   LabelRead,
   ProjectRead,
   RuleActions,
@@ -18,7 +18,7 @@ import { formatList } from '@/i18n/format'
  *
  * A rule is a row of ids, and a row of ids is unreadable. Every list of rules
  * anybody has ever had to audit was audited by reading it out loud, so the
- * settings page renders exactly that -- "When an issue is created, if it is
+ * settings page renders exactly that -- "When a ticket is created, if it is
  * urgent, set status to Todo" -- from the same pieces the editor collects.
  *
  * Pure and in its own module so it can be tested without a DOM, and so the
@@ -34,14 +34,14 @@ import { formatList } from '@/i18n/format'
 // Getters over the catalog, so every caller keeps reading
 // `TRIGGER_LABELS[trigger]` and gets the current language's words.
 export const TRIGGER_LABELS: Record<AutomationTrigger, string> = {
-  get issue_created() {
-    return i18n.t('automations:trigger.issue_created')
+  get ticket_created() {
+    return i18n.t('automations:trigger.ticket_created')
   },
   get status_changed() {
     return i18n.t('automations:trigger.status_changed')
   },
-  get issue_assigned() {
-    return i18n.t('automations:trigger.issue_assigned')
+  get ticket_assigned() {
+    return i18n.t('automations:trigger.ticket_assigned')
   },
   get comment_added() {
     return i18n.t('automations:trigger.comment_added')
@@ -105,13 +105,13 @@ function sprintName(vocabulary: RuleVocabulary, id: number): string {
 }
 
 // Mid-clause: "its priority is urgent" -- the catalog's clause words.
-function priorityName(priority: IssuePriority): string {
+function priorityName(priority: TicketPriority): string {
   return i18n.t(`automations:priorityInClause.${priority}`)
 }
 
 /**
  * The conditions, one clause each. Empty means the rule fires on everything
- * its trigger reaches, which the caller renders as "any issue" rather than as
+ * its trigger reaches, which the caller renders as "any ticket" rather than as
  * nothing at all — a blank line there reads as a rule that is broken.
  */
 export function describeConditions(

@@ -11,7 +11,7 @@ test('a mention in a comment shows up in the mentioned person’s inbox', async 
 }) => {
   const team = await makeTeam(request, author)
   await api(request, author, 'post', `/teams/${team.id}/members`, { email: mentioned.email })
-  const issue = await api(request, author, 'post', `/teams/${team.id}/issues`, {
+  const ticket = await api(request, author, 'post', `/teams/${team.id}/tickets`, {
     title: 'Needs a second pair of eyes',
   })
 
@@ -19,7 +19,7 @@ test('a mention in a comment shows up in the mentioned person’s inbox', async 
   const authorContext = await browser.newContext()
   const authorPage = await authorContext.newPage()
   await signIn(authorPage, author)
-  await authorPage.goto(`/${team.key}/issue/${issue.number}`)
+  await authorPage.goto(`/${team.key}/ticket/${ticket.number}`)
   const composer = authorPage.getByPlaceholder('Leave a comment…')
   await composer.fill(`@${mentioned.username} could you take a look?`)
   await authorPage.getByRole('button', { name: 'Send' }).click()

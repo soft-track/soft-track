@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
- * Issue templates in team settings (#97): admins write, order and delete
- * them; members see what the new-issue form will offer.
+ * Ticket templates in team settings (#97): admins write, order and delete
+ * them; members see what the new-ticket form will offer.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
@@ -39,11 +39,11 @@ vi.mock('@/api/generated/endpoints/teams/teams', async (importOriginal) => ({
 }))
 vi.mock('@/api/generated/endpoints/templates/templates', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/generated/endpoints/templates/templates')>()),
-  useListTemplatesTeamsTeamIdIssueTemplatesGet: () => ({ data: mocks.templates, isLoading: false }),
-  useCreateTemplateTeamsTeamIdIssueTemplatesPost: () => mocks.create,
-  useUpdateTemplateIssueTemplatesTemplateIdPatch: () => mocks.update,
-  useReorderTemplatesTeamsTeamIdIssueTemplatesOrderPut: () => mocks.reorder,
-  useDeleteTemplateIssueTemplatesTemplateIdDelete: () => mocks.remove,
+  useListTemplatesTeamsTeamIdTicketTemplatesGet: () => ({ data: mocks.templates, isLoading: false }),
+  useCreateTemplateTeamsTeamIdTicketTemplatesPost: () => mocks.create,
+  useUpdateTemplateTicketTemplatesTemplateIdPatch: () => mocks.update,
+  useReorderTemplatesTeamsTeamIdTicketTemplatesOrderPut: () => mocks.reorder,
+  useDeleteTemplateTicketTemplatesTemplateIdDelete: () => mocks.remove,
 }))
 
 const BUG = { id: 1, team_id: 7, name: 'Bug report', body: '## Steps to reproduce\n\n1. ', position: 0 }

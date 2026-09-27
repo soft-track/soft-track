@@ -51,9 +51,9 @@ class ErrorCode(str, enum.Enum):
 
     # --- something you named does not exist ------------------------------------
     team_not_found = "team_not_found"
-    issue_not_found = "issue_not_found"
-    #: Some of a bulk edit's issues are missing or on another team.
-    issues_not_found = "issues_not_found"
+    ticket_not_found = "ticket_not_found"
+    #: Some of a bulk edit's tickets are missing or on another team.
+    tickets_not_found = "tickets_not_found"
     parent_not_found = "parent_not_found"
     project_not_found = "project_not_found"
     sprint_not_found = "sprint_not_found"
@@ -105,9 +105,9 @@ class ErrorCode(str, enum.Enum):
     link_to_self = "link_to_self"
     parent_is_self = "parent_is_self"
     parent_other_team = "parent_other_team"
-    #: Sub-issues are one level deep.
-    parent_is_subissue = "parent_is_subissue"
-    issue_has_subissues = "issue_has_subissues"
+    #: Sub-tickets are one level deep.
+    parent_is_subticket = "parent_is_subticket"
+    ticket_has_subtickets = "ticket_has_subtickets"
     labels_conflict = "labels_conflict"
     status_order_incomplete = "status_order_incomplete"
     template_order_incomplete = "template_order_incomplete"
@@ -119,7 +119,7 @@ class ErrorCode(str, enum.Enum):
     not_your_comment = "not_your_comment"
     #: A date worked that has not happened yet.
     worklog_in_future = "worklog_in_future"
-    #: Moving an issue to the team it is already on (#98).
+    #: Moving a ticket to the team it is already on (#98).
     transfer_same_team = "transfer_same_team"
     view_other_team = "view_other_team"
     view_private_default = "view_private_default"

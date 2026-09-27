@@ -14,7 +14,7 @@ import { useListTeamMembersTeamsTeamIdMembersGet } from '@/api/generated/endpoin
 import { StatusCategory, type StatusRead, type TeamRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
-import { CATEGORY_META, CATEGORY_ORDER } from '@/issues/issueMeta'
+import { CATEGORY_META, CATEGORY_ORDER } from '@/tickets/ticketMeta'
 import { Trans, useTranslation } from '@/i18n'
 import { useTeamByKey } from '@/team/useTeams'
 import { Icon } from '@/ui/Icon'
@@ -316,9 +316,9 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
 }
 
 /**
- * Deleting a column asks where its issues go.
+ * Deleting a column asks where its tickets go.
  *
- * Not defaulted and not skippable: issues are the point of the tracker, and
+ * Not defaulted and not skippable: tickets are the point of the tracker, and
  * guessing which column somebody's work should land in is not a decision to
  * make on their behalf.
  */

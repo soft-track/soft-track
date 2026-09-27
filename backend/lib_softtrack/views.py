@@ -1,4 +1,4 @@
-"""Saved views: named filter sets over a team's issues, and where you land.
+"""Saved views: named filter sets over a team's tickets, and where you land.
 
 Two things live here that are easy to get wrong separately and easy to keep
 straight together:
@@ -352,7 +352,7 @@ def set_my_default(
 
     if payload.view_id is None:
         # Removing the override falls back to the team's default rather than
-        # to "all issues" -- "no preference" is what the row's absence means.
+        # to "all tickets" -- "no preference" is what the row's absence means.
         if existing is not None:
             session.delete(existing)
     else:

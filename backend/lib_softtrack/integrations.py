@@ -1,8 +1,8 @@
-"""Connecting repositories, and turning what they send into links on issues.
+"""Connecting repositories, and turning what they send into links on tickets.
 
-The problem this exists for: nothing connected an issue to the code that
+The problem this exists for: nothing connected a ticket to the code that
 implements it, so the status had to be moved by hand -- twice, once when the
-branch went up and once when it merged, on every issue, for ever.
+branch went up and once when it merged, on every ticket, for ever.
 
 The shape of the answer is deliberately narrow. SoftTrack does not clone, does
 not call the provider's API and holds no access token. It is told things, by a
@@ -14,13 +14,13 @@ against every repository in the org.
 Three rules everything here keeps:
 
 **The team is the boundary.** A repository is connected by one team, and text
-arriving from it resolves only to that team's issues. See
+arriving from it resolves only to that team's tickets. See
 `identifiers.resolve` -- resolving globally would make every connected
 repository a way into every board on the instance.
 
 **A redelivery changes nothing twice.** Webhooks are at-least-once, and both
 providers have a "redeliver" button that people press when they are debugging.
-So links are upserted on `(repository, kind, external_id, issue)` and the
+So links are upserted on `(repository, kind, external_id, ticket)` and the
 automation triggers fire on transitions -- a row appearing, a pull request
 actually becoming merged -- rather than on a payload arriving.
 
@@ -51,7 +51,7 @@ from lib_softtrack.tables import (
     CodeLink,
     CodeLinkKind,
     GitProvider,
-    Issue,
+    Ticket,
     PullRequestState,
     Repository,
     Team,
@@ -66,9 +66,9 @@ from lib_softtrack.webhooks import CodeEvent, WebhookError
 from web import settings
 from lib_utils.errors import ErrorCode, api_error
 
-#: How many commits from one push are worth recording against an issue. A
+#: How many commits from one push are worth recording against a ticket. A
 #: branch merged from a fork, or a rebase of a long-lived branch, can carry
-#: hundreds -- and an issue page listing three hundred commits is one nobody
+#: hundreds -- and a ticket page listing three hundred commits is one nobody
 #: reads past the first screen. The branch and the pull request are the useful
 #: links; the commits are colour.
 MAX_COMMITS_PER_DELIVERY = 20
@@ -204,7 +204,7 @@ def delete_repository(session: Session, current_user: User, repository_id: int) 
     """Disconnect a repository, and take its links with it.
 
     The links hold a foreign key here, so they have to go either way. It is
-    also the right outcome: a branch shown on an issue is a link somebody is
+    also the right outcome: a branch shown on a ticket is a link somebody is
     meant to be able to click, and one belonging to a repository this team no
     longer has connected is a link into somewhere it cannot see.
     """
@@ -222,7 +222,7 @@ def delete_repository(session: Session, current_user: User, repository_id: int) 
 
 
 # ---------------------------------------------------------------------------
-# Reading the links on an issue
+# Reading the links on a ticket
 # ---------------------------------------------------------------------------
 
 
@@ -245,17 +245,17 @@ def _link_to_read(link: CodeLink, repository: Repository) -> CodeLinkRead:
     )
 
 
-def list_code_links(session: Session, current_user: User, issue_id: int) -> CodeLinks:
-    """Everything connected to one issue, newest first within each group."""
-    from lib_softtrack.issues import get_issue_or_404
+def list_code_links(session: Session, current_user: User, ticket_id: int) -> CodeLinks:
+    """Everything connected to one ticket, newest first within each group."""
+    from lib_softtrack.tickets import get_ticket_or_404
 
-    issue = get_issue_or_404(session, issue_id)
-    require_team_member(issue.team_id, current_user, session)
+    ticket = get_ticket_or_404(session, ticket_id)
+    require_team_member(ticket.team_id, current_user, session)
 
     rows = session.exec(
         select(CodeLink, Repository)
         .join(Repository, Repository.id == CodeLink.repository_id)
-        .where(CodeLink.issue_id == issue_id)
+        .where(CodeLink.ticket_id == ticket_id)
         .order_by(CodeLink.id.desc())
     ).all()
 
@@ -271,14 +271,14 @@ def list_code_links(session: Session, current_user: User, issue_id: int) -> Code
     return links
 
 
-def delete_links_for_issue(session: Session, issue_id: int) -> None:
-    """Drop the code links for an issue being deleted.
+def delete_links_for_ticket(session: Session, ticket_id: int) -> None:
+    """Drop the code links for a ticket being deleted.
 
     They hold a foreign key to it. Same call and same reasoning as
-    `notifications.delete_for_issue`.
+    `notifications.delete_for_ticket`.
     """
     for link in session.exec(
-        select(CodeLink).where(CodeLink.issue_id == issue_id)
+        select(CodeLink).where(CodeLink.ticket_id == ticket_id)
     ).all():
         session.delete(link)
 
@@ -331,7 +331,7 @@ def receive(
         # The signature proved the delivery came from somebody holding this
         # connection's secret; this proves it is about the repository the
         # connection is for. A webhook pasted onto the wrong repository would
-        # otherwise link that project's commits to this team's issues.
+        # otherwise link that project's commits to this team's tickets.
         raise WebhookError(
             400,
             f"This webhook is connected to {repository.full_name}, "
@@ -354,7 +354,7 @@ def receive(
                 touched.append(identifier)
 
     session.commit()
-    return WebhookReceipt(events=len(events), links=links, issues=touched)
+    return WebhookReceipt(events=len(events), links=links, tickets=touched)
 
 
 def _capped(events: list[CodeEvent]) -> list[CodeEvent]:
@@ -375,26 +375,26 @@ def _capped(events: list[CodeEvent]) -> list[CodeEvent]:
 
 
 def _apply(session: Session, repository: Repository, event: CodeEvent) -> list[str]:
-    """Link one event to the issues it names, and fire what that sets off.
+    """Link one event to the tickets it names, and fire what that sets off.
 
     Returns the identifiers touched, for the receipt.
     """
-    issues = identifiers.resolve(session, repository.team_id, event.text)
-    if not issues:
+    tickets = identifiers.resolve(session, repository.team_id, event.text)
+    if not tickets:
         return []
 
     team = session.get(Team, repository.team_id)
     touched: list[str] = []
 
-    for issue in issues:
-        trigger = _upsert(session, repository, event, issue)
-        touched.append(f"{team.key}-{issue.number}")
+    for ticket in tickets:
+        trigger = _upsert(session, repository, event, ticket)
+        touched.append(f"{team.key}-{ticket.number}")
         if trigger is not None:
             # Flushed first so the link exists before a rule can act on the
-            # issue -- a rule that posts a comment saying "a PR is open"
+            # ticket -- a rule that posts a comment saying "a PR is open"
             # should not race the row that says so.
             session.flush()
-            rules_service.on_code_event(session, issue, trigger)
+            rules_service.on_code_event(session, ticket, trigger)
 
     return touched
 
@@ -403,7 +403,7 @@ def _upsert(
     session: Session,
     repository: Repository,
     event: CodeEvent,
-    issue: Issue,
+    ticket: Ticket,
 ) -> Optional[AutomationTrigger]:
     """Create or update the link, and say which trigger this was, if any.
 
@@ -418,14 +418,14 @@ def _upsert(
             CodeLink.repository_id == repository.id,
             CodeLink.kind == event.kind,
             CodeLink.external_id == event.external_id,
-            CodeLink.issue_id == issue.id,
+            CodeLink.ticket_id == ticket.id,
         )
     ).first()
 
     if existing is None:
         session.add(
             CodeLink(
-                issue_id=issue.id,
+                ticket_id=ticket.id,
                 repository_id=repository.id,
                 kind=event.kind,
                 external_id=event.external_id,
@@ -441,7 +441,7 @@ def _upsert(
             # A pull request SoftTrack is seeing for the first time *already*
             # merged -- a webhook added after the fact, or a redelivery of an
             # old event -- is the merge, not the opening. Reporting it as
-            # "opened" would move the issue to In Review and leave it there.
+            # "opened" would move the ticket to In Review and leave it there.
             return (
                 AutomationTrigger.pull_request_merged
                 if event.state is PullRequestState.merged

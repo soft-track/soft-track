@@ -32,12 +32,12 @@ export const errors = {
   not_your_comment:
     'Only the person who wrote a comment can edit it. Its author or a team admin can delete it.',
 
-  // Tickets and epics (#211). The API still words these as issues and
-  // projects, after its own paths; the interface says what it calls them
-  // everywhere else.
-  issue_not_found:
+  // Tickets and epics (#211). The interface's own words for them: the API
+  // still calls an epic a project, and several of these say more than its
+  // `detail` does.
+  ticket_not_found:
     'That ticket could not be found. It may have been deleted, or moved to another team.',
-  issues_not_found: 'Some of those tickets are no longer on this team. Refresh and try again.',
+  tickets_not_found: 'Some of those tickets are no longer on this team. Refresh and try again.',
   parent_not_found: 'That parent ticket could not be found.',
   project_not_found: 'That epic could not be found. It may have been deleted.',
   not_on_this_team:
@@ -50,9 +50,9 @@ export const errors = {
   rank_neighbour_is_self: 'A ticket cannot be placed next to itself.',
   parent_is_self: 'A ticket cannot be its own parent.',
   parent_other_team: 'A sub-ticket must be on the same team as its parent.',
-  parent_is_subissue:
+  parent_is_subticket:
     'That ticket is already a sub-ticket. Sub-tickets are one level deep, so it cannot also be a parent.',
-  issue_has_subissues:
+  ticket_has_subtickets:
     'This ticket has sub-tickets of its own, so it cannot become a sub-ticket. Move or detach its children first.',
   transfer_same_team: 'The ticket is already on that team.',
   team_has_no_statuses: 'This team has no statuses to put a ticket in.',

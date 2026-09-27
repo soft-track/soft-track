@@ -3,9 +3,9 @@
 import pytest
 
 
-def make_issue(client, team, title="Sized work", **fields):
+def make_ticket(client, team, title="Sized work", **fields):
     response = client.post(
-        f"/teams/{team['team']['id']}/issues",
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": title, **fields},
         headers=team["headers"],
     )
@@ -26,17 +26,17 @@ def summary(client, team):
 
 @pytest.mark.parametrize("points", [1, 2, 3, 5, 8])
 def test_every_point_on_the_scale_is_accepted(client, team, points):
-    assert make_issue(client, team, estimate=points)["estimate"] == points
+    assert make_ticket(client, team, estimate=points)["estimate"] == points
 
 
-def test_an_issue_starts_unsized(client, team):
-    assert make_issue(client, team)["estimate"] is None
+def test_a_ticket_starts_unsized(client, team):
+    assert make_ticket(client, team)["estimate"] is None
 
 
 @pytest.mark.parametrize("points", [0, 4, 6, 7, 13, -1, 100])
 def test_a_value_off_the_scale_is_rejected(client, team, points):
     response = client.post(
-        f"/teams/{team['team']['id']}/issues",
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": "Bad estimate", "estimate": points},
         headers=team["headers"],
     )
@@ -46,7 +46,7 @@ def test_a_value_off_the_scale_is_rejected(client, team, points):
 def test_the_rejection_names_the_scale(client, team):
     """A 422 a person can act on, rather than a bare type error."""
     response = client.post(
-        f"/teams/{team['team']['id']}/issues",
+        f"/teams/{team['team']['id']}/tickets",
         json={"title": "Bad estimate", "estimate": 7},
         headers=team["headers"],
     )
@@ -56,41 +56,41 @@ def test_the_rejection_names_the_scale(client, team):
 
 
 def test_an_estimate_can_be_set_and_changed_later(client, team):
-    issue = make_issue(client, team)
+    ticket = make_ticket(client, team)
     updated = client.patch(
-        f"/issues/{issue['id']}", json={"estimate": 5}, headers=team["headers"]
+        f"/tickets/{ticket['id']}", json={"estimate": 5}, headers=team["headers"]
     )
     assert updated.json()["estimate"] == 5
 
     again = client.patch(
-        f"/issues/{issue['id']}", json={"estimate": 8}, headers=team["headers"]
+        f"/tickets/{ticket['id']}", json={"estimate": 8}, headers=team["headers"]
     )
     assert again.json()["estimate"] == 8
 
 
 def test_an_estimate_can_be_cleared(client, team):
     """An explicit null means "unsize this", and must not be ignored."""
-    issue = make_issue(client, team, estimate=3)
+    ticket = make_ticket(client, team, estimate=3)
     cleared = client.patch(
-        f"/issues/{issue['id']}", json={"estimate": None}, headers=team["headers"]
+        f"/tickets/{ticket['id']}", json={"estimate": None}, headers=team["headers"]
     )
     assert cleared.json()["estimate"] is None
 
 
 def test_an_omitted_estimate_leaves_the_stored_one_alone(client, team):
     """The other half of the pair above: omitted is not the same as null."""
-    issue = make_issue(client, team, estimate=3)
+    ticket = make_ticket(client, team, estimate=3)
     patched = client.patch(
-        f"/issues/{issue['id']}", json={"title": "Renamed"}, headers=team["headers"]
+        f"/tickets/{ticket['id']}", json={"title": "Renamed"}, headers=team["headers"]
     )
     assert patched.json()["estimate"] == 3
 
 
 def test_the_estimate_survives_the_list_endpoint(client, team):
-    """The list builds IssueRead by a different path than the detail route."""
-    make_issue(client, team, estimate=8)
+    """The list builds TicketRead by a different path than the detail route."""
+    make_ticket(client, team, estimate=8)
     listed = client.get(
-        f"/teams/{team['team']['id']}/issues", headers=team["headers"]
+        f"/teams/{team['team']['id']}/tickets", headers=team["headers"]
     ).json()
     assert [item["estimate"] for item in listed["items"]] == [8]
 
@@ -101,7 +101,7 @@ def test_the_estimate_survives_the_list_endpoint(client, team):
 def test_an_empty_team_reports_zeroes_for_every_column(client, team):
     data = summary(client, team)
     assert data["total_points"] == 0
-    assert data["total_issues"] == 0
+    assert data["total_tickets"] == 0
     # Every one of the team's own columns is present so the board never has
     # to guard on a key. Keyed by status id, because the columns are rows now
     # and two teams can both have a "Done".
@@ -112,31 +112,31 @@ def test_an_empty_team_reports_zeroes_for_every_column(client, team):
 
 
 def test_points_are_summed_per_column(client, team):
-    make_issue(client, team, estimate=3, status_id=team["status_ids"]["Todo"])
-    make_issue(client, team, estimate=5, status_id=team["status_ids"]["Todo"])
-    make_issue(client, team, estimate=8, status_id=team["status_ids"]["Done"])
+    make_ticket(client, team, estimate=3, status_id=team["status_ids"]["Todo"])
+    make_ticket(client, team, estimate=5, status_id=team["status_ids"]["Todo"])
+    make_ticket(client, team, estimate=8, status_id=team["status_ids"]["Done"])
 
     data = summary(client, team)
     todo = str(team["status_ids"]["Todo"])
     done = str(team["status_ids"]["Done"])
     assert data["by_status"][todo]["points"] == 8
-    assert data["by_status"][todo]["issue_count"] == 2
+    assert data["by_status"][todo]["ticket_count"] == 2
     assert data["by_status"][done]["points"] == 8
     assert data["total_points"] == 16
-    assert data["total_issues"] == 3
+    assert data["total_tickets"] == 3
 
 
-def test_unsized_issues_are_counted_not_treated_as_zero(client, team):
-    make_issue(client, team, estimate=5, status_id=team["status_ids"]["Todo"])
-    make_issue(client, team, status_id=team["status_ids"]["Todo"])
+def test_unsized_tickets_are_counted_not_treated_as_zero(client, team):
+    make_ticket(client, team, estimate=5, status_id=team["status_ids"]["Todo"])
+    make_ticket(client, team, status_id=team["status_ids"]["Todo"])
 
     data = summary(client, team)
     assert data["by_status"][str(team["status_ids"]["Todo"])] == {
         "points": 5,
-        "issue_count": 2,
+        "ticket_count": 2,
         "unestimated_count": 1,
     }
-    assert data["unestimated_issues"] == 1
+    assert data["unestimated_tickets"] == 1
 
 
 def test_points_are_summed_per_assignee(client, team, auth):
@@ -147,9 +147,9 @@ def test_points_are_summed_per_assignee(client, team, auth):
         headers=team["headers"],
     )
 
-    make_issue(client, team, estimate=8, assignee_id=team["user"]["id"])
-    make_issue(client, team, estimate=3, assignee_id=other["user"]["id"])
-    make_issue(client, team, estimate=2)  # unassigned
+    make_ticket(client, team, estimate=8, assignee_id=team["user"]["id"])
+    make_ticket(client, team, estimate=3, assignee_id=other["user"]["id"])
+    make_ticket(client, team, estimate=2)  # unassigned
 
     loads = summary(client, team)["by_assignee"]
     assert [load["points"] for load in loads] == [8, 3, 2]
@@ -162,9 +162,9 @@ def test_points_are_summed_per_assignee(client, team, auth):
 
 def test_unassigned_work_sorts_last_however_heavy(client, team):
     """It is a backlog to distribute, not somebody's load."""
-    make_issue(client, team, estimate=8)
-    make_issue(client, team, estimate=8)
-    make_issue(client, team, estimate=1, assignee_id=team["user"]["id"])
+    make_ticket(client, team, estimate=8)
+    make_ticket(client, team, estimate=8)
+    make_ticket(client, team, estimate=1, assignee_id=team["user"]["id"])
 
     loads = summary(client, team)["by_assignee"]
     assert loads[-1]["user"] is None
@@ -172,7 +172,7 @@ def test_unassigned_work_sorts_last_however_heavy(client, team):
 
 
 def test_the_summary_does_not_leak_across_teams(client, team, auth):
-    make_issue(client, team, estimate=8)
+    make_ticket(client, team, estimate=8)
 
     outsider = auth(email="outsider@softtrack.dev", full_name="Outsider")
     response = client.get(

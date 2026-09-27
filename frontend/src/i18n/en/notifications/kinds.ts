@@ -1,4 +1,4 @@
-/** Inbox → the line above each issue, one whole sentence per kind: with a person, and without. */
+/** Inbox → the line above each ticket, one whole sentence per kind: with a person, and without. */
 export const kinds = {
   assigned: {
     byActor: '{{actor}} assigned this to you',

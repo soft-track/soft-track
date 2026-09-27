@@ -1,6 +1,6 @@
-"""Watching issues, raising notifications, and reading the inbox.
+"""Watching tickets, raising notifications, and reading the inbox.
 
-Every notification in SoftTrack starts here. The issue and comment services
+Every notification in SoftTrack starts here. The ticket and comment services
 call the three `on_*` hooks below and know nothing else about it -- the same
 arrangement as `history.py`, and for the same reason: "who gets told what"
 is one policy, and it is only correct if it lives in one place.
@@ -9,7 +9,7 @@ Two rules the hooks all obey, so no caller has to remember them:
 
 * Nobody is notified about their own action. An inbox that tells you what you
   just did is an inbox people learn to ignore.
-* One notification per person per event. An update that assigns an issue *and*
+* One notification per person per event. An update that assigns a ticket *and*
   moves it to In Progress is one thing that happened, and the assignment is
   the part worth saying.
 """
@@ -22,7 +22,7 @@ from sqlmodel import Session, func, select
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.mentions import mentioned_user_ids
 from lib_softtrack.models.notifications import (
-    NotificationIssue,
+    NotificationTicket,
     NotificationRead,
     NotificationSettings,
     UnreadCount,
@@ -31,8 +31,8 @@ from lib_softtrack.models.notifications import (
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.tables import (
     Comment,
-    Issue,
-    IssueWatch,
+    Ticket,
+    TicketWatch,
     Notification,
     NotificationKind,
     Team,
@@ -51,58 +51,58 @@ EXCERPT_LENGTH = 140
 # ---------------------------------------------------------------------------
 
 
-def watcher_ids(session: Session, issue_id: int) -> set[int]:
+def watcher_ids(session: Session, ticket_id: int) -> set[int]:
     rows = session.exec(
-        select(IssueWatch.user_id).where(
-            IssueWatch.issue_id == issue_id,
-            IssueWatch.watching == True,  # noqa: E712 -- SQL comparison
+        select(TicketWatch.user_id).where(
+            TicketWatch.ticket_id == ticket_id,
+            TicketWatch.watching == True,  # noqa: E712 -- SQL comparison
         )
     ).all()
     return set(rows)
 
 
-def _watch_row(session: Session, issue_id: int, user_id: int) -> Optional[IssueWatch]:
+def _watch_row(session: Session, ticket_id: int, user_id: int) -> Optional[TicketWatch]:
     return session.exec(
-        select(IssueWatch).where(
-            IssueWatch.issue_id == issue_id, IssueWatch.user_id == user_id
+        select(TicketWatch).where(
+            TicketWatch.ticket_id == ticket_id, TicketWatch.user_id == user_id
         )
     ).first()
 
 
-def auto_watch(session: Session, issue_id: int, user_id: int) -> None:
+def auto_watch(session: Session, ticket_id: int, user_id: int) -> None:
     """Start watching because of something the person did.
 
-    Only when they have never expressed a preference. Someone who unwatched an
-    issue and then answered a question on it meant to answer the question, not
-    to resubscribe -- see IssueWatch's docstring.
+    Only when they have never expressed a preference. Someone who unwatched a
+    ticket and then answered a question on it meant to answer the question, not
+    to resubscribe -- see TicketWatch's docstring.
     """
-    if _watch_row(session, issue_id, user_id) is None:
-        session.add(IssueWatch(issue_id=issue_id, user_id=user_id))
+    if _watch_row(session, ticket_id, user_id) is None:
+        session.add(TicketWatch(ticket_id=ticket_id, user_id=user_id))
 
 
-def get_watch_state(session: Session, current_user: User, issue_id: int) -> WatchState:
-    from lib_softtrack.issues import get_issue_or_404
+def get_watch_state(session: Session, current_user: User, ticket_id: int) -> WatchState:
+    from lib_softtrack.tickets import get_ticket_or_404
     from lib_softtrack.teams import require_team_member
 
-    issue = get_issue_or_404(session, issue_id)
-    require_team_member(issue.team_id, current_user, session)
+    ticket = get_ticket_or_404(session, ticket_id)
+    require_team_member(ticket.team_id, current_user, session)
 
-    row = _watch_row(session, issue_id, current_user.id)
+    row = _watch_row(session, ticket_id, current_user.id)
     return WatchState(watching=bool(row and row.watching))
 
 
 def set_watching(
-    session: Session, current_user: User, issue_id: int, watching: bool
+    session: Session, current_user: User, ticket_id: int, watching: bool
 ) -> WatchState:
-    from lib_softtrack.issues import get_issue_or_404
+    from lib_softtrack.tickets import get_ticket_or_404
     from lib_softtrack.teams import require_team_member
 
-    issue = get_issue_or_404(session, issue_id)
-    require_team_member(issue.team_id, current_user, session)
+    ticket = get_ticket_or_404(session, ticket_id)
+    require_team_member(ticket.team_id, current_user, session)
 
-    row = _watch_row(session, issue_id, current_user.id)
+    row = _watch_row(session, ticket_id, current_user.id)
     if row is None:
-        row = IssueWatch(issue_id=issue_id, user_id=current_user.id)
+        row = TicketWatch(ticket_id=ticket_id, user_id=current_user.id)
     row.watching = watching
     session.add(row)
     session.commit()
@@ -117,9 +117,9 @@ def set_watching(
 def _deliverable(session: Session, team_id: int, user_ids: Iterable[int]) -> set[int]:
     """Narrow a set of recipients to people who should still hear about it.
 
-    Current members of the issue's team, and active accounts. Watches outlive
+    Current members of the ticket's team, and active accounts. Watches outlive
     membership -- somebody who left the team last month is still a row in
-    `issuewatch` -- and continuing to mail them the team's business is a leak,
+    `ticketwatch` -- and continuing to mail them the team's business is a leak,
     not a courtesy.
     """
     ids = {user_id for user_id in user_ids if user_id is not None}
@@ -143,17 +143,17 @@ def _raise(
     *,
     recipients: Iterable[int],
     kind: NotificationKind,
-    issue: Issue,
+    ticket: Ticket,
     actor: Optional[User],
     comment: Optional[Comment] = None,
 ) -> None:
     """Add a row per recipient. Flushed with whatever transaction is open."""
-    for user_id in _deliverable(session, issue.team_id, recipients):
+    for user_id in _deliverable(session, ticket.team_id, recipients):
         session.add(
             Notification(
                 user_id=user_id,
                 kind=kind,
-                issue_id=issue.id,
+                ticket_id=ticket.id,
                 comment_id=comment.id if comment else None,
                 actor_id=actor.id if actor else None,
             )
@@ -170,33 +170,33 @@ def _own(actor: Optional[User]) -> set[int]:
     return {actor.id} if actor is not None else set()
 
 
-def on_issue_created(session: Session, issue: Issue, actor: User) -> None:
-    """Filing an issue watches it; assigning it to someone tells them.
+def on_ticket_created(session: Session, ticket: Ticket, actor: User) -> None:
+    """Filing a ticket watches it; assigning it to someone tells them.
 
     A mention does not auto-watch. Being named in a description is somebody
     else's decision about you, and it is a weaker signal than the three things
     you did yourself.
     """
-    auto_watch(session, issue.id, actor.id)
+    auto_watch(session, ticket.id, actor.id)
 
     assigned: set[int] = set()
-    if issue.assignee_id and issue.assignee_id != actor.id:
-        assigned = {issue.assignee_id}
-        auto_watch(session, issue.id, issue.assignee_id)
+    if ticket.assignee_id and ticket.assignee_id != actor.id:
+        assigned = {ticket.assignee_id}
+        auto_watch(session, ticket.id, ticket.assignee_id)
         _raise(
             session,
             recipients=assigned,
             kind=NotificationKind.assigned,
-            issue=issue,
+            ticket=ticket,
             actor=actor,
         )
 
-    mentioned = mentioned_user_ids(session, issue.team_id, issue.description)
+    mentioned = mentioned_user_ids(session, ticket.team_id, ticket.description)
     _raise(
         session,
         recipients=mentioned - assigned - {actor.id},
         kind=NotificationKind.mentioned,
-        issue=issue,
+        ticket=ticket,
         actor=actor,
     )
 
@@ -208,12 +208,12 @@ def on_issue_created(session: Session, issue: Issue, actor: User) -> None:
 WATCHED_FIELDS = ("assignee_id", "status_id", "description")
 
 
-def snapshot(issue: Issue) -> dict[str, object]:
-    return {field: getattr(issue, field) for field in WATCHED_FIELDS}
+def snapshot(ticket: Ticket) -> dict[str, object]:
+    return {field: getattr(ticket, field) for field in WATCHED_FIELDS}
 
 
-def on_issue_updated(
-    session: Session, issue: Issue, before: dict[str, object], actor: Optional[User]
+def on_ticket_updated(
+    session: Session, ticket: Ticket, before: dict[str, object], actor: Optional[User]
 ) -> None:
     """Tell the new assignee, anyone newly named, and then the watchers.
 
@@ -222,29 +222,29 @@ def on_issue_updated(
 
     A null `actor` means an automation rule made the change. Nobody is
     subtracted in that case, deliberately: "nobody is notified about their own
-    action" is about a person recognising what they just did, and an issue
+    action" is about a person recognising what they just did, and a ticket
     that moved on its own is the opposite of that.
     """
     assigned: set[int] = set()
-    if issue.assignee_id != before.get("assignee_id") and issue.assignee_id:
-        auto_watch(session, issue.id, issue.assignee_id)
-        if actor is None or issue.assignee_id != actor.id:
-            assigned = {issue.assignee_id}
+    if ticket.assignee_id != before.get("assignee_id") and ticket.assignee_id:
+        auto_watch(session, ticket.id, ticket.assignee_id)
+        if actor is None or ticket.assignee_id != actor.id:
+            assigned = {ticket.assignee_id}
             _raise(
                 session,
                 recipients=assigned,
                 kind=NotificationKind.assigned,
-                issue=issue,
+                ticket=ticket,
                 actor=actor,
             )
 
     mentioned: set[int] = set()
-    if issue.description != before.get("description"):
+    if ticket.description != before.get("description"):
         # Only handles that were not there before. Editing a typo in a
         # description should not re-ping everyone it names.
-        was = mentioned_user_ids(session, issue.team_id, before.get("description"))
+        was = mentioned_user_ids(session, ticket.team_id, before.get("description"))
         mentioned = (
-            mentioned_user_ids(session, issue.team_id, issue.description)
+            mentioned_user_ids(session, ticket.team_id, ticket.description)
             - was
             - assigned
             - _own(actor)
@@ -253,52 +253,52 @@ def on_issue_updated(
             session,
             recipients=mentioned,
             kind=NotificationKind.mentioned,
-            issue=issue,
+            ticket=ticket,
             actor=actor,
         )
 
-    if issue.status_id != before.get("status_id"):
+    if ticket.status_id != before.get("status_id"):
         _raise(
             session,
-            recipients=watcher_ids(session, issue.id)
+            recipients=watcher_ids(session, ticket.id)
             - assigned
             - mentioned
             - _own(actor),
             kind=NotificationKind.status_changed,
-            issue=issue,
+            ticket=ticket,
             actor=actor,
         )
 
 
 def on_comment_created(
-    session: Session, issue: Issue, comment: Comment, actor: Optional[User]
+    session: Session, ticket: Ticket, comment: Comment, actor: Optional[User]
 ) -> None:
     """A null `actor` is a comment an automation rule wrote -- see
     `Comment.author_id`. It watches nothing and excludes nobody."""
     if actor is not None:
-        auto_watch(session, issue.id, actor.id)
+        auto_watch(session, ticket.id, actor.id)
 
-    mentioned = mentioned_user_ids(session, issue.team_id, comment.body) - _own(actor)
+    mentioned = mentioned_user_ids(session, ticket.team_id, comment.body) - _own(actor)
     _raise(
         session,
         recipients=mentioned,
         kind=NotificationKind.mentioned,
-        issue=issue,
+        ticket=ticket,
         actor=actor,
         comment=comment,
     )
     _raise(
         session,
-        recipients=watcher_ids(session, issue.id) - mentioned - _own(actor),
+        recipients=watcher_ids(session, ticket.id) - mentioned - _own(actor),
         kind=NotificationKind.commented,
-        issue=issue,
+        ticket=ticket,
         actor=actor,
         comment=comment,
     )
 
 
 def on_comment_edited(
-    session: Session, issue: Issue, comment: Comment, before: str, actor: User
+    session: Session, ticket: Ticket, comment: Comment, before: str, actor: User
 ) -> None:
     """Tell anyone the edit newly names (#93), and nobody else.
 
@@ -306,14 +306,14 @@ def on_comment_edited(
     a typo should not re-ping everyone the comment mentions, and watchers
     heard about the comment when it was posted.
     """
-    was = mentioned_user_ids(session, issue.team_id, before)
+    was = mentioned_user_ids(session, ticket.team_id, before)
     _raise(
         session,
-        recipients=mentioned_user_ids(session, issue.team_id, comment.body)
+        recipients=mentioned_user_ids(session, ticket.team_id, comment.body)
         - was
         - _own(actor),
         kind=NotificationKind.mentioned,
-        issue=issue,
+        ticket=ticket,
         actor=actor,
         comment=comment,
     )
@@ -331,19 +331,19 @@ def delete_for_comment(session: Session, comment_id: int) -> None:
         session.delete(row)
 
 
-def delete_for_issue(session: Session, issue_id: int) -> None:
-    """Drop the watches and notifications pointing at an issue being deleted.
+def delete_for_ticket(session: Session, ticket_id: int) -> None:
+    """Drop the watches and notifications pointing at a ticket being deleted.
 
     Both hold foreign keys to it (and to its comments), so this runs before
-    the issue goes. There is nothing to keep: an inbox row whose issue no
+    the ticket goes. There is nothing to keep: an inbox row whose ticket no
     longer exists is a link to a 404.
     """
     for row in session.exec(
-        select(Notification).where(Notification.issue_id == issue_id)
+        select(Notification).where(Notification.ticket_id == ticket_id)
     ).all():
         session.delete(row)
     for row in session.exec(
-        select(IssueWatch).where(IssueWatch.issue_id == issue_id)
+        select(TicketWatch).where(TicketWatch.ticket_id == ticket_id)
     ).all():
         session.delete(row)
 
@@ -373,17 +373,19 @@ def expand_notifications(
     if not notifications:
         return []
 
-    issues = {
-        issue.id: issue
-        for issue in session.exec(
-            select(Issue).where(Issue.id.in_({row.issue_id for row in notifications}))
+    tickets = {
+        ticket.id: ticket
+        for ticket in session.exec(
+            select(Ticket).where(
+                Ticket.id.in_({row.ticket_id for row in notifications})
+            )
         ).all()
     }
     teams = {
         team.id: team
         for team in session.exec(
             select(Team).where(
-                Team.id.in_({issue.team_id for issue in issues.values()})
+                Team.id.in_({ticket.team_id for ticket in tickets.values()})
             )
         ).all()
     }
@@ -408,10 +410,10 @@ def expand_notifications(
 
     expanded = []
     for row in notifications:
-        issue = issues.get(row.issue_id)
-        team = teams.get(issue.team_id) if issue else None
-        if issue is None or team is None:
-            # Unreachable while `delete_for_issue` runs on every issue delete,
+        ticket = tickets.get(row.ticket_id)
+        team = teams.get(ticket.team_id) if ticket else None
+        if ticket is None or team is None:
+            # Unreachable while `delete_for_ticket` runs on every ticket delete,
             # which is the point: if a path is ever added that misses it, the
             # inbox skips the orphan rather than returning a 500 for every
             # notification the person has.
@@ -422,13 +424,13 @@ def expand_notifications(
             NotificationRead(
                 id=row.id,
                 kind=row.kind,
-                issue=NotificationIssue(
-                    id=issue.id,
-                    team_id=issue.team_id,
+                ticket=NotificationTicket(
+                    id=ticket.id,
+                    team_id=ticket.team_id,
                     team_key=team.key,
-                    number=issue.number,
-                    identifier=f"{team.key}-{issue.number}",
-                    title=issue.title,
+                    number=ticket.number,
+                    identifier=f"{team.key}-{ticket.number}",
+                    title=ticket.title,
                 ),
                 actor=UserPublic.model_validate(actor) if actor else None,
                 excerpt=excerpt(comment.body) if comment else None,

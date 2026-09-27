@@ -4,7 +4,7 @@ Four charts, each answering a question about the past: how many points were
 outstanding on the ninth, how much did the last six sprints deliver, is work
 piling up in review, is the backlog growing.
 
-No query over the current rows can answer any of those. The `issueevent` table
+No query over the current rows can answer any of those. The `ticketevent` table
 is the only source — every change to a ticket's status, sprint, estimate,
 epic, assignee or priority writes a row — and each report replays those events up to the end of each day
 and counts what the board looked like then. One replay serves all of them.
@@ -43,4 +43,4 @@ ago". Changes made by an automation rule are credited to "Automation".
 - Assignee and priority changes are recorded too. No chart uses them; they're
   there because they're what people ask a ticket's history about. Label
   changes aren't recorded.
-- The panel shows the latest 100 changes, via `GET /issues/{id}/events`.
+- The panel shows the latest 100 changes, via `GET /tickets/{id}/events`.

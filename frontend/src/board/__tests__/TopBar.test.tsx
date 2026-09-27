@@ -30,7 +30,7 @@ vi.mock('@/notifications/useNotifications', () => ({
   useUnreadCount: () => 0,
 }))
 
-const OBJECT_URL = 'blob:http://localhost/issues-csv'
+const OBJECT_URL = 'blob:http://localhost/tickets-csv'
 
 function status(id: number, name: string): StatusRead {
   return { id, team_id: 7, name, category: 'unstarted', position: id, color: '#888' }
@@ -59,8 +59,8 @@ const PROJECT: ProjectRead = {
   created_at: '2026-01-01T00:00:00Z',
   state: 'in_progress',
   archived: false,
-  issue_count: 0,
-  completed_issue_count: 0,
+  ticket_count: 0,
+  completed_ticket_count: 0,
 }
 
 const LABEL: LabelRead = { id: 4, team_id: 7, name: 'Bug', color: '#456' }
@@ -74,11 +74,11 @@ const SPRINT: SprintRead = {
   ends_at: '2026-01-19T09:00:00Z',
   state: 'active',
   progress: {
-    issues_total: 0,
-    issues_completed: 0,
+    tickets_total: 0,
+    tickets_completed: 0,
     points_total: 0,
     points_completed: 0,
-    issues_unestimated: 0,
+    tickets_unestimated: 0,
   },
 }
 
@@ -117,7 +117,7 @@ function renderTopBar({
         onGroupingChange={vi.fn()}
         sort={DEFAULT_SORT}
         onSortChange={vi.fn()}
-        onNewIssue={vi.fn()}
+        onNewTicket={vi.fn()}
         onOpenSidebar={vi.fn()}
         search={search}
         onSearchChange={vi.fn()}
@@ -128,7 +128,7 @@ function renderTopBar({
         notificationsOpen={false}
         onToggleNotifications={vi.fn()}
         onCloseNotifications={vi.fn()}
-        onOpenNotifiedIssue={vi.fn()}
+        onOpenNotifiedTicket={vi.fn()}
       />
     </TeamProvider>,
   )
@@ -192,12 +192,12 @@ describe('TopBar export', () => {
     expect(button.title).toBe('Download these tickets as CSV')
   })
 
-  it("asks the export endpoint for the team's issues", async () => {
+  it("asks the export endpoint for the team's tickets", async () => {
     const user = renderTopBar()
     await user.click(exportButton())
 
     const { path, params, config } = requestedUrl()
-    expect(path).toBe('/teams/7/issues/export')
+    expect(path).toBe('/teams/7/tickets/export')
     // Nothing is filtered, so nothing is narrowed: an empty query string
     // rather than a parameter set to nothing.
     expect(params).toEqual({})
@@ -209,7 +209,7 @@ describe('TopBar export', () => {
     await user.click(exportButton())
 
     const { path, params } = requestedUrl()
-    expect(path).toBe('/teams/7/issues/export')
+    expect(path).toBe('/teams/7/tickets/export')
     expect(params).toEqual({
       status_id: '3',
       priority: 'high',

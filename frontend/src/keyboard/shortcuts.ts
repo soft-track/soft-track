@@ -19,7 +19,7 @@ export type ShortcutGroup = {
 export const SHORTCUT_GROUPS: ShortcutGroup[] = [
   group('anywhere', [
     shortcut(['⌘', 'K'], 'openPalette'),
-    shortcut(['C'], 'createIssue'),
+    shortcut(['C'], 'createTicket'),
     shortcut(['/'], 'focusSearch'),
     shortcut(['?'], 'showList'),
     shortcut(['Esc'], 'closeTop'),
@@ -39,7 +39,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     shortcut(['⇧', 'Click'], 'selectRange'),
     shortcut(['Esc'], 'clearSelection'),
   ]),
-  group('issue', [
+  group('ticket', [
     shortcut(['S'], 'changeStatus'),
     shortcut(['P'], 'changePriority'),
     shortcut(['A'], 'changeAssignee'),

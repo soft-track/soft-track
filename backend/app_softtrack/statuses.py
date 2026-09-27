@@ -74,7 +74,7 @@ def update_status(
     return statuses_service.update_status(session, current_user, status_id, payload)
 
 
-# A body on DELETE rather than a query parameter: where the issues go is not
+# A body on DELETE rather than a query parameter: where the tickets go is not
 # optional, and a required body is the shape that says so.
 @router.delete(
     "/statuses/{status_id}", response_model=list[StatusRead], dependencies=[team_writer]
@@ -85,9 +85,9 @@ def delete_status(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Remove a column, moving its issues to another one.
+    """Remove a column, moving its tickets to another one.
 
     Returns the remaining statuses, because deleting one is the only operation
-    whose result the board cannot work out for itself -- the issues moved.
+    whose result the board cannot work out for itself -- the tickets moved.
     """
     return statuses_service.delete_status(session, current_user, status_id, payload)

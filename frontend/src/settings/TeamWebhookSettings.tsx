@@ -28,9 +28,9 @@ import { Loading } from '@/ui/Loading'
 
 /** What an admin can subscribe to, in the words the settings page uses. */
 const EVENT_OPTIONS = [
-  { event: 'issue.created', label: 'webhooks.events.issueCreated' },
-  { event: 'issue.updated', label: 'webhooks.events.issueUpdated' },
-  { event: 'issue.status_changed', label: 'webhooks.events.issueStatusChanged' },
+  { event: 'ticket.created', label: 'webhooks.events.ticketCreated' },
+  { event: 'ticket.updated', label: 'webhooks.events.ticketUpdated' },
+  { event: 'ticket.status_changed', label: 'webhooks.events.ticketStatusChanged' },
   { event: 'comment.created', label: 'webhooks.events.commentCreated' },
   { event: 'sprint.started', label: 'webhooks.events.sprintStarted' },
   { event: 'sprint.completed', label: 'webhooks.events.sprintCompleted' },
@@ -82,7 +82,7 @@ function Webhooks({ team }: { team: TeamRead }) {
   const create = useCreateWebhookTeamsTeamIdOutboundWebhooksPost()
 
   const [url, setUrl] = useState('')
-  const [events, setEvents] = useState<Set<WebhookEvent>>(new Set(['issue.created']))
+  const [events, setEvents] = useState<Set<WebhookEvent>>(new Set(['ticket.created']))
   const [fresh, setFresh] = useState<OutboundWebhookCreated | null>(null)
   const [error, setError] = useState<string | null>(null)
 

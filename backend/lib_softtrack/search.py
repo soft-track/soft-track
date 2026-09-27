@@ -1,4 +1,4 @@
-"""Full-text search over issue titles, descriptions and comments.
+"""Full-text search over ticket titles, descriptions and comments.
 
 Two implementations behind one function, chosen by the dialect at runtime:
 
@@ -37,7 +37,7 @@ from lib_softtrack.models.statuses import StatusRead
 from lib_softtrack.search_fts import fts_query
 from lib_softtrack.tables import (
     Comment,
-    Issue,
+    Ticket,
     Team,
     TeamMember,
     User,
@@ -48,7 +48,7 @@ from lib_softtrack.tables import (
 SNIPPET_RADIUS = 90
 
 
-def search_issues(
+def search_tickets(
     session: Session,
     current_user: User,
     query: str,
@@ -86,41 +86,45 @@ def search_issues(
     else:
         condition, order_by = _like_query(query, team_ids)
 
-    total = session.exec(select(func.count()).select_from(Issue).where(condition)).one()
+    total = session.exec(
+        select(func.count()).select_from(Ticket).where(condition)
+    ).one()
 
-    issues = list(
+    tickets = list(
         session.exec(
-            select(Issue)
+            select(Ticket)
             .where(condition)
             .order_by(*order_by)
             .offset(offset)
             .limit(limit)
         ).all()
     )
-    if not issues:
+    if not tickets:
         return Page(items=[], total=total, limit=limit, offset=offset)
 
     # One query for every matching comment on the page, rather than one per
-    # result. Ordered so the first row per issue is the earliest match.
-    # The same matching rule as the search itself, so a comment that found an
-    # issue through stemming ("deploying" for "deploy") is the one quoted.
+    # result. Ordered so the first row per ticket is the earliest match.
+    # The same matching rule as the search itself, so a comment that found a
+    # ticket through stemming ("deploying" for "deploy") is the one quoted.
     comment_matches = (
         Comment.id.in_(_fts_matches("comment_fts", fts_query(query)))
         if fts
         else cast(Comment.body, String).ilike(f"%{query}%")
     )
-    comment_by_issue: dict[int, str] = {}
+    comment_by_ticket: dict[int, str] = {}
     for comment in session.exec(
         select(Comment)
-        .where(Comment.issue_id.in_([issue.id for issue in issues]), comment_matches)
+        .where(
+            Comment.ticket_id.in_([ticket.id for ticket in tickets]), comment_matches
+        )
         .order_by(Comment.created_at)
     ).all():
-        comment_by_issue.setdefault(comment.issue_id, comment.body)
+        comment_by_ticket.setdefault(comment.ticket_id, comment.body)
 
     teams = {
         team.id: team
         for team in session.exec(
-            select(Team).where(Team.id.in_({issue.team_id for issue in issues}))
+            select(Team).where(Team.id.in_({ticket.team_id for ticket in tickets}))
         ).all()
     }
     # Search reaches across every team the caller is in, so a page of hits can
@@ -129,25 +133,27 @@ def search_issues(
         status.id: status
         for status in session.exec(
             select(WorkflowStatus).where(
-                WorkflowStatus.id.in_({issue.status_id for issue in issues})
+                WorkflowStatus.id.in_({ticket.status_id for ticket in tickets})
             )
         ).all()
     }
 
     items = []
-    for issue in issues:
-        matched_in, snippet = _attribute(issue, query, comment_by_issue.get(issue.id))
+    for ticket in tickets:
+        matched_in, snippet = _attribute(
+            ticket, query, comment_by_ticket.get(ticket.id)
+        )
         items.append(
             SearchHit(
-                id=issue.id,
-                identifier=f"{teams[issue.team_id].key}-{issue.number}",
-                title=issue.title,
-                status=StatusRead.model_validate(statuses[issue.status_id]),
-                priority=issue.priority,
-                team_id=issue.team_id,
-                team_key=teams[issue.team_id].key,
-                number=issue.number,
-                updated_at=issue.updated_at,
+                id=ticket.id,
+                identifier=f"{teams[ticket.team_id].key}-{ticket.number}",
+                title=ticket.title,
+                status=StatusRead.model_validate(statuses[ticket.status_id]),
+                priority=ticket.priority,
+                team_id=ticket.team_id,
+                team_key=teams[ticket.team_id].key,
+                number=ticket.number,
+                updated_at=ticket.updated_at,
                 matched_in=matched_in,
                 snippet=snippet,
             )
@@ -165,7 +171,7 @@ _ENGLISH = literal_column("'english'")
 
 
 def _document():
-    """The searchable text of an issue.
+    """The searchable text of a ticket.
 
     Concatenated with `||` rather than `concat_ws`, because `concat_ws` is
     STABLE and Postgres refuses to build an index on a non-IMMUTABLE
@@ -174,7 +180,7 @@ def _document():
     and fall back to a sequential scan.
     """
     return func.to_tsvector(
-        _ENGLISH, Issue.title + " " + func.coalesce(Issue.description, "")
+        _ENGLISH, Ticket.title + " " + func.coalesce(Ticket.description, "")
     )
 
 
@@ -182,18 +188,18 @@ def _postgres_query(query: str, team_ids: list[int]):
     document = _document()
     tsquery = func.plainto_tsquery(_ENGLISH, query)
 
-    comment_matches = sa_select(Comment.issue_id).where(
+    comment_matches = sa_select(Comment.ticket_id).where(
         func.to_tsvector(_ENGLISH, Comment.body).op("@@")(tsquery)
     )
 
-    condition = (Issue.team_id.in_(team_ids)) & or_(
+    condition = (Ticket.team_id.in_(team_ids)) & or_(
         document.op("@@")(tsquery),
-        Issue.id.in_(comment_matches),
+        Ticket.id.in_(comment_matches),
     )
-    # Relevance first, recency as the tie-break: two equally relevant issues
+    # Relevance first, recency as the tie-break: two equally relevant tickets
     # are not equally interesting, and the fresher one almost always is.
     rank = cast(func.ts_rank(document, tsquery), Float)
-    return condition, (rank.desc(), Issue.updated_at.desc())
+    return condition, (rank.desc(), Ticket.updated_at.desc())
 
 
 def _fts_ready(session: Session) -> bool:
@@ -202,7 +208,7 @@ def _fts_ready(session: Session) -> bool:
     return (
         session.exec(
             text(
-                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'issue_fts'"
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'ticket_fts'"
             )
         ).first()
         is not None
@@ -228,52 +234,52 @@ def _fts_matches(table: str, match: str):
 def _fts_query(match: str, team_ids: list[int]):
     """The FTS5 search, held to the same contract as the Postgres one.
 
-    Relevance first, from the issue's own title and description; an issue
-    found only through a comment comes after every issue whose own text
-    matched, as with `ts_rank` on Postgres, which scores such an issue 0.
+    Relevance first, from the ticket's own title and description; a ticket
+    found only through a comment comes after every ticket whose own text
+    matched, as with `ts_rank` on Postgres, which scores such a ticket 0.
     Recency breaks ties. bm25() is "lower is better", so it sorts ascending.
     """
     scored = (
         text(
-            "SELECT rowid AS id, bm25(issue_fts) AS score"
-            " FROM issue_fts WHERE issue_fts MATCH :match"
+            "SELECT rowid AS id, bm25(ticket_fts) AS score"
+            " FROM ticket_fts WHERE ticket_fts MATCH :match"
         )
         .bindparams(match=match)
         .columns(id=Integer, score=Float)
         .subquery()
     )
     comment_ids = _fts_matches("comment_fts", match)
-    found_via_comment = sa_select(Comment.issue_id).where(Comment.id.in_(comment_ids))
+    found_via_comment = sa_select(Comment.ticket_id).where(Comment.id.in_(comment_ids))
 
-    condition = (Issue.team_id.in_(team_ids)) & or_(
-        Issue.id.in_(sa_select(scored.c.id)),
-        Issue.id.in_(found_via_comment),
+    condition = (Ticket.team_id.in_(team_ids)) & or_(
+        Ticket.id.in_(sa_select(scored.c.id)),
+        Ticket.id.in_(found_via_comment),
     )
-    score = sa_select(scored.c.score).where(scored.c.id == Issue.id).scalar_subquery()
+    score = sa_select(scored.c.score).where(scored.c.id == Ticket.id).scalar_subquery()
     # Past any real bm25() score, which is never positive.
     unmatched = 1e9
-    return condition, (func.coalesce(score, unmatched).asc(), Issue.updated_at.desc())
+    return condition, (func.coalesce(score, unmatched).asc(), Ticket.updated_at.desc())
 
 
 def _like_query(query: str, team_ids: list[int]):
     pattern = f"%{query}%"
-    comment_matches = sa_select(Comment.issue_id).where(
+    comment_matches = sa_select(Comment.ticket_id).where(
         cast(Comment.body, String).ilike(pattern)
     )
 
-    condition = (Issue.team_id.in_(team_ids)) & or_(
-        cast(Issue.title, String).ilike(pattern),
-        cast(Issue.description, String).ilike(pattern),
-        Issue.id.in_(comment_matches),
+    condition = (Ticket.team_id.in_(team_ids)) & or_(
+        cast(Ticket.title, String).ilike(pattern),
+        cast(Ticket.description, String).ilike(pattern),
+        Ticket.id.in_(comment_matches),
     )
     # No ranking function available, so approximate it: a title hit is almost
     # always what someone typing a couple of words is looking for.
-    title_first = cast(Issue.title, String).ilike(pattern).desc()
-    return condition, (title_first, Issue.updated_at.desc())
+    title_first = cast(Ticket.title, String).ilike(pattern).desc()
+    return condition, (title_first, Ticket.updated_at.desc())
 
 
 def _attribute(
-    issue: Issue, query: str, comment_body: Optional[str]
+    ticket: Ticket, query: str, comment_body: Optional[str]
 ) -> tuple[str, str]:
     """Which field to credit the hit to, and the snippet to show for it.
 
@@ -281,16 +287,16 @@ def _attribute(
     the search term does not look like a mistake.
     """
     needle = query.lower()
-    if needle in (issue.title or "").lower():
-        return "title", _snippet(issue.description, query) or issue.title
-    if needle in (issue.description or "").lower():
-        return "description", _snippet(issue.description, query)
+    if needle in (ticket.title or "").lower():
+        return "title", _snippet(ticket.description, query) or ticket.title
+    if needle in (ticket.description or "").lower():
+        return "description", _snippet(ticket.description, query)
     if comment_body:
         return "comment", _snippet(comment_body, query)
     # Postgres matched a stem that a plain substring check cannot see (the
     # query "deploying" against the word "deploy"). Credit the field the
     # tsvector covers and show its opening.
-    return "description", _snippet(issue.description, query)
+    return "description", _snippet(ticket.description, query)
 
 
 def _snippet(text: Optional[str], needle: str) -> str:

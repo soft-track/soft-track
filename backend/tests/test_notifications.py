@@ -7,7 +7,7 @@ most one row per person, and never one for the person who did it.
 import pytest
 from sqlmodel import select
 
-from lib_softtrack.tables import IssueWatch, Notification, User
+from lib_softtrack.tables import TicketWatch, Notification, User
 
 
 @pytest.fixture
@@ -27,9 +27,9 @@ def pair(client, team, auth):
     return {**team, "member": member}
 
 
-def make_issue(client, actor, team, **fields):
+def make_ticket(client, actor, team, **fields):
     response = client.post(
-        f"/teams/{team['id']}/issues",
+        f"/teams/{team['id']}/tickets",
         json={"title": "Some work", **fields},
         headers=actor["headers"],
     )
@@ -43,23 +43,25 @@ def inbox(client, actor, **params):
     return response.json()["items"]
 
 
-def comment(client, actor, issue, body):
+def comment(client, actor, ticket, body):
     response = client.post(
-        f"/issues/{issue['id']}/comments", json={"body": body}, headers=actor["headers"]
+        f"/tickets/{ticket['id']}/comments",
+        json={"body": body},
+        headers=actor["headers"],
     )
     assert response.status_code == 200, response.text
     return response.json()
 
 
-def watching(client, actor, issue) -> bool:
-    response = client.get(f"/issues/{issue['id']}/watch", headers=actor["headers"])
+def watching(client, actor, ticket) -> bool:
+    response = client.get(f"/tickets/{ticket['id']}/watch", headers=actor["headers"])
     assert response.status_code == 200, response.text
     return response.json()["watching"]
 
 
-def set_watching(client, actor, issue, value):
+def set_watching(client, actor, ticket, value):
     return client.put(
-        f"/issues/{issue['id']}/watch",
+        f"/tickets/{ticket['id']}/watch",
         json={"watching": value},
         headers=actor["headers"],
     )
@@ -68,32 +70,32 @@ def set_watching(client, actor, issue, value):
 # --- auto-watching -----------------------------------------------------
 
 
-def test_filing_an_issue_watches_it(client, pair):
-    issue = make_issue(client, pair, pair["team"])
-    assert watching(client, pair, issue) is True
+def test_filing_a_ticket_watches_it(client, pair):
+    ticket = make_ticket(client, pair, pair["team"])
+    assert watching(client, pair, ticket) is True
 
 
-def test_being_assigned_an_issue_watches_it(client, pair):
-    issue = make_issue(
+def test_being_assigned_a_ticket_watches_it(client, pair):
+    ticket = make_ticket(
         client, pair, pair["team"], assignee_id=pair["member"]["user"]["id"]
     )
-    assert watching(client, pair["member"], issue) is True
+    assert watching(client, pair["member"], ticket) is True
 
 
-def test_commenting_watches_the_issue(client, pair):
-    issue = make_issue(client, pair, pair["team"])
-    assert watching(client, pair["member"], issue) is False
-    comment(client, pair["member"], issue, "Looking at this")
-    assert watching(client, pair["member"], issue) is True
+def test_commenting_watches_the_ticket(client, pair):
+    ticket = make_ticket(client, pair, pair["team"])
+    assert watching(client, pair["member"], ticket) is False
+    comment(client, pair["member"], ticket, "Looking at this")
+    assert watching(client, pair["member"], ticket) is True
 
 
-def test_being_mentioned_does_not_watch_the_issue(client, pair):
+def test_being_mentioned_does_not_watch_the_ticket(client, pair):
     """Somebody else naming you is a weaker signal than anything you did.
 
     You hear about the mention; you do not silently acquire the whole thread.
     """
-    issue = make_issue(client, pair, pair["team"], description="ping @member")
-    assert watching(client, pair["member"], issue) is False
+    ticket = make_ticket(client, pair, pair["team"], description="ping @member")
+    assert watching(client, pair["member"], ticket) is False
 
 
 def test_unwatching_survives_commenting_again(client, pair):
@@ -102,29 +104,29 @@ def test_unwatching_survives_commenting_again(client, pair):
     Auto-watch would recreate the row on the next comment, and the mute would
     last until the person next said something.
     """
-    issue = make_issue(client, pair, pair["team"])
-    assert set_watching(client, pair, issue, False).status_code == 200
+    ticket = make_ticket(client, pair, pair["team"])
+    assert set_watching(client, pair, ticket, False).status_code == 200
 
-    comment(client, pair, issue, "Still here")
-    assert watching(client, pair, issue) is False
+    comment(client, pair, ticket, "Still here")
+    assert watching(client, pair, ticket) is False
 
 
 def test_watching_is_per_person(client, pair):
-    issue = make_issue(client, pair, pair["team"])
-    set_watching(client, pair["member"], issue, True)
-    set_watching(client, pair, issue, False)
+    ticket = make_ticket(client, pair, pair["team"])
+    set_watching(client, pair["member"], ticket, True)
+    set_watching(client, pair, ticket, False)
 
-    assert watching(client, pair["member"], issue) is True
-    assert watching(client, pair, issue) is False
+    assert watching(client, pair["member"], ticket) is True
+    assert watching(client, pair, ticket) is False
 
 
 def test_a_non_member_cannot_watch(client, pair, auth):
     outsider = auth(email="outside@softtrack.dev")
-    issue = make_issue(client, pair, pair["team"])
-    assert set_watching(client, outsider, issue, True).status_code == 403
+    ticket = make_ticket(client, pair, pair["team"])
+    assert set_watching(client, outsider, ticket, True).status_code == 403
     assert (
         client.get(
-            f"/issues/{issue['id']}/watch", headers=outsider["headers"]
+            f"/tickets/{ticket['id']}/watch", headers=outsider["headers"]
         ).status_code
         == 403
     )
@@ -134,22 +136,22 @@ def test_a_non_member_cannot_watch(client, pair, auth):
 
 
 def test_assigning_on_creation_tells_the_assignee(client, pair):
-    issue = make_issue(
+    ticket = make_ticket(
         client, pair, pair["team"], assignee_id=pair["member"]["user"]["id"]
     )
 
     (item,) = inbox(client, pair["member"])
     assert item["kind"] == "assigned"
-    assert item["issue"]["identifier"] == issue["identifier"]
-    assert item["issue"]["team_key"] == "ENG"
+    assert item["ticket"]["identifier"] == ticket["identifier"]
+    assert item["ticket"]["team_key"] == "ENG"
     assert item["actor"]["id"] == pair["user"]["id"]
     assert item["read"] is False
 
 
 def test_assigning_on_update_tells_the_new_assignee(client, pair):
-    issue = make_issue(client, pair, pair["team"])
+    ticket = make_ticket(client, pair, pair["team"])
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"assignee_id": pair["member"]["user"]["id"]},
         headers=pair["headers"],
     )
@@ -158,18 +160,18 @@ def test_assigning_on_update_tells_the_new_assignee(client, pair):
     assert item["kind"] == "assigned"
 
 
-def test_assigning_an_issue_to_yourself_tells_nobody(client, pair):
-    make_issue(client, pair, pair["team"], assignee_id=pair["user"]["id"])
+def test_assigning_a_ticket_to_yourself_tells_nobody(client, pair):
+    make_ticket(client, pair, pair["team"], assignee_id=pair["user"]["id"])
     assert inbox(client, pair) == []
 
 
 def test_reassigning_to_the_same_person_does_not_tell_them_twice(client, pair):
     """The notification follows the diff, not the payload."""
-    issue = make_issue(
+    ticket = make_ticket(
         client, pair, pair["team"], assignee_id=pair["member"]["user"]["id"]
     )
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"assignee_id": pair["member"]["user"]["id"], "title": "Renamed"},
         headers=pair["headers"],
     )
@@ -180,17 +182,17 @@ def test_reassigning_to_the_same_person_does_not_tell_them_twice(client, pair):
 
 
 def test_a_mention_in_a_description_tells_the_person(client, pair):
-    make_issue(client, pair, pair["team"], description="over to @member please")
+    make_ticket(client, pair, pair["team"], description="over to @member please")
 
     (item,) = inbox(client, pair["member"])
     assert item["kind"] == "mentioned"
 
 
 def test_a_mention_in_a_comment_tells_the_person(client, pair):
-    issue = make_issue(client, pair["member"], pair["team"])
-    # The author is watching their own issue, so this would be a `commented`
+    ticket = make_ticket(client, pair["member"], pair["team"])
+    # The author is watching their own ticket, so this would be a `commented`
     # row too if mentions did not take precedence.
-    comment(client, pair, issue, "what do you think @member?")
+    comment(client, pair, ticket, "what do you think @member?")
 
     (item,) = inbox(client, pair["member"])
     assert item["kind"] == "mentioned"
@@ -200,50 +202,50 @@ def test_a_mention_in_a_comment_tells_the_person(client, pair):
 def test_a_handle_inside_code_is_not_a_mention(client, pair):
     """Mirrors the renderer, which only ever rewrites text nodes.
 
-    An issue tracker is mostly shell snippets, and a fenced block full of
+    A ticket tracker is mostly shell snippets, and a fenced block full of
     them should not page whoever happens to share a name with a flag.
     """
-    issue = make_issue(client, pair, pair["team"])
-    comment(client, pair, issue, "run:\n\n```\ncurl -u @member host\n```\n")
+    ticket = make_ticket(client, pair, pair["team"])
+    comment(client, pair, ticket, "run:\n\n```\ncurl -u @member host\n```\n")
     assert inbox(client, pair["member"]) == []
 
-    comment(client, pair, issue, "the `@member` placeholder")
+    comment(client, pair, ticket, "the `@member` placeholder")
     assert inbox(client, pair["member"]) == []
 
 
 def test_an_email_address_in_prose_is_not_a_mention(client, pair):
-    issue = make_issue(client, pair, pair["team"])
-    comment(client, pair, issue, "mail it to plain@member for now")
+    ticket = make_ticket(client, pair, pair["team"])
+    comment(client, pair, ticket, "mail it to plain@member for now")
     assert inbox(client, pair["member"]) == []
 
 
 def test_a_handle_nobody_has_tells_nobody(client, pair):
-    make_issue(client, pair, pair["team"], description="cc @nobody-at-all")
+    make_ticket(client, pair, pair["team"], description="cc @nobody-at-all")
     assert inbox(client, pair["member"]) == []
 
 
 def test_mentioning_someone_outside_the_team_tells_them_nothing(client, pair, auth):
-    """A handle is instance-wide; an issue is not.
+    """A handle is instance-wide; a ticket is not.
 
     Resolving one against the whole instance would tell a stranger that a
-    team they are not in has an issue, and what it is called.
+    team they are not in has a ticket, and what it is called.
     """
     outsider = auth(email="outside@softtrack.dev")
-    make_issue(client, pair, pair["team"], description="cc @outside")
+    make_ticket(client, pair, pair["team"], description="cc @outside")
     assert inbox(client, outsider) == []
 
 
 def test_mentioning_yourself_tells_you_nothing(client, pair):
-    make_issue(client, pair, pair["team"], description="note to self @demo")
+    make_ticket(client, pair, pair["team"], description="note to self @demo")
     assert inbox(client, pair) == []
 
 
 def test_editing_a_description_does_not_re_mention_anyone(client, pair):
-    issue = make_issue(client, pair, pair["team"], description="@member take a look")
+    ticket = make_ticket(client, pair, pair["team"], description="@member take a look")
     assert len(inbox(client, pair["member"])) == 1
 
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"description": "@member take a look, typo fixed"},
         headers=pair["headers"],
     )
@@ -251,9 +253,9 @@ def test_editing_a_description_does_not_re_mention_anyone(client, pair):
 
 
 def test_adding_a_mention_to_a_description_tells_the_new_person(client, pair):
-    issue = make_issue(client, pair, pair["team"], description="no mentions yet")
+    ticket = make_ticket(client, pair, pair["team"], description="no mentions yet")
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"description": "actually @member should see this"},
         headers=pair["headers"],
     )
@@ -266,8 +268,8 @@ def test_adding_a_mention_to_a_description_tells_the_new_person(client, pair):
 
 
 def test_a_comment_tells_the_watchers_and_not_the_author(client, pair):
-    issue = make_issue(client, pair, pair["team"])
-    comment(client, pair["member"], issue, "Fixed in main")
+    ticket = make_ticket(client, pair, pair["team"])
+    comment(client, pair["member"], ticket, "Fixed in main")
 
     (item,) = inbox(client, pair)
     assert item["kind"] == "commented"
@@ -276,8 +278,8 @@ def test_a_comment_tells_the_watchers_and_not_the_author(client, pair):
 
 
 def test_a_long_comment_is_trimmed_for_the_inbox(client, pair):
-    issue = make_issue(client, pair, pair["team"])
-    comment(client, pair["member"], issue, "word " * 200)
+    ticket = make_ticket(client, pair, pair["team"])
+    comment(client, pair["member"], ticket, "word " * 200)
 
     (item,) = inbox(client, pair)
     assert len(item["excerpt"]) <= 140
@@ -286,9 +288,9 @@ def test_a_long_comment_is_trimmed_for_the_inbox(client, pair):
 
 def test_a_status_change_tells_the_watchers(client, pair):
     """The member filed it, so they are watching it; the admin moves it."""
-    issue = make_issue(client, pair["member"], pair["team"])
+    ticket = make_ticket(client, pair["member"], pair["team"])
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"status_id": pair["status_ids"]["In Progress"]},
         headers=pair["headers"],
     )
@@ -301,9 +303,9 @@ def test_a_status_change_tells_the_watchers(client, pair):
 
 
 def test_a_status_change_tells_nobody_who_is_not_watching(client, pair):
-    issue = make_issue(client, pair, pair["team"])
+    ticket = make_ticket(client, pair, pair["team"])
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"status_id": pair["status_ids"]["Done"]},
         headers=pair["headers"],
     )
@@ -313,11 +315,11 @@ def test_a_status_change_tells_nobody_who_is_not_watching(client, pair):
 def test_one_update_is_at_most_one_notification_per_person(client, pair):
     """Assigned *and* moved is one thing that happened, and the assignment
     is the half worth saying."""
-    issue = make_issue(client, pair, pair["team"])
-    set_watching(client, pair["member"], issue, True)
+    ticket = make_ticket(client, pair, pair["team"])
+    set_watching(client, pair["member"], ticket, True)
 
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={
             "assignee_id": pair["member"]["user"]["id"],
             "status_id": pair["status_ids"]["In Progress"],
@@ -330,8 +332,8 @@ def test_one_update_is_at_most_one_notification_per_person(client, pair):
 
 
 def test_a_comment_that_mentions_a_watcher_is_one_notification(client, pair):
-    issue = make_issue(client, pair["member"], pair["team"])
-    comment(client, pair, issue, "@member have a look")
+    ticket = make_ticket(client, pair["member"], pair["team"])
+    comment(client, pair, ticket, "@member have a look")
 
     items = inbox(client, pair["member"])
     assert [item["kind"] for item in items] == ["mentioned"]
@@ -342,14 +344,14 @@ def test_a_comment_that_mentions_a_watcher_is_one_notification(client, pair):
 
 def test_leaving_the_team_stops_the_notifications(client, pair):
     """Watches outlive membership; delivery must not."""
-    issue = make_issue(client, pair["member"], pair["team"])
-    assert watching(client, pair["member"], issue) is True
+    ticket = make_ticket(client, pair["member"], pair["team"])
+    assert watching(client, pair["member"], ticket) is True
 
     client.delete(
         f"/teams/{pair['team']['id']}/members/{pair['member']['user']['id']}",
         headers=pair["headers"],
     )
-    comment(client, pair, issue, "Anyone?")
+    comment(client, pair, ticket, "Anyone?")
 
     assert (
         client.get("/notifications", headers=pair["member"]["headers"]).json()["items"]
@@ -358,14 +360,14 @@ def test_leaving_the_team_stops_the_notifications(client, pair):
 
 
 def test_a_deactivated_account_is_not_notified(client, pair, session):
-    issue = make_issue(client, pair["member"], pair["team"])
+    ticket = make_ticket(client, pair["member"], pair["team"])
 
     member = session.get(User, pair["member"]["user"]["id"])
     member.is_active = False
     session.add(member)
     session.commit()
 
-    comment(client, pair, issue, "Anyone?")
+    comment(client, pair, ticket, "Anyone?")
     assert (
         session.exec(
             select(Notification).where(Notification.user_id == member.id)
@@ -378,16 +380,16 @@ def test_a_deactivated_account_is_not_notified(client, pair, session):
 
 
 def test_the_inbox_is_newest_first(client, pair):
-    issue = make_issue(client, pair, pair["team"])
-    comment(client, pair["member"], issue, "first")
-    comment(client, pair["member"], issue, "second")
+    ticket = make_ticket(client, pair, pair["team"])
+    comment(client, pair["member"], ticket, "first")
+    comment(client, pair["member"], ticket, "second")
 
     assert [item["excerpt"] for item in inbox(client, pair)] == ["second", "first"]
 
 
 def test_marking_one_read_and_unread_again(client, pair):
-    issue = make_issue(client, pair, pair["team"])
-    comment(client, pair["member"], issue, "hello")
+    ticket = make_ticket(client, pair, pair["team"])
+    comment(client, pair["member"], ticket, "hello")
     (item,) = inbox(client, pair)
 
     response = client.patch(
@@ -404,9 +406,9 @@ def test_marking_one_read_and_unread_again(client, pair):
 
 
 def test_the_unread_count_is_the_badge(client, pair):
-    issue = make_issue(client, pair, pair["team"])
-    comment(client, pair["member"], issue, "one")
-    comment(client, pair["member"], issue, "two")
+    ticket = make_ticket(client, pair, pair["team"])
+    comment(client, pair["member"], ticket, "one")
+    comment(client, pair["member"], ticket, "two")
 
     def count():
         return client.get("/notifications/unread-count", headers=pair["headers"]).json()
@@ -423,8 +425,8 @@ def test_the_unread_count_is_the_badge(client, pair):
 
 def test_somebody_elses_notification_is_a_404(client, pair):
     """404 rather than 403 -- the caller has no business learning the id exists."""
-    issue = make_issue(client, pair, pair["team"])
-    comment(client, pair["member"], issue, "hello")
+    ticket = make_ticket(client, pair, pair["team"])
+    comment(client, pair["member"], ticket, "hello")
     (item,) = inbox(client, pair)
 
     response = client.patch(
@@ -436,11 +438,11 @@ def test_somebody_elses_notification_is_a_404(client, pair):
 
 
 def test_read_all_only_touches_your_own(client, pair):
-    issue = make_issue(client, pair, pair["team"])
-    set_watching(client, pair["member"], issue, True)
-    comment(client, pair["member"], issue, "mine")
+    ticket = make_ticket(client, pair, pair["team"])
+    set_watching(client, pair["member"], ticket, True)
+    comment(client, pair["member"], ticket, "mine")
     client.patch(
-        f"/issues/{issue['id']}",
+        f"/tickets/{ticket['id']}",
         json={"status_id": pair["status_ids"]["Done"]},
         headers=pair["headers"],
     )
@@ -450,19 +452,19 @@ def test_read_all_only_touches_your_own(client, pair):
     assert len(inbox(client, pair["member"], unread_only=True)) == 1
 
 
-def test_deleting_an_issue_clears_its_inbox_rows(client, pair, session):
+def test_deleting_a_ticket_clears_its_inbox_rows(client, pair, session):
     """They would otherwise be links to a 404 -- and foreign keys to a row
     that no longer exists, which Postgres rejects outright."""
-    issue = make_issue(client, pair, pair["team"])
-    comment(client, pair["member"], issue, "hello")
+    ticket = make_ticket(client, pair, pair["team"])
+    comment(client, pair["member"], ticket, "hello")
     assert len(inbox(client, pair)) == 1
 
-    response = client.delete(f"/issues/{issue['id']}", headers=pair["headers"])
+    response = client.delete(f"/tickets/{ticket['id']}", headers=pair["headers"])
     assert response.status_code == 204, response.text
 
     assert inbox(client, pair) == []
     assert session.exec(select(Notification)).all() == []
-    assert session.exec(select(IssueWatch)).all() == []
+    assert session.exec(select(TicketWatch)).all() == []
 
 
 # --- preferences ---------------------------------------------------------
@@ -500,7 +502,7 @@ def test_switching_email_off_leaves_the_inbox_alone(client, pair):
         json={"email_notifications": False},
         headers=pair["headers"],
     )
-    issue = make_issue(client, pair, pair["team"])
-    comment(client, pair["member"], issue, "hello")
+    ticket = make_ticket(client, pair, pair["team"])
+    comment(client, pair["member"], ticket, "hello")
 
     assert len(inbox(client, pair)) == 1

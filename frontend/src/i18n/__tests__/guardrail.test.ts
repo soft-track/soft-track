@@ -13,12 +13,12 @@ describe('the i18n guardrail (#106)', () => {
     expect(
       texts(
         `const a = <>
-          <input placeholder="Search issues" />
+          <input placeholder="Search tickets" />
           <button aria-label={'Close panel'} title={\`Delete it\`} />
           <img alt="Avatar" />
         </>`,
       ),
-    ).toEqual(['Search issues', 'Close panel', 'Delete it', 'Avatar'])
+    ).toEqual(['Search tickets', 'Close panel', 'Delete it', 'Avatar'])
   })
 
   it('flags a string written as a JSX child', () => {

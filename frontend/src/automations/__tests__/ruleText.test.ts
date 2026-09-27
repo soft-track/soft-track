@@ -33,7 +33,7 @@ function rule(overrides: Partial<AutomationRuleRead> = {}): AutomationRuleRead {
     id: 1,
     team_id: 1,
     name: 'A rule',
-    trigger: 'issue_created',
+    trigger: 'ticket_created',
     is_enabled: true,
     conditions: { if_unassigned: false },
     actions: { move_to_active_sprint: false },

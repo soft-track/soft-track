@@ -8,9 +8,9 @@ read them, and the log.
 
 | Trigger | Fires when |
 | --- | --- |
-| `issue_created` | A ticket is filed |
+| `ticket_created` | A ticket is filed |
 | `status_changed` | It moves to a different column |
-| `issue_assigned` | Somebody is put on it |
+| `ticket_assigned` | Somebody is put on it |
 | `comment_added` | A comment is posted |
 | `sprint_completed` | A sprint finishes, once per ticket that was in it |
 | `branch_created` | A branch naming it appears in a connected repository |

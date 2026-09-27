@@ -1,46 +1,46 @@
 import { useQueryClient } from '@tanstack/react-query'
 
 import {
-  getListIssuesTeamsTeamIdIssuesGetQueryKey,
-  useUpdateIssueIssuesIssueIdPatch,
-} from '@/api/generated/endpoints/issues/issues'
-import type { IssueRead, StatusRead, TeamRead } from '@/api/generated/models'
+  getListTicketsTeamsTeamIdTicketsGetQueryKey,
+  useUpdateTicketTicketsTicketIdPatch,
+} from '@/api/generated/endpoints/tickets/tickets'
+import type { TicketRead, StatusRead, TeamRead } from '@/api/generated/models'
 import { invalidateProjects } from '@/team/projects'
 
 /** The shape the list endpoint caches: a page, not a bare array. */
-type IssuePage = { items: IssueRead[]; total: number; limit: number; offset: number }
+type TicketPage = { items: TicketRead[]; total: number; limit: number; offset: number }
 
 /**
- * Move an issue between columns, optimistically.
+ * Move a ticket between columns, optimistically.
  *
  * The card moves before the server answers, and moves back if the server
- * refuses. `issuesParams` has to match what the board is showing, because it
+ * refuses. `ticketsParams` has to match what the board is showing, because it
  * is part of the query key being patched.
  */
 export function useStatusChange(
   team: TeamRead | undefined,
-  issuesParams: Parameters<typeof getListIssuesTeamsTeamIdIssuesGetQueryKey>[1],
+  ticketsParams: Parameters<typeof getListTicketsTeamsTeamIdTicketsGetQueryKey>[1],
 ) {
   const queryClient = useQueryClient()
-  const updateIssue = useUpdateIssueIssuesIssueIdPatch()
+  const updateTicket = useUpdateTicketTicketsTicketIdPatch()
 
-  return async (issueId: number, status: StatusRead) => {
+  return async (ticketId: number, status: StatusRead) => {
     if (!team) return
-    const queryKey = getListIssuesTeamsTeamIdIssuesGetQueryKey(team.id, issuesParams)
-    const previous = queryClient.getQueryData<IssuePage>(queryKey)
-    queryClient.setQueryData<IssuePage>(queryKey, (old) =>
+    const queryKey = getListTicketsTeamsTeamIdTicketsGetQueryKey(team.id, ticketsParams)
+    const previous = queryClient.getQueryData<TicketPage>(queryKey)
+    queryClient.setQueryData<TicketPage>(queryKey, (old) =>
       old
         ? {
             ...old,
-            items: old.items.map((issue) =>
-              issue.id === issueId ? { ...issue, status } : issue,
+            items: old.items.map((ticket) =>
+              ticket.id === ticketId ? { ...ticket, status } : ticket,
             ),
           }
         : old,
     )
     try {
-      await updateIssue.mutateAsync({ issueId, data: { status_id: status.id } })
-      queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}`] })
+      await updateTicket.mutateAsync({ ticketId, data: { status_id: status.id } })
+      queryClient.invalidateQueries({ queryKey: [`/tickets/${ticketId}`] })
       // Moving a card moves its points between columns.
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/sprints`] })

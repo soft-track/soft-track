@@ -15,7 +15,7 @@ export type Drop =
       changesColumn: boolean
     }
 
-type Column = { id: string; issues: Array<{ id: number }> }
+type Column = { id: string; tickets: Array<{ id: number }> }
 
 /**
  * Where a card lands, given what it was dropped on.
@@ -31,7 +31,7 @@ export function resolveDrop(
   activeId: number,
   overId: UniqueIdentifier,
 ): Drop {
-  const home = columns.find((column) => column.issues.some((issue) => issue.id === activeId))
+  const home = columns.find((column) => column.tickets.some((ticket) => ticket.id === activeId))
   if (!home) return { kind: 'none' }
 
   if (typeof overId !== 'number') {
@@ -40,10 +40,10 @@ export function resolveDrop(
     return { kind: 'column', columnId: column.id }
   }
 
-  const target = columns.find((column) => column.issues.some((issue) => issue.id === overId))
+  const target = columns.find((column) => column.tickets.some((ticket) => ticket.id === overId))
   if (!target || overId === activeId) return { kind: 'none' }
 
-  const ids = target.issues.map((issue) => issue.id)
+  const ids = target.tickets.map((ticket) => ticket.id)
   const to = ids.indexOf(overId)
   let order: number[]
   if (target.id === home.id) {

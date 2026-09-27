@@ -1,7 +1,7 @@
 """A team's workflow: the statuses on its board, and what they mean.
 
 The one rule everything else depends on: **nothing outside this module asks a
-status for its name.** Burndown, velocity, sprint completion, sub-issue
+status for its name.** Burndown, velocity, sprint completion, sub-ticket
 progress and "does this blocker still block" all ask for a *category*, which
 is a fixed five-value enum. That is what makes letting a team invent "Blocked"
 or "QA" safe, and it is why `in_category` below exists rather than a list of
@@ -22,7 +22,7 @@ from lib_softtrack.models.statuses import (
 )
 from lib_softtrack.tables import (
     DEFAULT_STATUSES,
-    Issue,
+    Ticket,
     SavedView,
     StatusCategory,
     User,
@@ -41,13 +41,13 @@ RESOLVED = (StatusCategory.done, StatusCategory.cancelled)
 
 
 def in_category(*categories: StatusCategory):
-    """A SQL clause for "this issue's status means one of these things".
+    """A SQL clause for "this ticket's status means one of these things".
 
     A subquery on the status table rather than a join, so it composes with the
     other filters on a query without changing its cardinality. Status rows
     already belong to exactly one team, so no team filter is needed here.
     """
-    return Issue.status_id.in_(
+    return Ticket.status_id.in_(
         select(WorkflowStatus.id).where(WorkflowStatus.category.in_(categories))
     )
 
@@ -56,7 +56,7 @@ def create_default_statuses(session: Session, team_id: int) -> list[WorkflowStat
     """The workflow a new team starts with: what the fixed enum used to be.
 
     Added on team creation rather than lazily, so a team always has somewhere
-    to put an issue and the board is never empty on the first load.
+    to put a ticket and the board is never empty on the first load.
     """
     statuses = [
         WorkflowStatus(
@@ -81,10 +81,10 @@ def team_statuses(session: Session, team_id: int) -> list[WorkflowStatus]:
 
 
 def default_status(session: Session, team_id: int) -> WorkflowStatus:
-    """Where a new issue lands: the leftmost column.
+    """Where a new ticket lands: the leftmost column.
 
     Not "the backlog one" -- a team is free to delete that, and the first
-    column is what someone filing an issue is looking at anyway.
+    column is what someone filing a ticket is looking at anyway.
     """
     statuses = team_statuses(session, team_id)
     if not statuses:
@@ -94,7 +94,7 @@ def default_status(session: Session, team_id: int) -> WorkflowStatus:
         raise api_error(
             status_code=409,
             code=ErrorCode.team_has_no_statuses,
-            detail="This team has no statuses to put an issue in",
+            detail="This team has no statuses to put a ticket in",
         )
     return statuses[0]
 
@@ -116,7 +116,7 @@ def resolve_for_team(
 ) -> Optional[WorkflowStatus]:
     """A status id from a request, checked against the team it is being used on.
 
-    Without this an issue could be moved into another team's column, which
+    Without this a ticket could be moved into another team's column, which
     would take it off its own board entirely.
     """
     if status_id is None:
@@ -237,9 +237,9 @@ def reorder_statuses(
 def delete_status(
     session: Session, current_user: User, status_id: int, payload: StatusDelete
 ) -> list[StatusRead]:
-    """Remove a status, moving its issues to another one.
+    """Remove a status, moving its tickets to another one.
 
-    The move is the whole point: issues hold a foreign key here, and silently
+    The move is the whole point: tickets hold a foreign key here, and silently
     deleting somebody's work along with a column would be the worst possible
     reading of "delete this status".
     """
@@ -255,7 +255,7 @@ def delete_status(
         raise api_error(
             status_code=409,
             code=ErrorCode.last_status,
-            detail="A team needs at least one status; there would be nowhere to put its issues.",
+            detail="A team needs at least one status; there would be nowhere to put its tickets.",
         )
 
     target = session.get(WorkflowStatus, payload.move_to_id)
@@ -269,16 +269,18 @@ def delete_status(
         raise api_error(
             status_code=400,
             code=ErrorCode.status_move_to_same,
-            detail="Move the issues to a different status",
+            detail="Move the tickets to a different status",
         )
 
-    # No history is written for the move. These issues did not change state --
+    # No history is written for the move. These tickets did not change state --
     # the column they were sitting in was renamed out from under them -- and a
-    # status event per issue would put a step in every cumulative flow diagram
+    # status event per ticket would put a step in every cumulative flow diagram
     # on the day an admin tidied up the board.
-    for issue in session.exec(select(Issue).where(Issue.status_id == status.id)).all():
-        issue.status_id = target.id
-        session.add(issue)
+    for ticket in session.exec(
+        select(Ticket).where(Ticket.status_id == status.id)
+    ).all():
+        ticket.status_id = target.id
+        session.add(ticket)
 
     # Saved views filtering on it lose the filter rather than the view: a view
     # pointing at a status that no longer exists would match nothing, which
@@ -289,9 +291,9 @@ def delete_status(
         view.status_id = None
         session.add(view)
 
-    # Automation rules follow the issues instead of losing the reference. A
+    # Automation rules follow the tickets instead of losing the reference. A
     # rule's condition read as "no opinion" when cleared, which would widen it
-    # to every issue on the team -- see automations.move_status.
+    # to every ticket on the team -- see automations.move_status.
     automations_service.move_status(session, status.id, target.id)
 
     session.flush()
