@@ -443,6 +443,15 @@ class User(SQLModel, table=True):
         default=None, foreign_key="department.id", index=True
     )
     department: Optional[Department] = Relationship()
+    #: Who they report to (#124), set by a site admin. Information, not
+    #: authority: nothing is permitted or approved because of it. Never a
+    #: loop -- `lib_identity/managers.py` walks the chain before it is set --
+    #: and left in place when the manager is deactivated, where the admin
+    #: directory lists it rather than letting it go quietly stale.
+    manager_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
+    manager: Optional["User"] = Relationship(
+        sa_relationship_kwargs={"remote_side": "User.id"}
+    )
 
     @property
     def has_password(self) -> bool:

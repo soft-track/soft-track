@@ -20,4 +20,8 @@ limit?: number;
  * @minimum 0
  */
 offset?: number;
+/**
+ * Only active people whose manager has been deactivated
+ */
+reports_to_deactivated?: boolean;
 };

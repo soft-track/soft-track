@@ -118,6 +118,24 @@ describe('Profile settings', () => {
   it('says a fact is not set rather than leaving a gap', () => {
     renderProfile(DANIEL)
     const card = screen.getByRole('region', { name: 'Your place in the organisation' })
-    expect(within(card).getAllByText('Not set')).toHaveLength(2)
+    expect(within(card).getAllByText('Not set')).toHaveLength(3)
+  })
+
+  it('shows who you report to, and says so when their account is deactivated', () => {
+    renderProfile({
+      ...DANIEL,
+      manager: {
+        id: 3,
+        username: 'amina',
+        full_name: 'Amina Khan',
+        avatar_color: '#6366f1',
+        is_active: false,
+        job_title: 'Engineering Manager',
+      },
+    })
+    const card = screen.getByRole('region', { name: 'Your place in the organisation' })
+    const manager = within(card).getByText('Manager').parentElement!
+    expect(within(manager).getByText('Amina Khan')).toBeTruthy()
+    expect(within(manager).getByText('Deactivated')).toBeTruthy()
   })
 })

@@ -730,6 +730,18 @@
               "default": 0,
               "title": "Offset"
             }
+          },
+          {
+            "name": "reports_to_deactivated",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only active people whose manager has been deactivated",
+              "default": false,
+              "title": "Reports To Deactivated"
+            },
+            "description": "Only active people whose manager has been deactivated"
           }
         ],
         "responses": {
@@ -7326,6 +7338,16 @@
               }
             ]
           },
+          "manager": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "last_login_at": {
             "anyOf": [
               {
@@ -7341,6 +7363,10 @@
           "team_count": {
             "type": "integer",
             "title": "Team Count"
+          },
+          "report_count": {
+            "type": "integer",
+            "title": "Report Count"
           }
         },
         "type": "object",
@@ -7354,7 +7380,8 @@
           "is_site_admin",
           "has_password",
           "created_at",
-          "team_count"
+          "team_count",
+          "report_count"
         ],
         "title": "AdminUserRead",
         "description": "A row in the site admin's user directory."
@@ -7416,6 +7443,17 @@
               }
             ],
             "title": "Department Id"
+          },
+          "manager_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manager Id"
           }
         },
         "type": "object",
@@ -9899,6 +9937,51 @@
           "new_password"
         ],
         "title": "PasswordChange"
+      },
+      "PersonRef": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "avatar_color": {
+            "type": "string",
+            "title": "Avatar Color"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "job_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "username",
+          "full_name",
+          "avatar_color",
+          "is_active"
+        ],
+        "title": "PersonRef",
+        "description": "Somebody a profile points at: a manager, or one of their reports (#124).\n\nEnough to show them and link to them -- name, handle, avatar and title --\nand whether the account is still active: a deactivated manager is shown\nas one, not hidden, because the people reporting to them still do."
       },
       "PersonTime": {
         "properties": {
@@ -12853,6 +12936,16 @@
                 "type": "null"
               }
             ]
+          },
+          "manager": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -13549,6 +13642,9 @@
           "password_required_to_disconnect",
           "department_not_empty",
           "department_move_to_same",
+          "manager_is_self",
+          "manager_cycle",
+          "manager_deactivated",
           "name_required",
           "body_required",
           "invalid_colour",

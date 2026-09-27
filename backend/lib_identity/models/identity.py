@@ -35,6 +35,24 @@ class UserPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PersonRef(BaseModel):
+    """Somebody a profile points at: a manager, or one of their reports (#124).
+
+    Enough to show them and link to them -- name, handle, avatar and title --
+    and whether the account is still active: a deactivated manager is shown
+    as one, not hidden, because the people reporting to them still do.
+    """
+
+    id: int
+    username: str
+    full_name: str
+    avatar_color: str
+    is_active: bool
+    job_title: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class UserMe(UserPublic):
     """The signed-in user's own record.
 
@@ -58,6 +76,8 @@ class UserMe(UserPublic):
     started_on: Optional[date] = None
     #: Set by a site admin, like the start date (#123).
     department: Optional[DepartmentRef] = None
+    #: Who they report to (#124), also set by a site admin.
+    manager: Optional[PersonRef] = None
 
 
 #: Long enough for "Senior Staff Site Reliability Engineer, Payments" and a

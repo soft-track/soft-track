@@ -12,4 +12,5 @@ export interface AdminUserUpdate {
   full_name?: string | null;
   started_on?: string | null;
   department_id?: number | null;
+  manager_id?: number | null;
 }

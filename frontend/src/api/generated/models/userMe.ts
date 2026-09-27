@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { DepartmentRef } from './departmentRef';
+import type { PersonRef } from './personRef';
 
 /**
  * The signed-in user's own record.
@@ -28,4 +29,5 @@ export interface UserMe {
   location?: string | null;
   started_on?: string | null;
   department?: DepartmentRef | null;
+  manager?: PersonRef | null;
 }

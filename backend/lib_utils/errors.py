@@ -133,6 +133,12 @@ class ErrorCode(str, enum.Enum):
     #: go: another department, or none (#123).
     department_not_empty = "department_not_empty"
     department_move_to_same = "department_move_to_same"
+    #: A manager link that would loop: somebody managing themselves, or
+    #: reporting to a person who already reports to them (#124).
+    manager_is_self = "manager_is_self"
+    manager_cycle = "manager_cycle"
+    #: A deactivated account cannot take on new reports.
+    manager_deactivated = "manager_deactivated"
 
     # --- what you sent is not usable ------------------------------------------
     name_required = "name_required"

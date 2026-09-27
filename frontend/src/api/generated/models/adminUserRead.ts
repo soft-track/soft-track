@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { DepartmentRef } from './departmentRef';
+import type { PersonRef } from './personRef';
 
 /**
  * A row in the site admin's user directory.
@@ -24,6 +25,8 @@ export interface AdminUserRead {
   location?: string | null;
   started_on?: string | null;
   department?: DepartmentRef | null;
+  manager?: PersonRef | null;
   last_login_at?: string | null;
   team_count: number;
+  report_count: number;
 }
