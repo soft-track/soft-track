@@ -227,3 +227,70 @@ def test_registering_with_a_chosen_username(client):
     )
     assert response.status_code == 200
     assert response.json()["user"]["username"] == "picked"
+
+
+# --- What the organisation knows about you (#122) ---------------------------
+
+
+def test_a_new_account_has_no_title_location_or_start_date(client, auth):
+    actor = auth()
+    body = client.get("/auth/me", headers=actor["headers"]).json()
+    assert body["job_title"] is None
+    assert body["location"] is None
+    assert body["started_on"] is None
+
+
+def test_your_title_and_location_are_yours_to_set(client, auth):
+    actor = auth()
+    response = client.patch(
+        "/auth/me",
+        json={"job_title": "  Senior Backend Engineer ", "location": "Lagos, Nigeria"},
+        headers=actor["headers"],
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["job_title"] == "Senior Backend Engineer"
+
+    body = client.get("/auth/me", headers=actor["headers"]).json()
+    assert body["job_title"] == "Senior Backend Engineer"
+    assert body["location"] == "Lagos, Nigeria"
+
+
+def test_blank_or_null_clears_them_and_leaving_them_out_does_not(client, auth):
+    actor = auth()
+    client.patch(
+        "/auth/me",
+        json={"job_title": "Designer", "location": "Lisbon"},
+        headers=actor["headers"],
+    )
+
+    # A save that is about something else keeps them...
+    client.patch("/auth/me", json={"full_name": "Ada"}, headers=actor["headers"])
+    body = client.get("/auth/me", headers=actor["headers"]).json()
+    assert (body["job_title"], body["location"]) == ("Designer", "Lisbon")
+
+    # ...and an emptied field, or an explicit null, clears them.
+    response = client.patch(
+        "/auth/me",
+        json={"job_title": "   ", "location": None},
+        headers=actor["headers"],
+    )
+    assert response.status_code == 200
+    assert (response.json()["job_title"], response.json()["location"]) == (None, None)
+
+
+def test_an_overlong_title_is_refused(client, auth):
+    actor = auth()
+    response = client.patch(
+        "/auth/me", json={"job_title": "x" * 101}, headers=actor["headers"]
+    )
+    assert response.status_code == 422
+
+
+def test_you_cannot_set_your_own_start_date(client, auth):
+    """The organisation's fact, not yours: only a site admin sets it."""
+    actor = auth()
+    response = client.patch(
+        "/auth/me", json={"started_on": "2020-01-01"}, headers=actor["headers"]
+    )
+    assert response.status_code == 200
+    assert response.json()["started_on"] is None

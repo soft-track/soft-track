@@ -75,6 +75,10 @@ def test_me_returns_the_current_user(client, auth):
         "is_site_admin",
         "has_password",
         "created_at",
+        # What the organisation knows about them (#122), null until filled in.
+        "job_title",
+        "location",
+        "started_on",
     }
     # Registered with one, so it has one. False is reserved for an account
     # created by signing in with Google or GitHub -- see test_oauth.py.

@@ -7092,6 +7092,40 @@
             "format": "date-time",
             "title": "Created At"
           },
+          "job_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Title"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "started_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started On"
+          },
           "last_login_at": {
             "anyOf": [
               {
@@ -7159,6 +7193,18 @@
               }
             ],
             "title": "Full Name"
+          },
+          "started_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started On"
           }
         },
         "type": "object",
@@ -12420,6 +12466,40 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "job_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Title"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "started_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started On"
           }
         },
         "type": "object",
@@ -12521,6 +12601,30 @@
               }
             ],
             "title": "Email"
+          },
+          "job_title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Title"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
           },
           "current_password": {
             "anyOf": [

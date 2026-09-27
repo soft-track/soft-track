@@ -13,6 +13,9 @@ export const adminUsers = {
   lastSeen: 'last seen {{when}}',
   neverSignedIn: 'never signed in',
   joined: 'joined {{date}}',
+  startedOn: 'started {{date}}',
+  edit: 'Edit',
+  editLabel: 'Edit {{name}}',
   deactivate: 'Deactivate',
   reactivate: 'Reactivate',
   cannotDeactivateSelf: 'You cannot deactivate your own account',
@@ -28,6 +31,12 @@ export const adminUsers = {
   errors: {
     update: 'Could not update that account.',
     reset: 'Could not reset that password.',
+  },
+  /** The organisation's facts about someone, set on their row (#122). */
+  editor: {
+    label: 'Organisation details for {{name}}',
+    startDate: 'Start date',
+    theirs: 'Job title and location are {{name}}’s to edit, from their own profile.',
   },
   resetDialog: {
     title: 'Reset password',

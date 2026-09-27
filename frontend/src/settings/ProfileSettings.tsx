@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, type ReactNode, useId, useState } from 'react'
 
 import {
   getMeAuthMeGetQueryKey,
@@ -8,6 +8,7 @@ import {
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { Trans, userText, useTranslation } from '@/i18n'
+import { formatStartedOn } from '@/settings/startedOn'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 
@@ -30,6 +31,8 @@ export default function ProfileSettings() {
 
   const [fullName, setFullName] = useState(user?.full_name ?? '')
   const [username, setUsername] = useState(user?.username ?? '')
+  const [jobTitle, setJobTitle] = useState(user?.job_title ?? '')
+  const [location, setLocation] = useState(user?.location ?? '')
   const [avatarColor, setAvatarColor] = useState(user?.avatar_color ?? AVATAR_COLORS[0])
   const [email, setEmail] = useState(user?.email ?? '')
   const [currentPassword, setCurrentPassword] = useState('')
@@ -55,6 +58,9 @@ export default function ProfileSettings() {
         data: {
           full_name: fullName,
           username,
+          // Sent as typed: the API trims them, and an emptied field clears.
+          job_title: jobTitle,
+          location,
           avatar_color: avatarColor,
           // Only sent when it actually changed: the API asks for a password
           // whenever `email` is present and different, and sending the
@@ -64,6 +70,9 @@ export default function ProfileSettings() {
         },
       })
       queryClient.setQueryData(getMeAuthMeGetQueryKey(), updated)
+      // What was stored, which is trimmed, and empty when it was cleared.
+      setJobTitle(updated.job_title ?? '')
+      setLocation(updated.location ?? '')
       setCurrentPassword('')
       setSaved(true)
     } catch (err: unknown) {
@@ -74,139 +83,213 @@ export default function ProfileSettings() {
   const preview = { full_name: fullName || user.full_name, avatar_color: avatarColor }
 
   return (
-    <form onSubmit={onSubmit} className="glass-strong sheen rounded-panel p-6">
-      <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
-        {t('profile.title')}
-      </h1>
-      <p className="mt-1 text-sm text-neutral-500">{t('profile.intro')}</p>
+    <div className="space-y-4">
+      <form onSubmit={onSubmit} className="glass-strong sheen rounded-panel p-6">
+        <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
+          {t('profile.title')}
+        </h1>
+        <p className="mt-1 text-sm text-neutral-500">{t('profile.intro')}</p>
 
-      {error && (
-        <div
-          role="alert"
-          className="mt-4 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
-        >
-          {error}
-        </div>
-      )}
-      {saved && !error && (
-        <p className="mt-4 flex items-center gap-1.5 text-sm text-neutral-500">
-          <Icon name="check" size={14} className="text-accent-mint" />
-          {t('profile.saved')}
-        </p>
-      )}
-
-      <div className="mt-6 space-y-5">
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-neutral-700">
-            {t('profile.fullName')}
-          </span>
-          <input
-            required
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="field"
-          />
-        </label>
-
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-neutral-700">
-            {t('profile.username')}
-          </span>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-400">
-              @
-            </span>
-            <input
-              required
-              value={username}
-              // Lowercased as it is typed rather than on save, so the field
-              // shows the handle people will actually write in a comment.
-              onChange={(e) => setUsername(e.target.value.toLowerCase())}
-              className="field pl-7"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-            />
+        {error && (
+          <div
+            role="alert"
+            className="mt-4 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+          >
+            {error}
           </div>
-          <span className="mt-1.5 block text-xs text-neutral-400">
-            <Trans
-              t={t}
-              i18nKey="profile.usernameHint"
-              values={{ username: username || t('profile.usernameFallback') }}
-              components={{ handle: <code className="identifier" /> }}
-              {...userText}
-            />
-          </span>
-        </label>
+        )}
+        {saved && !error && (
+          <p className="mt-4 flex items-center gap-1.5 text-sm text-neutral-500">
+            <Icon name="check" size={14} className="text-accent-mint" />
+            {t('profile.saved')}
+          </p>
+        )}
 
-        <div>
-          <span className="mb-1.5 block text-sm font-medium text-neutral-700">
-            {t('profile.avatarColour')}
-          </span>
-          <div className="flex flex-wrap items-center gap-3">
-            <Avatar user={preview} size={40} />
-            <div className="flex flex-wrap gap-2">
-              {AVATAR_COLORS.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  onClick={() => setAvatarColor(color)}
-                  aria-label={t('profile.useColour', { color })}
-                  aria-pressed={avatarColor.toLowerCase() === color}
-                  className="h-7 w-7 rounded-full transition-transform hover:scale-110"
-                  style={{
-                    background: color,
-                    boxShadow:
-                      avatarColor.toLowerCase() === color
-                        ? '0 0 0 2px var(--color-brand-500), inset 0 1px 0 rgba(255,255,255,0.45)'
-                        : 'inset 0 1px 0 rgba(255,255,255,0.45), 0 0 0 1.5px var(--glass-border)',
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-neutral-700">
-            {t('profile.email')}
-          </span>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="field"
-            autoComplete="email"
-          />
-        </label>
-
-        {confirmWithPassword && (
-          <label className="well block rounded-control p-3">
+        <div className="mt-6 space-y-5">
+          <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-neutral-700">
-              {t('profile.currentPassword')}
+              {t('profile.fullName')}
             </span>
             <input
-              type="password"
               required
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               className="field"
-              autoComplete="current-password"
-              placeholder={t('profile.currentPasswordPlaceholder')}
             />
+          </label>
+
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+              {t('profile.username')}
+            </span>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-400">
+                @
+              </span>
+              <input
+                required
+                value={username}
+                // Lowercased as it is typed rather than on save, so the field
+                // shows the handle people will actually write in a comment.
+                onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                className="field pl-7"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+              />
+            </div>
             <span className="mt-1.5 block text-xs text-neutral-400">
-              {t('profile.currentPasswordHint')}
+              <Trans
+                t={t}
+                i18nKey="profile.usernameHint"
+                values={{ username: username || t('profile.usernameFallback') }}
+                components={{ handle: <code className="identifier" /> }}
+                {...userText}
+              />
             </span>
           </label>
-        )}
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+                <Trans t={t} i18nKey="profile.jobTitle" components={{ optional: <Optional /> }} />
+              </span>
+              <input
+                value={jobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+                maxLength={100}
+                className="field"
+                autoComplete="organization-title"
+                placeholder={t('profile.jobTitlePlaceholder')}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+                <Trans t={t} i18nKey="profile.location" components={{ optional: <Optional /> }} />
+              </span>
+              <input
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                maxLength={100}
+                className="field"
+                placeholder={t('profile.locationPlaceholder')}
+              />
+            </label>
+          </div>
+
+          <div>
+            <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+              {t('profile.avatarColour')}
+            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <Avatar user={preview} size={40} />
+              <div className="flex flex-wrap gap-2">
+                {AVATAR_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setAvatarColor(color)}
+                    aria-label={t('profile.useColour', { color })}
+                    aria-pressed={avatarColor.toLowerCase() === color}
+                    className="h-7 w-7 rounded-full transition-transform hover:scale-110"
+                    style={{
+                      background: color,
+                      boxShadow:
+                        avatarColor.toLowerCase() === color
+                          ? '0 0 0 2px var(--color-brand-500), inset 0 1px 0 rgba(255,255,255,0.45)'
+                          : 'inset 0 1px 0 rgba(255,255,255,0.45), 0 0 0 1.5px var(--glass-border)',
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+              {t('profile.email')}
+            </span>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="field"
+              autoComplete="email"
+            />
+          </label>
+
+          {confirmWithPassword && (
+            <label className="well block rounded-control p-3">
+              <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+                {t('profile.currentPassword')}
+              </span>
+              <input
+                type="password"
+                required
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="field"
+                autoComplete="current-password"
+                placeholder={t('profile.currentPasswordPlaceholder')}
+              />
+              <span className="mt-1.5 block text-xs text-neutral-400">
+                {t('profile.currentPasswordHint')}
+              </span>
+            </label>
+          )}
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button type="submit" disabled={updateMe.isPending} className="btn btn-primary">
+            {updateMe.isPending ? t('common:saving') : t('profile.saveChanges')}
+          </button>
+        </div>
+      </form>
+
+      <OrganisationFacts startedOn={user.started_on ?? null} />
+    </div>
+  )
+}
+
+function Optional(props: { children?: ReactNode }) {
+  return <span className="font-normal text-neutral-400" {...props} />
+}
+
+/**
+ * The facts the organisation owns about you (#122), read-only here.
+ *
+ * A site admin sets them from the user directory. Showing them where you edit
+ * everything else, with who to ask, beats leaving a wrong one to be found on
+ * somebody else's screen.
+ */
+function OrganisationFacts({ startedOn }: { startedOn: string | null }) {
+  const { t } = useTranslation(['settings', 'common'])
+  const titleId = useId()
+  return (
+    <section aria-labelledby={titleId} className="glass-strong rounded-panel p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
+            {t('profile.organisation.title')}
+          </h2>
+          <p className="mt-1 text-sm text-neutral-500">{t('profile.organisation.intro')}</p>
+        </div>
+        <Icon name="lock" size={15} className="mt-1 shrink-0 text-neutral-400" />
       </div>
 
-      <div className="mt-6 flex justify-end">
-        <button type="submit" disabled={updateMe.isPending} className="btn btn-primary">
-          {updateMe.isPending ? t('common:saving') : t('profile.saveChanges')}
-        </button>
-      </div>
-    </form>
+      <dl className="mt-5 grid gap-3 sm:grid-cols-3">
+        <div className="well rounded-control px-4 py-3">
+          <dt className="text-xs text-neutral-400">{t('profile.organisation.startDate')}</dt>
+          <dd className="mt-1 text-sm text-neutral-800">
+            {startedOn ? (
+              formatStartedOn(startedOn)
+            ) : (
+              <span className="text-neutral-400">{t('profile.organisation.notSet')}</span>
+            )}
+          </dd>
+        </div>
+      </dl>
+    </section>
   )
 }

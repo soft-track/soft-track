@@ -151,6 +151,8 @@ def update_user(
                 detail="A name cannot be empty",
             )
         user.full_name = name
+    if "started_on" in payload.model_fields_set:
+        user.started_on = payload.started_on
     if payload.is_site_admin is not None:
         user.is_site_admin = payload.is_site_admin
     if payload.is_active is not None:

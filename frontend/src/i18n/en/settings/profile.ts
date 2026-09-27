@@ -8,6 +8,10 @@ export const profile = {
   usernameHint:
     '2–39 characters. Letters, digits, dots, dashes and underscores. This is what <handle>@{{username}}</handle> resolves to in comments.',
   usernameFallback: 'you',
+  jobTitle: 'Job title <optional>· optional</optional>',
+  jobTitlePlaceholder: 'e.g. Backend Engineer',
+  location: 'Location <optional>· optional</optional>',
+  locationPlaceholder: 'e.g. Lisbon, or Remote',
   avatarColour: 'Avatar colour',
   useColour: 'Use {{color}}',
   email: 'Email',
@@ -18,5 +22,12 @@ export const profile = {
   saveChanges: 'Save changes',
   errors: {
     save: 'Could not save your profile.',
+  },
+  /** The facts a site admin sets (#122), read-only under the form. */
+  organisation: {
+    title: 'Your place in the organisation',
+    intro: 'Set by a site admin. Ask one if something here is wrong.',
+    startDate: 'Start date',
+    notSet: 'Not set',
   },
 } as const

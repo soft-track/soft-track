@@ -46,6 +46,7 @@ export type IconName =
   | 'download'
   | 'calendar-grid'
   | 'expand'
+  | 'lock'
 
 const PATHS: Record<IconName, JSX.Element> = {
   search: (
@@ -117,6 +118,12 @@ const PATHS: Record<IconName, JSX.Element> = {
     </>
   ),
   shield: <path d="M12 3l7.5 3v5.5c0 4.4-3 8.4-7.5 9.5-4.5-1.1-7.5-5.1-7.5-9.5V6L12 3Z" />,
+  lock: (
+    <>
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </>
+  ),
   mail: (
     <>
       <rect x="3" y="5" width="18" height="14" rx="2" />

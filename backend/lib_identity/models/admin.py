@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -19,6 +19,10 @@ class AdminUserUpdate(BaseModel):
     is_active: Optional[bool] = None
     is_site_admin: Optional[bool] = None
     full_name: Optional[str] = None
+    #: When they started (#122). An explicit null clears it; leaving it out
+    #: leaves it alone. Set here and nowhere else: it is the organisation's
+    #: fact, so the person cannot change it from their own profile.
+    started_on: Optional[date] = None
 
 
 class AdminPasswordReset(BaseModel):

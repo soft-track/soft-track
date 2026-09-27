@@ -394,6 +394,23 @@ class User(SQLModel, table=True):
     last_login_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=utcnow)
 
+    # --- What the organisation knows about them (#122) ---------------------
+    # Every one nullable: an instance that never fills them in looks exactly
+    # as it did before they existed. Title and location are the person's own
+    # to edit; the start date is set by a site admin, because it is a fact
+    # the organisation owns rather than one the person does.
+
+    #: Free text, in their own words. A fixed list of titles is an HR
+    #: system's job; the directory only has to show it.
+    job_title: Optional[str] = None
+    #: Where they work from: a city, an office, "Remote". Free text for the
+    #: same reason.
+    location: Optional[str] = None
+    #: A date rather than a datetime, like a ticket's due date: a start is a
+    #: day, and a timestamp would move it across midnight for anybody in
+    #: another timezone.
+    started_on: Optional[date] = None
+
     @property
     def has_password(self) -> bool:
         """Whether this account can be signed into with a password.

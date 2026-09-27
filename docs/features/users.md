@@ -21,6 +21,25 @@ arrived. An account that *does* have a password is never joined to a provider
 automatically — its owner connects one from Settings, where being signed in is
 the proof. The reasoning is worth reading before changing it.
 
+### Job title, location and start date
+
+A profile can say what somebody does here, where they work from, and when
+they started. All three are optional, and an instance that never fills them in
+looks exactly as it did before they existed. Who sets which is deliberate:
+
+- **Job title and location are the person's own.** They edit them in
+  **Settings → Profile**, beside their name. Both are free text, trimmed, and
+  cleared by emptying the field. A site admin sees them in the user directory
+  but can't change them.
+- **The start date belongs to the organisation.** A site admin sets it from
+  **Administration → Users** with **Edit** on the person's row. The person
+  sees it read-only under their profile, in *Your place in the organisation*,
+  with a line saying to ask a site admin if it's wrong.
+
+The start date is a date, not a timestamp, like a ticket's due date: a start is
+a day, and a timestamp would move it across midnight for anyone in another
+timezone.
+
 ### Team roles
 
 Every membership is `admin`, `member` or `guest`. Admins rename the team,

@@ -270,3 +270,73 @@ def test_a_normal_user_cannot_reset_a_password(client, auth):
         headers=ada["headers"],
     )
     assert response.status_code == 403
+
+
+# --- Employee profiles (#122) ------------------------------------------------
+
+
+def test_a_site_admin_sets_and_clears_a_start_date(client, auth):
+    admin = auth(email="admin@softtrack.dev")
+    ada = auth(email="ada@softtrack.dev")
+    url = f"/admin/users/{ada['user']['id']}"
+
+    response = client.patch(
+        url, json={"started_on": "2023-08-14"}, headers=admin["headers"]
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["started_on"] == "2023-08-14"
+    # She reads it on her own profile.
+    me = client.get("/auth/me", headers=ada["headers"]).json()
+    assert me["started_on"] == "2023-08-14"
+
+    # A change that is about something else leaves it alone...
+    client.patch(url, json={"full_name": "Ada L"}, headers=admin["headers"])
+    assert client.get("/auth/me", headers=ada["headers"]).json()["started_on"] == (
+        "2023-08-14"
+    )
+
+    # ...and an explicit null clears it.
+    cleared = client.patch(url, json={"started_on": None}, headers=admin["headers"])
+    assert cleared.json()["started_on"] is None
+
+
+def test_a_normal_user_cannot_set_a_start_date(client, auth):
+    auth(email="admin@softtrack.dev")
+    ada = auth(email="ada@softtrack.dev")
+    response = client.patch(
+        f"/admin/users/{ada['user']['id']}",
+        json={"started_on": "2020-01-01"},
+        headers=ada["headers"],
+    )
+    assert response.status_code == 403
+
+
+def test_the_directory_shows_what_people_say_about_themselves(client, auth):
+    admin = auth(email="admin@softtrack.dev")
+    ada = auth(email="ada@softtrack.dev")
+    client.patch(
+        "/auth/me",
+        json={"job_title": "Analyst", "location": "London"},
+        headers=ada["headers"],
+    )
+
+    items = client.get("/admin/users", headers=admin["headers"]).json()["items"]
+    row = next(u for u in items if u["email"] == "ada@softtrack.dev")
+    assert (row["job_title"], row["location"], row["started_on"]) == (
+        "Analyst",
+        "London",
+        None,
+    )
+
+
+def test_title_and_location_are_not_the_admins_to_set(client, auth):
+    """Shown to the admin, edited only by the person (#122)."""
+    admin = auth(email="admin@softtrack.dev")
+    ada = auth(email="ada@softtrack.dev")
+    response = client.patch(
+        f"/admin/users/{ada['user']['id']}",
+        json={"job_title": "Intern", "location": "Nowhere"},
+        headers=admin["headers"],
+    )
+    assert response.status_code == 200
+    assert (response.json()["job_title"], response.json()["location"]) == (None, None)

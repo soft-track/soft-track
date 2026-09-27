@@ -269,6 +269,11 @@ def login_user(session: Session, email: str, password: str) -> Token:
     return ticket_token(user)
 
 
+def _profile_text(value: str | None) -> str | None:
+    """A title or location as stored: trimmed, and null rather than blank."""
+    return (value or "").strip() or None
+
+
 def update_profile(session: Session, user: User, payload: UserUpdate) -> User:
     if payload.full_name is not None:
         name = payload.full_name.strip()
@@ -284,6 +289,14 @@ def update_profile(session: Session, user: User, payload: UserUpdate) -> User:
         handle = normalise_username(payload.username)
         assert_username_free(session, handle, except_user_id=user.id)
         user.username = handle
+
+    # Null and blank both clear: the form sends whatever is in the field, and
+    # an API client can send null. Leaving the key out leaves the value alone.
+    sent = payload.model_fields_set
+    if "job_title" in sent:
+        user.job_title = _profile_text(payload.job_title)
+    if "location" in sent:
+        user.location = _profile_text(payload.location)
 
     if payload.avatar_color is not None:
         if not _HEX_COLOR.match(payload.avatar_color):

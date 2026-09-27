@@ -11,5 +11,7 @@ export interface UserUpdate {
   username?: string | null;
   avatar_color?: string | null;
   email?: string | null;
+  job_title?: string | null;
+  location?: string | null;
   current_password?: string | null;
 }

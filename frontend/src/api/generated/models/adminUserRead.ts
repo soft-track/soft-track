@@ -19,6 +19,9 @@ export interface AdminUserRead {
   is_site_admin: boolean;
   has_password: boolean;
   created_at: string;
+  job_title?: string | null;
+  location?: string | null;
+  started_on?: string | null;
   last_login_at?: string | null;
   team_count: number;
 }

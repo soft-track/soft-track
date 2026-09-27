@@ -6,7 +6,7 @@ import {
   useResetPasswordAdminUsersUserIdResetPasswordPost,
   useUpdateUserAdminUsersUserIdPatch,
 } from '@/api/generated/endpoints/admin/admin'
-import type { AdminUserRead } from '@/api/generated/models'
+import type { AdminUserRead, AdminUserUpdate } from '@/api/generated/models'
 import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
@@ -14,6 +14,7 @@ import { Trans, userText, useTranslation } from '@/i18n'
 import { formatDate, formatRelative } from '@/i18n/format'
 import { useDebounced } from '@/search/useDebounced'
 import { DeactivatedChip } from '@/settings/RoleChip'
+import { formatStartedOn } from '@/settings/startedOn'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
@@ -29,6 +30,7 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('')
   const [offset, setOffset] = useState(0)
   const [resetting, setResetting] = useState<AdminUserRead | null>(null)
+  const [editing, setEditing] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const q = useDebounced(search, 250)
@@ -44,16 +46,16 @@ export default function AdminUsersPage() {
     queryClient.invalidateQueries({ queryKey: ['/admin/users'] })
   }
 
-  const patch = async (
-    target: AdminUserRead,
-    data: { is_active?: boolean; is_site_admin?: boolean },
-  ) => {
+  /** Resolves to whether it worked; a failure is shown above the list. */
+  const patch = async (target: AdminUserRead, data: AdminUserUpdate) => {
     setError(null)
     try {
       await updateUser.mutateAsync({ userId: target.id, data })
       refresh()
+      return true
     } catch (err: unknown) {
       setError(errorDetail(err, t('adminUsers.errors.update')))
+      return false
     }
   }
 
@@ -116,6 +118,15 @@ export default function AdminUsersPage() {
           <ul className="divide-y divide-neutral-900/8">
             {shown.map((row) => {
               const isSelf = row.id === user?.id
+              // What the organisation knows about them (#122): their own
+              // words for title and location, and the start date an admin
+              // sets below. Nothing at all when none of it is filled in.
+              const facts = [
+                row.job_title,
+                row.location,
+                row.started_on &&
+                  t('adminUsers.startedOn', { date: formatStartedOn(row.started_on) }),
+              ].filter(Boolean)
               return (
                 <li key={row.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
                   <Avatar user={row} size={34} inactive={!row.is_active} decorative />
@@ -135,6 +146,9 @@ export default function AdminUsersPage() {
                       )}
                       {!row.is_active && <DeactivatedChip />}
                     </p>
+                    {facts.length > 0 && (
+                      <p className="text-xs text-neutral-500">{facts.join(' · ')}</p>
+                    )}
                     <p className="text-xs text-neutral-400">
                       {row.email} · {t('adminUsers.teams', { count: row.team_count })} ·{' '}
                       {row.last_login_at
@@ -152,6 +166,15 @@ export default function AdminUsersPage() {
                   {/* One group, so the three actions wrap together onto a
                       second line rather than one being orphaned below. */}
                   <div className="flex flex-wrap items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(editing === row.id ? null : row.id)}
+                      aria-expanded={editing === row.id}
+                      aria-label={t('adminUsers.editLabel', { name: row.full_name })}
+                      className="btn btn-ghost btn-sm"
+                    >
+                      {t('adminUsers.edit')}
+                    </button>
                     <button
                       type="button"
                       onClick={() => onDeactivate(row)}
@@ -185,6 +208,17 @@ export default function AdminUsersPage() {
                       {t('adminUsers.resetPassword')}
                     </button>
                   </div>
+
+                  {editing === row.id && (
+                    <OrganisationEditor
+                      target={row}
+                      saving={updateUser.isPending}
+                      onCancel={() => setEditing(null)}
+                      onSave={async (data) => {
+                        if (await patch(row, data)) setEditing(null)
+                      }}
+                    />
+                  )}
                 </li>
               )
             })}
@@ -232,6 +266,64 @@ export default function AdminUsersPage() {
         />
       )}
     </div>
+  )
+}
+
+/**
+ * The facts the organisation owns about someone (#122), set inline on their
+ * row. Title and location are not here: those are the person's to say, from
+ * their own profile, and the admin only reads them.
+ */
+function OrganisationEditor({
+  target,
+  saving,
+  onCancel,
+  onSave,
+}: {
+  target: AdminUserRead
+  saving: boolean
+  onCancel: () => void
+  onSave: (data: AdminUserUpdate) => void
+}) {
+  const { t } = useTranslation(['settings', 'common'])
+  const [startedOn, setStartedOn] = useState(target.started_on ?? '')
+
+  const onSubmit = (event: FormEvent) => {
+    event.preventDefault()
+    onSave({ started_on: startedOn || null })
+  }
+
+  return (
+    <form
+      onSubmit={onSubmit}
+      aria-label={t('adminUsers.editor.label', { name: target.full_name })}
+      className="well basis-full rounded-control p-3 sm:ml-[2.875rem]"
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-neutral-500">
+            {t('adminUsers.editor.startDate')}
+          </span>
+          <input
+            type="date"
+            value={startedOn}
+            onChange={(e) => setStartedOn(e.target.value)}
+            className="field field-sm"
+          />
+        </label>
+      </div>
+      <p className="mt-2 text-xs text-neutral-400">
+        {t('adminUsers.editor.theirs', { name: target.full_name })}
+      </p>
+      <div className="mt-3 flex justify-end gap-2">
+        <button type="button" onClick={onCancel} className="btn btn-ghost btn-sm">
+          {t('common:cancel')}
+        </button>
+        <button type="submit" disabled={saving} className="btn btn-primary btn-sm">
+          {saving ? t('common:saving') : t('common:save')}
+        </button>
+      </div>
+    </form>
   )
 }
 

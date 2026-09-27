@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -48,6 +48,17 @@ class UserMe(UserPublic):
     #: password that does not exist.
     has_password: bool
     created_at: datetime
+    #: What the organisation knows about them (#122). Null until somebody
+    #: fills it in. Title and location are theirs to edit; the start date is
+    #: set by a site admin.
+    job_title: Optional[str] = None
+    location: Optional[str] = None
+    started_on: Optional[date] = None
+
+
+#: Long enough for "Senior Staff Site Reliability Engineer, Payments" and a
+#: city with its country; short enough to fit a directory row.
+PROFILE_TEXT_MAX = 100
 
 
 class UserUpdate(BaseModel):
@@ -55,6 +66,10 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     avatar_color: Optional[str] = None
     email: Optional[EmailStr] = None
+    #: Blank or null clears it. Only the person edits these two; there is no
+    #: admin route to them, because a title and a location are theirs to say.
+    job_title: Optional[str] = Field(default=None, max_length=PROFILE_TEXT_MAX)
+    location: Optional[str] = Field(default=None, max_length=PROFILE_TEXT_MAX)
     #: Required only when `email` changes, and only for an account that has a
     #: password. An address is the identity a password reset would one day be
     #: sent to, so changing it is re-verified even though the session is
