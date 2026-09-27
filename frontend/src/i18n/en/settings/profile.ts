@@ -28,6 +28,7 @@ export const profile = {
     title: 'Your place in the organisation',
     intro: 'Set by a site admin. Ask one if something here is wrong.',
     department: 'Department',
+    manager: 'Manager',
     startDate: 'Start date',
     notSet: 'Not set',
   },

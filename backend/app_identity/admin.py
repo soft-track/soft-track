@@ -24,10 +24,20 @@ def list_users(
     ),
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(default=0, ge=0),
+    reports_to_deactivated: bool = Query(
+        default=False,
+        description="Only active people whose manager has been deactivated",
+    ),
     session: Session = Depends(get_session),
     _: User = Depends(require_site_admin),
 ):
-    return admin_service.list_users(session, q=q, limit=limit, offset=offset)
+    return admin_service.list_users(
+        session,
+        q=q,
+        limit=limit,
+        offset=offset,
+        reports_to_deactivated=reports_to_deactivated,
+    )
 
 
 @router.patch("/users/{user_id}", response_model=AdminUserRead)

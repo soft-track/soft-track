@@ -89,6 +89,7 @@ export * from './parentRef';
 export * from './parsedComment';
 export * from './parsedTicket';
 export * from './passwordChange';
+export * from './personRef';
 export * from './personTime';
 export * from './previewTransferTicketsTicketIdTransferGetParams';
 export * from './projectBurnup';

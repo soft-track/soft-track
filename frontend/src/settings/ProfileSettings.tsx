@@ -6,10 +6,11 @@ import {
   useUpdateMeAuthMePatch,
 } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
-import type { DepartmentRef } from '@/api/generated/models'
+import type { DepartmentRef, PersonRef } from '@/api/generated/models'
 import { useAuth } from '@/auth/useAuth'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { DepartmentChip } from '@/people/DepartmentChip'
+import { DeactivatedChip } from '@/settings/RoleChip'
 import { formatStartedOn } from '@/settings/startedOn'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
@@ -249,7 +250,11 @@ export default function ProfileSettings() {
         </div>
       </form>
 
-      <OrganisationFacts department={user.department ?? null} startedOn={user.started_on ?? null} />
+      <OrganisationFacts
+        department={user.department ?? null}
+        manager={user.manager ?? null}
+        startedOn={user.started_on ?? null}
+      />
     </div>
   )
 }
@@ -267,9 +272,11 @@ function Optional(props: { children?: ReactNode }) {
  */
 function OrganisationFacts({
   department,
+  manager,
   startedOn,
 }: {
   department: DepartmentRef | null
+  manager: PersonRef | null
   startedOn: string | null
 }) {
   const { t } = useTranslation(['settings', 'common'])
@@ -292,6 +299,20 @@ function OrganisationFacts({
           <dt className="text-xs text-neutral-400">{t('profile.organisation.department')}</dt>
           <dd className="mt-1 text-sm text-neutral-800">
             {department ? <DepartmentChip department={department} /> : notSet}
+          </dd>
+        </div>
+        <div className="well rounded-control px-4 py-3">
+          <dt className="text-xs text-neutral-400">{t('profile.organisation.manager')}</dt>
+          <dd className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-neutral-800">
+            {manager ? (
+              <>
+                <Avatar user={manager} size={18} inactive={!manager.is_active} decorative />
+                {manager.full_name}
+                {!manager.is_active && <DeactivatedChip />}
+              </>
+            ) : (
+              notSet
+            )}
           </dd>
         </div>
         <div className="well rounded-control px-4 py-3">

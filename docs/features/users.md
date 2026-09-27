@@ -66,6 +66,29 @@ the list: a department's name is no secret from the people who work in it.
 The list is flat on purpose: no parent departments, no heads, no permissions.
 Those are org-chart features that can come later if they earn it.
 
+### Managers
+
+Each person can have one manager: who they report to, and who to ask when
+their work is stuck. A site admin sets it from **Users**, with **Edit** on
+the row, by typing part of a name. People see their manager under their
+profile, and the directory row says `reports to …` and `N direct reports`.
+
+- **A loop is refused, with a sentence.** "Amina Khan can’t report to Daniel
+  Okafor: Daniel Okafor already reports to Amina Khan." The server walks the
+  chain upward from the new manager when the link is set, which also catches a
+  loop through other people ("already reports up to"). Nobody is their own
+  manager.
+- **Deactivating a manager leaves the links in place.** The people reporting to
+  them are not silently orphaned. Instead the user directory shows a banner,
+  "3 people report to a deactivated manager (Jonas Berg)", and **Show them**
+  lists them, each with Edit to choose someone new. On the API that list is
+  `GET /admin/users?reports_to_deactivated=true`. Nobody *new* can report to a
+  deactivated account, but saving someone's other details keeps the manager
+  they already have.
+- **It is information, not authority.** No approvals, no "managers can edit
+  their reports' tickets", no permissions derived from the chain. Roles stay
+  team admin, member and guest, plus the site admin.
+
 ### Team roles
 
 Every membership is `admin`, `member` or `guest`. Admins rename the team,
