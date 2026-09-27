@@ -454,6 +454,45 @@ def test_an_access_token_cannot_be_redeemed_as_a_ticket(client, auth):
     assert response.status_code == 400
 
 
+def test_signing_in_with_a_provider_still_asks_for_the_two_factor_code(
+    client, configured, provider
+):
+    """Two-factor is a property of the account, not of the password: with it
+    on, "Continue with Google" must ask for the code as well, or it is the
+    way around it."""
+    import pyotp
+
+    headers = signed_in(client)
+    enrolled = client.post("/auth/totp/enrol", headers=headers)
+    assert enrolled.status_code == 200, enrolled.text
+    secret = enrolled.json()["manual_key"]
+    confirmed = client.post(
+        "/auth/totp/confirm",
+        json={"code": pyotp.TOTP(secret).now()},
+        headers=headers,
+    )
+    assert confirmed.status_code == 200, confirmed.text
+
+    exchanged = redeem(client, sign_in(client))
+    assert exchanged.status_code == 202, exchanged.text
+    body = exchanged.json()
+    assert body["totp_required"] is True
+    assert "access_token" not in body
+
+    # The pending token is not a session...
+    as_bearer = {"Authorization": f"Bearer {body['pending_token']}"}
+    assert client.get("/auth/me", headers=as_bearer).status_code == 401
+    # ...and the recovery codes complete it, as they do after a password.
+    verified = client.post(
+        "/auth/totp/verify",
+        json={
+            "pending_token": body["pending_token"],
+            "code": confirmed.json()["recovery_codes"][0],
+        },
+    )
+    assert verified.status_code == 200, verified.text
+
+
 # ---------------------------------------------------------------------------
 # The gate on a closed instance
 # ---------------------------------------------------------------------------

@@ -7,9 +7,10 @@ import {
   useLoginAuthLoginPost,
   useMeAuthMeGet,
   useRegisterAuthRegisterPost,
+  useTotpVerifyAuthTotpVerifyPost,
 } from '@/api/generated/endpoints/auth/auth'
 import type { UserMe } from '@/api/generated/models'
-import { AuthContext, type AuthContextValue } from '@/auth/useAuth'
+import { AuthContext, isTotpPending, type AuthContextValue } from '@/auth/useAuth'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() =>
@@ -23,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useLoginAuthLoginPost()
   const registerMutation = useRegisterAuthRegisterPost()
+  const totpVerifyMutation = useTotpVerifyAuthTotpVerifyPost()
 
   const setSession = (newToken: string, user: UserMe) => {
     localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, newToken)
@@ -39,7 +41,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await loginMutation.mutateAsync({
       data: { username: email, password },
     })
+    // A 202: the password was right, and the account wants its code too.
+    if (isTotpPending(result)) return result
     setSession(result.access_token, result.user)
+    return null
+  }
+
+  const totpVerify = async (pendingToken: string, code: string) => {
+    const result = await totpVerifyMutation.mutateAsync({
+      data: { pending_token: pendingToken, code },
+    })
+    // Adopted rather than set: the first factor may have been Google or
+    // GitHub, and whoever arrives is not necessarily who was here before.
+    adoptSession(result.access_token, result.user)
   }
 
   const register = async (
@@ -72,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: Boolean(token) && meQuery.isPending,
       isAuthenticated: Boolean(token) && Boolean(meQuery.data),
       login,
+      totpVerify,
       register,
       setSession,
       adoptSession,

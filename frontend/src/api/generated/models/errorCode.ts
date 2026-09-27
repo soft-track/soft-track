@@ -118,4 +118,10 @@ export const ErrorCode = {
   oauth_expired: 'oauth_expired',
   oauth_connect_failed: 'oauth_connect_failed',
   oauth_not_connected: 'oauth_not_connected',
+  totp_code_invalid: 'totp_code_invalid',
+  totp_session_expired: 'totp_session_expired',
+  totp_not_enrolling: 'totp_not_enrolling',
+  totp_already_enabled: 'totp_already_enabled',
+  totp_not_enabled: 'totp_not_enabled',
+  totp_unavailable: 'totp_unavailable',
 } as const;

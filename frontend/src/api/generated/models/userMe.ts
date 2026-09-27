@@ -25,6 +25,7 @@ export interface UserMe {
   is_site_admin: boolean;
   has_password: boolean;
   created_at: string;
+  totp_enabled: boolean;
   job_title?: string | null;
   location?: string | null;
   started_on?: string | null;

@@ -3,6 +3,7 @@ import { statuses } from '@/i18n/en/settings/statuses'
 import { layout } from '@/i18n/en/settings/layout'
 import { profile } from '@/i18n/en/settings/profile'
 import { security } from '@/i18n/en/settings/security'
+import { twoFactor } from '@/i18n/en/settings/twoFactor'
 import { notifications } from '@/i18n/en/settings/notifications'
 import { apiTokens } from '@/i18n/en/settings/apiTokens'
 import { connectedAccounts } from '@/i18n/en/settings/connectedAccounts'
@@ -22,6 +23,7 @@ export const settings = {
   layout,
   profile,
   security,
+  twoFactor,
   notifications,
   apiTokens,
   connectedAccounts,

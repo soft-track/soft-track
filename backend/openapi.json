@@ -75,12 +75,65 @@
           "auth"
         ],
         "summary": "Login",
+        "description": "Password step of login.\n\nReturns a full `Token` (200) for users without TOTP, or a\n`TotpLoginPending` (202) when TOTP is enabled -- the client must then call\nPOST /auth/totp/verify to complete the login.",
         "operationId": "login_auth_login_post",
         "requestBody": {
           "content": {
             "application/x-www-form-urlencoded": {
               "schema": {
                 "$ref": "#/components/schemas/Body_login_auth_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Two-factor code required: POST it to /auth/totp/verify",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpLoginPending"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/totp/verify": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Totp Verify",
+        "description": "Second step of signing in, for an account with two-factor on.\n\nTakes the `pending_token` a first factor answered with and a code from\nthe authenticator -- or one of the recovery codes.",
+        "operationId": "totp_verify_auth_totp_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TotpVerifyRequest"
               }
             }
           },
@@ -178,6 +231,127 @@
             }
           }
         }
+      }
+    },
+    "/auth/totp/enrol": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Totp Enrol",
+        "description": "Start setting up an authenticator app. Nothing changes until confirmed.",
+        "operationId": "totp_enrol_auth_totp_enrol_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpEnrolmentStart"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/auth/totp/confirm": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Totp Confirm",
+        "description": "Turn two-factor on with a first code from the authenticator.\n\nReturns the recovery codes -- the only time they are shown -- and a fresh\ntoken, because every session is signed out, this one included.",
+        "operationId": "totp_confirm_auth_totp_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TotpCode"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpEnrolmentResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/auth/totp/disable": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Totp Disable",
+        "description": "Turn two-factor off with a live code or a recovery code.\n\nReturns a fresh token, because every session is signed out, this one\nincluded.",
+        "operationId": "totp_disable_auth_totp_disable_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TotpCode"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/auth/me": {
@@ -476,7 +650,7 @@
           "auth"
         ],
         "summary": "Exchange Ticket",
-        "description": "Redeem a finished sign-in for a session.\n\nDeliberately unauthenticated and deliberately a POST: the ticket and the\nhandshake together are the credential, and neither belongs in a URL.",
+        "description": "Redeem a finished sign-in for a session.\n\nDeliberately unauthenticated and deliberately a POST: the ticket and the\nhandshake together are the credential, and neither belongs in a URL.\nFor an account with two-factor on, the answer is a 202 asking for the\ncode, exactly as `/auth/login` gives.",
         "operationId": "exchange_ticket_auth_oauth_exchange_post",
         "requestBody": {
           "content": {
@@ -490,11 +664,21 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Signed in",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Two-factor code required: POST it to /auth/totp/verify",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpLoginPending"
                 }
               }
             }
@@ -858,6 +1042,47 @@
             }
           }
         },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{user_id}/clear-totp": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Clear Totp",
+        "description": "Turn two-factor off for an account, and sign it out everywhere.",
+        "operationId": "clear_totp_admin_users__user_id__clear_totp_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": "Successful Response"
@@ -7294,6 +7519,10 @@
             "format": "date-time",
             "title": "Created At"
           },
+          "totp_enabled": {
+            "type": "boolean",
+            "title": "Totp Enabled"
+          },
           "job_title": {
             "anyOf": [
               {
@@ -7380,6 +7609,7 @@
           "is_site_admin",
           "has_password",
           "created_at",
+          "totp_enabled",
           "team_count",
           "report_count"
         ],
@@ -12635,6 +12865,98 @@
         ],
         "title": "Token"
       },
+      "TotpCode": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "TotpCode",
+        "description": "A code from the authenticator -- or, to turn it off, a recovery code."
+      },
+      "TotpEnrolmentResult": {
+        "properties": {
+          "recovery_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recovery Codes"
+          },
+          "token": {
+            "$ref": "#/components/schemas/Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recovery_codes",
+          "token"
+        ],
+        "title": "TotpEnrolmentResult"
+      },
+      "TotpEnrolmentStart": {
+        "properties": {
+          "provisioning_uri": {
+            "type": "string",
+            "title": "Provisioning Uri"
+          },
+          "manual_key": {
+            "type": "string",
+            "title": "Manual Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provisioning_uri",
+          "manual_key"
+        ],
+        "title": "TotpEnrolmentStart"
+      },
+      "TotpLoginPending": {
+        "properties": {
+          "pending_token": {
+            "type": "string",
+            "title": "Pending Token"
+          },
+          "totp_required": {
+            "type": "boolean",
+            "const": true,
+            "title": "Totp Required",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "pending_token"
+        ],
+        "title": "TotpLoginPending",
+        "description": "A first factor that passed, for an account with two-factor on."
+      },
+      "TotpVerifyRequest": {
+        "properties": {
+          "pending_token": {
+            "type": "string",
+            "title": "Pending Token"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pending_token",
+          "code"
+        ],
+        "title": "TotpVerifyRequest"
+      },
       "TransferPlan": {
         "properties": {
           "from_identifier": {
@@ -12893,6 +13215,10 @@
             "format": "date-time",
             "title": "Created At"
           },
+          "totp_enabled": {
+            "type": "boolean",
+            "title": "Totp Enabled"
+          },
           "job_title": {
             "anyOf": [
               {
@@ -12958,7 +13284,8 @@
           "is_active",
           "is_site_admin",
           "has_password",
-          "created_at"
+          "created_at",
+          "totp_enabled"
         ],
         "title": "UserMe",
         "description": "The signed-in user's own record.\n\nA superset of UserPublic rather than a separate model: what the account\ncan do instance-wide is the user's business, and nobody else's, so it is\nonly ever returned for `me`."
@@ -13675,7 +14002,13 @@
           "oauth_provider_disabled",
           "oauth_expired",
           "oauth_connect_failed",
-          "oauth_not_connected"
+          "oauth_not_connected",
+          "totp_code_invalid",
+          "totp_session_expired",
+          "totp_not_enrolling",
+          "totp_already_enabled",
+          "totp_not_enabled",
+          "totp_unavailable"
         ],
         "title": "ErrorCode",
         "type": "string"

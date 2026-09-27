@@ -35,6 +35,7 @@ const DANIEL: UserMe = {
   is_active: true,
   is_site_admin: false,
   has_password: true,
+  totp_enabled: false,
   created_at: '2026-01-01T00:00:00',
   job_title: null,
   location: null,

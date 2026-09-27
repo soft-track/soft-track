@@ -9,6 +9,7 @@ import { useAuth } from '@/auth/useAuth'
 import { useTranslation } from '@/i18n'
 import { ApiTokens } from '@/settings/ApiTokens'
 import { ConnectedAccounts } from '@/settings/ConnectedAccounts'
+import { TwoFactorAuth } from '@/settings/TwoFactorAuth'
 import { Icon } from '@/ui/Icon'
 
 export default function SecuritySettings() {
@@ -165,6 +166,8 @@ export default function SecuritySettings() {
           </button>
         </div>
       </form>
+
+      <TwoFactorAuth />
 
       <ConnectedAccounts />
 

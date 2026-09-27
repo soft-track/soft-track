@@ -119,6 +119,11 @@ def test_a_token_cannot_manage_tokens_or_the_password(client, team):
             "/auth/me/password",
             {"current_password": "password123", "new_password": "taken-over"},
         ),
+        # Two-factor too: off, or on with an authenticator the holder controls.
+        ("post", "/auth/totp/enrol", None),
+        ("post", "/auth/totp/confirm", {"code": "123456"}),
+        ("post", "/auth/totp/disable", {"code": "123456"}),
+        ("post", f"/admin/users/{team['user']['id']}/clear-totp", None),
     ]:
         response = client.request(method, url, json=body, headers=bearer(secret))
         assert response.status_code == 403, (url, response.text)

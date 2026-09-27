@@ -18,6 +18,15 @@ export const errors = {
   reset_link_invalid:
     'This reset link is invalid or has expired. Ask for a new one below.',
 
+  // Two-factor sign-in.
+  totp_code_invalid: 'That code did not work. Codes change every 30 seconds, and each one works once.',
+  totp_session_expired: 'That sign-in took too long. Start again.',
+  totp_not_enrolling: 'That setup has expired. Start setting up two-factor again.',
+  totp_already_enabled: 'Two-factor is already on. Turn it off first to set it up again.',
+  totp_not_enabled: 'Two-factor is not on for this account.',
+  totp_unavailable:
+    'Two-factor sign-in is unavailable for this account. Ask a site admin to reset it.',
+
   // What a team lets you do.
   not_team_member: 'You are not a member of this team.',
   not_team_admin: 'Only an admin of this team can do that.',

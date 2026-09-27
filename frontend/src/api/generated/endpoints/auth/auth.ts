@@ -41,6 +41,11 @@ import type {
   PasswordChange,
   ResetPassword,
   Token,
+  TotpCode,
+  TotpEnrolmentResult,
+  TotpEnrolmentStart,
+  TotpLoginPending,
+  TotpVerifyRequest,
   UserCreate,
   UserMe,
   UserUpdate
@@ -236,6 +241,11 @@ export const useRegisterAuthRegisterPost = <TError = HTTPValidationError,
       return useMutation(getRegisterAuthRegisterPostMutationOptions(options), queryClient);
     }
     /**
+ * Password step of login.
+ *
+ * Returns a full `Token` (200) for users without TOTP, or a
+ * `TotpLoginPending` (202) when TOTP is enabled -- the client must then call
+ * POST /auth/totp/verify to complete the login.
  * @summary Login
  */
 export const loginAuthLoginPost = (
@@ -259,7 +269,7 @@ if(bodyLoginAuthLoginPost.client_secret !== undefined && bodyLoginAuthLoginPost.
  formUrlEncoded.append(`client_secret`, bodyLoginAuthLoginPost.client_secret);
  }
 
-      return apiClient<Token>(
+      return apiClient<Token | TotpLoginPending>(
       {url: `/auth/login`, method: 'POST',
       headers: {'Content-Type': 'application/x-www-form-urlencoded', },
        data: formUrlEncoded, signal
@@ -316,6 +326,77 @@ export const useLoginAuthLoginPost = <TError = HTTPValidationError,
         TContext
       > => {
       return useMutation(getLoginAuthLoginPostMutationOptions(options), queryClient);
+    }
+    /**
+ * Second step of signing in, for an account with two-factor on.
+ *
+ * Takes the `pending_token` a first factor answered with and a code from
+ * the authenticator -- or one of the recovery codes.
+ * @summary Totp Verify
+ */
+export const totpVerifyAuthTotpVerifyPost = (
+    totpVerifyRequest: TotpVerifyRequest,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<Token>(
+      {url: `/auth/totp/verify`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: totpVerifyRequest, signal
+    },
+      );
+    }
+
+
+
+
+export const getTotpVerifyAuthTotpVerifyPostMutationKey = () => ['totpVerifyAuthTotpVerifyPost'] as const;
+
+export const getTotpVerifyAuthTotpVerifyPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpVerifyAuthTotpVerifyPost>>, TError,TotpVerifyAuthTotpVerifyPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof totpVerifyAuthTotpVerifyPost>>, TError,TotpVerifyAuthTotpVerifyPostMutationVariables, TContext> => {
+
+const mutationKey = getTotpVerifyAuthTotpVerifyPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof totpVerifyAuthTotpVerifyPost>>, TotpVerifyAuthTotpVerifyPostMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  totpVerifyAuthTotpVerifyPost(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TotpVerifyAuthTotpVerifyPostMutationResult = NonNullable<Awaited<ReturnType<typeof totpVerifyAuthTotpVerifyPost>>>
+    export type TotpVerifyAuthTotpVerifyPostMutationBody = TotpVerifyRequest
+    export type TotpVerifyAuthTotpVerifyPostMutationError = HTTPValidationError
+    export type TotpVerifyAuthTotpVerifyPostMutationVariables = {data: TotpVerifyRequest}
+
+    /**
+ * @summary Totp Verify
+ */
+export const useTotpVerifyAuthTotpVerifyPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpVerifyAuthTotpVerifyPost>>, TError,TotpVerifyAuthTotpVerifyPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof totpVerifyAuthTotpVerifyPost>>,
+        TError,
+        TotpVerifyAuthTotpVerifyPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getTotpVerifyAuthTotpVerifyPostMutationOptions(options), queryClient);
     }
     /**
  * Email a single-use link for choosing a new password.
@@ -460,6 +541,214 @@ export const useResetPasswordAuthResetPasswordPost = <TError = HTTPValidationErr
         TContext
       > => {
       return useMutation(getResetPasswordAuthResetPasswordPostMutationOptions(options), queryClient);
+    }
+    /**
+ * Start setting up an authenticator app. Nothing changes until confirmed.
+ * @summary Totp Enrol
+ */
+export const totpEnrolAuthTotpEnrolPost = (
+
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TotpEnrolmentStart>(
+      {url: `/auth/totp/enrol`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+
+export const getTotpEnrolAuthTotpEnrolPostMutationKey = () => ['totpEnrolAuthTotpEnrolPost'] as const;
+
+export const getTotpEnrolAuthTotpEnrolPostMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpEnrolAuthTotpEnrolPost>>, TError,void, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof totpEnrolAuthTotpEnrolPost>>, TError,void, TContext> => {
+
+const mutationKey = getTotpEnrolAuthTotpEnrolPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof totpEnrolAuthTotpEnrolPost>>, void> = () => {
+
+
+          return  totpEnrolAuthTotpEnrolPost()
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TotpEnrolAuthTotpEnrolPostMutationResult = NonNullable<Awaited<ReturnType<typeof totpEnrolAuthTotpEnrolPost>>>
+
+    export type TotpEnrolAuthTotpEnrolPostMutationError = unknown
+
+
+    /**
+ * @summary Totp Enrol
+ */
+export const useTotpEnrolAuthTotpEnrolPost = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpEnrolAuthTotpEnrolPost>>, TError,void, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof totpEnrolAuthTotpEnrolPost>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getTotpEnrolAuthTotpEnrolPostMutationOptions(options), queryClient);
+    }
+    /**
+ * Turn two-factor on with a first code from the authenticator.
+ *
+ * Returns the recovery codes -- the only time they are shown -- and a fresh
+ * token, because every session is signed out, this one included.
+ * @summary Totp Confirm
+ */
+export const totpConfirmAuthTotpConfirmPost = (
+    totpCode: TotpCode,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TotpEnrolmentResult>(
+      {url: `/auth/totp/confirm`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: totpCode, signal
+    },
+      );
+    }
+
+
+
+
+export const getTotpConfirmAuthTotpConfirmPostMutationKey = () => ['totpConfirmAuthTotpConfirmPost'] as const;
+
+export const getTotpConfirmAuthTotpConfirmPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpConfirmAuthTotpConfirmPost>>, TError,TotpConfirmAuthTotpConfirmPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof totpConfirmAuthTotpConfirmPost>>, TError,TotpConfirmAuthTotpConfirmPostMutationVariables, TContext> => {
+
+const mutationKey = getTotpConfirmAuthTotpConfirmPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof totpConfirmAuthTotpConfirmPost>>, TotpConfirmAuthTotpConfirmPostMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  totpConfirmAuthTotpConfirmPost(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TotpConfirmAuthTotpConfirmPostMutationResult = NonNullable<Awaited<ReturnType<typeof totpConfirmAuthTotpConfirmPost>>>
+    export type TotpConfirmAuthTotpConfirmPostMutationBody = TotpCode
+    export type TotpConfirmAuthTotpConfirmPostMutationError = HTTPValidationError
+    export type TotpConfirmAuthTotpConfirmPostMutationVariables = {data: TotpCode}
+
+    /**
+ * @summary Totp Confirm
+ */
+export const useTotpConfirmAuthTotpConfirmPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpConfirmAuthTotpConfirmPost>>, TError,TotpConfirmAuthTotpConfirmPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof totpConfirmAuthTotpConfirmPost>>,
+        TError,
+        TotpConfirmAuthTotpConfirmPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getTotpConfirmAuthTotpConfirmPostMutationOptions(options), queryClient);
+    }
+    /**
+ * Turn two-factor off with a live code or a recovery code.
+ *
+ * Returns a fresh token, because every session is signed out, this one
+ * included.
+ * @summary Totp Disable
+ */
+export const totpDisableAuthTotpDisablePost = (
+    totpCode: TotpCode,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<Token>(
+      {url: `/auth/totp/disable`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: totpCode, signal
+    },
+      );
+    }
+
+
+
+
+export const getTotpDisableAuthTotpDisablePostMutationKey = () => ['totpDisableAuthTotpDisablePost'] as const;
+
+export const getTotpDisableAuthTotpDisablePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpDisableAuthTotpDisablePost>>, TError,TotpDisableAuthTotpDisablePostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof totpDisableAuthTotpDisablePost>>, TError,TotpDisableAuthTotpDisablePostMutationVariables, TContext> => {
+
+const mutationKey = getTotpDisableAuthTotpDisablePostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof totpDisableAuthTotpDisablePost>>, TotpDisableAuthTotpDisablePostMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  totpDisableAuthTotpDisablePost(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TotpDisableAuthTotpDisablePostMutationResult = NonNullable<Awaited<ReturnType<typeof totpDisableAuthTotpDisablePost>>>
+    export type TotpDisableAuthTotpDisablePostMutationBody = TotpCode
+    export type TotpDisableAuthTotpDisablePostMutationError = HTTPValidationError
+    export type TotpDisableAuthTotpDisablePostMutationVariables = {data: TotpCode}
+
+    /**
+ * @summary Totp Disable
+ */
+export const useTotpDisableAuthTotpDisablePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof totpDisableAuthTotpDisablePost>>, TError,TotpDisableAuthTotpDisablePostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof totpDisableAuthTotpDisablePost>>,
+        TError,
+        TotpDisableAuthTotpDisablePostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getTotpDisableAuthTotpDisablePostMutationOptions(options), queryClient);
     }
     /**
  * @summary Me
@@ -1081,6 +1370,8 @@ export function useMyInvitesAuthMeInvitesGet<TData = Awaited<ReturnType<typeof m
  *
  * Deliberately unauthenticated and deliberately a POST: the ticket and the
  * handshake together are the credential, and neither belongs in a URL.
+ * For an account with two-factor on, the answer is a 202 asking for the
+ * code, exactly as `/auth/login` gives.
  * @summary Exchange Ticket
  */
 export const exchangeTicketAuthOauthExchangePost = (
@@ -1089,7 +1380,7 @@ export const exchangeTicketAuthOauthExchangePost = (
 ) => {
 
 
-      return apiClient<Token>(
+      return apiClient<Token | TotpLoginPending>(
       {url: `/auth/oauth/exchange`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: oAuthExchange, signal

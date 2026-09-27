@@ -79,6 +79,7 @@ def test_me_returns_the_current_user(client, auth):
         "job_title",
         "location",
         "started_on",
+        "totp_enabled",
         "department",
         "manager",
     }

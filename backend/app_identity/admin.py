@@ -5,6 +5,7 @@ from sqlmodel import Session
 
 from lib_identity import admin as admin_service
 from lib_identity.admin import require_site_admin
+from lib_identity.api_tokens import RequireSession
 from lib_identity.models.admin import (
     AdminPasswordReset,
     AdminUserRead,
@@ -58,4 +59,17 @@ def reset_password(
     actor: User = Depends(require_site_admin),
 ):
     admin_service.reset_password(session, actor, user_id, payload.new_password)
+    return Response(status_code=204)
+
+
+@router.post("/users/{user_id}/clear-totp", status_code=204)
+def clear_totp(
+    user_id: int,
+    session: Session = Depends(get_session),
+    actor: User = Depends(require_site_admin),
+    # Taking away somebody's second factor is managing a credential (#90).
+    _session_only: None = RequireSession,
+):
+    """Turn two-factor off for an account, and sign it out everywhere."""
+    admin_service.admin_clear_totp(session, actor, user_id)
     return Response(status_code=204)

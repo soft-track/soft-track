@@ -8,6 +8,7 @@ import { DEMO_EMAIL, DEMO_PASSWORD } from '@/auth/demo'
 import { oauthErrorMessage } from '@/auth/oauth'
 import { ProviderButtons } from '@/auth/ProviderButtons'
 import { signInDestination } from '@/auth/redirect'
+import { TotpChallenge } from '@/auth/TotpChallenge'
 import { Trans, useTranslation } from '@/i18n'
 import { Logo } from '@/ui/Logo'
 
@@ -36,6 +37,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  // Set once the password has passed for an account with two-factor on.
+  const [pendingToken, setPendingToken] = useState<string | null>(null)
 
   // `?next=` as well as the router's own state -- see signInDestination for
   // why there are two sources and why only one shape of value is honoured.
@@ -54,8 +57,13 @@ export default function LoginPage() {
     setError(null)
     setSubmitting(true)
     try {
-      await login(email, password)
-      navigate(from, { replace: true })
+      const pending = await login(email, password)
+      if (pending) {
+        setPendingToken(pending.pending_token)
+        setPassword('')
+      } else {
+        navigate(from, { replace: true })
+      }
     } catch (err: unknown) {
       // Surface what the API said rather than always blaming the password.
       // Sign-in is rate limited, and a throttled person told "incorrect
@@ -87,72 +95,83 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={onSubmit} className="glass-strong sheen space-y-4 rounded-panel p-6">
-          {message && (
-            <div
-              role="alert"
-              className="rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
-            >
-              {message}
-            </div>
-          )}
+        {pendingToken ? (
+          <TotpChallenge
+            pendingToken={pendingToken}
+            onSignedIn={() => navigate(from, { replace: true })}
+            onRestart={(reason) => {
+              setPendingToken(null)
+              setError(reason ?? null)
+            }}
+          />
+        ) : (
+          <form onSubmit={onSubmit} className="glass-strong sheen space-y-4 rounded-panel p-6">
+            {message && (
+              <div
+                role="alert"
+                className="rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+              >
+                {message}
+              </div>
+            )}
 
-          <ProviderButtons next={from} />
+            <ProviderButtons next={from} />
 
-          <div>
-            <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-neutral-700">
-              {t('fields.email')}
-            </label>
-            <input
-              id="login-email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setTypedEmail(e.target.value)}
-              className="field"
-              placeholder={t('fields.emailPlaceholder')}
-            />
-          </div>
-
-          <div>
-            <div className="mb-1.5 flex items-baseline justify-between">
-              <label htmlFor="login-password" className="block text-sm font-medium text-neutral-700">
-                {t('fields.password')}
+            <div>
+              <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-neutral-700">
+                {t('fields.email')}
               </label>
-              {/* Only where the email can actually be sent: a link to a form
-                  whose mail never arrives is worse than no link. */}
-              {config.data?.password_reset && (
-                <Link
-                  to="/forgot-password"
-                  className="text-xs font-medium text-brand-600 hover:text-brand-700"
-                >
-                  {t('login.forgotPassword')}
-                </Link>
-              )}
+              <input
+                id="login-email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setTypedEmail(e.target.value)}
+                className="field"
+                placeholder={t('fields.emailPlaceholder')}
+              />
             </div>
-            <input
-              id="login-password"
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="field"
-              placeholder="••••••••"
-            />
-          </div>
 
-          <button type="submit" disabled={submitting} className="btn btn-primary h-10 w-full text-sm">
-            {submitting ? t('login.submitting') : t('login.submit')}
-          </button>
+            <div>
+              <div className="mb-1.5 flex items-baseline justify-between">
+                <label htmlFor="login-password" className="block text-sm font-medium text-neutral-700">
+                  {t('fields.password')}
+                </label>
+                {/* Only where the email can actually be sent: a link to a form
+                    whose mail never arrives is worse than no link. */}
+                {config.data?.password_reset && (
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs font-medium text-brand-600 hover:text-brand-700"
+                  >
+                    {t('login.forgotPassword')}
+                  </Link>
+                )}
+              </div>
+              <input
+                id="login-password"
+                type="password"
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="field"
+                placeholder="••••••••"
+              />
+            </div>
 
-          {demoCredentials && (
-            <p className="text-center text-xs text-neutral-400">
-              {t('login.demo', { email: DEMO_EMAIL, password: DEMO_PASSWORD })}
-            </p>
-          )}
-        </form>
+            <button type="submit" disabled={submitting} className="btn btn-primary h-10 w-full text-sm">
+              {submitting ? t('login.submitting') : t('login.submit')}
+            </button>
+
+            {demoCredentials && (
+              <p className="text-center text-xs text-neutral-400">
+                {t('login.demo', { email: DEMO_EMAIL, password: DEMO_PASSWORD })}
+              </p>
+            )}
+          </form>
+        )}
 
         {config.data?.open_registration !== false && (
           <p className="mt-5 text-center text-sm text-neutral-500">

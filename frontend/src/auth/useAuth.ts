@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 
-import type { UserMe } from '@/api/generated/models'
+import type { Token, TotpLoginPending, UserMe } from '@/api/generated/models'
 
 /**
  * The session half of a context/provider pair split across two files.
@@ -15,7 +15,13 @@ export interface AuthContextValue {
   user: UserMe | null
   isLoading: boolean
   isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<void>
+  /**
+   * Sign in with a password. Resolves to null once signed in, or -- for an
+   * account with two-factor on -- to the pending sign-in `totpVerify` finishes.
+   */
+  login: (email: string, password: string) => Promise<TotpLoginPending | null>
+  /** Finish a two-factor sign-in with a code or a recovery code. */
+  totpVerify: (pendingToken: string, code: string) => Promise<void>
   register: (
     email: string,
     password: string,
@@ -49,4 +55,9 @@ export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used within an AuthProvider')
   return ctx
+}
+
+/** Whether a sign-in answered "now the code" rather than with a session. */
+export function isTotpPending(result: Token | TotpLoginPending): result is TotpLoginPending {
+  return 'pending_token' in result
 }

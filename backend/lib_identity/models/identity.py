@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -68,6 +68,8 @@ class UserMe(UserPublic):
     #: password that does not exist.
     has_password: bool
     created_at: datetime
+    #: Whether signing in also asks for a code from an authenticator app.
+    totp_enabled: bool
     #: What the organisation knows about them (#122). Null until somebody
     #: fills it in. Title and location are theirs to edit; the start date is
     #: set by a site admin.
@@ -144,3 +146,38 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserMe
+
+
+class TotpLoginPending(BaseModel):
+    """A first factor that passed, for an account with two-factor on."""
+
+    #: Redeem with a code at /auth/totp/verify. Lives five minutes, and is no
+    #: use as a bearer token.
+    pending_token: str
+    totp_required: Literal[True] = True
+
+
+class TotpVerifyRequest(BaseModel):
+    pending_token: str
+    #: Six digits from the authenticator, or one of the recovery codes.
+    code: str = Field(max_length=64)
+
+
+class TotpEnrolmentStart(BaseModel):
+    #: The `otpauth://` URI, for a QR code.
+    provisioning_uri: str
+    #: The same secret in Base32, for typing in by hand.
+    manual_key: str
+
+
+class TotpCode(BaseModel):
+    """A code from the authenticator -- or, to turn it off, a recovery code."""
+
+    code: str = Field(max_length=64)
+
+
+class TotpEnrolmentResult(BaseModel):
+    #: Shown once and never again; only their hashes are stored.
+    recovery_codes: list[str]
+    #: Every session was signed out, this one included. This keeps it going.
+    token: Token

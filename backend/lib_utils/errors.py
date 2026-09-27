@@ -184,6 +184,20 @@ class ErrorCode(str, enum.Enum):
     oauth_expired = "oauth_expired"
     oauth_connect_failed = "oauth_connect_failed"
     oauth_not_connected = "oauth_not_connected"
+    #: The two-factor code (or recovery code) is wrong, or was already used.
+    totp_code_invalid = "totp_code_invalid"
+    #: The five minutes between the password and the code ran out, or the
+    #: account's sessions were revoked in between. Start signing in again.
+    totp_session_expired = "totp_session_expired"
+    #: Confirming a two-factor setup that was never started.
+    totp_not_enrolling = "totp_not_enrolling"
+    #: Setting up two-factor again while it is on. Turn it off first.
+    totp_already_enabled = "totp_already_enabled"
+    #: Turning off two-factor on an account that does not have it.
+    totp_not_enabled = "totp_not_enabled"
+    #: The stored secret cannot be read with this instance's key -- usually a
+    #: rotated SECRET_KEY. A site admin has to clear two-factor for the account.
+    totp_unavailable = "totp_unavailable"
 
 
 class ApiErrorBody(BaseModel):

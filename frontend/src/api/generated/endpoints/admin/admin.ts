@@ -282,3 +282,69 @@ export const useResetPasswordAdminUsersUserIdResetPasswordPost = <TError = HTTPV
       > => {
       return useMutation(getResetPasswordAdminUsersUserIdResetPasswordPostMutationOptions(options), queryClient);
     }
+    /**
+ * Turn two-factor off for an account, and sign it out everywhere.
+ * @summary Clear Totp
+ */
+export const clearTotpAdminUsersUserIdClearTotpPost = (
+    userId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/admin/users/${userId}/clear-totp`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+
+export const getClearTotpAdminUsersUserIdClearTotpPostMutationKey = () => ['clearTotpAdminUsersUserIdClearTotpPost'] as const;
+
+export const getClearTotpAdminUsersUserIdClearTotpPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearTotpAdminUsersUserIdClearTotpPost>>, TError,ClearTotpAdminUsersUserIdClearTotpPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof clearTotpAdminUsersUserIdClearTotpPost>>, TError,ClearTotpAdminUsersUserIdClearTotpPostMutationVariables, TContext> => {
+
+const mutationKey = getClearTotpAdminUsersUserIdClearTotpPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearTotpAdminUsersUserIdClearTotpPost>>, ClearTotpAdminUsersUserIdClearTotpPostMutationVariables> = (props) => {
+          const {userId} = props ?? {};
+
+          return  clearTotpAdminUsersUserIdClearTotpPost(userId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClearTotpAdminUsersUserIdClearTotpPostMutationResult = NonNullable<Awaited<ReturnType<typeof clearTotpAdminUsersUserIdClearTotpPost>>>
+
+    export type ClearTotpAdminUsersUserIdClearTotpPostMutationError = HTTPValidationError
+    export type ClearTotpAdminUsersUserIdClearTotpPostMutationVariables = {userId: number}
+
+    /**
+ * @summary Clear Totp
+ */
+export const useClearTotpAdminUsersUserIdClearTotpPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearTotpAdminUsersUserIdClearTotpPost>>, TError,ClearTotpAdminUsersUserIdClearTotpPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof clearTotpAdminUsersUserIdClearTotpPost>>,
+        TError,
+        ClearTotpAdminUsersUserIdClearTotpPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getClearTotpAdminUsersUserIdClearTotpPostMutationOptions(options), queryClient);
+    }

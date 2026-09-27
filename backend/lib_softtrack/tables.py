@@ -453,6 +453,13 @@ class User(SQLModel, table=True):
         sa_relationship_kwargs={"remote_side": "User.id"}
     )
 
+    # --- Two-factor authentication ----------------------------------------
+    totp_secret: Optional[str] = Field(default=None)
+    totp_pending_secret: Optional[str] = Field(default=None)
+    totp_enabled: bool = Field(default=False)
+    totp_recovery_codes: Optional[str] = Field(default=None)
+    totp_last_step: Optional[int] = Field(default=None)
+
     @property
     def has_password(self) -> bool:
         """Whether this account can be signed into with a password.

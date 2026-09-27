@@ -29,12 +29,16 @@ export const adminUsers = {
   removeSiteAdmin: 'Remove site admin',
   cannotChangeOwnAdmin: 'You cannot change your own site admin access',
   resetPassword: 'Reset password',
+  clearTotp: 'Reset two-factor',
+  confirmClearTotp:
+    'Turn off two-factor for {{name}}? Only do this once you are sure it is them asking — they will sign in with just their password, and every session they have ends now.',
   showing: 'Showing {{from}}–{{to}} of {{total}}',
   previous: 'Previous',
   next: 'Next',
   errors: {
     update: 'Could not update that account.',
     reset: 'Could not reset that password.',
+    clearTotp: 'Could not reset two-factor for that account.',
   },
   /** The organisation's facts about someone, set on their row (#122). */
   editor: {

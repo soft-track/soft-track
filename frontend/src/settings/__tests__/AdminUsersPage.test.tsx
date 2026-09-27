@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => ({
   listCalls: [] as unknown[],
   update: { mutateAsync: vi.fn(), isPending: false },
   reset: { mutateAsync: vi.fn(), isPending: false },
+  clearTotp: { mutateAsync: vi.fn(), isPending: false },
   departments: {
     data: [
       { id: 1, name: 'Engineering', description: null, member_count: 3 },
@@ -50,6 +51,7 @@ vi.mock('@/api/generated/endpoints/admin/admin', async (importOriginal) => ({
   },
   useUpdateUserAdminUsersUserIdPatch: () => mocks.update,
   useResetPasswordAdminUsersUserIdResetPasswordPost: () => mocks.reset,
+  useClearTotpAdminUsersUserIdClearTotpPost: () => mocks.clearTotp,
 }))
 
 vi.mock('@/api/generated/endpoints/departments/departments', async (importOriginal) => ({
@@ -66,6 +68,7 @@ const BASE: AdminUserRead = {
   is_active: true,
   is_site_admin: false,
   has_password: true,
+  totp_enabled: false,
   created_at: '2026-01-01T00:00:00',
   last_login_at: null,
   team_count: 1,
@@ -299,5 +302,31 @@ describe('The admin user directory', () => {
   it('shows no banner when nobody is stranded', () => {
     renderPage([DANIEL])
     expect(screen.queryByText(/deactivated manager/)).toBeNull()
+  })
+})
+
+describe('Resetting someone’s two-factor', () => {
+  it('is offered only for an account that has it on', () => {
+    renderPage([DANIEL])
+    expect(screen.queryByRole('button', { name: 'Reset two-factor' })).toBeNull()
+    cleanup()
+
+    renderPage([{ ...DANIEL, totp_enabled: true }])
+    expect(screen.getByRole('button', { name: 'Reset two-factor' })).toBeTruthy()
+  })
+
+  it('asks first, then clears it', async () => {
+    mocks.clearTotp.mutateAsync.mockReset().mockResolvedValue(undefined)
+    const confirm = vi.spyOn(window, 'confirm')
+    const user = renderPage([{ ...DANIEL, totp_enabled: true }])
+
+    confirm.mockReturnValueOnce(false)
+    await user.click(screen.getByRole('button', { name: 'Reset two-factor' }))
+    expect(mocks.clearTotp.mutateAsync).not.toHaveBeenCalled()
+
+    confirm.mockReturnValueOnce(true)
+    await user.click(screen.getByRole('button', { name: 'Reset two-factor' }))
+    expect(mocks.clearTotp.mutateAsync).toHaveBeenCalledWith({ userId: 2 })
+    confirm.mockRestore()
   })
 })

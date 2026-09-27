@@ -52,8 +52,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, select
 
 from lib_identity import oauth_providers
-from lib_identity.identity import create_user, find_user_by_email, ticket_token
-from lib_identity.models.identity import Token
+from lib_identity.identity import (
+    create_user,
+    find_user_by_email,
+    ticket_token,
+    totp_challenge,
+)
+from lib_identity.models.identity import Token, TotpLoginPending
 from lib_identity.models.oauth import ConnectedIdentity
 from lib_identity.oauth_providers import OAuthError, OAuthIdentity, Provider
 from lib_softtrack.tables import OAuthProvider, User, UserIdentity, utcnow
@@ -636,7 +641,7 @@ def _linking_user(session: Session, claims: dict) -> User:
 # ---------------------------------------------------------------------------
 
 
-def exchange(session: Session, ticket: str, handshake: str) -> Token:
+def exchange(session: Session, ticket: str, handshake: str) -> Token | TotpLoginPending:
     """Trade the callback's ticket for a session.
 
     The ticket travelled in a URL fragment and the handshake never left the
@@ -674,6 +679,11 @@ def exchange(session: Session, ticket: str, handshake: str) -> Token:
             detail="That sign-in has expired",
         )
 
+    # The provider stands in for the password, not for the second factor. An
+    # account with two-factor on is asked for its code here as well, or
+    # "Continue with Google" would be the way around it.
+    if user.totp_enabled:
+        return totp_challenge(user)
     return ticket_token(user)
 
 
