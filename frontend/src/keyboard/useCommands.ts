@@ -16,6 +16,7 @@ export function useCommands({
   teams,
   user,
   openNewIssue,
+  openNewProject,
   openShortcuts,
 }: {
   view: BoardView
@@ -25,6 +26,8 @@ export function useCommands({
   user: UserMe | null
   /** Absent for a guest (#104), who has nothing to create. */
   openNewIssue?: () => void
+  /** Absent for a guest, the same way. */
+  openNewProject?: () => void
   openShortcuts: () => void
 }): Command[] {
   const navigate = useNavigate()
@@ -42,6 +45,16 @@ export function useCommands({
               hint: 'C',
               group: actions,
               run: openNewIssue,
+            },
+          ]
+        : []),
+      ...(openNewProject
+        ? [
+            {
+              id: 'new-project',
+              label: t('commands.newProject'),
+              group: actions,
+              run: openNewProject,
             },
           ]
         : []),
@@ -104,6 +117,7 @@ export function useCommands({
     user?.is_site_admin,
     navigate,
     openNewIssue,
+    openNewProject,
     openShortcuts,
     t,
   ])

@@ -18,6 +18,7 @@ export type Overlay =
   | 'palette'
   | 'shortcuts'
   | 'newCycle'
+  | 'newProject'
   | 'import'
   | 'notifications'
   | 'saveView'

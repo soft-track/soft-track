@@ -6,6 +6,7 @@ export const commands = {
     account: 'Account',
   },
   newIssue: 'Create an issue',
+  newProject: 'Create a project',
   switchToList: 'Switch to list view',
   switchToBoard: 'Switch to board view',
   showShortcuts: 'Show keyboard shortcuts',

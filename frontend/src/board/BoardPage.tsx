@@ -51,6 +51,7 @@ import { ShortcutsCheatsheet } from '@/keyboard/ShortcutsCheatsheet'
 import { BOARD_VIEWS, type BoardView, useCommands } from '@/keyboard/useCommands'
 import { useGlobalShortcuts } from '@/keyboard/useGlobalShortcuts'
 import { isTypingTarget } from '@/keyboard/typing'
+import { NewProjectModal } from '@/projects/NewProjectModal'
 import { ProjectPage } from '@/projects/ProjectPage'
 import { RoadmapView } from '@/projects/RoadmapView'
 import { useTeamEvents } from '@/realtime/useTeamEvents'
@@ -243,6 +244,8 @@ export default function BoardPage() {
   const canWrite = canWriteIn(teamData.members, user?.id)
   const openNewIssueNow = useCallback(() => overlays.open('newIssue'), [overlays])
   const openNewIssue = canWrite ? openNewIssueNow : undefined
+  const openNewProjectNow = useCallback(() => overlays.open('newProject'), [overlays])
+  const openNewProject = canWrite ? openNewProjectNow : undefined
   const openShortcuts = useCallback(() => overlays.open('shortcuts'), [overlays])
   const togglePalette = useCallback(() => overlays.toggle('palette'), [overlays])
 
@@ -260,6 +263,7 @@ export default function BoardPage() {
     teams,
     user,
     openNewIssue,
+    openNewProject,
     openShortcuts,
   })
 
@@ -366,6 +370,14 @@ export default function BoardPage() {
           ? () => {
               setSidebarOpen(false)
               overlays.open('newCycle')
+            }
+          : undefined
+      }
+      onNewProject={
+        openNewProject
+          ? () => {
+              setSidebarOpen(false)
+              openNewProject()
             }
           : undefined
       }
@@ -492,6 +504,9 @@ export default function BoardPage() {
       )}
       {overlays.isOpen('newIssue') && <NewIssueModal onClose={() => overlays.close('newIssue')} />}
       {overlays.isOpen('newCycle') && <NewCycleModal onClose={() => overlays.close('newCycle')} />}
+      {overlays.isOpen('newProject') && (
+        <NewProjectModal onClose={() => overlays.close('newProject')} />
+      )}
       {overlays.isOpen('import') && <ImportJiraModal onClose={() => overlays.close('import')} />}
       {overlays.isOpen('saveView') && (
         <SaveViewModal

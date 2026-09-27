@@ -11,6 +11,13 @@ a project is finished, not a decision that it is. Archiving a project takes it
 out of the pickers without touching the issues already in it, and deleting one
 keeps its issues and leaves them with no project.
 
+**Creating one.** The **+** beside Projects in the sidebar, or *Create a
+project* in the command palette, asks for a name, a colour, a lead and a
+target date, and only the name is required. The colour starts on one no other
+project on the team is wearing, so two projects can be told apart on the
+board without anyone choosing. The new project opens on its own page, which
+is where issues get added. Guests are offered neither.
+
 **Each project has its own page**, opened from the arrow on its row in the
 sidebar. The page shows the project's fields, which you can edit there, and its
 issues grouped by the team's columns. Issues can be added (found by search) and

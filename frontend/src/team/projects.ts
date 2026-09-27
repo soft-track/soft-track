@@ -49,6 +49,46 @@ export function stateMeta(state: ProjectState) {
 }
 
 /**
+ * The colours a new project can be given (#210). The first is the one the API
+ * defaults to. Each is named, so a swatch reads as "Teal" rather than a hex
+ * code to someone who cannot see it.
+ */
+export const PROJECT_COLOURS = [
+  projectColour('indigo', '#6366f1'),
+  projectColour('pink', '#ec4899'),
+  projectColour('teal', '#14b8a6'),
+  projectColour('amber', '#f59e0b'),
+  projectColour('violet', '#8b5cf6'),
+  projectColour('red', '#ef4444'),
+  projectColour('green', '#22c55e'),
+]
+
+function projectColour(
+  id: 'indigo' | 'pink' | 'teal' | 'amber' | 'violet' | 'red' | 'green',
+  value: string,
+) {
+  return {
+    id,
+    value,
+    get label() {
+      return i18n.t(`team:projects.colours.${id}`)
+    },
+  }
+}
+
+/**
+ * The colour a new project starts with: the first no project on the team is
+ * wearing, so two can be told apart on the board without anyone choosing.
+ * Archived projects count, since the issues still in them show the colour.
+ * Once every colour is taken they are handed round again in order.
+ */
+export function nextProjectColour(projects: ProjectRead[]): string {
+  const taken = new Set(projects.map((project) => project.color.toLowerCase()))
+  const free = PROJECT_COLOURS.find((colour) => !taken.has(colour.value))
+  return (free ?? PROJECT_COLOURS[projects.length % PROJECT_COLOURS.length]).value
+}
+
+/**
  * "3 of 5 done", or null for a project with nothing in it yet.
  *
  * The counts come from the server, already excluding cancelled issues -- the

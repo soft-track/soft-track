@@ -23,6 +23,7 @@ export function Sidebar({
   onEditView,
   isAdmin,
   onNewCycle,
+  onNewProject,
   onImport,
 }: {
   filters: BoardFilters
@@ -34,6 +35,7 @@ export function Sidebar({
   isAdmin: boolean
   /** Absent for a guest (#104), and so are the buttons. */
   onNewCycle?: () => void
+  onNewProject?: () => void
   onImport?: () => void
 }) {
   const { user, logout } = useAuth()
@@ -114,7 +116,20 @@ export function Sidebar({
         </div>
 
         <div>
-          <p className="eyebrow mb-1.5 px-2">{t('sidebar.projects')}</p>
+          <div className="mb-1.5 flex items-center justify-between px-2">
+            <p className="eyebrow">{t('sidebar.projects')}</p>
+            {onNewProject && (
+              <button
+                type="button"
+                onClick={onNewProject}
+                aria-label={t('sidebar.newProject')}
+                title={t('sidebar.newProject')}
+                className="btn btn-ghost btn-icon btn-xs"
+              >
+                <Icon name="plus" size={13} />
+              </button>
+            )}
+          </div>
           {projects.length === 0 && (
             <p className="px-2 text-xs text-neutral-400">{t('sidebar.noProjects')}</p>
           )}

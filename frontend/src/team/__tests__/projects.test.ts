@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import type { IssueRead, ProjectRead, StatusRead } from '@/api/generated/models'
-import { groupByStatus, pickableProjects, progressLabel, progressRatio } from '@/team/projects'
+import {
+  groupByStatus,
+  nextProjectColour,
+  pickableProjects,
+  progressLabel,
+  progressRatio,
+} from '@/team/projects'
 
 function project(id: number, archived: boolean): ProjectRead {
   return {
@@ -32,6 +38,30 @@ describe('pickableProjects', () => {
 
   it('treats a null selection as no selection', () => {
     expect(ids(pickableProjects(projects, null))).toEqual([1, 3])
+  })
+})
+
+describe('nextProjectColour', () => {
+  const wearing = (...colours: string[]) =>
+    colours.map((color, index) => ({ ...project(index + 1, false), color }))
+
+  it('starts a team on the colour the API defaults to', () => {
+    expect(nextProjectColour([])).toBe('#6366f1')
+  })
+
+  it('skips colours already taken, however they were written', () => {
+    expect(nextProjectColour(wearing('#6366F1', '#ec4899'))).toBe('#14b8a6')
+  })
+
+  it('counts archived projects, whose issues still wear their colour', () => {
+    const taken = [{ ...project(1, true), color: '#6366f1' }]
+    expect(nextProjectColour(taken)).toBe('#ec4899')
+  })
+
+  it('hands the colours round again once all are taken', () => {
+    const all = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#ef4444', '#22c55e']
+    expect(nextProjectColour(wearing(...all))).toBe('#6366f1')
+    expect(nextProjectColour(wearing(...all, '#6366f1'))).toBe('#ec4899')
   })
 })
 

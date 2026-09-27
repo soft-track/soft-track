@@ -10,6 +10,7 @@ export const sidebar = {
   cycles: 'Cycles',
   newCycle: 'New cycle',
   projects: 'Projects',
+  newProject: 'New project',
   noProjects: 'No projects yet.',
   openNamed: 'Open {{name}}',
   openProject: 'Open project',
