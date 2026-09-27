@@ -11,9 +11,11 @@ leave the tracker unable to say who did what. Deactivation is the delete.
 from typing import Optional
 
 from fastapi import Depends
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, func, or_, select
 
 from lib_identity import api_tokens
+from lib_identity.departments import require_department
 from lib_identity.identity import get_current_user
 from lib_identity.models.admin import AdminUserRead, AdminUserUpdate
 from lib_identity.models.identity import UserMe
@@ -66,6 +68,8 @@ def list_users(
     users = session.exec(
         select(User)
         .where(*filters)
+        # The page's departments in one query, not one per row.
+        .options(selectinload(User.department))
         .order_by(User.created_at, User.id)
         .limit(limit)
         .offset(offset)
@@ -153,6 +157,10 @@ def update_user(
         user.full_name = name
     if "started_on" in payload.model_fields_set:
         user.started_on = payload.started_on
+    if "department_id" in payload.model_fields_set:
+        if payload.department_id is not None:
+            require_department(session, payload.department_id)
+        user.department_id = payload.department_id
     if payload.is_site_admin is not None:
         user.is_site_admin = payload.is_site_admin
     if payload.is_active is not None:

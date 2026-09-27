@@ -43,6 +43,9 @@ NOT_TEAM_WRITES = {
     ("DELETE", "/auth/me/identities/{provider}"): "your own account",
     ("PATCH", "/admin/users/{user_id}"): "site admins, not team roles",
     ("POST", "/admin/users/{user_id}/reset-password"): "site admins, not team roles",
+    ("POST", "/departments"): "site admins, not team roles",
+    ("PATCH", "/departments/{department_id}"): "site admins, not team roles",
+    ("DELETE", "/departments/{department_id}"): "site admins, not team roles",
     ("POST", "/teams"): "a new team, which its creator admins",
     # The invite link is the authority, and it names the role.
     ("POST", "/invites/{token}/accept"): "the invitation decides the role",

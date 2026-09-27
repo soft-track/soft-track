@@ -1,0 +1,40 @@
+/** Settings → Administration → Departments (#123). */
+export const departments = {
+  title: 'Departments',
+  intro:
+    'The names people pick from, set here once. Renaming one renames it for everyone in it; everyone signed in can read the list.',
+  new: 'New department',
+  loading: 'Loading departments…',
+  empty: 'No departments yet. Once there is one, people are put in it from Users.',
+  people_one: '{{count}} person',
+  people_other: '{{count}} people',
+  nobody: 'Nobody yet',
+  rename: 'Rename',
+  renameNamed: 'Rename {{name}}',
+  nameOf: 'Name of {{name}}',
+  deleteNamed: 'Delete {{name}}',
+  errors: {
+    create: 'Could not create that department.',
+    rename: 'Could not rename that department.',
+    delete: 'Could not delete that department.',
+  },
+  newDialog: {
+    title: 'New department',
+    name: 'Name',
+    description: 'Description <optional>· optional</optional>',
+    descriptionPlaceholder: 'What it does',
+    create: 'Create',
+    creating: 'Creating…',
+  },
+  deleteDialog: {
+    title: 'Delete “{{name}}”',
+    titleEmpty: 'Delete “{{name}}”?',
+    body_one: '{{count}} person is in it. Choose where they go; nobody is moved until you do.',
+    body_other: '{{count}} people are in it. Choose where they go; nobody is moved until you do.',
+    bodyEmpty: 'Nobody is in it.',
+    moveTo: 'Move its people to',
+    choose: 'Choose…',
+    none: 'No department',
+    confirm: 'Delete department',
+  },
+} as const

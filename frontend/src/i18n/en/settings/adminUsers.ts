@@ -35,6 +35,8 @@ export const adminUsers = {
   /** The organisation's facts about someone, set on their row (#122). */
   editor: {
     label: 'Organisation details for {{name}}',
+    department: 'Department',
+    noDepartment: 'No department',
     startDate: 'Start date',
     theirs: 'Job title and location are {{name}}’s to edit, from their own profile.',
   },

@@ -863,6 +863,196 @@
         }
       }
     },
+    "/departments": {
+      "get": {
+        "tags": [
+          "departments"
+        ],
+        "summary": "List Departments",
+        "description": "Every department, by name, with how many people are in each.\n\nOpen to anyone signed in, not just site admins: the people directory\nfilters by department, and a department's name is not a secret from the\npeople who work in it.",
+        "operationId": "list_departments_departments_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DepartmentRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Departments Departments Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "departments"
+        ],
+        "summary": "Create Department",
+        "description": "Add a department. Names are unique whatever the case.",
+        "operationId": "create_department_departments_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/departments/{department_id}": {
+      "patch": {
+        "tags": [
+          "departments"
+        ],
+        "summary": "Update Department",
+        "description": "Rename a department or change its description.\n\nA rename follows everybody in it: they point at the department, not at\nits name.",
+        "operationId": "update_department_departments__department_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "department_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Department Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartmentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "departments"
+        ],
+        "summary": "Delete Department",
+        "description": "Delete a department, moving its people where `move_to_id` says.\n\n`move_to_id` is another department, or null for none. Required only when\nsomebody is in it -- including deactivated accounts, which still point at\nit -- and a 409 `department_not_empty` when it is missing.",
+        "operationId": "delete_department_departments__department_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "department_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Department Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DepartmentDelete"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/teams": {
       "get": {
         "tags": [
@@ -7126,6 +7316,16 @@
             ],
             "title": "Started On"
           },
+          "department": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "last_login_at": {
             "anyOf": [
               {
@@ -7205,6 +7405,17 @@
               }
             ],
             "title": "Started On"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
           }
         },
         "type": "object",
@@ -8277,6 +8488,138 @@
         "type": "object",
         "title": "DefaultViewUpdate",
         "description": "Null clears the default rather than setting one."
+      },
+      "DepartmentCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "DepartmentCreate"
+      },
+      "DepartmentDelete": {
+        "properties": {
+          "move_to_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Move To Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "move_to_id"
+        ],
+        "title": "DepartmentDelete",
+        "description": "Where the people in a department go when it is deleted.\n\nRequired and nullable: another department's id, or null for none. There\nis no default, so a client has to say which -- moving somebody out of\ntheir department is not a decision to make on the admin's behalf, the\nsame way deleting a status asks where its tickets go. Only needed when\nsomebody is in it; an empty department takes no body at all."
+      },
+      "DepartmentRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "member_count": {
+            "type": "integer",
+            "title": "Member Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "member_count"
+        ],
+        "title": "DepartmentRead"
+      },
+      "DepartmentRef": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "DepartmentRef",
+        "description": "A department as a profile shows it: enough to name it and filter by it."
+      },
+      "DepartmentUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "title": "DepartmentUpdate"
       },
       "DueFilter": {
         "type": "string",
@@ -12500,6 +12843,16 @@
               }
             ],
             "title": "Started On"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -13152,6 +13505,7 @@
           "repository_not_found",
           "invite_not_found",
           "user_not_found",
+          "department_not_found",
           "member_not_found",
           "not_on_this_team",
           "user_not_on_team",
@@ -13161,6 +13515,7 @@
           "status_name_taken",
           "template_name_taken",
           "rule_name_taken",
+          "department_name_taken",
           "already_member",
           "link_exists",
           "link_contradicts",
@@ -13192,6 +13547,8 @@
           "view_private_default",
           "rank_neighbour_is_self",
           "password_required_to_disconnect",
+          "department_not_empty",
+          "department_move_to_same",
           "name_required",
           "body_required",
           "invalid_colour",

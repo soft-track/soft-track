@@ -5,6 +5,7 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { DepartmentRef } from './departmentRef';
 
 /**
  * The signed-in user's own record.
@@ -26,4 +27,5 @@ export interface UserMe {
   job_title?: string | null;
   location?: string | null;
   started_on?: string | null;
+  department?: DepartmentRef | null;
 }

@@ -99,12 +99,17 @@ describe('Profile settings', () => {
     })
   })
 
-  it('shows the start date read-only, and says who sets it', () => {
-    renderProfile({ ...DANIEL, started_on: '2023-08-14' })
+  it('shows the department and start date read-only, and says who sets them', () => {
+    renderProfile({
+      ...DANIEL,
+      started_on: '2023-08-14',
+      department: { id: 1, name: 'Engineering' },
+    })
 
     const card = screen.getByRole('region', { name: 'Your place in the organisation' })
     expect(within(card).getByText('Set by a site admin. Ask one if something here is wrong.'))
       .toBeTruthy()
+    expect(within(card).getByText('Engineering')).toBeTruthy()
     expect(within(card).getByText('14 Aug 2023')).toBeTruthy()
     // Nothing in it to edit.
     expect(within(card).queryByRole('textbox')).toBeNull()
@@ -113,6 +118,6 @@ describe('Profile settings', () => {
   it('says a fact is not set rather than leaving a gap', () => {
     renderProfile(DANIEL)
     const card = screen.getByRole('region', { name: 'Your place in the organisation' })
-    expect(within(card).getByText('Not set')).toBeTruthy()
+    expect(within(card).getAllByText('Not set')).toHaveLength(2)
   })
 })

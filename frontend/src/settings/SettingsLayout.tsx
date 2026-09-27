@@ -96,6 +96,11 @@ export default function SettingsLayout() {
                 label: t('layout.nav.users'),
                 icon: 'shield' as IconName,
               },
+              {
+                to: '/settings/admin/departments',
+                label: t('layout.nav.departments'),
+                icon: 'building' as IconName,
+              },
             ],
           },
         ]

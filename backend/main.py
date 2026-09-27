@@ -7,6 +7,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 
 from app_identity.admin import router as admin_router
+from app_identity.departments import router as departments_router
 from app_identity.identity import router as identity_router
 from app_identity.oauth import router as oauth_router
 from lib_identity.identity import warm_password_hasher
@@ -131,6 +132,7 @@ app.add_middleware(
 app.include_router(identity_router)
 app.include_router(oauth_router)
 app.include_router(admin_router)
+app.include_router(departments_router)
 app.include_router(teams_router)
 app.include_router(invites_router)
 app.include_router(projects_router)

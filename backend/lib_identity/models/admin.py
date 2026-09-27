@@ -23,6 +23,9 @@ class AdminUserUpdate(BaseModel):
     #: leaves it alone. Set here and nowhere else: it is the organisation's
     #: fact, so the person cannot change it from their own profile.
     started_on: Optional[date] = None
+    #: Which department they are in (#123); an explicit null takes them out
+    #: of it. Like the start date, the organisation's to say.
+    department_id: Optional[int] = None
 
 
 class AdminPasswordReset(BaseModel):

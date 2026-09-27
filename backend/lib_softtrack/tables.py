@@ -11,7 +11,7 @@ from datetime import date, datetime, timezone
 from typing import Optional
 
 from sqlalchemy import Index, UniqueConstraint
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
 
 from lib_utils.password import is_usable_password
 
@@ -363,6 +363,33 @@ class TicketLabelLink(SQLModel, table=True):
 # ---------------------------------------------------------------------------
 
 
+class Department(SQLModel, table=True):
+    """A named group people belong to, defined once by a site admin (#123).
+
+    A row rather than free text on the profile: a department typed by hand is
+    a department spelled four ways, and the people directory filters by it.
+    Renaming one renames it for everybody in it, which is the point of it
+    being a row.
+
+    Flat on purpose -- no parent department, no head, no permissions. Those
+    are org-chart features that can arrive if they earn it; a named list is
+    what the directory and its filters need.
+    """
+
+    __table_args__ = (UniqueConstraint("name_key", name="uq_department_name_key"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    #: `name` case-folded, which is what makes two names the same one. Unique,
+    #: so "engineering" cannot join "Engineering" even when two admins create
+    #: them at once. A column rather than an index on `lower(name)`: SQLite's
+    #: lower() folds ASCII only, and SQLAlchemy cannot reflect an expression
+    #: index there, so every later migration touching `user` would warn.
+    name_key: str
+    description: Optional[str] = None
+    created_at: datetime = Field(default_factory=utcnow)
+
+
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(index=True, unique=True)
@@ -410,6 +437,12 @@ class User(SQLModel, table=True):
     #: day, and a timestamp would move it across midnight for anybody in
     #: another timezone.
     started_on: Optional[date] = None
+    #: Set by a site admin (#123). Deleting a department with people in it
+    #: asks where they go, so this never dangles and never silently empties.
+    department_id: Optional[int] = Field(
+        default=None, foreign_key="department.id", index=True
+    )
+    department: Optional[Department] = Relationship()
 
     @property
     def has_password(self) -> bool:

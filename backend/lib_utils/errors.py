@@ -69,6 +69,7 @@ class ErrorCode(str, enum.Enum):
     repository_not_found = "repository_not_found"
     invite_not_found = "invite_not_found"
     user_not_found = "user_not_found"
+    department_not_found = "department_not_found"
     #: The person is not a member of the team the request is about.
     member_not_found = "member_not_found"
     #: A status, label, project or sprint id that belongs to another team.
@@ -83,6 +84,8 @@ class ErrorCode(str, enum.Enum):
     status_name_taken = "status_name_taken"
     template_name_taken = "template_name_taken"
     rule_name_taken = "rule_name_taken"
+    #: Department names are unique whatever the case (#123).
+    department_name_taken = "department_name_taken"
     already_member = "already_member"
     link_exists = "link_exists"
     link_contradicts = "link_contradicts"
@@ -126,6 +129,10 @@ class ErrorCode(str, enum.Enum):
     #: A card cannot be dropped next to itself (#88).
     rank_neighbour_is_self = "rank_neighbour_is_self"
     password_required_to_disconnect = "password_required_to_disconnect"
+    #: Deleting a department with people in it needs to be told where they
+    #: go: another department, or none (#123).
+    department_not_empty = "department_not_empty"
+    department_move_to_same = "department_move_to_same"
 
     # --- what you sent is not usable ------------------------------------------
     name_required = "name_required"

@@ -19,5 +19,6 @@ export const layout = {
     webhooks: 'Webhooks',
     general: 'General',
     users: 'Users',
+    departments: 'Departments',
   },
 } as const

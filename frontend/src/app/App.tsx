@@ -11,6 +11,7 @@ import OAuthCallbackPage from '@/auth/OAuthCallbackPage'
 import NewTeamPage from '@/team/NewTeamPage'
 import RegisterPage from '@/auth/RegisterPage'
 import ResetPasswordPage from '@/auth/ResetPasswordPage'
+import AdminDepartmentsPage from '@/settings/AdminDepartmentsPage'
 import AdminUsersPage from '@/settings/AdminUsersPage'
 import NotificationSettings from '@/settings/NotificationSettings'
 import ProfileSettings from '@/settings/ProfileSettings'
@@ -88,6 +89,7 @@ export default function App() {
             <Route path="teams/:teamKey/webhooks" element={<TeamWebhookSettings />} />
             <Route element={<RequireSiteAdmin />}>
               <Route path="admin/users" element={<AdminUsersPage />} />
+              <Route path="admin/departments" element={<AdminDepartmentsPage />} />
             </Route>
           </Route>
 

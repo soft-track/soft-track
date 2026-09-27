@@ -6,6 +6,7 @@ import {
   useResetPasswordAdminUsersUserIdResetPasswordPost,
   useUpdateUserAdminUsersUserIdPatch,
 } from '@/api/generated/endpoints/admin/admin'
+import { useListDepartmentsDepartmentsGet } from '@/api/generated/endpoints/departments/departments'
 import type { AdminUserRead, AdminUserUpdate } from '@/api/generated/models'
 import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
@@ -18,6 +19,7 @@ import { formatStartedOn } from '@/settings/startedOn'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
+import { Select } from '@/ui/Select'
 import { useFocusTrap } from '@/ui/useFocusTrap'
 
 const PAGE_SIZE = 25
@@ -119,10 +121,12 @@ export default function AdminUsersPage() {
             {shown.map((row) => {
               const isSelf = row.id === user?.id
               // What the organisation knows about them (#122): their own
-              // words for title and location, and the start date an admin
-              // sets below. Nothing at all when none of it is filled in.
+              // words for title and location, and the department and start
+              // date an admin sets below. Nothing at all when none of it is
+              // filled in.
               const facts = [
                 row.job_title,
+                row.department?.name,
                 row.location,
                 row.started_on &&
                   t('adminUsers.startedOn', { date: formatStartedOn(row.started_on) }),
@@ -270,9 +274,9 @@ export default function AdminUsersPage() {
 }
 
 /**
- * The facts the organisation owns about someone (#122), set inline on their
- * row. Title and location are not here: those are the person's to say, from
- * their own profile, and the admin only reads them.
+ * The facts the organisation owns about someone (#122, #123), set inline on
+ * their row. Title and location are not here: those are the person's to say,
+ * from their own profile, and the admin only reads them.
  */
 function OrganisationEditor({
   target,
@@ -286,11 +290,16 @@ function OrganisationEditor({
   onSave: (data: AdminUserUpdate) => void
 }) {
   const { t } = useTranslation(['settings', 'common'])
+  const departments = useListDepartmentsDepartmentsGet()
+  const [departmentId, setDepartmentId] = useState(String(target.department?.id ?? ''))
   const [startedOn, setStartedOn] = useState(target.started_on ?? '')
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault()
-    onSave({ started_on: startedOn || null })
+    onSave({
+      department_id: departmentId ? Number(departmentId) : null,
+      started_on: startedOn || null,
+    })
   }
 
   return (
@@ -300,6 +309,24 @@ function OrganisationEditor({
       className="well basis-full rounded-control p-3 sm:ml-[2.875rem]"
     >
       <div className="grid gap-3 sm:grid-cols-3">
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-neutral-500">
+            {t('adminUsers.editor.department')}
+          </span>
+          <Select
+            dense
+            block
+            value={departmentId}
+            onChange={(e) => setDepartmentId(e.target.value)}
+          >
+            <option value="">{t('adminUsers.editor.noDepartment')}</option>
+            {(departments.data ?? []).map((department) => (
+              <option key={department.id} value={department.id}>
+                {department.name}
+              </option>
+            ))}
+          </Select>
+        </label>
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-neutral-500">
             {t('adminUsers.editor.startDate')}

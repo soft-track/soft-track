@@ -3,6 +3,7 @@ export * from './attachments/attachments';
 export * from './auth/auth';
 export * from './automations/automations';
 export * from './comments/comments';
+export * from './departments/departments';
 export * from './health/health';
 export * from './import/import';
 export * from './integrations/integrations';

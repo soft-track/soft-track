@@ -79,6 +79,7 @@ def test_me_returns_the_current_user(client, auth):
         "job_title",
         "location",
         "started_on",
+        "department",
     }
     # Registered with one, so it has one. False is reserved for an account
     # created by signing in with Google or GitHub -- see test_oauth.py.

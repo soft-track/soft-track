@@ -3,6 +3,8 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from lib_identity.models.departments import DepartmentRef
+
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -54,6 +56,8 @@ class UserMe(UserPublic):
     job_title: Optional[str] = None
     location: Optional[str] = None
     started_on: Optional[date] = None
+    #: Set by a site admin, like the start date (#123).
+    department: Optional[DepartmentRef] = None
 
 
 #: Long enough for "Senior Staff Site Reliability Engineer, Payments" and a

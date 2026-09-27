@@ -40,6 +40,32 @@ The start date is a date, not a timestamp, like a ticket's due date: a start is
 a day, and a timestamp would move it across midnight for anyone in another
 timezone.
 
+### Departments
+
+A department is a row, not free text. A department typed by hand ends up
+spelled four ways, and anything that filters by it would have to guess. A
+site admin keeps the list in **Administration → Departments** and puts people
+in them from **Users**, next to the start date. People see their own
+department under their profile but can't change it. Anyone signed in can read
+the list: a department's name is no secret from the people who work in it.
+
+- **Names are unique whatever the case.** "engineering" can't join
+  "Engineering", and the refusal names the one that exists. The table stores
+  the name case-folded (`name_key`) under a unique constraint. That works the
+  same on SQLite and Postgres and folds more than ASCII, so "équipe" and
+  "Équipe" clash too.
+- **Renaming follows everyone in it**, because people point at the row rather
+  than at its name.
+- **Deleting one with people in it asks where they go**: another department,
+  or none. Delete stays disabled until the admin chooses, the same shape as
+  deleting a status. On the API, `DELETE /departments/{id}` takes
+  `{"move_to_id": …}` (an id, or `null` for none), and leaving it out is a
+  `409 department_not_empty`. Deactivated accounts count, since they point at
+  the row too. A department with nobody in it deletes with a plain confirm.
+
+The list is flat on purpose: no parent departments, no heads, no permissions.
+Those are org-chart features that can come later if they earn it.
+
 ### Team roles
 
 Every membership is `admin`, `member` or `guest`. Admins rename the team,

@@ -6,8 +6,10 @@ import {
   useUpdateMeAuthMePatch,
 } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
+import type { DepartmentRef } from '@/api/generated/models'
 import { useAuth } from '@/auth/useAuth'
 import { Trans, userText, useTranslation } from '@/i18n'
+import { DepartmentChip } from '@/people/DepartmentChip'
 import { formatStartedOn } from '@/settings/startedOn'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
@@ -247,7 +249,7 @@ export default function ProfileSettings() {
         </div>
       </form>
 
-      <OrganisationFacts startedOn={user.started_on ?? null} />
+      <OrganisationFacts department={user.department ?? null} startedOn={user.started_on ?? null} />
     </div>
   )
 }
@@ -263,9 +265,16 @@ function Optional(props: { children?: ReactNode }) {
  * everything else, with who to ask, beats leaving a wrong one to be found on
  * somebody else's screen.
  */
-function OrganisationFacts({ startedOn }: { startedOn: string | null }) {
+function OrganisationFacts({
+  department,
+  startedOn,
+}: {
+  department: DepartmentRef | null
+  startedOn: string | null
+}) {
   const { t } = useTranslation(['settings', 'common'])
   const titleId = useId()
+  const notSet = <span className="text-neutral-400">{t('profile.organisation.notSet')}</span>
   return (
     <section aria-labelledby={titleId} className="glass-strong rounded-panel p-6">
       <div className="flex items-start justify-between gap-3">
@@ -280,13 +289,15 @@ function OrganisationFacts({ startedOn }: { startedOn: string | null }) {
 
       <dl className="mt-5 grid gap-3 sm:grid-cols-3">
         <div className="well rounded-control px-4 py-3">
+          <dt className="text-xs text-neutral-400">{t('profile.organisation.department')}</dt>
+          <dd className="mt-1 text-sm text-neutral-800">
+            {department ? <DepartmentChip department={department} /> : notSet}
+          </dd>
+        </div>
+        <div className="well rounded-control px-4 py-3">
           <dt className="text-xs text-neutral-400">{t('profile.organisation.startDate')}</dt>
           <dd className="mt-1 text-sm text-neutral-800">
-            {startedOn ? (
-              formatStartedOn(startedOn)
-            ) : (
-              <span className="text-neutral-400">{t('profile.organisation.notSet')}</span>
-            )}
+            {startedOn ? formatStartedOn(startedOn) : notSet}
           </dd>
         </div>
       </dl>
