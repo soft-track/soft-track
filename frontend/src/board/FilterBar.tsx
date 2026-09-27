@@ -33,7 +33,7 @@ export function FilterBar({
   canSave: boolean
 }) {
   const { t } = useTranslation(['board', 'common'])
-  const { members, labels, projects, cycles, statuses } = useTeamContext()
+  const { members, labels, projects, sprints, statuses } = useTeamContext()
   const [open, setOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [anchor, setAnchor] = useState<DOMRect | null>(null)
@@ -49,7 +49,7 @@ export function FilterBar({
   }, [open])
 
   const count = activeCount(filters)
-  const chips = describeFilters(filters, { members, labels, projects, cycles, statuses })
+  const chips = describeFilters(filters, { members, labels, projects, sprints, statuses })
   const set = <K extends keyof BoardFilters>(key: K, value: BoardFilters[K]) =>
     onChange({ ...filters, [key]: value })
 
@@ -222,17 +222,17 @@ export function FilterBar({
                   </Select>
                 </Field>
 
-                <Field label={t('filters.fields.cycle')}>
+                <Field label={t('filters.fields.sprint')}>
                   <Select
                     block
                     dense
-                    value={filters.cycleId ?? ''}
-                    onChange={(e) => set('cycleId', e.target.value ? Number(e.target.value) : null)}
+                    value={filters.sprintId ?? ''}
+                    onChange={(e) => set('sprintId', e.target.value ? Number(e.target.value) : null)}
                   >
-                    <option value="">{t('filters.any.cycle')}</option>
-                    {cycles.map((cycle) => (
-                      <option key={cycle.id} value={cycle.id}>
-                        {cycle.display_name}
+                    <option value="">{t('filters.any.sprint')}</option>
+                    {sprints.map((sprint) => (
+                      <option key={sprint.id} value={sprint.id}>
+                        {sprint.display_name}
                       </option>
                     ))}
                   </Select>

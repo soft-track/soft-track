@@ -36,7 +36,7 @@ function renderRoadmap(projects: ProjectRead[]) {
     projects,
     labels: [],
     members: [],
-    cycles: [],
+    sprints: [],
     statuses: [],
   }
   render(

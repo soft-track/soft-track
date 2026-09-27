@@ -29,7 +29,7 @@ triggers (see `backend/lib_softtrack/search_fts.py`).
 
 ## Saved views and shareable filters
 
-Six things narrow the board: status, priority, assignee, label, epic, and cycle. They compose, and the active state is shown as chips beside the filter control.
+Six things narrow the board: status, priority, assignee, label, epic, and sprint. They compose, and the active state is shown as chips beside the filter control.
 
 **Every filter is in the URL.** `/ENG?priority=urgent&label=3` is the full state for a board, which makes it easy to share, reload, and use the browser back button. The URL carries the filters rather than a view id so a link still works even when the view itself is private.
 
@@ -42,6 +42,6 @@ Six things narrow the board: status, priority, assignee, label, epic, and cycle.
 Two follow-on rules matter:
 
 - A saved view that points at another team's label is refused when it is saved.
-- Deleting a cycle removes it from the views that filtered on it.
+- Deleting a sprint removes it from the views that filtered on it.
 
 See also [../architecture.md](../architecture.md) and [../deployment.md](../deployment.md).

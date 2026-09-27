@@ -13,10 +13,10 @@ class BurndownPoint(BaseModel):
     issues_remaining: int
     #: Points completed so far -- the burnup line, from the same data.
     points_completed: int
-    #: Total points in the cycle on this day. It moves when scope changes,
+    #: Total points in the sprint on this day. It moves when scope changes,
     #: which is exactly what makes a burndown honest.
     points_total: int
-    #: The straight line from the cycle's opening scope to zero. Not a target
+    #: The straight line from the sprint's opening scope to zero. Not a target
     #: so much as the thing the real line is read against.
     ideal_remaining: float
 
@@ -58,8 +58,8 @@ class ScopeChange(BaseModel):
 
 
 class Burndown(BaseModel):
-    cycle_id: int
-    cycle_name: str
+    sprint_id: int
+    sprint_name: str
     starts_at: date
     ends_at: date
     points: list[BurndownPoint]
@@ -67,9 +67,9 @@ class Burndown(BaseModel):
     scope_changes: list[ScopeChange]
 
 
-class VelocityCycle(BaseModel):
-    cycle_id: int
-    cycle_name: str
+class VelocitySprint(BaseModel):
+    sprint_id: int
+    sprint_name: str
     completed_at: Optional[date] = None
     points_committed: int
     points_completed: int
@@ -77,8 +77,8 @@ class VelocityCycle(BaseModel):
 
 
 class Velocity(BaseModel):
-    cycles: list[VelocityCycle]
-    #: Mean completed points across the cycles returned. Null when there are
+    sprints: list[VelocitySprint]
+    #: Mean completed points across the sprints returned. Null when there are
     #: none -- a zero would read as "this team delivers nothing".
     average_points: Optional[float] = None
 

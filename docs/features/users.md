@@ -35,7 +35,7 @@ chat logs and browser history by the time anyone wants to rename it.
 ### Guests
 
 A guest sees what a member sees -- the board, the list, every ticket and its
-comments, cycles, reports and search -- and changes none of it: no tickets, no
+comments, sprints, reports and search -- and changes none of it: no tickets, no
 comments, no settings. It is the role for a stakeholder, a client, or a
 neighbouring team that needs visibility without write access, and it is the
 part of "granular permissions" that covers most of the need without committing

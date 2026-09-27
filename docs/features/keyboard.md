@@ -7,7 +7,7 @@ and `Esc` closes whatever is open.
 On the board, the arrow keys move between columns and cards and `Enter` opens
 the focused one. `⌘`/`Ctrl`-click adds a card or list row to a selection and
 `Shift`-click selects the range from the last one picked; a bar then sets
-status, priority, assignee, epic, cycle or labels on all of them in one
+status, priority, assignee, epic, sprint or labels on all of them in one
 transactional request, or deletes them after a confirmation. Dragging a
 selected card moves the whole selection, and `Esc` clears it. A card or row
 is also a link, so a middle click opens the ticket's page in a new tab.
@@ -37,7 +37,7 @@ shortcut that works but is not listed may as well not exist; a listed one that
 does not work is worse. One array makes both failures impossible.
 
 **Dialogs keep keyboard focus inside them while they're open.** This applies
-to every dialog that dims the page behind it: the new-ticket and new-cycle
+to every dialog that dims the page behind it: the new-ticket and new-sprint
 forms, the ticket panel, the command palette, the cheatsheet, and so on.
 Opening one moves focus into it. Tab and Shift+Tab cycle through its controls
 and wrap at the ends, so they never reach the page behind it. Closing it puts

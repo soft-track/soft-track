@@ -43,7 +43,7 @@ export function useStatusChange(
       queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}`] })
       // Moving a card moves its points between columns.
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
-      queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/cycles`] })
+      queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/sprints`] })
       invalidateProjects(queryClient, team.id)
     } catch {
       queryClient.setQueryData(queryKey, previous)

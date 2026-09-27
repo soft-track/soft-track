@@ -14,7 +14,7 @@ export type IssueEventField = typeof IssueEventField[keyof typeof IssueEventFiel
 
 export const IssueEventField = {
   status: 'status',
-  cycle: 'cycle',
+  sprint: 'sprint',
   estimate: 'estimate',
   project: 'project',
   assignee: 'assignee',

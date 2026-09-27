@@ -85,22 +85,22 @@ def test_ids_come_back_with_the_names_they_stand_for(client, team):
     project = client.post(
         f"/teams/{team_id}/projects", json={"name": "Platform"}, headers=team["headers"]
     ).json()
-    cycle = client.post(
-        f"/teams/{team_id}/cycles",
+    sprint = client.post(
+        f"/teams/{team_id}/sprints",
         json={"starts_at": "2026-09-01", "ends_at": "2026-09-14"},
         headers=team["headers"],
     )
-    assert cycle.status_code == 200, cycle.text
+    assert sprint.status_code == 200, sprint.text
     issue = make_issue(client, team)
     patch(client, team, issue, assignee_id=team["user"]["id"])
     patch(client, team, issue, project_id=project["id"])
-    patch(client, team, issue, cycle_id=cycle.json()["id"])
+    patch(client, team, issue, sprint_id=sprint.json()["id"])
 
     labels = {e["field"]: e["new_label"] for e in events(client, team, issue)}
     assert labels == {
         "assignee": team["user"]["full_name"],
         "project": "Platform",
-        "cycle": cycle.json()["display_name"],
+        "sprint": sprint.json()["display_name"],
     }
 
 

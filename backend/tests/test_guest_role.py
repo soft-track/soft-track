@@ -128,8 +128,8 @@ def world(client, team, guest):
         f"/issues/{issue['id']}/attachments",
         files={"file": ("shot.png", io.BytesIO(PNG), "image/png")},
     )
-    cycle = post(
-        f"/teams/{team_id}/cycles",
+    sprint = post(
+        f"/teams/{team_id}/sprints",
         json={
             "name": "Sprint",
             "starts_at": date.today().isoformat(),
@@ -173,7 +173,7 @@ def world(client, team, guest):
         "issue_id": issue["id"],
         "link_id": link["id"],
         "attachment_id": attachment["id"],
-        "cycle_id": cycle["id"],
+        "sprint_id": sprint["id"],
         "project_id": project["id"],
         "view_id": view["id"],
         "status_id": team["status_ids"]["Todo"],
@@ -238,14 +238,14 @@ def test_a_guest_sees_what_a_member_sees(client, team, guest, world):
         f"/teams/{team_id}",
         f"/teams/{team_id}/issues",
         f"/teams/{team_id}/members",
-        f"/teams/{team_id}/cycles",
+        f"/teams/{team_id}/sprints",
         f"/teams/{team_id}/statuses",
         f"/teams/{team_id}/velocity",
         f"/issues/{issue_id}",
         f"/issues/{issue_id}/comments",
         f"/issues/{issue_id}/attachments",
         f"/issues/{issue_id}/links",
-        f"/cycles/{world['cycle_id']}/burndown",
+        f"/sprints/{world['sprint_id']}/burndown",
         f"/attachments/{world['attachment_id']}/content",
     ):
         response = client.get(path, headers=guest["headers"])

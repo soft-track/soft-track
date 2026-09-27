@@ -9,8 +9,8 @@ import type { BurndownPoint } from './burndownPoint';
 import type { ScopeChange } from './scopeChange';
 
 export interface Burndown {
-  cycle_id: number;
-  cycle_name: string;
+  sprint_id: number;
+  sprint_name: string;
   starts_at: string;
   ends_at: string;
   points: BurndownPoint[];

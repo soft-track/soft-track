@@ -1,7 +1,7 @@
 """Per-team custom statuses (issue #22).
 
 The property most of these guard: **a team can invent a column, and nothing
-that reasons about work notices.** Burndown, cycle completion, sub-issue
+that reasons about work notices.** Burndown, sprint completion, sub-issue
 progress and blocker counting all read the fixed category, so a status called
 "Blocked" behaves exactly like the "In Progress" it was cloned from -- and one
 called "Shipped" counts as finished everywhere without a single call site

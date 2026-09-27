@@ -20,7 +20,7 @@ export interface TransferPlan {
   status: StatusChange;
   labels_kept: string[];
   labels_dropped: string[];
-  cycle_cleared?: string | null;
+  sprint_cleared?: string | null;
   project_cleared?: string | null;
   assignee_cleared?: string | null;
   parent_detached?: string | null;

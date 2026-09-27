@@ -73,7 +73,7 @@ export function useMoveIssue(
       queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}`] })
       if (placement.status) {
         queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
-        queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/cycles`] })
+        queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/sprints`] })
         invalidateProjects(queryClient, team.id)
       }
     } catch {

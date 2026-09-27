@@ -32,8 +32,8 @@ const EVENT_OPTIONS = [
   { event: 'issue.updated', label: 'webhooks.events.issueUpdated' },
   { event: 'issue.status_changed', label: 'webhooks.events.issueStatusChanged' },
   { event: 'comment.created', label: 'webhooks.events.commentCreated' },
-  { event: 'cycle.started', label: 'webhooks.events.cycleStarted' },
-  { event: 'cycle.completed', label: 'webhooks.events.cycleCompleted' },
+  { event: 'sprint.started', label: 'webhooks.events.sprintStarted' },
+  { event: 'sprint.completed', label: 'webhooks.events.sprintCompleted' },
 ] as const satisfies ReadonlyArray<{ event: WebhookEvent; label: string }>
 
 const ago = (value: string) => formatRelative(parseServerDate(value))

@@ -28,7 +28,7 @@ export interface IssueRead {
   assignee?: UserPublic | null;
   estimate?: number | null;
   blocked_by_count: number;
-  cycle_id?: number | null;
+  sprint_id?: number | null;
   due_date?: string | null;
   external_key?: string | null;
   parent?: ParentRef | null;

@@ -1,4 +1,4 @@
-import { useListCyclesTeamsTeamIdCyclesGet } from '@/api/generated/endpoints/cycles/cycles'
+import { useListSprintsTeamsTeamIdSprintsGet } from '@/api/generated/endpoints/sprints/sprints'
 import { useGetEstimateSummaryTeamsTeamIdEstimatesGet } from '@/api/generated/endpoints/issues/issues'
 import { useListLabelsTeamsTeamIdLabelsGet } from '@/api/generated/endpoints/labels/labels'
 import { useListProjectsTeamsTeamIdProjectsGet } from '@/api/generated/endpoints/projects/projects'
@@ -24,7 +24,7 @@ export function useTeamData(
   const projects = useListProjectsTeamsTeamIdProjectsGet(id, options)
   const labels = useListLabelsTeamsTeamIdLabelsGet(id, options)
   const members = useListTeamMembersTeamsTeamIdMembersGet(id, options)
-  const cycles = useListCyclesTeamsTeamIdCyclesGet(id, options)
+  const sprints = useListSprintsTeamsTeamIdSprintsGet(id, options)
   // The team's board columns. Everything that renders a status reads these
   // rather than a fixed list -- see issue #22.
   const statuses = useListStatusesTeamsTeamIdStatusesGet(id, options)
@@ -39,7 +39,7 @@ export function useTeamData(
     projects: projects.data ?? [],
     labels: labels.data ?? [],
     members: members.data ?? [],
-    cycles: cycles.data ?? [],
+    sprints: sprints.data ?? [],
     statuses: statuses.data ?? [],
     estimates: estimates.data,
   }

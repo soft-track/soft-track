@@ -6,9 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface VelocityCycle {
-  cycle_id: number;
-  cycle_name: string;
+export interface VelocitySprint {
+  sprint_id: number;
+  sprint_name: string;
   completed_at?: string | null;
   points_committed: number;
   points_completed: number;

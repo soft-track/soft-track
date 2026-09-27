@@ -10,7 +10,7 @@
  * What someone may do inside one team.
  *
  * Ordered from most to least power. `guest` (#104) sees everything a member
- * sees -- board, list, issues, comments, cycles, reports, search -- and
+ * sees -- board, list, issues, comments, sprints, reports, search -- and
  * changes nothing: no issues, no comments, no settings. The one thing a guest
  * does write is their own relationship to the team: watching an issue,
  * choosing their own default view, and leaving.

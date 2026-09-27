@@ -41,13 +41,13 @@ class RuleActions(BaseModel):
 
     Every field is optional and this model asserts nothing about the
     combination, because it is also the shape a *stored* rule is read back in
-    -- and a stored rule can be left with no actions at all. Deleting a cycle
-    strips `set_cycle_id` out of the rules that filled it and switches them
+    -- and a stored rule can be left with no actions at all. Deleting a sprint
+    strips `set_sprint_id` out of the rules that filled it and switches them
     off, and a rule in that state has to survive being listed so that somebody
     can see it and decide what it should say instead.
 
     The two things a rule being *written* may not do -- nothing at all, and
-    naming both a cycle and the active one -- are checked on
+    naming both a sprint and the active one -- are checked on
     AutomationRuleCreate and AutomationRuleUpdate, which is where writing
     happens.
     """
@@ -58,10 +58,10 @@ class RuleActions(BaseModel):
     set_assignee_id: Optional[int] = None
     #: Added to whatever the issue already has, never replacing it.
     add_label_id: Optional[int] = None
-    set_cycle_id: Optional[int] = None
-    #: "Whichever cycle is running when this fires." Keeps meaning the same
-    #: thing a fortnight later, which a fixed cycle id does not.
-    move_to_active_cycle: bool = False
+    set_sprint_id: Optional[int] = None
+    #: "Whichever sprint is running when this fires." Keeps meaning the same
+    #: thing a fortnight later, which a fixed sprint id does not.
+    move_to_active_sprint: bool = False
     comment_body: Optional[str] = Field(default=None, max_length=2000)
 
     @property
@@ -73,8 +73,8 @@ class RuleActions(BaseModel):
                 self.set_type is not None,
                 self.set_assignee_id is not None,
                 self.add_label_id is not None,
-                self.set_cycle_id is not None,
-                self.move_to_active_cycle,
+                self.set_sprint_id is not None,
+                self.move_to_active_sprint,
                 (self.comment_body or "").strip(),
             )
         )
@@ -90,9 +90,9 @@ def _check_writable(actions: RuleActions) -> None:
     """
     if actions.is_empty:
         raise ValueError("A rule has to do something; give it at least one action.")
-    if actions.move_to_active_cycle and actions.set_cycle_id is not None:
+    if actions.move_to_active_sprint and actions.set_sprint_id is not None:
         raise ValueError(
-            "A rule moves an issue to a named cycle or to the active one, not both."
+            "A rule moves an issue to a named sprint or to the active one, not both."
         )
 
 
@@ -162,7 +162,7 @@ class AutomationRunRead(BaseModel):
     issue_identifier: str
     issue_title: str
     #: Who did the thing that set the rule off. Null when nobody did -- a
-    #: cycle completing, or an event an earlier rule caused.
+    #: sprint completing, or an event an earlier rule caused.
     actor: Optional[UserPublic]
     #: What it did, one action per line.
     summary: str

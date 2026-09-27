@@ -36,7 +36,7 @@ class TransferPlan(BaseModel):
     labels_kept: list[str]
     labels_dropped: list[str]
     #: Names of what is cleared, or null when there was nothing to clear.
-    cycle_cleared: Optional[str] = None
+    sprint_cleared: Optional[str] = None
     project_cleared: Optional[str] = None
     #: The assignee, when they are not on the target team.
     assignee_cleared: Optional[str] = None

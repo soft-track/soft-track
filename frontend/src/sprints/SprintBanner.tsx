@@ -2,32 +2,32 @@ import { useQueryClient } from '@tanstack/react-query'
 import { isPast } from 'date-fns'
 import { useState } from 'react'
 
-import { formatCycleRange, parseServerDate } from '@/api/dates'
+import { formatSprintRange, parseServerDate } from '@/api/dates'
 
 import {
-  useCompleteCycleCyclesCycleIdCompletePost,
-  useStartCycleCyclesCycleIdStartPost,
-} from '@/api/generated/endpoints/cycles/cycles'
-import type { CycleRead } from '@/api/generated/models'
+  useCompleteSprintSprintsSprintIdCompletePost,
+  useStartSprintSprintsSprintIdStartPost,
+} from '@/api/generated/endpoints/sprints/sprints'
+import type { SprintRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { formatRelative } from '@/i18n/format'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 
-/** Shown above the board while a cycle is selected. */
-export function CycleBanner({ cycle }: { cycle: CycleRead }) {
-  const { t } = useTranslation(['cycles', 'common'])
+/** Shown above the board while a sprint is selected. */
+export function SprintBanner({ sprint }: { sprint: SprintRead }) {
+  const { t } = useTranslation(['sprints', 'common'])
   const { team } = useTeamContext()
   const queryClient = useQueryClient()
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const startCycle = useStartCycleCyclesCycleIdStartPost()
-  const completeCycle = useCompleteCycleCyclesCycleIdCompletePost()
+  const startSprint = useStartSprintSprintsSprintIdStartPost()
+  const completeSprint = useCompleteSprintSprintsSprintIdCompletePost()
 
   const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/cycles`] })
+    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/sprints`] })
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/issues`] })
   }
 
@@ -43,20 +43,20 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
     }
   }
 
-  const { progress } = cycle
-  const ends = parseServerDate(cycle.ends_at)
-  const overdue = cycle.state === 'active' && isPast(ends)
+  const { progress } = sprint
+  const ends = parseServerDate(sprint.ends_at)
+  const overdue = sprint.state === 'active' && isPast(ends)
   const done = progress.issues_total > 0 ? progress.issues_completed / progress.issues_total : 0
-  const cycleRange = formatCycleRange(cycle.starts_at, cycle.ends_at)
+  const sprintRange = formatSprintRange(sprint.starts_at, sprint.ends_at)
 
   return (
     <div className="glass rounded-panel px-4 py-2.5">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <Icon name="calendar" size={15} className="text-neutral-400" />
-        <span className="text-sm font-semibold text-neutral-900">{cycle.display_name}</span>
+        <span className="text-sm font-semibold text-neutral-900">{sprint.display_name}</span>
         <span className="text-xs text-neutral-500">
-          {cycleRange}
-          {cycle.state !== 'completed' && (
+          {sprintRange}
+          {sprint.state !== 'completed' && (
             <span className={overdue ? 'text-danger-600' : undefined}>
               {' · '}
               {overdue
@@ -94,13 +94,13 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
         </span>
 
         <div className="ml-auto flex items-center gap-2">
-          {cycle.state === 'upcoming' && (
+          {sprint.state === 'upcoming' && (
             <button
               type="button"
-              disabled={startCycle.isPending}
+              disabled={startSprint.isPending}
               onClick={() =>
                 run(
-                  () => startCycle.mutateAsync({ cycleId: cycle.id }),
+                  () => startSprint.mutateAsync({ sprintId: sprint.id }),
                   () => t('banner.started'),
                 )
               }
@@ -109,17 +109,17 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
               {t('banner.start')}
             </button>
           )}
-          {cycle.state === 'active' && (
+          {sprint.state === 'active' && (
             <button
               type="button"
-              disabled={completeCycle.isPending}
+              disabled={completeSprint.isPending}
               onClick={() =>
                 run(
-                  () => completeCycle.mutateAsync({ cycleId: cycle.id }),
-                  (result: { carried_over: number; carried_into_cycle_id: number | null }) =>
+                  () => completeSprint.mutateAsync({ sprintId: sprint.id }),
+                  (result: { carried_over: number; carried_into_sprint_id: number | null }) =>
                     result.carried_over === 0
                       ? t('banner.completedAllDone')
-                      : result.carried_into_cycle_id
+                      : result.carried_into_sprint_id
                         ? t('banner.completedToNext', { count: result.carried_over })
                         : t('banner.completedToBacklog', { count: result.carried_over }),
                 )
@@ -129,7 +129,7 @@ export function CycleBanner({ cycle }: { cycle: CycleRead }) {
               {t('banner.complete')}
             </button>
           )}
-          {cycle.state === 'completed' && (
+          {sprint.state === 'completed' && (
             <span
               className="chip"
               style={{ ['--chip' as string]: 'var(--color-status-done)' }}

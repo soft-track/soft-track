@@ -135,13 +135,13 @@ def test_matching_an_assignee_and_unassigned_is_refused(client, pair):
     assert response.status_code == 422
 
 
-def test_a_named_cycle_and_the_active_one_is_refused(client, pair):
+def test_a_named_sprint_and_the_active_one_is_refused(client, pair):
     response = client.post(
         f"/teams/{pair['team']['id']}/automation-rules",
         json={
             "name": "Both",
             "trigger": "issue_created",
-            "actions": {"set_cycle_id": 1, "move_to_active_cycle": True},
+            "actions": {"set_sprint_id": 1, "move_to_active_sprint": True},
         },
         headers=pair["headers"],
     )
@@ -365,10 +365,10 @@ def test_comment_added_fires_on_a_comment(client, pair):
     )
 
 
-def test_cycle_completed_fires_on_everything_that_was_in_the_cycle(client, pair):
+def test_sprint_completed_fires_on_everything_that_was_in_the_sprint(client, pair):
     """Including the unfinished work, which has already carried over by then."""
     response = client.post(
-        f"/teams/{pair['team']['id']}/cycles",
+        f"/teams/{pair['team']['id']}/sprints",
         json={
             "name": "Sprint 1",
             "starts_at": "2026-01-01T00:00:00Z",
@@ -376,26 +376,26 @@ def test_cycle_completed_fires_on_everything_that_was_in_the_cycle(client, pair)
         },
         headers=pair["headers"],
     )
-    cycle = response.json()
-    client.post(f"/cycles/{cycle['id']}/start", headers=pair["headers"])
+    sprint = response.json()
+    client.post(f"/sprints/{sprint['id']}/start", headers=pair["headers"])
 
     finished = create_issue(
         client,
         pair,
         pair["team"]["id"],
-        cycle_id=cycle["id"],
+        sprint_id=sprint["id"],
         status_id=pair["status_ids"]["Done"],
     )
-    unfinished = create_issue(client, pair, pair["team"]["id"], cycle_id=cycle["id"])
+    unfinished = create_issue(client, pair, pair["team"]["id"], sprint_id=sprint["id"])
 
     create_rule(
         client,
         pair,
         pair["team"]["id"],
-        trigger="cycle_completed",
+        trigger="sprint_completed",
         set_priority="medium",
     )
-    client.post(f"/cycles/{cycle['id']}/complete", headers=pair["headers"])
+    client.post(f"/sprints/{sprint['id']}/complete", headers=pair["headers"])
 
     assert get_issue(client, pair, finished["id"])["priority"] == "medium"
     assert get_issue(client, pair, unfinished["id"])["priority"] == "medium"
@@ -496,21 +496,21 @@ def test_a_comment_action_posts_with_no_author(client, pair):
         client,
         pair,
         pair["team"]["id"],
-        comment_body="Filed outside a cycle -- please size it.",
+        comment_body="Filed outside a sprint -- please size it.",
     )
     issue = create_issue(client, pair, pair["team"]["id"])
 
     posted = comments(client, pair, issue["id"])
     assert len(posted) == 1
-    assert posted[0]["body"].startswith("Filed outside a cycle")
+    assert posted[0]["body"].startswith("Filed outside a sprint")
     # Not attributed to whoever filed the issue. Nobody wrote it.
     assert posted[0]["author"] is None
 
 
-def test_the_active_cycle_is_resolved_when_the_rule_fires(client, pair):
-    """A named cycle would stop meaning "the sprint" a fortnight later."""
-    cycle = client.post(
-        f"/teams/{pair['team']['id']}/cycles",
+def test_the_active_sprint_is_resolved_when_the_rule_fires(client, pair):
+    """A named sprint would stop meaning "the sprint" a fortnight later."""
+    sprint = client.post(
+        f"/teams/{pair['team']['id']}/sprints",
         json={
             "name": "Sprint 1",
             "starts_at": "2026-01-01T00:00:00Z",
@@ -524,16 +524,16 @@ def test_the_active_cycle_is_resolved_when_the_rule_fires(client, pair):
         pair,
         pair["team"]["id"],
         conditions={"if_priority": "urgent"},
-        move_to_active_cycle=True,
+        move_to_active_sprint=True,
     )
 
     # Nothing running yet: the rule matches and quietly has nowhere to move it.
     before = create_issue(client, pair, pair["team"]["id"], priority="urgent")
-    assert get_issue(client, pair, before["id"])["cycle_id"] is None
+    assert get_issue(client, pair, before["id"])["sprint_id"] is None
 
-    client.post(f"/cycles/{cycle['id']}/start", headers=pair["headers"])
+    client.post(f"/sprints/{sprint['id']}/start", headers=pair["headers"])
     after = create_issue(client, pair, pair["team"]["id"], priority="urgent")
-    assert get_issue(client, pair, after["id"])["cycle_id"] == cycle["id"]
+    assert get_issue(client, pair, after["id"])["sprint_id"] == sprint["id"]
 
 
 def test_rules_run_in_the_order_they_were_written(client, pair):
@@ -581,10 +581,10 @@ def test_an_assignee_condition_narrows_to_that_person(client, pair):
     assert get_issue(client, pair, theirs["id"])["priority"] == "urgent"
 
 
-def test_a_named_cycle_action_moves_the_issue_into_it(client, pair):
-    """The other half of the cycle action -- `move_to_active_cycle` is above."""
-    cycle = client.post(
-        f"/teams/{pair['team']['id']}/cycles",
+def test_a_named_sprint_action_moves_the_issue_into_it(client, pair):
+    """The other half of the sprint action -- `move_to_active_sprint` is above."""
+    sprint = client.post(
+        f"/teams/{pair['team']['id']}/sprints",
         json={
             "name": "Sprint 1",
             "starts_at": "2026-01-01T00:00:00Z",
@@ -592,10 +592,10 @@ def test_a_named_cycle_action_moves_the_issue_into_it(client, pair):
         },
         headers=pair["headers"],
     ).json()
-    create_rule(client, pair, pair["team"]["id"], set_cycle_id=cycle["id"])
+    create_rule(client, pair, pair["team"]["id"], set_sprint_id=sprint["id"])
 
     issue = create_issue(client, pair, pair["team"]["id"])
-    assert get_issue(client, pair, issue["id"])["cycle_id"] == cycle["id"]
+    assert get_issue(client, pair, issue["id"])["sprint_id"] == sprint["id"]
     assert (
         "Moved to Sprint 1"
         in runs(client, pair, pair["team"]["id"])["items"][0]["summary"]
@@ -946,11 +946,11 @@ def test_deleting_a_status_sends_the_rules_after_the_issues(client, pair):
     assert updated["actions"]["set_status_id"] == pair["status_ids"]["In Progress"]
 
 
-def test_deleting_a_cycle_switches_off_the_rules_that_filled_it(client, pair):
+def test_deleting_a_sprint_switches_off_the_rules_that_filled_it(client, pair):
     """There is nowhere to send them, and a rule left enabled would silently
     do less than it says."""
-    cycle = client.post(
-        f"/teams/{pair['team']['id']}/cycles",
+    sprint = client.post(
+        f"/teams/{pair['team']['id']}/sprints",
         json={
             "name": "Sprint 1",
             "starts_at": "2026-01-01T00:00:00Z",
@@ -958,23 +958,23 @@ def test_deleting_a_cycle_switches_off_the_rules_that_filled_it(client, pair):
         },
         headers=pair["headers"],
     ).json()
-    create_rule(client, pair, pair["team"]["id"], set_cycle_id=cycle["id"])
+    create_rule(client, pair, pair["team"]["id"], set_sprint_id=sprint["id"])
 
-    response = client.delete(f"/cycles/{cycle['id']}", headers=pair["headers"])
+    response = client.delete(f"/sprints/{sprint['id']}", headers=pair["headers"])
     assert response.status_code == 204, response.text
 
     rule = client.get(
         f"/teams/{pair['team']['id']}/automation-rules", headers=pair["headers"]
     ).json()[0]
     assert rule["is_enabled"] is False
-    assert rule["actions"]["set_cycle_id"] is None
+    assert rule["actions"]["set_sprint_id"] is None
 
 
-def test_a_rule_cannot_be_pointed_at_a_completed_cycle(client, pair):
+def test_a_rule_cannot_be_pointed_at_a_completed_sprint(client, pair):
     """Its numbers are history everywhere else in SoftTrack, and a rule that
     kept dropping work into it would rewrite a report on every run."""
-    cycle = client.post(
-        f"/teams/{pair['team']['id']}/cycles",
+    sprint = client.post(
+        f"/teams/{pair['team']['id']}/sprints",
         json={
             "name": "Sprint 1",
             "starts_at": "2026-01-01T00:00:00Z",
@@ -982,7 +982,9 @@ def test_a_rule_cannot_be_pointed_at_a_completed_cycle(client, pair):
         },
         headers=pair["headers"],
     ).json()
-    client.post(f"/cycles/{cycle['id']}/start", headers=pair["headers"])
-    client.post(f"/cycles/{cycle['id']}/complete", headers=pair["headers"])
+    client.post(f"/sprints/{sprint['id']}/start", headers=pair["headers"])
+    client.post(f"/sprints/{sprint['id']}/complete", headers=pair["headers"])
 
-    create_rule(client, pair, pair["team"]["id"], set_cycle_id=cycle["id"], expect=400)
+    create_rule(
+        client, pair, pair["team"]["id"], set_sprint_id=sprint["id"], expect=400
+    )

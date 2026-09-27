@@ -18,13 +18,13 @@ export function parseServerDate(value: string): Date {
 }
 
 
-/** Format cycle boundaries as calendar days in the server's timezone.
+/** Format sprint boundaries as calendar days in the server's timezone.
  *
- * Cycle boundaries represent whole UTC days, even though the API serialises
+ * Sprint boundaries represent whole UTC days, even though the API serialises
  * them as instants. Formatting with an explicit timezone prevents a viewer's
  * local offset from moving the displayed day across midnight.
  */
-export function formatCycleRange(
+export function formatSprintRange(
   startsAt: string,
   endsAt: string,
   timeZone = 'UTC',

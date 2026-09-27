@@ -10,7 +10,7 @@ warehouse without polling. They work well alongside [API tokens](api-tokens.md).
 | `issue.updated` | Any of a ticket's fields change; `data.changes` says which, from and to |
 | `issue.status_changed` | It moved column; also sends `issue.updated` |
 | `comment.created` | A comment is added |
-| `cycle.started`, `cycle.completed` | A cycle starts or completes |
+| `sprint.started`, `sprint.completed` | A sprint starts or completes |
 | `ping` | You pressed **Send a ping** |
 
 A change made by an automation rule is sent as a separate delivery, with

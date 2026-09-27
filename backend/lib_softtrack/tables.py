@@ -25,7 +25,7 @@ class StatusCategory(str, enum.Enum):
 
     Fixed on purpose, and the reason per-team statuses are safe to allow at
     all. Everything that has to reason about work -- burndown, velocity, "is
-    this cycle finished", "3 of 5 sub-issues done", whether a blocker still
+    this sprint finished", "3 of 5 sub-issues done", whether a blocker still
     blocks -- asks the category, never the name. A team can add "Blocked" or
     "QA" without any of that having an opinion about it.
 
@@ -58,7 +58,7 @@ DEFAULT_STATUSES: tuple[tuple[str, "StatusCategory", str], ...] = (
 class ProjectState(str, enum.Enum):
     """Where a project -- which is what SoftTrack calls an epic -- is in its life.
 
-    Set by hand, like CycleState and for the same reason: "every issue is
+    Set by hand, like SprintState and for the same reason: "every issue is
     done" is evidence a project is finished, not a decision that it is. A
     project can be complete with a stray follow-up still open, or have every
     issue closed and still be waiting on a launch.
@@ -153,12 +153,12 @@ class IssueLinkType(str, enum.Enum):
 DIRECTED_LINK_TYPES = (IssueLinkType.blocks, IssueLinkType.duplicates)
 
 
-class CycleState(str, enum.Enum):
-    """Where a cycle is in its life.
+class SprintState(str, enum.Enum):
+    """Where a sprint is in its life.
 
     Derived from dates would be simpler, but a team that forgets to start a
-    cycle on Monday should not have Monday counted against its burndown, and a
-    cycle that runs a day long should not silently complete itself and carry
+    sprint on Monday should not have Monday counted against its burndown, and a
+    sprint that runs a day long should not silently complete itself and carry
     work away. So the state is set deliberately and the dates are the plan.
     """
 
@@ -171,7 +171,7 @@ class IssueEventField(str, enum.Enum):
     """Which field an IssueEvent records a change to."""
 
     status = "status"
-    cycle = "cycle"
+    sprint = "sprint"
     estimate = "estimate"
     #: Which project -- epic -- the issue is in (#64). What makes "how much
     #: did this epic grow after work started" answerable, and scope added late
@@ -211,7 +211,7 @@ class TeamRole(str, enum.Enum):
     """What someone may do inside one team.
 
     Ordered from most to least power. `guest` (#104) sees everything a member
-    sees -- board, list, issues, comments, cycles, reports, search -- and
+    sees -- board, list, issues, comments, sprints, reports, search -- and
     changes nothing: no issues, no comments, no settings. The one thing a guest
     does write is their own relationship to the team: watching an issue,
     choosing their own default view, and leaving.
@@ -282,9 +282,9 @@ class AutomationTrigger(str, enum.Enum):
     #: is a different event and leaves nobody to act on.
     issue_assigned = "issue_assigned"
     comment_added = "comment_added"
-    #: Once per issue that was in the cycle, after the unfinished work has
-    #: carried over -- see lib_softtrack/cycles.py.
-    cycle_completed = "cycle_completed"
+    #: Once per issue that was in the sprint, after the unfinished work has
+    #: carried over -- see lib_softtrack/sprints.py.
+    sprint_completed = "sprint_completed"
 
     #: A branch naming this issue appeared. Fires the first time the branch is
     #: seen, not on every push to it.
@@ -460,8 +460,8 @@ class WebhookEvent(str, enum.Enum):
     issue_updated = "issue.updated"
     issue_status_changed = "issue.status_changed"
     comment_created = "comment.created"
-    cycle_started = "cycle.started"
-    cycle_completed = "cycle.completed"
+    sprint_started = "sprint.started"
+    sprint_completed = "sprint.completed"
     #: Sent on request from the settings page, to check a URL works.
     ping = "ping"
 
@@ -607,7 +607,7 @@ class Team(SQLModel, table=True):
     key: str = Field(index=True, unique=True, description="Short prefix, e.g. ENG")
     description: Optional[str] = None
     next_issue_number: int = Field(default=1)
-    next_cycle_number: int = Field(default=1)
+    next_sprint_number: int = Field(default=1)
     #: The view everyone on this team lands on, unless they have chosen their
     #: own -- see UserDefaultView. Only a shared view may hold it, since a
     #: private one would be invisible to everybody it was defaulted for.
@@ -623,7 +623,7 @@ class Project(SQLModel, table=True):
     """A group of issues working towards one outcome. An epic, in Jira terms.
 
     The Jira importer maps `Epic Link` here, and there is deliberately no
-    separate Epic entity: projects, `parent_id` and cycles already group
+    separate Epic entity: projects, `parent_id` and sprints already group
     issues three ways, and a fourth that overlapped them would be sprawl.
     """
 
@@ -677,7 +677,7 @@ class Issue(SQLModel, table=True):
     # parent. See lib_softtrack/subissues.py for why that limit is enforced
     # rather than left to convention.
     parent_id: Optional[int] = Field(default=None, foreign_key="issue.id", index=True)
-    cycle_id: Optional[int] = Field(default=None, foreign_key="cycle.id", index=True)
+    sprint_id: Optional[int] = Field(default=None, foreign_key="sprint.id", index=True)
     #: The identifier this issue had in the system it was imported from, e.g.
     #: a Jira key like "PROJ-142". Kept so links in old documents, commit
     #: messages and chat history stay traceable after a migration -- which is
@@ -716,18 +716,18 @@ class IssueLink(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow)
 
 
-class Cycle(SQLModel, table=True):
+class Sprint(SQLModel, table=True):
     """A time-boxed iteration belonging to one team."""
 
     id: Optional[int] = Field(default=None, primary_key=True)
     team_id: int = Field(foreign_key="team.id", index=True)
-    #: Per team, and stable: "Cycle 7" keeps meaning the same fortnight after
-    #: another cycle is deleted, which a positional index would not.
+    #: Per team, and stable: "Sprint 7" keeps meaning the same fortnight after
+    #: another sprint is deleted, which a positional index would not.
     number: int
     name: Optional[str] = None
     starts_at: datetime
     ends_at: datetime
-    state: CycleState = Field(default=CycleState.upcoming, index=True)
+    state: SprintState = Field(default=SprintState.upcoming, index=True)
     completed_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=utcnow)
 
@@ -943,7 +943,7 @@ class SavedView(SQLModel, table=True):
     and already described by enums the API publishes, so columns get typed
     request and response models -- and therefore a typed frontend client --
     where a blob would reach the browser as `unknown`. Foreign keys also mean
-    a view cannot outlive the label or cycle it filters on without somebody
+    a view cannot outlive the label or sprint it filters on without somebody
     having to decide what happens, which is the conversation a blob quietly
     skips.
 
@@ -970,10 +970,10 @@ class SavedView(SQLModel, table=True):
     unassigned: bool = Field(default=False)
     label_id: Optional[int] = Field(default=None, foreign_key="label.id")
     project_id: Optional[int] = Field(default=None, foreign_key="project.id")
-    #: Cleared when the cycle is deleted -- see lib_softtrack/cycles.py. A view
-    #: pointing at a cycle that no longer exists would match nothing and look
+    #: Cleared when the sprint is deleted -- see lib_softtrack/sprints.py. A view
+    #: pointing at a sprint that no longer exists would match nothing and look
     #: broken rather than empty.
-    cycle_id: Optional[int] = Field(default=None, foreign_key="cycle.id")
+    sprint_id: Optional[int] = Field(default=None, foreign_key="sprint.id")
     due: Optional[DueFilter] = None
     type: Optional[IssueType] = None
 
@@ -1038,7 +1038,7 @@ class AutomationRule(SQLModel, table=True):
     gives: the vocabulary is small and fixed, the API publishes it as enums,
     and a typed frontend falls out of that where a blob would arrive in the
     browser as `unknown`. The foreign keys also mean a rule cannot quietly
-    outlive the status or cycle it names -- deleting one of those has to
+    outlive the status or sprint it names -- deleting one of those has to
     decide what happens to the rule, which is the conversation a blob skips.
 
     **Conditions** are the `if_*` columns, ANDed, with null meaning "no
@@ -1094,13 +1094,13 @@ class AutomationRule(SQLModel, table=True):
     #: else in SoftTrack, and a rule that silently stripped the ones somebody
     #: chose would be the worst reading of "add a label".
     add_label_id: Optional[int] = Field(default=None, foreign_key="label.id")
-    set_cycle_id: Optional[int] = Field(default=None, foreign_key="cycle.id")
-    #: "Whichever cycle is running when this fires", as opposed to a named
-    #: one. Worth its own flag rather than leaving people to point at a cycle
+    set_sprint_id: Optional[int] = Field(default=None, foreign_key="sprint.id")
+    #: "Whichever sprint is running when this fires", as opposed to a named
+    #: one. Worth its own flag rather than leaving people to point at a sprint
     #: by id: the useful version of "put new urgent bugs in the sprint" has to
     #: keep meaning that a fortnight later, and a fixed id does not. Mutually
-    #: exclusive with `set_cycle_id`.
-    move_to_active_cycle: bool = Field(default=False)
+    #: exclusive with `set_sprint_id`.
+    move_to_active_sprint: bool = Field(default=False)
     #: Posted with no author -- see Comment.author_id.
     comment_body: Optional[str] = None
 
@@ -1140,7 +1140,7 @@ class AutomationRun(SQLModel, table=True):
     rule_name: str
     trigger: AutomationTrigger
     issue_id: int = Field(foreign_key="issue.id", index=True)
-    #: Who did the thing that fired the rule. Null for a cycle completing
+    #: Who did the thing that fired the rule. Null for a sprint completing
     #: under a scheduled process, and for anything an earlier automation
     #: caused.
     actor_id: Optional[int] = Field(default=None, foreign_key="user.id")

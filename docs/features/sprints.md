@@ -1,17 +1,18 @@
-# Cycles and estimates
+# Sprints and estimates
 
-A cycle is a time-boxed iteration — a sprint, if that is the word your team
-uses. It has a name (or just "Cycle 7"), a start, an end, and a state.
+A sprint is a time-boxed iteration. It has a name (or just "Sprint 7"), a
+start, an end, and a state. Until #214 the interface and the API called it a
+cycle.
 
-**State is set, not derived.** A cycle could infer "active" from today falling
+**State is set, not derived.** A sprint could infer "active" from today falling
 between its dates, but then a team that forgets to start on Monday has Monday
-counted against its burndown, and a cycle that runs a day long completes itself
+counted against its burndown, and a sprint that runs a day long completes itself
 overnight and carries work away while nobody is looking. The dates are the
 plan; the state is what actually happened.
 
-**Completing a cycle never deletes work.** Unfinished tickets move to the next
-upcoming cycle, or back to the backlog if there is none, and the completion
-response says how many moved and where they went. A cycle boundary is an
+**Completing a sprint never deletes work.** Unfinished tickets move to the next
+upcoming sprint, or back to the backlog if there is none, and the completion
+response says how many moved and where they went. A sprint boundary is an
 accounting event, not a reason to lose anything. Cancelled tickets count as
 finished for this purpose — they are not outstanding work, and dragging them
 forward for ever would be wrong.
@@ -20,7 +21,7 @@ forward for ever would be wrong.
 the point. They stop a team arguing about whether something is a 6 or a 7, a
 distinction no estimate is accurate enough to carry. Anything off the scale is
 refused with a 422 that names the scale. Null means *not sized yet*, which is
-deliberately distinct from an estimate of zero — and the cycle's progress
+deliberately distinct from an estimate of zero — and the sprint's progress
 reports the unsized count alongside the totals, because a points total is only
 as honest as that number is small.
 

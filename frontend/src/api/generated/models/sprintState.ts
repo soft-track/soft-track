@@ -7,17 +7,17 @@
  */
 
 /**
- * Where a cycle is in its life.
+ * Where a sprint is in its life.
  *
  * Derived from dates would be simpler, but a team that forgets to start a
- * cycle on Monday should not have Monday counted against its burndown, and a
- * cycle that runs a day long should not silently complete itself and carry
+ * sprint on Monday should not have Monday counted against its burndown, and a
+ * sprint that runs a day long should not silently complete itself and carry
  * work away. So the state is set deliberately and the dates are the plan.
  */
-export type CycleState = typeof CycleState[keyof typeof CycleState];
+export type SprintState = typeof SprintState[keyof typeof SprintState];
 
 
-export const CycleState = {
+export const SprintState = {
   upcoming: 'upcoming',
   active: 'active',
   completed: 'completed',

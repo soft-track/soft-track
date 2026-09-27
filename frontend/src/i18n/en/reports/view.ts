@@ -1,15 +1,15 @@
 /** The reports page: its filters, the burndown's placeholder, and the note on history. */
 export const view = {
-  cycle: 'Cycle',
-  noCycles: 'No cycles',
+  sprint: 'Sprint',
+  noSprints: 'No sprints',
   window: 'Window',
   /** A window tab: the last this many days. */
   windowDays: '{{days}}d',
   burndown: 'Burndown',
-  burndownNoCycles: 'Create a cycle to see a burndown.',
-  cycleTime: {
-    title: 'Time in {{cycle}}',
-    note: 'Logged during the cycle on tickets that were in it.',
+  burndownNoSprints: 'Create a sprint to see a burndown.',
+  sprintTime: {
+    title: 'Time in {{sprint}}',
+    note: 'Logged during the sprint on tickets that were in it.',
   },
   windowTime: {
     title_one: 'Time, last {{count}} day',

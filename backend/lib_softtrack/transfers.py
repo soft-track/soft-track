@@ -12,7 +12,7 @@ so a move is not a field change. The rules, which `plan` computes and
   category, or its first column if it has none in that category.
 - **Labels** are kept where the target team has one of the same name, ignoring
   case, and dropped otherwise.
-- **Cycle** and **project** are cleared; both belong to one team.
+- **Sprint** and **project** are cleared; both belong to one team.
 - **Assignee** is cleared if they are not on the target team.
 - **Parent.** A sub-issue whose parent stays behind becomes top level --
   sub-issues must share a team with their parent.
@@ -42,7 +42,7 @@ from lib_softtrack.ranks import top_rank
 from lib_softtrack.statuses import default_status, team_statuses
 from lib_softtrack.tables import (
     Comment,
-    Cycle,
+    Sprint,
     Issue,
     IssueEvent,
     IssueEventField,
@@ -169,7 +169,7 @@ def preview_transfer(
     move = _plan(session, current_user, issue, target_team_id)
     target = session.get(Team, target_team_id)
     current_status = session.get(WorkflowStatus, issue.status_id)
-    cycle = session.get(Cycle, issue.cycle_id) if issue.cycle_id else None
+    sprint = session.get(Sprint, issue.sprint_id) if issue.sprint_id else None
     project = session.get(Project, issue.project_id) if issue.project_id else None
     assignee = session.get(User, issue.assignee_id) if move.clear_assignee else None
     parent = session.get(Issue, issue.parent_id) if move.detach_parent else None
@@ -184,7 +184,7 @@ def preview_transfer(
         ),
         labels_kept=move.labels_kept,
         labels_dropped=move.labels_dropped,
-        cycle_cleared=(cycle.name or f"Cycle {cycle.number}") if cycle else None,
+        sprint_cleared=(sprint.name or f"Sprint {sprint.number}") if sprint else None,
         project_cleared=project.name if project else None,
         assignee_cleared=assignee.full_name if assignee else None,
         parent_detached=_identifier(session, parent) if parent else None,
@@ -205,7 +205,7 @@ def _carry_out(session: Session, move: _Move, target: Team, actor: User) -> str:
     issue.team_id = target.id
     issue.number = number
     issue.status_id = move.status.id
-    issue.cycle_id = None
+    issue.sprint_id = None
     issue.project_id = None
     if move.clear_assignee:
         issue.assignee_id = None
@@ -217,8 +217,8 @@ def _carry_out(session: Session, move: _Move, target: Team, actor: User) -> str:
     set_labels(issue.id, move.label_ids, session)
     session.flush()
 
-    # The fields the reports read -- a cleared cycle has to show up on that
-    # cycle's burndown as scope leaving it -- through the same function every
+    # The fields the reports read -- a cleared sprint has to show up on that
+    # sprint's burndown as scope leaving it -- through the same function every
     # other change goes through. They are written under the new team.
     record_changes(session, issue, before, actor)
     new_key = f"{target.key}-{number}"

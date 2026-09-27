@@ -5,10 +5,10 @@
  * An open-source, self-hostable issue tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
-import type { CycleProgress } from './cycleProgress';
-import type { CycleState } from './cycleState';
+import type { SprintProgress } from './sprintProgress';
+import type { SprintState } from './sprintState';
 
-export interface CycleRead {
+export interface SprintRead {
   id: number;
   team_id: number;
   number: number;
@@ -16,7 +16,7 @@ export interface CycleRead {
   display_name: string;
   starts_at: string;
   ends_at: string;
-  state: CycleState;
+  state: SprintState;
   completed_at?: string | null;
-  progress: CycleProgress;
+  progress: SprintProgress;
 }

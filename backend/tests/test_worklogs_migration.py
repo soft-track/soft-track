@@ -37,6 +37,11 @@ def test_the_table_takes_an_entry_and_comes_off_cleanly(tmp_path):
     connection.commit()
     connection.close()
     command.upgrade(config, AFTER)
+    # The rest of the way before writing through the models: a flush reads the
+    # issue a worklog is on, with every column today's `Issue` has
+    # (`sprint_id`, #214) -- names this revision predates. Nothing after it
+    # touches `worklog`, so the table checked is still this one's.
+    command.upgrade(config, "head")
 
     engine = create_engine(f"sqlite:///{db_path}")
     with Session(engine) as session:

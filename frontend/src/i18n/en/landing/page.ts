@@ -10,7 +10,7 @@ export const page = {
   },
   hero: {
     title: 'A ticket tracker your team can <highlight>actually host</highlight>',
-    lede: 'Teams, epics and cycles; a kanban board with drag-and-drop; reports built from real ticket history. Open source, self-hosted, and up in one command.',
+    lede: 'Teams, epics and sprints; a kanban board with drag-and-drop; reports built from real ticket history. Open source, self-hosted, and up in one command.',
     signIn: 'Sign in',
     register: 'Create an account',
     demo: 'Demo login: {{email}} / {{password}}',

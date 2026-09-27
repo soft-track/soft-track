@@ -67,7 +67,7 @@ vi.mock('@/team/useTeams', async (importOriginal) => ({
 }))
 
 vi.mock('@/team/useTeamData', () => ({
-  useTeamData: () => ({ projects: [], labels: [], members: [], cycles: [], statuses: [TODO] }),
+  useTeamData: () => ({ projects: [], labels: [], members: [], sprints: [], statuses: [TODO] }),
 }))
 
 vi.mock('@/realtime/useTeamEvents', () => ({ useTeamEvents: () => {} }))

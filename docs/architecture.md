@@ -42,7 +42,7 @@ soft_track/
     │   ├── team/             # TeamContext, useTeams, useTeamData, team pages
     │   ├── board/            # BoardPage + its hooks (filters, overlays, status change)
     │   ├── issues/           # IssueCard, NewIssueModal, issueMeta, and detail/
-    │   ├── cycles/           # CycleList, CycleBanner, NewCycleModal
+    │   ├── sprints/           # SprintList, SprintBanner, NewSprintModal
     │   ├── search/           # SearchResults, useDebounced
     │   ├── imports/          # ImportJiraModal
     │   ├── reports/          # charts

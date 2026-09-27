@@ -1,4 +1,4 @@
-/** The board's sidebar: teams, views, cycles, projects, and the account. */
+/** The board's sidebar: teams, views, sprints, projects, and the account. */
 export const sidebar = {
   switchToLight: 'Switch to light theme',
   switchToDark: 'Switch to dark theme',
@@ -7,8 +7,8 @@ export const sidebar = {
   team: 'Team',
   teamOption: '{{name}} · {{key}}',
   views: 'Views',
-  cycles: 'Cycles',
-  newCycle: 'New cycle',
+  sprints: 'Sprints',
+  newSprint: 'New sprint',
   projects: 'Epics',
   newProject: 'New epic',
   noProjects: 'No epics yet.',

@@ -20,7 +20,7 @@ type HistoryKey =
   | `priority.${'set' | 'changed' | 'removed'}`
   | `estimate.${'set' | 'changed' | 'cleared'}`
   | `assignee.${'assigned' | 'reassigned' | 'unassigned'}`
-  | `cycle.${'added' | 'moved' | 'removed'}`
+  | `sprint.${'added' | 'moved' | 'removed'}`
   | `due.${'set' | 'moved' | 'removed'}`
   | `project.${'added' | 'moved' | 'removed'}`
   | 'team'
@@ -37,8 +37,8 @@ type HistoryKey =
  * why a move between two columns of the same category never appears here: no
  * row was written for it.
  *
- * A name that has gone -- a deleted cycle or project, say -- reads as "a
- * deleted cycle" rather than as an id nobody can place.
+ * A name that has gone -- a deleted sprint or project, say -- reads as "a
+ * deleted sprint" rather than as an id nobody can place.
  */
 export function describeEvent(event: IssueEventRead): EventSentence {
   const { old_value: from, new_value: to } = event
@@ -69,12 +69,12 @@ export function describeEvent(event: IssueEventRead): EventSentence {
       return say('assignee.reassigned', { from: before, to: after })
     }
 
-    case 'cycle': {
-      const before = named(event.old_label, 'deletedCycle')
-      const after = named(event.new_label, 'deletedCycle')
-      if (!to) return say('cycle.removed', { from: before })
-      if (!from) return say('cycle.added', { to: after })
-      return say('cycle.moved', { from: before, to: after })
+    case 'sprint': {
+      const before = named(event.old_label, 'deletedSprint')
+      const after = named(event.new_label, 'deletedSprint')
+      if (!to) return say('sprint.removed', { from: before })
+      if (!from) return say('sprint.added', { to: after })
+      return say('sprint.moved', { from: before, to: after })
     }
 
     case 'due_date':
@@ -132,7 +132,7 @@ function points(value: string | null | undefined): string {
 
 function named(
   label: string | null | undefined,
-  gone: 'formerMember' | 'deletedCycle' | 'deletedProject',
+  gone: 'formerMember' | 'deletedSprint' | 'deletedProject',
 ): string {
   return label ?? i18n.t(`issues:history.${gone}`)
 }

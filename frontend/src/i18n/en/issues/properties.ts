@@ -1,4 +1,4 @@
-/** Issue panel → the block of properties: status, priority, estimate, cycle and the rest. */
+/** Issue panel → the block of properties: status, priority, estimate, sprint and the rest. */
 export const properties = {
   status: 'Status',
   priority: 'Priority',
@@ -7,7 +7,7 @@ export const properties = {
   notSized: 'Not sized',
   points_one: '{{count}} point',
   points_other: '{{count}} points',
-  cycle: 'Cycle',
+  sprint: 'Sprint',
   backlog: 'Backlog',
   dueDate: 'Due date',
   project: 'Epic',

@@ -754,7 +754,7 @@ export const useMoveIssueIssuesIssueIdMovePost = <TError = HTTPValidationError,
     }
     /**
  * What has happened to an issue: status, priority, assignee, estimate,
- * cycle and project changes, oldest first, with who made each one.
+ * sprint and project changes, oldest first, with who made each one.
  *
  * The latest 100 changes. The values an issue was created with are its
  * starting point rather than changes, and are left out.

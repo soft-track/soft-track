@@ -32,7 +32,7 @@ class ViewFilters(BaseModel):
     unassigned: bool = False
     label_id: Optional[int] = None
     project_id: Optional[int] = None
-    cycle_id: Optional[int] = None
+    sprint_id: Optional[int] = None
     #: Overdue, due this week, or no due date (#87). Measured from the
     #: viewer's own today when the view is applied, not from when it was saved.
     due: Optional[DueFilter] = None

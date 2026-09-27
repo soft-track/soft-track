@@ -19,7 +19,7 @@ What belongs to the old team is remapped or cleared:
 |---|---|
 | **Status** | The target team's first status in the same category — `started` to `started`. If it has none, its first column. |
 | **Labels** | Kept where the target team has one with the same name, ignoring case. Dropped otherwise. |
-| **Cycle, epic** | Cleared. Both belong to one team. |
+| **Sprint, epic** | Cleared. Both belong to one team. |
 | **Assignee** | Kept if they are on the target team, cleared if not. |
 | **Parent** | A sub-ticket moved on its own stops being one. Sub-tickets share their parent's team. |
 | **Sub-tickets** | Move with their parent, by the same rules, each getting its own new key. |
@@ -30,7 +30,7 @@ hand. The whole family moves in one transaction, or none of it does.
 
 The move is recorded in the ticket's history ("moved this from ENG-42 to
 OPS-17"), and the fields it clears are recorded the way any other change is,
-so a cycle's burndown shows the ticket leaving it. It notifies nobody:
+so a sprint's burndown shows the ticket leaving it. It notifies nobody:
 watchers who are not on the target team simply stop hearing about it, as
 anyone who leaves a team does.
 

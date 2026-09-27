@@ -17,7 +17,7 @@ const DATA = {
 
 describe('TimeSpentChart (#102)', () => {
   it('draws a bar per person, longest for the most time, with the numbers as text', () => {
-    render(<TimeSpentChart title="Time in Sprint 4" note="Logged during the cycle." data={DATA} />)
+    render(<TimeSpentChart title="Time in Sprint 4" note="Logged during the sprint." data={DATA} />)
     const rows = screen.getAllByRole('listitem')
     expect(rows.map((row) => row.textContent)).toEqual(['Maya Chen4h', 'Olivia Owner1h 30m'])
     const widths = rows.map(

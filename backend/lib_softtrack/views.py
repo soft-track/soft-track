@@ -27,7 +27,7 @@ from lib_softtrack.models.views import (
     ViewFilters,
 )
 from lib_softtrack.tables import (
-    Cycle,
+    Sprint,
     Label,
     Project,
     SavedView,
@@ -59,7 +59,7 @@ def _to_read(view: SavedView, owner: User) -> SavedViewRead:
             unassigned=view.unassigned,
             label_id=view.label_id,
             project_id=view.project_id,
-            cycle_id=view.cycle_id,
+            sprint_id=view.sprint_id,
             due=view.due,
             type=view.type,
         ),
@@ -78,7 +78,7 @@ def _apply_filters(view: SavedView, filters: ViewFilters) -> None:
     view.unassigned = filters.unassigned
     view.label_id = filters.label_id
     view.project_id = filters.project_id
-    view.cycle_id = filters.cycle_id
+    view.sprint_id = filters.sprint_id
     view.due = filters.due
     view.type = filters.type
 
@@ -114,13 +114,13 @@ def _validate_filters(session: Session, team_id: int, filters: ViewFilters) -> N
                 code=ErrorCode.not_on_this_team,
                 detail="No such project on this team",
             )
-    if filters.cycle_id is not None:
-        cycle = session.get(Cycle, filters.cycle_id)
-        if cycle is None or cycle.team_id != team_id:
+    if filters.sprint_id is not None:
+        sprint = session.get(Sprint, filters.sprint_id)
+        if sprint is None or sprint.team_id != team_id:
             raise api_error(
                 status_code=400,
                 code=ErrorCode.not_on_this_team,
-                detail="No such cycle on this team",
+                detail="No such sprint on this team",
             )
     if filters.assignee_id is not None:
         member = session.exec(
@@ -377,24 +377,24 @@ def set_my_default(
     return list_views(session, current_user, team_id)
 
 
-def clear_cycle(session: Session, cycle_id: int) -> None:
-    """Drop a deleted cycle from every view that filtered on it.
+def clear_sprint(session: Session, sprint_id: int) -> None:
+    """Drop a deleted sprint from every view that filtered on it.
 
-    Called from the cycle service. A view left pointing at a cycle that no
+    Called from the sprint service. A view left pointing at a sprint that no
     longer exists matches nothing, which reads as a broken filter rather than
     an empty one.
     """
     for view in session.exec(
-        select(SavedView).where(SavedView.cycle_id == cycle_id)
+        select(SavedView).where(SavedView.sprint_id == sprint_id)
     ).all():
-        view.cycle_id = None
+        view.sprint_id = None
         session.add(view)
 
 
 def clear_project(session: Session, project_id: int) -> None:
     """Drop a deleted project from every view that filtered on it.
 
-    Called from the project service, for the reason `clear_cycle` gives.
+    Called from the project service, for the reason `clear_sprint` gives.
     """
     for view in session.exec(
         select(SavedView).where(SavedView.project_id == project_id)

@@ -5,9 +5,9 @@
  * An open-source, self-hostable issue tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
-import type { VelocityCycle } from './velocityCycle';
+import type { VelocitySprint } from './velocitySprint';
 
 export interface Velocity {
-  cycles: VelocityCycle[];
+  sprints: VelocitySprint[];
   average_points?: number | null;
 }

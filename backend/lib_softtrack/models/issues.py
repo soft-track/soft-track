@@ -62,7 +62,7 @@ class IssueCreate(BaseModel):
     assignee_id: Optional[int] = None
     estimate: Estimate = None
     parent_id: Optional[int] = None
-    cycle_id: Optional[int] = None
+    sprint_id: Optional[int] = None
     due_date: Optional[date] = None
     label_ids: list[int] = []
 
@@ -81,8 +81,8 @@ class IssueUpdate(BaseModel):
     estimate: Estimate = None
     #: An explicit null detaches the issue from its parent.
     parent_id: Optional[int] = None
-    #: An explicit null moves the issue out of its cycle, back to the backlog.
-    cycle_id: Optional[int] = None
+    #: An explicit null moves the issue out of its sprint, back to the backlog.
+    sprint_id: Optional[int] = None
     #: An explicit null clears the due date.
     due_date: Optional[date] = None
     label_ids: Optional[list[int]] = None
@@ -122,7 +122,7 @@ class IssueRead(BaseModel):
     #: Unresolved issues that block this one. Zero for an issue that is free
     #: to start; the board marks anything above zero.
     blocked_by_count: int
-    cycle_id: Optional[int] = None
+    sprint_id: Optional[int] = None
     due_date: Optional[date] = None
     #: The key this issue had before it was imported, e.g. "PROJ-142".
     external_key: Optional[str] = None
@@ -161,14 +161,14 @@ class IssueBulkChanges(BaseModel):
     """What to do to every issue in the batch. Omitted fields are left alone.
 
     The same unset-versus-null distinction as `IssueUpdate`: an explicit null
-    assignee, project or cycle clears it on every issue.
+    assignee, project or sprint clears it on every issue.
     """
 
     status_id: Optional[int] = None
     priority: Optional[IssuePriority] = None
     assignee_id: Optional[int] = None
     project_id: Optional[int] = None
-    cycle_id: Optional[int] = None
+    sprint_id: Optional[int] = None
     #: Labels are added and removed rather than replaced. Twenty issues rarely
     #: share a label set, and "set these labels" across them would silently
     #: strip whatever each one had that the others did not.

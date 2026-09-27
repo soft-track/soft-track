@@ -37,7 +37,7 @@ const TEAM: TeamContextValue = {
   projects: [],
   labels: [],
   members: [],
-  cycles: [],
+  sprints: [],
   statuses: [TODO],
 }
 

@@ -25,7 +25,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation(['issues', 'common'])
   const dialogRef = useFocusTrap<HTMLDivElement>()
   const titleId = useId()
-  const { team, projects, labels, members, cycles, statuses } = useTeamContext()
+  const { team, projects, labels, members, sprints, statuses } = useTeamContext()
   const queryClient = useQueryClient()
   const createIssue = useCreateIssueTeamsTeamIdIssuesPost()
   const templates = useListTemplatesTeamsTeamIdIssueTemplatesGet(team.id).data ?? []
@@ -44,7 +44,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
   const [priority, setPriority] = useState<IssuePriority>(IssuePriority.no_priority)
   const [type, setType] = useState<IssueType>('task')
   const [estimate, setEstimate] = useState<(typeof ESTIMATE_SCALE)[number] | null>(null)
-  const [cycleId, setCycleId] = useState<string>('')
+  const [sprintId, setSprintId] = useState<string>('')
   const [dueDate, setDueDate] = useState('')
   const [assigneeId, setAssigneeId] = useState<string>('')
   const [labelIds, setLabelIds] = useState<number[]>([])
@@ -88,7 +88,7 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
           priority,
           type,
           estimate,
-          cycle_id: cycleId ? Number(cycleId) : undefined,
+          sprint_id: sprintId ? Number(sprintId) : undefined,
           due_date: dueDate || undefined,
           assignee_id: assigneeId ? Number(assigneeId) : undefined,
           label_ids: labelIds,
@@ -236,16 +236,16 @@ export function NewIssueModal({ onClose }: { onClose: () => void }) {
 
             <Select
               dense
-              value={cycleId}
-              onChange={(e) => setCycleId(e.target.value)}
-              aria-label={t('newIssue.cycle')}
+              value={sprintId}
+              onChange={(e) => setSprintId(e.target.value)}
+              aria-label={t('newIssue.sprint')}
             >
-              <option value="">{t('newIssue.noCycle')}</option>
-              {cycles
+              <option value="">{t('newIssue.noSprint')}</option>
+              {sprints
                 .filter((c) => c.state !== 'completed')
-                .map((cycle) => (
-                  <option key={cycle.id} value={cycle.id}>
-                    {cycle.display_name}
+                .map((sprint) => (
+                  <option key={sprint.id} value={sprint.id}>
+                    {sprint.display_name}
                   </option>
                 ))}
             </Select>

@@ -10,7 +10,7 @@ const W = 640
 const H = 220
 
 /**
- * Committed against completed, per cycle.
+ * Committed against completed, per sprint.
  *
  * Target-and-actual rather than two equal bars: the pale bar is what the team
  * signed up for, the solid one is what landed. Every bar carries its number,
@@ -19,12 +19,12 @@ const H = 220
 export function VelocityChart({ data }: { data: Velocity }) {
   const { t } = useTranslation(['reports', 'common'])
   const [hovered, setHovered] = useState<number | null>(null)
-  const cycles = data.cycles
+  const sprints = data.sprints
 
-  const max = Math.max(1, ...cycles.flatMap((c) => [c.points_committed, c.points_completed]))
+  const max = Math.max(1, ...sprints.flatMap((c) => [c.points_committed, c.points_completed]))
   const inner = W - PAD.left - PAD.right
   const plot = H - PAD.top - PAD.bottom
-  const slot = inner / Math.max(cycles.length, 1)
+  const slot = inner / Math.max(sprints.length, 1)
   const wide = Math.min(slot * 0.62, 56)
   const narrow = wide * 0.55
 
@@ -37,7 +37,7 @@ export function VelocityChart({ data }: { data: Velocity }) {
     <Figure
       title={t('velocity.title')}
       note={t('velocity.note')}
-      empty={cycles.length === 0 ? t('velocity.empty') : undefined}
+      empty={sprints.length === 0 ? t('velocity.empty') : undefined}
       legend={
         <>
           <Key colour={INK.reference} label={t('velocity.committed')} />
@@ -70,11 +70,11 @@ export function VelocityChart({ data }: { data: Velocity }) {
           />
         ))}
 
-        {cycles.map((cycle, i) => {
+        {sprints.map((sprint, i) => {
           const active = hovered === i
           return (
             <g
-              key={cycle.cycle_id}
+              key={sprint.sprint_id}
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered(null)}
             >
@@ -88,18 +88,18 @@ export function VelocityChart({ data }: { data: Velocity }) {
               />
               <rect
                 x={barX(i, wide)}
-                y={y(cycle.points_committed)}
+                y={y(sprint.points_committed)}
                 width={wide}
-                height={Math.max(plot - (y(cycle.points_committed) - PAD.top), 0)}
+                height={Math.max(plot - (y(sprint.points_committed) - PAD.top), 0)}
                 rx={4}
                 fill={INK.reference}
               />
               {/* A 2px surface ring keeps the two fills from touching. */}
               <rect
                 x={barX(i, narrow)}
-                y={y(cycle.points_completed)}
+                y={y(sprint.points_completed)}
                 width={narrow}
-                height={Math.max(plot - (y(cycle.points_completed) - PAD.top), 0)}
+                height={Math.max(plot - (y(sprint.points_completed) - PAD.top), 0)}
                 rx={4}
                 fill={INK.measure}
                 stroke="white"
@@ -108,12 +108,12 @@ export function VelocityChart({ data }: { data: Velocity }) {
               />
               <text
                 x={PAD.left + slot * i + slot / 2}
-                y={y(Math.max(cycle.points_committed, cycle.points_completed)) - 6}
+                y={y(Math.max(sprint.points_committed, sprint.points_completed)) - 6}
                 textAnchor="middle"
                 className="fill-neutral-700"
                 style={{ fontSize: 11, fontVariantNumeric: 'tabular-nums' }}
               >
-                {cycle.points_completed}/{cycle.points_committed}
+                {sprint.points_completed}/{sprint.points_committed}
               </text>
               <text
                 x={PAD.left + slot * i + slot / 2}
@@ -122,7 +122,7 @@ export function VelocityChart({ data }: { data: Velocity }) {
                 className="fill-neutral-400"
                 style={{ fontSize: 10 }}
               >
-                {cycle.cycle_name}
+                {sprint.sprint_name}
               </text>
             </g>
           )

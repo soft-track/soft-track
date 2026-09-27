@@ -14,7 +14,7 @@ import {
 import { useListTeamMembersTeamsTeamIdMembersGet } from '@/api/generated/endpoints/teams/teams'
 import {
   AutomationTrigger,
-  CycleState,
+  SprintState,
   IssuePriority,
   IssueType,
   type AutomationRuleRead,
@@ -53,7 +53,7 @@ const TRIGGER_ORDER: AutomationTrigger[] = [
   AutomationTrigger.status_changed,
   AutomationTrigger.issue_assigned,
   AutomationTrigger.comment_added,
-  AutomationTrigger.cycle_completed,
+  AutomationTrigger.sprint_completed,
   // The three that arrive from a connected repository rather than from
   // somebody using the tracker. Last because a team with no repository
   // connected can still pick them, and they would do nothing.
@@ -63,7 +63,7 @@ const TRIGGER_ORDER: AutomationTrigger[] = [
 ]
 
 const EMPTY_CONDITIONS: RuleConditions = { if_unassigned: false }
-const EMPTY_ACTIONS: RuleActions = { move_to_active_cycle: false }
+const EMPTY_ACTIONS: RuleActions = { move_to_active_sprint: false }
 
 export default function TeamAutomationSettings() {
   const { teamKey } = useParams()
@@ -91,8 +91,8 @@ export default function TeamAutomationSettings() {
 function Automation({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
   const { t } = useTranslation(['settings', 'common'])
   const queryClient = useQueryClient()
-  const { statuses, labels, projects, members, cycles } = useTeamData(team)
-  const vocabulary: RuleVocabulary = { statuses, labels, projects, members, cycles }
+  const { statuses, labels, projects, members, sprints } = useTeamData(team)
+  const vocabulary: RuleVocabulary = { statuses, labels, projects, members, sprints }
 
   const rules = useListRulesTeamsTeamIdAutomationRulesGet(team.id)
   const runs = useListRunsTeamsTeamIdAutomationRunsGet(team.id, { limit: RECENT_RUNS })
@@ -289,7 +289,7 @@ function RuleSentence({
         })
       : t('automation.sentence.then', { trigger, actions: joinClauses(actions) })
   }
-  // Deleting a cycle strips the action out of the rules that filled it
+  // Deleting a sprint strips the action out of the rules that filled it
   // and switches them off. Saying so beats trailing off.
   return (
     <Trans
@@ -451,11 +451,11 @@ function RuleEditor({
   const [actions, setActions] = useState<RuleActions>(rule?.actions ?? EMPTY_ACTIONS)
   const [saving, setSaving] = useState(false)
 
-  // A completed cycle's numbers are history, so the API refuses to point a
+  // A completed sprint's numbers are history, so the API refuses to point a
   // rule at one. Leaving it out of the list is how that reads as a rule of the
   // feature rather than as an error somebody had to trip over.
-  const openCycles = vocabulary.cycles.filter(
-    (cycle) => cycle.state !== CycleState.completed,
+  const openSprints = vocabulary.sprints.filter(
+    (sprint) => sprint.state !== SprintState.completed,
   )
 
   const setCondition = (patch: Partial<RuleConditions>) =>
@@ -759,22 +759,22 @@ function RuleEditor({
               </Select>
             </Field>
 
-            <Field label={t('automation.editor.moveToCycle')} className="sm:col-span-2">
+            <Field label={t('automation.editor.moveToSprint')} className="sm:col-span-2">
               <Select
                 dense
                 block
                 value={
-                  actions.move_to_active_cycle
+                  actions.move_to_active_sprint
                     ? 'active'
-                    : asText(actions.set_cycle_id)
+                    : asText(actions.set_sprint_id)
                 }
                 onChange={(e) =>
                   setAction(
                     e.target.value === 'active'
-                      ? { move_to_active_cycle: true, set_cycle_id: null }
+                      ? { move_to_active_sprint: true, set_sprint_id: null }
                       : {
-                          move_to_active_cycle: false,
-                          set_cycle_id: idOrNull(e.target.value),
+                          move_to_active_sprint: false,
+                          set_sprint_id: idOrNull(e.target.value),
                         },
                   )
                 }
@@ -782,10 +782,10 @@ function RuleEditor({
                 <option value="">{t('automation.editor.leaveIt')}</option>
                 {/* Above the named ones because it is the one that keeps
                     meaning "the sprint" a fortnight from now. */}
-                <option value="active">{t('automation.editor.activeCycle')}</option>
-                {openCycles.map((cycle) => (
-                  <option key={cycle.id} value={cycle.id}>
-                    {cycle.display_name}
+                <option value="active">{t('automation.editor.activeSprint')}</option>
+                {openSprints.map((sprint) => (
+                  <option key={sprint.id} value={sprint.id}>
+                    {sprint.display_name}
                   </option>
                 ))}
               </Select>

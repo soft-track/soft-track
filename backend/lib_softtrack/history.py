@@ -12,7 +12,7 @@ from sqlmodel import Session, select
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.history import IssueEventRead
 from lib_softtrack.tables import (
-    Cycle,
+    Sprint,
     Issue,
     IssueEvent,
     IssueEventField,
@@ -29,7 +29,7 @@ from lib_utils.errors import ErrorCode, api_error
 #: changes are left out for the same reason.
 TRACKED: dict[str, IssueEventField] = {
     "status_id": IssueEventField.status,
-    "cycle_id": IssueEventField.cycle,
+    "sprint_id": IssueEventField.sprint,
     "estimate": IssueEventField.estimate,
     "project_id": IssueEventField.project,
     "assignee_id": IssueEventField.assignee,
@@ -151,7 +151,7 @@ def _labels(session: Session, events: list[IssueEvent]) -> dict[tuple, str]:
     """`{(field, id): name}` for every id an event mentions, one query per kind."""
     ids: dict[IssueEventField, set[int]] = {
         IssueEventField.assignee: set(),
-        IssueEventField.cycle: set(),
+        IssueEventField.sprint: set(),
         IssueEventField.project: set(),
     }
     for event in events:
@@ -166,12 +166,12 @@ def _labels(session: Session, events: list[IssueEvent]) -> dict[tuple, str]:
             select(User).where(User.id.in_(ids[IssueEventField.assignee]))
         ):
             labels[(IssueEventField.assignee, user.id)] = user.full_name
-    if ids[IssueEventField.cycle]:
-        for cycle in session.exec(
-            select(Cycle).where(Cycle.id.in_(ids[IssueEventField.cycle]))
+    if ids[IssueEventField.sprint]:
+        for sprint in session.exec(
+            select(Sprint).where(Sprint.id.in_(ids[IssueEventField.sprint]))
         ):
-            labels[(IssueEventField.cycle, cycle.id)] = (
-                cycle.name or f"Cycle {cycle.number}"
+            labels[(IssueEventField.sprint, sprint.id)] = (
+                sprint.name or f"Sprint {sprint.number}"
             )
     if ids[IssueEventField.project]:
         for project in session.exec(

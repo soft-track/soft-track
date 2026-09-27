@@ -19,7 +19,7 @@ export const history = {
     reassigned: '<actor>{{actor}}</actor> reassigned this from {{from}} to {{to}}',
     unassigned: '<actor>{{actor}}</actor> unassigned {{from}}',
   },
-  cycle: {
+  sprint: {
     added: '<actor>{{actor}}</actor> added this to {{to}}',
     moved: '<actor>{{actor}}</actor> moved this from {{from}} to {{to}}',
     removed: '<actor>{{actor}}</actor> moved this out of {{from}}, back to the backlog',
@@ -37,7 +37,7 @@ export const history = {
   team: '<actor>{{actor}}</actor> moved this from {{from}} to {{to}}',
   other: '<actor>{{actor}}</actor> changed this',
   formerMember: 'a former member',
-  deletedCycle: 'a deleted cycle',
+  deletedSprint: 'a deleted sprint',
   deletedProject: 'a deleted epic',
   anotherTeam: 'another team',
   unknownStatus: 'an unknown status',

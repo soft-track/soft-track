@@ -1,7 +1,7 @@
 # Saved views and shareable filters
 
 Six things narrow the board — status, priority, assignee, label, epic and
-cycle — and they compose. The **Filter** button in the top bar holds all of
+sprint — and they compose. The **Filter** button in the top bar holds all of
 them; whatever is active shows as a chip beside it, because a board narrowed by
 a filter you cannot see is a board that looks like it has lost your tickets.
 
@@ -34,7 +34,7 @@ clearing the filters yourself keeps them cleared.
 
 Two things that follow from views being real rows rather than a blob of JSON:
 a filter pointing at another team's label is refused when the view is saved
-rather than silently matching nothing for ever, and deleting a cycle clears it
+rather than silently matching nothing for ever, and deleting a sprint clears it
 from the views that filtered on it.
 
 **A view also remembers how the board was grouped:** by status, or by epic

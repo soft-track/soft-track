@@ -15,7 +15,7 @@ the rest safe:
 | `cancelled` | Closed without being delivered |
 
 Nothing outside `backend/lib_softtrack/statuses.py` asks a status for its name.
-Burndown, velocity, cycle completion, "3 of 5 sub-tickets done", and whether a
+Burndown, velocity, sprint completion, "3 of 5 sub-tickets done", and whether a
 blocker still blocks all read the *category* — so a column called "Shipped"
 counts as finished everywhere without a single call site learning about it, and
 one called "Blocked" is work in flight rather than a new kind of thing. The five

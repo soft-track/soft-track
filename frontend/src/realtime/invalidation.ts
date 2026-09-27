@@ -32,7 +32,7 @@ export function invalidationFor(
           // The board and list, and what is counted from them.
           p.startsWith(`${team}/issues`) ||
           p === `${team}/estimates` ||
-          p === `${team}/cycles` ||
+          p === `${team}/sprints` ||
           p === `${team}/projects` ||
           p.startsWith('/projects/')
         )

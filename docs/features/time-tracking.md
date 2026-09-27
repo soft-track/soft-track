@@ -5,7 +5,7 @@ something like `2h 30m`, `45m`, `1.5h` or `2:30`, the day, and an optional
 note. The panel shows the total, who spent it, and every entry; you can edit
 or delete your own. Board cards show none of it — cards stay clean.
 
-Reports gets two charts: time logged **in the chosen cycle**, and time logged
+Reports gets two charts: time logged **in the chosen sprint**, and time logged
 on the team's tickets **over the chosen window**, one bar per person.
 
 Deliberately Jira-lite: no remaining-estimate burndown (SoftTrack's burndown
@@ -23,9 +23,9 @@ is scope-based), no timers, no billing rates, no approvals.
   the future are refused, with a day's slack for time zones ahead of UTC.
 - **Only whoever logged an entry can change or delete it**, admins included.
   Time is a claim somebody made about their own day.
-- **A cycle's time is what was logged during the cycle on tickets that were
-  ever in it.** Time spent before a ticket was carried over to the next cycle
-  stays with this one; counting the tickets currently in the cycle instead
+- **A sprint's time is what was logged during the sprint on tickets that were
+  ever in it.** Time spent before a ticket was carried over to the next sprint
+  stays with this one; counting the tickets currently in the sprint instead
   would move a finished sprint's hours whenever someone tidied the backlog.
 - Time belongs to the ticket: it moves with it to another team, and goes when
   the ticket is deleted. Guests see it and cannot log it.
@@ -35,4 +35,4 @@ is scope-based), no timers, no billing rates, no approvals.
 - `GET /issues/{issue_id}/worklogs` — the total, per person, and every entry.
 - `POST /issues/{issue_id}/worklogs` — `{minutes, worked_on?, note?}`.
 - `PATCH /worklogs/{worklog_id}`, `DELETE /worklogs/{worklog_id}` — your own only.
-- `GET /cycles/{cycle_id}/time-spent`, `GET /teams/{team_id}/time-spent?days=30`.
+- `GET /sprints/{sprint_id}/time-spent`, `GET /teams/{team_id}/time-spent?days=30`.

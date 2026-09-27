@@ -21,7 +21,7 @@ export const move = {
     movesUnlike: 'Moves from {{from}} to {{to}} — that team has no column like it.',
     keeps: 'Keeps {{labels}}.',
     loses: 'Loses {{labels}} — no label by that name there.',
-    leavesCycle: 'Leaves {{cycle}}; cycles belong to one team.',
+    leavesSprint: 'Leaves {{sprint}}; sprints belong to one team.',
     leavesProject: 'Leaves {{project}}; epics belong to one team.',
     unassigned: 'Is unassigned from {{name}}, who is not on that team.',
     detached: 'Stops being a sub-ticket of {{parent}}.',

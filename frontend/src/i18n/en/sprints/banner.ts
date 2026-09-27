@@ -1,4 +1,4 @@
-/** The banner above the board for the selected cycle: its progress, and starting or ending it. */
+/** The banner above the board for the selected sprint: its progress, and starting or ending it. */
 export const banner = {
   progress_one:
     '<num>{{issuesCompleted}}/{{count}}</num> ticket · <num>{{pointsCompleted}}/{{pointsTotal}}</num> pts',
@@ -10,14 +10,14 @@ export const banner = {
   progressUnsized_other:
     '<num>{{issuesCompleted}}/{{count}}</num> tickets · <num>{{pointsCompleted}}/{{pointsTotal}}</num> pts<muted> ({{unsized}} unsized)</muted>',
   unsizedHint: 'Points totals are only as honest as this number is small',
-  start: 'Start cycle',
-  complete: 'Complete cycle',
+  start: 'Start sprint',
+  complete: 'Complete sprint',
   completed: 'Completed',
-  started: 'Cycle started.',
-  completedAllDone: 'Cycle completed with everything finished.',
-  completedToNext_one: 'Cycle completed. {{count}} unfinished ticket moved to the next cycle.',
-  completedToNext_other: 'Cycle completed. {{count}} unfinished tickets moved to the next cycle.',
-  completedToBacklog_one: 'Cycle completed. {{count}} unfinished ticket moved to the backlog.',
-  completedToBacklog_other: 'Cycle completed. {{count}} unfinished tickets moved to the backlog.',
+  started: 'Sprint started.',
+  completedAllDone: 'Sprint completed with everything finished.',
+  completedToNext_one: 'Sprint completed. {{count}} unfinished ticket moved to the next sprint.',
+  completedToNext_other: 'Sprint completed. {{count}} unfinished tickets moved to the next sprint.',
+  completedToBacklog_one: 'Sprint completed. {{count}} unfinished ticket moved to the backlog.',
+  completedToBacklog_other: 'Sprint completed. {{count}} unfinished tickets moved to the backlog.',
   error: 'That did not work.',
 } as const

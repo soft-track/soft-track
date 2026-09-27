@@ -37,7 +37,7 @@ export function SaveViewModal({
   const { t } = useTranslation(['views', 'common'])
   const dialogRef = useFocusTrap<HTMLFormElement>()
   const titleId = useId()
-  const { team, members, labels, projects, cycles, statuses } = useTeamContext()
+  const { team, members, labels, projects, sprints, statuses } = useTeamContext()
   const views = useSavedViews(team.id)
 
   const [name, setName] = useState(editing?.name ?? '')
@@ -74,7 +74,7 @@ export function SaveViewModal({
   // The filters, then how the view is arranged: each facet a whole phrase of
   // its own, one per sort and direction, set apart the way the filters are.
   const summary = [
-    summarise(filters, { members, labels, projects, cycles, statuses }),
+    summarise(filters, { members, labels, projects, sprints, statuses }),
     grouping === 'project' && t('save.grouped'),
     !isDefaultSort(sort) && t(`save.sorted.${sort.sort}.${sort.direction}`),
   ]

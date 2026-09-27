@@ -12,7 +12,7 @@ const REPOSITORY_URL = 'https://github.com/soft-track/soft-track'
 /** Shell commands, the same in every language. */
 const INSTALL_COMMANDS = `git clone ${REPOSITORY_URL}.git\ncd soft-track\ndocker compose up`
 
-type FeatureKey = 'board' | 'cycles' | 'reports' | 'notifications' | 'keyboard' | 'moving'
+type FeatureKey = 'board' | 'sprints' | 'reports' | 'notifications' | 'keyboard' | 'moving'
 
 /**
  * What is in the tracker, in the order someone evaluating it would ask.
@@ -23,7 +23,7 @@ type FeatureKey = 'board' | 'cycles' | 'reports' | 'notifications' | 'keyboard' 
  */
 const FEATURES: { icon: IconName; title: string; body: string }[] = [
   feature('board', 'board'),
-  feature('calendar', 'cycles'),
+  feature('calendar', 'sprints'),
   feature('chart', 'reports'),
   feature('bell', 'notifications'),
   feature('command', 'keyboard'),

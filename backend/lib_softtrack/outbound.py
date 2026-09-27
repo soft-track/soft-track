@@ -232,7 +232,7 @@ _ISSUE_FIELDS = (
     "type",
     "assignee_id",
     "estimate",
-    "cycle_id",
+    "sprint_id",
     "project_id",
     "parent_id",
     "due_date",

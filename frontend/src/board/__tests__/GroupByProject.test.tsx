@@ -90,7 +90,7 @@ const TEAM: TeamContextValue = {
   projects: [PLATFORM, BILLING],
   labels: [],
   members: [ADA],
-  cycles: [],
+  sprints: [],
   statuses: [TODO, DOING],
 }
 

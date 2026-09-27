@@ -12,7 +12,7 @@ class IssueEventRead(BaseModel):
 
     `old_value`/`new_value` are what the history stores: a status *category*
     (see `_status_category` in history.py), a priority, an estimate, or a
-    row id. For the id fields -- assignee, cycle, project -- the labels carry
+    row id. For the id fields -- assignee, sprint, project -- the labels carry
     the name it has now, or null when that row has since been deleted.
     """
 

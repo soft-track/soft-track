@@ -17,7 +17,7 @@ export type Overlay =
   | 'newIssue'
   | 'palette'
   | 'shortcuts'
-  | 'newCycle'
+  | 'newSprint'
   | 'newProject'
   | 'import'
   | 'notifications'

@@ -4,9 +4,9 @@ export const features = {
     title: 'A board and a list',
     body: 'Drag-and-drop kanban over statuses each team defines for itself, or the same tickets as a dense sortable list. Filters are shareable, and worth saving as a view.',
   },
-  cycles: {
-    title: 'Cycles and estimates',
-    body: 'Timeboxed cycles with points on tickets, so a burndown has something real to burn down. Sub-tickets and ticket links for the work that does not fit in one card.',
+  sprints: {
+    title: 'Sprints and estimates',
+    body: 'Timeboxed sprints with points on tickets, so a burndown has something real to burn down. Sub-tickets and ticket links for the work that does not fit in one card.',
   },
   reports: {
     title: 'Reports from real history',

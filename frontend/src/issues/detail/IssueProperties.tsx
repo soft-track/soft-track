@@ -20,7 +20,7 @@ import { useTeamContext } from '@/team/useTeamContext'
 import { Select } from '@/ui/Select'
 
 /**
- * The block of selects: status, priority, estimate, cycle, project, assignee,
+ * The block of selects: status, priority, estimate, sprint, project, assignee,
  * labels.
  *
  * Each carries a `data-field` so the panel's single-key shortcuts can focus
@@ -41,7 +41,7 @@ export function IssueProperties({
   readOnly?: boolean
 }) {
   const { t } = useTranslation('issues')
-  const { members, labels, cycles, statuses, projects } = useTeamContext()
+  const { members, labels, sprints, statuses, projects } = useTeamContext()
 
   // A fieldset so one attribute disables every control in it -- including any
   // property added later -- while still showing each one's current value.
@@ -117,21 +117,21 @@ export function IssueProperties({
         </Select>
       </Row>
 
-      <Row label={t('properties.cycle')}>
+      <Row label={t('properties.sprint')}>
         <Select
           dense
-          data-field="cycle"
-          value={issue.cycle_id ?? ''}
-          onChange={(e) => patch({ cycle_id: e.target.value ? Number(e.target.value) : null })}
+          data-field="sprint"
+          value={issue.sprint_id ?? ''}
+          onChange={(e) => patch({ sprint_id: e.target.value ? Number(e.target.value) : null })}
         >
           <option value="">{t('properties.backlog')}</option>
-          {cycles
-            // A completed cycle is history; moving work into one would
+          {sprints
+            // A completed sprint is history; moving work into one would
             // rewrite numbers already reported.
-            .filter((c) => c.state !== 'completed' || c.id === issue.cycle_id)
-            .map((cycle) => (
-              <option key={cycle.id} value={cycle.id}>
-                {cycle.display_name}
+            .filter((c) => c.state !== 'completed' || c.id === issue.sprint_id)
+            .map((sprint) => (
+              <option key={sprint.id} value={sprint.id}>
+                {sprint.display_name}
               </option>
             ))}
         </Select>

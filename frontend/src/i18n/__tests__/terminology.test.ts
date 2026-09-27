@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest'
 import { resources } from '@/i18n/resources'
 
 /**
- * The interface says ticket and epic (#211). The API, the database, URLs and
- * the code still say issue and project, which is exactly why the old words
- * keep trying to come back: this fails when new text in the catalog uses
- * them.
+ * The interface says ticket, epic and sprint (#211, #214). The API, the
+ * database, URLs and the code still say issue and project, which is exactly
+ * why the old words keep trying to come back: this fails when new text in the
+ * catalog uses them, or calls a sprint a cycle.
  *
  * Other products' words stay theirs -- Jira's issues and its Issue key
  * column, GitHub issues, GitLab projects -- and "Issues a new secret" is a
@@ -22,7 +22,7 @@ const THEIRS = [
 function usesOldWords(text: string): boolean {
   let prose = text.replace(/\{\{[^}]*\}\}|<[^>]*>/g, '')
   for (const theirs of THEIRS) prose = prose.replace(theirs, '')
-  return /\b(?:issues?|projects?)\b/i.test(prose)
+  return /\b(?:issues?|projects?|cycles?)\b/i.test(prose)
 }
 
 function* strings(node: unknown, path: string): Generator<[string, string]> {
@@ -35,8 +35,8 @@ function* strings(node: unknown, path: string): Generator<[string, string]> {
   }
 }
 
-describe('what the interface calls things (#211)', () => {
-  it('says ticket and epic, not issue and project', () => {
+describe('what the interface calls things (#211, #214)', () => {
+  it('says ticket, epic and sprint, not issue, project and cycle', () => {
     const offenders = Object.entries(resources.en)
       .flatMap(([namespace, catalog]) => [...strings(catalog, namespace)])
       .filter(([, text]) => usesOldWords(text))
@@ -50,6 +50,7 @@ describe('what the interface calls things (#211)', () => {
     expect(usesOldWords('Sub-issues')).toBe(true)
     expect(usesOldWords('Add {{count}} issues to {{project}}')).toBe(true)
     expect(usesOldWords('Group by Project')).toBe(true)
+    expect(usesOldWords('Complete {{count}} cycles')).toBe(true)
   })
 
   it('leaves code and other products’ words alone', () => {
@@ -58,5 +59,6 @@ describe('what the interface calls things (#211)', () => {
     expect(usesOldWords('Export with the <em>Issue key</em> column')).toBe(false)
     expect(usesOldWords('That file has no Jira issues in it.')).toBe(false)
     expect(usesOldWords('Issues a new secret and a new URL.')).toBe(false)
+    expect(usesOldWords('Every sprint has a lifecycle')).toBe(false)
   })
 })

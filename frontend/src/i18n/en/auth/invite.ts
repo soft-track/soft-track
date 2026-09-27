@@ -11,7 +11,7 @@ export const invite = {
   // No spaces: the row is a flex container whose gap spaces the three items.
   teamAs: '<chip>{{teamKey}}</chip><as>as</as><role />',
   guest:
-    'A guest can see the team’s tickets, comments, cycles and reports, and change none of them.',
+    'A guest can see the team’s tickets, comments, sprints and reports, and change none of them.',
   sentTo: 'Sent to <strong>{{email}}</strong>.',
   createAccount: 'Create an account',
   signInToAccept: 'Sign in to accept',

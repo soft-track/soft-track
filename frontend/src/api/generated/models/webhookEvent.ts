@@ -20,7 +20,7 @@ export const WebhookEvent = {
   issueupdated: 'issue.updated',
   issuestatus_changed: 'issue.status_changed',
   commentcreated: 'comment.created',
-  cyclestarted: 'cycle.started',
-  cyclecompleted: 'cycle.completed',
+  sprintstarted: 'sprint.started',
+  sprintcompleted: 'sprint.completed',
   ping: 'ping',
 } as const;

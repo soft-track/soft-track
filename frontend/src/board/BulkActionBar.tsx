@@ -30,7 +30,7 @@ export function BulkActionBar({
   onClear: () => void
 }) {
   const { t } = useTranslation(['board', 'common'])
-  const { statuses, members, projects, cycles, labels } = useTeamContext()
+  const { statuses, members, projects, sprints, labels } = useTeamContext()
   const count = selectedIds.length
 
   const apply = (changes: IssueBulkChanges) => bulk.update(selectedIds, changes)
@@ -141,22 +141,22 @@ export function BulkActionBar({
 
         <Select
           dense
-          aria-label={t('bulk.setCycle')}
+          aria-label={t('bulk.setSprint')}
           value=""
           disabled={bulk.isPending}
           onChange={(e) => {
             const id = idOrNull(e)
-            if (id !== undefined) apply({ cycle_id: id })
+            if (id !== undefined) apply({ sprint_id: id })
           }}
         >
-          <option value="">{t('bulk.cyclePlaceholder')}</option>
-          <option value={NONE}>{t('bulk.noCycle')}</option>
-          {cycles
-            // As in the issue panel: a completed cycle is history.
-            .filter((cycle) => cycle.state !== 'completed')
-            .map((cycle) => (
-              <option key={cycle.id} value={cycle.id}>
-                {cycle.display_name}
+          <option value="">{t('bulk.sprintPlaceholder')}</option>
+          <option value={NONE}>{t('bulk.noSprint')}</option>
+          {sprints
+            // As in the issue panel: a completed sprint is history.
+            .filter((sprint) => sprint.state !== 'completed')
+            .map((sprint) => (
+              <option key={sprint.id} value={sprint.id}>
+                {sprint.display_name}
               </option>
             ))}
         </Select>

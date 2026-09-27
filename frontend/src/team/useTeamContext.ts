@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react'
 
 import type {
-  CycleRead,
+  SprintRead,
   LabelRead,
   ProjectRead,
   StatusRead,
@@ -19,7 +19,7 @@ export interface TeamContextValue {
   projects: ProjectRead[]
   labels: LabelRead[]
   members: TeamMemberRead[]
-  cycles: CycleRead[]
+  sprints: SprintRead[]
   /** The team's board columns, in order. */
   statuses: StatusRead[]
 }

@@ -56,7 +56,7 @@ class ErrorCode(str, enum.Enum):
     issues_not_found = "issues_not_found"
     parent_not_found = "parent_not_found"
     project_not_found = "project_not_found"
-    cycle_not_found = "cycle_not_found"
+    sprint_not_found = "sprint_not_found"
     status_not_found = "status_not_found"
     view_not_found = "view_not_found"
     rule_not_found = "rule_not_found"
@@ -71,7 +71,7 @@ class ErrorCode(str, enum.Enum):
     user_not_found = "user_not_found"
     #: The person is not a member of the team the request is about.
     member_not_found = "member_not_found"
-    #: A status, label, project or cycle id that belongs to another team.
+    #: A status, label, project or sprint id that belongs to another team.
     not_on_this_team = "not_on_this_team"
     #: An assignee, lead or filter naming someone outside the team.
     user_not_on_team = "user_not_on_team"
@@ -98,10 +98,10 @@ class ErrorCode(str, enum.Enum):
     team_has_no_statuses = "team_has_no_statuses"
     cannot_deactivate_self = "cannot_deactivate_self"
     cannot_demote_self = "cannot_demote_self"
-    #: A completed cycle's numbers are history and cannot change.
-    cycle_completed = "cycle_completed"
-    cycle_already_active = "cycle_already_active"
-    cycle_dates_invalid = "cycle_dates_invalid"
+    #: A completed sprint's numbers are history and cannot change.
+    sprint_completed = "sprint_completed"
+    sprint_already_active = "sprint_already_active"
+    sprint_dates_invalid = "sprint_dates_invalid"
     link_to_self = "link_to_self"
     parent_is_self = "parent_is_self"
     parent_other_team = "parent_other_team"

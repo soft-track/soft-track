@@ -2,7 +2,7 @@
 
 Jira-lite on purpose. A person logs how long they spent on an issue on a
 given day, with an optional note; the issue shows the total and who spent it;
-the reports roll it up per cycle and per person. No remaining-estimate
+the reports roll it up per sprint and per person. No remaining-estimate
 burndown, timers, billing rates or approvals -- see the issue for why.
 
 Only the person who logged an entry can change or delete it. Time is a claim

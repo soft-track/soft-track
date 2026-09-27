@@ -20,7 +20,7 @@ export interface IssueUpdate {
   /** Story points on the scale 1, 2, 3, 5, 8. Null means not sized yet, which is distinct from an estimate of zero. */
   estimate?: IssueUpdateEstimate;
   parent_id?: number | null;
-  cycle_id?: number | null;
+  sprint_id?: number | null;
   due_date?: string | null;
   label_ids?: number[] | null;
 }

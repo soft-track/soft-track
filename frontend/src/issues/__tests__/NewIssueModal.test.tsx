@@ -104,7 +104,7 @@ const TEAM: TeamContextValue = {
   projects: [project(20, 'Platform'), project(21, 'Retired Epic', true)],
   labels: [],
   members: [member(10, 'Ada Lovelace'), member(11, 'Grace Hopper'), member(12, 'Left Already', false)],
-  cycles: [],
+  sprints: [],
   statuses: [status(1, 'Todo'), status(2, 'In Progress')],
 }
 
@@ -186,7 +186,7 @@ describe('NewIssueModal', () => {
         priority: 'high',
         type: 'task',
         estimate: null,
-        cycle_id: undefined,
+        sprint_id: undefined,
         assignee_id: 11,
         label_ids: [],
       },
@@ -268,7 +268,7 @@ describe('NewIssueModal', () => {
     await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'Just a title')
     await user.click(screen.getByRole('button', { name: 'Create ticket' }))
 
-    // Empty status and cycle are omitted rather than guessed, which is what
+    // Empty status and sprint are omitted rather than guessed, which is what
     // lets the API put the issue in the team's leftmost column.
     expect(mutateAsync).toHaveBeenCalledWith({
       teamId: 7,
@@ -280,7 +280,7 @@ describe('NewIssueModal', () => {
         priority: 'no_priority',
         type: 'task',
         estimate: null,
-        cycle_id: undefined,
+        sprint_id: undefined,
         assignee_id: undefined,
         label_ids: [],
       },

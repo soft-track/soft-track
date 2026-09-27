@@ -1,7 +1,7 @@
 # Epics
 
 An epic groups the tickets that make up one larger piece of work. Epics,
-sub-tickets and cycles group tickets three ways, and a fourth grouping that
+sub-tickets and sprints group tickets three ways, and a fourth grouping that
 overlapped them would be sprawl. The Jira importer maps `Epic Link` onto an
 epic.
 
@@ -46,8 +46,8 @@ A ticket belongs to at most one epic. It gets into one:
 
 The **Roadmap** tab lists the team's epics under the month their target
 date falls in, with each epic's state, progress, lead and date. Every row
-opens the epic's page. It answers the question the board and the cycles
-view cannot: will this land by the date? An epic spans cycles by definition,
+opens the epic's page. It answers the question the board and the sprints
+view cannot: will this land by the date? An epic spans sprints by definition,
 and both of those views only show work in flight now.
 
 - **By month, not a zoomable timeline.** A target is a single day, and "what
@@ -87,7 +87,7 @@ is work added after work started, which explains most missed dates. A burndown
 would fold that into "remaining" and hide it.
 
 The chart is replayed from ticket history, like the [reports](reports.md), so
-every change to a ticket's epic is recorded along with its status, cycle
+every change to a ticket's epic is recorded along with its status, sprint
 and estimate changes. That includes tickets released when their epic is
 deleted.
 

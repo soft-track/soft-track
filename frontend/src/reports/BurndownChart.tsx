@@ -31,7 +31,7 @@ export function BurndownChart({ data }: { data: Burndown }) {
 
   return (
     <Figure
-      title={t('burndown.title', { cycle: data.cycle_name })}
+      title={t('burndown.title', { sprint: data.sprint_name })}
       note={t('burndown.note')}
       empty={points.length === 0 ? t('burndown.notStarted') : undefined}
       legend={
@@ -49,7 +49,7 @@ export function BurndownChart({ data }: { data: Burndown }) {
           viewBox={`0 0 ${W} ${H}`}
           className="w-full"
           role="img"
-          aria-label={t('burndown.chart', { cycle: data.cycle_name })}
+          aria-label={t('burndown.chart', { sprint: data.sprint_name })}
           onMouseMove={(e) => onMove(e, W)}
           onMouseLeave={onLeave}
         >

@@ -40,24 +40,24 @@ def test_creating_an_issue_records_its_opening_status(client, team, session):
     assert opening[0].new_value == "started"
 
 
-def test_creation_records_the_estimate_and_cycle_when_given(client, team, session):
-    cycle = client.post(
-        f"/teams/{team['team']['id']}/cycles",
+def test_creation_records_the_estimate_and_sprint_when_given(client, team, session):
+    sprint = client.post(
+        f"/teams/{team['team']['id']}/sprints",
         json={"starts_at": "2026-01-01T00:00:00Z", "ends_at": "2026-01-14T00:00:00Z"},
         headers=team["headers"],
     ).json()
-    issue = make_issue(client, team, estimate=5, cycle_id=cycle["id"])
+    issue = make_issue(client, team, estimate=5, sprint_id=sprint["id"])
 
     assert events(session, issue["id"], IssueEventField.estimate)[0].new_value == "5"
-    assert events(session, issue["id"], IssueEventField.cycle)[0].new_value == str(
-        cycle["id"]
+    assert events(session, issue["id"], IssueEventField.sprint)[0].new_value == str(
+        sprint["id"]
     )
 
 
 def test_creation_records_nothing_for_fields_left_unset(client, team, session):
     issue = make_issue(client, team)
     assert events(session, issue["id"], IssueEventField.estimate) == []
-    assert events(session, issue["id"], IssueEventField.cycle) == []
+    assert events(session, issue["id"], IssueEventField.sprint) == []
 
 
 def test_a_status_change_is_recorded_with_both_ends(client, team, session):
@@ -109,39 +109,39 @@ def test_clearing_a_field_is_recorded_as_a_change_to_null(client, team, session)
     assert (change.old_value, change.new_value) == ("5", None)
 
 
-def test_carrying_an_issue_between_cycles_is_recorded(client, team, session):
+def test_carrying_an_issue_between_sprints_is_recorded(client, team, session):
     """A report that cannot see carry-over shows work vanishing from one
-    cycle and appearing in the next with no explanation."""
+    sprint and appearing in the next with no explanation."""
     first = client.post(
-        f"/teams/{team['team']['id']}/cycles",
+        f"/teams/{team['team']['id']}/sprints",
         json={"starts_at": "2026-01-01T00:00:00Z", "ends_at": "2026-01-14T00:00:00Z"},
         headers=team["headers"],
     ).json()
     second = client.post(
-        f"/teams/{team['team']['id']}/cycles",
+        f"/teams/{team['team']['id']}/sprints",
         json={"starts_at": "2026-01-15T00:00:00Z", "ends_at": "2026-01-28T00:00:00Z"},
         headers=team["headers"],
     ).json()
-    issue = make_issue(client, team, cycle_id=first["id"])
+    issue = make_issue(client, team, sprint_id=first["id"])
 
-    client.post(f"/cycles/{first['id']}/complete", headers=team["headers"])
+    client.post(f"/sprints/{first['id']}/complete", headers=team["headers"])
 
-    change = events(session, issue["id"], IssueEventField.cycle)[-1]
+    change = events(session, issue["id"], IssueEventField.sprint)[-1]
     assert (change.old_value, change.new_value) == (str(first["id"]), str(second["id"]))
 
 
-def test_deleting_a_cycle_records_its_issues_leaving(client, team, session):
-    cycle = client.post(
-        f"/teams/{team['team']['id']}/cycles",
+def test_deleting_a_sprint_records_its_issues_leaving(client, team, session):
+    sprint = client.post(
+        f"/teams/{team['team']['id']}/sprints",
         json={"starts_at": "2026-01-01T00:00:00Z", "ends_at": "2026-01-14T00:00:00Z"},
         headers=team["headers"],
     ).json()
-    issue = make_issue(client, team, cycle_id=cycle["id"])
+    issue = make_issue(client, team, sprint_id=sprint["id"])
 
-    client.delete(f"/cycles/{cycle['id']}", headers=team["headers"])
+    client.delete(f"/sprints/{sprint['id']}", headers=team["headers"])
 
-    change = events(session, issue["id"], IssueEventField.cycle)[-1]
-    assert (change.old_value, change.new_value) == (str(cycle["id"]), None)
+    change = events(session, issue["id"], IssueEventField.sprint)[-1]
+    assert (change.old_value, change.new_value) == (str(sprint["id"]), None)
 
 
 def test_events_carry_the_team_so_reports_can_filter_without_a_join(

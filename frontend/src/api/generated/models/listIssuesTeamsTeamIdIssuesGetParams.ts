@@ -32,9 +32,9 @@ label_id?: number | null;
  */
 parent_id?: number | null;
 /**
- * Only issues in this cycle.
+ * Only issues in this sprint.
  */
-cycle_id?: number | null;
+sprint_id?: number | null;
 /**
  * Overdue, due this week, or with no due date.
  */

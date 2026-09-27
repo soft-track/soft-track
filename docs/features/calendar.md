@@ -26,4 +26,4 @@ ticket list for exactly the days on screen with `due_from` and `due_to`, up to
 200 tickets; a month with more than that says so and asks for narrower
 filters.
 
-Not included: week and day views, cycle overlays, iCal export.
+Not included: week and day views, sprint overlays, iCal export.

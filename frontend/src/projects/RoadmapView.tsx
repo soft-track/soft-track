@@ -12,8 +12,8 @@ import { Avatar } from '@/ui/Avatar'
 /**
  * The team's projects against their target dates (issue #62).
  *
- * The board and the cycles view are both about work in flight now; an epic
- * spans cycles by definition, so this is the one place that answers "will it
+ * The board and the sprints view are both about work in flight now; an epic
+ * spans sprints by definition, so this is the one place that answers "will it
  * land by the date". Each row opens the project's own page.
  */
 export function RoadmapView({ today = format(new Date(), 'yyyy-MM-dd') }: { today?: string }) {

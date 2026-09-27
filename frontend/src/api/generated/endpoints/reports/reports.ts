@@ -55,21 +55,21 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
 };
 
 /**
- * Points and issues outstanding on each day of the cycle.
+ * Points and issues outstanding on each day of the sprint.
  *
  * Carries the burnup line and the days scope moved, from the same data --
  * a burndown that hides scope changes makes a team look slow when what
  * actually happened is that the sprint grew.
- * @summary Cycle Burndown
+ * @summary Sprint Burndown
  */
-export const cycleBurndownCyclesCycleIdBurndownGet = (
-    cycleId: number,
+export const sprintBurndownSprintsSprintIdBurndownGet = (
+    sprintId: number,
  signal?: AbortSignal
 ) => {
 
 
       return apiClient<Burndown>(
-      {url: `/cycles/${cycleId}/burndown`, method: 'GET', signal
+      {url: `/sprints/${sprintId}/burndown`, method: 'GET', signal
     },
       );
     }
@@ -77,69 +77,69 @@ export const cycleBurndownCyclesCycleIdBurndownGet = (
 
 
 
-export const getCycleBurndownCyclesCycleIdBurndownGetQueryKey = (cycleId: number,) => {
+export const getSprintBurndownSprintsSprintIdBurndownGetQueryKey = (sprintId: number,) => {
     return [
-    `/cycles/${cycleId}/burndown`
+    `/sprints/${sprintId}/burndown`
     ] as const;
     }
 
 
-export const getCycleBurndownCyclesCycleIdBurndownGetQueryOptions = <TData = Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>, TError = HTTPValidationError>(cycleId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>, TError, TData>>, }
+export const getSprintBurndownSprintsSprintIdBurndownGetQueryOptions = <TData = Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>, TError = HTTPValidationError>(sprintId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getCycleBurndownCyclesCycleIdBurndownGetQueryKey(cycleId);
+  const queryKey =  queryOptions?.queryKey ?? getSprintBurndownSprintsSprintIdBurndownGetQueryKey(sprintId);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>> = ({ signal }) => cycleBurndownCyclesCycleIdBurndownGet(cycleId, signal);
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>> = ({ signal }) => sprintBurndownSprintsSprintIdBurndownGet(sprintId, signal);
 
 
 
 
 
-   return  { queryKey, queryFn, enabled: cycleId !== null && cycleId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, enabled: sprintId !== null && sprintId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type CycleBurndownCyclesCycleIdBurndownGetQueryResult = NonNullable<Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>>
-export type CycleBurndownCyclesCycleIdBurndownGetQueryError = HTTPValidationError
+export type SprintBurndownSprintsSprintIdBurndownGetQueryResult = NonNullable<Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>>
+export type SprintBurndownSprintsSprintIdBurndownGetQueryError = HTTPValidationError
 
 
-export function useCycleBurndownCyclesCycleIdBurndownGet<TData = Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>, TError = HTTPValidationError>(
- cycleId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>, TError, TData>> & Pick<
+export function useSprintBurndownSprintsSprintIdBurndownGet<TData = Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>, TError = HTTPValidationError>(
+ sprintId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>,
+          Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>,
           TError,
-          Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>
+          Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>
         > , 'initialData'
       >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useCycleBurndownCyclesCycleIdBurndownGet<TData = Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>, TError = HTTPValidationError>(
- cycleId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>, TError, TData>> & Pick<
+export function useSprintBurndownSprintsSprintIdBurndownGet<TData = Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>, TError = HTTPValidationError>(
+ sprintId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>,
+          Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>,
           TError,
-          Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>
+          Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>
         > , 'initialData'
       >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useCycleBurndownCyclesCycleIdBurndownGet<TData = Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>, TError = HTTPValidationError>(
- cycleId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>, TError, TData>>, }
+export function useSprintBurndownSprintsSprintIdBurndownGet<TData = Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>, TError = HTTPValidationError>(
+ sprintId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Cycle Burndown
+ * @summary Sprint Burndown
  */
 
-export function useCycleBurndownCyclesCycleIdBurndownGet<TData = Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>, TError = HTTPValidationError>(
- cycleId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleBurndownCyclesCycleIdBurndownGet>>, TError, TData>>, }
+export function useSprintBurndownSprintsSprintIdBurndownGet<TData = Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>, TError = HTTPValidationError>(
+ sprintId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintBurndownSprintsSprintIdBurndownGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getCycleBurndownCyclesCycleIdBurndownGetQueryOptions(cycleId,options)
+  const queryOptions = getSprintBurndownSprintsSprintIdBurndownGetQueryOptions(sprintId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -249,7 +249,7 @@ export function useProjectBurnupProjectsProjectIdBurnupGet<TData = Awaited<Retur
 
 
 /**
- * Committed and completed points for recent completed cycles.
+ * Committed and completed points for recent completed sprints.
  * @summary Team Velocity
  */
 export const teamVelocityTeamsTeamIdVelocityGet = (
@@ -552,17 +552,17 @@ export function useTeamCreatedVsResolvedTeamsTeamIdCreatedVsResolvedGet<TData = 
 
 
 /**
- * Time logged during the cycle on issues that were ever in it, by person (#102).
- * @summary Cycle Time Spent
+ * Time logged during the sprint on issues that were ever in it, by person (#102).
+ * @summary Sprint Time Spent
  */
-export const cycleTimeSpentCyclesCycleIdTimeSpentGet = (
-    cycleId: number,
+export const sprintTimeSpentSprintsSprintIdTimeSpentGet = (
+    sprintId: number,
  signal?: AbortSignal
 ) => {
 
 
       return apiClient<TimeSpent>(
-      {url: `/cycles/${cycleId}/time-spent`, method: 'GET', signal
+      {url: `/sprints/${sprintId}/time-spent`, method: 'GET', signal
     },
       );
     }
@@ -570,69 +570,69 @@ export const cycleTimeSpentCyclesCycleIdTimeSpentGet = (
 
 
 
-export const getCycleTimeSpentCyclesCycleIdTimeSpentGetQueryKey = (cycleId: number,) => {
+export const getSprintTimeSpentSprintsSprintIdTimeSpentGetQueryKey = (sprintId: number,) => {
     return [
-    `/cycles/${cycleId}/time-spent`
+    `/sprints/${sprintId}/time-spent`
     ] as const;
     }
 
 
-export const getCycleTimeSpentCyclesCycleIdTimeSpentGetQueryOptions = <TData = Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError = HTTPValidationError>(cycleId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError, TData>>, }
+export const getSprintTimeSpentSprintsSprintIdTimeSpentGetQueryOptions = <TData = Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>, TError = HTTPValidationError>(sprintId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getCycleTimeSpentCyclesCycleIdTimeSpentGetQueryKey(cycleId);
+  const queryKey =  queryOptions?.queryKey ?? getSprintTimeSpentSprintsSprintIdTimeSpentGetQueryKey(sprintId);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>> = ({ signal }) => cycleTimeSpentCyclesCycleIdTimeSpentGet(cycleId, signal);
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>> = ({ signal }) => sprintTimeSpentSprintsSprintIdTimeSpentGet(sprintId, signal);
 
 
 
 
 
-   return  { queryKey, queryFn, enabled: cycleId !== null && cycleId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, enabled: sprintId !== null && sprintId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type CycleTimeSpentCyclesCycleIdTimeSpentGetQueryResult = NonNullable<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>>
-export type CycleTimeSpentCyclesCycleIdTimeSpentGetQueryError = HTTPValidationError
+export type SprintTimeSpentSprintsSprintIdTimeSpentGetQueryResult = NonNullable<Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>>
+export type SprintTimeSpentSprintsSprintIdTimeSpentGetQueryError = HTTPValidationError
 
 
-export function useCycleTimeSpentCyclesCycleIdTimeSpentGet<TData = Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError = HTTPValidationError>(
- cycleId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError, TData>> & Pick<
+export function useSprintTimeSpentSprintsSprintIdTimeSpentGet<TData = Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>, TError = HTTPValidationError>(
+ sprintId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>,
+          Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>,
           TError,
-          Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>
+          Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>
         > , 'initialData'
       >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useCycleTimeSpentCyclesCycleIdTimeSpentGet<TData = Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError = HTTPValidationError>(
- cycleId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError, TData>> & Pick<
+export function useSprintTimeSpentSprintsSprintIdTimeSpentGet<TData = Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>, TError = HTTPValidationError>(
+ sprintId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>,
+          Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>,
           TError,
-          Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>
+          Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>
         > , 'initialData'
       >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useCycleTimeSpentCyclesCycleIdTimeSpentGet<TData = Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError = HTTPValidationError>(
- cycleId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError, TData>>, }
+export function useSprintTimeSpentSprintsSprintIdTimeSpentGet<TData = Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>, TError = HTTPValidationError>(
+ sprintId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Cycle Time Spent
+ * @summary Sprint Time Spent
  */
 
-export function useCycleTimeSpentCyclesCycleIdTimeSpentGet<TData = Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError = HTTPValidationError>(
- cycleId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof cycleTimeSpentCyclesCycleIdTimeSpentGet>>, TError, TData>>, }
+export function useSprintTimeSpentSprintsSprintIdTimeSpentGet<TData = Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>, TError = HTTPValidationError>(
+ sprintId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintTimeSpentSprintsSprintIdTimeSpentGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getCycleTimeSpentCyclesCycleIdTimeSpentGetQueryOptions(cycleId,options)
+  const queryOptions = getSprintTimeSpentSprintsSprintIdTimeSpentGetQueryOptions(sprintId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

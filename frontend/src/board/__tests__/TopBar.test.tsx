@@ -18,7 +18,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest'
 
 import { AXIOS_INSTANCE } from '@/api/client'
-import type { CycleRead, LabelRead, ProjectRead, StatusRead, TeamMemberRead } from '@/api/generated/models'
+import type { SprintRead, LabelRead, ProjectRead, StatusRead, TeamMemberRead } from '@/api/generated/models'
 import { NO_FILTERS, type BoardFilters } from '@/board/filters'
 import { DEFAULT_SORT } from '@/board/sorting'
 import { TopBar } from '@/board/TopBar'
@@ -65,11 +65,11 @@ const PROJECT: ProjectRead = {
 
 const LABEL: LabelRead = { id: 4, team_id: 7, name: 'Bug', color: '#456' }
 
-const CYCLE: CycleRead = {
+const SPRINT: SprintRead = {
   id: 6,
   team_id: 7,
   number: 1,
-  display_name: 'Cycle 1',
+  display_name: 'Sprint 1',
   starts_at: '2026-01-05T09:00:00Z',
   ends_at: '2026-01-19T09:00:00Z',
   state: 'active',
@@ -88,7 +88,7 @@ const TEAM: TeamContextValue = {
   projects: [PROJECT],
   labels: [LABEL],
   members: [member(10, 'Ada Lovelace')],
-  cycles: [CYCLE],
+  sprints: [SPRINT],
   statuses: [status(1, 'Todo'), status(3, 'In Progress')],
 }
 
@@ -99,7 +99,7 @@ const ALL_FILTERS: BoardFilters = {
   assignee: 'unassigned',
   labelId: LABEL.id,
   projectId: PROJECT.id,
-  cycleId: CYCLE.id,
+  sprintId: SPRINT.id,
   due: null,
   type: null,
 }
@@ -218,7 +218,7 @@ describe('TopBar export', () => {
       unassigned: 'true',
       label_id: '4',
       project_id: '5',
-      cycle_id: '6',
+      sprint_id: '6',
     })
     expect(params.assignee_id).toBeUndefined()
   })

@@ -31,7 +31,7 @@ export const AutomationTrigger = {
   status_changed: 'status_changed',
   issue_assigned: 'issue_assigned',
   comment_added: 'comment_added',
-  cycle_completed: 'cycle_completed',
+  sprint_completed: 'sprint_completed',
   branch_created: 'branch_created',
   pull_request_opened: 'pull_request_opened',
   pull_request_merged: 'pull_request_merged',

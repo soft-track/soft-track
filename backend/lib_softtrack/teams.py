@@ -16,7 +16,7 @@ from lib_softtrack.tables import (
     Attachment,
     AutomationRule,
     Comment,
-    Cycle,
+    Sprint,
     Issue,
     IssueTemplate,
     OutboundWebhook,
@@ -114,7 +114,7 @@ def require_team_writer(team_id: int, user: User, session: Session) -> TeamMembe
 #: path wins, so `/issues/{issue_id}/links/{link_id}` resolves by the issue.
 _TEAM_OWNED_BY_PATH = (
     ("issue_id", Issue, ErrorCode.issue_not_found, "Issue not found"),
-    ("cycle_id", Cycle, ErrorCode.cycle_not_found, "Cycle not found"),
+    ("sprint_id", Sprint, ErrorCode.sprint_not_found, "Sprint not found"),
     ("project_id", Project, ErrorCode.project_not_found, "Project not found"),
     ("view_id", SavedView, ErrorCode.view_not_found, "View not found"),
     ("status_id", WorkflowStatus, ErrorCode.status_not_found, "Status not found"),

@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { addDays, format } from 'date-fns'
 import { type FormEvent, useId, useState } from 'react'
 
-import { useCreateCycleTeamsTeamIdCyclesPost } from '@/api/generated/endpoints/cycles/cycles'
+import { useCreateSprintTeamsTeamIdSprintsPost } from '@/api/generated/endpoints/sprints/sprints'
 import { errorDetail } from '@/api/errors'
 import { useTranslation } from '@/i18n'
 import { useTeamContext } from '@/team/useTeamContext'
@@ -11,13 +11,13 @@ import { useFocusTrap } from '@/ui/useFocusTrap'
 /** A day, as the value an <input type="date"> wants. */
 const asDateInput = (date: Date) => format(date, 'yyyy-MM-dd')
 
-export function NewCycleModal({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation(['cycles', 'common'])
+export function NewSprintModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation(['sprints', 'common'])
   const dialogRef = useFocusTrap<HTMLFormElement>()
   const titleId = useId()
   const { team } = useTeamContext()
   const queryClient = useQueryClient()
-  const createCycle = useCreateCycleTeamsTeamIdCyclesPost()
+  const createSprint = useCreateSprintTeamsTeamIdSprintsPost()
 
   const [name, setName] = useState('')
   // A fortnight from today: the common case, and still editable.
@@ -29,7 +29,7 @@ export function NewCycleModal({ onClose }: { onClose: () => void }) {
     event.preventDefault()
     setError(null)
     try {
-      await createCycle.mutateAsync({
+      await createSprint.mutateAsync({
         teamId: team.id,
         data: {
           name: name.trim() || undefined,
@@ -37,10 +37,10 @@ export function NewCycleModal({ onClose }: { onClose: () => void }) {
           ends_at: new Date(`${endsAt}T23:59:59Z`).toISOString(),
         },
       })
-      queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/cycles`] })
+      queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/sprints`] })
       onClose()
     } catch (err: unknown) {
-      setError(errorDetail(err, t('newCycle.error')))
+      setError(errorDetail(err, t('newSprint.error')))
     }
   }
 
@@ -60,18 +60,18 @@ export function NewCycleModal({ onClose }: { onClose: () => void }) {
         className="pop-in glass-strong w-full max-w-sm rounded-panel p-5"
       >
         <h2 id={titleId} className="mb-4 text-base font-semibold tracking-tight text-neutral-900">
-          {t('newCycle.title')}
+          {t('newSprint.title')}
         </h2>
 
         <label className="mb-3 block">
           <span className="mb-1.5 block text-xs font-medium text-neutral-500">
-            {t('newCycle.name')}
+            {t('newSprint.name')}
           </span>
           <input
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={t('newCycle.namePlaceholder')}
+            placeholder={t('newSprint.namePlaceholder')}
             className="field"
           />
         </label>
@@ -79,7 +79,7 @@ export function NewCycleModal({ onClose }: { onClose: () => void }) {
         <div className="mb-4 flex gap-3">
           <label className="flex-1">
             <span className="mb-1.5 block text-xs font-medium text-neutral-500">
-              {t('newCycle.starts')}
+              {t('newSprint.starts')}
             </span>
             <input
               type="date"
@@ -91,7 +91,7 @@ export function NewCycleModal({ onClose }: { onClose: () => void }) {
           </label>
           <label className="flex-1">
             <span className="mb-1.5 block text-xs font-medium text-neutral-500">
-              {t('newCycle.ends')}
+              {t('newSprint.ends')}
             </span>
             <input
               type="date"
@@ -109,8 +109,8 @@ export function NewCycleModal({ onClose }: { onClose: () => void }) {
           <button type="button" onClick={onClose} className="btn btn-ghost">
             {t('common:cancel')}
           </button>
-          <button type="submit" disabled={createCycle.isPending} className="btn btn-primary">
-            {createCycle.isPending ? t('newCycle.creating') : t('newCycle.create')}
+          <button type="submit" disabled={createSprint.isPending} className="btn btn-primary">
+            {createSprint.isPending ? t('newSprint.creating') : t('newSprint.create')}
           </button>
         </div>
       </form>

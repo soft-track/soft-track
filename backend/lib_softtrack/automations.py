@@ -3,7 +3,7 @@
 Two halves, and they are deliberately in different modules. This one is the
 service the settings page talks to -- create, edit, enable, delete, and read
 the run log. `lib_softtrack/rules.py` is the engine the issue, comment and
-cycle services call when something happens. Splitting them the way
+sprint services call when something happens. Splitting them the way
 `history.py` and `notifications.py` are split from `issues.py` keeps the hot
 path -- "an issue changed; is there a rule about that" -- free of anything to
 do with validating a form.
@@ -33,7 +33,7 @@ from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.tables import (
     AutomationRule,
     AutomationRun,
-    Cycle,
+    Sprint,
     Issue,
     Label,
     Project,
@@ -73,8 +73,8 @@ _ACTION_FIELDS = (
     "set_type",
     "set_assignee_id",
     "add_label_id",
-    "set_cycle_id",
-    "move_to_active_cycle",
+    "set_sprint_id",
+    "move_to_active_sprint",
     "comment_body",
 )
 
@@ -149,17 +149,17 @@ def _validate(
     _belongs_to_team(session, WorkflowStatus, actions.set_status_id, team_id)
     _belongs_to_team(session, Label, actions.add_label_id, team_id)
 
-    cycle = _belongs_to_team(session, Cycle, actions.set_cycle_id, team_id)
-    if cycle is not None and cycle.state.value == "completed":
-        # Not a foreign key problem -- a meaning problem. A completed cycle's
+    sprint = _belongs_to_team(session, Sprint, actions.set_sprint_id, team_id)
+    if sprint is not None and sprint.state.value == "completed":
+        # Not a foreign key problem -- a meaning problem. A completed sprint's
         # numbers are history everywhere else in SoftTrack, and a rule that
         # kept dropping work into it would rewrite a report every time it
         # fired.
         raise api_error(
             status_code=400,
-            code=ErrorCode.cycle_completed,
-            detail="That cycle is completed; its numbers are history. "
-            "Use the active cycle instead.",
+            code=ErrorCode.sprint_completed,
+            detail="That sprint is completed; its numbers are history. "
+            "Use the active sprint instead.",
         )
 
     for user_id in (conditions.if_assignee_id, actions.set_assignee_id):
@@ -430,19 +430,19 @@ def move_status(session: Session, status_id: int, target_id: int) -> None:
     session.flush()
 
 
-def clear_cycle(session: Session, cycle_id: int) -> None:
-    """Disarm rules that moved issues into a cycle being deleted.
+def clear_sprint(session: Session, sprint_id: int) -> None:
+    """Disarm rules that moved issues into a sprint being deleted.
 
-    Unlike a status there is nowhere to send them -- a deleted cycle's issues
+    Unlike a status there is nowhere to send them -- a deleted sprint's issues
     go to the backlog, and "move it to the backlog" is not what the rule said.
     So the reference goes and the rule is switched off rather than left
     enabled doing less than it claims. It shows up disabled in the settings
     list, which is where somebody can decide what it should say instead.
     """
     for rule in session.exec(
-        select(AutomationRule).where(AutomationRule.set_cycle_id == cycle_id)
+        select(AutomationRule).where(AutomationRule.set_sprint_id == sprint_id)
     ).all():
-        rule.set_cycle_id = None
+        rule.set_sprint_id = None
         rule.is_enabled = False
         session.add(rule)
     session.flush()

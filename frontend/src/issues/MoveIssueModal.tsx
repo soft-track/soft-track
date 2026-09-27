@@ -182,8 +182,8 @@ export function PlanSummary({ plan }: { plan: TransferPlan }) {
       loses: true,
     })
   }
-  if (plan.cycle_cleared) {
-    lines.push({ text: t('move.plan.leavesCycle', { cycle: plan.cycle_cleared }), loses: true })
+  if (plan.sprint_cleared) {
+    lines.push({ text: t('move.plan.leavesSprint', { sprint: plan.sprint_cleared }), loses: true })
   }
   if (plan.project_cleared) {
     lines.push({

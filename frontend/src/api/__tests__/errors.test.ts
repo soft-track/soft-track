@@ -11,8 +11,8 @@ describe('errorDetail', () => {
   })
 
   it("falls back to the server's sentence for a code it does not know", () => {
-    const err = failed({ detail: 'That cycle is already completed.', code: 'cycle_completed' })
-    expect(errorDetail(err, 'fallback')).toBe('That cycle is already completed.')
+    const err = failed({ detail: 'That sprint is already completed.', code: 'sprint_completed' })
+    expect(errorDetail(err, 'fallback')).toBe('That sprint is already completed.')
   })
 
   it('keeps the wait in a rate-limit message, which only the server knows', () => {
@@ -43,9 +43,9 @@ describe('errorCode', () => {
 
   it('reads its own words from the catalog, and has none for most codes (#106)', () => {
     expect(errorMessage('not_team_admin')).toBe('Only an admin of this team can do that.')
-    expect(errorMessage('cycle_not_found')).toBeUndefined()
-    const err = { response: { data: { code: 'cycle_not_found', detail: 'Cycle not found' } } }
-    expect(errorDetail(err, 'fallback')).toBe('Cycle not found')
+    expect(errorMessage('sprint_not_found')).toBeUndefined()
+    const err = { response: { data: { code: 'sprint_not_found', detail: 'Sprint not found' } } }
+    expect(errorDetail(err, 'fallback')).toBe('Sprint not found')
   })
 
   it('says ticket and epic where the API says issue and project (#211)', () => {

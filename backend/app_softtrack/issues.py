@@ -61,7 +61,7 @@ CSV_COLUMNS = [
     "assignee",
     "labels",
     "project",
-    "cycle",
+    "sprint",
     "estimate",
     "creator",
     "created",
@@ -113,7 +113,7 @@ def _csv_row(row: IssueExportRow) -> list[str]:
         _csv_text(_csv_person(issue.assignee)),
         _csv_text(";".join(label.name for label in issue.labels)),
         _csv_text(row.project_name),
-        _csv_text(row.cycle_name),
+        _csv_text(row.sprint_name),
         "" if issue.estimate is None else str(issue.estimate),
         _csv_text(_csv_person(issue.creator)),
         _csv_timestamp(issue.created_at),
@@ -176,7 +176,7 @@ def list_issues(
     parent_id: Optional[int] = Query(
         None, description="Only sub-issues of this issue."
     ),
-    cycle_id: Optional[int] = Query(None, description="Only issues in this cycle."),
+    sprint_id: Optional[int] = Query(None, description="Only issues in this sprint."),
     due: Optional[DueFilter] = Query(
         None, description="Overdue, due this week, or with no due date."
     ),
@@ -216,7 +216,7 @@ def list_issues(
         unassigned=unassigned,
         label_id=label_id,
         parent_id=parent_id,
-        cycle_id=cycle_id,
+        sprint_id=sprint_id,
         due=due,
         today=today,
         due_from=due_from,
@@ -290,7 +290,7 @@ def export_issues_csv(
     parent_id: Optional[int] = Query(
         None, description="Only sub-issues of this issue."
     ),
-    cycle_id: Optional[int] = Query(None, description="Only issues in this cycle."),
+    sprint_id: Optional[int] = Query(None, description="Only issues in this sprint."),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
@@ -312,7 +312,7 @@ def export_issues_csv(
         unassigned=unassigned,
         label_id=label_id,
         parent_id=parent_id,
-        cycle_id=cycle_id,
+        sprint_id=sprint_id,
     )
 
     return StreamingResponse(
@@ -368,7 +368,7 @@ def list_issue_events(
     current_user: User = Depends(get_current_user),
 ):
     """What has happened to an issue: status, priority, assignee, estimate,
-    cycle and project changes, oldest first, with who made each one.
+    sprint and project changes, oldest first, with who made each one.
 
     The latest 100 changes. The values an issue was created with are its
     starting point rather than changes, and are left out.

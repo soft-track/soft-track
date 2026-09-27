@@ -7,13 +7,13 @@
  */
 
 /**
- * How much of the cycle's work is done.
+ * How much of the sprint's work is done.
  *
  * Issues and points are reported separately because they disagree, and the
  * disagreement is the interesting part: eight of ten issues done with two
  * points of thirty burned means the hard work is all still ahead.
  */
-export interface CycleProgress {
+export interface SprintProgress {
   issues_total: number;
   issues_completed: number;
   points_total: number;

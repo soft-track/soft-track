@@ -5,13 +5,13 @@
  * An open-source, self-hostable issue tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
-import type { CycleRead } from './cycleRead';
+import type { SprintRead } from './sprintRead';
 
 /**
- * The result of completing a cycle.
+ * The result of completing a sprint.
  */
-export interface CycleCompletion {
-  cycle: CycleRead;
+export interface SprintCompletion {
+  sprint: SprintRead;
   carried_over: number;
-  carried_into_cycle_id?: number | null;
+  carried_into_sprint_id?: number | null;
 }

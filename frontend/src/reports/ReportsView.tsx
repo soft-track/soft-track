@@ -1,8 +1,8 @@
 import { useState } from 'react'
 
 import {
-  useCycleBurndownCyclesCycleIdBurndownGet,
-  useCycleTimeSpentCyclesCycleIdTimeSpentGet,
+  useSprintBurndownSprintsSprintIdBurndownGet,
+  useSprintTimeSpentSprintsSprintIdTimeSpentGet,
   useTeamCreatedVsResolvedTeamsTeamIdCreatedVsResolvedGet,
   useTeamCumulativeFlowTeamsTeamIdCumulativeFlowGet,
   useTeamTimeSpentTeamsTeamIdTimeSpentGet,
@@ -21,19 +21,19 @@ const WINDOWS = [14, 30, 90] as const
 
 export function ReportsView() {
   const { t } = useTranslation(['reports', 'common'])
-  const { team, cycles } = useTeamContext()
+  const { team, sprints } = useTeamContext()
 
-  // Default to the cycle a team would actually want to look at.
+  // Default to the sprint a team would actually want to look at.
   const preferred =
-    cycles.find((cycle) => cycle.state === 'active') ??
-    [...cycles].reverse().find((cycle) => cycle.state === 'completed') ??
-    cycles[0]
-  const [cycleId, setCycleId] = useState<number | null>(preferred?.id ?? null)
+    sprints.find((sprint) => sprint.state === 'active') ??
+    [...sprints].reverse().find((sprint) => sprint.state === 'completed') ??
+    sprints[0]
+  const [sprintId, setSprintId] = useState<number | null>(preferred?.id ?? null)
   const [days, setDays] = useState<(typeof WINDOWS)[number]>(30)
 
-  const selected = cycles.find((cycle) => cycle.id === cycleId) ?? preferred ?? null
+  const selected = sprints.find((sprint) => sprint.id === sprintId) ?? preferred ?? null
 
-  const burndown = useCycleBurndownCyclesCycleIdBurndownGet(selected?.id ?? 0, {
+  const burndown = useSprintBurndownSprintsSprintIdBurndownGet(selected?.id ?? 0, {
     query: { enabled: Boolean(selected) },
   })
   const velocity = useTeamVelocityTeamsTeamIdVelocityGet(team.id, { limit: 8 })
@@ -42,8 +42,8 @@ export function ReportsView() {
     team.id,
     { days },
   )
-  // Time spent (#102): in the chosen cycle, and over the chosen window.
-  const cycleTime = useCycleTimeSpentCyclesCycleIdTimeSpentGet(selected?.id ?? 0, {
+  // Time spent (#102): in the chosen sprint, and over the chosen window.
+  const sprintTime = useSprintTimeSpentSprintsSprintIdTimeSpentGet(selected?.id ?? 0, {
     query: { enabled: Boolean(selected) },
   })
   const windowTime = useTeamTimeSpentTeamsTeamIdTimeSpentGet(team.id, { days })
@@ -55,14 +55,14 @@ export function ReportsView() {
         <Select
           dense
           value={selected?.id ?? ''}
-          onChange={(e) => setCycleId(e.target.value ? Number(e.target.value) : null)}
-          disabled={cycles.length === 0}
-          aria-label={t('view.cycle')}
+          onChange={(e) => setSprintId(e.target.value ? Number(e.target.value) : null)}
+          disabled={sprints.length === 0}
+          aria-label={t('view.sprint')}
         >
-          {cycles.length === 0 && <option value="">{t('view.noCycles')}</option>}
-          {cycles.map((cycle) => (
-            <option key={cycle.id} value={cycle.id}>
-              {cycle.display_name}
+          {sprints.length === 0 && <option value="">{t('view.noSprints')}</option>}
+          {sprints.map((sprint) => (
+            <option key={sprint.id} value={sprint.id}>
+              {sprint.display_name}
             </option>
           ))}
         </Select>
@@ -91,7 +91,7 @@ export function ReportsView() {
           <figure className="glass rounded-panel p-4">
             <h3 className="text-sm font-semibold text-neutral-900">{t('view.burndown')}</h3>
             <p className="py-10 text-center text-sm text-neutral-400">
-              {cycles.length === 0 ? t('view.burndownNoCycles') : t('common:loading')}
+              {sprints.length === 0 ? t('view.burndownNoSprints') : t('common:loading')}
             </p>
           </figure>
         )}
@@ -99,11 +99,11 @@ export function ReportsView() {
         {velocity.data && <VelocityChart data={velocity.data} />}
         {flow.data && <FlowChart data={flow.data} />}
         {createdResolved.data && <CreatedResolvedChart data={createdResolved.data} />}
-        {selected && cycleTime.data && (
+        {selected && sprintTime.data && (
           <TimeSpentChart
-            title={t('view.cycleTime.title', { cycle: selected.display_name })}
-            note={t('view.cycleTime.note')}
-            data={cycleTime.data}
+            title={t('view.sprintTime.title', { sprint: selected.display_name })}
+            note={t('view.sprintTime.note')}
+            data={sprintTime.data}
           />
         )}
         {windowTime.data && (

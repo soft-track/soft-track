@@ -12,7 +12,7 @@ read them, and the log.
 | `status_changed` | It moves to a different column |
 | `issue_assigned` | Somebody is put on it |
 | `comment_added` | A comment is posted |
-| `cycle_completed` | A cycle finishes, once per ticket that was in it |
+| `sprint_completed` | A sprint finishes, once per ticket that was in it |
 | `branch_created` | A branch naming it appears in a connected repository |
 | `pull_request_opened` | A pull or merge request naming it opens |
 | `pull_request_merged` | ...and merges. Closed-without-merging is not this |
@@ -23,7 +23,7 @@ using the tracker — see [GitHub and GitLab](git-integrations.md).
 Conditions are status, priority, label, epic and assignee (or "nobody is
 assigned"). They are ANDed, and unset means "no opinion" — a rule with none of
 them fires on everything its trigger reaches. Actions set the status, priority,
-assignee or cycle, add a label, or post a comment; at least one is required,
+assignee or sprint, add a label, or post a comment; at least one is required,
 because a rule that does nothing is a rule that will be read as broken. There is deliberately no "every Monday" for rules a person triggers, no OR, no
 negation and no branching. Two rules say "or" perfectly well, and each of the
 others is a step towards the workflow engine SoftTrack is trying not to become.
@@ -64,6 +64,6 @@ something a rule names goes away, somebody has to decide what happens:
 **deleting a status sends the rules after the tickets** to whichever column
 those moved to — clearing the reference would turn a condition into "no
 opinion" and quietly widen the rule to every ticket on the team — while
-**deleting a cycle switches off the rules that filled it**, since there is
+**deleting a sprint switches off the rules that filled it**, since there is
 nowhere equivalent to send them and a rule left enabled would silently do less
 than it says.

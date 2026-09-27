@@ -11,7 +11,7 @@
  *
  * Fixed on purpose, and the reason per-team statuses are safe to allow at
  * all. Everything that has to reason about work -- burndown, velocity, "is
- * this cycle finished", "3 of 5 sub-issues done", whether a blocker still
+ * this sprint finished", "3 of 5 sub-issues done", whether a blocker still
  * blocks -- asks the category, never the name. A team can add "Blocked" or
  * "QA" without any of that having an opinion about it.
  *

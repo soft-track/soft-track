@@ -1,6 +1,6 @@
 """Running automation rules: the engine the rest of the tracker calls into.
 
-The issue, comment, cycle and repository-integration services call the `on_*`
+The issue, comment, sprint and repository-integration services call the `on_*`
 hooks below and know nothing else about automation -- the same arrangement as `history.py` and
 `notifications.py`, and for the same reason. "What fires, and what it does"
 is one policy, and it is only correct if it lives in one place.
@@ -51,7 +51,7 @@ from lib_softtrack.tables import (
     AutomationRun,
     AutomationTrigger,
     Comment,
-    Cycle,
+    Sprint,
     Issue,
     IssueLabelLink,
     Label,
@@ -136,16 +136,18 @@ def on_comment_created(session: Session, issue: Issue, actor: Optional[User]) ->
     _dispatch(session, issue.team_id, AutomationTrigger.comment_added, [issue], actor)
 
 
-def on_cycle_completed(
-    session: Session, cycle: Cycle, issues: list[Issue], actor: Optional[User]
+def on_sprint_completed(
+    session: Session, sprint: Sprint, issues: list[Issue], actor: Optional[User]
 ) -> None:
-    """A cycle finished. Fires once per issue that was in it.
+    """A sprint finished. Fires once per issue that was in it.
 
     `issues` is the membership as it stood before the carry-over, and the
     hook runs after it -- so a rule can see which issues came out of the
-    cycle unfinished and act on all of them, not only the ones that stayed.
+    sprint unfinished and act on all of them, not only the ones that stayed.
     """
-    _dispatch(session, cycle.team_id, AutomationTrigger.cycle_completed, issues, actor)
+    _dispatch(
+        session, sprint.team_id, AutomationTrigger.sprint_completed, issues, actor
+    )
 
 
 def on_code_event(session: Session, issue: Issue, trigger: AutomationTrigger) -> None:
@@ -341,10 +343,10 @@ def _apply(
         lines.append(f"Added the label {label.name}")
         touched_issue = True
 
-    cycle = _target_cycle(session, issue.team_id, actions)
-    if cycle is not None and issue.cycle_id != cycle.id:
-        issue.cycle_id = cycle.id
-        lines.append(f"Moved to {cycle.name or f'Cycle {cycle.number}'}")
+    sprint = _target_sprint(session, issue.team_id, actions)
+    if sprint is not None and issue.sprint_id != sprint.id:
+        issue.sprint_id = sprint.id
+        lines.append(f"Moved to {sprint.name or f'Sprint {sprint.number}'}")
         touched_issue = True
 
     body = (actions.comment_body or "").strip()
@@ -372,24 +374,24 @@ def _apply(
     return lines
 
 
-def _target_cycle(
+def _target_sprint(
     session: Session, team_id: int, actions: RuleActions
-) -> Optional[Cycle]:
-    """The cycle this rule moves an issue into, if there is one to move it to.
+) -> Optional[Sprint]:
+    """The sprint this rule moves an issue into, if there is one to move it to.
 
-    `move_to_active_cycle` with no cycle running is not an error and not a
+    `move_to_active_sprint` with no sprint running is not an error and not a
     skipped rule -- it is a rule whose other actions still apply and whose
-    cycle action has nowhere to point this week. Silently doing nothing is the
+    sprint action has nowhere to point this week. Silently doing nothing is the
     only reading that does not either lose the rest of the rule or invent a
-    cycle.
+    sprint.
     """
-    if actions.set_cycle_id is not None:
-        return session.get(Cycle, actions.set_cycle_id)
-    if not actions.move_to_active_cycle:
+    if actions.set_sprint_id is not None:
+        return session.get(Sprint, actions.set_sprint_id)
+    if not actions.move_to_active_sprint:
         return None
 
-    # Imported here rather than at module scope: `cycles.py` calls this module
+    # Imported here rather than at module scope: `sprints.py` calls this module
     # on completion, and at module level that is an import cycle.
-    from lib_softtrack.cycles import active_cycle
+    from lib_softtrack.sprints import active_sprint
 
-    return active_cycle(session, team_id)
+    return active_sprint(session, team_id)

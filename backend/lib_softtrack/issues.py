@@ -35,7 +35,7 @@ from lib_softtrack import rules as rules_service
 from lib_softtrack.links import open_blocker_counts
 from lib_softtrack.tables import (
     Comment,
-    Cycle,
+    Sprint,
     DueFilter,
     Issue,
     IssueEvent,
@@ -52,7 +52,7 @@ from lib_softtrack.tables import (
     WebhookEvent,
     WorkflowStatus,
 )
-from lib_softtrack.cycles import display_name as cycle_display_name
+from lib_softtrack.sprints import display_name as sprint_display_name
 from lib_softtrack.ranks import neighbour_or_404, rank_between, rank_order, top_rank
 from lib_softtrack.statuses import (
     RESOLVED,
@@ -110,7 +110,7 @@ def issue_to_read(issue: Issue, session: Session) -> IssueRead:
         assignee=UserPublic.model_validate(assignee) if assignee else None,
         estimate=issue.estimate,
         blocked_by_count=open_blocker_counts(session, [issue.id]).get(issue.id, 0),
-        cycle_id=issue.cycle_id,
+        sprint_id=issue.sprint_id,
         due_date=issue.due_date,
         external_key=issue.external_key,
         parent=_parent_ref(issue, session),
@@ -199,7 +199,7 @@ def _expand_issues(issues: list[Issue], session: Session) -> list[IssueRead]:
             ),
             estimate=issue.estimate,
             blocked_by_count=blocker_counts.get(issue.id, 0),
-            cycle_id=issue.cycle_id,
+            sprint_id=issue.sprint_id,
             due_date=issue.due_date,
             external_key=issue.external_key,
             creator=UserPublic.model_validate(users[issue.creator_id]),
@@ -271,7 +271,7 @@ def create_issue(
         type=payload.type,
         assignee_id=payload.assignee_id,
         estimate=payload.estimate,
-        cycle_id=payload.cycle_id,
+        sprint_id=payload.sprint_id,
         due_date=payload.due_date,
         # On top of its column, where a new card is looked for.
         rank=top_rank(session, team_id),
@@ -322,7 +322,7 @@ def list_issues(
     unassigned: bool = False,
     label_id: Optional[int] = None,
     parent_id: Optional[int] = None,
-    cycle_id: Optional[int] = None,
+    sprint_id: Optional[int] = None,
     due: Optional[DueFilter] = None,
     today: Optional[date] = None,
     due_from: Optional[date] = None,
@@ -352,7 +352,7 @@ def list_issues(
         unassigned=unassigned,
         label_id=label_id,
         parent_id=parent_id,
-        cycle_id=cycle_id,
+        sprint_id=sprint_id,
     )
     if type is not None:
         filters.append(Issue.type == type)
@@ -396,7 +396,7 @@ def _build_issue_filters(
     unassigned: bool = False,
     label_id: Optional[int] = None,
     parent_id: Optional[int] = None,
-    cycle_id: Optional[int] = None,
+    sprint_id: Optional[int] = None,
 ) -> list[ColumnElement[bool]]:
     """The WHERE clauses for a team's issue list, after checking who is asking.
 
@@ -434,8 +434,8 @@ def _build_issue_filters(
         )
     if parent_id is not None:
         filters.append(Issue.parent_id == parent_id)
-    if cycle_id is not None:
-        filters.append(Issue.cycle_id == cycle_id)
+    if sprint_id is not None:
+        filters.append(Issue.sprint_id == sprint_id)
 
     return filters
 
@@ -455,7 +455,7 @@ EXPORT_BATCH_SIZE = 500
 class IssueExportRow(NamedTuple):
     """One issue, with the related names an export has to spell out.
 
-    `IssueRead` carries `project_id` and `cycle_id` but not their names,
+    `IssueRead` carries `project_id` and `sprint_id` but not their names,
     because every client that renders a board is already holding both lists.
     A file someone opens in a spreadsheet has no such context, so the names
     are resolved alongside the issue -- batched, not one lookup per row.
@@ -463,7 +463,7 @@ class IssueExportRow(NamedTuple):
 
     issue: IssueRead
     project_name: str
-    cycle_name: str
+    sprint_name: str
 
 
 def export_issues(
@@ -477,7 +477,7 @@ def export_issues(
     unassigned: bool = False,
     label_id: Optional[int] = None,
     parent_id: Optional[int] = None,
-    cycle_id: Optional[int] = None,
+    sprint_id: Optional[int] = None,
 ) -> Iterator[list[IssueExportRow]]:
     """Every issue matching the filters, newest number first, in batches.
 
@@ -499,7 +499,7 @@ def export_issues(
         unassigned=unassigned,
         label_id=label_id,
         parent_id=parent_id,
-        cycle_id=cycle_id,
+        sprint_id=sprint_id,
     )
     return _export_batches(filters, session.get_bind())
 
@@ -549,7 +549,7 @@ def _export_batches(
 
 
 def _export_rows(issues: list[Issue], session: Session) -> list[IssueExportRow]:
-    """Expand one batch, resolving project and cycle names in one query each."""
+    """Expand one batch, resolving project and sprint names in one query each."""
     project_names = {
         project.id: project.name
         for project in session.exec(
@@ -560,11 +560,11 @@ def _export_rows(issues: list[Issue], session: Session) -> list[IssueExportRow]:
             )
         ).all()
     }
-    cycle_names = {
-        cycle.id: cycle_display_name(cycle)
-        for cycle in session.exec(
-            select(Cycle).where(
-                Cycle.id.in_({issue.cycle_id for issue in issues if issue.cycle_id})
+    sprint_names = {
+        sprint.id: sprint_display_name(sprint)
+        for sprint in session.exec(
+            select(Sprint).where(
+                Sprint.id.in_({issue.sprint_id for issue in issues if issue.sprint_id})
             )
         ).all()
     }
@@ -575,7 +575,7 @@ def _export_rows(issues: list[Issue], session: Session) -> list[IssueExportRow]:
             # `.get` rather than an `is None` check: an issue with no project
             # and one pointing at a deleted row both mean "no name to print".
             project_name=project_names.get(read.project_id, ""),
-            cycle_name=cycle_names.get(read.cycle_id, ""),
+            sprint_name=sprint_names.get(read.sprint_id, ""),
         )
         for read in _expand_issues(issues, session)
     ]
@@ -909,7 +909,7 @@ def _team_issues_or_404(
 def _require_on_team(
     session: Session, model: type, row_id: Optional[int], team_id: int, noun: str
 ) -> None:
-    """A project, cycle or label id from the request, checked against the team.
+    """A project, sprint or label id from the request, checked against the team.
 
     Checked once up front rather than left to the foreign key: a row from
     another team satisfies the foreign key and would quietly file twenty
@@ -931,7 +931,7 @@ def _validate_bulk_changes(
 ) -> None:
     resolve_for_team(session, team_id, changes.status_id)
     _require_on_team(session, Project, changes.project_id, team_id, "project")
-    _require_on_team(session, Cycle, changes.cycle_id, team_id, "cycle")
+    _require_on_team(session, Sprint, changes.sprint_id, team_id, "sprint")
     for label_id in {*changes.add_label_ids, *changes.remove_label_ids}:
         _require_on_team(session, Label, label_id, team_id, "label")
     if set(changes.add_label_ids) & set(changes.remove_label_ids):

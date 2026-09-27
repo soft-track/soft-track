@@ -39,8 +39,8 @@ import { usePeek } from '@/board/usePeek'
 import { useMoveIssue } from '@/board/useMoveIssue'
 import { useStatusChange } from '@/board/useStatusChange'
 import { CalendarView } from '@/calendar/CalendarView'
-import { CycleBanner } from '@/cycles/CycleBanner'
-import { NewCycleModal } from '@/cycles/NewCycleModal'
+import { SprintBanner } from '@/sprints/SprintBanner'
+import { NewSprintModal } from '@/sprints/NewSprintModal'
 import { useTranslation } from '@/i18n'
 import { ImportJiraModal } from '@/imports/ImportJiraModal'
 import { IssueDetailPanel } from '@/issues/IssueDetailPanel'
@@ -340,7 +340,7 @@ export default function BoardPage() {
   }
 
   const openIssue = loadedIssue ?? (issueNumber ? fetchedIssue.data : undefined)
-  const selectedCycle = teamData.cycles.find((cycle) => cycle.id === filters.cycleId) ?? null
+  const selectedSprint = teamData.sprints.find((sprint) => sprint.id === filters.sprintId) ?? null
   const isTeamAdmin =
     teamData.members.find((member) => member.user.id === user?.id)?.role === 'admin'
   // Nothing to save while this board is already a view somebody named.
@@ -365,11 +365,11 @@ export default function BoardPage() {
         overlays.open('saveView')
       }}
       isAdmin={isTeamAdmin}
-      onNewCycle={
+      onNewSprint={
         canWrite
           ? () => {
               setSidebarOpen(false)
-              overlays.open('newCycle')
+              overlays.open('newSprint')
             }
           : undefined
       }
@@ -440,7 +440,7 @@ export default function BoardPage() {
               onCloseNotifications={() => overlays.close('notifications')}
               onOpenNotifiedIssue={leaveForIssue}
             />
-            {selectedCycle && !searchQuery && <CycleBanner cycle={selectedCycle} />}
+            {selectedSprint && !searchQuery && <SprintBanner sprint={selectedSprint} />}
             <PeekContext.Provider value={peek}>
               <div className="min-h-0 flex-1">
                 {searchQuery ? (
@@ -503,7 +503,7 @@ export default function BoardPage() {
         <ShortcutsCheatsheet onClose={() => overlays.close('shortcuts')} />
       )}
       {overlays.isOpen('newIssue') && <NewIssueModal onClose={() => overlays.close('newIssue')} />}
-      {overlays.isOpen('newCycle') && <NewCycleModal onClose={() => overlays.close('newCycle')} />}
+      {overlays.isOpen('newSprint') && <NewSprintModal onClose={() => overlays.close('newSprint')} />}
       {overlays.isOpen('newProject') && (
         <NewProjectModal onClose={() => overlays.close('newProject')} />
       )}

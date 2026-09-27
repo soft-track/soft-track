@@ -50,8 +50,8 @@ export function useIssueEditor(issueId: number) {
     // The change just made belongs in the Activity feed below.
     queryClient.invalidateQueries({ queryKey: [`/issues/${issueId}/events`] })
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
-    // Cycle progress moves whenever an issue's status or cycle changes.
-    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/cycles`] })
+    // Sprint progress moves whenever an issue's status or sprint changes.
+    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/sprints`] })
     // And project progress whenever its status or project does.
     invalidateProjects(queryClient, team.id)
   }

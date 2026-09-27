@@ -1,5 +1,5 @@
 import type {
-  CycleRead,
+  SprintRead,
   LabelRead,
   ProjectRead,
   StatusRead,
@@ -16,7 +16,7 @@ export type FilterLookups = {
   members: TeamMemberRead[]
   labels: LabelRead[]
   projects: ProjectRead[]
-  cycles: CycleRead[]
+  sprints: SprintRead[]
   statuses: StatusRead[]
 }
 
@@ -33,7 +33,7 @@ export const EMPTY_LOOKUPS: FilterLookups = {
   members: [],
   labels: [],
   projects: [],
-  cycles: [],
+  sprints: [],
   statuses: [],
 }
 
@@ -94,12 +94,12 @@ export function describeFilters(
         i18n.t('board:filters.missing.project'),
     })
   }
-  if (filters.cycleId !== null) {
-    const cycle = lookups.cycles.find((c) => c.id === filters.cycleId)
+  if (filters.sprintId !== null) {
+    const sprint = lookups.sprints.find((c) => c.id === filters.sprintId)
     chips.push({
-      key: 'cycleId',
-      field: i18n.t('board:filters.fields.cycle'),
-      value: cycle?.display_name ?? i18n.t('board:filters.missing.cycle'),
+      key: 'sprintId',
+      field: i18n.t('board:filters.fields.sprint'),
+      value: sprint?.display_name ?? i18n.t('board:filters.missing.sprint'),
     })
   }
 

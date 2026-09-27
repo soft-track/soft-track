@@ -225,7 +225,7 @@ export function IssueCard({
  * The project an issue is in, coloured from the project (#63).
  *
  * A chip like a label's, with a filled dot in front, so the one grouping that
- * spans cycles is not mistaken for one more label.
+ * spans sprints is not mistaken for one more label.
  */
 export function ProjectBadge({ name, color }: { name: string; color: string }) {
   const { t } = useTranslation('issues')

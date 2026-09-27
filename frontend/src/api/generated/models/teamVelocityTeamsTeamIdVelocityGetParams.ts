@@ -8,7 +8,7 @@
 
 export type TeamVelocityTeamsTeamIdVelocityGetParams = {
 /**
- * How many recent cycles.
+ * How many recent sprints.
  * @minimum 1
  * @maximum 24
  */

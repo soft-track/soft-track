@@ -1,7 +1,7 @@
 import type {
   AutomationRuleRead,
   AutomationTrigger,
-  CycleRead,
+  SprintRead,
   IssuePriority,
   LabelRead,
   ProjectRead,
@@ -46,8 +46,8 @@ export const TRIGGER_LABELS: Record<AutomationTrigger, string> = {
   get comment_added() {
     return i18n.t('automations:trigger.comment_added')
   },
-  get cycle_completed() {
-    return i18n.t('automations:trigger.cycle_completed')
+  get sprint_completed() {
+    return i18n.t('automations:trigger.sprint_completed')
   },
   get branch_created() {
     return i18n.t('automations:trigger.branch_created')
@@ -66,7 +66,7 @@ export type RuleVocabulary = {
   labels: LabelRead[]
   projects: ProjectRead[]
   members: TeamMemberRead[]
-  cycles: CycleRead[]
+  sprints: SprintRead[]
 }
 
 function statusName(vocabulary: RuleVocabulary, id: number): string {
@@ -97,10 +97,10 @@ function personName(vocabulary: RuleVocabulary, id: number): string {
   )
 }
 
-function cycleName(vocabulary: RuleVocabulary, id: number): string {
+function sprintName(vocabulary: RuleVocabulary, id: number): string {
   return (
-    vocabulary.cycles.find((c) => c.id === id)?.display_name ??
-    i18n.t('automations:missing.cycle')
+    vocabulary.sprints.find((c) => c.id === id)?.display_name ??
+    i18n.t('automations:missing.sprint')
   )
 }
 
@@ -191,12 +191,12 @@ export function describeActions(
       }),
     )
   }
-  if (actions.move_to_active_cycle) {
-    clauses.push(i18n.t('automations:action.moveToActiveCycle'))
-  } else if (actions.set_cycle_id != null) {
+  if (actions.move_to_active_sprint) {
+    clauses.push(i18n.t('automations:action.moveToActiveSprint'))
+  } else if (actions.set_sprint_id != null) {
     clauses.push(
-      i18n.t('automations:action.moveToCycle', {
-        cycle: cycleName(vocabulary, actions.set_cycle_id),
+      i18n.t('automations:action.moveToSprint', {
+        sprint: sprintName(vocabulary, actions.set_sprint_id),
       }),
     )
   }
@@ -224,7 +224,7 @@ export function describeRule(
     actions: joinClauses(actions),
   }
   const hasConditions = conditions.length > 0
-  // A rule can be left with no actions when the cycle it filled is deleted;
+  // A rule can be left with no actions when the sprint it filled is deleted;
   // it is switched off at the same time. Saying so beats an empty sentence.
   if (actions.length === 0) {
     return hasConditions

@@ -14,7 +14,7 @@ function hits(event: string, data: string, keys: string[]) {
 const KEYS = [
   '/teams/7/issues',
   '/teams/7/estimates',
-  '/teams/7/cycles',
+  '/teams/7/sprints',
   '/teams/8/issues',
   '/issues/42',
   '/issues/42/comments',
@@ -31,7 +31,7 @@ describe('invalidationFor (#103)', () => {
     expect(hits('issue_changed', '{"id": 42}', KEYS)).toEqual([
       '/teams/7/issues',
       '/teams/7/estimates',
-      '/teams/7/cycles',
+      '/teams/7/sprints',
       '/issues/42',
       '/issues/42/comments',
       '/issues/42/events',

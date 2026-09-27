@@ -6,8 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CycleCreate {
+export interface SprintUpdate {
   name?: string | null;
-  starts_at: string;
-  ends_at: string;
+  starts_at?: string | null;
+  ends_at?: string | null;
 }

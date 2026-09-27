@@ -221,13 +221,13 @@ def test_labels_are_kept_by_name_and_dropped_otherwise(client, two_teams):
     assert [lab["id"] for lab in moved["labels"]] == [ops_bug["id"]]
 
 
-def test_cycle_and_project_are_cleared_and_the_cycle_sees_it_leave(
+def test_sprint_and_project_are_cleared_and_the_sprint_sees_it_leave(
     client, two_teams, session
 ):
     eng = two_teams["team"]["id"]
     start = date.today()
-    cycle = client.post(
-        f"/teams/{eng}/cycles",
+    sprint = client.post(
+        f"/teams/{eng}/sprints",
         json={
             "name": "Sprint 4",
             "starts_at": start.isoformat(),
@@ -239,26 +239,26 @@ def test_cycle_and_project_are_cleared_and_the_cycle_sees_it_leave(
         f"/teams/{eng}/projects", json={"name": "Launch"}, headers=two_teams["headers"]
     ).json()
     issue = make_issue(
-        client, two_teams, eng, cycle_id=cycle["id"], project_id=project["id"]
+        client, two_teams, eng, sprint_id=sprint["id"], project_id=project["id"]
     )
 
     plan = preview(client, two_teams, issue, two_teams["ops"]["id"])
-    assert (plan["cycle_cleared"], plan["project_cleared"]) == ("Sprint 4", "Launch")
+    assert (plan["sprint_cleared"], plan["project_cleared"]) == ("Sprint 4", "Launch")
 
     moved = transfer(client, two_teams, issue, two_teams["ops"]["id"])["issue"]
-    assert moved["cycle_id"] is None and moved["project_id"] is None
+    assert moved["sprint_id"] is None and moved["project_id"] is None
 
-    # The burndown reads cycle events: without this row the issue would stay
+    # The burndown reads sprint events: without this row the issue would stay
     # in Sprint 4's scope forever.
     left = session.exec(
         select(IssueEvent)
         .where(
             IssueEvent.issue_id == issue["id"],
-            IssueEvent.field == IssueEventField.cycle,
+            IssueEvent.field == IssueEventField.sprint,
         )
         .order_by(IssueEvent.id)
     ).all()[-1]
-    assert (left.old_value, left.new_value) == (str(cycle["id"]), None)
+    assert (left.old_value, left.new_value) == (str(sprint["id"]), None)
 
 
 def test_the_assignee_stays_only_if_they_are_on_the_target_team(

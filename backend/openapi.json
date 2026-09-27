@@ -2091,7 +2091,7 @@
             "description": "Only sub-issues of this issue."
           },
           {
-            "name": "cycle_id",
+            "name": "sprint_id",
             "in": "query",
             "required": false,
             "schema": {
@@ -2103,10 +2103,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Only issues in this cycle.",
-              "title": "Cycle Id"
+              "description": "Only issues in this sprint.",
+              "title": "Sprint Id"
             },
-            "description": "Only issues in this cycle."
+            "description": "Only issues in this sprint."
           },
           {
             "name": "due",
@@ -2522,7 +2522,7 @@
             "description": "Only sub-issues of this issue."
           },
           {
-            "name": "cycle_id",
+            "name": "sprint_id",
             "in": "query",
             "required": false,
             "schema": {
@@ -2534,10 +2534,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Only issues in this cycle.",
-              "title": "Cycle Id"
+              "description": "Only issues in this sprint.",
+              "title": "Sprint Id"
             },
-            "description": "Only issues in this cycle."
+            "description": "Only issues in this sprint."
           }
         ],
         "responses": {
@@ -2733,7 +2733,7 @@
           "issues"
         ],
         "summary": "List Issue Events",
-        "description": "What has happened to an issue: status, priority, assignee, estimate,\ncycle and project changes, oldest first, with who made each one.\n\nThe latest 100 changes. The values an issue was created with are its\nstarting point rather than changes, and are left out.",
+        "description": "What has happened to an issue: status, priority, assignee, estimate,\nsprint and project changes, oldest first, with who made each one.\n\nThe latest 100 changes. The values an issue was created with are its\nstarting point rather than changes, and are left out.",
         "operationId": "list_issue_events_issues__issue_id__events_get",
         "security": [
           {
@@ -3736,13 +3736,13 @@
         }
       }
     },
-    "/teams/{team_id}/cycles": {
+    "/teams/{team_id}/sprints": {
       "post": {
         "tags": [
-          "cycles"
+          "sprints"
         ],
-        "summary": "Create Cycle",
-        "operationId": "create_cycle_teams__team_id__cycles_post",
+        "summary": "Create Sprint",
+        "operationId": "create_sprint_teams__team_id__sprints_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3764,7 +3764,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CycleCreate"
+                "$ref": "#/components/schemas/SprintCreate"
               }
             }
           }
@@ -3775,7 +3775,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CycleRead"
+                  "$ref": "#/components/schemas/SprintRead"
                 }
               }
             }
@@ -3794,10 +3794,10 @@
       },
       "get": {
         "tags": [
-          "cycles"
+          "sprints"
         ],
-        "summary": "List Cycles",
-        "operationId": "list_cycles_teams__team_id__cycles_get",
+        "summary": "List Sprints",
+        "operationId": "list_sprints_teams__team_id__sprints_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3822,9 +3822,9 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/CycleRead"
+                    "$ref": "#/components/schemas/SprintRead"
                   },
-                  "title": "Response List Cycles Teams  Team Id  Cycles Get"
+                  "title": "Response List Sprints Teams  Team Id  Sprints Get"
                 }
               }
             }
@@ -3842,13 +3842,13 @@
         }
       }
     },
-    "/cycles/{cycle_id}": {
+    "/sprints/{sprint_id}": {
       "get": {
         "tags": [
-          "cycles"
+          "sprints"
         ],
-        "summary": "Get Cycle",
-        "operationId": "get_cycle_cycles__cycle_id__get",
+        "summary": "Get Sprint",
+        "operationId": "get_sprint_sprints__sprint_id__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3856,12 +3856,12 @@
         ],
         "parameters": [
           {
-            "name": "cycle_id",
+            "name": "sprint_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cycle Id"
+              "title": "Sprint Id"
             }
           }
         ],
@@ -3871,7 +3871,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CycleRead"
+                  "$ref": "#/components/schemas/SprintRead"
                 }
               }
             }
@@ -3890,10 +3890,10 @@
       },
       "patch": {
         "tags": [
-          "cycles"
+          "sprints"
         ],
-        "summary": "Update Cycle",
-        "operationId": "update_cycle_cycles__cycle_id__patch",
+        "summary": "Update Sprint",
+        "operationId": "update_sprint_sprints__sprint_id__patch",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3901,12 +3901,12 @@
         ],
         "parameters": [
           {
-            "name": "cycle_id",
+            "name": "sprint_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cycle Id"
+              "title": "Sprint Id"
             }
           }
         ],
@@ -3915,7 +3915,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CycleUpdate"
+                "$ref": "#/components/schemas/SprintUpdate"
               }
             }
           }
@@ -3926,7 +3926,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CycleRead"
+                  "$ref": "#/components/schemas/SprintRead"
                 }
               }
             }
@@ -3945,10 +3945,10 @@
       },
       "delete": {
         "tags": [
-          "cycles"
+          "sprints"
         ],
-        "summary": "Delete Cycle",
-        "operationId": "delete_cycle_cycles__cycle_id__delete",
+        "summary": "Delete Sprint",
+        "operationId": "delete_sprint_sprints__sprint_id__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3956,12 +3956,12 @@
         ],
         "parameters": [
           {
-            "name": "cycle_id",
+            "name": "sprint_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cycle Id"
+              "title": "Sprint Id"
             }
           }
         ],
@@ -3982,14 +3982,14 @@
         }
       }
     },
-    "/cycles/{cycle_id}/start": {
+    "/sprints/{sprint_id}/start": {
       "post": {
         "tags": [
-          "cycles"
+          "sprints"
         ],
-        "summary": "Start Cycle",
-        "description": "Make this the team's active cycle. Only one may be active at a time.",
-        "operationId": "start_cycle_cycles__cycle_id__start_post",
+        "summary": "Start Sprint",
+        "description": "Make this the team's active sprint. Only one may be active at a time.",
+        "operationId": "start_sprint_sprints__sprint_id__start_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3997,12 +3997,12 @@
         ],
         "parameters": [
           {
-            "name": "cycle_id",
+            "name": "sprint_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cycle Id"
+              "title": "Sprint Id"
             }
           }
         ],
@@ -4012,7 +4012,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CycleRead"
+                  "$ref": "#/components/schemas/SprintRead"
                 }
               }
             }
@@ -4030,14 +4030,14 @@
         }
       }
     },
-    "/cycles/{cycle_id}/complete": {
+    "/sprints/{sprint_id}/complete": {
       "post": {
         "tags": [
-          "cycles"
+          "sprints"
         ],
-        "summary": "Complete Cycle",
-        "description": "Close the cycle, carrying unfinished issues into the next one.\n\nNothing is deleted: if there is no later cycle to carry into, the\nunfinished issues go back to the backlog.",
-        "operationId": "complete_cycle_cycles__cycle_id__complete_post",
+        "summary": "Complete Sprint",
+        "description": "Close the sprint, carrying unfinished issues into the next one.\n\nNothing is deleted: if there is no later sprint to carry into, the\nunfinished issues go back to the backlog.",
+        "operationId": "complete_sprint_sprints__sprint_id__complete_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4045,12 +4045,12 @@
         ],
         "parameters": [
           {
-            "name": "cycle_id",
+            "name": "sprint_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cycle Id"
+              "title": "Sprint Id"
             }
           }
         ],
@@ -4060,7 +4060,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CycleCompletion"
+                  "$ref": "#/components/schemas/SprintCompletion"
                 }
               }
             }
@@ -4078,14 +4078,14 @@
         }
       }
     },
-    "/cycles/{cycle_id}/burndown": {
+    "/sprints/{sprint_id}/burndown": {
       "get": {
         "tags": [
           "reports"
         ],
-        "summary": "Cycle Burndown",
-        "description": "Points and issues outstanding on each day of the cycle.\n\nCarries the burnup line and the days scope moved, from the same data --\na burndown that hides scope changes makes a team look slow when what\nactually happened is that the sprint grew.",
-        "operationId": "cycle_burndown_cycles__cycle_id__burndown_get",
+        "summary": "Sprint Burndown",
+        "description": "Points and issues outstanding on each day of the sprint.\n\nCarries the burnup line and the days scope moved, from the same data --\na burndown that hides scope changes makes a team look slow when what\nactually happened is that the sprint grew.",
+        "operationId": "sprint_burndown_sprints__sprint_id__burndown_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4093,12 +4093,12 @@
         ],
         "parameters": [
           {
-            "name": "cycle_id",
+            "name": "sprint_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cycle Id"
+              "title": "Sprint Id"
             }
           }
         ],
@@ -4180,7 +4180,7 @@
           "reports"
         ],
         "summary": "Team Velocity",
-        "description": "Committed and completed points for recent completed cycles.",
+        "description": "Committed and completed points for recent completed sprints.",
         "operationId": "team_velocity_teams__team_id__velocity_get",
         "security": [
           {
@@ -4205,11 +4205,11 @@
               "type": "integer",
               "maximum": 24,
               "minimum": 1,
-              "description": "How many recent cycles.",
+              "description": "How many recent sprints.",
               "default": 6,
               "title": "Limit"
             },
-            "description": "How many recent cycles."
+            "description": "How many recent sprints."
           }
         ],
         "responses": {
@@ -4356,14 +4356,14 @@
         }
       }
     },
-    "/cycles/{cycle_id}/time-spent": {
+    "/sprints/{sprint_id}/time-spent": {
       "get": {
         "tags": [
           "reports"
         ],
-        "summary": "Cycle Time Spent",
-        "description": "Time logged during the cycle on issues that were ever in it, by person (#102).",
-        "operationId": "cycle_time_spent_cycles__cycle_id__time_spent_get",
+        "summary": "Sprint Time Spent",
+        "description": "Time logged during the sprint on issues that were ever in it, by person (#102).",
+        "operationId": "sprint_time_spent_sprints__sprint_id__time_spent_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4371,12 +4371,12 @@
         ],
         "parameters": [
           {
-            "name": "cycle_id",
+            "name": "sprint_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cycle Id"
+              "title": "Sprint Id"
             }
           }
         ],
@@ -7689,7 +7689,7 @@
           "status_changed",
           "issue_assigned",
           "comment_added",
-          "cycle_completed",
+          "sprint_completed",
           "branch_created",
           "pull_request_opened",
           "pull_request_merged"
@@ -7794,13 +7794,13 @@
       },
       "Burndown": {
         "properties": {
-          "cycle_id": {
+          "sprint_id": {
             "type": "integer",
-            "title": "Cycle Id"
+            "title": "Sprint Id"
           },
-          "cycle_name": {
+          "sprint_name": {
             "type": "string",
-            "title": "Cycle Name"
+            "title": "Sprint Name"
           },
           "starts_at": {
             "type": "string",
@@ -7829,8 +7829,8 @@
         },
         "type": "object",
         "required": [
-          "cycle_id",
-          "cycle_name",
+          "sprint_id",
+          "sprint_name",
           "starts_at",
           "ends_at",
           "points",
@@ -8213,222 +8213,6 @@
           "days"
         ],
         "title": "CumulativeFlow"
-      },
-      "CycleCompletion": {
-        "properties": {
-          "cycle": {
-            "$ref": "#/components/schemas/CycleRead"
-          },
-          "carried_over": {
-            "type": "integer",
-            "title": "Carried Over"
-          },
-          "carried_into_cycle_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Carried Into Cycle Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "cycle",
-          "carried_over"
-        ],
-        "title": "CycleCompletion",
-        "description": "The result of completing a cycle."
-      },
-      "CycleCreate": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "starts_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Starts At"
-          },
-          "ends_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Ends At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "starts_at",
-          "ends_at"
-        ],
-        "title": "CycleCreate"
-      },
-      "CycleProgress": {
-        "properties": {
-          "issues_total": {
-            "type": "integer",
-            "title": "Issues Total"
-          },
-          "issues_completed": {
-            "type": "integer",
-            "title": "Issues Completed"
-          },
-          "points_total": {
-            "type": "integer",
-            "title": "Points Total"
-          },
-          "points_completed": {
-            "type": "integer",
-            "title": "Points Completed"
-          },
-          "issues_unestimated": {
-            "type": "integer",
-            "title": "Issues Unestimated"
-          }
-        },
-        "type": "object",
-        "required": [
-          "issues_total",
-          "issues_completed",
-          "points_total",
-          "points_completed",
-          "issues_unestimated"
-        ],
-        "title": "CycleProgress",
-        "description": "How much of the cycle's work is done.\n\nIssues and points are reported separately because they disagree, and the\ndisagreement is the interesting part: eight of ten issues done with two\npoints of thirty burned means the hard work is all still ahead."
-      },
-      "CycleRead": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "team_id": {
-            "type": "integer",
-            "title": "Team Id"
-          },
-          "number": {
-            "type": "integer",
-            "title": "Number"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "display_name": {
-            "type": "string",
-            "title": "Display Name"
-          },
-          "starts_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Starts At"
-          },
-          "ends_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Ends At"
-          },
-          "state": {
-            "$ref": "#/components/schemas/CycleState"
-          },
-          "completed_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Completed At"
-          },
-          "progress": {
-            "$ref": "#/components/schemas/CycleProgress"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "team_id",
-          "number",
-          "display_name",
-          "starts_at",
-          "ends_at",
-          "state",
-          "progress"
-        ],
-        "title": "CycleRead"
-      },
-      "CycleState": {
-        "type": "string",
-        "enum": [
-          "upcoming",
-          "active",
-          "completed"
-        ],
-        "title": "CycleState",
-        "description": "Where a cycle is in its life.\n\nDerived from dates would be simpler, but a team that forgets to start a\ncycle on Monday should not have Monday counted against its burndown, and a\ncycle that runs a day long should not silently complete itself and carry\nwork away. So the state is set deliberately and the dates are the plan."
-      },
-      "CycleUpdate": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "starts_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Starts At"
-          },
-          "ends_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ends At"
-          }
-        },
-        "type": "object",
-        "title": "CycleUpdate"
       },
       "DefaultViewUpdate": {
         "properties": {
@@ -8825,7 +8609,7 @@
             ],
             "title": "Project Id"
           },
-          "cycle_id": {
+          "sprint_id": {
             "anyOf": [
               {
                 "type": "integer"
@@ -8834,7 +8618,7 @@
                 "type": "null"
               }
             ],
-            "title": "Cycle Id"
+            "title": "Sprint Id"
           },
           "add_label_ids": {
             "items": {
@@ -8855,7 +8639,7 @@
         },
         "type": "object",
         "title": "IssueBulkChanges",
-        "description": "What to do to every issue in the batch. Omitted fields are left alone.\n\nThe same unset-versus-null distinction as `IssueUpdate`: an explicit null\nassignee, project or cycle clears it on every issue."
+        "description": "What to do to every issue in the batch. Omitted fields are left alone.\n\nThe same unset-versus-null distinction as `IssueUpdate`: an explicit null\nassignee, project or sprint clears it on every issue."
       },
       "IssueBulkDelete": {
         "properties": {
@@ -8988,7 +8772,7 @@
             ],
             "title": "Parent Id"
           },
-          "cycle_id": {
+          "sprint_id": {
             "anyOf": [
               {
                 "type": "integer"
@@ -8997,7 +8781,7 @@
                 "type": "null"
               }
             ],
-            "title": "Cycle Id"
+            "title": "Sprint Id"
           },
           "due_date": {
             "anyOf": [
@@ -9030,7 +8814,7 @@
         "type": "string",
         "enum": [
           "status",
-          "cycle",
+          "sprint",
           "estimate",
           "project",
           "assignee",
@@ -9117,7 +8901,7 @@
           "created_at"
         ],
         "title": "IssueEventRead",
-        "description": "One change to one field of an issue, as the Activity feed shows it (#81).\n\n`old_value`/`new_value` are what the history stores: a status *category*\n(see `_status_category` in history.py), a priority, an estimate, or a\nrow id. For the id fields -- assignee, cycle, project -- the labels carry\nthe name it has now, or null when that row has since been deleted."
+        "description": "One change to one field of an issue, as the Activity feed shows it (#81).\n\n`old_value`/`new_value` are what the history stores: a status *category*\n(see `_status_category` in history.py), a priority, an estimate, or a\nrow id. For the id fields -- assignee, sprint, project -- the labels carry\nthe name it has now, or null when that row has since been deleted."
       },
       "IssueGrouping": {
         "type": "string",
@@ -9366,7 +9150,7 @@
             "type": "integer",
             "title": "Blocked By Count"
           },
-          "cycle_id": {
+          "sprint_id": {
             "anyOf": [
               {
                 "type": "integer"
@@ -9375,7 +9159,7 @@
                 "type": "null"
               }
             ],
-            "title": "Cycle Id"
+            "title": "Sprint Id"
           },
           "due_date": {
             "anyOf": [
@@ -9750,7 +9534,7 @@
             ],
             "title": "Parent Id"
           },
-          "cycle_id": {
+          "sprint_id": {
             "anyOf": [
               {
                 "type": "integer"
@@ -9759,7 +9543,7 @@
                 "type": "null"
               }
             ],
-            "title": "Cycle Id"
+            "title": "Sprint Id"
           },
           "due_date": {
             "anyOf": [
@@ -10986,7 +10770,7 @@
           "cancelled"
         ],
         "title": "ProjectState",
-        "description": "Where a project -- which is what SoftTrack calls an epic -- is in its life.\n\nSet by hand, like CycleState and for the same reason: \"every issue is\ndone\" is evidence a project is finished, not a decision that it is. A\nproject can be complete with a stray follow-up still open, or have every\nissue closed and still be waiting on a launch."
+        "description": "Where a project -- which is what SoftTrack calls an epic -- is in its life.\n\nSet by hand, like SprintState and for the same reason: \"every issue is\ndone\" is evidence a project is finished, not a decision that it is. A\nproject can be complete with a stray follow-up still open, or have every\nissue closed and still be waiting on a launch."
       },
       "ProjectUpdate": {
         "properties": {
@@ -11308,7 +11092,7 @@
             ],
             "title": "Add Label Id"
           },
-          "set_cycle_id": {
+          "set_sprint_id": {
             "anyOf": [
               {
                 "type": "integer"
@@ -11317,11 +11101,11 @@
                 "type": "null"
               }
             ],
-            "title": "Set Cycle Id"
+            "title": "Set Sprint Id"
           },
-          "move_to_active_cycle": {
+          "move_to_active_sprint": {
             "type": "boolean",
-            "title": "Move To Active Cycle",
+            "title": "Move To Active Sprint",
             "default": false
           },
           "comment_body": {
@@ -11339,7 +11123,7 @@
         },
         "type": "object",
         "title": "RuleActions",
-        "description": "What a rule does to an issue it matched.\n\nEvery field is optional and this model asserts nothing about the\ncombination, because it is also the shape a *stored* rule is read back in\n-- and a stored rule can be left with no actions at all. Deleting a cycle\nstrips `set_cycle_id` out of the rules that filled it and switches them\noff, and a rule in that state has to survive being listed so that somebody\ncan see it and decide what it should say instead.\n\nThe two things a rule being *written* may not do -- nothing at all, and\nnaming both a cycle and the active one -- are checked on\nAutomationRuleCreate and AutomationRuleUpdate, which is where writing\nhappens."
+        "description": "What a rule does to an issue it matched.\n\nEvery field is optional and this model asserts nothing about the\ncombination, because it is also the shape a *stored* rule is read back in\n-- and a stored rule can be left with no actions at all. Deleting a sprint\nstrips `set_sprint_id` out of the rules that filled it and switches them\noff, and a rule in that state has to survive being listed so that somebody\ncan see it and decide what it should say instead.\n\nThe two things a rule being *written* may not do -- nothing at all, and\nnaming both a sprint and the active one -- are checked on\nAutomationRuleCreate and AutomationRuleUpdate, which is where writing\nhappens."
       },
       "RuleConditions": {
         "properties": {
@@ -11764,6 +11548,222 @@
         ],
         "title": "SortDirection"
       },
+      "SprintCompletion": {
+        "properties": {
+          "sprint": {
+            "$ref": "#/components/schemas/SprintRead"
+          },
+          "carried_over": {
+            "type": "integer",
+            "title": "Carried Over"
+          },
+          "carried_into_sprint_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Carried Into Sprint Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sprint",
+          "carried_over"
+        ],
+        "title": "SprintCompletion",
+        "description": "The result of completing a sprint."
+      },
+      "SprintCreate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starts At"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ends At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "starts_at",
+          "ends_at"
+        ],
+        "title": "SprintCreate"
+      },
+      "SprintProgress": {
+        "properties": {
+          "issues_total": {
+            "type": "integer",
+            "title": "Issues Total"
+          },
+          "issues_completed": {
+            "type": "integer",
+            "title": "Issues Completed"
+          },
+          "points_total": {
+            "type": "integer",
+            "title": "Points Total"
+          },
+          "points_completed": {
+            "type": "integer",
+            "title": "Points Completed"
+          },
+          "issues_unestimated": {
+            "type": "integer",
+            "title": "Issues Unestimated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "issues_total",
+          "issues_completed",
+          "points_total",
+          "points_completed",
+          "issues_unestimated"
+        ],
+        "title": "SprintProgress",
+        "description": "How much of the sprint's work is done.\n\nIssues and points are reported separately because they disagree, and the\ndisagreement is the interesting part: eight of ten issues done with two\npoints of thirty burned means the hard work is all still ahead."
+      },
+      "SprintRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starts At"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ends At"
+          },
+          "state": {
+            "$ref": "#/components/schemas/SprintState"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/SprintProgress"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "number",
+          "display_name",
+          "starts_at",
+          "ends_at",
+          "state",
+          "progress"
+        ],
+        "title": "SprintRead"
+      },
+      "SprintState": {
+        "type": "string",
+        "enum": [
+          "upcoming",
+          "active",
+          "completed"
+        ],
+        "title": "SprintState",
+        "description": "Where a sprint is in its life.\n\nDerived from dates would be simpler, but a team that forgets to start a\nsprint on Monday should not have Monday counted against its burndown, and a\nsprint that runs a day long should not silently complete itself and carry\nwork away. So the state is set deliberately and the dates are the plan."
+      },
+      "SprintUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "starts_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starts At"
+          },
+          "ends_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ends At"
+          }
+        },
+        "type": "object",
+        "title": "SprintUpdate"
+      },
       "StatusCategory": {
         "type": "string",
         "enum": [
@@ -11774,7 +11774,7 @@
           "cancelled"
         ],
         "title": "StatusCategory",
-        "description": "What a status *means*, as opposed to what a team calls it.\n\nFixed on purpose, and the reason per-team statuses are safe to allow at\nall. Everything that has to reason about work -- burndown, velocity, \"is\nthis cycle finished\", \"3 of 5 sub-issues done\", whether a blocker still\nblocks -- asks the category, never the name. A team can add \"Blocked\" or\n\"QA\" without any of that having an opinion about it.\n\nUnconstrained workflow states are how Jira became Jira. These five are the\nline."
+        "description": "What a status *means*, as opposed to what a team calls it.\n\nFixed on purpose, and the reason per-team statuses are safe to allow at\nall. Everything that has to reason about work -- burndown, velocity, \"is\nthis sprint finished\", \"3 of 5 sub-issues done\", whether a blocker still\nblocks -- asks the category, never the name. A team can add \"Blocked\" or\n\"QA\" without any of that having an opinion about it.\n\nUnconstrained workflow states are how Jira became Jira. These five are the\nline."
       },
       "StatusChange": {
         "properties": {
@@ -12088,7 +12088,7 @@
           "guest"
         ],
         "title": "TeamRole",
-        "description": "What someone may do inside one team.\n\nOrdered from most to least power. `guest` (#104) sees everything a member\nsees -- board, list, issues, comments, cycles, reports, search -- and\nchanges nothing: no issues, no comments, no settings. The one thing a guest\ndoes write is their own relationship to the team: watching an issue,\nchoosing their own default view, and leaving."
+        "description": "What someone may do inside one team.\n\nOrdered from most to least power. `guest` (#104) sees everything a member\nsees -- board, list, issues, comments, sprints, reports, search -- and\nchanges nothing: no issues, no comments, no settings. The one thing a guest\ndoes write is their own relationship to the team: watching an issue,\nchoosing their own default view, and leaving."
       },
       "TeamUpdate": {
         "properties": {
@@ -12190,7 +12190,7 @@
             "type": "array",
             "title": "Labels Dropped"
           },
-          "cycle_cleared": {
+          "sprint_cleared": {
             "anyOf": [
               {
                 "type": "string"
@@ -12199,7 +12199,7 @@
                 "type": "null"
               }
             ],
-            "title": "Cycle Cleared"
+            "title": "Sprint Cleared"
           },
           "project_cleared": {
             "anyOf": [
@@ -12579,12 +12579,12 @@
       },
       "Velocity": {
         "properties": {
-          "cycles": {
+          "sprints": {
             "items": {
-              "$ref": "#/components/schemas/VelocityCycle"
+              "$ref": "#/components/schemas/VelocitySprint"
             },
             "type": "array",
-            "title": "Cycles"
+            "title": "Sprints"
           },
           "average_points": {
             "anyOf": [
@@ -12600,19 +12600,19 @@
         },
         "type": "object",
         "required": [
-          "cycles"
+          "sprints"
         ],
         "title": "Velocity"
       },
-      "VelocityCycle": {
+      "VelocitySprint": {
         "properties": {
-          "cycle_id": {
+          "sprint_id": {
             "type": "integer",
-            "title": "Cycle Id"
+            "title": "Sprint Id"
           },
-          "cycle_name": {
+          "sprint_name": {
             "type": "string",
-            "title": "Cycle Name"
+            "title": "Sprint Name"
           },
           "completed_at": {
             "anyOf": [
@@ -12641,13 +12641,13 @@
         },
         "type": "object",
         "required": [
-          "cycle_id",
-          "cycle_name",
+          "sprint_id",
+          "sprint_name",
           "points_committed",
           "points_completed",
           "issues_completed"
         ],
-        "title": "VelocityCycle"
+        "title": "VelocitySprint"
       },
       "ViewFilters": {
         "properties": {
@@ -12710,7 +12710,7 @@
             ],
             "title": "Project Id"
           },
-          "cycle_id": {
+          "sprint_id": {
             "anyOf": [
               {
                 "type": "integer"
@@ -12719,7 +12719,7 @@
                 "type": "null"
               }
             ],
-            "title": "Cycle Id"
+            "title": "Sprint Id"
           },
           "due": {
             "anyOf": [
@@ -12846,8 +12846,8 @@
           "issue.updated",
           "issue.status_changed",
           "comment.created",
-          "cycle.started",
-          "cycle.completed",
+          "sprint.started",
+          "sprint.completed",
           "ping"
         ],
         "title": "WebhookEvent",
@@ -13035,7 +13035,7 @@
           "issues_not_found",
           "parent_not_found",
           "project_not_found",
-          "cycle_not_found",
+          "sprint_not_found",
           "status_not_found",
           "view_not_found",
           "rule_not_found",
@@ -13068,9 +13068,9 @@
           "team_has_no_statuses",
           "cannot_deactivate_self",
           "cannot_demote_self",
-          "cycle_completed",
-          "cycle_already_active",
-          "cycle_dates_invalid",
+          "sprint_completed",
+          "sprint_already_active",
+          "sprint_dates_invalid",
           "link_to_self",
           "parent_is_self",
           "parent_other_team",

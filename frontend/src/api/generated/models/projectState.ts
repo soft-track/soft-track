@@ -9,7 +9,7 @@
 /**
  * Where a project -- which is what SoftTrack calls an epic -- is in its life.
  *
- * Set by hand, like CycleState and for the same reason: "every issue is
+ * Set by hand, like SprintState and for the same reason: "every issue is
  * done" is evidence a project is finished, not a decision that it is. A
  * project can be complete with a stray follow-up still open, or have every
  * issue closed and still be waiting on a launch.

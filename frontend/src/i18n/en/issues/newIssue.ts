@@ -12,9 +12,9 @@ export const newIssue = {
   priority: 'Priority',
   estimate: 'Estimate',
   noEstimate: 'No estimate',
-  cycle: 'Cycle',
-  // The cycle picker's empty choice: not in any cycle.
-  noCycle: 'Backlog',
+  sprint: 'Sprint',
+  // The sprint picker's empty choice: not in any sprint.
+  noSprint: 'Backlog',
   dueDate: 'Due date',
   project: 'Epic',
   noProject: 'No epic',

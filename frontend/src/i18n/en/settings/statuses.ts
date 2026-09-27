@@ -3,7 +3,7 @@ export const statuses = {
   title: 'Statuses',
   intro: 'The columns on {{team}}’s board, in order.',
   categories:
-    'Every status belongs to one of five fixed <strong>categories</strong>. The category is what the tracker reads — whether a cycle is finished, whether a blocker still blocks, what counts as delivered on a burndown — so you can call a column anything and none of that has to learn its name. The five cannot be added to; that is the line between a workflow and a workflow engine.',
+    'Every status belongs to one of five fixed <strong>categories</strong>. The category is what the tracker reads — whether a sprint is finished, whether a blocker still blocks, what counts as delivered on a burndown — so you can call a column anything and none of that has to learn its name. The five cannot be added to; that is the line between a workflow and a workflow engine.',
   nameOf: 'Name of {{name}}',
   categoryOf: 'Category of {{name}}',
   moveEarlier: 'Move {{name}} earlier',

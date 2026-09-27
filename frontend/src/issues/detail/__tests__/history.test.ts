@@ -70,11 +70,11 @@ describe('eventText', () => {
     )
   })
 
-  it('says where a cycle or project move went, and names deleted ones as such', () => {
-    expect(eventText(event('cycle', null, '7', { new_label: 'Sprint 7' }))).toBe(
+  it('says where a sprint or project move went, and names deleted ones as such', () => {
+    expect(eventText(event('sprint', null, '7', { new_label: 'Sprint 7' }))).toBe(
       'Automation added this to Sprint 7',
     )
-    expect(eventText(event('cycle', '7', null, { old_label: 'Sprint 7' }))).toBe(
+    expect(eventText(event('sprint', '7', null, { old_label: 'Sprint 7' }))).toBe(
       'Automation moved this out of Sprint 7, back to the backlog',
     )
     expect(eventText(event('project', '5', null, { old_label: null }))).toBe(

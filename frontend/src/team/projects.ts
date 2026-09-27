@@ -128,7 +128,7 @@ export function groupByStatus(
  *
  * Progress moves with any write to an issue -- its status, its project, or
  * the issue going away -- so every such write calls this, the same way they
- * already refresh the cycle and estimate rollups.
+ * already refresh the sprint and estimate rollups.
  */
 export function invalidateProjects(queryClient: QueryClient, teamId: number) {
   queryClient.invalidateQueries({ queryKey: [`/teams/${teamId}/projects`] })

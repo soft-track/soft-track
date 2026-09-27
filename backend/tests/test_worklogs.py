@@ -201,9 +201,9 @@ def test_time_travels_with_an_issue_to_another_team(client, team, issue):
 # --- reports -----------------------------------------------------------------
 
 
-def make_cycle(client, team, start, days=14):
+def make_sprint(client, team, start, days=14):
     response = client.post(
-        f"/teams/{team['team']['id']}/cycles",
+        f"/teams/{team['team']['id']}/sprints",
         json={
             "name": "Sprint",
             "starts_at": start.isoformat(),
@@ -215,12 +215,12 @@ def make_cycle(client, team, start, days=14):
     return response.json()
 
 
-def test_a_cycle_counts_time_logged_during_it_on_its_work(client, team, maya):
+def test_a_sprint_counts_time_logged_during_it_on_its_work(client, team, maya):
     team_id = team["team"]["id"]
     start = date.today() - timedelta(days=5)
-    cycle = make_cycle(client, team, start)
-    inside = make_issue(client, team, team_id, cycle_id=cycle["id"])
-    outside = make_issue(client, team, team_id, title="Not in the cycle")
+    sprint = make_sprint(client, team, start)
+    inside = make_issue(client, team, team_id, sprint_id=sprint["id"])
+    outside = make_issue(client, team, team_id, title="Not in the sprint")
 
     log(client, team, inside, minutes=60, worked_on=date.today().isoformat())
     log(
@@ -230,7 +230,7 @@ def test_a_cycle_counts_time_logged_during_it_on_its_work(client, team, maya):
         minutes=30,
         worked_on=(start + timedelta(days=1)).isoformat(),
     )
-    # Before the cycle began: not this cycle's time.
+    # Before the sprint began: not this sprint's time.
     log(
         client,
         maya,
@@ -241,7 +241,7 @@ def test_a_cycle_counts_time_logged_during_it_on_its_work(client, team, maya):
     log(client, team, outside, minutes=240)
 
     report = client.get(
-        f"/cycles/{cycle['id']}/time-spent", headers=team["headers"]
+        f"/sprints/{sprint['id']}/time-spent", headers=team["headers"]
     ).json()
     assert report["total_minutes"] == 90
     assert [(p["user"]["full_name"], p["minutes"]) for p in report["by_person"]] == [
@@ -250,20 +250,20 @@ def test_a_cycle_counts_time_logged_during_it_on_its_work(client, team, maya):
     ]
 
 
-def test_carrying_an_issue_over_keeps_its_hours_with_the_cycle_they_were_spent_in(
+def test_carrying_an_issue_over_keeps_its_hours_with_the_sprint_they_were_spent_in(
     client, team
 ):
     team_id = team["team"]["id"]
-    cycle = make_cycle(client, team, date.today() - timedelta(days=3))
-    issue = make_issue(client, team, team_id, cycle_id=cycle["id"])
+    sprint = make_sprint(client, team, date.today() - timedelta(days=3))
+    issue = make_issue(client, team, team_id, sprint_id=sprint["id"])
     log(client, team, issue, minutes=120)
 
-    # Moved out of the cycle afterwards -- the time was still spent in it.
+    # Moved out of the sprint afterwards -- the time was still spent in it.
     client.patch(
-        f"/issues/{issue['id']}", json={"cycle_id": None}, headers=team["headers"]
+        f"/issues/{issue['id']}", json={"sprint_id": None}, headers=team["headers"]
     )
     report = client.get(
-        f"/cycles/{cycle['id']}/time-spent", headers=team["headers"]
+        f"/sprints/{sprint['id']}/time-spent", headers=team["headers"]
     ).json()
     assert report["total_minutes"] == 120
 

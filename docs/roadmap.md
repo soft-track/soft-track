@@ -5,8 +5,8 @@ latency, and configuration sprawl. SoftTrack aims to cover that fraction well
 and skip the rest deliberately.
 
 **Next up — what a team switching from Jira actually needs:** a Jira importer,
-markdown descriptions, sub-tickets, ticket links (blocks / relates-to), cycles
-(sprints), estimates, full-text search, and keyboard-first navigation.
+markdown descriptions, sub-tickets, ticket links (blocks / relates-to), sprints,
+estimates, full-text search, and keyboard-first navigation.
 
 **After that:** burndown/velocity reports, automation rules, GitHub/GitLab
 branch and PR linking. Sending invitations by email (SMTP) is done — see

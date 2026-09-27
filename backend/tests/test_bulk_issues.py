@@ -148,24 +148,24 @@ def test_labels_are_added_and_removed_not_replaced(client, board):
     assert names == [["Chore"], ["Chore"]]
 
 
-def test_setting_project_and_cycle(client, board):
+def test_setting_project_and_sprint(client, board):
     project = client.post(
         f"/teams/{board['team_id']}/projects",
         json={"name": "Launch"},
         headers=board["headers"],
     ).json()
-    cycle = client.post(
-        f"/teams/{board['team_id']}/cycles",
+    sprint = client.post(
+        f"/teams/{board['team_id']}/sprints",
         json={"starts_at": "2026-01-01T00:00:00Z", "ends_at": "2026-01-15T00:00:00Z"},
         headers=board["headers"],
     ).json()
 
     response = bulk_update(
-        client, board, board["ids"], project_id=project["id"], cycle_id=cycle["id"]
+        client, board, board["ids"], project_id=project["id"], sprint_id=sprint["id"]
     )
     assert response.status_code == 200, response.text
     assert {row["project_id"] for row in response.json()} == {project["id"]}
-    assert {row["cycle_id"] for row in response.json()} == {cycle["id"]}
+    assert {row["sprint_id"] for row in response.json()} == {sprint["id"]}
 
 
 def test_each_issue_gets_its_own_history(client, board, session):
@@ -226,8 +226,8 @@ def test_a_status_from_another_team_is_rejected(client, board, auth):
     assert response.status_code == 400
 
 
-@pytest.mark.parametrize("field", ["project", "cycle", "label"])
-def test_a_project_cycle_or_label_from_another_team_is_rejected(
+@pytest.mark.parametrize("field", ["project", "sprint", "label"])
+def test_a_project_sprint_or_label_from_another_team_is_rejected(
     client, board, auth, field
 ):
     theirs = other_team(client, auth)
@@ -237,16 +237,16 @@ def test_a_project_cycle_or_label_from_another_team_is_rejected(
             f"{base}/projects", json={"name": "Theirs"}, headers=theirs["headers"]
         ).json()
         changes = {"project_id": row["id"]}
-    elif field == "cycle":
+    elif field == "sprint":
         row = client.post(
-            f"{base}/cycles",
+            f"{base}/sprints",
             json={
                 "starts_at": "2026-01-01T00:00:00Z",
                 "ends_at": "2026-01-15T00:00:00Z",
             },
             headers=theirs["headers"],
         ).json()
-        changes = {"cycle_id": row["id"]}
+        changes = {"sprint_id": row["id"]}
     else:
         row = client.post(
             f"{base}/labels", json={"name": "Theirs"}, headers=theirs["headers"]

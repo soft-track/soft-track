@@ -1,7 +1,7 @@
 """A team's workflow: the statuses on its board, and what they mean.
 
 The one rule everything else depends on: **nothing outside this module asks a
-status for its name.** Burndown, velocity, cycle completion, sub-issue
+status for its name.** Burndown, velocity, sprint completion, sub-issue
 progress and "does this blocker still block" all ask for a *category*, which
 is a fixed five-value enum. That is what makes letting a team invent "Blocked"
 or "QA" safe, and it is why `in_category` below exists rather than a list of

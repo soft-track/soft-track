@@ -16,7 +16,7 @@ from typing import Iterable, Optional
 from sqlalchemy import or_
 from sqlmodel import Session, select
 
-from lib_softtrack.cycles import get_cycle_or_404
+from lib_softtrack.sprints import get_sprint_or_404
 from lib_softtrack.models.worklogs import TimeSpent
 from lib_softtrack.models.reports import (
     Burndown,
@@ -29,13 +29,13 @@ from lib_softtrack.models.reports import (
     ProjectBurnupPoint,
     ScopeChange,
     Velocity,
-    VelocityCycle,
+    VelocitySprint,
 )
 from lib_softtrack.projects import get_project_or_404
 from lib_softtrack.statuses import in_category
 from lib_softtrack.tables import (
-    Cycle,
-    CycleState,
+    Sprint,
+    SprintState,
     Issue,
     IssueEvent,
     IssueEventField,
@@ -52,7 +52,7 @@ from lib_softtrack.teams import get_team_or_404, require_team_member
 #: is what keeps a chart of the past meaningful after a team renames a column,
 #: adds one, or deletes one and moves the work.
 RESOLVED = (StatusCategory.done, StatusCategory.cancelled)
-#: Only `done` counts as delivered. Cancelled work left the cycle without
+#: Only `done` counts as delivered. Cancelled work left the sprint without
 #: being finished, so counting it as completed would flatter every chart.
 DELIVERED = StatusCategory.done
 
@@ -121,7 +121,7 @@ def _timelines(
 
     return (
         of(IssueEventField.status),
-        of(IssueEventField.cycle),
+        of(IssueEventField.sprint),
         of(IssueEventField.estimate),
     )
 
@@ -129,34 +129,36 @@ def _timelines(
 # --- burndown -----------------------------------------------------------
 
 
-def burndown(session: Session, current_user: User, cycle_id: int) -> Burndown:
-    cycle = get_cycle_or_404(session, cycle_id)
-    require_team_member(cycle.team_id, current_user, session)
+def burndown(session: Session, current_user: User, sprint_id: int) -> Burndown:
+    sprint = get_sprint_or_404(session, sprint_id)
+    require_team_member(sprint.team_id, current_user, session)
 
-    # Every issue that was ever in this cycle, not just the ones in it now --
-    # work that was pulled out mid-cycle still shaped the line while it was in.
+    # Every issue that was ever in this sprint, not just the ones in it now --
+    # work that was pulled out mid-sprint still shaped the line while it was in.
     ever_in = {
         event.issue_id
         for event in session.exec(
             select(IssueEvent).where(
-                IssueEvent.field == IssueEventField.cycle,
-                IssueEvent.new_value == str(cycle_id),
+                IssueEvent.field == IssueEventField.sprint,
+                IssueEvent.new_value == str(sprint_id),
             )
         ).all()
     }
     ever_in |= {
         issue.id
-        for issue in session.exec(select(Issue).where(Issue.cycle_id == cycle_id)).all()
+        for issue in session.exec(
+            select(Issue).where(Issue.sprint_id == sprint_id)
+        ).all()
     }
 
-    status_at, cycle_at, estimate_at = _timelines(session, ever_in)
+    status_at, sprint_at, estimate_at = _timelines(session, ever_in)
 
-    start = _as_utc(cycle.starts_at).date()
-    end = _as_utc(cycle.ends_at).date()
+    start = _as_utc(sprint.starts_at).date()
+    end = _as_utc(sprint.ends_at).date()
     today = datetime.now(timezone.utc).date()
     # Never chart the future: a line running flat to the end of the sprint
     # reads as "nothing is happening" rather than "this has not happened yet".
-    last = min(end, today) if cycle.state != CycleState.completed else end
+    last = min(end, today) if sprint.state != SprintState.completed else end
 
     points: list[BurndownPoint] = []
     scope_changes: list[ScopeChange] = []
@@ -166,13 +168,13 @@ def burndown(session: Session, current_user: User, cycle_id: int) -> Burndown:
 
     for offset, day in enumerate(_days_between(start, max(last, start))):
         moment = _end_of(day)
-        in_cycle: set[int] = set()
+        in_sprint: set[int] = set()
         total = remaining = completed = issues_remaining = 0
 
         for issue_id in ever_in:
-            if cycle_at.value_at(issue_id, moment) != str(cycle_id):
+            if sprint_at.value_at(issue_id, moment) != str(sprint_id):
                 continue
-            in_cycle.add(issue_id)
+            in_sprint.add(issue_id)
 
             raw_estimate = estimate_at.value_at(issue_id, moment)
             estimate = int(raw_estimate) if raw_estimate else 0
@@ -205,7 +207,7 @@ def burndown(session: Session, current_user: User, cycle_id: int) -> Burndown:
 
         if previous is not None:
             before_ids, before_points = previous
-            added, removed = in_cycle - before_ids, before_ids - in_cycle
+            added, removed = in_sprint - before_ids, before_ids - in_sprint
             if added or removed:
                 scope_changes.append(
                     ScopeChange(
@@ -216,11 +218,11 @@ def burndown(session: Session, current_user: User, cycle_id: int) -> Burndown:
                         points_removed=max(before_points - total, 0),
                     )
                 )
-        previous = (in_cycle, total)
+        previous = (in_sprint, total)
 
     return Burndown(
-        cycle_id=cycle.id,
-        cycle_name=cycle.name or f"Cycle {cycle.number}",
+        sprint_id=sprint.id,
+        sprint_name=sprint.name or f"Sprint {sprint.number}",
         starts_at=start,
         ends_at=end,
         points=points,
@@ -333,47 +335,48 @@ def velocity(
     get_team_or_404(team_id, session)
     require_team_member(team_id, current_user, session)
 
-    completed_cycles = session.exec(
-        select(Cycle)
-        .where(Cycle.team_id == team_id, Cycle.state == CycleState.completed)
-        .order_by(Cycle.number.desc())
+    completed_sprints = session.exec(
+        select(Sprint)
+        .where(Sprint.team_id == team_id, Sprint.state == SprintState.completed)
+        .order_by(Sprint.number.desc())
         .limit(limit)
     ).all()
-    completed_cycles = list(reversed(completed_cycles))
+    completed_sprints = list(reversed(completed_sprints))
 
-    rows: list[VelocityCycle] = []
-    for cycle in completed_cycles:
-        issues = session.exec(select(Issue).where(Issue.cycle_id == cycle.id)).all()
+    rows: list[VelocitySprint] = []
+    for sprint in completed_sprints:
+        issues = session.exec(select(Issue).where(Issue.sprint_id == sprint.id)).all()
         delivered_ids = {
             issue_id
             for issue_id in session.exec(
                 select(Issue.id).where(
-                    Issue.cycle_id == cycle.id, in_category(DELIVERED)
+                    Issue.sprint_id == sprint.id, in_category(DELIVERED)
                 )
             ).all()
         }
         delivered = [issue for issue in issues if issue.id in delivered_ids]
 
-        # Committed is the scope at the moment the cycle started, not what it
+        # Committed is the scope at the moment the sprint started, not what it
         # ended with. A team that finished everything it added late did not
         # commit to it.
-        _, cycle_at, estimate_at = _timelines(
-            session, {issue.id for issue in issues} | _ever_in_cycle(session, cycle.id)
+        _, sprint_at, estimate_at = _timelines(
+            session,
+            {issue.id for issue in issues} | _ever_in_sprint(session, sprint.id),
         )
-        opened = _end_of(_as_utc(cycle.starts_at).date())
+        opened = _end_of(_as_utc(sprint.starts_at).date())
         committed = 0
-        for issue_id in cycle_at.issue_ids:
-            if cycle_at.value_at(issue_id, opened) != str(cycle.id):
+        for issue_id in sprint_at.issue_ids:
+            if sprint_at.value_at(issue_id, opened) != str(sprint.id):
                 continue
             raw = estimate_at.value_at(issue_id, opened)
             committed += int(raw) if raw else 0
 
         rows.append(
-            VelocityCycle(
-                cycle_id=cycle.id,
-                cycle_name=cycle.name or f"Cycle {cycle.number}",
+            VelocitySprint(
+                sprint_id=sprint.id,
+                sprint_name=sprint.name or f"Sprint {sprint.number}",
                 completed_at=(
-                    _as_utc(cycle.completed_at).date() if cycle.completed_at else None
+                    _as_utc(sprint.completed_at).date() if sprint.completed_at else None
                 ),
                 points_committed=committed,
                 points_completed=sum(issue.estimate or 0 for issue in delivered),
@@ -382,7 +385,7 @@ def velocity(
         )
 
     return Velocity(
-        cycles=rows,
+        sprints=rows,
         # None rather than 0 for an empty history: zero reads as "this team
         # delivers nothing", which is a different and much worse claim.
         average_points=(
@@ -393,13 +396,13 @@ def velocity(
     )
 
 
-def _ever_in_cycle(session: Session, cycle_id: int) -> set[int]:
+def _ever_in_sprint(session: Session, sprint_id: int) -> set[int]:
     return {
         event.issue_id
         for event in session.exec(
             select(IssueEvent).where(
-                IssueEvent.field == IssueEventField.cycle,
-                IssueEvent.new_value == str(cycle_id),
+                IssueEvent.field == IssueEventField.sprint,
+                IssueEvent.new_value == str(sprint_id),
             )
         ).all()
     }
@@ -503,20 +506,22 @@ def created_vs_resolved(
 # --- time spent (#102) ---------------------------------------------------
 
 
-def cycle_time_spent(session: Session, current_user: User, cycle_id: int) -> TimeSpent:
-    """Time logged during the cycle on the cycle's work, by person.
+def sprint_time_spent(
+    session: Session, current_user: User, sprint_id: int
+) -> TimeSpent:
+    """Time logged during the sprint on the sprint's work, by person.
 
-    "During" is the cycle's dates and "the cycle's work" is any issue that was
+    "During" is the sprint's dates and "the sprint's work" is any issue that was
     ever in it -- so time spent before an issue was carried over to the next
-    cycle stays with this one, and time spent on it afterwards goes with it.
-    Taking the issues currently in the cycle instead would move a finished
+    sprint stays with this one, and time spent on it afterwards goes with it.
+    Taking the issues currently in the sprint instead would move a finished
     sprint's hours every time somebody tidied the backlog.
     """
     from lib_softtrack.worklogs import rollup
 
-    cycle = get_cycle_or_404(session, cycle_id)
-    require_team_member(cycle.team_id, current_user, session)
-    issue_ids = _ever_in_cycle(session, cycle_id)
+    sprint = get_sprint_or_404(session, sprint_id)
+    require_team_member(sprint.team_id, current_user, session)
+    issue_ids = _ever_in_sprint(session, sprint_id)
     if not issue_ids:
         return TimeSpent(total_minutes=0, by_person=[])
     rows = session.exec(
@@ -524,8 +529,8 @@ def cycle_time_spent(session: Session, current_user: User, cycle_id: int) -> Tim
         .join(User, User.id == Worklog.user_id)
         .where(
             Worklog.issue_id.in_(issue_ids),
-            Worklog.worked_on >= cycle.starts_at.date(),
-            Worklog.worked_on <= cycle.ends_at.date(),
+            Worklog.worked_on >= sprint.starts_at.date(),
+            Worklog.worked_on <= sprint.ends_at.date(),
         )
     ).all()
     return rollup(rows)

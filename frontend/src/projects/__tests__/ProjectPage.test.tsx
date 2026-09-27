@@ -87,7 +87,7 @@ const TEAM: TeamContextValue = {
   projects: [],
   labels: [],
   members: [ADA],
-  cycles: [],
+  sprints: [],
   statuses: [TODO, DOING, DONE],
 }
 

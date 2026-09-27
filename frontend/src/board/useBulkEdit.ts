@@ -32,7 +32,7 @@ export function useBulkEdit(team: TeamRead | undefined) {
     // Prefixes: every filtered page of the list, and every open issue.
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/issues`] })
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
-    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/cycles`] })
+    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/sprints`] })
     invalidateProjects(queryClient, team.id)
     queryClient.invalidateQueries({
       predicate: (query) =>

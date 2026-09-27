@@ -25,7 +25,7 @@ cd soft-track && docker compose up --build
 
 Then open <http://localhost:5173> and sign in as `demo@softtrack.dev` /
 `password123`. The seeded instance starts smaller than the screenshots in this
-README, which show a team several cycles in.
+README, which show a team several sprints in.
 
 ## Contents
 
@@ -36,7 +36,7 @@ README, which show a team several cycles in.
   [migrations](#database-migrations) · [the checks](#running-the-checks)
 - How it works:
   [statuses](#statuses-and-categories) ·
-  [cycles and estimates](#cycles-and-estimates) ·
+  [sprints and estimates](#sprints-and-estimates) ·
   [reports](#reports) ·
   [sub-tickets and links](#sub-issues-and-links) ·
   [markdown and mentions](#markdown-mentions-and-task-lists) ·
@@ -65,7 +65,7 @@ for there.
 - [Deployment and operations](docs/deployment.md)
 - [Roadmap](docs/roadmap.md)
 - [Statuses and categories](docs/features/statuses.md)
-- [Cycles and estimates](docs/features/cycles.md)
+- [Sprints and estimates](docs/features/sprints.md)
 - [Reports](docs/features/reports.md)
 - [Time tracking](docs/features/time-tracking.md)
 - [Opening a ticket: the peek, the panel and the page](docs/features/issue-views.md)

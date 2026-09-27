@@ -19,7 +19,7 @@ const some: BoardFilters = {
   assignee: 7,
   labelId: 3,
   projectId: 2,
-  cycleId: 5,
+  sprintId: 5,
   due: 'overdue',
   type: 'bug',
 }
@@ -43,13 +43,23 @@ describe('the URL round trip', () => {
   it('ignores a filter it cannot parse rather than passing it on', () => {
     // A truncated or hand-edited link should show an unfiltered board, not
     // send NaN to the API and get a 422.
-    const params = new URLSearchParams('status=abc&label=abc&project=-1&cycle=')
+    const params = new URLSearchParams('status=abc&label=abc&project=-1&sprint=')
     expect(fromSearchParams(params)).toEqual(NO_FILTERS)
   })
 
   it('writes only the filters that are set', () => {
     const params = toSearchParams({ ...NO_FILTERS, priority: 'high' })
     expect(params.toString()).toBe('priority=high')
+  })
+
+  it('still reads a link sent while sprints were called cycles (#214)', () => {
+    expect(fromSearchParams(new URLSearchParams('cycle=5'))).toEqual({
+      ...NO_FILTERS,
+      sprintId: 5,
+    })
+    // Written the new way from then on, and the new key wins over the old.
+    expect(toSearchParams({ ...NO_FILTERS, sprintId: 5 }).toString()).toBe('sprint=5')
+    expect(fromSearchParams(new URLSearchParams('sprint=6&cycle=5')).sprintId).toBe(6)
   })
 })
 
@@ -62,7 +72,7 @@ describe('toQueryParams', () => {
       unassigned: undefined,
       label_id: 3,
       project_id: 2,
-      cycle_id: 5,
+      sprint_id: 5,
       due: 'overdue',
       today: '2026-09-23',
       type: 'bug',
@@ -115,7 +125,7 @@ describe('the saved-view round trip', () => {
 describe('sameFilters', () => {
   it('is what lights up the saved view a link happens to match', () => {
     expect(sameFilters(some, { ...some })).toBe(true)
-    expect(sameFilters(some, { ...some, cycleId: 6 })).toBe(false)
+    expect(sameFilters(some, { ...some, sprintId: 6 })).toBe(false)
   })
 
   it('tells "unassigned" apart from a person', () => {

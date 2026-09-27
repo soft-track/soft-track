@@ -25,7 +25,7 @@ export interface ViewFilters {
   unassigned?: boolean;
   label_id?: number | null;
   project_id?: number | null;
-  cycle_id?: number | null;
+  sprint_id?: number | null;
   due?: DueFilter | null;
   type?: IssueType | null;
 }

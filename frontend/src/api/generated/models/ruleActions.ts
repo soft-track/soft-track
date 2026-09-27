@@ -13,13 +13,13 @@ import type { IssueType } from './issueType';
  *
  * Every field is optional and this model asserts nothing about the
  * combination, because it is also the shape a *stored* rule is read back in
- * -- and a stored rule can be left with no actions at all. Deleting a cycle
- * strips `set_cycle_id` out of the rules that filled it and switches them
+ * -- and a stored rule can be left with no actions at all. Deleting a sprint
+ * strips `set_sprint_id` out of the rules that filled it and switches them
  * off, and a rule in that state has to survive being listed so that somebody
  * can see it and decide what it should say instead.
  *
  * The two things a rule being *written* may not do -- nothing at all, and
- * naming both a cycle and the active one -- are checked on
+ * naming both a sprint and the active one -- are checked on
  * AutomationRuleCreate and AutomationRuleUpdate, which is where writing
  * happens.
  */
@@ -29,7 +29,7 @@ export interface RuleActions {
   set_type?: IssueType | null;
   set_assignee_id?: number | null;
   add_label_id?: number | null;
-  set_cycle_id?: number | null;
-  move_to_active_cycle?: boolean;
+  set_sprint_id?: number | null;
+  move_to_active_sprint?: boolean;
   comment_body?: string | null;
 }

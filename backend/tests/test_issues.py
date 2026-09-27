@@ -196,7 +196,7 @@ def test_deleting_a_bare_issue(client, issue, team):
 def export_board(client, team):
     """A team with something in every column an export has.
 
-    A project, a cycle, two labels, an assignee, an estimate and a parent, so
+    A project, a sprint, two labels, an assignee, an estimate and a parent, so
     the one row this returns exercises every mapping rather than the handful
     a bare issue happens to fill in.
     """
@@ -208,10 +208,10 @@ def export_board(client, team):
         return response.json()
 
     project = post(f"/teams/{team_id}/projects", {"name": "Platform"})
-    # Unnamed on purpose: a cycle without a name is shown by its number, and
+    # Unnamed on purpose: a sprint without a name is shown by its number, and
     # that substitution is part of what the export has to get right.
-    cycle = post(
-        f"/teams/{team_id}/cycles",
+    sprint = post(
+        f"/teams/{team_id}/sprints",
         {"starts_at": "2026-01-05T09:00:00", "ends_at": "2026-01-19T09:00:00"},
     )
     bug = post(f"/teams/{team_id}/labels", {"name": "Bug"})
@@ -224,7 +224,7 @@ def export_board(client, team):
             "title": 'Title, with comma "quote" and\na newline',
             "description": 'Desc with "quote", comma, and\nnew line',
             "project_id": project["id"],
-            "cycle_id": cycle["id"],
+            "sprint_id": sprint["id"],
             "label_ids": [bug["id"], chore["id"]],
             "assignee_id": team["user"]["id"],
             "estimate": 5,
@@ -237,7 +237,7 @@ def export_board(client, team):
         **team,
         "team_id": team_id,
         "project": project,
-        "cycle": cycle,
+        "sprint": sprint,
         "parent": parent,
         "child": child,
     }
@@ -268,7 +268,7 @@ def test_the_export_header_names_every_column(client, export_board):
         "assignee",
         "labels",
         "project",
-        "cycle",
+        "sprint",
         "estimate",
         "creator",
         "created",
@@ -297,7 +297,7 @@ def test_every_column_carries_its_value(client, export_board, session):
         export_board["user"]["username"],
         "Bug;Chore",
         "Platform",
-        "Cycle 1",
+        "Sprint 1",
         "5",
         export_board["user"]["username"],
         stored.created_at.strftime("%Y-%m-%d %H:%M:%S"),
@@ -312,7 +312,7 @@ def test_an_issue_with_nothing_set_leaves_those_cells_empty(client, export_board
     rows = export_rows(client, export_board)
     row = next(r for r in rows[1:] if r[0] == parent["identifier"])
 
-    # assignee, labels, project, cycle, estimate, parent_key.
+    # assignee, labels, project, sprint, estimate, parent_key.
     assert [row[5], row[6], row[7], row[8], row[9], row[13]] == ["", "", "", "", "", ""]
     assert row[1] == "Parent issue"
     assert row[4] == "no_priority"
@@ -383,7 +383,7 @@ def test_the_export_streams_past_one_batch(client, export_board, monkeypatch):
 #: moved between versions, so the export does not depend on the answer: it
 #: checks who is asking on the request's session and then reads every row on
 #: one it opens and closes itself.
-_REQUEST_SESSION_MUST_NOT_READ = ("issue", "project", "cycle", "label")
+_REQUEST_SESSION_MUST_NOT_READ = ("issue", "project", "sprint", "label")
 
 
 def test_the_rows_are_read_on_the_export_s_own_session(client, export_board, session):

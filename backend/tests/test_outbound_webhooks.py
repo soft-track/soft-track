@@ -204,11 +204,11 @@ def test_a_patch_that_changes_nothing_sends_nothing(client, team, session):
     assert session.exec(select(WebhookDelivery)).all() == []
 
 
-def test_comments_and_cycles(client, team, session):
+def test_comments_and_sprints(client, team, session):
     make_hook(
         client,
         team,
-        events=("comment.created", "cycle.started", "cycle.completed"),
+        events=("comment.created", "sprint.started", "sprint.completed"),
     )
     issue = make_issue(client, team)
     client.post(
@@ -216,17 +216,21 @@ def test_comments_and_cycles(client, team, session):
         json={"body": "Looks good"},
         headers=team["headers"],
     )
-    cycle = client.post(
-        f"/teams/{team['team']['id']}/cycles",
+    sprint = client.post(
+        f"/teams/{team['team']['id']}/sprints",
         json={"starts_at": "2026-09-01", "ends_at": "2026-09-14"},
         headers=team["headers"],
     ).json()
-    client.post(f"/cycles/{cycle['id']}/start", headers=team["headers"])
-    client.post(f"/cycles/{cycle['id']}/complete", headers=team["headers"])
+    client.post(f"/sprints/{sprint['id']}/start", headers=team["headers"])
+    client.post(f"/sprints/{sprint['id']}/complete", headers=team["headers"])
 
     receiver = FakeReceiver()
     deliver(session, receiver)
-    assert receiver.events() == ["comment.created", "cycle.started", "cycle.completed"]
+    assert receiver.events() == [
+        "comment.created",
+        "sprint.started",
+        "sprint.completed",
+    ]
     assert receiver.payloads()[0]["data"]["comment"]["body"] == "Looks good"
 
 
