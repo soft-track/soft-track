@@ -9,10 +9,10 @@ import { ProjectBadge } from '@/tickets/TicketCard'
 import { isResolved } from '@/tickets/ticketMeta'
 import { TicketTypeIcon } from '@/tickets/TicketTypeIcon'
 import { PriorityIcon } from '@/tickets/PriorityIcon'
+import { AssigneeAvatar } from '@/tickets/AssigneeAvatar'
 import { isPlainClick, ticketPath, useOpenTicket } from '@/tickets/surface'
 import { isPlainKey } from '@/keyboard/typing'
 import { useTeamContext } from '@/team/useTeamContext'
-import { Avatar } from '@/ui/Avatar'
 
 type OnSelect = (ticketId: number, gesture: 'range' | 'toggle', order: readonly number[]) => void
 
@@ -185,7 +185,7 @@ function TicketRow({
         )}
         {ticket.estimate != null && <EstimateBadge points={ticket.estimate} />}
         {ticket.assignee ? (
-          <Avatar user={ticket.assignee} size={22} />
+          <AssigneeAvatar user={ticket.assignee} size={22} />
         ) : (
           <span className="h-[22px] w-[22px] shrink-0 rounded-full border border-dashed border-neutral-900/20" />
         )}

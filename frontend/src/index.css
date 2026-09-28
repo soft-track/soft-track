@@ -699,6 +699,12 @@
     background: color-mix(in oklab, var(--color-brand-500) 14%, transparent);
   }
   :root[data-theme="dark"] .mention { color: var(--color-brand-300); }
+  a.mention:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+  /* A person's name that opens their profile (#126). */
+  .person-link { color: var(--color-brand-600); }
+  .person-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+  :root[data-theme="dark"] .person-link { color: var(--color-brand-300); }
 
   /* -- Text with a brand gradient ---------------------------------------- */
   .text-gradient {

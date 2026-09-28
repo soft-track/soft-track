@@ -2,6 +2,7 @@ import type { Root, Text } from 'mdast'
 import { visit } from 'unist-util-visit'
 
 import { MENTION_PATTERN, type Mentionable, peopleByHandle } from '@/markdown/mentions'
+import { personPath } from '@/people/personPath'
 
 /**
  * Turn `@handle` into a link node for each member of the team.
@@ -43,7 +44,8 @@ export function remarkMentions({ people }: { people: Mentionable[] }) {
 
         children.push({
           type: 'link',
-          url: `#user-${person.id}`,
+          // Their profile (#126), so a mention is a way to the person.
+          url: personPath(person),
           title: person.email,
           children: [{ type: 'text', value: `@${person.full_name}` }],
           data: {

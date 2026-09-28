@@ -48,6 +48,8 @@ export type IconName =
   | 'expand'
   | 'lock'
   | 'building'
+  | 'pin'
+  | 'briefcase'
 
 const PATHS: Record<IconName, JSX.Element> = {
   search: (
@@ -123,6 +125,18 @@ const PATHS: Record<IconName, JSX.Element> = {
     <>
       <rect x="5" y="11" width="14" height="10" rx="2" />
       <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  pin: (
+    <>
+      <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </>
+  ),
+  briefcase: (
+    <>
+      <rect x="3" y="7" width="18" height="13" rx="2" />
+      <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18" />
     </>
   ),
   building: (

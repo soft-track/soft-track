@@ -23,7 +23,8 @@ import type {
 import type {
   HTTPValidationError,
   ListPeopleUsersGetParams,
-  PeoplePage
+  PeoplePage,
+  ProfileRead
 } from '../../models';
 
 import { apiClient } from '../../../client';
@@ -133,6 +134,103 @@ export function useListPeopleUsersGet<TData = Awaited<ReturnType<typeof listPeop
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getListPeopleUsersGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Somebody's profile page: who they are, who they report to, who reports
+ * to them, and the teams they share with you.
+ *
+ * Readable by anyone signed in, and for a deactivated account too -- old
+ * links keep landing somewhere.
+ * @summary Get Profile
+ */
+export const getProfileUsersUsernameGet = (
+    username: string,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<ProfileRead>(
+      {url: `/users/${username}`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getGetProfileUsersUsernameGetQueryKey = (username: string,) => {
+    return [
+    `/users/${username}`
+    ] as const;
+    }
+
+
+export const getGetProfileUsersUsernameGetQueryOptions = <TData = Awaited<ReturnType<typeof getProfileUsersUsernameGet>>, TError = HTTPValidationError>(username: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfileUsersUsernameGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProfileUsersUsernameGetQueryKey(username);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProfileUsersUsernameGet>>> = ({ signal }) => getProfileUsersUsernameGet(username, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: username !== null && username !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProfileUsersUsernameGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetProfileUsersUsernameGetQueryResult = NonNullable<Awaited<ReturnType<typeof getProfileUsersUsernameGet>>>
+export type GetProfileUsersUsernameGetQueryError = HTTPValidationError
+
+
+export function useGetProfileUsersUsernameGet<TData = Awaited<ReturnType<typeof getProfileUsersUsernameGet>>, TError = HTTPValidationError>(
+ username: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfileUsersUsernameGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProfileUsersUsernameGet>>,
+          TError,
+          Awaited<ReturnType<typeof getProfileUsersUsernameGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetProfileUsersUsernameGet<TData = Awaited<ReturnType<typeof getProfileUsersUsernameGet>>, TError = HTTPValidationError>(
+ username: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfileUsersUsernameGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProfileUsersUsernameGet>>,
+          TError,
+          Awaited<ReturnType<typeof getProfileUsersUsernameGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetProfileUsersUsernameGet<TData = Awaited<ReturnType<typeof getProfileUsersUsernameGet>>, TError = HTTPValidationError>(
+ username: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfileUsersUsernameGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Profile
+ */
+
+export function useGetProfileUsersUsernameGet<TData = Awaited<ReturnType<typeof getProfileUsersUsernameGet>>, TError = HTTPValidationError>(
+ username: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfileUsersUsernameGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetProfileUsersUsernameGetQueryOptions(username,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

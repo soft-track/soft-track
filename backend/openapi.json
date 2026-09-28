@@ -1179,6 +1179,54 @@
         }
       }
     },
+    "/users/{username}": {
+      "get": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Get Profile",
+        "description": "Somebody's profile page: who they are, who they report to, who reports\nto them, and the teams they share with you.\n\nReadable by anyone signed in, and for a deactivated account too -- old\nlinks keep landing somewhere.",
+        "operationId": "get_profile_users__username__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Username"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/teams": {
       "get": {
         "tags": [
@@ -10243,6 +10291,110 @@
         ],
         "title": "PersonTime"
       },
+      "ProfileRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "avatar_color": {
+            "type": "string",
+            "title": "Avatar Color"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "job_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Title"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "started_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started On"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "manager": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "direct_reports": {
+            "items": {
+              "$ref": "#/components/schemas/PersonRef"
+            },
+            "type": "array",
+            "title": "Direct Reports"
+          },
+          "shared_teams": {
+            "items": {
+              "$ref": "#/components/schemas/SharedTeam"
+            },
+            "type": "array",
+            "title": "Shared Teams"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "username",
+          "full_name",
+          "avatar_color",
+          "is_active",
+          "direct_reports",
+          "shared_teams"
+        ],
+        "title": "ProfileRead",
+        "description": "Somebody's profile page (#126): their directory row, and around it the\npeople they connect to and the teams they share with whoever is looking.\n\nResolves for a deactivated account too, marked by `is_active`: tickets\nand comments keep pointing at a person, and the page should not pretend\notherwise."
+      },
       "ProjectBurnup": {
         "properties": {
           "project_id": {
@@ -11243,6 +11395,30 @@
           "snippet"
         ],
         "title": "SearchHit"
+      },
+      "SharedTeam": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "key",
+          "name"
+        ],
+        "title": "SharedTeam",
+        "description": "A team on somebody's profile (#126), which the viewer is on too."
       },
       "SortDirection": {
         "type": "string",

@@ -1,5 +1,6 @@
-import { useMemo } from 'react'
+import { type ReactNode, useMemo } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
+import { Link, useInRouterContext } from 'react-router-dom'
 import type { PluggableList } from 'unified'
 import remarkGfm from 'remark-gfm'
 
@@ -19,6 +20,27 @@ import { remarkTicketKeys } from '@/markdown/remarkTicketKeys'
  * through react-markdown's default transform, which drops `javascript:` and
  * other non-http protocols, so `[click](javascript:...)` renders inert.
  */
+/**
+ * An @mention: the person's profile (#126), in the app's own navigation --
+ * never a new tab, unlike the other links in a document. Markdown is also
+ * rendered outside the app's router, in tests and static markup, where a
+ * plain link does the same job.
+ */
+function MentionLink({ to, title, children }: { to: string; title?: string; children: ReactNode }) {
+  if (!useInRouterContext()) {
+    return (
+      <a href={to} className="mention" title={title}>
+        {children}
+      </a>
+    )
+  }
+  return (
+    <Link to={to} className="mention" title={title}>
+      {children}
+    </Link>
+  )
+}
+
 export function Markdown({
   children,
   people = [],
@@ -48,9 +70,9 @@ export function Markdown({
       void node
       if (linkClass === 'mention') {
         return (
-          <span className="mention" title={props.title}>
+          <MentionLink to={props.href ?? ''} title={props.title}>
             {linkChildren}
-          </span>
+          </MentionLink>
         )
       }
       return (

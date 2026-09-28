@@ -18,6 +18,7 @@ import {
   toSearchParams,
 } from '@/people/directorySearch'
 import type { PeopleOutlet } from '@/people/PeopleLayout'
+import { PersonLink } from '@/people/PersonLink'
 import { PersonPicker } from '@/people/PersonPicker'
 import { useDebounced } from '@/search/useDebounced'
 import { useOpenTicket } from '@/tickets/surface'
@@ -264,7 +265,9 @@ function PeopleTable({ rows }: { rows: PersonRead[] }) {
               <div className="flex items-center gap-3">
                 <Avatar user={person} size={32} decorative />
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-neutral-900">{person.full_name}</p>
+                  <p className="truncate font-medium">
+                    <PersonLink person={person} className="text-neutral-900 hover:underline" />
+                  </p>
                   <p className="identifier truncate text-xs text-neutral-400">@{person.username}</p>
                 </div>
               </div>
@@ -282,7 +285,7 @@ function PeopleTable({ rows }: { rows: PersonRead[] }) {
                     inactive={!person.manager.is_active}
                     decorative
                   />
-                  <span className="truncate">{person.manager.full_name}</span>
+                  <PersonLink person={person.manager} className="person-link truncate" />
                 </span>
               )}
             </td>

@@ -11,6 +11,7 @@ import OAuthCallbackPage from '@/auth/OAuthCallbackPage'
 import NewTeamPage from '@/team/NewTeamPage'
 import DirectoryPage from '@/people/DirectoryPage'
 import PeopleLayout from '@/people/PeopleLayout'
+import ProfilePage from '@/people/ProfilePage'
 import RegisterPage from '@/auth/RegisterPage'
 import ResetPasswordPage from '@/auth/ResetPasswordPage'
 import AdminDepartmentsPage from '@/settings/AdminDepartmentsPage'
@@ -103,6 +104,8 @@ export default function App() {
               docs/deployment.md). */}
           <Route path="/people" caseSensitive element={<PeopleLayout />}>
             <Route index element={<DirectoryPage />} />
+            {/* A profile behind every name (#126). */}
+            <Route path=":username" element={<ProfilePage />} />
           </Route>
 
           {/* The same element for all three, so the board survives a ticket

@@ -10,11 +10,11 @@ import { EstimateBadge } from '@/tickets/EstimateBadge'
 import { isResolved } from '@/tickets/ticketMeta'
 import { TicketTypeIcon } from '@/tickets/TicketTypeIcon'
 import { PriorityIcon } from '@/tickets/PriorityIcon'
+import { AssigneeAvatar } from '@/tickets/AssigneeAvatar'
 import { isPlainClick, ticketPath, useOpenTicket } from '@/tickets/surface'
 import { isPlainKey } from '@/keyboard/typing'
 import { useCanWrite } from '@/team/useCanWrite'
 import { useTeamContext } from '@/team/useTeamContext'
-import { Avatar } from '@/ui/Avatar'
 
 export function TicketCard({
   ticket,
@@ -208,7 +208,7 @@ export function TicketCard({
             <DueBadge dueDate={ticket.due_date} resolved={isResolved(ticket.status)} />
           )}
           {ticket.assignee ? (
-            <Avatar user={ticket.assignee} size={22} />
+            <AssigneeAvatar user={ticket.assignee} size={22} />
           ) : (
             <span
               className="h-[22px] w-[22px] shrink-0 rounded-full border border-dashed border-neutral-900/20"

@@ -15,15 +15,49 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, func, or_, select
 
 from lib_identity.models.identity import PersonRef
-from lib_identity.models.people import PeoplePage, PersonRead
+from lib_identity.models.people import PeoplePage, PersonRead, ProfileRead, SharedTeam
 from lib_softtrack.models.page import DEFAULT_LIMIT
-from lib_softtrack.tables import User
+from lib_softtrack.tables import Team, TeamMember, User
+from lib_utils.errors import ErrorCode, api_error
 
 
 def find_by_username(session: Session, username: str) -> Optional[User]:
     return session.exec(
         select(User).where(func.lower(User.username) == username.strip().lower())
     ).first()
+
+
+def get_profile(session: Session, viewer: User, username: str) -> ProfileRead:
+    """Somebody's profile, as `viewer` may see it (#126).
+
+    Anyone signed in can read anyone's, deactivated accounts included. The
+    teams on it are the intersection of theirs and the viewer's, worked out
+    in the query rather than filtered afterwards.
+    """
+    person = find_by_username(session, username)
+    if person is None:
+        raise api_error(
+            status_code=404, code=ErrorCode.user_not_found, detail="User not found"
+        )
+
+    reports = session.exec(
+        select(User)
+        .where(User.manager_id == person.id, User.is_active == True)  # noqa: E712
+        .order_by(func.lower(User.full_name), User.id)
+    ).all()
+    viewers_teams = select(TeamMember.team_id).where(TeamMember.user_id == viewer.id)
+    teams = session.exec(
+        select(Team)
+        .join(TeamMember, TeamMember.team_id == Team.id)
+        .where(TeamMember.user_id == person.id, col(Team.id).in_(viewers_teams))
+        .order_by(func.lower(Team.name), Team.id)
+    ).all()
+
+    return ProfileRead(
+        **PersonRead.model_validate(person).model_dump(),
+        direct_reports=[PersonRef.model_validate(report) for report in reports],
+        shared_teams=[SharedTeam.model_validate(team) for team in teams],
+    )
 
 
 def list_people(

@@ -5,7 +5,7 @@ from sqlmodel import Session
 
 from lib_identity import people as people_service
 from lib_identity.identity import get_current_user
-from lib_identity.models.people import PeoplePage
+from lib_identity.models.people import PeoplePage, ProfileRead
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT
 from lib_softtrack.tables import User
 from web import get_session
@@ -44,3 +44,18 @@ def list_people(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get("/{username}", response_model=ProfileRead)
+def get_profile(
+    username: str,
+    session: Session = Depends(get_session),
+    viewer: User = Depends(get_current_user),
+):
+    """Somebody's profile page: who they are, who they report to, who reports
+    to them, and the teams they share with you.
+
+    Readable by anyone signed in, and for a deactivated account too -- old
+    links keep landing somewhere.
+    """
+    return people_service.get_profile(session, viewer, username)

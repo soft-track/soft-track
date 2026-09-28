@@ -27,6 +27,7 @@ import { TicketActionsMenu } from '@/tickets/detail/TicketActionsMenu'
 import { ReactionBar } from '@/tickets/detail/ReactionBar'
 import type { Mentionable } from '@/markdown/mentions'
 import { toggleTaskAtOffset } from '@/markdown/tasks'
+import { PersonLink } from '@/people/PersonLink'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 
@@ -297,9 +298,15 @@ function CommentItem({
       )}
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
-          <span className="text-sm font-medium text-neutral-900">
-            {comment.author?.full_name ?? t('comments.automation')}
-          </span>
+          {comment.author ? (
+            // Who wrote it, one click from their profile (#126).
+            <PersonLink
+              person={comment.author}
+              className="text-sm font-medium text-neutral-900 hover:underline"
+            />
+          ) : (
+            <span className="text-sm font-medium text-neutral-900">{t('comments.automation')}</span>
+          )}
           <span className="text-[11px] text-neutral-400">
             {formatRelative(parseServerDate(comment.created_at))}
           </span>

@@ -80,6 +80,12 @@ describe('Markdown', () => {
     expect(html).toContain('demo@softtrack.dev')
   })
 
+  it('makes a mention a link to the person’s profile, in the same tab (#126)', () => {
+    const html = render('ping @demo about it')
+    expect(html).toContain('<a href="/people/demo" class="mention"')
+    expect(html).not.toMatch(/class="mention"[^>]*target=/)
+  })
+
   it('leaves an unknown handle as plain text', () => {
     const html = render('ping @nobody about it')
     expect(html).toContain('@nobody')

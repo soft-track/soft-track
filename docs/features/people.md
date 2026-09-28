@@ -42,3 +42,30 @@ The API is `GET /users` (`q`, `department_id`, `manager` as a username,
 app's pages are `/people`, and on a single-domain deployment the two have to
 stay apart. The `/people` route is also case-sensitive, so `/PEOPLE` is still
 the board of a team keyed PEOPLE.
+
+## Profiles
+
+Every person has a page at `/people/<username>`, readable by anyone signed in:
+their title, department, location and start date (with how long ago that
+was), who they report to, their direct reports, and the teams they are on.
+The manager and every report are links to their own profiles.
+
+- **Only the teams you share with them are listed.** A stranger's team list
+  says what a team is called and that it exists, the same reason `@mentions`
+  resolve per team. The server works out the intersection in its query; the
+  page never receives the rest. On your own profile that is all your teams.
+- **Your own profile** is the same page with **Edit profile**, which goes to
+  **Settings → Profile**. There is no second editor.
+- **A deactivated account still resolves**, marked as deactivated. Tickets and
+  comments keep pointing at the person, so old links keep landing somewhere.
+
+People are links wherever they appear: rows in the directory, comment
+authors, `@mentions` in rendered markdown, the "Created by" line under a
+ticket, and the manager in **Settings → Profile**. On the board, clicking the
+assignee's avatar on a card or a list row opens their profile. The avatar is a
+click target rather than a link, because the card around it is already a link
+to the ticket; a modified click still selects the card. The quick peek stays
+a read-only preview, and the assignee in the ticket's properties stays a picker.
+
+The API is `GET /users/{username}`, with `direct_reports` and `shared_teams`
+beside the directory's fields.

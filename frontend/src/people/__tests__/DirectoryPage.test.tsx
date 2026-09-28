@@ -128,6 +128,13 @@ describe('The people directory', () => {
     renderAt('/people')
 
     const row = screen.getByText('Daniel Okafor').closest('tr')!
+    // Names are ways to their profiles (#126).
+    expect(within(row).getByRole('link', { name: 'Daniel Okafor' }).getAttribute('href')).toBe(
+      '/people/daniel',
+    )
+    expect(within(row).getByRole('link', { name: 'Amina Khan' }).getAttribute('href')).toBe(
+      '/people/amina',
+    )
     expect(within(row).getByText('@daniel')).toBeTruthy()
     expect(within(row).getByText('Senior Backend Engineer')).toBeTruthy()
     expect(within(row).getByText('Engineering')).toBeTruthy()

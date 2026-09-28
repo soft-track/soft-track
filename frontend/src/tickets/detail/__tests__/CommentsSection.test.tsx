@@ -7,6 +7,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CommentsSection } from '@/tickets/detail/CommentsSection'
@@ -62,18 +63,21 @@ const OLIVIA = { ...MAYA, id: 1, email: 'olivia@example.com', username: 'olivia'
 
 function renderFeed({ canComment = true, canModerate = false } = {}) {
   render(
-    <QueryClientProvider client={new QueryClient()}>
-      <CommentsSection
-        ticketId={1}
-        people={[]}
-        uploadFiles={vi.fn()}
-        removeAttachment={vi.fn()}
-        uploading={0}
-        onFilesClaimed={vi.fn()}
-        canComment={canComment}
-        canModerate={canModerate}
-      />
-    </QueryClientProvider>,
+    // A router, since an author's name is a link to their profile (#126).
+    <MemoryRouter>
+      <QueryClientProvider client={new QueryClient()}>
+        <CommentsSection
+          ticketId={1}
+          people={[]}
+          uploadFiles={vi.fn()}
+          removeAttachment={vi.fn()}
+          uploading={0}
+          onFilesClaimed={vi.fn()}
+          canComment={canComment}
+          canModerate={canModerate}
+        />
+      </QueryClientProvider>
+    </MemoryRouter>,
   )
 }
 
@@ -121,6 +125,26 @@ describe('the Activity feed', () => {
     expect(rows[0]).toContain('Picking this up.')
     expect(rows[1]).toMatch(/Maya Chen moved this from Started to Done · .+ ago$/)
     expect(rows[2]).toContain('Shipped.')
+  })
+
+  it('makes a comment’s author a way to their profile (#126)', () => {
+    mocks.comments.data = {
+      items: [
+        {
+          id: 1,
+          body: 'Picking this up.',
+          author: MAYA,
+          attachments: [],
+          created_at: '2026-09-25T09:00:00',
+        },
+      ],
+      total: 1,
+    }
+    mocks.events.data = []
+    renderFeed()
+    expect(screen.getByRole('link', { name: 'Maya Chen' }).getAttribute('href')).toBe(
+      `/people/${MAYA.username}`,
+    )
   })
 
   it('credits a change nobody made by hand to Automation', () => {

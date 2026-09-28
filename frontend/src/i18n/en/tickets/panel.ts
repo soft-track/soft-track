@@ -10,7 +10,7 @@ export const panel = {
   files: 'Files',
   // The properties' own landmark: a column beside the reading on a wide page (#112).
   details: 'Details',
-  createdBy: 'Created by {{name}} {{when}}',
+  createdBy: 'Created by <person>{{name}}</person> {{when}}',
   actions: {
     more: 'More actions',
     menu: 'Ticket actions',
