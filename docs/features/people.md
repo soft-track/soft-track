@@ -69,3 +69,31 @@ a read-only preview, and the assignee in the ticket's properties stays a picker.
 
 The API is `GET /users/{username}`, with `direct_reports` and `shared_teams`
 beside the directory's fields.
+
+## Workload
+
+A profile's **Workload** tab (`/people/<username>/workload`) answers "what is
+on their plate" in one place, where it used to take one board per team and
+some adding up.
+
+- **Everything open assigned to them**, grouped by team. "Open" means the
+  backlog, unstarted and started categories, the same vocabulary every other
+  rollup uses. Done and cancelled work is not on anybody's plate.
+- **Only the teams you are on.** A ticket is listed, and counted, only if it
+  is assigned to them *and* on a team you belong to. The tenancy is in the
+  query, not a filter afterwards, and a site admin gets no wider view: this is
+  for planning, not auditing.
+- **Totals come from the database**, per team, the way sprint rollups do:
+  "6 open · 18 pts" is the whole team's, not the page's. Each group shows its
+  first few tickets, in flight first and then the most urgent, and pages on
+  its own with **Show more**. Each row shows status, key, title, priority,
+  estimate and sprint.
+- **A manager's profile** shows each direct report's load beside their name,
+  as a bar and "9 open · 26 pts" linking to that person's workload. The counts
+  come from the same query, restricted to the teams you share with each of
+  them.
+
+The API is `GET /users/{username}/workload` (`per_team`, and `team_id` with
+`offset` for one group's next page). It lives with the ticket code, in
+`app_softtrack/workload.py`, because it reads tickets; the profile itself
+stays with identity.

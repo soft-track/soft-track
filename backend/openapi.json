@@ -6111,6 +6111,95 @@
         }
       }
     },
+    "/users/{username}/workload": {
+      "get": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Get Workload",
+        "description": "Everything open assigned to somebody, in the teams you share with them.\n\nGrouped by team, with each team's count and points summed by the\ndatabase, and a page of its tickets. Pass `team_id` and `offset` for a\ngroup's next page. Done and cancelled work is not on anybody's plate, and\ntickets on a team you are not on are neither listed nor counted -- a site\nadmin included.",
+        "operationId": "get_workload_users__username__workload_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Username"
+            }
+          },
+          {
+            "name": "per_team",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 5,
+              "title": "Per Team"
+            }
+          },
+          {
+            "name": "team_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only this team's group, for its next page",
+              "title": "Team Id"
+            },
+            "description": "Only this team's group, for its next page"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkloadRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/teams/{team_id}/events": {
       "get": {
         "tags": [
@@ -10769,6 +10858,29 @@
         "title": "ReactionSummary",
         "description": "One emoji on one comment, and who gave it (#96).\n\nSummarised rather than one row per reaction: a chip needs the count, the\nnames for its tooltip, and whether it is yours to take back -- never the\nindividual rows."
       },
+      "ReportLoad": {
+        "properties": {
+          "person": {
+            "$ref": "#/components/schemas/PersonRef"
+          },
+          "open_count": {
+            "type": "integer",
+            "title": "Open Count"
+          },
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "person",
+          "open_count",
+          "points"
+        ],
+        "title": "ReportLoad",
+        "description": "A direct report's open work, in the same teams-you-share terms."
+      },
       "RepositoryCreate": {
         "properties": {
           "provider": {
@@ -13848,6 +13960,146 @@
         ],
         "title": "WebhookReceipt",
         "description": "What the webhook endpoint answers with.\n\nMore than an empty 200 on purpose. Both providers show the response body\nin their delivery log, and that log is the entire debugging surface for\nwhoever is setting this up -- \"accepted, matched nothing\" is the answer to\nthe question they are about to ask, and it is much cheaper to read there\nthan to work out from a ticket page that did not change."
+      },
+      "WorkloadRead": {
+        "properties": {
+          "open_count": {
+            "type": "integer",
+            "title": "Open Count"
+          },
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          },
+          "teams": {
+            "items": {
+              "$ref": "#/components/schemas/WorkloadTeam"
+            },
+            "type": "array",
+            "title": "Teams"
+          },
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/ReportLoad"
+            },
+            "type": "array",
+            "title": "Reports"
+          }
+        },
+        "type": "object",
+        "required": [
+          "open_count",
+          "points",
+          "teams",
+          "reports"
+        ],
+        "title": "WorkloadRead",
+        "description": "Everything open assigned to one person, in the teams the viewer is on.\n\nTenancy is inside the query: a ticket is here only if it is assigned to\nthem *and* on a team the viewer belongs to. A site admin gets no wider\nview -- this is for planning, not auditing."
+      },
+      "WorkloadTeam": {
+        "properties": {
+          "team": {
+            "$ref": "#/components/schemas/SharedTeam"
+          },
+          "open_count": {
+            "type": "integer",
+            "title": "Open Count"
+          },
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          },
+          "tickets": {
+            "items": {
+              "$ref": "#/components/schemas/WorkloadTicket"
+            },
+            "type": "array",
+            "title": "Tickets"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team",
+          "open_count",
+          "points",
+          "tickets",
+          "offset",
+          "limit"
+        ],
+        "title": "WorkloadTeam",
+        "description": "One team's share of somebody's open work, and a page of it."
+      },
+      "WorkloadTicket": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_key": {
+            "type": "string",
+            "title": "Team Key"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusRead"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TicketPriority"
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimate"
+          },
+          "sprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sprint"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_key",
+          "number",
+          "identifier",
+          "title",
+          "status",
+          "priority"
+        ],
+        "title": "WorkloadTicket",
+        "description": "One open ticket on somebody's plate (#127), as a planner scans it."
       },
       "WorklogCreate": {
         "properties": {

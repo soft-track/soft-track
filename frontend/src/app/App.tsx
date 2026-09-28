@@ -106,6 +106,8 @@ export default function App() {
             <Route index element={<DirectoryPage />} />
             {/* A profile behind every name (#126). */}
             <Route path=":username" element={<ProfilePage />} />
+            {/* Everything open on their plate (#127). */}
+            <Route path=":username/workload" element={<ProfilePage tab="workload" />} />
           </Route>
 
           {/* The same element for all three, so the board survives a ticket

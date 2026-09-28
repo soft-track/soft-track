@@ -21,10 +21,12 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  GetWorkloadUsersUsernameWorkloadGetParams,
   HTTPValidationError,
   ListPeopleUsersGetParams,
   PeoplePage,
-  ProfileRead
+  ProfileRead,
+  WorkloadRead
 } from '../../models';
 
 import { apiClient } from '../../../client';
@@ -231,6 +233,113 @@ export function useGetProfileUsersUsernameGet<TData = Awaited<ReturnType<typeof 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetProfileUsersUsernameGetQueryOptions(username,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Everything open assigned to somebody, in the teams you share with them.
+ *
+ * Grouped by team, with each team's count and points summed by the
+ * database, and a page of its tickets. Pass `team_id` and `offset` for a
+ * group's next page. Done and cancelled work is not on anybody's plate, and
+ * tickets on a team you are not on are neither listed nor counted -- a site
+ * admin included.
+ * @summary Get Workload
+ */
+export const getWorkloadUsersUsernameWorkloadGet = (
+    username: string,
+    params?: GetWorkloadUsersUsernameWorkloadGetParams,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<WorkloadRead>(
+      {url: `/users/${username}/workload`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+
+
+
+
+export const getGetWorkloadUsersUsernameWorkloadGetQueryKey = (username: string,
+    params?: GetWorkloadUsersUsernameWorkloadGetParams,) => {
+    return [
+    `/users/${username}/workload`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetWorkloadUsersUsernameWorkloadGetQueryOptions = <TData = Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>, TError = HTTPValidationError>(username: string,
+    params?: GetWorkloadUsersUsernameWorkloadGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWorkloadUsersUsernameWorkloadGetQueryKey(username,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>> = ({ signal }) => getWorkloadUsersUsernameWorkloadGet(username,params, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: username !== null && username !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetWorkloadUsersUsernameWorkloadGetQueryResult = NonNullable<Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>>
+export type GetWorkloadUsersUsernameWorkloadGetQueryError = HTTPValidationError
+
+
+export function useGetWorkloadUsersUsernameWorkloadGet<TData = Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>, TError = HTTPValidationError>(
+ username: string,
+    params: undefined |  GetWorkloadUsersUsernameWorkloadGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>,
+          TError,
+          Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWorkloadUsersUsernameWorkloadGet<TData = Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>, TError = HTTPValidationError>(
+ username: string,
+    params?: GetWorkloadUsersUsernameWorkloadGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>,
+          TError,
+          Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWorkloadUsersUsernameWorkloadGet<TData = Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>, TError = HTTPValidationError>(
+ username: string,
+    params?: GetWorkloadUsersUsernameWorkloadGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Workload
+ */
+
+export function useGetWorkloadUsersUsernameWorkloadGet<TData = Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>, TError = HTTPValidationError>(
+ username: string,
+    params?: GetWorkloadUsersUsernameWorkloadGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWorkloadUsersUsernameWorkloadGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetWorkloadUsersUsernameWorkloadGetQueryOptions(username,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

@@ -1,0 +1,30 @@
+/** People → a profile's Workload tab (#127). */
+export const workload = {
+  overview: 'Overview',
+  tab: 'Workload',
+  tabs: 'Profile sections',
+  loading: 'Loading their work…',
+  error: 'Could not load their work.',
+  // Two sentences rather than one with a slot: whose teams they are is the
+  // part that changes, and it changes the whole sentence around it.
+  summary_one: '<strong>{{count}} open ticket</strong> in the teams you share with {{name}}',
+  summary_other: '<strong>{{count}} open tickets</strong> in the teams you share with {{name}}',
+  summaryYours_one: '<strong>{{count}} open ticket</strong> in your teams',
+  summaryYours_other: '<strong>{{count}} open tickets</strong> in your teams',
+  points_one: '{{count}} point',
+  points_other: '{{count}} points',
+  teamOpen_one: '{{count}} open',
+  teamOpen_other: '{{count}} open',
+  teamPoints: '{{count}} pts',
+  estimate: '{{count}} pts',
+  noEstimate: 'Not sized',
+  noSprint: 'No sprint',
+  showMore_one: 'Show {{count}} more',
+  showMore_other: 'Show {{count}} more',
+  moreError: 'Could not load the rest.',
+  empty: 'Nothing open for {{name}} in the teams you share.',
+  emptyYours: 'Nothing open for you in your teams.',
+  emptyHint: 'Done and cancelled tickets don’t count.',
+  reportLoad: '{{open}} · {{points}}',
+  openWorkload: 'Workload of {{name}}: {{load}}',
+} as const

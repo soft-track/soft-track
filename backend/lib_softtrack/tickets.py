@@ -685,7 +685,7 @@ def _apply_update(
 
 #: Most urgent highest, so "descending" reads as "most urgent first" -- the
 #: way a person means "sort by priority".
-_PRIORITY_RANK = {
+PRIORITY_RANK = {
     TicketPriority.urgent: 4,
     TicketPriority.high: 3,
     TicketPriority.medium: 2,
@@ -711,7 +711,7 @@ def _ordering(sort: TicketSort, direction: SortDirection, rank) -> list:
         key = Ticket.updated_at
     elif sort == TicketSort.priority:
         key = case(
-            *[(Ticket.priority == p, rank) for p, rank in _PRIORITY_RANK.items()],
+            *[(Ticket.priority == p, rank) for p, rank in PRIORITY_RANK.items()],
             else_=0,
         )
     elif sort == TicketSort.title:
