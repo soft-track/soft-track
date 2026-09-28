@@ -58,7 +58,9 @@ import { useTeamEvents } from '@/realtime/useTeamEvents'
 import { ReportsView } from '@/reports/ReportsView'
 import { SearchResults } from '@/search/SearchResults'
 import { useDebounced } from '@/search/useDebounced'
+import { rememberTeam } from '@/team/lastTeam'
 import { canWriteIn } from '@/team/members'
+import { ShellFrame } from '@/team/ShellFrame'
 import { TeamProvider } from '@/team/TeamContext'
 import { useTeamData } from '@/team/useTeamData'
 import { useTeamByKey } from '@/team/useTeams'
@@ -153,6 +155,10 @@ export default function BoardPage() {
   const teamData = useTeamData(team)
   // Other people's changes arrive as they happen (#103).
   useTeamEvents(team?.id)
+  // The people pages keep this team's sidebar beside them (#125).
+  useEffect(() => {
+    if (team) rememberTeam(team.key)
+  }, [team])
   const savedViews = useSavedViews(team?.id ?? 0)
 
   // Landing on the default view, at most once per mount.
@@ -394,23 +400,11 @@ export default function BoardPage() {
 
   return (
     <TeamProvider value={{ team, teams, ...teamData }}>
-      <div className="flex h-screen gap-3 p-2 sm:p-3">
-        <div className="hidden h-full lg:block">{sidebar}</div>
-
-        {sidebarOpen && (
-          <div
-            className="scrim fixed inset-0 z-30 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <div
-              className="slide-in-left h-full w-72 max-w-[85vw] p-2 sm:p-3"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {sidebar}
-            </div>
-          </div>
-        )}
-
+      <ShellFrame
+        sidebar={sidebar}
+        drawerOpen={sidebarOpen}
+        onCloseDrawer={() => setSidebarOpen(false)}
+      >
         {projectPageId !== null ? (
           <div className="min-w-0 flex-1">
             <ProjectPage key={projectPageId} projectId={projectPageId} />
@@ -483,7 +477,7 @@ export default function BoardPage() {
             </PeekContext.Provider>
           </div>
         )}
-      </div>
+      </ShellFrame>
 
       {hasSelection &&
         !searchQuery &&

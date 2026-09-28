@@ -16,7 +16,8 @@ export type PersonOption = Pick<
  * account on the instance, which is not a list to scroll. The parent does the
  * searching -- it knows which endpoint may be asked -- and passes the matches
  * in; this owns the typing, the list and the keyboard. The last option is
- * always "nobody", so clearing is a choice like any other.
+ * "nobody", so clearing is a choice like any other -- except where something
+ * else takes it off, like a filter's chip.
  */
 export function PersonPicker({
   label,
@@ -26,6 +27,7 @@ export function PersonPicker({
   onChange,
   noneLabel,
   placeholder,
+  noneOption = true,
 }: {
   label: string
   value: PersonOption | null
@@ -33,16 +35,19 @@ export function PersonPicker({
   results: PersonOption[]
   onSearch: (query: string) => void
   onChange: (person: PersonOption | null) => void
-  /** What "nobody" is called: "No manager". */
+  /** What "nobody" is called: "No manager". Also the empty field's text. */
   noneLabel: string
   placeholder: string
+  /** Whether "nobody" is one of the choices. Not for a filter, which is
+   *  taken off with its chip instead. */
+  noneOption?: boolean
 }) {
   const listId = useId()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [highlighted, setHighlighted] = useState(0)
-  const options: (PersonOption | null)[] = [...results, null]
-  const active = Math.min(highlighted, options.length - 1)
+  const options: (PersonOption | null)[] = noneOption ? [...results, null] : results
+  const active = Math.max(0, Math.min(highlighted, options.length - 1))
 
   const search = (text: string) => {
     setQuery(text)
@@ -69,7 +74,7 @@ export function PersonPicker({
     } else if (event.key === 'Enter' && open) {
       // The pick, not the form around it.
       event.preventDefault()
-      choose(options[active])
+      if (options.length > 0) choose(options[active])
     } else if (event.key === 'Escape' && open) {
       event.preventDefault()
       event.stopPropagation()
@@ -115,7 +120,7 @@ export function PersonPicker({
         autoComplete="off"
         className="field field-sm pl-8"
       />
-      {open && (
+      {open && options.length > 0 && (
         <ul
           id={listId}
           role="listbox"

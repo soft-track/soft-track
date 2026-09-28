@@ -22,7 +22,8 @@ import { useSavedViews } from '@/views/useSavedViews'
  * A row is marked as showing when the board's filters *equal* its filters,
  * rather than by tracking which view was clicked. That is what lets a pasted
  * URL light up the matching row for the person who receives it, and what
- * keeps the highlight honest when someone edits a filter afterwards.
+ * keeps the highlight honest when someone edits a filter afterwards. Beside
+ * a page that is not the board (`filters` null), no row is showing.
  */
 export function ViewList({
   filters,
@@ -31,11 +32,12 @@ export function ViewList({
   onEdit,
   isAdmin,
 }: {
-  filters: BoardFilters
+  filters: BoardFilters | null
   arrangement: Arrangement
   /** A view applies its grouping and sort too; "All tickets" only clears filters. */
   onApply: (filters: BoardFilters, arrangement?: Arrangement) => void
-  onEdit: (view: SavedViewRead) => void
+  /** Absent where there is no dialog to rename a view in. */
+  onEdit?: (view: SavedViewRead) => void
   isAdmin: boolean
 }) {
   const { t } = useTranslation(['views', 'common'])
@@ -51,7 +53,7 @@ export function ViewList({
         type="button"
         onClick={() => onApply(NO_FILTERS)}
         className="nav-item"
-        data-active={isEmpty(filters)}
+        data-active={filters !== null && isEmpty(filters)}
       >
         <Icon name="board" size={15} className="opacity-70" />
         {t('list.allTickets')}
@@ -102,11 +104,11 @@ function ViewRow({
   isAdmin,
 }: {
   view: SavedViewRead
-  filters: BoardFilters
+  filters: BoardFilters | null
   arrangement: Arrangement
   views: ReturnType<typeof useSavedViews>
   onApply: (filters: BoardFilters, arrangement?: Arrangement) => void
-  onEdit: (view: SavedViewRead) => void
+  onEdit?: (view: SavedViewRead) => void
   isAdmin: boolean
 }) {
   const { t } = useTranslation(['views', 'common'])
@@ -125,6 +127,7 @@ function ViewRow({
 
   const viewSort = fromViewSort(view.sort, view.sort_direction)
   const showing =
+    filters !== null &&
     view.group_by === arrangement.grouping &&
     sameSort(viewSort, arrangement.sort) &&
     sameFilters(filters, fromViewFilters(view.filters))
@@ -202,14 +205,16 @@ function ViewRow({
               )}
               {canEdit && (
                 <>
-                  <MenuItem
-                    onClick={() => {
-                      setMenuOpen(false)
-                      onEdit(view)
-                    }}
-                  >
-                    {t('list.rename')}
-                  </MenuItem>
+                  {onEdit && (
+                    <MenuItem
+                      onClick={() => {
+                        setMenuOpen(false)
+                        onEdit(view)
+                      }}
+                    >
+                      {t('list.rename')}
+                    </MenuItem>
+                  )}
                   <MenuItem
                     danger
                     onClick={() => act(() => views.destroy(view))}

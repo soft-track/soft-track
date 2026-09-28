@@ -9,6 +9,8 @@ import InvitePage from '@/auth/InvitePage'
 import LoginPage from '@/auth/LoginPage'
 import OAuthCallbackPage from '@/auth/OAuthCallbackPage'
 import NewTeamPage from '@/team/NewTeamPage'
+import DirectoryPage from '@/people/DirectoryPage'
+import PeopleLayout from '@/people/PeopleLayout'
 import RegisterPage from '@/auth/RegisterPage'
 import ResetPasswordPage from '@/auth/ResetPasswordPage'
 import AdminDepartmentsPage from '@/settings/AdminDepartmentsPage'
@@ -91,6 +93,16 @@ export default function App() {
               <Route path="admin/users" element={<AdminUsersPage />} />
               <Route path="admin/departments" element={<AdminDepartmentsPage />} />
             </Route>
+          </Route>
+
+          {/* People (#125): everyone on the instance. Case-sensitive, unlike
+              every other route: React Router otherwise matches without
+              regard to case, and /PEOPLE is where a team keyed PEOPLE lives
+              -- the app always links a team by its upper-case key. The API
+              answers on /users, keeping the two disjoint (see
+              docs/deployment.md). */}
+          <Route path="/people" caseSensitive element={<PeopleLayout />}>
+            <Route index element={<DirectoryPage />} />
           </Route>
 
           {/* The same element for all three, so the board survives a ticket

@@ -14,6 +14,7 @@ export const sidebar = {
   noProjects: 'No epics yet.',
   openNamed: 'Open {{name}}',
   openProject: 'Open epic',
+  people: 'People',
   members: 'Members',
   importJira: 'Import from Jira',
   newTeam: 'New team',

@@ -88,6 +88,7 @@ too, but still call an epic a *project* (`/teams/{team_id}/projects`,
 - [Editing and deleting comments](docs/features/comments.md)
 - [Attachments](docs/features/attachments.md)
 - [User management](docs/features/users.md)
+- [People: the directory](docs/features/people.md)
 - [Signing in with Google and GitHub](docs/features/oauth.md)
 - [Personal API tokens](docs/features/api-tokens.md)
 - [Sign-in rate limiting](docs/features/rate-limiting.md)

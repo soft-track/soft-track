@@ -11,6 +11,7 @@ export * from './invites/invites';
 export * from './labels/labels';
 export * from './notifications/notifications';
 export * from './outbound-webhooks/outbound-webhooks';
+export * from './people/people';
 export * from './projects/projects';
 export * from './realtime/realtime';
 export * from './reports/reports';

@@ -1,8 +1,8 @@
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import type { SavedViewRead } from '@/api/generated/models'
 import { useAuth } from '@/auth/useAuth'
-import type { BoardFilters } from '@/board/filters'
+import { type BoardFilters, NO_FILTERS } from '@/board/filters'
 import type { Arrangement } from '@/board/sorting'
 import { SprintList } from '@/sprints/SprintList'
 import { useTranslation } from '@/i18n'
@@ -26,11 +26,14 @@ export function Sidebar({
   onNewProject,
   onImport,
 }: {
-  filters: BoardFilters
+  /** Null beside a page that is not the board -- the people pages (#125):
+   *  nothing in the lists is showing, and picking one opens the board. */
+  filters: BoardFilters | null
   arrangement: Arrangement
   /** A saved view brings its grouping and sort; everything else leaves them. */
   onFiltersChange: (filters: BoardFilters, arrangement?: Arrangement) => void
-  onEditView: (view: SavedViewRead) => void
+  /** Absent where there is no dialog to rename a view in. */
+  onEditView?: (view: SavedViewRead) => void
   /** Team admins can set the team default and tidy up others' shared views. */
   isAdmin: boolean
   /** Absent for a guest (#104), and so are the buttons. */
@@ -42,9 +45,10 @@ export function Sidebar({
   const { team, teams, projects: allProjects, sprints } = useTeamContext()
   // Archived projects leave the sidebar, unless one is the filter in force --
   // the board is showing its tickets, so the row that toggles it off stays.
-  const projects = pickableProjects(allProjects, filters.projectId)
+  const projects = pickableProjects(allProjects, filters?.projectId ?? null)
   const navigate = useNavigate()
   const { projectId: openProjectId } = useParams<{ projectId?: string }>()
+  const onPeople = useLocation().pathname.startsWith('/people')
   const { theme, toggle: toggleTheme } = useTheme()
   const { t } = useTranslation(['board', 'common'])
 
@@ -110,8 +114,8 @@ export function Sidebar({
           </div>
           <SprintList
             sprints={sprints}
-            activeSprintId={filters.sprintId}
-            onSelect={(sprintId) => onFiltersChange({ ...filters, sprintId })}
+            activeSprintId={filters?.sprintId ?? null}
+            onSelect={(sprintId) => onFiltersChange({ ...(filters ?? NO_FILTERS), sprintId })}
           />
         </div>
 
@@ -141,13 +145,13 @@ export function Sidebar({
                 // composes with whatever else is set rather than replacing it.
                 onClick={() =>
                   onFiltersChange({
-                    ...filters,
-                    projectId: filters.projectId === project.id ? null : project.id,
+                    ...(filters ?? NO_FILTERS),
+                    projectId: filters?.projectId === project.id ? null : project.id,
                   })
                 }
                 className="nav-item pr-8"
                 data-active={
-                  filters.projectId === project.id || openProjectId === String(project.id)
+                  filters?.projectId === project.id || openProjectId === String(project.id)
                 }
               >
                 <span
@@ -177,6 +181,11 @@ export function Sidebar({
       </div>
 
       <div className="space-y-0.5 px-3 pb-2">
+        {/* Everyone on the instance (#125), beside the members of this team. */}
+        <Link to="/people" className="nav-item text-neutral-500" data-active={onPeople}>
+          <Icon name="users" size={15} className="opacity-70" />
+          {t('sidebar.people')}
+        </Link>
         <Link
           to={`/settings/teams/${team.key}/members`}
           className="nav-item text-neutral-500"
