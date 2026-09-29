@@ -14,7 +14,7 @@ import {
 } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { currencySymbol, formatDay, fromMinorUnits, toMinorUnits } from '@/finance/money'
-import { isCompensationQuery } from '@/finance/queries'
+import { isFinanceQuery } from '@/finance/queries'
 import { useCurrencies } from '@/finance/useCurrencies'
 import { useTranslation } from '@/i18n'
 import { type PersonOption, PersonPicker } from '@/people/PersonPicker'
@@ -136,7 +136,7 @@ export function RecordPayDialog({
           corrects_id: kind === CompensationKind.correction ? form.correctsId : null,
         },
       })
-      await queryClient.invalidateQueries({ predicate: isCompensationQuery })
+      await queryClient.invalidateQueries({ predicate: isFinanceQuery })
       onClose()
     } catch (err: unknown) {
       setError(errorDetail(err, t('compensation.record.error')))

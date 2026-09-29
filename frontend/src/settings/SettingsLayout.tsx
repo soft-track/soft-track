@@ -117,6 +117,11 @@ export default function SettingsLayout() {
                 label: t('layout.nav.compensation'),
                 icon: 'banknote' as IconName,
               },
+              {
+                to: '/settings/finance/payroll',
+                label: t('layout.nav.payroll'),
+                icon: 'calendar' as IconName,
+              },
             ],
           },
         ]

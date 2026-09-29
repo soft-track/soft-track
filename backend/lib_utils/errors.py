@@ -75,6 +75,9 @@ class ErrorCode(str, enum.Enum):
     department_not_found = "department_not_found"
     #: A compensation record that does not exist, or is somebody else's (#131).
     compensation_not_found = "compensation_not_found"
+    payroll_run_not_found = "payroll_run_not_found"
+    #: Adjusting somebody who is not on the run (#132).
+    payroll_line_not_found = "payroll_line_not_found"
     #: The person is not a member of the team the request is about.
     member_not_found = "member_not_found"
     #: A status, label, project or sprint id that belongs to another team.
@@ -147,6 +150,19 @@ class ErrorCode(str, enum.Enum):
     #: A compensation record is corrected once; a second correction corrects
     #: the first (#131).
     compensation_already_corrected = "compensation_already_corrected"
+    #: Payroll runs on one schedule never cover the same day twice (#132).
+    payroll_run_overlaps = "payroll_run_overlaps"
+    #: Only a draft run changes; approval freezes it.
+    payroll_run_not_draft = "payroll_run_not_draft"
+    #: Paid, or exported, only once approved.
+    payroll_run_not_approved = "payroll_run_not_approved"
+    #: A line with no pay recorded has no currency to adjust in.
+    payroll_line_missing_pay = "payroll_line_missing_pay"
+    #: An adjustment that would take a line below zero.
+    payroll_adjustment_too_large = "payroll_adjustment_too_large"
+    #: A department that approved payroll (and, later, expenses and budgets)
+    #: is attributed to is renamed, not deleted: the record keeps pointing at it.
+    department_has_finance_history = "department_has_finance_history"
 
     # --- what you sent is not usable ------------------------------------------
     name_required = "name_required"

@@ -43,6 +43,7 @@ from lib_softtrack.tables import (
     SortDirection,
     User,
 )
+from lib_utils.spreadsheet import BOM, safe_text
 from web import get_session
 
 router = APIRouter(tags=["tickets"])
@@ -87,35 +88,21 @@ def _csv_person(user: Optional[UserPublic]) -> str:
     return user.username or user.email
 
 
-#: What a spreadsheet takes a cell starting with to be a formula.
-_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
-
-
-def _csv_text(value: str) -> str:
-    """Text someone typed, made safe to open in a spreadsheet.
-
-    Excel and Sheets run a cell starting with `=` (or `+`, `-`, `@`) as a
-    formula, so a ticket titled `=HYPERLINK(...)` would run in the reader's
-    spreadsheet. A leading `'` makes the cell plain text again.
-    """
-    return f"'{value}" if value.startswith(_FORMULA_PREFIXES) else value
-
-
 def _csv_row(row: TicketExportRow) -> list[str]:
     """One ticket as the columns of `CSV_COLUMNS`, in that order."""
     ticket = row.ticket
     return [
         ticket.identifier,
-        _csv_text(ticket.title),
-        _csv_text(ticket.description or ""),
-        _csv_text(ticket.status.name),
+        safe_text(ticket.title),
+        safe_text(ticket.description or ""),
+        safe_text(ticket.status.name),
         ticket.priority.value,
-        _csv_text(_csv_person(ticket.assignee)),
-        _csv_text(";".join(label.name for label in ticket.labels)),
-        _csv_text(row.project_name),
-        _csv_text(row.sprint_name),
+        safe_text(_csv_person(ticket.assignee)),
+        safe_text(";".join(label.name for label in ticket.labels)),
+        safe_text(row.project_name),
+        safe_text(row.sprint_name),
         "" if ticket.estimate is None else str(ticket.estimate),
-        _csv_text(_csv_person(ticket.creator)),
+        safe_text(_csv_person(ticket.creator)),
         _csv_timestamp(ticket.created_at),
         _csv_timestamp(ticket.updated_at),
         ticket.parent.identifier if ticket.parent is not None else "",
@@ -140,7 +127,7 @@ def _csv_chunks(batches: Iterable[list[TicketExportRow]]) -> Iterator[bytes]:
 
     # A UTF-8 BOM, because Excel reads a BOM-less file as the machine's local
     # codepage and mangles every non-ASCII title in it.
-    yield "\ufeff".encode("utf-8")
+    yield BOM.encode("utf-8")
     writer.writerow(CSV_COLUMNS)
     yield drain()
 

@@ -126,3 +126,60 @@ Every finance response uses its own schemas (`backend/lib_finance/models/`).
 `tests/test_finance_access.py` follows every response outside `/finance`
 through every schema it points to, and fails if any of them is a finance
 schema. The one exception is the currency list.
+
+## Payroll runs
+
+A payroll run is a pay period made concrete: these people, these amounts,
+reviewed by a person, approved, and handed to whatever actually moves the money.
+SoftTrack keeps the record and the export. It computes no tax, models no
+withholding, files nothing and pays nobody.
+
+**Finance → Payroll runs** lists every run, newest period first, with its state
+and its totals per currency. **New run** generates a draft for one period on one
+pay schedule. The dates start as the period after that schedule's latest run,
+and they stay editable for payroll that runs from the 26th.
+
+- **One period, one schedule.** A monthly run and a semi-monthly run for
+  September are two runs, because a period's lines only make sense for the
+  people paid on that schedule. Runs on the same schedule never cover the same
+  day twice (`409 payroll_run_overlaps`), so nobody is paid twice for it.
+- **A draft follows compensation as it changes.** Its lines are worked out
+  whenever it is read. That means everybody active whose pay in effect on the
+  period's last day is on this schedule, plus everybody active with no pay in
+  effect at all. Pay recorded, or an account opened, after the run was
+  generated is on it before it is approved. It is the pay on the last day, not
+  a share of the month: a raise halfway through is an adjustment somebody
+  decides, not a proration SoftTrack guesses.
+- **Missing, not skipped.** People with no compensation are on the run as
+  lines, at the bottom, named in a callout. **Record pay** on the line records
+  it there and then. Approving warns who the run will not pay.
+- **A line takes a one-off adjustment** in its own currency, positive or
+  negative, and always with a reason ("+$400.00 On-call, 4 weekends"). An
+  adjustment can't take a line below zero. Somebody who leaves the run before
+  approval, deactivated or moved to another schedule, takes their adjustment
+  with them.
+- **Approval freezes the run.** Every line is written with its amount, currency
+  and compensation record copied onto it, and with the department the person
+  was in. A raise recorded next week can't change what an approved run says
+  was paid, and a reorg can't move its cost to another department. A department
+  that payroll has been approved under can be renamed but not deleted
+  (`409 department_has_finance_history`), so that history keeps pointing somewhere.
+- **State is set, not derived:** draft → approved → paid, forward only, each
+  step by a finance admin. A mistake found after approval is put right on the
+  next run, which is how payroll corrections are made anyway. A draft can be
+  thrown away. An approved run is a record and stays.
+- **The export is the product.** Only an approved run has a CSV. It has
+  `name, amount, currency, period_start, period_end`, with the adjustment
+  included in the amount and missing lines left out, shaped for a bank
+  template or a payroll bureau. It follows the same rules as the ticket export:
+  a UTF-8 BOM, and names a spreadsheet would run as a formula made plain.
+
+On the API, all under `/finance/payroll/runs`:
+
+| | |
+| --- | --- |
+| `GET /`, `POST /` | List runs; generate a draft (`pay_schedule`, `period_start`, `period_end`) |
+| `GET /{id}`, `DELETE /{id}` | One run and its lines; throw away a draft |
+| `PUT /{id}/lines/{user_id}/adjustment` | `{"amount_minor": 40000, "note": "…"}`, and `DELETE` to take it off |
+| `POST /{id}/approve`, `POST /{id}/paid` | Move it on |
+| `GET /{id}/export` | The CSV, once approved |

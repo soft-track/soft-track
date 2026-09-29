@@ -11,6 +11,8 @@ import OAuthCallbackPage from '@/auth/OAuthCallbackPage'
 import NewTeamPage from '@/team/NewTeamPage'
 import CompensationHistoryPage from '@/finance/CompensationHistoryPage'
 import CompensationPage from '@/finance/CompensationPage'
+import PayrollRunPage from '@/finance/PayrollRunPage'
+import PayrollRunsPage from '@/finance/PayrollRunsPage'
 import { RequireFinanceAdmin } from '@/finance/RequireFinanceAdmin'
 import DirectoryPage from '@/people/DirectoryPage'
 import PeopleLayout from '@/people/PeopleLayout'
@@ -103,6 +105,8 @@ export default function App() {
               <Route index element={<Navigate to="compensation" replace />} />
               <Route path="compensation" element={<CompensationPage />} />
               <Route path="compensation/:username" element={<CompensationHistoryPage />} />
+              <Route path="payroll" element={<PayrollRunsPage />} />
+              <Route path="payroll/:runId" element={<PayrollRunPage />} />
               <Route path="*" element={<Navigate to="/settings/finance" replace />} />
             </Route>
           </Route>

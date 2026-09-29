@@ -352,6 +352,21 @@ class PaySchedule(str, enum.Enum):
     bi_weekly = "bi_weekly"
 
 
+class PayrollRunState(str, enum.Enum):
+    """Where a payroll run is (#132).
+
+    Set by a finance admin, never derived, for the reason a sprint's state is
+    set: the dates are the plan, the state is what happened. Forward only. A
+    mistake found after approval is put right on the next run, which is how
+    payroll corrections are made anyway, and an approved run stays what it
+    said it paid.
+    """
+
+    draft = "draft"
+    approved = "approved"
+    paid = "paid"
+
+
 class CompensationKind(str, enum.Enum):
     """What decision a compensation record is (#131).
 
@@ -1439,4 +1454,99 @@ class Compensation(SQLModel, table=True):
             "foreign_keys": "Compensation.recorded_by_id",
             "viewonly": True,
         }
+    )
+
+
+class PayrollRun(SQLModel, table=True):
+    """One pay period on one pay schedule, made concrete (#132).
+
+    A monthly run and a semi-monthly run for September are two runs: a
+    period's lines only make sense for the people paid on that schedule. Runs
+    on one schedule never overlap, so nobody is paid twice for the same days
+    -- the service refuses an overlap, and the constraint catches two runs
+    for the same start at once.
+
+    SoftTrack keeps the record and the export. It computes no tax, models no
+    withholding, files nothing and pays nobody: the CSV feeds whatever does.
+    """
+
+    __table_args__ = (
+        UniqueConstraint(
+            "pay_schedule", "period_start", name="uq_payrollrun_schedule_start"
+        ),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    pay_schedule: PaySchedule
+    #: Both days included. Dates, like compensation's effective dates.
+    period_start: date
+    period_end: date
+    state: PayrollRunState = Field(default=PayrollRunState.draft, index=True)
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    approved_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    approved_at: Optional[datetime] = None
+    paid_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    paid_at: Optional[datetime] = None
+
+    # Read-only, and named: three links to `user`.
+    created_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "PayrollRun.created_by_id",
+            "viewonly": True,
+        }
+    )
+    approved_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "PayrollRun.approved_by_id",
+            "viewonly": True,
+        }
+    )
+    paid_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "PayrollRun.paid_by_id",
+            "viewonly": True,
+        }
+    )
+
+
+class PayrollLine(SQLModel, table=True):
+    """One person on one payroll run (#132).
+
+    While the run is a draft, a row exists only to hold an adjustment; the
+    rest of a draft line is read live -- who is active, and what they are
+    paid on the period's last day -- so a pay recorded or an account opened
+    after the run was generated is on it. Approval writes a row for every
+    line and copies onto it what it pays: the amount, the currency, the
+    record they came from, and the department the person was in. From then on
+    the row is the record, whatever later happens to the pay or the person --
+    a raise recorded next week cannot change what an approved run says was
+    paid, and a reorg in June cannot move January's cost (#134).
+    """
+
+    __table_args__ = (
+        UniqueConstraint("run_id", "user_id", name="uq_payrollline_run_user"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    run_id: int = Field(foreign_key="payrollrun.id", index=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    #: Copied at approval. All three null on a line whose person had no pay
+    #: in effect: missing, which the run lists rather than leaving out.
+    compensation_id: Optional[int] = Field(default=None, foreign_key="compensation.id")
+    amount_minor: Optional[int] = None
+    currency: Optional[str] = None
+    #: A one-off amount on top, positive or negative, in the line's currency,
+    #: and why. Only a draft takes one, and never without its note.
+    adjustment_minor: int = Field(default=0)
+    adjustment_note: Optional[str] = None
+    #: Where the cost belongs, copied at approval (#134). Null for somebody
+    #: in no department, who lands in Unattributed rather than nowhere.
+    department_id: Optional[int] = Field(default=None, foreign_key="department.id")
+
+    user: Optional[User] = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "PayrollLine.user_id", "viewonly": True}
+    )
+    department: Optional[Department] = Relationship(
+        sa_relationship_kwargs={"viewonly": True}
     )

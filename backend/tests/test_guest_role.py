@@ -48,6 +48,21 @@ NOT_TEAM_WRITES = {
     ("DELETE", "/departments/{department_id}"): "site admins, not team roles",
     # Money (#130-#137): the finance flag decides, not any team role.
     ("POST", "/finance/compensation/{username}"): "finance admins, not team roles",
+    ("POST", "/finance/payroll/runs"): "finance admins, not team roles",
+    ("DELETE", "/finance/payroll/runs/{run_id}"): "finance admins, not team roles",
+    (
+        "PUT",
+        "/finance/payroll/runs/{run_id}/lines/{user_id}/adjustment",
+    ): "finance admins, not team roles",
+    (
+        "DELETE",
+        "/finance/payroll/runs/{run_id}/lines/{user_id}/adjustment",
+    ): "finance admins, not team roles",
+    (
+        "POST",
+        "/finance/payroll/runs/{run_id}/approve",
+    ): "finance admins, not team roles",
+    ("POST", "/finance/payroll/runs/{run_id}/paid"): "finance admins, not team roles",
     ("POST", "/teams"): "a new team, which its creator admins",
     # The invite link is the authority, and it names the role.
     ("POST", "/invites/{token}/accept"): "the invitation decides the role",

@@ -13,6 +13,7 @@ export * from './invites/invites';
 export * from './labels/labels';
 export * from './notifications/notifications';
 export * from './outbound-webhooks/outbound-webhooks';
+export * from './payroll/payroll';
 export * from './people/people';
 export * from './projects/projects';
 export * from './realtime/realtime';

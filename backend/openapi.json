@@ -7737,6 +7737,460 @@
         }
       }
     },
+    "/finance/payroll/runs": {
+      "get": {
+        "tags": [
+          "payroll"
+        ],
+        "summary": "List Payroll Runs",
+        "description": "Every run, the newest period first, with its totals per currency.",
+        "operationId": "list_payroll_runs_finance_payroll_runs_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayrollRunPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "payroll"
+        ],
+        "summary": "Create Payroll Run",
+        "description": "Generate a draft run for one period on one pay schedule. Refused when\nanother run on that schedule covers any of the same days.",
+        "operationId": "create_payroll_run_finance_payroll_runs_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayrollRunCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayrollRunRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/payroll/runs/{run_id}": {
+      "get": {
+        "tags": [
+          "payroll"
+        ],
+        "summary": "Get Payroll Run",
+        "description": "A run and its lines: live while it is a draft, as approved after.",
+        "operationId": "get_payroll_run_finance_payroll_runs__run_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayrollRunRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "payroll"
+        ],
+        "summary": "Delete Payroll Run",
+        "description": "Throw away a draft. An approved run is a record, and stays.",
+        "operationId": "delete_payroll_run_finance_payroll_runs__run_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/payroll/runs/{run_id}/lines/{user_id}/adjustment": {
+      "put": {
+        "tags": [
+          "payroll"
+        ],
+        "summary": "Set Payroll Adjustment",
+        "description": "A one-off amount on somebody's line, in its currency, with a note.",
+        "operationId": "set_payroll_adjustment_finance_payroll_runs__run_id__lines__user_id__adjustment_put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayrollAdjustment"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayrollRunRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "payroll"
+        ],
+        "summary": "Clear Payroll Adjustment",
+        "operationId": "clear_payroll_adjustment_finance_payroll_runs__run_id__lines__user_id__adjustment_delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayrollRunRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/payroll/runs/{run_id}/approve": {
+      "post": {
+        "tags": [
+          "payroll"
+        ],
+        "summary": "Approve Payroll Run",
+        "description": "Freeze the run: every line written with its amount, currency, record\nand department, so nothing recorded later can change what it paid.",
+        "operationId": "approve_payroll_run_finance_payroll_runs__run_id__approve_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayrollRunRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/payroll/runs/{run_id}/paid": {
+      "post": {
+        "tags": [
+          "payroll"
+        ],
+        "summary": "Mark Payroll Run Paid",
+        "operationId": "mark_payroll_run_paid_finance_payroll_runs__run_id__paid_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayrollRunRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/payroll/runs/{run_id}/export": {
+      "get": {
+        "tags": [
+          "payroll"
+        ],
+        "summary": "Export Payroll Run",
+        "description": "The approved run as CSV -- name, amount, currency and the period --\nshaped for a bank template or a payroll bureau. Missing lines are not in\nit: there is nothing to pay them.",
+        "operationId": "export_payroll_run_finance_payroll_runs__run_id__export_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -10943,6 +11397,420 @@
         ],
         "title": "PaySchedule",
         "description": "How often somebody is paid (#131). A compensation amount is per pay\nperiod of its schedule -- a month, half a month, two weeks -- so a monthly\nand a bi-weekly amount are never added together, and nothing is\nannualised behind anybody's back."
+      },
+      "PayrollAdjustment": {
+        "properties": {
+          "amount_minor": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "minimum": -1000000000000.0,
+            "title": "Amount Minor"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount_minor",
+          "note"
+        ],
+        "title": "PayrollAdjustment",
+        "description": "A one-off amount on one line, in the line's currency, and why."
+      },
+      "PayrollLineRead": {
+        "properties": {
+          "person": {
+            "$ref": "#/components/schemas/FinancePerson"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "compensation_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compensation Id"
+          },
+          "amount_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Currency"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Minor"
+          },
+          "adjustment_minor": {
+            "type": "integer",
+            "title": "Adjustment Minor"
+          },
+          "adjustment_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustment Note"
+          },
+          "missing": {
+            "type": "boolean",
+            "title": "Missing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "person",
+          "adjustment_minor",
+          "missing"
+        ],
+        "title": "PayrollLineRead"
+      },
+      "PayrollRunCreate": {
+        "properties": {
+          "pay_schedule": {
+            "$ref": "#/components/schemas/PaySchedule"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Period End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pay_schedule",
+          "period_start",
+          "period_end"
+        ],
+        "title": "PayrollRunCreate"
+      },
+      "PayrollRunPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PayrollRunSummary"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "PayrollRunPage"
+      },
+      "PayrollRunRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "pay_schedule": {
+            "$ref": "#/components/schemas/PaySchedule"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Period End"
+          },
+          "state": {
+            "$ref": "#/components/schemas/PayrollRunState"
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/PersonRef"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "paid_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "paid_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid At"
+          },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/PayrollTotal"
+            },
+            "type": "array",
+            "title": "Totals"
+          },
+          "line_count": {
+            "type": "integer",
+            "title": "Line Count"
+          },
+          "missing_count": {
+            "type": "integer",
+            "title": "Missing Count"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/PayrollLineRead"
+            },
+            "type": "array",
+            "title": "Lines"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "pay_schedule",
+          "period_start",
+          "period_end",
+          "state",
+          "created_by",
+          "created_at",
+          "totals",
+          "line_count",
+          "missing_count",
+          "lines"
+        ],
+        "title": "PayrollRunRead"
+      },
+      "PayrollRunState": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "approved",
+          "paid"
+        ],
+        "title": "PayrollRunState",
+        "description": "Where a payroll run is (#132).\n\nSet by a finance admin, never derived, for the reason a sprint's state is\nset: the dates are the plan, the state is what happened. Forward only. A\nmistake found after approval is put right on the next run, which is how\npayroll corrections are made anyway, and an approved run stays what it\nsaid it paid."
+      },
+      "PayrollRunSummary": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "pay_schedule": {
+            "$ref": "#/components/schemas/PaySchedule"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Period End"
+          },
+          "state": {
+            "$ref": "#/components/schemas/PayrollRunState"
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/PersonRef"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "paid_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "paid_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid At"
+          },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/PayrollTotal"
+            },
+            "type": "array",
+            "title": "Totals"
+          },
+          "line_count": {
+            "type": "integer",
+            "title": "Line Count"
+          },
+          "missing_count": {
+            "type": "integer",
+            "title": "Missing Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "pay_schedule",
+          "period_start",
+          "period_end",
+          "state",
+          "created_by",
+          "created_at",
+          "totals",
+          "line_count",
+          "missing_count"
+        ],
+        "title": "PayrollRunSummary"
+      },
+      "PayrollTotal": {
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "lines": {
+            "type": "integer",
+            "title": "Lines"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "amount_minor",
+          "lines"
+        ],
+        "title": "PayrollTotal",
+        "description": "The lines paid in one currency, summed. Never across currencies."
       },
       "PeoplePage": {
         "properties": {
@@ -15032,6 +15900,8 @@
           "user_not_found",
           "department_not_found",
           "compensation_not_found",
+          "payroll_run_not_found",
+          "payroll_line_not_found",
           "member_not_found",
           "not_on_this_team",
           "user_not_on_team",
@@ -15079,6 +15949,12 @@
           "manager_cycle",
           "manager_deactivated",
           "compensation_already_corrected",
+          "payroll_run_overlaps",
+          "payroll_run_not_draft",
+          "payroll_run_not_approved",
+          "payroll_line_missing_pay",
+          "payroll_adjustment_too_large",
+          "department_has_finance_history",
           "name_required",
           "body_required",
           "invalid_colour",
