@@ -2,6 +2,7 @@
 import type {
   CompensationRecordRead,
   CompensationRow,
+  ExpenseRead,
   FinancePerson,
   PersonRef,
 } from '@/api/generated/models'
@@ -59,4 +60,22 @@ export function payRow(
   overrides: Partial<CompensationRow> = {},
 ): CompensationRow {
   return { person, current, change_percent: null, scheduled: [], ...overrides }
+}
+
+export function claim(id: number, overrides: Partial<ExpenseRead> = {}): ExpenseRead {
+  return {
+    id,
+    amount_minor: 41240,
+    currency: 'EUR',
+    incurred_on: '2026-09-14',
+    description: 'Hotel, client workshop in Lisbon',
+    state: 'submitted',
+    receipt: null,
+    decided_by: null,
+    decided_at: null,
+    refusal_reason: null,
+    created_at: '2026-09-15T09:00:00',
+    updated_at: '2026-09-15T09:00:00',
+    ...overrides,
+  }
 }

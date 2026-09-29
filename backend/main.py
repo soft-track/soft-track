@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app_finance.compensation import router as compensation_router
 from app_finance.currencies import router as currencies_router
+from app_finance.expenses import finance as expense_claims_router
+from app_finance.expenses import router as expenses_router
 from app_finance.payroll import router as payroll_router
 from app_identity.admin import router as admin_router
 from app_identity.departments import router as departments_router
@@ -164,6 +166,8 @@ app.include_router(outbound_router)
 app.include_router(currencies_router)
 app.include_router(compensation_router)
 app.include_router(payroll_router)
+app.include_router(expenses_router)
+app.include_router(expense_claims_router)
 
 
 @app.get("/health", tags=["health"])

@@ -40,15 +40,11 @@ from lib_finance.money import Currency
 from lib_identity.models.identity import PersonRef
 from lib_identity.people import find_by_username
 from lib_softtrack.models.page import DEFAULT_LIMIT
-from lib_softtrack.tables import Compensation, PaySchedule, User, utcnow
+from lib_softtrack.tables import Compensation, PaySchedule, User
 from lib_utils.errors import ErrorCode, api_error
 
 #: Totals are listed monthly first, the way pay is usually talked about.
 _SCHEDULE_ORDER = list(PaySchedule)
-
-
-def today() -> date:
-    return utcnow().date()
 
 
 def _corrected_ids():

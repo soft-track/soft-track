@@ -5,6 +5,7 @@ from sqlmodel import Session
 
 from lib_finance import compensation as compensation_service
 from lib_finance.access import finance_router, require_finance_admin
+from lib_finance.dates import today
 from lib_finance.models.compensation import (
     CompensationCreate,
     CompensationHistory,
@@ -35,7 +36,7 @@ def list_compensation(
     effect come last, and are counted in `missing`."""
     return compensation_service.list_compensation(
         session,
-        compensation_service.today(),
+        today(),
         q=q,
         department_id=department_id,
         currency=currency,
@@ -48,7 +49,7 @@ def list_compensation(
 def get_compensation_history(username: str, session: Session = Depends(get_session)):
     """Every record somebody has, latest effective first, each marked
     scheduled, current, past or corrected."""
-    return compensation_service.history(session, username, compensation_service.today())
+    return compensation_service.history(session, username, today())
 
 
 @router.post("/{username}", response_model=CompensationRecordRead)
@@ -60,6 +61,4 @@ def record_compensation(
 ):
     """Record a decision about somebody's pay. A raise or a correction is a
     new record; nothing is edited or deleted."""
-    return compensation_service.record(
-        session, actor, username, payload, compensation_service.today()
-    )
+    return compensation_service.record(session, actor, username, payload, today())

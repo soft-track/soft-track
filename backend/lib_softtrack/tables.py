@@ -367,6 +367,20 @@ class PayrollRunState(str, enum.Enum):
     paid = "paid"
 
 
+class ExpenseState(str, enum.Enum):
+    """Where an expense claim is (#133).
+
+    One submitter, one decision, by a finance admin -- never by the manager
+    chain, which stays information (#124). A refusal carries its reason.
+    Whatever happens to an approved claim next -- a batch, a line on a
+    payroll run -- is reimbursement's (#137), and reads from these rows.
+    """
+
+    submitted = "submitted"
+    approved = "approved"
+    refused = "refused"
+
+
 class CompensationKind(str, enum.Enum):
     """What decision a compensation record is (#131).
 
@@ -1546,6 +1560,59 @@ class PayrollLine(SQLModel, table=True):
 
     user: Optional[User] = Relationship(
         sa_relationship_kwargs={"foreign_keys": "PayrollLine.user_id", "viewonly": True}
+    )
+    department: Optional[Department] = Relationship(
+        sa_relationship_kwargs={"viewonly": True}
+    )
+
+
+class Expense(SQLModel, table=True):
+    """One expense claim (#133): money somebody spent for work, wanting it back.
+
+    The submitter can change or withdraw it while it waits. The decision
+    freezes it: an approved or refused claim is a record, and a correction is
+    a new claim. Approval copies the submitter's department onto it, like a
+    payroll line, so a reorg cannot move what a department spent (#134).
+
+    The receipt goes through the attachment pipeline -- the same name
+    handling, derived types, byte checks and storage -- but lives on the claim
+    rather than as an Attachment row, which always belongs to a ticket and is
+    guarded by the ticket's team. A receipt is guarded by who may see money.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    submitter_id: int = Field(foreign_key="user.id", index=True)
+    #: In the currency's minor unit, like compensation, and never converted.
+    amount_minor: int
+    currency: str
+    #: The day the money was spent.
+    incurred_on: date
+    description: str
+    state: ExpenseState = Field(default=ExpenseState.submitted, index=True)
+    receipt_filename: Optional[str] = None
+    receipt_content_type: Optional[str] = None
+    receipt_size_bytes: Optional[int] = None
+    receipt_storage_key: Optional[str] = None
+    decided_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    decided_at: Optional[datetime] = None
+    #: Required on a refusal, and shown to the submitter.
+    refusal_reason: Optional[str] = None
+    #: Copied at approval (#134); null for somebody in no department.
+    department_id: Optional[int] = Field(default=None, foreign_key="department.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+    submitter: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "Expense.submitter_id",
+            "viewonly": True,
+        }
+    )
+    decided_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "Expense.decided_by_id",
+            "viewonly": True,
+        }
     )
     department: Optional[Department] = Relationship(
         sa_relationship_kwargs={"viewonly": True}

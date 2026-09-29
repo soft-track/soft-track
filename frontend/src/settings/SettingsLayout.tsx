@@ -44,6 +44,8 @@ export default function SettingsLayout() {
           icon: 'bell',
         },
         { to: '/settings/security', label: t('layout.nav.security'), icon: 'shield' },
+        // Your own expense claims (#133): everybody's, and only their own.
+        { to: '/settings/expenses', label: t('layout.nav.expenses'), icon: 'receipt' },
       ],
     },
     ...(teams ?? []).map((team) => ({
@@ -121,6 +123,11 @@ export default function SettingsLayout() {
                 to: '/settings/finance/payroll',
                 label: t('layout.nav.payroll'),
                 icon: 'calendar' as IconName,
+              },
+              {
+                to: '/settings/finance/expenses',
+                label: t('layout.nav.expenseClaims'),
+                icon: 'receipt' as IconName,
               },
             ],
           },

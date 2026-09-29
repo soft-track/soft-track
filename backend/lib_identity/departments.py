@@ -17,7 +17,7 @@ from lib_identity.models.departments import (
     DepartmentRead,
     DepartmentUpdate,
 )
-from lib_softtrack.tables import Department, PayrollLine, User
+from lib_softtrack.tables import Department, Expense, PayrollLine, User
 from lib_utils.errors import ErrorCode, api_error
 
 
@@ -178,19 +178,25 @@ def delete_department(
     anybody. A department with nobody in it just goes.
     """
     department = get_department_or_404(session, department_id)
-    # Approved payroll lines keep the department they were paid under (#132),
-    # which is what stops a reorg rewriting where past spend went (#134).
-    # Deleting it would leave that history pointing at nothing, so it stays:
-    # a department that has been paid under is renamed, never deleted. Says
-    # that there is payroll history, and nothing about it.
-    paid_under = session.exec(
-        select(PayrollLine.id).where(PayrollLine.department_id == department.id)
-    ).first()
+    # Approved payroll lines (#132) and expense claims (#133) keep the
+    # department they were paid under, which is what stops a reorg rewriting
+    # where past spend went (#134). Deleting it would leave that history
+    # pointing at nothing, so it stays: a department money has been approved
+    # under is renamed, never deleted. Says that there is such history, and
+    # nothing about it.
+    paid_under = (
+        session.exec(
+            select(PayrollLine.id).where(PayrollLine.department_id == department.id)
+        ).first()
+        or session.exec(
+            select(Expense.id).where(Expense.department_id == department.id)
+        ).first()
+    )
     if paid_under is not None:
         raise api_error(
             status_code=409,
             code=ErrorCode.department_has_finance_history,
-            detail=f"Payroll has been approved under {department.name}, so it "
+            detail=f"Money has been approved under {department.name}, so it "
             "stays for the record. Rename it instead.",
         )
     members = session.exec(

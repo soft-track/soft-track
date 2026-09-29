@@ -385,6 +385,17 @@
   .btn-danger-ghost { color: var(--color-danger-600); background: transparent; }
   .btn-danger-ghost:hover:not(:disabled) { background: var(--color-danger-50); }
 
+  /* The one red button on a dialog that says no (#133). Filled, and the same
+     in both themes: 600 is not remapped for dark, and carries white text. */
+  .btn-danger {
+    color: #fff;
+    background: var(--color-danger-600);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 1px 2px rgba(20, 18, 40, 0.2);
+  }
+  .btn-danger:hover:not(:disabled) { filter: brightness(1.08); }
+
   .btn-icon {
     width: 2.125rem;
     padding: 0;

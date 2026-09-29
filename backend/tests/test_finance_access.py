@@ -247,6 +247,10 @@ def test_the_line_survives_the_migrations_the_app_runs_on_startup(tmp_path):
 #: else in lib_finance/models is for finance admins' eyes only.
 SHARED_FINANCE_SCHEMAS = {
     "CurrencyRead": "a list of currencies is no secret",
+    # /expenses answers with the caller's own claims and nobody else's (#133).
+    "ExpenseRead": "your own claims",
+    "ExpensePage": "your own claims",
+    "ReceiptRead": "your own receipts",
 }
 
 

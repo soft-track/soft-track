@@ -17,6 +17,7 @@ risking.
 
 import logging
 import secrets
+from collections.abc import Mapping
 from pathlib import PurePosixPath
 from typing import Optional
 from urllib.parse import quote
@@ -130,9 +131,11 @@ MAX_FILENAME_LENGTH = 200
 MAX_EXTENSION_LENGTH = max(len(extension) - 1 for extension in ALLOWED_TYPES)
 
 
-def content_type_for(filename: str) -> Optional[str]:
+def content_type_for(
+    filename: str, allowed: Mapping[str, str] = ALLOWED_TYPES
+) -> Optional[str]:
     """The type this name will be served as, or None if it is not allowed."""
-    return ALLOWED_TYPES.get(PurePosixPath(filename).suffix.lower())
+    return allowed.get(PurePosixPath(filename).suffix.lower())
 
 
 def safe_filename(raw: str) -> str:
@@ -158,10 +161,58 @@ def safe_filename(raw: str) -> str:
     return name
 
 
-def _storage_key(extension: str) -> str:
+def new_storage_key(filename: str) -> str:
     """A fresh, unguessable key, sharded so no directory grows without bound."""
     token = secrets.token_hex(16)
-    return f"{token[:2]}/{token}{extension}"
+    return f"{token[:2]}/{token}{PurePosixPath(filename).suffix.lower()}"
+
+
+def check_upload(
+    raw_filename: str, data: bytes, allowed: Mapping[str, str] = ALLOWED_TYPES
+) -> tuple[str, str]:
+    """A file fit to store: its safe name and the type it will be served as.
+
+    Refused, with the reason, when it has no usable name, a type not on
+    `allowed`, no bytes, or bytes that are not the image or PDF its name
+    says. Shared with expense receipts (#133), which allow fewer types.
+    """
+    filename = safe_filename(raw_filename)
+    if not filename:
+        raise api_error(
+            status_code=422,
+            code=ErrorCode.attachment_name_missing,
+            detail="That file has no usable name.",
+        )
+
+    content_type = content_type_for(filename, allowed)
+    if content_type is None:
+        raise api_error(
+            status_code=415,
+            code=ErrorCode.attachment_type_not_allowed,
+            detail=(
+                f"{PurePosixPath(filename).suffix or 'That file type'} is not an "
+                "accepted attachment type. Accepted: "
+                + ", ".join(sorted(allowed))
+                + "."
+            ),
+        )
+
+    if not data:
+        raise api_error(
+            status_code=422, code=ErrorCode.file_empty, detail="That file is empty."
+        )
+
+    signatures = _IMAGE_SIGNATURES.get(content_type)
+    not_a_pdf = (
+        content_type == "application/pdf" and b"%PDF-" not in data[:_PDF_HEADER_WINDOW]
+    )
+    if (signatures and not data.startswith(signatures)) or not_a_pdf:
+        raise api_error(
+            status_code=422,
+            code=ErrorCode.attachment_content_mismatch,
+            detail=f"{filename} is not a valid {content_type.split('/')[1].upper()}.",
+        )
+    return filename, content_type
 
 
 def preview_kind(content_type: str) -> Optional[AttachmentPreview]:
@@ -189,14 +240,17 @@ def served_type(attachment: Attachment) -> str:
 
 
 def content_disposition(attachment: Attachment) -> str:
+    return content_disposition_for(attachment.filename, attachment.content_type)
+
+
+def content_disposition_for(name: str, content_type: str) -> str:
     """`inline` for what can be previewed, `attachment` for everything else.
 
     Both spellings of the filename are sent: the bare `filename=` for clients
     that predate RFC 5987 and `filename*=` for every name that is not ASCII,
     which is most people's names for most files.
     """
-    disposition = "inline" if preview_kind(attachment.content_type) else "attachment"
-    name = attachment.filename
+    disposition = "inline" if preview_kind(content_type) else "attachment"
     ascii_name = name.encode("ascii", "replace").decode("ascii").replace('"', "'")
     return (
         f'{disposition}; filename="{ascii_name}"; '
@@ -278,44 +332,9 @@ def create_attachment(
     ticket = _ticket_or_404(session, ticket_id)
     require_team_member(ticket.team_id, current_user, session)
 
-    filename = safe_filename(upload.filename or "")
-    if not filename:
-        raise api_error(
-            status_code=422,
-            code=ErrorCode.attachment_name_missing,
-            detail="That file has no usable name.",
-        )
+    filename, content_type = check_upload(upload.filename or "", data)
 
-    content_type = content_type_for(filename)
-    if content_type is None:
-        raise api_error(
-            status_code=415,
-            code=ErrorCode.attachment_type_not_allowed,
-            detail=(
-                f"{PurePosixPath(filename).suffix or 'That file type'} is not an "
-                "accepted attachment type. Accepted: "
-                + ", ".join(sorted(ALLOWED_TYPES))
-                + "."
-            ),
-        )
-
-    if not data:
-        raise api_error(
-            status_code=422, code=ErrorCode.file_empty, detail="That file is empty."
-        )
-
-    signatures = _IMAGE_SIGNATURES.get(content_type)
-    not_a_pdf = (
-        content_type == "application/pdf" and b"%PDF-" not in data[:_PDF_HEADER_WINDOW]
-    )
-    if (signatures and not data.startswith(signatures)) or not_a_pdf:
-        raise api_error(
-            status_code=422,
-            code=ErrorCode.attachment_content_mismatch,
-            detail=f"{filename} is not a valid {content_type.split('/')[1].upper()}.",
-        )
-
-    key = _storage_key(PurePosixPath(filename).suffix.lower())
+    key = new_storage_key(filename)
     # Bytes first: a row promising a file that was never written is the one
     # failure that shows up as a broken image rather than as an error.
     storage.write(key, data)

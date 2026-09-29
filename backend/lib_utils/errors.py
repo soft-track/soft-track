@@ -78,6 +78,10 @@ class ErrorCode(str, enum.Enum):
     payroll_run_not_found = "payroll_run_not_found"
     #: Adjusting somebody who is not on the run (#132).
     payroll_line_not_found = "payroll_line_not_found"
+    #: A claim that does not exist, or -- to its submitter's API -- is
+    #: somebody else's (#133).
+    expense_not_found = "expense_not_found"
+    receipt_not_found = "receipt_not_found"
     #: The person is not a member of the team the request is about.
     member_not_found = "member_not_found"
     #: A status, label, project or sprint id that belongs to another team.
@@ -160,6 +164,12 @@ class ErrorCode(str, enum.Enum):
     payroll_line_missing_pay = "payroll_line_missing_pay"
     #: An adjustment that would take a line below zero.
     payroll_adjustment_too_large = "payroll_adjustment_too_large"
+    #: A decided claim is a record; a correction is a new claim (#133).
+    expense_decided = "expense_decided"
+    #: Nobody decides their own claim.
+    expense_own_claim = "expense_own_claim"
+    #: A claim is for money already spent.
+    expense_in_future = "expense_in_future"
     #: A department that approved payroll (and, later, expenses and budgets)
     #: is attributed to is renamed, not deleted: the record keeps pointing at it.
     department_has_finance_history = "department_has_finance_history"

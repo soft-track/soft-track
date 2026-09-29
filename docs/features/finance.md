@@ -183,3 +183,59 @@ On the API, all under `/finance/payroll/runs`:
 | `PUT /{id}/lines/{user_id}/adjustment` | `{"amount_minor": 40000, "note": "…"}`, and `DELETE` to take it off |
 | `POST /{id}/approve`, `POST /{id}/paid` | Move it on |
 | `GET /{id}/export` | The CSV, once approved |
+
+## Expense claims
+
+Expenses are the one finance feature everybody touches: buy the thing, keep the
+receipt, get paid back. There are two sides to it, and a wall between them.
+
+**Settings → Expenses** is everybody's own, finance access or not. **New
+expense** takes an amount and currency, the date the money was spent, a
+description, and a receipt. The list shows each of your claims and where it
+stands. A claim that is still waiting can be edited or withdrawn. A decided
+claim says who decided it, and a refusal says why. Only you and finance admins
+see your claims, because an expense says where you were and what you bought.
+The API has no way to ask for anybody else's: `/expenses` only ever answers
+with the caller's own claims, and somebody else's claim id is a 404 there.
+
+**Finance → Expense claims** is the review queue: every claim, filtered by state
+(with a count on each) and by person. A chosen claim shows beside the list with
+its receipt, a photo inline or a PDF in the browser's own viewer. It is
+**Approve** or **Refuse…**.
+
+- **Approval belongs to finance**, not the manager chain, which stays
+  information. Nobody decides their own claim, finance access or not
+  (`409 expense_own_claim`). Another finance admin does.
+- **A refusal needs a reason**, and the submitter sees it on the claim. "No"
+  with no why is a Slack thread waiting to happen.
+- **A decided claim is frozen** (`409 expense_decided`). A correction is a new
+  claim, the same instinct as compensation's append-only history. Approval
+  copies the submitter's department onto the claim, like a payroll line, so a
+  reorg can't move what a department spent.
+- **A claim is for money already spent.** A date more than a day ahead is
+  refused (`400 expense_in_future`); the day of slack is for somebody a
+  timezone ahead of the server.
+- **Receipts ride the attachment pipeline**: the same name handling, types
+  derived from the name and never taken from the request, byte checks that a
+  PNG is a PNG and a PDF a PDF, the same storage (local or S3), and the same
+  headers on the way out. A receipt must be an image or a PDF, since a receipt
+  is not a zip file. It lives on the claim rather than as an attachment row,
+  because attachments belong to tickets and are guarded by the ticket's team,
+  while a receipt is guarded by who may see money. Replacing a receipt or
+  withdrawing a claim removes the old bytes.
+
+There is no policy engine: no per-diem rules, category limits or approval
+chains. One submitter, one decision, one paper trail. What happens to an
+approved claim next is reimbursement.
+
+On the API:
+
+| | |
+| --- | --- |
+| `GET /expenses`, `POST /expenses` | Your claims; submit one |
+| `PATCH /expenses/{id}`, `DELETE /expenses/{id}` | Change or withdraw one while it waits |
+| `PUT /expenses/{id}/receipt`, `DELETE …`, `GET …` | Attach, remove or fetch its receipt |
+| `GET /finance/expenses?state=&submitter_id=` | Every claim, with `counts` per state |
+| `GET /finance/expenses/{id}`, `…/receipt` | One claim, and its receipt |
+| `POST /finance/expenses/{id}/approve` | Approve |
+| `POST /finance/expenses/{id}/refuse` | `{"reason": "…"}`, required |

@@ -63,6 +63,17 @@ NOT_TEAM_WRITES = {
         "/finance/payroll/runs/{run_id}/approve",
     ): "finance admins, not team roles",
     ("POST", "/finance/payroll/runs/{run_id}/paid"): "finance admins, not team roles",
+    (
+        "POST",
+        "/finance/expenses/{expense_id}/approve",
+    ): "finance admins, not team roles",
+    ("POST", "/finance/expenses/{expense_id}/refuse"): "finance admins, not team roles",
+    # Your own expense claims (#133), which no team has anything to do with.
+    ("POST", "/expenses"): "your own claims",
+    ("PATCH", "/expenses/{expense_id}"): "your own claims",
+    ("DELETE", "/expenses/{expense_id}"): "your own claims",
+    ("PUT", "/expenses/{expense_id}/receipt"): "your own claims",
+    ("DELETE", "/expenses/{expense_id}/receipt"): "your own claims",
     ("POST", "/teams"): "a new team, which its creator admins",
     # The invite link is the authority, and it names the role.
     ("POST", "/invites/{token}/accept"): "the invitation decides the role",

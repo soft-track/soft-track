@@ -8191,6 +8191,648 @@
         }
       }
     },
+    "/expenses": {
+      "get": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "List My Expenses",
+        "description": "Your own claims, the latest spent first. Nobody else's, whoever asks:\nan expense says where somebody was and what they bought.",
+        "operationId": "list_my_expenses_expenses_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpensePage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Submit Expense",
+        "description": "Claim money you spent for work. The receipt is attached next, with\nPUT /expenses/{id}/receipt.",
+        "operationId": "submit_expense_expenses_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpenseCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpenseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/expenses/{expense_id}": {
+      "patch": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Update Expense",
+        "description": "Change a claim that is still waiting. A decided one is a record.",
+        "operationId": "update_expense_expenses__expense_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "expense_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Expense Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpenseUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpenseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Withdraw Expense",
+        "description": "Withdraw a claim that is still waiting, receipt and all.",
+        "operationId": "withdraw_expense_expenses__expense_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "expense_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Expense Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/expenses/{expense_id}/receipt": {
+      "put": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Attach Receipt",
+        "description": "Attach the receipt, or replace it: an image or a PDF, checked the way\nticket attachments are.",
+        "operationId": "attach_receipt_expenses__expense_id__receipt_put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "expense_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Expense Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_attach_receipt_expenses__expense_id__receipt_put"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpenseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Remove Receipt",
+        "operationId": "remove_receipt_expenses__expense_id__receipt_delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "expense_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Expense Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpenseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Download My Receipt",
+        "operationId": "download_my_receipt_expenses__expense_id__receipt_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "expense_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Expense Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/expenses": {
+      "get": {
+        "tags": [
+          "expense-claims"
+        ],
+        "summary": "List Expense Claims",
+        "description": "Every claim, the latest spent first, with how many are in each state.",
+        "operationId": "list_expense_claims_finance_expenses_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ExpenseState"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "name": "submitter_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Submitter Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/expenses/{expense_id}": {
+      "get": {
+        "tags": [
+          "expense-claims"
+        ],
+        "summary": "Get Expense Claim",
+        "operationId": "get_expense_claim_finance_expenses__expense_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "expense_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Expense Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/expenses/{expense_id}/receipt": {
+      "get": {
+        "tags": [
+          "expense-claims"
+        ],
+        "summary": "Download Claim Receipt",
+        "operationId": "download_claim_receipt_finance_expenses__expense_id__receipt_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "expense_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Expense Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/expenses/{expense_id}/approve": {
+      "post": {
+        "tags": [
+          "expense-claims"
+        ],
+        "summary": "Approve Expense",
+        "description": "Approve a waiting claim. Refused for your own: another finance admin\ndecides it.",
+        "operationId": "approve_expense_finance_expenses__expense_id__approve_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "expense_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Expense Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/expenses/{expense_id}/refuse": {
+      "post": {
+        "tags": [
+          "expense-claims"
+        ],
+        "summary": "Refuse Expense",
+        "description": "Refuse a waiting claim, saying why. The submitter sees the reason.",
+        "operationId": "refuse_expense_finance_expenses__expense_id__refuse_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "expense_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Expense Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpenseRefusal"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -9011,6 +9653,21 @@
         "title": "AutomationTrigger",
         "description": "What makes an automation rule look at a ticket.\n\nEight, and not extensible by a team. Every one of them is something\nSoftTrack already writes down as it happens, which is what keeps the\nengine to \"read the event, read the rules, apply them\" instead of a\nscheduler with a clock of its own. There is deliberately no \"every\nMonday\": a rule that fires while nobody is doing anything is a rule\nnobody remembers exists when it surprises them.\n\nThe last three arrive from a connected repository rather than from\nsomebody using the tracker. They are triggers rather than a settings pair\nof their own -- \"which status means in review\", \"which means shipped\" --\nbecause that pair is a second engine for \"when X happens, change the\nticket\", and this one already exists, already has conditions, and already\nwrites down what it did."
       },
+      "Body_attach_receipt_expenses__expense_id__receipt_put": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "A photo or PDF of the receipt."
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_attach_receipt_expenses__expense_id__receipt_put"
+      },
       "Body_import_jira_teams__team_id__import_jira_post": {
         "properties": {
           "file": {
@@ -9190,6 +9847,172 @@
           "ideal_remaining"
         ],
         "title": "BurndownPoint"
+      },
+      "ClaimCounts": {
+        "properties": {
+          "submitted": {
+            "type": "integer",
+            "title": "Submitted"
+          },
+          "approved": {
+            "type": "integer",
+            "title": "Approved"
+          },
+          "refused": {
+            "type": "integer",
+            "title": "Refused"
+          }
+        },
+        "type": "object",
+        "required": [
+          "submitted",
+          "approved",
+          "refused"
+        ],
+        "title": "ClaimCounts",
+        "description": "How many claims wait in each state, for the queue's tabs."
+      },
+      "ClaimPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/ClaimCounts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "counts"
+        ],
+        "title": "ClaimPage"
+      },
+      "ClaimRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "incurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Incurred On"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ExpenseState"
+          },
+          "receipt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "refusal_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refusal Reason"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "submitter": {
+            "$ref": "#/components/schemas/FinancePerson"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "amount_minor",
+          "currency",
+          "incurred_on",
+          "description",
+          "state",
+          "created_at",
+          "updated_at",
+          "submitter"
+        ],
+        "title": "ClaimRead",
+        "description": "An expense claim as finance sees it: whose, and where it belongs."
       },
       "CodeLinkKind": {
         "type": "string",
@@ -10102,6 +10925,239 @@
           "by_assignee"
         ],
         "title": "EstimateSummary"
+      },
+      "ExpenseCreate": {
+        "properties": {
+          "amount_minor": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "incurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Incurred On"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount_minor",
+          "currency",
+          "incurred_on",
+          "description"
+        ],
+        "title": "ExpenseCreate"
+      },
+      "ExpensePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ExpenseRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ExpensePage"
+      },
+      "ExpenseRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "incurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Incurred On"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ExpenseState"
+          },
+          "receipt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "refusal_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refusal Reason"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "amount_minor",
+          "currency",
+          "incurred_on",
+          "description",
+          "state",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ExpenseRead",
+        "description": "An expense claim as its submitter sees it (#133).\n\nReturned by /expenses, which only ever answers with the caller's own\nclaims. Who decided and why is on it: a refusal is shown to the person\nit refuses, with its reason."
+      },
+      "ExpenseRefusal": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "ExpenseRefusal"
+      },
+      "ExpenseState": {
+        "type": "string",
+        "enum": [
+          "submitted",
+          "approved",
+          "refused"
+        ],
+        "title": "ExpenseState",
+        "description": "Where an expense claim is (#133).\n\nOne submitter, one decision, by a finance admin -- never by the manager\nchain, which stays information (#124). A refusal carries its reason.\nWhatever happens to an approved claim next -- a batch, a line on a\npayroll run -- is reimbursement's (#137), and reads from these rows."
+      },
+      "ExpenseUpdate": {
+        "properties": {
+          "amount_minor": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Currency"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "incurred_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incurred On"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "title": "ExpenseUpdate",
+        "description": "Only while the claim waits. Leaving a field out leaves it alone."
       },
       "FinancePerson": {
         "properties": {
@@ -12480,6 +13536,39 @@
         ],
         "title": "ReactionSummary",
         "description": "One emoji on one comment, and who gave it (#96).\n\nSummarised rather than one row per reaction: a chip needs the count, the\nnames for its tooltip, and whether it is yours to take back -- never the\nindividual rows."
+      },
+      "ReceiptRead": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "is_image": {
+            "type": "boolean",
+            "title": "Is Image"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "content_type",
+          "size_bytes",
+          "is_image",
+          "url"
+        ],
+        "title": "ReceiptRead"
       },
       "ReportLoad": {
         "properties": {
@@ -15902,6 +16991,8 @@
           "compensation_not_found",
           "payroll_run_not_found",
           "payroll_line_not_found",
+          "expense_not_found",
+          "receipt_not_found",
           "member_not_found",
           "not_on_this_team",
           "user_not_on_team",
@@ -15954,6 +17045,9 @@
           "payroll_run_not_approved",
           "payroll_line_missing_pay",
           "payroll_adjustment_too_large",
+          "expense_decided",
+          "expense_own_claim",
+          "expense_in_future",
           "department_has_finance_history",
           "name_required",
           "body_required",
