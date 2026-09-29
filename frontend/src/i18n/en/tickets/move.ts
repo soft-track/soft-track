@@ -24,6 +24,7 @@ export const move = {
     leavesSprint: 'Leaves {{sprint}}; sprints belong to one team.',
     leavesProject: 'Leaves {{project}}; epics belong to one team.',
     unassigned: 'Is unassigned from {{name}}, who is not on that team.',
+    fieldsCleared: 'Clears {{fields}}; fields belong to one team.',
     detached: 'Stops being a sub-ticket of {{parent}}.',
     takes_one: 'Takes its sub-ticket {{list}} with it.',
     takes_other: 'Takes its sub-tickets {{list}} with it.',

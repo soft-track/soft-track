@@ -33,6 +33,9 @@ class NotificationRead(BaseModel):
     #: Trimmed server-side so the inbox never downloads a 4,000-word comment
     #: to show forty characters of it.
     excerpt: Optional[str] = None
+    #: For `field_assigned` (#117): the field the reader was named in --
+    #: "Reviewer" -- as it is called now.
+    field_name: Optional[str] = None
     read: bool
     created_at: datetime
 

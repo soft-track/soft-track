@@ -22,4 +22,5 @@ export const NotificationKind = {
   mentioned: 'mentioned',
   commented: 'commented',
   status_changed: 'status_changed',
+  field_assigned: 'field_assigned',
 } as const;

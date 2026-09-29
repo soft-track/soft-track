@@ -197,6 +197,12 @@ export function PlanSummary({ plan }: { plan: TransferPlan }) {
       loses: true,
     })
   }
+  if (plan.fields_cleared.length > 0) {
+    lines.push({
+      text: t('move.plan.fieldsCleared', { fields: formatList(plan.fields_cleared) }),
+      loses: true,
+    })
+  }
   if (plan.parent_detached) {
     lines.push({ text: t('move.plan.detached', { parent: plan.parent_detached }), loses: true })
   }

@@ -16,4 +16,9 @@ export const kinds = {
     byActor: '{{actor}} changed the status',
     noActor: 'Changed the status',
   },
+  // Named in one of the team's own user fields (#117): a reviewer, say.
+  field_assigned: {
+    byActor: '{{actor}} set you as {{field}}',
+    noActor: 'Set you as {{field}}',
+  },
 } as const

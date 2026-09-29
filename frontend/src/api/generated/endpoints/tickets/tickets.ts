@@ -754,7 +754,7 @@ export const useMoveTicketTicketsTicketIdMovePost = <TError = HTTPValidationErro
     }
     /**
  * What has happened to a ticket: status, priority, assignee, estimate,
- * sprint and project changes, oldest first, with who made each one.
+ * sprint, project and team-field changes, oldest first, with who made each.
  *
  * The latest 100 changes. The values a ticket was created with are its
  * starting point rather than changes, and are left out.

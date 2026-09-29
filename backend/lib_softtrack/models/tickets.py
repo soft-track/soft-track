@@ -4,6 +4,7 @@ from typing import Annotated, Optional
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from lib_identity.models.identity import UserPublic
+from lib_softtrack.models.custom_fields import CustomFieldValueRead, CustomFieldValues
 from lib_softtrack.models.labels import LabelRead
 from lib_softtrack.models.statuses import StatusRead
 from lib_softtrack.tables import TicketPriority, TicketType
@@ -65,6 +66,9 @@ class TicketCreate(BaseModel):
     sprint_id: Optional[int] = None
     due_date: Optional[date] = None
     label_ids: list[int] = []
+    #: The team's own fields (#117), by key. A required one left out is
+    #: refused with an error that names it.
+    custom_fields: CustomFieldValues = {}
 
 
 class TicketUpdate(BaseModel):
@@ -86,6 +90,9 @@ class TicketUpdate(BaseModel):
     #: An explicit null clears the due date.
     due_date: Optional[date] = None
     label_ids: Optional[list[int]] = None
+    #: Merged into what the ticket has: keys left out are left alone, and an
+    #: explicit null clears one.
+    custom_fields: Optional[CustomFieldValues] = None
 
 
 class TicketMove(BaseModel):
@@ -136,6 +143,12 @@ class TicketRead(BaseModel):
     #: the schema, pushing an `undefined` check into every client.
     creator: UserPublic
     labels: list[LabelRead] = []
+    #: Values for the team's own fields (#117), by key; a field with no value
+    #: is absent. A person is the whole user, like `assignee`. Every field
+    #: the ticket has a value in is here -- an archived one, or one bound to
+    #: another ticket type, included -- and `GET /teams/{id}/custom-fields`
+    #: says what each is. No default, like the counts above.
+    custom_fields: dict[str, CustomFieldValueRead]
     created_at: datetime
     updated_at: datetime
 

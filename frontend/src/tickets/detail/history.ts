@@ -1,11 +1,13 @@
 import { parseServerDate } from '@/api/dates'
 import type {
   CommentRead,
+  CustomFieldRef,
   TicketEventRead,
   TicketPriority,
   StatusCategory,
 } from '@/api/generated/models'
 import { i18n } from '@/i18n'
+import { formatNumber } from '@/i18n/format'
 import { shortDue } from '@/tickets/dueDate'
 import { CATEGORY_META, PRIORITY_META } from '@/tickets/ticketMeta'
 
@@ -24,6 +26,7 @@ type HistoryKey =
   | `due.${'set' | 'moved' | 'removed'}`
   | `project.${'added' | 'moved' | 'removed'}`
   | 'team'
+  | `field.${'set' | 'changed' | 'cleared' | 'ticked' | 'unticked'}`
   | 'other'
 
 /**
@@ -97,6 +100,20 @@ export function describeEvent(event: TicketEventRead): EventSentence {
       return say('team', { from: from ?? elsewhere, to: to ?? elsewhere })
     }
 
+    case 'custom_field': {
+      // One of the team's own fields (#117), named as it is now. Deleting a
+      // field takes its history with it, so the field is always here.
+      const field = event.custom_field
+      if (!field) return say('other')
+      const values = { field: field.name }
+      if (field.kind === 'checkbox') return say(to ? 'field.ticked' : 'field.unticked', values)
+      const before = fieldValue(field, from, event.old_label)
+      const after = fieldValue(field, to, event.new_label)
+      if (!to) return say('field.cleared', { ...values, from: before })
+      if (!from) return say('field.set', { ...values, to: after })
+      return say('field.changed', { ...values, from: before, to: after })
+    }
+
     default:
       return say('other')
   }
@@ -128,6 +145,32 @@ function priority(value: string | null | undefined): string {
 
 function points(value: string | null | undefined): string {
   return i18n.t('tickets:history.points', { count: Number(value) })
+}
+
+/**
+ * One side of a field's change. A person or an option reads as its name now
+ * -- the label -- and one that has gone reads as such rather than as an id.
+ */
+function fieldValue(
+  field: CustomFieldRef,
+  value: string | null | undefined,
+  label: string | null | undefined,
+): string {
+  // The side that had no value: the sentence chosen does not show it.
+  if (value === null || value === undefined) return ''
+  switch (field.kind) {
+    case 'user':
+      return named(label, 'formerMember')
+    case 'select':
+    case 'multi_select':
+      return label ?? i18n.t('tickets:history.removedOption')
+    case 'date':
+      return shortDue(value)
+    case 'number':
+      return formatNumber(Number(value))
+    default:
+      return value
+  }
 }
 
 function named(

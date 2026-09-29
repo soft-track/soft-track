@@ -1,10 +1,20 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useId, useState } from 'react'
 
+import { errorDetail } from '@/api/errors'
 import { useCreateTicketTeamsTeamIdTicketsPost } from '@/api/generated/endpoints/tickets/tickets'
 import { useListTemplatesTeamsTeamIdTicketTemplatesGet } from '@/api/generated/endpoints/templates/templates'
 import { TicketPriority, type TicketType } from '@/api/generated/models'
-import { useTranslation } from '@/i18n'
+import { Trans, userText, useTranslation } from '@/i18n'
+import { formatList } from '@/i18n/format'
+import { CustomFieldControl } from '@/tickets/CustomFieldControl'
+import {
+  type FieldInput,
+  editableFields,
+  isFilled,
+  missingRequired,
+  useCustomFields,
+} from '@/tickets/customFields'
 import {
   ESTIMATE_SCALE,
   PRIORITY_META,
@@ -29,6 +39,7 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient()
   const createTicket = useCreateTicketTeamsTeamIdTicketsPost()
   const templates = useListTemplatesTeamsTeamIdTicketTemplatesGet(team.id).data ?? []
+  const customFields = useCustomFields(team.id)
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -48,7 +59,16 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
   const [dueDate, setDueDate] = useState('')
   const [assigneeId, setAssigneeId] = useState<string>('')
   const [labelIds, setLabelIds] = useState<number[]>([])
+  // The team's own fields (#117), by key. Only the ones a ticket of the
+  // chosen type has are offered, and only those are sent.
+  const [fieldValues, setFieldValues] = useState<Record<string, FieldInput>>({})
+  // Set by a submit that left a required field empty, and from then on
+  // recomputed as the form changes, so filling one in clears its warning.
+  const [checkRequired, setCheckRequired] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const formFields = editableFields(customFields, type)
+  const missing = checkRequired ? missingRequired(customFields, type, fieldValues) : []
 
   const applyTemplate = (id: string) => {
     const template = templates.find((candidate) => String(candidate.id) === id)
@@ -77,6 +97,16 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
     event.preventDefault()
     if (!title.trim()) return
     setError(null)
+    // The check the API makes, made first: the form can point at the field.
+    if (missingRequired(customFields, type, fieldValues).length > 0) {
+      setCheckRequired(true)
+      return
+    }
+    // Only the fields this type of ticket has: a value chosen before the type
+    // was changed is not sent for a field the ticket no longer takes.
+    const filled = formFields
+      .filter((field) => isFilled(fieldValues[field.key]))
+      .map((field) => [field.key, fieldValues[field.key]] as const)
     try {
       await createTicket.mutateAsync({
         teamId: team.id,
@@ -92,13 +122,16 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
           due_date: dueDate || undefined,
           assignee_id: assigneeId ? Number(assigneeId) : undefined,
           label_ids: labelIds,
+          custom_fields: filled.length > 0 ? Object.fromEntries(filled) : undefined,
         },
       })
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/tickets`] })
       invalidateProjects(queryClient, team.id)
       onClose()
-    } catch {
-      setError(t('newTicket.errors.create'))
+    } catch (err: unknown) {
+      // The API's sentence when it has one -- a field made required since
+      // the form loaded is named in it.
+      setError(errorDetail(err, t('newTicket.errors.create')))
     }
   }
 
@@ -306,6 +339,50 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
                   </button>
                 )
               })}
+            </div>
+          )}
+
+          {formFields.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 px-5 pb-4">
+              <span className="eyebrow mr-1">
+                {t('customFields.heading', { team: team.name })}
+              </span>
+              {formFields.map((field) => (
+                <CustomFieldControl
+                  key={field.id}
+                  field={field}
+                  value={fieldValues[field.key] ?? undefined}
+                  live
+                  label={field.name}
+                  placeholder={field.required ? `${field.name} *` : field.name}
+                  invalid={missing.some((gap) => gap.id === field.id)}
+                  onChange={(value) =>
+                    setFieldValues((prev) => ({ ...prev, [field.key]: value }))
+                  }
+                />
+              ))}
+            </div>
+          )}
+
+          {missing.length > 0 && (
+            <div
+              role="alert"
+              className="mx-5 mb-4 flex items-start gap-2.5 rounded-control border border-danger-500/30 bg-danger-50 px-3.5 py-3 text-sm text-neutral-700"
+            >
+              <Icon name="alert" size={15} className="mt-0.5 shrink-0 text-danger-600" />
+              <span>
+                <Trans
+                  t={t}
+                  i18nKey="customFields.required"
+                  count={missing.length}
+                  values={{
+                    fields: formatList(missing.map((field) => field.name)),
+                    team: team.name,
+                  }}
+                  components={{ strong: <strong className="font-semibold text-neutral-900" /> }}
+                  {...userText}
+                />
+              </span>
             </div>
           )}
 

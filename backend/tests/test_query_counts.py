@@ -114,8 +114,9 @@ def test_listing_tickets_does_not_scale_queries_with_page_size():
 
 #: Raised from 10 to 11 when statuses became rows (soft-track#22): a page of
 #: tickets now loads the status rows it points at. One query for the page, not
-#: one per ticket -- which is what the test above actually guards.
-_CEILING = 11
+#: one per ticket -- which is what the test above actually guards. And to 12
+#: for the team's own field values (#117), one query for the page again.
+_CEILING = 12
 
 
 @pytest.mark.parametrize("ticket_count", [5, 60])

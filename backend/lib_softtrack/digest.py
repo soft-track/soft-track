@@ -39,6 +39,9 @@ def _sentence(item: NotificationRead) -> str:
         return f"{who} mentioned you on {item.ticket.identifier}"
     if item.kind == NotificationKind.commented:
         return f"{who} commented on {item.ticket.identifier}"
+    if item.kind == NotificationKind.field_assigned:
+        field = item.field_name or "a field"
+        return f"{who} set you as {field} on {item.ticket.identifier}"
     return f"{who} changed the status of {item.ticket.identifier}"
 
 

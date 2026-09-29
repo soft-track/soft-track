@@ -3115,7 +3115,7 @@
           "tickets"
         ],
         "summary": "List Ticket Events",
-        "description": "What has happened to a ticket: status, priority, assignee, estimate,\nsprint and project changes, oldest first, with who made each one.\n\nThe latest 100 changes. The values a ticket was created with are its\nstarting point rather than changes, and are left out.",
+        "description": "What has happened to a ticket: status, priority, assignee, estimate,\nsprint, project and team-field changes, oldest first, with who made each.\n\nThe latest 100 changes. The values a ticket was created with are its\nstarting point rather than changes, and are left out.",
         "operationId": "list_ticket_events_tickets__ticket_id__events_get",
         "security": [
           {
@@ -5908,6 +5908,273 @@
             "schema": {
               "type": "integer",
               "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/custom-fields": {
+      "get": {
+        "tags": [
+          "custom-fields"
+        ],
+        "summary": "List Custom Fields",
+        "description": "The team's own ticket fields (#117), archived ones included, in order.\n\nAny member may read them: they say what the keys in a ticket's\n`custom_fields` are and how to show their values.",
+        "operationId": "list_custom_fields_teams__team_id__custom_fields_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomFieldRead"
+                  },
+                  "title": "Response List Custom Fields Teams  Team Id  Custom Fields Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "custom-fields"
+        ],
+        "summary": "Create Custom Field",
+        "description": "Add a field to the team's tickets. Team admins only.",
+        "operationId": "create_custom_field_teams__team_id__custom_fields_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomFieldCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomFieldRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/custom-fields/order": {
+      "put": {
+        "tags": [
+          "custom-fields"
+        ],
+        "summary": "Reorder Custom Fields",
+        "description": "Set the order tickets show the fields in. Takes every field that is\nnot archived, at once.",
+        "operationId": "reorder_custom_fields_teams__team_id__custom_fields_order_put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomFieldOrder"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomFieldRead"
+                  },
+                  "title": "Response Reorder Custom Fields Teams  Team Id  Custom Fields Order Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/custom-fields/{field_id}": {
+      "patch": {
+        "tags": [
+          "custom-fields"
+        ],
+        "summary": "Update Custom Field",
+        "description": "Rename, change the options, make required, bind to ticket types,\narchive or restore. Team admins only.",
+        "operationId": "update_custom_field_custom_fields__field_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "field_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Field Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomFieldUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomFieldRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "custom-fields"
+        ],
+        "summary": "Delete Custom Field",
+        "description": "Destroy an archived field, with every value and history row it has.\n\nRefused for a field that is not archived: archiving is how a field is\nretired, and this is the separate, louder step past it.",
+        "operationId": "delete_custom_field_custom_fields__field_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "field_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Field Id"
             }
           }
         ],
@@ -11921,6 +12188,312 @@
         "title": "CurrencyRead",
         "description": "A currency amounts can be recorded in, and its decimal places."
       },
+      "CustomFieldCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,39}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CustomFieldKind"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/CustomFieldOptionWrite"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Options",
+            "default": []
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "applies_to": {
+            "items": {
+              "$ref": "#/components/schemas/TicketType"
+            },
+            "type": "array",
+            "title": "Applies To",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "kind"
+        ],
+        "title": "CustomFieldCreate"
+      },
+      "CustomFieldKind": {
+        "type": "string",
+        "enum": [
+          "text",
+          "number",
+          "select",
+          "multi_select",
+          "user",
+          "date",
+          "checkbox",
+          "url"
+        ],
+        "title": "CustomFieldKind",
+        "description": "What a team's own field holds (#117).\n\nDeliberately few. `user` is the one that motivated the feature -- a QA\nassignee or a reviewer, who is neither the assignee nor a string -- and\nthe rest are what a label cannot type-check. Formulas, rollups and\nanything computed are out: a field is a value somebody sets."
+      },
+      "CustomFieldOption": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "CustomFieldOption",
+        "description": "One choice a `select` or `multi_select` field offers.\n\n`id` is what a ticket's value stores. It is made from the option's first\nname and kept when the option is renamed, so renaming \"prod\" to\n\"Production\" does not change any ticket."
+      },
+      "CustomFieldOptionWrite": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CustomFieldOptionWrite",
+        "description": "An option as an admin sends it. An existing option keeps its `id`; a\nnew one leaves it out and is given one."
+      },
+      "CustomFieldOrder": {
+        "properties": {
+          "field_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Field Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_ids"
+        ],
+        "title": "CustomFieldOrder",
+        "description": "Every field that is not archived, in the order tickets should show them.\n\nAll at once, like `StatusOrder`. Archived fields keep their place, so\nrestoring one puts it back where it was."
+      },
+      "CustomFieldRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CustomFieldKind"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/CustomFieldOption"
+            },
+            "type": "array",
+            "title": "Options"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required"
+          },
+          "applies_to": {
+            "items": {
+              "$ref": "#/components/schemas/TicketType"
+            },
+            "type": "array",
+            "title": "Applies To"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "key",
+          "name",
+          "kind",
+          "options",
+          "required",
+          "applies_to",
+          "position",
+          "created_at"
+        ],
+        "title": "CustomFieldRead"
+      },
+      "CustomFieldRef": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CustomFieldKind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "key",
+          "name",
+          "kind"
+        ],
+        "title": "CustomFieldRef",
+        "description": "Which field a history row is about, as it is named now."
+      },
+      "CustomFieldUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CustomFieldOptionWrite"
+                },
+                "type": "array",
+                "maxItems": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          },
+          "required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required"
+          },
+          "applies_to": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TicketType"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applies To"
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
+          }
+        },
+        "type": "object",
+        "title": "CustomFieldUpdate",
+        "description": "What an admin may change. Not the key and not the kind: both are what\nthe values already written mean."
+      },
       "DefaultViewUpdate": {
         "properties": {
           "view_id": {
@@ -12830,7 +13403,8 @@
           "assigned",
           "mentioned",
           "commented",
-          "status_changed"
+          "status_changed",
+          "field_assigned"
         ],
         "title": "NotificationKind",
         "description": "Why a notification was raised.\n\nDeliberately about *what happened*, not about how the recipient came to\ncare -- \"someone commented\" reads the same whether you are watching the\nticket because you filed it or because you were assigned it. Which of\nthose is true is not information the inbox has any use for."
@@ -12867,6 +13441,17 @@
               }
             ],
             "title": "Excerpt"
+          },
+          "field_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Name"
           },
           "read": {
             "type": "boolean",
@@ -16783,6 +17368,37 @@
             "type": "array",
             "title": "Label Ids",
             "default": []
+          },
+          "custom_fields": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Custom Fields",
+            "description": "Values for the team's own fields, by key. On an update only the keys given change, and null clears one.",
+            "default": {}
           }
         },
         "type": "object",
@@ -16801,7 +17417,8 @@
           "assignee",
           "priority",
           "due_date",
-          "team"
+          "team",
+          "custom_field"
         ],
         "title": "TicketEventField",
         "description": "Which field a TicketEvent records a change to."
@@ -16814,6 +17431,16 @@
           },
           "field": {
             "$ref": "#/components/schemas/TicketEventField"
+          },
+          "custom_field": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomFieldRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "old_value": {
             "anyOf": [
@@ -16882,7 +17509,7 @@
           "created_at"
         ],
         "title": "TicketEventRead",
-        "description": "One change to one field of a ticket, as the Activity feed shows it (#81).\n\n`old_value`/`new_value` are what the history stores: a status *category*\n(see `_status_category` in history.py), a priority, an estimate, or a\nrow id. For the id fields -- assignee, sprint, project -- the labels carry\nthe name it has now, or null when that row has since been deleted."
+        "description": "One change to one field of a ticket, as the Activity feed shows it (#81).\n\n`old_value`/`new_value` are what the history stores: a status *category*\n(see `_status_category` in history.py), a priority, an estimate, or a\nrow id. For the id fields -- assignee, sprint, project -- the labels carry\nthe name it has now, or null when that row has since been deleted.\n\nA change to one of the team's own fields (#117) is `custom_field`, with\nthe field in `custom_field` and its values as the field stores them: a\nuser id, an option id, a JSON list of option ids, `true`, a date or the\ntext. Labels carry a person's or an option's name as it is now."
       },
       "TicketGrouping": {
         "type": "string",
@@ -17194,6 +17821,35 @@
             "title": "Labels",
             "default": []
           },
+          "custom_fields": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "$ref": "#/components/schemas/UserPublic"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Custom Fields"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -17221,6 +17877,7 @@
           "child_count",
           "completed_child_count",
           "creator",
+          "custom_fields",
           "created_at",
           "updated_at"
         ],
@@ -17551,6 +18208,43 @@
               }
             ],
             "title": "Label Ids"
+          },
+          "custom_fields": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "object",
+                "description": "Values for the team's own fields, by key. On an update only the keys given change, and null clears one."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Fields"
           }
         },
         "type": "object",
@@ -17660,6 +18354,13 @@
             ],
             "title": "Assignee Cleared"
           },
+          "fields_cleared": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Fields Cleared"
+          },
           "parent_detached": {
             "anyOf": [
               {
@@ -17686,6 +18387,7 @@
           "status",
           "labels_kept",
           "labels_dropped",
+          "fields_cleared",
           "sub_tickets"
         ],
         "title": "TransferPlan",
@@ -18704,6 +19406,7 @@
           "attachment_not_found",
           "comment_not_found",
           "template_not_found",
+          "custom_field_not_found",
           "worklog_not_found",
           "notification_not_found",
           "repository_not_found",
@@ -18725,6 +19428,8 @@
           "team_key_taken",
           "status_name_taken",
           "template_name_taken",
+          "custom_field_key_taken",
+          "custom_field_name_taken",
           "rule_name_taken",
           "department_name_taken",
           "already_member",
@@ -18749,6 +19454,11 @@
           "labels_conflict",
           "status_order_incomplete",
           "template_order_incomplete",
+          "custom_field_order_incomplete",
+          "custom_field_required",
+          "custom_field_archived",
+          "custom_field_not_applicable",
+          "custom_field_not_archived",
           "status_move_to_same",
           "not_your_worklog",
           "not_your_comment",
@@ -18783,6 +19493,8 @@
           "department_has_finance_history",
           "name_required",
           "body_required",
+          "custom_field_invalid_value",
+          "custom_field_options_invalid",
           "invalid_colour",
           "username_invalid",
           "current_password_incorrect",

@@ -6,6 +6,7 @@ export * from './budgets/budgets';
 export * from './comments/comments';
 export * from './compensation/compensation';
 export * from './currencies/currencies';
+export * from './custom-fields/custom-fields';
 export * from './departments/departments';
 export * from './expense-claims/expense-claims';
 export * from './expenses/expenses';

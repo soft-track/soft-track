@@ -54,6 +54,18 @@ export type IconName =
   | 'history'
   | 'receipt'
   | 'undo'
+  | 'user'
+  | 'type'
+  | 'hash'
+  | 'select-box'
+  | 'list-check'
+  | 'globe'
+  | 'external'
+  | 'archive'
+  | 'grip'
+  | 'alert'
+  | 'sliders'
+  | 'pencil'
 
 const PATHS: Record<IconName, JSX.Element> = {
   search: (
@@ -272,6 +284,54 @@ const PATHS: Record<IconName, JSX.Element> = {
     <>
       <circle cx="12" cy="12" r="9" />
       <path d="M8.5 14.5s1.3 1.8 3.5 1.8 3.5-1.8 3.5-1.8M9 9.5h.01M15 9.5h.01" />
+    </>
+  ),
+  // The kinds of a team's own field (#117): one person, a letter, a number
+  // sign, a box that drops down, a list of ticks, and the globe of a link.
+  user: (
+    <>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20a7 7 0 0 1 14 0" />
+    </>
+  ),
+  type: <path d="M5 7V5h14v2M12 5v14M9 19h6" />,
+  hash: <path d="M5 9h15M4 15h15M10 4 8 20M16 4l-2 16" />,
+  'select-box': (
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="3" />
+      <path d="m9 11 3 3 3-3" />
+    </>
+  ),
+  'list-check': (
+    <path d="M11 6h9M11 12h9M11 18h9M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5 2.5-2.5M3.5 18l1.5 1.5 2.5-2.5" />
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+    </>
+  ),
+  external: <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />,
+  archive: (
+    <>
+      <rect x="3" y="4" width="18" height="4" rx="1" />
+      <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4" />
+    </>
+  ),
+  // Six dots: something that is picked up and dragged.
+  grip: <path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" />,
+  pencil: <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4ZM13.5 6.5l4 4" />,
+  sliders: (
+    <>
+      <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+      <circle cx="15" cy="7" r="2" />
+      <circle cx="9" cy="17" r="2" />
+    </>
+  ),
+  alert: (
+    <>
+      <path d="M12 4 2.5 20h19L12 4Z" />
+      <path d="M12 10v4M12 17h.01" />
     </>
   ),
 }

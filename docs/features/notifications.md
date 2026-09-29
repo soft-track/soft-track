@@ -1,12 +1,12 @@
 # Notifications
 
-Notifications are raised when a ticket is assigned to you, someone mentions you with `@handle`, or a ticket you are watching gets a comment or a status change.
+Notifications are raised when a ticket is assigned to you, someone sets you in one of the team's [user fields](custom-fields.md) (a reviewer, a QA assignee), someone mentions you with `@handle`, or a ticket you are watching gets a comment or a status change.
 
 Four rules are enforced in the backend rather than at each call site:
 
 - Nothing tells you what you just did.
 - One event is at most one notification per person.
-- Watching is automatic when you create, comment on, or are assigned a ticket, unless you explicitly override it.
+- Watching is automatic when you create, comment on, or are assigned a ticket -- or are set in one of its user fields -- unless you explicitly override it.
 - Mentions resolve to the `username` on a profile and only to members of the ticket's team.
 
 ## Email digest

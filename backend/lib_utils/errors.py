@@ -67,6 +67,9 @@ class ErrorCode(str, enum.Enum):
     attachment_not_found = "attachment_not_found"
     comment_not_found = "comment_not_found"
     template_not_found = "template_not_found"
+    #: A team's own field (#117) that does not exist -- by id in a path, or
+    #: by key in a ticket's `custom_fields`.
+    custom_field_not_found = "custom_field_not_found"
     worklog_not_found = "worklog_not_found"
     notification_not_found = "notification_not_found"
     repository_not_found = "repository_not_found"
@@ -97,6 +100,9 @@ class ErrorCode(str, enum.Enum):
     team_key_taken = "team_key_taken"
     status_name_taken = "status_name_taken"
     template_name_taken = "template_name_taken"
+    #: Field keys and names are unique on a team, whatever the case (#117).
+    custom_field_key_taken = "custom_field_key_taken"
+    custom_field_name_taken = "custom_field_name_taken"
     rule_name_taken = "rule_name_taken"
     #: Department names are unique whatever the case (#123).
     department_name_taken = "department_name_taken"
@@ -128,6 +134,16 @@ class ErrorCode(str, enum.Enum):
     labels_conflict = "labels_conflict"
     status_order_incomplete = "status_order_incomplete"
     template_order_incomplete = "template_order_incomplete"
+    custom_field_order_incomplete = "custom_field_order_incomplete"
+    #: A required field left empty on a new ticket, or cleared on one (#117).
+    #: The detail names the field.
+    custom_field_required = "custom_field_required"
+    #: An archived field's values are read-only.
+    custom_field_archived = "custom_field_archived"
+    #: A field bound to other ticket types than this ticket's.
+    custom_field_not_applicable = "custom_field_not_applicable"
+    #: Deleting destroys history, so a field is archived first.
+    custom_field_not_archived = "custom_field_not_archived"
     status_move_to_same = "status_move_to_same"
     #: Only the person who logged time can change or delete the entry (#102).
     not_your_worklog = "not_your_worklog"
@@ -194,6 +210,12 @@ class ErrorCode(str, enum.Enum):
     name_required = "name_required"
     #: A template (#97) whose text is only whitespace.
     body_required = "body_required"
+    #: A value of the wrong kind for its field, or an option it does not
+    #: offer (#117). The detail says what the field takes.
+    custom_field_invalid_value = "custom_field_invalid_value"
+    #: Options on a kind that has none, none on one that needs them, or two
+    #: with the same name.
+    custom_field_options_invalid = "custom_field_options_invalid"
     invalid_colour = "invalid_colour"
     username_invalid = "username_invalid"
     current_password_incorrect = "current_password_incorrect"

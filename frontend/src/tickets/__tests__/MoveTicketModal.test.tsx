@@ -40,6 +40,7 @@ const PLAN: TransferPlan = {
   sprint_cleared: 'Sprint 4',
   project_cleared: null,
   assignee_cleared: 'Maya Chen',
+  fields_cleared: ['Reviewer'],
   parent_detached: null,
   sub_tickets: ['ENG-43'],
 }
@@ -138,6 +139,7 @@ describe('PlanSummary', () => {
       'Loses frontend and design — no label by that name there.',
       'Leaves Sprint 4; sprints belong to one team.',
       'Is unassigned from Maya Chen, who is not on that team.',
+      'Clears Reviewer; fields belong to one team.',
       'Takes its sub-ticket ENG-43 with it.',
     ])
   })

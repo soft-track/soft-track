@@ -249,14 +249,23 @@ def _plain(value):
 
 
 def ticket_changed(
-    session: Session, ticket, before: dict, actor: Optional[User]
+    session: Session,
+    ticket,
+    before: dict,
+    actor: Optional[User],
+    extra: Optional[dict] = None,
 ) -> None:
-    """Emit `ticket.updated` (and `ticket.status_changed`) for what moved."""
+    """Emit `ticket.updated` (and `ticket.status_changed`) for what moved.
+
+    `extra` is changes made off the ticket row, already in `{"from", "to"}`
+    form: the team's own fields (#117), as `custom_fields.<key>`.
+    """
     changes = {
         field: {"from": _plain(before[field]), "to": _plain(getattr(ticket, field))}
         for field in _TICKET_FIELDS
         if before[field] != getattr(ticket, field)
     }
+    changes.update(extra or {})
     if not changes:
         return
 

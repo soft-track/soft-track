@@ -5,6 +5,7 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { TicketCreateCustomFields } from './ticketCreateCustomFields';
 import type { TicketCreateEstimate } from './ticketCreateEstimate';
 import type { TicketPriority } from './ticketPriority';
 import type { TicketType } from './ticketType';
@@ -23,4 +24,6 @@ export interface TicketCreate {
   sprint_id?: number | null;
   due_date?: string | null;
   label_ids?: number[];
+  /** Values for the team's own fields, by key. On an update only the keys given change, and null clears one. */
+  custom_fields?: TicketCreateCustomFields;
 }

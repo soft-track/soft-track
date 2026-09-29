@@ -10,6 +10,7 @@ from typing import Optional
 from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
+from lib_softtrack import custom_fields as custom_fields_service
 from lib_softtrack.models.history import TicketEventRead
 from lib_softtrack.tables import (
     Sprint,
@@ -207,6 +208,7 @@ def ticket_events(
     changes.reverse()
 
     labels = _labels(session, changes)
+    field_refs, field_labels = custom_fields_service.history_refs(session, changes)
     actors = {
         user.id: UserPublic.model_validate(user)
         for user in session.exec(
@@ -221,16 +223,22 @@ def ticket_events(
             return None
         return labels.get((event.field, int(value)))
 
-    return [
-        TicketEventRead(
+    def read(event: TicketEvent) -> TicketEventRead:
+        if event.field == TicketEventField.custom_field:
+            old_label, new_label = field_labels.get(event.id, (None, None))
+        else:
+            old_label = label(event, event.old_value)
+            new_label = label(event, event.new_value)
+        return TicketEventRead(
             id=event.id,
             field=event.field,
+            custom_field=field_refs.get(event.custom_field_id),
             old_value=event.old_value,
             new_value=event.new_value,
-            old_label=label(event, event.old_value),
-            new_label=label(event, event.new_value),
+            old_label=old_label,
+            new_label=new_label,
             actor=actors.get(event.actor_id),
             created_at=event.created_at,
         )
-        for event in changes
-    ]
+
+    return [read(event) for event in changes]

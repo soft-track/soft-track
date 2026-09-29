@@ -13,6 +13,7 @@ from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack import attachments as attachments_service
+from lib_softtrack import custom_fields as custom_fields_service
 from lib_softtrack import outbound
 from lib_softtrack.models.tickets import (
     TicketBulkChanges,
@@ -93,6 +94,7 @@ def ticket_to_read(ticket: Ticket, session: Session) -> TicketRead:
         select(TicketLabelLink).where(TicketLabelLink.ticket_id == ticket.id)
     ).all()
     labels = [session.get(Label, link.label_id) for link in label_links]
+    custom_fields = custom_fields_service.read_values(session, [ticket.id])
 
     return TicketRead(
         id=ticket.id,
@@ -118,6 +120,7 @@ def ticket_to_read(ticket: Ticket, session: Session) -> TicketRead:
         child_count=total,
         creator=UserPublic.model_validate(creator),
         labels=[label for label in labels if label is not None],
+        custom_fields=custom_fields.get(ticket.id, {}),
         created_at=ticket.created_at,
         updated_at=ticket.updated_at,
     )
@@ -179,6 +182,7 @@ def _expand_tickets(tickets: list[Ticket], session: Session) -> list[TicketRead]
             )
         ).all()
     }
+    custom_fields = custom_fields_service.read_values(session, ticket_ids)
 
     return [
         TicketRead(
@@ -206,6 +210,7 @@ def _expand_tickets(tickets: list[Ticket], session: Session) -> list[TicketRead]
             external_key=ticket.external_key,
             creator=UserPublic.model_validate(users[ticket.creator_id]),
             labels=labels_by_ticket.get(ticket.id, []),
+            custom_fields=custom_fields.get(ticket.id, {}),
             parent=_parent_ref_from(parents.get(ticket.parent_id), teams),
             completed_child_count=progress.get(ticket.id, (0, 0))[0],
             child_count=progress.get(ticket.id, (0, 0))[1],
@@ -254,6 +259,12 @@ def create_ticket(
     team = get_team_or_404(team_id, session)
     require_team_member(team_id, current_user, session)
     _require_on_team(session, Project, payload.project_id, team_id, "project")
+    # Checked before anything is written, so a ticket refused for a missing
+    # field does not use up a number -- or exist at all.
+    field_changes = custom_fields_service.resolve(
+        session, team_id, None, payload.type, payload.custom_fields
+    )
+    custom_fields_service.require_filled(session, team_id, payload.type, field_changes)
 
     number = team.next_ticket_number
     team.next_ticket_number = number + 1
@@ -287,8 +298,13 @@ def create_ticket(
     session.commit()
     session.refresh(ticket)
 
+    applied = custom_fields_service.write(
+        session, ticket, field_changes, current_user, record=False
+    )
     record_creation(session, ticket, current_user)
-    notifications_service.on_ticket_created(session, ticket, current_user)
+    notifications_service.on_ticket_created(
+        session, ticket, current_user, named=applied.named
+    )
     outbound.emit(
         session,
         ticket.team_id,
@@ -616,8 +632,9 @@ def update_ticket(
         session,
         current_user,
         ticket,
-        payload.model_dump(exclude_unset=True, exclude={"label_ids"}),
+        payload.model_dump(exclude_unset=True, exclude={"label_ids", "custom_fields"}),
         payload.label_ids,
+        payload.custom_fields,
     )
 
     session.commit()
@@ -631,6 +648,7 @@ def _apply_update(
     ticket: Ticket,
     data: dict,
     label_ids: Optional[list[int]],
+    custom_fields: Optional[dict] = None,
 ) -> None:
     """Change one ticket and everything that follows from it, without committing.
 
@@ -662,6 +680,16 @@ def _apply_update(
     _require_on_team(
         session, Project, data.get("project_id"), ticket.team_id, "project"
     )
+    # The team's own fields (#117) after the type, which decides which of
+    # them this ticket has -- and checked before anything is set, so a bad
+    # value leaves the ticket as it was.
+    field_changes = custom_fields_service.resolve(
+        session,
+        ticket.team_id,
+        ticket.id,
+        data.get("type") or ticket.type,
+        custom_fields or {},
+    )
     for field, value in data.items():
         setattr(ticket, field, value)
     ticket.updated_at = datetime.now(timezone.utc)
@@ -669,14 +697,17 @@ def _apply_update(
 
     if label_ids is not None:
         set_labels(ticket.id, label_ids, session)
+    applied = custom_fields_service.write(session, ticket, field_changes, current_user)
 
     record_changes(session, ticket, before, current_user)
     notifications_service.on_ticket_updated(
-        session, ticket, watched_before, current_user
+        session, ticket, watched_before, current_user, named=applied.named
     )
     # Before the rules run, so what a person did and what a rule then did
     # arrive as separate deliveries -- the same split history keeps.
-    outbound.ticket_changed(session, ticket, hook_before, current_user)
+    outbound.ticket_changed(
+        session, ticket, hook_before, current_user, extra=applied.webhook_changes
+    )
     # Last, so a rule reads the ticket as the update left it -- and so its own
     # changes are recorded as a separate step in the history rather than
     # folded into the one the person made.
@@ -826,6 +857,8 @@ def _delete_rows(session: Session, ticket: Ticket) -> list[str]:
     from lib_softtrack import worklogs as worklogs_service
 
     worklogs_service.delete_for_ticket(session, ticket_id)
+    # And its values for the team's own fields (#117).
+    custom_fields_service.delete_for_ticket(session, ticket_id)
     session.flush()
 
     # Attachments before comments: a comment attachment holds a foreign key to

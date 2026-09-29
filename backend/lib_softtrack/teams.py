@@ -16,6 +16,7 @@ from lib_softtrack.tables import (
     Attachment,
     AutomationRule,
     Comment,
+    CustomField,
     Sprint,
     Ticket,
     TicketTemplate,
@@ -132,6 +133,7 @@ _TEAM_OWNED_BY_PATH = (
         ErrorCode.template_not_found,
         "Template not found",
     ),
+    ("field_id", CustomField, ErrorCode.custom_field_not_found, "Field not found"),
 )
 
 

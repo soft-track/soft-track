@@ -16,7 +16,12 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { ProjectRead, StatusRead, TeamMemberRead } from '@/api/generated/models'
+import type {
+  CustomFieldRead,
+  ProjectRead,
+  StatusRead,
+  TeamMemberRead,
+} from '@/api/generated/models'
 import { NewTicketModal } from '@/tickets/NewTicketModal'
 import { useGlobalShortcuts } from '@/keyboard/useGlobalShortcuts'
 import { TeamProvider } from '@/team/TeamContext'
@@ -39,6 +44,13 @@ const templates = vi.hoisted(() => ({ data: [] as unknown[] }))
 vi.mock('@/api/generated/endpoints/templates/templates', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/generated/endpoints/templates/templates')>()),
   useListTemplatesTeamsTeamIdTicketTemplatesGet: () => templates,
+}))
+
+// The team's own fields (#117). None unless a test gives it some.
+const customFields = vi.hoisted(() => ({ data: [] as unknown[] }))
+vi.mock('@/api/generated/endpoints/custom-fields/custom-fields', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/generated/endpoints/custom-fields/custom-fields')>()),
+  useListCustomFieldsTeamsTeamIdCustomFieldsGet: () => customFields,
 }))
 
 // Spread the real module: it also exports `Markdown`, and replacing the whole
@@ -146,6 +158,7 @@ beforeEach(() => {
   mutateAsync.mockReset()
   mutation.isPending = false
   templates.data = []
+  customFields.data = []
 })
 
 // The suite runs without globals, so Testing Library cannot register this itself.
@@ -414,5 +427,106 @@ describe('description templates (#97)', () => {
     await user.selectOptions(picker, 'Feature request')
     expect(window.confirm).toHaveBeenCalledTimes(1)
     expect(description.value).toBe('## Problem')
+  })
+})
+
+function field(id: number, name: string, key: string, extra: Partial<CustomFieldRead> = {}): CustomFieldRead {
+  return {
+    id,
+    team_id: 7,
+    key,
+    name,
+    kind: 'user',
+    options: [],
+    required: false,
+    applies_to: [],
+    position: id,
+    archived_at: null,
+    created_at: '2026-01-01T00:00:00Z',
+    ...extra,
+  }
+}
+
+describe('NewTicketModal with the team’s own fields (#117)', () => {
+  const QA = field(1, 'QA assignee', 'qa_assignee', { required: true })
+  const ENVIRONMENT = field(2, 'Environment', 'environment', {
+    kind: 'select',
+    options: [
+      { id: 'production', name: 'production' },
+      { id: 'staging', name: 'staging' },
+    ],
+    applies_to: ['bug'],
+  })
+  const RETIRED = field(3, 'Root cause', 'root_cause', {
+    kind: 'text',
+    archived_at: '2026-08-02T10:00:00Z',
+  })
+
+  beforeEach(() => {
+    customFields.data = [QA, ENVIRONMENT, RETIRED]
+  })
+
+  it('offers the fields this type of ticket has, never an archived one', async () => {
+    const { user } = renderModal()
+    expect(screen.getByText('Engineering fields')).toBeTruthy()
+    expect(optionsOf('QA assignee')).toEqual(['QA assignee *', 'Ada Lovelace', 'Grace Hopper'])
+    expect(screen.queryByRole('combobox', { name: 'Environment' })).toBeNull()
+    expect(screen.queryByRole('textbox', { name: 'Root cause' })).toBeNull()
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Type' }), 'bug')
+    expect(optionsOf('Environment')).toEqual(['Environment', 'production', 'staging'])
+  })
+
+  it('names a required field left empty, and does not send the ticket', async () => {
+    const { user } = renderModal()
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'Export drops a row')
+    await user.click(screen.getByRole('button', { name: 'Create ticket' }))
+
+    expect(mutateAsync).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert').textContent).toBe(
+      'QA assignee is required on Engineering tickets.',
+    )
+    const qa = screen.getByRole('combobox', { name: 'QA assignee' })
+    expect(qa.getAttribute('aria-invalid')).toBe('true')
+
+    // Filling it in takes the warning away.
+    await user.selectOptions(qa, 'Grace Hopper')
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(qa.getAttribute('aria-invalid')).toBeNull()
+  })
+
+  it('sends the values the ticket’s type has, by key', async () => {
+    const { user } = renderModal()
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'Export drops a row')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Type' }), 'bug')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Environment' }), 'staging')
+    // Back to a task: Environment is not a task field, so it is not sent.
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Type' }), 'task')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'QA assignee' }), 'Ada Lovelace')
+    await user.click(screen.getByRole('button', { name: 'Create ticket' }))
+
+    expect(mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ type: 'task', custom_fields: { qa_assignee: 10 } }),
+      }),
+    )
+  })
+
+  it('shows the API’s sentence when it refuses the ticket', async () => {
+    customFields.data = [field(2, 'Reviewer', 'reviewer')]
+    mutateAsync.mockRejectedValue({
+      response: {
+        data: {
+          detail: 'Reviewer is required on Engineering tickets.',
+          code: 'custom_field_required',
+        },
+      },
+    })
+    const { user } = renderModal()
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'Export drops a row')
+    await user.click(screen.getByRole('button', { name: 'Create ticket' }))
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Reviewer is required on Engineering tickets.',
+    )
   })
 })

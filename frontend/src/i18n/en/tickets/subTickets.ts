@@ -5,4 +5,7 @@ export const subTickets = {
   placeholder: 'Sub-ticket title, then Enter',
   complete: 'Complete {{identifier}}',
   reopen: 'Reopen {{identifier}}',
+  errors: {
+    add: 'Could not add that sub-ticket.',
+  },
 } as const

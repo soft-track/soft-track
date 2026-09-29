@@ -21,6 +21,8 @@ export const KIND_META: Record<NotificationKind, { icon: IconName; color: string
   mentioned: { icon: 'sparkle', color: 'var(--color-accent-pink)' },
   commented: { icon: 'mail', color: 'var(--color-neutral-400)' },
   status_changed: { icon: 'board', color: 'var(--color-accent-amber)' },
+  // Assignment by another name (#117): set as a ticket's reviewer, say.
+  field_assigned: { icon: 'user', color: 'var(--color-accent-sky)' },
 }
 
 /** "Sam mentioned you" — the line above the ticket title. */
@@ -30,9 +32,11 @@ export function describe(notification: NotificationRead): string {
   // bare verb reads correctly for all of them.
   const who = notification.actor?.full_name
   const kind = notification.kind
+  // The field someone was named in, for `field_assigned`; the others ignore it.
+  const field = notification.field_name ?? ''
   return who
-    ? i18n.t(`notifications:kinds.${kind}.byActor`, { actor: who })
-    : i18n.t(`notifications:kinds.${kind}.noActor`)
+    ? i18n.t(`notifications:kinds.${kind}.byActor`, { actor: who, field })
+    : i18n.t(`notifications:kinds.${kind}.noActor`, { field })
 }
 
 /** What the badge shows. Past 9 the exact number stops being actionable. */

@@ -40,6 +40,9 @@ class TransferPlan(BaseModel):
     project_cleared: Optional[str] = None
     #: The assignee, when they are not on the target team.
     assignee_cleared: Optional[str] = None
+    #: The team's own fields (#117) the ticket has a value in, by name. They
+    #: belong to the team it is leaving, so their values go.
+    fields_cleared: list[str]
     #: The parent it leaves behind, when this is a sub-ticket.
     parent_detached: Optional[str] = None
     #: Sub-tickets that move with it, by current identifier.

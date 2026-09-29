@@ -31,6 +31,7 @@ from lib_softtrack.models.notifications import (
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.tables import (
     Comment,
+    CustomField,
     Ticket,
     TicketWatch,
     Notification,
@@ -146,6 +147,7 @@ def _raise(
     ticket: Ticket,
     actor: Optional[User],
     comment: Optional[Comment] = None,
+    custom_field: Optional[CustomField] = None,
 ) -> None:
     """Add a row per recipient. Flushed with whatever transaction is open."""
     for user_id in _deliverable(session, ticket.team_id, recipients):
@@ -156,8 +158,40 @@ def _raise(
                 ticket_id=ticket.id,
                 comment_id=comment.id if comment else None,
                 actor_id=actor.id if actor else None,
+                custom_field_id=custom_field.id if custom_field else None,
             )
         )
+
+
+def _named_in_fields(
+    session: Session,
+    ticket: Ticket,
+    named: dict[int, CustomField],
+    actor: Optional[User],
+    already: set[int],
+) -> set[int]:
+    """Tell the people newly set in a user field (#117), as assignment does.
+
+    Being made somebody's reviewer is assignment by another name: it
+    watches the ticket for them, and tells them unless they did it
+    themselves. Somebody the same update also assigned has been told once
+    already. Returns who was told, for the hooks to subtract from the rest.
+    """
+    told: set[int] = set()
+    for user_id, field in named.items():
+        auto_watch(session, ticket.id, user_id)
+        if user_id in already or user_id in _own(actor):
+            continue
+        told.add(user_id)
+        _raise(
+            session,
+            recipients={user_id},
+            kind=NotificationKind.field_assigned,
+            ticket=ticket,
+            actor=actor,
+            custom_field=field,
+        )
+    return told
 
 
 def _own(actor: Optional[User]) -> set[int]:
@@ -170,8 +204,14 @@ def _own(actor: Optional[User]) -> set[int]:
     return {actor.id} if actor is not None else set()
 
 
-def on_ticket_created(session: Session, ticket: Ticket, actor: User) -> None:
-    """Filing a ticket watches it; assigning it to someone tells them.
+def on_ticket_created(
+    session: Session,
+    ticket: Ticket,
+    actor: User,
+    named: Optional[dict[int, CustomField]] = None,
+) -> None:
+    """Filing a ticket watches it; assigning it to someone tells them, and so
+    does naming them in one of the team's user fields (`named`).
 
     A mention does not auto-watch. Being named in a description is somebody
     else's decision about you, and it is a weaker signal than the three things
@@ -190,6 +230,7 @@ def on_ticket_created(session: Session, ticket: Ticket, actor: User) -> None:
             ticket=ticket,
             actor=actor,
         )
+    assigned |= _named_in_fields(session, ticket, named or {}, actor, assigned)
 
     mentioned = mentioned_user_ids(session, ticket.team_id, ticket.description)
     _raise(
@@ -213,9 +254,14 @@ def snapshot(ticket: Ticket) -> dict[str, object]:
 
 
 def on_ticket_updated(
-    session: Session, ticket: Ticket, before: dict[str, object], actor: Optional[User]
+    session: Session,
+    ticket: Ticket,
+    before: dict[str, object],
+    actor: Optional[User],
+    named: Optional[dict[int, CustomField]] = None,
 ) -> None:
-    """Tell the new assignee, anyone newly named, and then the watchers.
+    """Tell the new assignee, anyone newly set in a user field (`named`),
+    anyone newly mentioned, and then the watchers.
 
     In that order, and each set subtracted from the next, so one PATCH is at
     most one notification per person.
@@ -237,6 +283,7 @@ def on_ticket_updated(
                 ticket=ticket,
                 actor=actor,
             )
+    assigned |= _named_in_fields(session, ticket, named or {}, actor, assigned)
 
     mentioned: set[int] = set()
     if ticket.description != before.get("description"):
@@ -407,6 +454,17 @@ def expand_notifications(
             )
         ).all()
     }
+    field_ids = {row.custom_field_id for row in notifications if row.custom_field_id}
+    field_names = (
+        {
+            field.id: field.name
+            for field in session.exec(
+                select(CustomField).where(CustomField.id.in_(field_ids))
+            ).all()
+        }
+        if field_ids
+        else {}
+    )
 
     expanded = []
     for row in notifications:
@@ -434,6 +492,7 @@ def expand_notifications(
                 ),
                 actor=UserPublic.model_validate(actor) if actor else None,
                 excerpt=excerpt(comment.body) if comment else None,
+                field_name=field_names.get(row.custom_field_id),
                 read=row.read_at is not None,
                 created_at=row.created_at,
             )

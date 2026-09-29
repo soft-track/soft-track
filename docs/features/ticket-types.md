@@ -11,6 +11,8 @@ is also named in its tooltip and to screen readers.
   saved views keep it.
 - Automation rules can check it ("Type is") and change it ("Set type to"),
   wherever they can do the same with priority.
+- A team's [custom fields](custom-fields.md) can be bound to types, so
+  Environment shows on bugs and not on stories.
 - The Jira importer maps Bug and Defect to bug, Story and User Story to story,
   and everything else (Task, Sub-task, Improvement, a team's own types) to
   task.

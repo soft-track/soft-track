@@ -10,7 +10,8 @@ import enum
 from datetime import date, datetime, timezone
 from typing import Optional
 
-from sqlalchemy import CheckConstraint, Column, Enum, Index, UniqueConstraint
+from sqlalchemy import JSON, CheckConstraint, Column, Enum, Index, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import SQLModel, Field, Relationship
 
 from lib_utils.password import is_usable_password
@@ -103,6 +104,29 @@ class TicketType(str, enum.Enum):
     story = "story"
 
 
+class CustomFieldKind(str, enum.Enum):
+    """What a team's own field holds (#117).
+
+    Deliberately few. `user` is the one that motivated the feature -- a QA
+    assignee or a reviewer, who is neither the assignee nor a string -- and
+    the rest are what a label cannot type-check. Formulas, rollups and
+    anything computed are out: a field is a value somebody sets.
+    """
+
+    text = "text"
+    number = "number"
+    select = "select"
+    multi_select = "multi_select"
+    user = "user"
+    date = "date"
+    checkbox = "checkbox"
+    url = "url"
+
+
+#: The kinds that choose from the field's own list of options.
+OPTION_KINDS = (CustomFieldKind.select, CustomFieldKind.multi_select)
+
+
 class TicketSort(str, enum.Enum):
     """What the ticket list can be ordered by (#88)."""
 
@@ -188,6 +212,10 @@ class TicketEventField(str, enum.Enum):
     #: The key rather than the team id because the key is what changed from
     #: anybody's point of view, and what the Activity feed has to show.
     team = "team"
+    #: One of the team's own fields (#117). Which one is the event's
+    #: `custom_field_id`; one value for all of them, because the set of
+    #: fields is the team's and cannot be an enum.
+    custom_field = "custom_field"
 
 
 class DueFilter(str, enum.Enum):
@@ -254,6 +282,10 @@ class NotificationKind(str, enum.Enum):
     mentioned = "mentioned"
     commented = "commented"
     status_changed = "status_changed"
+    #: Named in one of the team's user fields (#117) -- set as a ticket's
+    #: reviewer or QA assignee. Assignment by another name, told the same
+    #: way; `Notification.custom_field_id` says which field.
+    field_assigned = "field_assigned"
 
 
 class AutomationTrigger(str, enum.Enum):
@@ -909,6 +941,12 @@ class TicketEvent(SQLModel, table=True):
     #: soon after creation" also describes a real change made quickly, such
     #: as an automation assigning a new ticket.
     opening: bool = Field(default=False)
+    #: Which of the team's own fields changed, when `field` is `custom_field`
+    #: (#117); null for every built-in field. The values are the field's own
+    #: -- see lib_softtrack/custom_fields.py for how each kind is written.
+    custom_field_id: Optional[int] = Field(
+        default=None, foreign_key="customfield.id", index=True
+    )
 
 
 class Comment(SQLModel, table=True):
@@ -975,6 +1013,79 @@ class TicketTemplate(SQLModel, table=True):
     #: The picker's order, which admins set.
     position: int = 0
     created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
+#: JSON everywhere, stored as `jsonb` on Postgres: it has equality and
+#: containment operators, which is what filtering by a field will need, and
+#: plain `json` has neither.
+JSONValue = JSON().with_variant(JSONB(), "postgresql")
+
+
+class CustomField(SQLModel, table=True):
+    """A field a team adds to its own tickets (#117): a reviewer, an environment.
+
+    Team-scoped and never global -- two teams may both have "Reviewer" and
+    mean different people by it. Tickets carry values in CustomFieldValue;
+    this row is the definition the form, the panel and the export read.
+
+    `key` is what the API calls it (`"custom_fields": {"reviewer": 12}`) and
+    never changes once made, so a script written against it keeps working
+    after the name is reworded. `kind` never changes either: a value written
+    as a date means nothing read as a person.
+    """
+
+    __table_args__ = (
+        UniqueConstraint("team_id", "key", name="uq_custom_field_team_key"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    key: str
+    name: str
+    kind: CustomFieldKind
+    #: For `select` and `multi_select`: `[{"id": "production", "name":
+    #: "Production"}, ...]`, in the order offered. An option's id is made from
+    #: its first name and kept through renames, so values -- which store the
+    #: id -- survive the option being reworded. Empty for every other kind.
+    options: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: Enforced when a ticket is filed, with an error that names the field.
+    required: bool = Field(default=False)
+    #: The ticket types it shows on (#89); empty is all of them. The
+    #: difference between Environment on every task and Environment on bugs.
+    applies_to: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: Order in the ticket panel, the form and the export, low to high.
+    position: int = 0
+    #: Hidden from the form and the panel's editors; values stay readable.
+    #: Deleting is a separate step, and only from here -- it destroys history.
+    archived_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class CustomFieldValue(SQLModel, table=True):
+    """One ticket's value for one of its team's fields (#117).
+
+    One JSON `value` rather than a nullable column per kind: the kind on the
+    field says how to read it, the service validates it on the way in, and a
+    ninth kind is not a migration. The cost is that filtering has to reach
+    into JSON -- `jsonb` on Postgres, where that is cheap to index. A field
+    with no value has no row: clearing one deletes it.
+    """
+
+    __table_args__ = (
+        UniqueConstraint("ticket_id", "field_id", name="uq_custom_field_value"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
+    field_id: int = Field(foreign_key="customfield.id", index=True)
+    #: A string, number, bool, option id, list of option ids, ISO date or
+    #: user id, by the field's kind.
+    value: object = Field(sa_column=Column(JSONValue, nullable=False))
     updated_at: datetime = Field(default_factory=utcnow)
 
 
@@ -1072,6 +1183,11 @@ class Notification(SQLModel, table=True):
     #: user behind it, and "Jira import assigned this to you" is still worth
     #: saying.
     actor_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    #: The field somebody was named in, for `field_assigned` (#117). Read
+    #: through, like the ticket's title, so a renamed field reads as it is now.
+    custom_field_id: Optional[int] = Field(
+        default=None, foreign_key="customfield.id", index=True
+    )
     read_at: Optional[datetime] = Field(default=None, index=True)
     #: When this row went out in a digest. Set *before* the mail is sent and
     #: only on rows the update actually claimed, so two processes running the

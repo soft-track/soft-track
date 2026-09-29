@@ -39,6 +39,7 @@ from lib_softtrack.tables import (
     Attachment,
     Comment,
     CommentReaction,
+    CustomFieldValue,
     Ticket,
     TicketLabelLink,
     TicketLink,
@@ -229,9 +230,9 @@ def _collect_from(session: Session, pending: set[tuple[str, Event]]) -> None:
                             Event.of("comment_added", ticket_id=comment.ticket_id),
                         )
                     )
-        elif isinstance(obj, (Worklog, Attachment, TicketLabelLink)):
+        elif isinstance(obj, (Worklog, Attachment, TicketLabelLink, CustomFieldValue)):
             # Rows that change what a ticket shows without touching the
-            # ticket row: its time, its files, its labels.
+            # ticket row: its time, its files, its labels, its field values.
             ticket_changed(_ticket_team(session, obj.ticket_id), obj.ticket_id)
         elif isinstance(obj, TicketLink):
             for ticket_id in (obj.source_id, obj.target_id):

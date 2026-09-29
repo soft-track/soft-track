@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { CommentRead, TicketEventRead } from '@/api/generated/models'
+import type { CommentRead, CustomFieldKind, TicketEventRead } from '@/api/generated/models'
 import { eventText, interleave } from '@/tickets/detail/history'
 
 function event(
@@ -80,6 +80,58 @@ describe('eventText', () => {
     expect(eventText(event('project', '5', null, { old_label: null }))).toBe(
       'Automation removed this from a deleted epic',
     )
+  })
+})
+
+describe('eventText for the team’s own fields (#117)', () => {
+  function fieldEvent(
+    kind: CustomFieldKind,
+    old_value: string | null,
+    new_value: string | null,
+    labels: { old_label?: string | null; new_label?: string | null } = {},
+  ): TicketEventRead {
+    return {
+      ...event('custom_field', old_value, new_value, labels),
+      custom_field: { id: 3, key: 'field', name: 'Reviewer', kind },
+    }
+  }
+
+  it('names the field, and the person as they are called now', () => {
+    expect(eventText(fieldEvent('user', null, '4', { new_label: 'Maya' }))).toBe(
+      'Automation set Reviewer to Maya',
+    )
+    expect(
+      eventText(fieldEvent('user', '4', '5', { old_label: 'Maya', new_label: 'Sam' })),
+    ).toBe('Automation changed Reviewer from Maya to Sam')
+    expect(eventText(fieldEvent('user', '4', null, { old_label: null }))).toBe(
+      'Automation cleared Reviewer (was a former member)',
+    )
+  })
+
+  it('reads options by name, and one since removed as such', () => {
+    expect(
+      eventText(fieldEvent('select', 'prod', 'dev', { old_label: 'Production', new_label: null })),
+    ).toBe('Automation changed Reviewer from Production to a removed option')
+    expect(eventText(fieldEvent('multi_select', null, '["ios","web"]', { new_label: 'iOS, Web' }))).toBe(
+      'Automation set Reviewer to iOS, Web',
+    )
+  })
+
+  it('reads text as written, and dates and numbers the interface’s way', () => {
+    expect(eventText(fieldEvent('text', null, 'Acme Logistics'))).toBe(
+      'Automation set Reviewer to Acme Logistics',
+    )
+    expect(eventText(fieldEvent('date', null, '2026-10-03'))).toBe(
+      'Automation set Reviewer to Oct 3',
+    )
+    expect(eventText(fieldEvent('number', '1500', '2500.5'))).toBe(
+      'Automation changed Reviewer from 1,500 to 2,500.5',
+    )
+  })
+
+  it('ticks and unticks a checkbox', () => {
+    expect(eventText(fieldEvent('checkbox', null, 'true'))).toBe('Automation ticked Reviewer')
+    expect(eventText(fieldEvent('checkbox', 'true', null))).toBe('Automation unticked Reviewer')
   })
 })
 

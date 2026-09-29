@@ -5,6 +5,7 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { CustomFieldRef } from './customFieldRef';
 import type { TicketEventField } from './ticketEventField';
 import type { UserPublic } from './userPublic';
 
@@ -15,10 +16,16 @@ import type { UserPublic } from './userPublic';
  * (see `_status_category` in history.py), a priority, an estimate, or a
  * row id. For the id fields -- assignee, sprint, project -- the labels carry
  * the name it has now, or null when that row has since been deleted.
+ *
+ * A change to one of the team's own fields (#117) is `custom_field`, with
+ * the field in `custom_field` and its values as the field stores them: a
+ * user id, an option id, a JSON list of option ids, `true`, a date or the
+ * text. Labels carry a person's or an option's name as it is now.
  */
 export interface TicketEventRead {
   id: number;
   field: TicketEventField;
+  custom_field?: CustomFieldRef | null;
   old_value?: string | null;
   new_value?: string | null;
   old_label?: string | null;

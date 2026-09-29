@@ -5,6 +5,7 @@ import { Trans, userText, useTranslation } from '@/i18n'
 import { formatRelative } from '@/i18n/format'
 import { CommentsSection } from '@/tickets/detail/CommentsSection'
 import { DescriptionEditor } from '@/tickets/detail/DescriptionEditor'
+import { CustomFieldsSection } from '@/tickets/detail/CustomFieldsSection'
 import { DevelopmentSection } from '@/tickets/detail/DevelopmentSection'
 import { TicketLinksSection } from '@/tickets/detail/TicketLinksSection'
 import { TicketProperties } from '@/tickets/detail/TicketProperties'
@@ -103,6 +104,7 @@ export function TicketDetailBody({ ticketId }: { ticketId: number }) {
             onToggleLabel={editor.toggleLabel}
             readOnly={readOnly}
           />
+          <CustomFieldsSection ticket={ticket} patch={editor.patch} readOnly={readOnly} />
           <DevelopmentSection ticketId={ticket.id} />
         </aside>
 

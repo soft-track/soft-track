@@ -14,6 +14,9 @@ so a move is not a field change. The rules, which `plan` computes and
   case, and dropped otherwise.
 - **Sprint** and **project** are cleared; both belong to one team.
 - **Assignee** is cleared if they are not on the target team.
+- **Custom fields** (#117) are cleared. They are the old team's own, and a
+  "Reviewer" on the target team is a different field that may mean somebody
+  else -- matching them by name would be a guess made on nobody's behalf.
 - **Parent.** A sub-ticket whose parent stays behind becomes top level --
   sub-tickets must share a team with their parent.
 - **Sub-tickets** move with their parent, by the same rules. The alternative,
@@ -31,6 +34,7 @@ from typing import Optional
 
 from sqlmodel import Session, select
 
+from lib_softtrack import custom_fields as custom_fields_service
 from lib_softtrack.history import record_changes, snapshot
 from lib_softtrack.tickets import get_ticket_or_404, ticket_to_read, set_labels
 from lib_softtrack.models.transfers import (
@@ -191,6 +195,7 @@ def preview_transfer(
         sprint_cleared=(sprint.name or f"Sprint {sprint.number}") if sprint else None,
         project_cleared=project.name if project else None,
         assignee_cleared=assignee.full_name if assignee else None,
+        fields_cleared=custom_fields_service.names_with_values(session, ticket.id),
         parent_detached=_identifier(session, parent) if parent else None,
         sub_tickets=[_identifier(session, child.ticket) for child in move.children],
     )
@@ -219,6 +224,7 @@ def _carry_out(session: Session, move: _Move, target: Team, actor: User) -> str:
     ticket.rank = top_rank(session, target.id)
     session.add(ticket)
     set_labels(ticket.id, move.label_ids, session)
+    custom_fields_service.delete_for_ticket(session, ticket.id)
     session.flush()
 
     # The fields the reports read -- a cleared sprint has to show up on that

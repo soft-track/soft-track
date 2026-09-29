@@ -21,6 +21,7 @@ What belongs to the old team is remapped or cleared:
 | **Labels** | Kept where the target team has one with the same name, ignoring case. Dropped otherwise. |
 | **Sprint, epic** | Cleared. Both belong to one team. |
 | **Assignee** | Kept if they are on the target team, cleared if not. |
+| **Custom fields** | Cleared. [Fields](custom-fields.md) are the old team's own; a "Reviewer" on the target team is a different field. |
 | **Parent** | A sub-ticket moved on its own stops being one. Sub-tickets share their parent's team. |
 | **Sub-tickets** | Move with their parent, by the same rules, each getting its own new key. |
 

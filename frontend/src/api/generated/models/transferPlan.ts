@@ -23,6 +23,7 @@ export interface TransferPlan {
   sprint_cleared?: string | null;
   project_cleared?: string | null;
   assignee_cleared?: string | null;
+  fields_cleared: string[];
   parent_detached?: string | null;
   sub_tickets: string[];
 }

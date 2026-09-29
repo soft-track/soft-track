@@ -34,6 +34,15 @@ group('describe', () => {
     expect(describe({ ...base, kind: 'mentioned' })).toBe('Sam Rivera mentioned you')
   })
 
+  it('says which of the team’s fields someone was named in (#117)', () => {
+    expect(describe({ ...base, kind: 'field_assigned', field_name: 'Reviewer' })).toBe(
+      'Sam Rivera set you as Reviewer',
+    )
+    expect(
+      describe({ ...base, kind: 'field_assigned', field_name: 'QA assignee', actor: null }),
+    ).toBe('Set you as QA assignee')
+  })
+
   it('reads as a sentence when nobody did it', () => {
     // An import has no actor; "Someone changed the status" would be a claim
     // about a person who does not exist.

@@ -120,6 +120,7 @@ function ticket(id: number, title: string, inStatus: StatusRead): TicketRead {
     type: 'task',
     rank: 'a0',
     blocked_by_count: 0,
+    custom_fields: {},
     child_count: 0,
     completed_child_count: 0,
     creator: ADA.user,

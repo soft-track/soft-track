@@ -62,6 +62,11 @@ export default function SettingsLayout() {
           icon: 'board' as IconName,
         },
         {
+          to: `/settings/teams/${team.key}/fields`,
+          label: t('layout.nav.fields'),
+          icon: 'sliders' as IconName,
+        },
+        {
           to: `/settings/teams/${team.key}/templates`,
           label: t('layout.nav.templates'),
           icon: 'task' as IconName,

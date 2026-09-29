@@ -14,6 +14,7 @@ export const layout = {
     security: 'Security',
     members: 'Members',
     statuses: 'Statuses',
+    fields: 'Fields',
     templates: 'Templates',
     automation: 'Automation',
     repositories: 'Repositories',

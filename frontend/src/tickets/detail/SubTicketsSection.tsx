@@ -6,8 +6,10 @@ import {
   useListTicketsTeamsTeamIdTicketsGet,
   useUpdateTicketTicketsTicketIdPatch,
 } from '@/api/generated/endpoints/tickets/tickets'
+import { errorDetail } from '@/api/errors'
 import type { TicketRead } from '@/api/generated/models'
 import { useTranslation } from '@/i18n'
+import { isFilled, missingRequired, toInput, useCustomFields } from '@/tickets/customFields'
 import { useOpenRelatedTicket } from '@/tickets/surface'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
@@ -34,6 +36,8 @@ export function SubTicketsSection({
 
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const customFields = useCustomFields(team.id)
 
   const createTicket = useCreateTicketTeamsTeamIdTicketsPost()
   const updateTicket = useUpdateTicketTicketsTicketIdPatch()
@@ -54,10 +58,26 @@ export function SubTicketsSection({
   const addChild = async () => {
     const trimmed = title.trim()
     if (!trimmed) return
-    await createTicket.mutateAsync({
-      teamId: team.id,
-      data: { title: trimmed, parent_id: ticket.id },
-    })
+    // A title is all this box asks for, so a field the team requires (#117)
+    // starts as the parent has it: a sub-ticket's QA assignee is usually its
+    // parent's. One the parent has no value in is still refused, by name.
+    const inherited = missingRequired(customFields, 'task', {})
+      .filter((field) => isFilled(ticket.custom_fields[field.key]))
+      .map((field) => [field.key, toInput(ticket.custom_fields[field.key])])
+    setError(null)
+    try {
+      await createTicket.mutateAsync({
+        teamId: team.id,
+        data: {
+          title: trimmed,
+          parent_id: ticket.id,
+          custom_fields: Object.fromEntries(inherited),
+        },
+      })
+    } catch (err: unknown) {
+      setError(errorDetail(err, t('subTickets.errors.add')))
+      return
+    }
     setTitle('')
     setAdding(false)
     refresh()
@@ -157,6 +177,11 @@ export function SubTicketsSection({
           placeholder={t('subTickets.placeholder')}
           className="field field-sm mb-2"
         />
+      )}
+      {error && (
+        <p role="alert" className="mb-2 text-xs text-danger-600">
+          {error}
+        </p>
       )}
 
       {children.length > 0 && (

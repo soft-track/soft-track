@@ -7,6 +7,7 @@
  */
 import type { TicketPriority } from './ticketPriority';
 import type { TicketType } from './ticketType';
+import type { TicketUpdateCustomFields } from './ticketUpdateCustomFields';
 import type { TicketUpdateEstimate } from './ticketUpdateEstimate';
 
 export interface TicketUpdate {
@@ -23,4 +24,5 @@ export interface TicketUpdate {
   sprint_id?: number | null;
   due_date?: string | null;
   label_ids?: number[] | null;
+  custom_fields?: TicketUpdateCustomFields;
 }

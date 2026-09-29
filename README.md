@@ -74,6 +74,7 @@ too, but still call an epic a *project* (`/teams/{team_id}/projects`,
 - [Epics](docs/features/projects.md)
 - [Ticket types](docs/features/ticket-types.md)
 - [Ticket templates](docs/features/ticket-templates.md)
+- [Custom fields](docs/features/custom-fields.md)
 - [Markdown, mentions and task lists](docs/features/markdown.md)
 - [Saved views and shareable filters](docs/features/saved-views.md)
 - [Calendar](docs/features/calendar.md)
