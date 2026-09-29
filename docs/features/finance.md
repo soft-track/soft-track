@@ -1,8 +1,8 @@
 # Payroll and finance
 
 People taught SoftTrack who works here. Finance adds what the organisation owes
-them and spends on them. The pieces land one at a time (#130–#137, under the
-epic #136), and this page grows with them.
+them and spends on them. It landed in seven pieces (#130–#137, under the epic
+#136), in the order this page follows.
 
 Two lines hold everywhere:
 
@@ -343,3 +343,55 @@ On the API, all under `/finance/budgets`:
 | `GET /?start=&end=` | Every department with a budget for exactly that period or spend in it, per currency; Unattributed last |
 | `GET /actuals?start=&end=&currency=&department_id=` | Where one actual comes from; leave `department_id` out for Unattributed |
 | `POST /`, `PATCH /{id}`, `DELETE /{id}` | Create, change or delete a budget |
+
+## Reports
+
+**Finance → Reports** draws three charts from the rows the other finance pages
+already made. The rules are the [issue reports'](reports.md), because they apply
+word for word:
+
+- **Built from real rows.** Every bar and line is a sum of approved run lines,
+  reimbursed claims or budgets, never the current state guessed backwards.
+- **Charts never run into the future.** A month whose run is still a draft is an
+  empty, outlined slot: not a projection, and not last month again. The months
+  stop at this one, unless an approved run already reaches further. A run
+  approved ahead of its period is a record, not a guess.
+- **Reports begin where the data begins, and say so.** The page names the month
+  of the first approved run: "Reports begin in March 2026 … nothing earlier is
+  drawn." A chart that quietly starts late looks like a chart of a cheap year.
+
+The three charts:
+
+- **Payroll cost** is approved run totals per month, one small chart per
+  currency, each on its own scale. The bars are line totals with their
+  adjustments, frozen at approval, so a raise recorded later can't redraw a
+  month that was paid. A run counts in the month its period ends in, as budgets
+  count it. A bi-weekly schedule has months with three pay days, and those
+  months cost more, because they did.
+- **Spend by department** is the Budgets page's own numbers, drawn: payroll plus
+  reimbursed expenses, in the department each was approved in, against the
+  budget set for exactly the period chosen. The periods on offer are the
+  quarters, months and years since the reports begin. Currencies are grouped,
+  one scale each, so a dollar bar never sits on a pound axis. Over budget is
+  said three ways: the bar runs past its tick, turns red and says "over", so
+  nobody has to tell red from green. Unattributed is drawn with the rest.
+- **Headcount and cost** puts the people paid each month next to each
+  currency's cost, every line indexed to its own first month = 100. It's the
+  chart that says "we grew 20% and payroll grew 30%" without converting
+  anything. Headcount counts the people approved runs paid, once however many
+  runs paid them that month; somebody listed as missing pay wasn't paid and
+  isn't counted. A currency first paid in June starts at 100 in June.
+
+**6 months**, **12 months** and **All** choose how far back to look. Currencies
+are listed by code and keep one colour across the page.
+
+There is no export-to-accounting format and no drill-down query builder. The
+CSVs on runs and batches are the raw material for anything deeper, and every
+actual on the Budgets page already shows where it comes from.
+
+On the API:
+
+| | |
+| --- | --- |
+| `GET /finance/reports/payroll?months=` | Approved cost per currency and the people paid, per month, with `begins_on`; leave `months` out for all of them |
+| `GET /finance/budgets?start=&end=` | The spend chart's numbers: see [Budgets](#budgets) |

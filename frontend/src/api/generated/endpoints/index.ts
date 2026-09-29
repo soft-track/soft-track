@@ -9,6 +9,7 @@ export * from './currencies/currencies';
 export * from './departments/departments';
 export * from './expense-claims/expense-claims';
 export * from './expenses/expenses';
+export * from './finance-reports/finance-reports';
 export * from './health/health';
 export * from './import/import';
 export * from './integrations/integrations';

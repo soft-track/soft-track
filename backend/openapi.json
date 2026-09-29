@@ -9578,6 +9578,65 @@
         }
       }
     },
+    "/finance/reports/payroll": {
+      "get": {
+        "tags": [
+          "finance-reports"
+        ],
+        "summary": "Get Payroll Report",
+        "description": "Approved payroll cost per currency, and the people it paid, by month.\n\nSummed from the lines approval froze, so nothing recorded since can\nredraw a month. Begins with the first approved run and says so in\n`begins_on`; a month whose run is still a draft is empty, never\nprojected. Spend by department is GET /finance/budgets.",
+        "operationId": "get_payroll_report_finance_reports_payroll_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 120,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "How many months, ending with the latest; leave it out for all",
+              "title": "Months"
+            },
+            "description": "How many months, ending with the latest; leave it out for all"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayrollReport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -12742,6 +12801,29 @@
         "title": "LinkedTicket",
         "description": "Just enough of the other ticket to render a row and click through."
       },
+      "MonthCost": {
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "people": {
+            "type": "integer",
+            "title": "People"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "amount_minor",
+          "people"
+        ],
+        "title": "MonthCost",
+        "description": "One currency's approved payroll in one month."
+      },
       "NotificationKind": {
         "type": "string",
         "enum": [
@@ -13719,6 +13801,44 @@
         ],
         "title": "PayrollLineRead"
       },
+      "PayrollMonth": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "format": "date",
+            "title": "Month"
+          },
+          "runs": {
+            "type": "integer",
+            "title": "Runs"
+          },
+          "draft_runs": {
+            "type": "integer",
+            "title": "Draft Runs"
+          },
+          "headcount": {
+            "type": "integer",
+            "title": "Headcount"
+          },
+          "costs": {
+            "items": {
+              "$ref": "#/components/schemas/MonthCost"
+            },
+            "type": "array",
+            "title": "Costs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "runs",
+          "draft_runs",
+          "headcount",
+          "costs"
+        ],
+        "title": "PayrollMonth",
+        "description": "One calendar month of payroll, as approved (#135)."
+      },
       "PayrollReimbursementRead": {
         "properties": {
           "person": {
@@ -13745,6 +13865,36 @@
         ],
         "title": "PayrollReimbursementRead",
         "description": "Approved expense claims paid back on a run (#137), for one person in\none currency: a line of its own, never merged into the wages -- whoever\nreads the export needs to know which part is pay."
+      },
+      "PayrollReport": {
+        "properties": {
+          "begins_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Begins On"
+          },
+          "months": {
+            "items": {
+              "$ref": "#/components/schemas/PayrollMonth"
+            },
+            "type": "array",
+            "title": "Months"
+          }
+        },
+        "type": "object",
+        "required": [
+          "begins_on",
+          "months"
+        ],
+        "title": "PayrollReport",
+        "description": "Payroll cost and headcount, month by month (#135)."
       },
       "PayrollRunCreate": {
         "properties": {

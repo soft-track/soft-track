@@ -139,6 +139,11 @@ export default function SettingsLayout() {
                 label: t('layout.nav.budgets'),
                 icon: 'building' as IconName,
               },
+              {
+                to: '/settings/finance/reports',
+                label: t('layout.nav.financeReports'),
+                icon: 'chart' as IconName,
+              },
             ],
           },
         ]

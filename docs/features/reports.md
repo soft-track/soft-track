@@ -27,6 +27,9 @@ in `backlog` — that would draw work which had not been created — and the
 reports page carries a line saying earlier activity cannot be reconstructed,
 because a chart that quietly starts late looks like a chart of a quiet week.
 
+Finance has reports of its own, built the same way from approved runs and
+reimbursed claims: see [Payroll and finance](finance.md#reports).
+
 ## The same history, on the ticket
 
 The ticket panel's **Activity** section shows the ticket's history among its
