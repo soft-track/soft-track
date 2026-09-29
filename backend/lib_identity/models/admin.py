@@ -1,9 +1,17 @@
+import enum
 from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from lib_identity.models.identity import UserMe
+from lib_identity.models.identity import PersonRef, UserMe
+
+
+class AdminRole(str, enum.Enum):
+    """The instance-wide roles the user directory filters by (#130)."""
+
+    site_admin = "site_admin"
+    finance_admin = "finance_admin"
 
 
 class AdminUserRead(UserMe):
@@ -15,11 +23,20 @@ class AdminUserRead(UserMe):
     team_count: int
     #: How many active accounts report to them (#124).
     report_count: int
+    #: When the finance access they hold was granted, and who granted it
+    #: (#130). Null when they have none. The access, never any money: that
+    #: lives in the finance schemas, which nothing here reuses.
+    finance_admin_since: Optional[datetime] = None
+    finance_admin_granted_by: Optional[PersonRef] = None
 
 
 class AdminUserUpdate(BaseModel):
     is_active: Optional[bool] = None
     is_site_admin: Optional[bool] = None
+    #: Grant or revoke finance access (#130). Logged either way. A site admin
+    #: may grant it to themselves: nothing is guarded by refusing, since they
+    #: could grant it to anybody.
+    is_finance_admin: Optional[bool] = None
     full_name: Optional[str] = None
     #: When they started (#122). An explicit null clears it; leaving it out
     #: leaves it alone. Set here and nowhere else: it is the organisation's

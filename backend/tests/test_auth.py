@@ -73,6 +73,8 @@ def test_me_returns_the_current_user(client, auth):
         "avatar_color",
         "is_active",
         "is_site_admin",
+        # Whether they can see money (#130). Separate from site admin.
+        "is_finance_admin",
         "has_password",
         "created_at",
         # What the organisation knows about them (#122), null until filled in.

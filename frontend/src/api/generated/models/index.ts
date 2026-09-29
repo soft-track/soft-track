@@ -7,6 +7,7 @@
  */
 
 export * from './adminPasswordReset';
+export * from './adminRole';
 export * from './adminUserRead';
 export * from './adminUserUpdate';
 export * from './apiErrorBody';

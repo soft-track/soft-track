@@ -23,6 +23,9 @@ soft_track/
 │   │                         #   invites, notifications, views, statuses
 │   ├── lib_softtrack/        # services per domain, tables.py (SQLModel),
 │   │                         #   and models/ (pydantic request/response schemas)
+│   ├── app_finance/          # finance routes, every one behind the finance flag
+│   ├── lib_finance/          # who can see money (access.py), and the finance
+│   │                         #   services + models/ (their own schemas)
 │   ├── lib_utils/            # shared helpers: password hashing, JWT tokens
 │   ├── tests/                # pytest suite (in-memory SQLite, FKs enforced)
 │   ├── seed.py               # populates demo user/team/project/tickets
@@ -48,6 +51,7 @@ soft_track/
     │   ├── reports/          # charts
     │   ├── markdown/         # renderer, editor, mentions, task lists
     │   ├── notifications/    # the bell and its inbox, the watch toggle
+    │   ├── finance/          # the finance pages, and the page without access
     │   ├── views/            # saved views: the sidebar list and the save dialog
     │   ├── keyboard/         # command palette, shortcuts, global key handling
     │   └── ui/               # Avatar, Logo -- the genuinely shared primitives

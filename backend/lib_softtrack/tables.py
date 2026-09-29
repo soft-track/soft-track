@@ -450,7 +450,38 @@ class User(SQLModel, table=True):
     #: directory lists it rather than letting it go quietly stale.
     manager_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
     manager: Optional["User"] = Relationship(
-        sa_relationship_kwargs={"remote_side": "User.id"}
+        sa_relationship_kwargs={
+            "remote_side": "User.id",
+            # Named, because the finance grant below is a second link from
+            # a user to a user and the join would otherwise be ambiguous.
+            "foreign_keys": "User.manager_id",
+        }
+    )
+
+    # --- Finance access (#130) ---------------------------------------------
+
+    #: Whether they can see money at all: pay, payroll runs, everybody's
+    #: expense claims, budgets and the finance reports. Every endpoint under
+    #: /finance checks it (`lib_finance/access.py`). Granted by a site admin
+    #: and separate from being one: the site admin is the IT role, and
+    #: resetting somebody's password says nothing about reading their salary.
+    #: Neither flag includes the other.
+    is_finance_admin: bool = Field(default=False)
+    #: When the access they hold now was granted, and by whom. Both cleared
+    #: when it is revoked; the history is the log's (see lib_finance/access.py).
+    finance_admin_since: Optional[datetime] = None
+    finance_admin_granted_by_id: Optional[int] = Field(
+        default=None, foreign_key="user.id"
+    )
+    #: Read-only: the grant is written through the id. A site admin may
+    #: grant it to themselves, and a row pointing at itself through a
+    #: writable relationship is a cycle SQLAlchemy refuses to flush.
+    finance_admin_granted_by: Optional["User"] = Relationship(
+        sa_relationship_kwargs={
+            "remote_side": "User.id",
+            "foreign_keys": "User.finance_admin_granted_by_id",
+            "viewonly": True,
+        }
     )
 
     @property

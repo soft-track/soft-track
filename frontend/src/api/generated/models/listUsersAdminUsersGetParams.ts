@@ -5,6 +5,7 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminRole } from './adminRole';
 
 export type ListUsersAdminUsersGetParams = {
 /**
@@ -24,4 +25,8 @@ offset?: number;
  * Only active people whose manager has been deactivated
  */
 reports_to_deactivated?: boolean;
+/**
+ * Only site admins, or only finance admins
+ */
+role?: AdminRole | null;
 };

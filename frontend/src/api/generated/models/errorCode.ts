@@ -21,6 +21,7 @@ export const ErrorCode = {
   not_team_admin: 'not_team_admin',
   team_read_only: 'team_read_only',
   not_site_admin: 'not_site_admin',
+  not_finance_admin: 'not_finance_admin',
   invite_only: 'invite_only',
   team_not_found: 'team_not_found',
   ticket_not_found: 'ticket_not_found',

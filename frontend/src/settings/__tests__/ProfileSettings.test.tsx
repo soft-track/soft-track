@@ -35,6 +35,7 @@ const DANIEL: UserMe = {
   avatar_color: '#14b8a6',
   is_active: true,
   is_site_admin: false,
+  is_finance_admin: false,
   has_password: true,
   created_at: '2026-01-01T00:00:00',
   job_title: null,

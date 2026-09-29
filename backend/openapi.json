@@ -742,6 +742,24 @@
               "title": "Reports To Deactivated"
             },
             "description": "Only active people whose manager has been deactivated"
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AdminRole"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only site admins, or only finance admins",
+              "title": "Role"
+            },
+            "description": "Only site admins, or only finance admins"
           }
         ],
         "responses": {
@@ -7506,6 +7524,15 @@
         ],
         "title": "AdminPasswordReset"
       },
+      "AdminRole": {
+        "type": "string",
+        "enum": [
+          "site_admin",
+          "finance_admin"
+        ],
+        "title": "AdminRole",
+        "description": "The instance-wide roles the user directory filters by (#130)."
+      },
       "AdminUserRead": {
         "properties": {
           "id": {
@@ -7535,6 +7562,10 @@
           "is_site_admin": {
             "type": "boolean",
             "title": "Is Site Admin"
+          },
+          "is_finance_admin": {
+            "type": "boolean",
+            "title": "Is Finance Admin"
           },
           "has_password": {
             "type": "boolean",
@@ -7618,6 +7649,28 @@
           "report_count": {
             "type": "integer",
             "title": "Report Count"
+          },
+          "finance_admin_since": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finance Admin Since"
+          },
+          "finance_admin_granted_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -7629,6 +7682,7 @@
           "avatar_color",
           "is_active",
           "is_site_admin",
+          "is_finance_admin",
           "has_password",
           "created_at",
           "team_count",
@@ -7660,6 +7714,17 @@
               }
             ],
             "title": "Is Site Admin"
+          },
+          "is_finance_admin": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Finance Admin"
           },
           "full_name": {
             "anyOf": [
@@ -13415,6 +13480,10 @@
             "type": "boolean",
             "title": "Is Site Admin"
           },
+          "is_finance_admin": {
+            "type": "boolean",
+            "title": "Is Finance Admin"
+          },
           "has_password": {
             "type": "boolean",
             "title": "Has Password"
@@ -13488,6 +13557,7 @@
           "avatar_color",
           "is_active",
           "is_site_admin",
+          "is_finance_admin",
           "has_password",
           "created_at"
         ],
@@ -14250,6 +14320,7 @@
           "not_team_admin",
           "team_read_only",
           "not_site_admin",
+          "not_finance_admin",
           "invite_only",
           "team_not_found",
           "ticket_not_found",

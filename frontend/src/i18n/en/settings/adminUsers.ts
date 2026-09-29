@@ -7,7 +7,18 @@ export const adminUsers = {
   searchPlaceholder: 'Name, email or username',
   loading: 'Loading users…',
   empty: 'No account matches that search.',
+  emptyFinanceAdmins: 'Nobody has finance access yet. Grant it from somebody’s row under Everyone.',
   siteAdmin: 'Site admin',
+  financeAdmin: 'Finance',
+  /** The role filter beside the search (#130). */
+  roles: {
+    label: 'Show',
+    everyone: 'Everyone',
+    siteAdmins: 'Site admins',
+    financeAdmins: 'Finance admins',
+  },
+  financeSince: 'finance access since {{date}}, granted by {{name}}',
+  financeSinceUnknown: 'finance access since {{date}}',
   teams_one: '{{count}} team',
   teams_other: '{{count}} teams',
   lastSeen: 'last seen {{when}}',
@@ -29,6 +40,8 @@ export const adminUsers = {
   removeSiteAdmin: 'Remove site admin',
   cannotChangeOwnAdmin: 'You cannot change your own site admin access',
   resetPassword: 'Reset password',
+  grantFinance: 'Grant finance access',
+  revokeFinance: 'Revoke finance access',
   showing: 'Showing {{from}}–{{to}} of {{total}}',
   previous: 'Previous',
   next: 'Next',
@@ -59,6 +72,15 @@ export const adminUsers = {
     clear: 'Show everyone',
     count_one: '{{count}} person',
     count_other: '{{count}} people',
+  },
+  /** Granting finance access (#130): what it gives, before it is given. */
+  grantDialog: {
+    title: 'Give {{name}} finance access?',
+    body: '{{name}} will see <strong>every salary, payroll run, expense claim and budget</strong> on this SoftTrack, and can approve them.',
+    separate: 'Separate from site admin. Neither one includes the other.',
+    logged: 'Logged: who granted it, to whom, and when.',
+    submit: 'Grant finance access',
+    submitting: 'Granting…',
   },
   resetDialog: {
     title: 'Reset password',

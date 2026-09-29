@@ -7,7 +7,9 @@ nobody to grant it otherwise, and an instance with no administrator has no way
 to ever get one. Upgrading an existing install promotes the oldest account for
 the same reason. From **Settings → Administration → Users** a site admin can
 search the directory, deactivate and reactivate accounts, hand the privilege to
-somebody else, and set a password for a colleague who is locked out.
+somebody else, and set a password for a colleague who is locked out. Being a
+site admin does not include seeing money. That takes finance access, which a
+site admin grants from the same page ([Payroll and finance](finance.md)).
 
 Two guards you will meet rather than read about: nobody can deactivate or
 demote *themselves*, and the last active site administrator cannot be switched

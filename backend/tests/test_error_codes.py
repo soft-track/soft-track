@@ -15,9 +15,11 @@ BACKEND = pathlib.Path(__file__).resolve().parents[1]
 SOURCE_DIRS = [
     "lib_softtrack",
     "lib_identity",
+    "lib_finance",
     "lib_utils",
     "app_softtrack",
     "app_identity",
+    "app_finance",
 ]
 
 

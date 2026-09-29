@@ -7,7 +7,7 @@ import {
   useUpdateUserAdminUsersUserIdPatch,
 } from '@/api/generated/endpoints/admin/admin'
 import { useListDepartmentsDepartmentsGet } from '@/api/generated/endpoints/departments/departments'
-import type { AdminUserRead, AdminUserUpdate } from '@/api/generated/models'
+import { AdminRole, type AdminUserRead, type AdminUserUpdate } from '@/api/generated/models'
 import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
@@ -25,6 +25,13 @@ import { useFocusTrap } from '@/ui/useFocusTrap'
 
 const PAGE_SIZE = 25
 
+/** The directory's role filter (#130): everyone, or one instance-wide role. */
+const ROLE_FILTERS = [
+  { role: null, label: 'adminUsers.roles.everyone' },
+  { role: AdminRole.site_admin, label: 'adminUsers.roles.siteAdmins' },
+  { role: AdminRole.finance_admin, label: 'adminUsers.roles.financeAdmins' },
+] as const
+
 export default function AdminUsersPage() {
   const { t } = useTranslation(['settings', 'common'])
   const { user } = useAuth()
@@ -33,6 +40,8 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('')
   const [offset, setOffset] = useState(0)
   const [resetting, setResetting] = useState<AdminUserRead | null>(null)
+  const [granting, setGranting] = useState<AdminUserRead | null>(null)
+  const [role, setRole] = useState<AdminRole | null>(null)
   const [editing, setEditing] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   /** Only the people whose manager is deactivated (#124), from the banner. */
@@ -44,6 +53,7 @@ export default function AdminUsersPage() {
     limit: PAGE_SIZE,
     offset,
     reports_to_deactivated: strandedOnly || undefined,
+    role: role ?? undefined,
   })
   // Reports of a deactivated manager, for the banner that says so. Rare, and
   // short when it happens, so one page of them is all of them.
@@ -129,24 +139,45 @@ export default function AdminUsersPage() {
           </div>
         )}
 
-        <label className="relative mt-5 block max-w-sm">
-          <span className="sr-only">{t('adminUsers.searchLabel')}</span>
-          <Icon
-            name="search"
-            size={14}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
-          />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              setOffset(0)
-            }}
-            className="field pl-8"
-            placeholder={t('adminUsers.searchPlaceholder')}
-          />
-        </label>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <label className="relative block w-full max-w-sm">
+            <span className="sr-only">{t('adminUsers.searchLabel')}</span>
+            <Icon
+              name="search"
+              size={14}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setOffset(0)
+              }}
+              className="field pl-8"
+              placeholder={t('adminUsers.searchPlaceholder')}
+            />
+          </label>
+          {/* Finance access is its own role, so it gets its own filter
+              beside the site admins' (#130). */}
+          <div className="segmented" role="group" aria-label={t('adminUsers.roles.label')}>
+            {ROLE_FILTERS.map((filter) => (
+              <button
+                key={filter.label}
+                type="button"
+                aria-pressed={role === filter.role}
+                data-active={role === filter.role}
+                onClick={() => {
+                  setRole(filter.role)
+                  setOffset(0)
+                }}
+                className="segmented-item"
+              >
+                {t(filter.label)}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <section className="glass-strong rounded-panel p-6">
@@ -175,7 +206,11 @@ export default function AdminUsersPage() {
         {users.isPending ? (
           <Loading label={t('adminUsers.loading')} />
         ) : shown.length === 0 ? (
-          <p className="text-sm text-neutral-400">{t('adminUsers.empty')}</p>
+          <p className="text-sm text-neutral-400">
+            {role === AdminRole.finance_admin && !q
+              ? t('adminUsers.emptyFinanceAdmins')
+              : t('adminUsers.empty')}
+          </p>
         ) : (
           <ul className="divide-y divide-neutral-900/8">
             {shown.map((row) => {
@@ -216,6 +251,14 @@ export default function AdminUsersPage() {
                           {t('adminUsers.siteAdmin')}
                         </span>
                       )}
+                      {row.is_finance_admin && (
+                        <span
+                          className="chip"
+                          style={{ ['--chip' as string]: 'var(--color-accent-mint)' }}
+                        >
+                          {t('adminUsers.financeAdmin')}
+                        </span>
+                      )}
                       {!row.is_active && <DeactivatedChip />}
                     </p>
                     {facts.length > 0 && (
@@ -233,6 +276,24 @@ export default function AdminUsersPage() {
                         date: formatDate(parseServerDate(row.created_at), 'd MMM yyyy'),
                       })}
                     </p>
+                    {row.is_finance_admin && row.finance_admin_since && (
+                      <p className="text-xs text-neutral-400">
+                        {row.finance_admin_granted_by
+                          ? t('adminUsers.financeSince', {
+                              date: formatDate(
+                                parseServerDate(row.finance_admin_since),
+                                'd MMM yyyy',
+                              ),
+                              name: row.finance_admin_granted_by.full_name,
+                            })
+                          : t('adminUsers.financeSinceUnknown', {
+                              date: formatDate(
+                                parseServerDate(row.finance_admin_since),
+                                'd MMM yyyy',
+                              ),
+                            })}
+                      </p>
+                    )}
                   </div>
 
                   {/* One group, so the three actions wrap together onto a
@@ -272,6 +333,31 @@ export default function AdminUsersPage() {
                         ? t('adminUsers.removeSiteAdmin')
                         : t('adminUsers.makeSiteAdmin')}
                     </button>
+                    {/* Granting asks first and says what it means; revoking
+                        takes access away, which is never the risky direction.
+                        Nobody is granted it while deactivated -- coming back
+                        is when to decide (#130). */}
+                    {row.is_finance_admin ? (
+                      <button
+                        type="button"
+                        onClick={() => patch(row, { is_finance_admin: false })}
+                        className="btn btn-danger-ghost btn-sm"
+                      >
+                        <Icon name="banknote" size={14} />
+                        {t('adminUsers.revokeFinance')}
+                      </button>
+                    ) : (
+                      row.is_active && (
+                        <button
+                          type="button"
+                          onClick={() => setGranting(row)}
+                          className="btn btn-ghost btn-sm"
+                        >
+                          <Icon name="banknote" size={14} />
+                          {t('adminUsers.grantFinance')}
+                        </button>
+                      )
+                    )}
                     <button
                       type="button"
                       onClick={() => setResetting(row)}
@@ -334,6 +420,109 @@ export default function AdminUsersPage() {
           onDone={refresh}
         />
       )}
+
+      {granting && (
+        <GrantFinanceDialog target={granting} onClose={() => setGranting(null)} onDone={refresh} />
+      )}
+    </div>
+  )
+}
+
+/**
+ * Granting finance access (#130). Asks first, because what it gives is not
+ * obvious from the word: every salary, run, claim and budget, and approving
+ * them -- and it says that site admin and finance access are separate, since
+ * the person granting it is a site admin who may not have it themselves.
+ */
+function GrantFinanceDialog({
+  target,
+  onClose,
+  onDone,
+}: {
+  target: AdminUserRead
+  onClose: () => void
+  onDone: () => void
+}) {
+  const { t } = useTranslation(['settings', 'common'])
+  const dialogRef = useFocusTrap<HTMLDivElement>()
+  const titleId = useId()
+  const updateUser = useUpdateUserAdminUsersUserIdPatch()
+  const [error, setError] = useState<string | null>(null)
+
+  const onGrant = async () => {
+    setError(null)
+    try {
+      await updateUser.mutateAsync({ userId: target.id, data: { is_finance_admin: true } })
+      onDone()
+      onClose()
+    } catch (err: unknown) {
+      setError(errorDetail(err, t('adminUsers.errors.update')))
+    }
+  }
+
+  return (
+    <div
+      className="scrim fixed inset-0 z-30 flex items-start justify-center px-4 pt-[15vh]"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        ref={dialogRef}
+        aria-modal="true"
+        tabIndex={-1}
+        aria-labelledby={titleId}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') onClose()
+        }}
+        className="pop-in glass-strong w-full max-w-md rounded-panel p-5"
+      >
+        <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
+          {t('adminUsers.grantDialog.title', { name: target.full_name })}
+        </h2>
+        <p className="mt-2 text-sm text-neutral-600">
+          <Trans
+            t={t}
+            i18nKey="adminUsers.grantDialog.body"
+            values={{ name: target.full_name }}
+            components={{ strong: <strong className="font-semibold text-neutral-900" /> }}
+            {...userText}
+          />
+        </p>
+        <ul className="mt-3 space-y-1.5 text-xs text-neutral-500">
+          <li className="flex items-center gap-2">
+            <Icon name="shield" size={13} className="shrink-0" />
+            {t('adminUsers.grantDialog.separate')}
+          </li>
+          <li className="flex items-center gap-2">
+            <Icon name="history" size={13} className="shrink-0" />
+            {t('adminUsers.grantDialog.logged')}
+          </li>
+        </ul>
+
+        {error && (
+          <p role="alert" className="mt-3 text-xs text-danger-600">
+            {error}
+          </p>
+        )}
+
+        <div className="hairline mt-4 flex justify-end gap-2 border-t pt-4">
+          <button type="button" onClick={onClose} className="btn btn-ghost">
+            {t('common:cancel')}
+          </button>
+          <button
+            type="button"
+            onClick={onGrant}
+            disabled={updateUser.isPending}
+            className="btn btn-primary"
+          >
+            <Icon name="banknote" size={15} />
+            {updateUser.isPending
+              ? t('adminUsers.grantDialog.submitting')
+              : t('adminUsers.grantDialog.submit')}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

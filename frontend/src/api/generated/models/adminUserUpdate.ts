@@ -9,6 +9,7 @@
 export interface AdminUserUpdate {
   is_active?: boolean | null;
   is_site_admin?: boolean | null;
+  is_finance_admin?: boolean | null;
   full_name?: string | null;
   started_on?: string | null;
   department_id?: number | null;

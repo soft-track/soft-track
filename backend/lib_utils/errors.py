@@ -46,6 +46,9 @@ class ErrorCode(str, enum.Enum):
     #: A guest of the team (#104): may look, may not change anything.
     team_read_only = "team_read_only"
     not_site_admin = "not_site_admin"
+    #: Money is for finance admins only (#130), whatever else the account may
+    #: do -- a site admin included.
+    not_finance_admin = "not_finance_admin"
     #: Registration is invite-only on this instance.
     invite_only = "invite_only"
 

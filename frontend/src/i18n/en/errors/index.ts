@@ -23,6 +23,8 @@ export const errors = {
   not_team_admin: 'Only an admin of this team can do that.',
   team_read_only: 'You are a guest on this team: you can see its work but not change it.',
   not_site_admin: 'Only a site administrator can do that.',
+  not_finance_admin:
+    'Only a finance admin can do that. A site admin can grant finance access from Administration → Users.',
   last_team_admin: 'A team needs at least one admin. Make someone else an admin first.',
   last_site_admin: 'This instance needs at least one active site administrator.',
   cannot_deactivate_self: 'You cannot deactivate your own account.',

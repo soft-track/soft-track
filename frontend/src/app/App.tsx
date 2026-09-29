@@ -9,6 +9,7 @@ import InvitePage from '@/auth/InvitePage'
 import LoginPage from '@/auth/LoginPage'
 import OAuthCallbackPage from '@/auth/OAuthCallbackPage'
 import NewTeamPage from '@/team/NewTeamPage'
+import { RequireFinanceAdmin } from '@/finance/RequireFinanceAdmin'
 import DirectoryPage from '@/people/DirectoryPage'
 import PeopleLayout from '@/people/PeopleLayout'
 import ProfilePage from '@/people/ProfilePage'
@@ -93,6 +94,12 @@ export default function App() {
             <Route element={<RequireSiteAdmin />}>
               <Route path="admin/users" element={<AdminUsersPage />} />
               <Route path="admin/departments" element={<AdminDepartmentsPage />} />
+            </Route>
+            {/* Finance (#130): anyone without the flag who follows a link
+                here is told who can grant it, whatever the page. */}
+            <Route path="finance" element={<RequireFinanceAdmin />}>
+              <Route index element={<Navigate to="/settings/profile" replace />} />
+              <Route path="*" element={<Navigate to="/settings/finance" replace />} />
             </Route>
           </Route>
 

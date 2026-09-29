@@ -7,6 +7,7 @@ from lib_identity import admin as admin_service
 from lib_identity.admin import require_site_admin
 from lib_identity.models.admin import (
     AdminPasswordReset,
+    AdminRole,
     AdminUserRead,
     AdminUserUpdate,
 )
@@ -28,6 +29,9 @@ def list_users(
         default=False,
         description="Only active people whose manager has been deactivated",
     ),
+    role: Optional[AdminRole] = Query(
+        default=None, description="Only site admins, or only finance admins"
+    ),
     session: Session = Depends(get_session),
     _: User = Depends(require_site_admin),
 ):
@@ -37,6 +41,7 @@ def list_users(
         limit=limit,
         offset=offset,
         reports_to_deactivated=reports_to_deactivated,
+        role=role,
     )
 
 

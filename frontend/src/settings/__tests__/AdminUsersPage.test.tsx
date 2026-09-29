@@ -65,6 +65,7 @@ const BASE: AdminUserRead = {
   avatar_color: '#6366f1',
   is_active: true,
   is_site_admin: false,
+  is_finance_admin: false,
   has_password: true,
   created_at: '2026-01-01T00:00:00',
   last_login_at: null,
@@ -299,5 +300,81 @@ describe('The admin user directory', () => {
   it('shows no banner when nobody is stranded', () => {
     renderPage([DANIEL])
     expect(screen.queryByText(/deactivated manager/)).toBeNull()
+  })
+})
+
+describe('Finance access (#130)', () => {
+  const GRACE: AdminUserRead = {
+    ...BASE,
+    id: 4,
+    email: 'grace@northwind.dev',
+    username: 'grace',
+    full_name: 'Grace Mensah',
+    is_finance_admin: true,
+    finance_admin_since: '2026-01-02T09:00:00',
+    finance_admin_granted_by: AS_MANAGER({ ...AMINA, full_name: 'Sofia Marquez' }),
+  }
+
+  it('is its own chip, with when it was granted and by whom', () => {
+    renderPage([GRACE, DANIEL])
+    expect(screen.getAllByText('Finance')).toHaveLength(1)
+    expect(
+      screen.getByText('finance access since 2 Jan 2026, granted by Sofia Marquez'),
+    ).toBeTruthy()
+  })
+
+  it('is its own filter', async () => {
+    const user = renderPage([GRACE])
+    await user.click(screen.getByRole('button', { name: 'Finance admins' }))
+    expect(mocks.listCalls).toContainEqual({
+      q: undefined,
+      limit: 25,
+      offset: 0,
+      role: 'finance_admin',
+    })
+    expect(
+      screen.getByRole('button', { name: 'Finance admins' }).getAttribute('aria-pressed'),
+    ).toBe('true')
+  })
+
+  it('asks before granting it, and says what it gives', async () => {
+    const user = renderPage([DANIEL])
+    await user.click(screen.getByRole('button', { name: 'Grant finance access' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Give Daniel Okafor finance access?' })
+    expect(dialog.textContent).toMatch(
+      'Daniel Okafor will see every salary, payroll run, expense claim and budget',
+    )
+    expect(dialog.textContent).toMatch('Neither one includes the other.')
+    expect(mocks.update.mutateAsync).not.toHaveBeenCalled()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Grant finance access' }))
+    expect(mocks.update.mutateAsync).toHaveBeenCalledWith({
+      userId: 2,
+      data: { is_finance_admin: true },
+    })
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('cancels a grant with Escape', async () => {
+    const user = renderPage([DANIEL])
+    await user.click(screen.getByRole('button', { name: 'Grant finance access' }))
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(mocks.update.mutateAsync).not.toHaveBeenCalled()
+  })
+
+  it('revokes it without asking', async () => {
+    const user = renderPage([GRACE])
+    await user.click(screen.getByRole('button', { name: 'Revoke finance access' }))
+    expect(mocks.update.mutateAsync).toHaveBeenCalledWith({
+      userId: 4,
+      data: { is_finance_admin: false },
+    })
+  })
+
+  it('is not offered to a deactivated account', () => {
+    renderPage([{ ...DANIEL, is_active: false }])
+    expect(screen.queryByRole('button', { name: 'Grant finance access' })).toBeNull()
   })
 })

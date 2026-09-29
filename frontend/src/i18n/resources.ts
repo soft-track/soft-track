@@ -6,6 +6,7 @@ import { calendar } from '@/i18n/en/calendar'
 import { common } from '@/i18n/en/common'
 import { sprints } from '@/i18n/en/sprints'
 import { errors } from '@/i18n/en/errors'
+import { finance } from '@/i18n/en/finance'
 import { imports } from '@/i18n/en/imports'
 import { tickets } from '@/i18n/en/tickets'
 import { keyboard } from '@/i18n/en/keyboard'
@@ -41,6 +42,7 @@ export const resources = {
     keyboard,
     notifications,
     people,
+    finance,
     calendar,
     attachments,
     markdown,
