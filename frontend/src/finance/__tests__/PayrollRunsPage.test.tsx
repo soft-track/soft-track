@@ -45,6 +45,7 @@ function summary(overrides: Partial<PayrollRunSummary>): PayrollRunSummary {
     totals: [{ currency: 'USD', amount_minor: 2195000, lines: 3 }],
     line_count: 3,
     missing_count: 0,
+    reimbursement_totals: [],
     ...overrides,
   }
 }

@@ -80,6 +80,12 @@ export const payroll = {
     missingLines_one: '{{count}} missing',
     missingLines_other: '{{count}} missing',
     totalsLabel: 'Totals per currency',
+    /** Claims the run pays back (#137), as lines of their own. */
+    reimbursement: 'Reimbursement',
+    reimbursementClaims_one: 'Reimbursement, {{count}} claim',
+    reimbursementClaims_other: 'Reimbursement, {{count}} claims',
+    reimbursedTotalsLabel: 'Reimbursements per currency',
+    reimbursing: 'Also paying back',
   },
   /** A line's one-off adjustment. */
   adjustment: {

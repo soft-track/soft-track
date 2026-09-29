@@ -10,7 +10,7 @@ import enum
 from datetime import date, datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Column, Enum, Index, UniqueConstraint
+from sqlalchemy import CheckConstraint, Column, Enum, Index, UniqueConstraint
 from sqlmodel import SQLModel, Field, Relationship
 
 from lib_utils.password import is_usable_password
@@ -1566,6 +1566,46 @@ class PayrollLine(SQLModel, table=True):
     )
 
 
+class ReimbursementBatch(SQLModel, table=True):
+    """Approved expense claims paid back together (#137).
+
+    The expense counterpart of a payroll run: gathered by a finance admin,
+    moved draft -> approved -> paid, and exported as the same kind of CSV.
+    Its lines are the claims in it, summed per person per currency; their
+    amounts were frozen when each claim was approved, so there is nothing to
+    copy here.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    #: The payroll run's states, set the same way and for the same reason.
+    state: PayrollRunState = Field(default=PayrollRunState.draft, index=True)
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    approved_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    approved_at: Optional[datetime] = None
+    paid_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    paid_at: Optional[datetime] = None
+
+    created_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "ReimbursementBatch.created_by_id",
+            "viewonly": True,
+        }
+    )
+    approved_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "ReimbursementBatch.approved_by_id",
+            "viewonly": True,
+        }
+    )
+    paid_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "ReimbursementBatch.paid_by_id",
+            "viewonly": True,
+        }
+    )
+
+
 class Expense(SQLModel, table=True):
     """One expense claim (#133): money somebody spent for work, wanting it back.
 
@@ -1578,7 +1618,24 @@ class Expense(SQLModel, table=True):
     handling, derived types, byte checks and storage -- but lives on the claim
     rather than as an Attachment row, which always belongs to a ticket and is
     guarded by the ticket's team. A receipt is guarded by who may see money.
+
+    An approved claim is paid back exactly once (#137): in a reimbursement
+    batch, or on a payroll run, and never both. That rule is the row's own
+    -- two check constraints -- so paying a claim twice cannot be recorded
+    at all, rather than being something the service remembers to prevent.
     """
+
+    __table_args__ = (
+        CheckConstraint(
+            "reimbursement_batch_id IS NULL OR payroll_run_id IS NULL",
+            name="ck_expense_settled_once",
+        ),
+        CheckConstraint(
+            "state = 'approved' OR "
+            "(reimbursement_batch_id IS NULL AND payroll_run_id IS NULL)",
+            name="ck_expense_settles_approved",
+        ),
+    )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     submitter_id: int = Field(foreign_key="user.id", index=True)
@@ -1599,9 +1656,25 @@ class Expense(SQLModel, table=True):
     refusal_reason: Optional[str] = None
     #: Copied at approval (#134); null for somebody in no department.
     department_id: Optional[int] = Field(default=None, foreign_key="department.id")
+    #: How it goes out (#137): one of these, or neither while it waits.
+    reimbursement_batch_id: Optional[int] = Field(
+        default=None, foreign_key="reimbursementbatch.id", index=True
+    )
+    payroll_run_id: Optional[int] = Field(
+        default=None, foreign_key="payrollrun.id", index=True
+    )
+    #: When the batch or run it went out in was marked paid: the moment the
+    #: submitter's view says "Reimbursed".
+    reimbursed_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
 
+    reimbursement_batch: Optional[ReimbursementBatch] = Relationship(
+        sa_relationship_kwargs={"viewonly": True}
+    )
+    payroll_run: Optional[PayrollRun] = Relationship(
+        sa_relationship_kwargs={"viewonly": True}
+    )
     submitter: Optional[User] = Relationship(
         sa_relationship_kwargs={
             "foreign_keys": "Expense.submitter_id",

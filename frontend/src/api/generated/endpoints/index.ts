@@ -19,6 +19,7 @@ export * from './payroll/payroll';
 export * from './people/people';
 export * from './projects/projects';
 export * from './realtime/realtime';
+export * from './reimbursements/reimbursements';
 export * from './reports/reports';
 export * from './search/search';
 export * from './sprints/sprints';

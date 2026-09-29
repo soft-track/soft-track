@@ -32,6 +32,8 @@ from lib_finance.models.expenses import (
     ExpenseRead,
     ExpenseUpdate,
     ReceiptRead,
+    Settlement,
+    SettlementKind,
 )
 from lib_finance.models.money import FinancePerson
 from lib_identity.models.departments import DepartmentRef
@@ -39,7 +41,14 @@ from lib_identity.models.identity import PersonRef
 from lib_softtrack import attachments
 from lib_softtrack.models.page import DEFAULT_LIMIT
 from lib_softtrack.storage import Storage
-from lib_softtrack.tables import Expense, ExpenseState, User, utcnow
+from lib_softtrack.tables import (
+    Expense,
+    ExpenseState,
+    PayrollRun,
+    ReimbursementBatch,
+    User,
+    utcnow,
+)
 from lib_utils.errors import ErrorCode, api_error
 
 #: What a receipt may be: a photo or a PDF, and nothing else the attachment
@@ -70,6 +79,33 @@ def _receipt(expense: Expense, url: str) -> Optional[ReceiptRead]:
     )
 
 
+def _settlement(expense: Expense) -> Optional[Settlement]:
+    """The batch or run the claim goes out on, if it has one yet (#137)."""
+    batch, run = expense.reimbursement_batch, expense.payroll_run
+    container = batch or run
+    if container is None:
+        return None
+    return Settlement(
+        kind=SettlementKind.batch if batch else SettlementKind.payroll_run,
+        id=container.id,
+        state=container.state,
+        period_start=run.period_start if run else None,
+        period_end=run.period_end if run else None,
+        pay_schedule=run.pay_schedule if run else None,
+        paid_at=container.paid_at,
+        paid_by=(
+            PersonRef.model_validate(container.paid_by) if container.paid_by else None
+        ),
+    )
+
+
+#: What every claim read needs loaded with it, a page at a time.
+SETTLEMENT_LOADS = (
+    selectinload(Expense.reimbursement_batch).selectinload(ReimbursementBatch.paid_by),
+    selectinload(Expense.payroll_run).selectinload(PayrollRun.paid_by),
+)
+
+
 def _fields(expense: Expense, receipt_url: str) -> dict:
     return {
         "id": expense.id,
@@ -84,6 +120,8 @@ def _fields(expense: Expense, receipt_url: str) -> dict:
         ),
         "decided_at": expense.decided_at,
         "refusal_reason": expense.refusal_reason,
+        "settlement": _settlement(expense),
+        "reimbursed_at": expense.reimbursed_at,
         "created_at": expense.created_at,
         "updated_at": expense.updated_at,
     }
@@ -93,7 +131,7 @@ def _own(expense: Expense) -> ExpenseRead:
     return ExpenseRead(**_fields(expense, f"/expenses/{expense.id}/receipt"))
 
 
-def _claim(expense: Expense) -> ClaimRead:
+def claim_read(expense: Expense) -> ClaimRead:
     submitter = expense.submitter
     department = (
         expense.department
@@ -158,7 +196,7 @@ def list_own(
     rows = session.exec(
         select(Expense)
         .where(*filters)
-        .options(selectinload(Expense.decided_by))
+        .options(selectinload(Expense.decided_by), *SETTLEMENT_LOADS)
         .order_by(col(Expense.incurred_on).desc(), col(Expense.id).desc())
         .limit(limit)
         .offset(offset)
@@ -314,6 +352,7 @@ def list_claims(
             selectinload(Expense.submitter).selectinload(User.department),
             selectinload(Expense.decided_by),
             selectinload(Expense.department),
+            *SETTLEMENT_LOADS,
         )
         .order_by(col(Expense.incurred_on).desc(), col(Expense.id).desc())
         .limit(limit)
@@ -325,7 +364,7 @@ def list_claims(
         ).all()
     )
     return ClaimPage(
-        items=[_claim(row) for row in rows],
+        items=[claim_read(row) for row in rows],
         total=total,
         limit=limit,
         offset=offset,
@@ -334,7 +373,7 @@ def list_claims(
 
 
 def get_claim(session: Session, expense_id: int) -> ClaimRead:
-    return _claim(_claim_or_404(session, expense_id))
+    return claim_read(_claim_or_404(session, expense_id))
 
 
 def claim_receipt(session: Session, expense_id: int) -> Expense:
@@ -369,7 +408,7 @@ def _decide(
     session.add(expense)
     session.commit()
     session.refresh(expense)
-    return _claim(expense)
+    return claim_read(expense)
 
 
 def approve(session: Session, actor: User, expense_id: int) -> ClaimRead:

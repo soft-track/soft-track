@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PayrollLineRead } from './payrollLineRead';
+import type { PayrollReimbursementRead } from './payrollReimbursementRead';
 import type { PayrollRunState } from './payrollRunState';
 import type { PayrollTotal } from './payrollTotal';
 import type { PaySchedule } from './paySchedule';
@@ -26,5 +27,7 @@ export interface PayrollRunRead {
   totals: PayrollTotal[];
   line_count: number;
   missing_count: number;
+  reimbursement_totals: PayrollTotal[];
   lines: PayrollLineRead[];
+  reimbursements: PayrollReimbursementRead[];
 }

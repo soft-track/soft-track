@@ -14,6 +14,10 @@ while it is a draft and written down when it is approved:
   department afterwards changes it, and only now can it be exported.
 - **Paid.** A finance admin says the money went out.
 
+A run can also carry approved expense claims (#137), each person's as a line
+of its own beside their pay -- never merged into it -- in the run and in its
+CSV. Marking the run paid is what pays those claims back.
+
 The pay on the period's last day, not a share of the month: a raise halfway
 through is an adjustment somebody decides, not a proration SoftTrack guesses.
 """
@@ -21,6 +25,7 @@ through is an adjustment somebody decides, not a proration SoftTrack guesses.
 from dataclasses import dataclass
 from typing import Iterator, Optional
 
+from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, func, select
@@ -30,6 +35,7 @@ from lib_finance.models.money import FinancePerson
 from lib_finance.models.payroll import (
     PayrollAdjustment,
     PayrollLineRead,
+    PayrollReimbursementRead,
     PayrollRunCreate,
     PayrollRunPage,
     PayrollRunRead,
@@ -42,6 +48,7 @@ from lib_identity.models.identity import PersonRef
 from lib_softtrack.models.page import DEFAULT_LIMIT
 from lib_softtrack.tables import (
     Department,
+    Expense,
     PayrollLine,
     PayrollRun,
     PayrollRunState,
@@ -51,8 +58,9 @@ from lib_softtrack.tables import (
 from lib_utils.errors import ErrorCode, api_error
 
 #: The columns of a run's CSV, in order: what a bank template or a payroll
-#: bureau takes. Append, do not rearrange -- people build on exports.
-CSV_COLUMNS = ["name", "amount", "currency", "period_start", "period_end"]
+#: bureau takes. Append, do not rearrange -- people build on exports. `kind`
+#: (#137) says which rows are pay and which pay back expense claims.
+CSV_COLUMNS = ["name", "amount", "currency", "period_start", "period_end", "kind"]
 
 
 @dataclass
@@ -196,11 +204,74 @@ def _frozen_tallies(session: Session, run_ids: list[int]) -> dict[int, _Tally]:
     return tallies
 
 
+def _reimbursement_rows(session: Session, run_id: int):
+    """The claims a run carries (#137), per person per currency."""
+    return session.exec(
+        select(
+            Expense.submitter_id,
+            Expense.currency,
+            func.sum(Expense.amount_minor),
+            func.count(),
+        )
+        .where(Expense.payroll_run_id == run_id)
+        .group_by(Expense.submitter_id, Expense.currency)
+    ).all()
+
+
+def _reimbursements(session: Session, run_id: int) -> list[PayrollReimbursementRead]:
+    rows = _reimbursement_rows(session, run_id)
+    people = {
+        person.id: person
+        for person in session.exec(
+            select(User)
+            .where(col(User.id).in_([row[0] for row in rows] or [0]))
+            .options(selectinload(User.department))
+        )
+    }
+    return sorted(
+        (
+            PayrollReimbursementRead(
+                person=FinancePerson.model_validate(people[user_id]),
+                currency=currency,
+                amount_minor=amount,
+                claims=count,
+            )
+            for user_id, currency, amount, count in rows
+        ),
+        key=lambda line: (line.person.full_name.lower(), line.currency.value),
+    )
+
+
+def _reimbursement_totals(
+    session: Session, run_ids: list[int]
+) -> dict[int, list[PayrollTotal]]:
+    """What each run pays back, per currency, a page of runs at once."""
+    totals: dict[int, list[PayrollTotal]] = {run_id: [] for run_id in run_ids}
+    rows = session.exec(
+        select(
+            Expense.payroll_run_id,
+            Expense.currency,
+            func.sum(Expense.amount_minor),
+            func.count(),
+        )
+        .where(col(Expense.payroll_run_id).in_(run_ids or [0]))
+        .group_by(Expense.payroll_run_id, Expense.currency)
+        .order_by(Expense.payroll_run_id, Expense.currency)
+    ).all()
+    for run_id, currency, amount, count in rows:
+        totals[run_id].append(
+            PayrollTotal(currency=currency, amount_minor=amount, lines=count)
+        )
+    return totals
+
+
 def _person(user: Optional[User]) -> Optional[PersonRef]:
     return PersonRef.model_validate(user) if user is not None else None
 
 
-def _summary(run: PayrollRun, tally: _Tally) -> PayrollRunSummary:
+def _summary(
+    run: PayrollRun, tally: _Tally, reimbursed: list[PayrollTotal]
+) -> PayrollRunSummary:
     return PayrollRunSummary(
         id=run.id,
         pay_schedule=run.pay_schedule,
@@ -216,13 +287,28 @@ def _summary(run: PayrollRun, tally: _Tally) -> PayrollRunSummary:
         totals=tally.totals,
         line_count=tally.line_count,
         missing_count=tally.missing_count,
+        reimbursement_totals=reimbursed,
     )
 
 
 def _read(session: Session, run: PayrollRun) -> PayrollRunRead:
     lines = _lines(session, run)
+    reimbursements = _reimbursements(session, run.id)
+    reimbursed: dict[str, list[int]] = {}
+    for line in reimbursements:
+        total = reimbursed.setdefault(line.currency.value, [0, 0])
+        total[0] += line.amount_minor
+        total[1] += line.claims
     return PayrollRunRead(
-        **_summary(run, _Tally.of(lines)).model_dump(),
+        **_summary(
+            run,
+            _Tally.of(lines),
+            [
+                PayrollTotal(currency=currency, amount_minor=amount, lines=count)
+                for currency, (amount, count) in sorted(reimbursed.items())
+            ],
+        ).model_dump(),
+        reimbursements=reimbursements,
         lines=[
             PayrollLineRead(
                 person=FinancePerson.model_validate(line.person),
@@ -287,6 +373,7 @@ def list_runs(
     frozen = _frozen_tallies(
         session, [run.id for run in runs if run.state is not PayrollRunState.draft]
     )
+    reimbursed = _reimbursement_totals(session, [run.id for run in runs])
     return PayrollRunPage(
         items=[
             _summary(
@@ -296,6 +383,7 @@ def list_runs(
                     if run.state is PayrollRunState.draft
                     else frozen[run.id]
                 ),
+                reimbursed[run.id],
             )
             for run in runs
         ],
@@ -357,6 +445,12 @@ def delete_run(session: Session, run_id: int) -> None:
     run = _draft_or_409(session, run_id)
     for row in session.exec(select(PayrollLine).where(PayrollLine.run_id == run.id)):
         session.delete(row)
+    # Claims it was to carry go back to awaiting reimbursement (#137).
+    session.exec(
+        update(Expense)
+        .where(Expense.payroll_run_id == run.id)
+        .values(payroll_run_id=None)
+    )
     session.delete(run)
     session.commit()
 
@@ -458,6 +552,12 @@ def mark_paid(session: Session, actor: User, run_id: int) -> PayrollRunRead:
     run.paid_by_id = actor.id
     run.paid_at = utcnow()
     session.add(run)
+    # The claims it carried are paid back now, and their submitters see it.
+    session.exec(
+        update(Expense)
+        .where(Expense.payroll_run_id == run.id)
+        .values(reimbursed_at=run.paid_at)
+    )
     session.commit()
     session.refresh(run)
     return _read(session, run)
@@ -488,16 +588,29 @@ def export_rows(
             detail="Approve the run before exporting it",
         )
     lines = [line for line in _frozen_lines(session, run) if not line.missing]
+    reimbursements = _reimbursements(session, run.id)
+    period = [run.period_start.isoformat(), run.period_end.isoformat()]
 
     def rows() -> Iterator[list[str]]:
         yield CSV_COLUMNS
-        for line in lines:
-            yield [
+        # Each person's pay, then what the run pays them back: rows of their
+        # own, so nobody reading the file mistakes a claim for salary.
+        entries = [
+            (line.person.full_name, 0, line.currency, line.total_minor, "wages")
+            for line in lines
+        ] + [
+            (
                 line.person.full_name,
-                decimal(line.total_minor, line.currency),
-                line.currency,
-                run.period_start.isoformat(),
-                run.period_end.isoformat(),
-            ]
+                1,
+                line.currency.value,
+                line.amount_minor,
+                "reimbursement",
+            )
+            for line in reimbursements
+        ]
+        for name, _, currency, amount, kind in sorted(
+            entries, key=lambda entry: (entry[0].lower(), entry[1], entry[2])
+        ):
+            yield [name, decimal(amount, currency), currency, *period, kind]
 
     return run, rows()

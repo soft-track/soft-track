@@ -72,6 +72,49 @@ afterEach(() => {
 })
 
 describe('Your expenses', () => {
+  it('follows an approved claim until it is paid back (#137)', () => {
+    mocks.claims = [
+      claim(5, {
+        description: 'Hotel, Lisbon workshop',
+        state: 'approved',
+        decided_by: GRACE,
+        decided_at: '2026-09-16T10:00:00',
+        settlement: { kind: 'batch', id: 8, state: 'draft' },
+      }),
+      claim(6, {
+        description: 'Parking at the Porto office',
+        state: 'approved',
+        decided_by: GRACE,
+        decided_at: '2026-09-12T10:00:00',
+        settlement: { kind: 'batch', id: 6, state: 'paid', paid_by: GRACE },
+        reimbursed_at: '2026-09-16T10:00:00',
+      }),
+      claim(7, {
+        description: 'Keyboard for pairing',
+        state: 'approved',
+        decided_by: GRACE,
+        decided_at: '2026-08-20T10:00:00',
+        settlement: {
+          kind: 'payroll_run',
+          id: 3,
+          state: 'paid',
+          period_start: '2026-08-01',
+          period_end: '2026-08-31',
+          pay_schedule: 'monthly',
+        },
+        reimbursed_at: '2026-08-31T10:00:00',
+      }),
+    ]
+    renderPage()
+    const [waiting, batched, onRun] = screen.getAllByRole('listitem')
+    expect(within(waiting).getByText('Approved · awaiting reimbursement')).toBeTruthy()
+    expect(within(waiting).getByText('In batch RB-8, not paid yet')).toBeTruthy()
+    expect(within(batched).getByText('Reimbursed on 16 Sep 2026')).toBeTruthy()
+    expect(within(batched).getByText('In batch RB-6, paid by Grace Mensah')).toBeTruthy()
+    expect(within(onRun).getByText('Reimbursed on 31 Aug 2026')).toBeTruthy()
+    expect(within(onRun).getByText('With the August 2026 payroll run')).toBeTruthy()
+  })
+
   it('shows each claim, where it stands, and who decided it', () => {
     renderPage()
     const [hotel, parking, headphones] = screen.getAllByRole('listitem')

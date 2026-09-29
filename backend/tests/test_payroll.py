@@ -378,9 +378,9 @@ def test_the_export_is_the_approved_run_for_a_bank_template(client, paid, sessio
     )
     assert response.content.startswith("﻿".encode())
     assert response.content.decode("utf-8-sig").split("\r\n") == [
-        "name,amount,currency,period_start,period_end",
-        "'=HYPERLINK(1),6450.00,GBP,2026-09-01,2026-09-30",
-        "Daniel Okafor,8350.00,USD,2026-09-01,2026-09-30",
+        "name,amount,currency,period_start,period_end,kind",
+        "'=HYPERLINK(1),6450.00,GBP,2026-09-01,2026-09-30,wages",
+        "Daniel Okafor,8350.00,USD,2026-09-01,2026-09-30,wages",
         "",
     ]
 

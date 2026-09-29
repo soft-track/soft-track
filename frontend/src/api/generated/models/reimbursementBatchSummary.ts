@@ -5,16 +5,13 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { BatchTotal } from './batchTotal';
 import type { PayrollRunState } from './payrollRunState';
-import type { PayrollTotal } from './payrollTotal';
-import type { PaySchedule } from './paySchedule';
 import type { PersonRef } from './personRef';
 
-export interface PayrollRunSummary {
+export interface ReimbursementBatchSummary {
   id: number;
-  pay_schedule: PaySchedule;
-  period_start: string;
-  period_end: string;
+  label: string;
   state: PayrollRunState;
   created_by: PersonRef;
   created_at: string;
@@ -22,8 +19,7 @@ export interface PayrollRunSummary {
   approved_at?: string | null;
   paid_by?: PersonRef | null;
   paid_at?: string | null;
-  totals: PayrollTotal[];
-  line_count: number;
-  missing_count: number;
-  reimbursement_totals: PayrollTotal[];
+  totals: BatchTotal[];
+  claim_count: number;
+  people_count: number;
 }

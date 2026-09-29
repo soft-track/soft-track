@@ -53,6 +53,7 @@ export type IconName =
   | 'banknote'
   | 'history'
   | 'receipt'
+  | 'undo'
 
 const PATHS: Record<IconName, JSX.Element> = {
   search: (
@@ -147,6 +148,12 @@ const PATHS: Record<IconName, JSX.Element> = {
       <rect x="2.5" y="6" width="19" height="12" rx="2" />
       <circle cx="12" cy="12" r="2.5" />
       <path d="M6 9.5v.01M18 14.5v.01" />
+    </>
+  ),
+  undo: (
+    <>
+      <path d="M9 14 4 9l5-5" />
+      <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
     </>
   ),
   receipt: (

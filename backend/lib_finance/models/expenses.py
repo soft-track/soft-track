@@ -1,3 +1,4 @@
+import enum
 from datetime import date, datetime
 from typing import Optional
 
@@ -7,7 +8,7 @@ from lib_finance.models.money import FinancePerson
 from lib_finance.money import MAX_AMOUNT_MINOR, Currency
 from lib_identity.models.departments import DepartmentRef
 from lib_identity.models.identity import PersonRef
-from lib_softtrack.tables import ExpenseState
+from lib_softtrack.tables import ExpenseState, PayrollRunState, PaySchedule
 
 #: Room for "Hotel, two nights, for the client workshop in Lisbon".
 DESCRIPTION_MAX = 200
@@ -23,6 +24,27 @@ class ReceiptRead(BaseModel):
     #: Where to fetch the bytes, with the caller's token: the submitter's
     #: route or finance's, depending on who is asking.
     url: str
+
+
+class SettlementKind(str, enum.Enum):
+    """How an approved claim is paid back (#137)."""
+
+    batch = "batch"
+    payroll_run = "payroll_run"
+
+
+class Settlement(BaseModel):
+    """The batch or payroll run an approved claim goes out on (#137)."""
+
+    kind: SettlementKind
+    id: int
+    state: PayrollRunState
+    #: A run's period and schedule; null for a batch.
+    period_start: Optional[date] = None
+    period_end: Optional[date] = None
+    pay_schedule: Optional[PaySchedule] = None
+    paid_at: Optional[datetime] = None
+    paid_by: Optional[PersonRef] = None
 
 
 class ExpenseRead(BaseModel):
@@ -43,6 +65,11 @@ class ExpenseRead(BaseModel):
     decided_by: Optional[PersonRef] = None
     decided_at: Optional[datetime] = None
     refusal_reason: Optional[str] = None
+    #: Where an approved claim goes out (#137): null until it is put in a
+    #: batch or on a payroll run.
+    settlement: Optional[Settlement] = None
+    #: When that batch or run was marked paid: the claim is paid back.
+    reimbursed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 

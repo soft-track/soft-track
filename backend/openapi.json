@@ -8833,6 +8833,463 @@
         }
       }
     },
+    "/finance/reimbursements/awaiting": {
+      "get": {
+        "tags": [
+          "reimbursements"
+        ],
+        "summary": "List Awaiting Reimbursement",
+        "description": "Every approved claim not paid back yet, the longest waiting first.\nThose already in a draft batch or on a draft run say where.",
+        "operationId": "list_awaiting_reimbursement_finance_reimbursements_awaiting_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ClaimRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Awaiting Reimbursement Finance Reimbursements Awaiting Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/finance/reimbursements/carry": {
+      "post": {
+        "tags": [
+          "reimbursements"
+        ],
+        "summary": "Carry On Payroll Run",
+        "description": "Pay approved claims back with a draft payroll run, each person's as a\nline of its own beside their pay.",
+        "operationId": "carry_on_payroll_run_finance_reimbursements_carry_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReimbursementCarry"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayrollRunRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/finance/reimbursements/expenses/{expense_id}/settlement": {
+      "delete": {
+        "tags": [
+          "reimbursements"
+        ],
+        "summary": "Release Expense",
+        "description": "Take a claim back out of a draft batch or off a draft run.",
+        "operationId": "release_expense_finance_reimbursements_expenses__expense_id__settlement_delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "expense_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Expense Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/reimbursements/batches": {
+      "get": {
+        "tags": [
+          "reimbursements"
+        ],
+        "summary": "List Reimbursement Batches",
+        "operationId": "list_reimbursement_batches_finance_reimbursements_batches_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementBatchPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "reimbursements"
+        ],
+        "summary": "Create Reimbursement Batch",
+        "description": "Gather approved claims, none already going out, into a draft batch.",
+        "operationId": "create_reimbursement_batch_finance_reimbursements_batches_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReimbursementBatchCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementBatchRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/reimbursements/batches/{batch_id}": {
+      "get": {
+        "tags": [
+          "reimbursements"
+        ],
+        "summary": "Get Reimbursement Batch",
+        "operationId": "get_reimbursement_batch_finance_reimbursements_batches__batch_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Batch Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementBatchRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "reimbursements"
+        ],
+        "summary": "Delete Reimbursement Batch",
+        "description": "Throw a draft batch away; its claims go back to awaiting.",
+        "operationId": "delete_reimbursement_batch_finance_reimbursements_batches__batch_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Batch Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/reimbursements/batches/{batch_id}/approve": {
+      "post": {
+        "tags": [
+          "reimbursements"
+        ],
+        "summary": "Approve Reimbursement Batch",
+        "operationId": "approve_reimbursement_batch_finance_reimbursements_batches__batch_id__approve_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Batch Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementBatchRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/reimbursements/batches/{batch_id}/paid": {
+      "post": {
+        "tags": [
+          "reimbursements"
+        ],
+        "summary": "Mark Reimbursement Batch Paid",
+        "description": "Say the money went out: every claim in the batch is paid back now.",
+        "operationId": "mark_reimbursement_batch_paid_finance_reimbursements_batches__batch_id__paid_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Batch Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementBatchRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/reimbursements/batches/{batch_id}/export": {
+      "get": {
+        "tags": [
+          "reimbursements"
+        ],
+        "summary": "Export Reimbursement Batch",
+        "description": "The approved batch in the payroll CSV's shape: one row per person per\ncurrency, over the days the claims were spent.",
+        "operationId": "export_reimbursement_batch_finance_reimbursements_batches__batch_id__export_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Batch Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -9653,6 +10110,55 @@
         "title": "AutomationTrigger",
         "description": "What makes an automation rule look at a ticket.\n\nEight, and not extensible by a team. Every one of them is something\nSoftTrack already writes down as it happens, which is what keeps the\nengine to \"read the event, read the rules, apply them\" instead of a\nscheduler with a clock of its own. There is deliberately no \"every\nMonday\": a rule that fires while nobody is doing anything is a rule\nnobody remembers exists when it surprises them.\n\nThe last three arrive from a connected repository rather than from\nsomebody using the tracker. They are triggers rather than a settings pair\nof their own -- \"which status means in review\", \"which means shipped\" --\nbecause that pair is a second engine for \"when X happens, change the\nticket\", and this one already exists, already has conditions, and already\nwrites down what it did."
       },
+      "BatchLine": {
+        "properties": {
+          "person": {
+            "$ref": "#/components/schemas/FinancePerson"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "claims": {
+            "type": "integer",
+            "title": "Claims"
+          }
+        },
+        "type": "object",
+        "required": [
+          "person",
+          "currency",
+          "amount_minor",
+          "claims"
+        ],
+        "title": "BatchLine",
+        "description": "One person in one currency: what the batch pays them back."
+      },
+      "BatchTotal": {
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "claims": {
+            "type": "integer",
+            "title": "Claims"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "amount_minor",
+          "claims"
+        ],
+        "title": "BatchTotal"
+      },
       "Body_attach_receipt_expenses__expense_id__receipt_put": {
         "properties": {
           "file": {
@@ -9974,6 +10480,28 @@
               }
             ],
             "title": "Refusal Reason"
+          },
+          "settlement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Settlement"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reimbursed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reimbursed At"
           },
           "created_at": {
             "type": "string",
@@ -11055,6 +11583,28 @@
               }
             ],
             "title": "Refusal Reason"
+          },
+          "settlement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Settlement"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reimbursed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reimbursed At"
           },
           "created_at": {
             "type": "string",
@@ -12562,6 +13112,33 @@
         ],
         "title": "PayrollLineRead"
       },
+      "PayrollReimbursementRead": {
+        "properties": {
+          "person": {
+            "$ref": "#/components/schemas/FinancePerson"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "claims": {
+            "type": "integer",
+            "title": "Claims"
+          }
+        },
+        "type": "object",
+        "required": [
+          "person",
+          "currency",
+          "amount_minor",
+          "claims"
+        ],
+        "title": "PayrollReimbursementRead",
+        "description": "Approved expense claims paid back on a run (#137), for one person in\none currency: a line of its own, never merged into the wages -- whoever\nreads the export needs to know which part is pay."
+      },
       "PayrollRunCreate": {
         "properties": {
           "pay_schedule": {
@@ -12706,12 +13283,26 @@
             "type": "integer",
             "title": "Missing Count"
           },
+          "reimbursement_totals": {
+            "items": {
+              "$ref": "#/components/schemas/PayrollTotal"
+            },
+            "type": "array",
+            "title": "Reimbursement Totals"
+          },
           "lines": {
             "items": {
               "$ref": "#/components/schemas/PayrollLineRead"
             },
             "type": "array",
             "title": "Lines"
+          },
+          "reimbursements": {
+            "items": {
+              "$ref": "#/components/schemas/PayrollReimbursementRead"
+            },
+            "type": "array",
+            "title": "Reimbursements"
           }
         },
         "type": "object",
@@ -12726,7 +13317,9 @@
           "totals",
           "line_count",
           "missing_count",
-          "lines"
+          "reimbursement_totals",
+          "lines",
+          "reimbursements"
         ],
         "title": "PayrollRunRead"
       },
@@ -12828,6 +13421,13 @@
           "missing_count": {
             "type": "integer",
             "title": "Missing Count"
+          },
+          "reimbursement_totals": {
+            "items": {
+              "$ref": "#/components/schemas/PayrollTotal"
+            },
+            "type": "array",
+            "title": "Reimbursement Totals"
           }
         },
         "type": "object",
@@ -12841,7 +13441,8 @@
           "created_at",
           "totals",
           "line_count",
-          "missing_count"
+          "missing_count",
+          "reimbursement_totals"
         ],
         "title": "PayrollRunSummary"
       },
@@ -13570,6 +14171,283 @@
         ],
         "title": "ReceiptRead"
       },
+      "ReimbursementBatchCreate": {
+        "properties": {
+          "expense_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Expense Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expense_ids"
+        ],
+        "title": "ReimbursementBatchCreate"
+      },
+      "ReimbursementBatchPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReimbursementBatchSummary"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ReimbursementBatchPage"
+      },
+      "ReimbursementBatchRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "state": {
+            "$ref": "#/components/schemas/PayrollRunState"
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/PersonRef"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "paid_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "paid_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid At"
+          },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/BatchTotal"
+            },
+            "type": "array",
+            "title": "Totals"
+          },
+          "claim_count": {
+            "type": "integer",
+            "title": "Claim Count"
+          },
+          "people_count": {
+            "type": "integer",
+            "title": "People Count"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/BatchLine"
+            },
+            "type": "array",
+            "title": "Lines"
+          },
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimRead"
+            },
+            "type": "array",
+            "title": "Claims"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "state",
+          "created_by",
+          "created_at",
+          "totals",
+          "claim_count",
+          "people_count",
+          "lines",
+          "claims"
+        ],
+        "title": "ReimbursementBatchRead"
+      },
+      "ReimbursementBatchSummary": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "state": {
+            "$ref": "#/components/schemas/PayrollRunState"
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/PersonRef"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "paid_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "paid_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid At"
+          },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/BatchTotal"
+            },
+            "type": "array",
+            "title": "Totals"
+          },
+          "claim_count": {
+            "type": "integer",
+            "title": "Claim Count"
+          },
+          "people_count": {
+            "type": "integer",
+            "title": "People Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "state",
+          "created_by",
+          "created_at",
+          "totals",
+          "claim_count",
+          "people_count"
+        ],
+        "title": "ReimbursementBatchSummary"
+      },
+      "ReimbursementCarry": {
+        "properties": {
+          "run_id": {
+            "type": "integer",
+            "title": "Run Id"
+          },
+          "expense_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Expense Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "expense_ids"
+        ],
+        "title": "ReimbursementCarry",
+        "description": "Approved claims to pay back with a draft payroll run's pay."
+      },
       "ReportLoad": {
         "properties": {
           "person": {
@@ -14219,6 +15097,93 @@
           "snippet"
         ],
         "title": "SearchHit"
+      },
+      "Settlement": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/SettlementKind"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "state": {
+            "$ref": "#/components/schemas/PayrollRunState"
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Start"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          },
+          "pay_schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaySchedule"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "paid_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid At"
+          },
+          "paid_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "id",
+          "state"
+        ],
+        "title": "Settlement",
+        "description": "The batch or payroll run an approved claim goes out on (#137)."
+      },
+      "SettlementKind": {
+        "type": "string",
+        "enum": [
+          "batch",
+          "payroll_run"
+        ],
+        "title": "SettlementKind",
+        "description": "How an approved claim is paid back (#137)."
       },
       "SharedTeam": {
         "properties": {
@@ -16993,6 +17958,7 @@
           "payroll_line_not_found",
           "expense_not_found",
           "receipt_not_found",
+          "reimbursement_batch_not_found",
           "member_not_found",
           "not_on_this_team",
           "user_not_on_team",
@@ -17048,6 +18014,12 @@
           "expense_decided",
           "expense_own_claim",
           "expense_in_future",
+          "expense_not_approved",
+          "expense_already_settled",
+          "expense_settlement_locked",
+          "reimbursement_not_on_run",
+          "reimbursement_batch_not_draft",
+          "reimbursement_batch_not_approved",
           "department_has_finance_history",
           "name_required",
           "body_required",

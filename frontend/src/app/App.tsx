@@ -15,6 +15,8 @@ import ExpenseClaimsPage from '@/finance/ExpenseClaimsPage'
 import MyExpensesPage from '@/finance/MyExpensesPage'
 import PayrollRunPage from '@/finance/PayrollRunPage'
 import PayrollRunsPage from '@/finance/PayrollRunsPage'
+import ReimbursementBatchPage from '@/finance/ReimbursementBatchPage'
+import ReimbursementsPage from '@/finance/ReimbursementsPage'
 import { RequireFinanceAdmin } from '@/finance/RequireFinanceAdmin'
 import DirectoryPage from '@/people/DirectoryPage'
 import PeopleLayout from '@/people/PeopleLayout'
@@ -111,6 +113,11 @@ export default function App() {
               <Route path="payroll" element={<PayrollRunsPage />} />
               <Route path="payroll/:runId" element={<PayrollRunPage />} />
               <Route path="expenses" element={<ExpenseClaimsPage />} />
+              <Route path="reimbursements" element={<ReimbursementsPage />} />
+              <Route
+                path="reimbursements/batches/:batchId"
+                element={<ReimbursementBatchPage />}
+              />
               <Route path="*" element={<Navigate to="/settings/finance" replace />} />
             </Route>
           </Route>

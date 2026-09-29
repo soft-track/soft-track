@@ -23,6 +23,13 @@ export const expenses = {
     approvedBy: 'Approved by {{name}} on {{date}}.',
     refusedBy: '“{{reason}}” · {{name}}',
     error: 'Could not withdraw that claim.',
+    /** Where an approved claim is on its way back to you (#137). */
+    awaiting: 'Approved · awaiting reimbursement',
+    reimbursedOn: 'Reimbursed on {{date}}',
+    inBatch: 'In batch {{batch}}, not paid yet',
+    inBatchPaid: 'In batch {{batch}}, paid by {{name}}',
+    onRun: 'With the {{run}} payroll run, not paid yet',
+    onRunPaid: 'With the {{run}} payroll run',
   },
   /** A new claim, or a waiting one being changed. */
   dialog: {
@@ -69,6 +76,9 @@ export const expenses = {
     approving: 'Approving…',
     refuse: 'Refuse…',
     ownClaim: 'This is your own claim: another finance admin decides it.',
+    awaitingIn: 'Awaiting reimbursement · in {{where}}',
+    awaitingNowhere: 'Awaiting reimbursement: not in a batch or on a run yet.',
+    reimbursedOn: 'Reimbursed on {{date}}.',
     approvedBy: 'Approved by {{name}} on {{date}}.',
     refusedBy: 'Refused by {{name}} on {{date}}: “{{reason}}”',
     error: 'Could not decide that claim.',

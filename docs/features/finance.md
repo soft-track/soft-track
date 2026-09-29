@@ -226,7 +226,7 @@ its receipt, a photo inline or a PDF in the browser's own viewer. It is
 
 There is no policy engine: no per-diem rules, category limits or approval
 chains. One submitter, one decision, one paper trail. What happens to an
-approved claim next is reimbursement.
+approved claim next is [reimbursement](#reimbursements).
 
 On the API:
 
@@ -239,3 +239,57 @@ On the API:
 | `GET /finance/expenses/{id}`, `…/receipt` | One claim, and its receipt |
 | `POST /finance/expenses/{id}/approve` | Approve |
 | `POST /finance/expenses/{id}/refuse` | `{"reason": "…"}`, required |
+
+## Reimbursements
+
+An approved expense is a debt: the company agrees it owes the money.
+Reimbursement is the debt settled. The gap between the two is where trust
+erodes, in claims that sit "approved" for six weeks with nobody able to say
+when the money moves.
+
+**Finance → Reimbursements** lists every approved claim not paid back yet, the
+longest waiting first. Tick some, see what they come to per currency, and pay
+them back one of two ways:
+
+- **New batch** gathers them into a batch of their own, **RB-8**. A batch works
+  like a payroll run: draft → approved → paid, each step by a finance admin.
+  Its CSV has one row per person per currency, in the payroll export's columns,
+  with the days the claims were spent as the period and `reimbursement` as the
+  kind. Take a claim back out of a draft with **Take out**; taking out the last
+  one throws the draft away.
+- **Carry on a payroll run** puts them on a draft run, the next one by default.
+  Each person's claims become a reimbursement line of their own under their
+  pay, in the run and in its CSV. They are never merged into the wages, because
+  whoever reads the export needs to know which part is pay. The payroll CSV
+  gains a `kind` column (`wages` or `reimbursement`) for this. A run carries
+  claims only for people it pays (`409 reimbursement_not_on_run`). Throwing the
+  draft run away sends its claims back to awaiting.
+
+**A claim is paid back exactly once.** Each claim records the batch or run it
+goes out on, and the row itself allows only one: a check constraint refuses a
+claim in a batch *and* on a run, and another refuses either for a claim that
+isn't approved. Paying a claim twice is impossible to record, not merely
+discouraged. The service says so first: gathering a claim that is already going
+out is `409 expense_already_settled`, naming where it is. A claim in an
+approved batch or run stays there (`409 expense_settlement_locked`).
+
+**The submitter sees the money move.** Marking the batch or run paid stamps
+every claim in it. **Settings → Expenses** turns "Approved · awaiting
+reimbursement, in batch RB-8, not paid yet" into "Reimbursed on 16 Sep 2026, in
+batch RB-6, paid by Grace Mensah", or "with the August 2026 payroll run".
+
+There are no partial reimbursements. A claim paid in part is a decision that
+deserves a paper trail, which means a refusal and a corrected claim, not a
+remainder column.
+
+On the API, all under `/finance/reimbursements`:
+
+| | |
+| --- | --- |
+| `GET /awaiting` | Approved claims not paid back, each with its `settlement` if it has one |
+| `POST /batches`, `GET /batches` | Gather `{"expense_ids": […]}` into a draft; list batches |
+| `GET`, `DELETE /batches/{id}` | One batch with its lines and claims; throw a draft away |
+| `POST /batches/{id}/approve`, `…/paid` | Move it on |
+| `GET /batches/{id}/export` | The CSV, once approved |
+| `POST /carry` | `{"run_id": …, "expense_ids": […]}` onto a draft run |
+| `DELETE /expenses/{id}/settlement` | Take a claim back out of a draft batch or run |

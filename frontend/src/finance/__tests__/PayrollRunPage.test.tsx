@@ -88,6 +88,8 @@ function draft(overrides: Partial<PayrollRunRead> = {}): PayrollRunRead {
     ],
     line_count: 4,
     missing_count: 2,
+    reimbursement_totals: [],
+    reimbursements: [],
     lines: [
       line(1, 'Amina Khan'),
       line(2, 'Daniel Okafor', {
@@ -214,6 +216,32 @@ describe('A draft run', () => {
     const user = renderRun(draft())
     await user.click(screen.getByRole('button', { name: 'Record pay for Ben Adeyemi' }))
     expect(screen.getByRole('dialog', { name: 'Record pay for Ben Adeyemi' })).toBeTruthy()
+  })
+})
+
+describe('Reimbursements on a run (#137)', () => {
+  it('pays claims back as lines of their own, under the pay', () => {
+    renderRun(
+      draft({
+        reimbursements: [
+          {
+            person: financePerson(2, 'Daniel Okafor'),
+            currency: 'USD',
+            amount_minor: 18000,
+            claims: 1,
+          },
+        ],
+        reimbursement_totals: [{ currency: 'USD', amount_minor: 18000, lines: 1 }],
+      }),
+    )
+    const rows = screen.getAllByRole('row').slice(1)
+    expect(rows[1].textContent).toMatch('Daniel Okafor')
+    expect(rows[2].textContent).toBe('Reimbursement, 1 claim$180.00')
+    // Not folded into Daniel's pay.
+    expect(rows[1].textContent).toMatch('$8,350.00')
+    expect(screen.getByRole('list', { name: 'Reimbursements per currency' }).textContent).toBe(
+      'USD$180.00',
+    )
   })
 })
 

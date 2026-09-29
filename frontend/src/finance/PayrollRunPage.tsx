@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
-import { type FormEvent, useId, useState } from 'react'
+import { Fragment, type FormEvent, useId, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { parseServerDate } from '@/api/dates'
@@ -13,13 +13,14 @@ import {
   useMarkPayrollRunPaidFinancePayrollRunsRunIdPaidPost,
   useSetPayrollAdjustmentFinancePayrollRunsRunIdLinesUserIdAdjustmentPut,
 } from '@/api/generated/endpoints/payroll/payroll'
-import type { PayrollLineRead, PayrollRunRead, PayrollRunState } from '@/api/generated/models'
+import type { PayrollLineRead, PayrollRunRead } from '@/api/generated/models'
 import { downloadExport } from '@/finance/download'
 import { fromMinorUnits, toMinorUnits } from '@/finance/money'
 import { MoneyTotals } from '@/finance/MoneyTotals'
 import { periodRange, runTitle } from '@/finance/payrollPeriod'
 import { isFinanceQuery } from '@/finance/queries'
 import { RecordPayDialog } from '@/finance/RecordPayDialog'
+import { StateSteps } from '@/finance/StateSteps'
 import { useCurrencies } from '@/finance/useCurrencies'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { formatDate, formatList } from '@/i18n/format'
@@ -27,8 +28,6 @@ import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 import { useFocusTrap } from '@/ui/useFocusTrap'
-
-const STEPS: PayrollRunState[] = ['draft', 'approved', 'paid']
 
 const onDay = (value: string) => formatDate(parseServerDate(value), 'd MMM yyyy')
 
@@ -159,7 +158,7 @@ export default function PayrollRunPage() {
           </div>
         </div>
 
-        <Steps state={data.state} />
+        <StateSteps state={data.state} />
 
         {error && (
           <p
@@ -237,6 +236,15 @@ export default function PayrollRunPage() {
           </p>
           <MoneyTotals totals={data.totals} label={t('payroll.run.totalsLabel')} />
         </div>
+        {data.reimbursement_totals.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center justify-end gap-2 text-xs text-neutral-500">
+            {t('payroll.run.reimbursing')}
+            <MoneyTotals
+              totals={data.reimbursement_totals}
+              label={t('payroll.run.reimbursedTotalsLabel')}
+            />
+          </div>
+        )}
         {draft && <p className="mt-3 text-xs text-neutral-400">{t('payroll.run.liveHint')}</p>}
       </section>
 
@@ -253,37 +261,6 @@ export default function PayrollRunPage() {
   )
 }
 
-/** Draft — Approved — Paid, with the ones behind it ticked. */
-function Steps({ state }: { state: PayrollRunState }) {
-  const { t } = useTranslation('finance')
-  const at = STEPS.indexOf(state)
-  return (
-    <ol aria-label={t('payroll.run.steps')} className="mt-4 flex flex-wrap items-center gap-2">
-      {STEPS.map((step, index) => (
-        <li key={step} className="flex items-center gap-2">
-          {index > 0 && <span aria-hidden="true" className="h-px w-6 bg-neutral-900/15" />}
-          <span
-            aria-current={index === at ? 'step' : undefined}
-            className={clsx(
-              'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-              index === at && 'border-brand-500/40 bg-brand-500/10 text-brand-700',
-              index < at && 'border-accent-mint/40 bg-accent-mint/10 text-neutral-700',
-              index > at && 'border-neutral-900/10 text-neutral-400',
-            )}
-          >
-            {index < at ? (
-              <Icon name="check" size={11} />
-            ) : (
-              <span className="text-[10px] tabular-nums">{index + 1}</span>
-            )}
-            {t(`payroll.states.${step}`)}
-          </span>
-        </li>
-      ))}
-    </ol>
-  )
-}
-
 function LinesTable({
   run,
   onAdjust,
@@ -297,6 +274,10 @@ function LinesTable({
   const { format } = useCurrencies()
   const draft = run.state === 'draft'
   const cell = 'hairline border-t px-3 py-2.5'
+  const reimbursed = new Map<number, PayrollRunRead['reimbursements']>()
+  for (const refund of run.reimbursements) {
+    reimbursed.set(refund.person.id, [...(reimbursed.get(refund.person.id) ?? []), refund])
+  }
   return (
     <table className="w-full border-separate border-spacing-0 text-left text-sm">
       <thead>
@@ -320,80 +301,102 @@ function LinesTable({
       </thead>
       <tbody>
         {run.lines.map((line) => (
-          <tr key={line.person.id} className={clsx(line.missing && 'bg-danger-50/60')}>
-            <td className={cell}>
-              <span className="flex items-center gap-2.5">
-                <Avatar user={line.person} size={26} decorative />
-                <span className="font-medium text-neutral-900">{line.person.full_name}</span>
-              </span>
-            </td>
-            <td className={`${cell} hidden text-neutral-600 md:table-cell`}>
-              {line.department?.name ?? t('payroll.run.noDepartment')}
-            </td>
-            <td className={`${cell} identifier text-right tabular-nums text-neutral-700`}>
-              {line.amount_minor != null && line.currency
-                ? format(line.amount_minor, line.currency)
-                : '—'}
-            </td>
-            <td className={cell}>
-              {line.missing ? (
-                <span className="flex flex-wrap items-center gap-2">
-                  <span
-                    className="chip"
-                    style={{ ['--chip' as string]: 'var(--color-danger-500)' }}
-                  >
-                    {t('payroll.run.noCompensation')}
-                  </span>
-                  {draft && (
-                    <button
-                      type="button"
-                      onClick={() => onRecordPay(line)}
-                      aria-label={t('payroll.run.recordPayFor', { name: line.person.full_name })}
-                      className="btn btn-ghost btn-xs"
-                    >
-                      {t('payroll.run.recordPay')}
-                    </button>
-                  )}
+          <Fragment key={line.person.id}>
+            <tr className={clsx(line.missing && 'bg-danger-50/60')}>
+              <td className={cell}>
+                <span className="flex items-center gap-2.5">
+                  <Avatar user={line.person} size={26} decorative />
+                  <span className="font-medium text-neutral-900">{line.person.full_name}</span>
                 </span>
-              ) : line.adjustment_minor !== 0 && line.currency ? (
-                <button
-                  type="button"
-                  disabled={!draft}
-                  onClick={() => onAdjust(line)}
-                  aria-label={
-                    draft
-                      ? t('payroll.run.editAdjustmentFor', { name: line.person.full_name })
-                      : undefined
-                  }
-                  className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-brand-500/10 px-2 py-0.5 text-xs text-neutral-700 enabled:hover:bg-brand-500/15 disabled:cursor-default"
-                >
-                  <span className="identifier font-semibold text-brand-700">
-                    {line.adjustment_minor > 0 && '+'}
-                    {format(line.adjustment_minor, line.currency)}
+              </td>
+              <td className={`${cell} hidden text-neutral-600 md:table-cell`}>
+                {line.department?.name ?? t('payroll.run.noDepartment')}
+              </td>
+              <td className={`${cell} identifier text-right tabular-nums text-neutral-700`}>
+                {line.amount_minor != null && line.currency
+                  ? format(line.amount_minor, line.currency)
+                  : '—'}
+              </td>
+              <td className={cell}>
+                {line.missing ? (
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span
+                      className="chip"
+                      style={{ ['--chip' as string]: 'var(--color-danger-500)' }}
+                    >
+                      {t('payroll.run.noCompensation')}
+                    </span>
+                    {draft && (
+                      <button
+                        type="button"
+                        onClick={() => onRecordPay(line)}
+                        aria-label={t('payroll.run.recordPayFor', { name: line.person.full_name })}
+                        className="btn btn-ghost btn-xs"
+                      >
+                        {t('payroll.run.recordPay')}
+                      </button>
+                    )}
                   </span>
-                  <span className="truncate">{line.adjustment_note}</span>
-                </button>
-              ) : (
-                draft && (
+                ) : line.adjustment_minor !== 0 && line.currency ? (
                   <button
                     type="button"
+                    disabled={!draft}
                     onClick={() => onAdjust(line)}
-                    aria-label={t('payroll.run.addAdjustmentFor', { name: line.person.full_name })}
-                    className="text-xs text-neutral-400 hover:text-neutral-700"
+                    aria-label={
+                      draft
+                        ? t('payroll.run.editAdjustmentFor', { name: line.person.full_name })
+                        : undefined
+                    }
+                    className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-brand-500/10 px-2 py-0.5 text-xs text-neutral-700 enabled:hover:bg-brand-500/15 disabled:cursor-default"
                   >
-                    {t('payroll.run.addAdjustment')}
+                    <span className="identifier font-semibold text-brand-700">
+                      {line.adjustment_minor > 0 && '+'}
+                      {format(line.adjustment_minor, line.currency)}
+                    </span>
+                    <span className="truncate">{line.adjustment_note}</span>
                   </button>
-                )
-              )}
-            </td>
-            <td
-              className={`${cell} identifier text-right font-medium tabular-nums text-neutral-900`}
-            >
-              {line.total_minor != null && line.currency
-                ? format(line.total_minor, line.currency)
-                : '—'}
-            </td>
-          </tr>
+                ) : (
+                  draft && (
+                    <button
+                      type="button"
+                      onClick={() => onAdjust(line)}
+                      aria-label={t('payroll.run.addAdjustmentFor', {
+                        name: line.person.full_name,
+                      })}
+                      className="text-xs text-neutral-400 hover:text-neutral-700"
+                    >
+                      {t('payroll.run.addAdjustment')}
+                    </button>
+                  )
+                )}
+              </td>
+              <td
+                className={`${cell} identifier text-right font-medium tabular-nums text-neutral-900`}
+              >
+                {line.total_minor != null && line.currency
+                  ? format(line.total_minor, line.currency)
+                  : '—'}
+              </td>
+            </tr>
+            {/* What the run pays them back (#137): lines of their own,
+              under their pay and never added into it. */}
+            {(reimbursed.get(line.person.id) ?? []).map((refund) => (
+              <tr key={`${line.person.id}-${refund.currency}`} className="bg-brand-500/5">
+                <td className={cell} />
+                <td className={`${cell} hidden md:table-cell`} />
+                <td className={cell} />
+                <td className={`${cell} text-xs text-brand-700`}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Icon name="receipt" size={12} />
+                    {t('payroll.run.reimbursementClaims', { count: refund.claims })}
+                  </span>
+                </td>
+                <td className={`${cell} identifier text-right tabular-nums text-neutral-900`}>
+                  {format(refund.amount_minor, refund.currency)}
+                </td>
+              </tr>
+            ))}
+          </Fragment>
         ))}
       </tbody>
     </table>

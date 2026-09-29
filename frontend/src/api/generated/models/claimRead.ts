@@ -11,6 +11,7 @@ import type { ExpenseState } from './expenseState';
 import type { FinancePerson } from './financePerson';
 import type { PersonRef } from './personRef';
 import type { ReceiptRead } from './receiptRead';
+import type { Settlement } from './settlement';
 
 /**
  * An expense claim as finance sees it: whose, and where it belongs.
@@ -26,6 +27,8 @@ export interface ClaimRead {
   decided_by?: PersonRef | null;
   decided_at?: string | null;
   refusal_reason?: string | null;
+  settlement?: Settlement | null;
+  reimbursed_at?: string | null;
   created_at: string;
   updated_at: string;
   submitter: FinancePerson;

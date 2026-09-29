@@ -1,7 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
-import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
 import {
   useListMyExpensesExpensesGet,
@@ -9,13 +8,13 @@ import {
 } from '@/api/generated/endpoints/expenses/expenses'
 import type { Currency, ExpenseRead } from '@/api/generated/models'
 import { downloadAttachment, formatBytes } from '@/attachments/urls'
+import { ClaimProgress } from '@/finance/ClaimProgress'
 import { ExpenseDialog } from '@/finance/ExpenseDialog'
 import { ExpenseStateChip } from '@/finance/ExpenseStateChip'
 import { formatDay } from '@/finance/money'
 import { isExpenseQuery } from '@/finance/queries'
 import { useCurrencies } from '@/finance/useCurrencies'
 import { useTranslation } from '@/i18n'
-import { formatDate } from '@/i18n/format'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 
@@ -92,7 +91,7 @@ export default function MyExpensesPage() {
                   </p>
                 </div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-neutral-500">
-                  <ExpenseStateChip state={claim.state} />
+                  {claim.state !== 'approved' && <ExpenseStateChip state={claim.state} />}
                   <span>{t('expenses.mine.incurred', { date: formatDay(claim.incurred_on) })}</span>
                   {claim.receipt ? (
                     <button
@@ -134,14 +133,7 @@ export default function MyExpensesPage() {
                     </span>
                   )}
                 </div>
-                {claim.state === 'approved' && claim.decided_by && claim.decided_at && (
-                  <p className="mt-1.5 text-xs text-neutral-500">
-                    {t('expenses.mine.approvedBy', {
-                      name: claim.decided_by.full_name,
-                      date: formatDate(parseServerDate(claim.decided_at), 'd MMM yyyy'),
-                    })}
-                  </p>
-                )}
+                {claim.state === 'approved' && <ClaimProgress claim={claim} />}
                 {claim.state === 'refused' && claim.decided_by && (
                   <p className="mt-1.5 text-xs text-neutral-600">
                     {t('expenses.mine.refusedBy', {

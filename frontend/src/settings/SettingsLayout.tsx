@@ -129,6 +129,11 @@ export default function SettingsLayout() {
                 label: t('layout.nav.expenseClaims'),
                 icon: 'receipt' as IconName,
               },
+              {
+                to: '/settings/finance/reimbursements',
+                label: t('layout.nav.reimbursements'),
+                icon: 'undo' as IconName,
+              },
             ],
           },
         ]

@@ -65,6 +65,17 @@ class PayrollLineRead(BaseModel):
     missing: bool
 
 
+class PayrollReimbursementRead(BaseModel):
+    """Approved expense claims paid back on a run (#137), for one person in
+    one currency: a line of its own, never merged into the wages -- whoever
+    reads the export needs to know which part is pay."""
+
+    person: FinancePerson
+    currency: Currency
+    amount_minor: int
+    claims: int
+
+
 class PayrollTotal(BaseModel):
     """The lines paid in one currency, summed. Never across currencies."""
 
@@ -89,11 +100,15 @@ class PayrollRunSummary(BaseModel):
     #: Everybody on the run, the missing included.
     line_count: int
     missing_count: int
+    #: Expense claims it carries (#137), per currency, apart from the pay.
+    reimbursement_totals: list[PayrollTotal]
 
 
 class PayrollRunRead(PayrollRunSummary):
     #: Paid lines by name, then the missing ones, by name.
     lines: list[PayrollLineRead]
+    #: Claims paid back on the run (#137), by name.
+    reimbursements: list[PayrollReimbursementRead]
 
 
 class PayrollRunPage(BaseModel):

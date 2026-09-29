@@ -18,6 +18,7 @@ import { ExpenseStateChip } from '@/finance/ExpenseStateChip'
 import { formatDay } from '@/finance/money'
 import { isExpenseQuery } from '@/finance/queries'
 import { ReceiptPreview } from '@/finance/ReceiptPreview'
+import { settlementName } from '@/finance/settlement'
 import { useCurrencies } from '@/finance/useCurrencies'
 import { useTranslation } from '@/i18n'
 import { formatDate } from '@/i18n/format'
@@ -310,10 +311,17 @@ function ClaimPanel({ claimId }: { claimId: number }) {
         data.decided_at && (
           <p className="mt-4 text-xs text-neutral-600">
             {data.state === 'approved'
-              ? t('expenses.claims.approvedBy', {
-                  name: data.decided_by.full_name,
-                  date: onDay(data.decided_at),
-                })
+              ? [
+                  t('expenses.claims.approvedBy', {
+                    name: data.decided_by.full_name,
+                    date: onDay(data.decided_at),
+                  }),
+                  data.reimbursed_at
+                    ? t('expenses.claims.reimbursedOn', { date: onDay(data.reimbursed_at) })
+                    : data.settlement
+                      ? t('expenses.claims.awaitingIn', { where: settlementName(data.settlement) })
+                      : t('expenses.claims.awaitingNowhere'),
+                ].join(' ')
               : t('expenses.claims.refusedBy', {
                   name: data.decided_by.full_name,
                   date: onDay(data.decided_at),

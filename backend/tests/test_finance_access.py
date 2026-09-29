@@ -251,6 +251,7 @@ SHARED_FINANCE_SCHEMAS = {
     "ExpenseRead": "your own claims",
     "ExpensePage": "your own claims",
     "ReceiptRead": "your own receipts",
+    "Settlement": "how your own claims are paid back (#137)",
 }
 
 

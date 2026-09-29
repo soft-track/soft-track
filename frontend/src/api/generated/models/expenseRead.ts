@@ -9,6 +9,7 @@ import type { Currency } from './currency';
 import type { ExpenseState } from './expenseState';
 import type { PersonRef } from './personRef';
 import type { ReceiptRead } from './receiptRead';
+import type { Settlement } from './settlement';
 
 /**
  * An expense claim as its submitter sees it (#133).
@@ -28,6 +29,8 @@ export interface ExpenseRead {
   decided_by?: PersonRef | null;
   decided_at?: string | null;
   refusal_reason?: string | null;
+  settlement?: Settlement | null;
+  reimbursed_at?: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -82,6 +82,7 @@ class ErrorCode(str, enum.Enum):
     #: somebody else's (#133).
     expense_not_found = "expense_not_found"
     receipt_not_found = "receipt_not_found"
+    reimbursement_batch_not_found = "reimbursement_batch_not_found"
     #: The person is not a member of the team the request is about.
     member_not_found = "member_not_found"
     #: A status, label, project or sprint id that belongs to another team.
@@ -170,6 +171,16 @@ class ErrorCode(str, enum.Enum):
     expense_own_claim = "expense_own_claim"
     #: A claim is for money already spent.
     expense_in_future = "expense_in_future"
+    #: Only an approved claim is paid back (#137).
+    expense_not_approved = "expense_not_approved"
+    #: A claim is paid back exactly once: it is already in a batch or on a run.
+    expense_already_settled = "expense_already_settled"
+    #: A claim whose batch or run has been approved stays in it.
+    expense_settlement_locked = "expense_settlement_locked"
+    #: A payroll run carries reimbursements only for the people it pays.
+    reimbursement_not_on_run = "reimbursement_not_on_run"
+    reimbursement_batch_not_draft = "reimbursement_batch_not_draft"
+    reimbursement_batch_not_approved = "reimbursement_batch_not_approved"
     #: A department that approved payroll (and, later, expenses and budgets)
     #: is attributed to is renamed, not deleted: the record keeps pointing at it.
     department_has_finance_history = "department_has_finance_history"

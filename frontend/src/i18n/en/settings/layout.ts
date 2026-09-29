@@ -25,5 +25,6 @@ export const layout = {
     payroll: 'Payroll runs',
     expenses: 'Expenses',
     expenseClaims: 'Expense claims',
+    reimbursements: 'Reimbursements',
   },
 } as const
