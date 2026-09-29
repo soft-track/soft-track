@@ -41,9 +41,10 @@ export function MarkdownEditor(props: ComponentProps<typeof MarkdownEditorCompon
       fallback={
         <div className={props.className}>
           <div className="mb-1.5 h-6 w-32 rounded-lg bg-neutral-100" />
+          {/* The toolbar's 2.3rem, then the textarea's rows at leading-relaxed. */}
           <div
-            className="w-full rounded-md border border-neutral-200 bg-neutral-50"
-            style={{ height: `${(props.rows ?? 5) * 1.5 + 1}rem` }}
+            className="w-full rounded-card border border-neutral-200 bg-neutral-50"
+            style={{ height: `${(props.rows ?? 5) * 1.421875 + 3.3125}rem` }}
           />
         </div>
       }

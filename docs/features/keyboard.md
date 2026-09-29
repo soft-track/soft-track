@@ -31,6 +31,15 @@ On an open ticket, in the panel or on its page, `S`, `P`, `A` and `L` jump to
 status, priority, assignee and labels. The properties print those letters next
 to the fields, so the shortcut is discoverable from the thing it acts on.
 
+**While writing** a description or comment, `⌘B`, `⌘I` and `⌘K` bold,
+italicise and link the selection. There, `⌘K` makes a link instead of opening
+the palette. `Tab` and `Shift+Tab` indent and outdent a list item, but only
+once you are writing in the field. If you arrive by Tab and press it again,
+focus moves on, so the field never traps someone passing through with the
+keyboard, and Escape hands Tab back. The formatting toolbar above the text is
+a single tab stop, and the arrow keys move along it; see
+[the markdown editor](markdown.md).
+
 The shortcut table lives in one array in `frontend/src/keyboard/shortcuts.ts`,
 which is both what the handlers dispatch on and what the cheatsheet renders. A
 shortcut that works but is not listed may as well not exist; a listed one that

@@ -141,6 +141,7 @@ export function CommentsSection({
             people={people}
             placeholder={t('comments.placeholder')}
             rows={3}
+            compact
             onSubmit={() => void submit()}
             onUploadFiles={uploadForComment}
           />
@@ -354,6 +355,7 @@ function CommentItem({
               placeholder={t('comments.placeholder')}
               rows={3}
               autoFocus
+              compact
               onSubmit={() => void submitEdit()}
             />
             <div className="mt-2 flex items-center justify-end gap-3">

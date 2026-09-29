@@ -45,6 +45,15 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     shortcut(['A'], 'changeAssignee'),
     shortcut(['L'], 'jumpToLabels'),
   ]),
+  // In a description or comment (#118). The editor matches these itself, in
+  // `src/markdown/keys.ts`; they are listed here so they are findable.
+  group('writing', [
+    shortcut(['⌘', 'B'], 'bold'),
+    shortcut(['⌘', 'I'], 'italic'),
+    shortcut(['⌘', 'K'], 'link'),
+    shortcut(['Tab'], 'indentItem'),
+    shortcut(['⇧', 'Tab'], 'outdentItem'),
+  ]),
 ]
 
 function group(

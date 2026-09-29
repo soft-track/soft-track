@@ -66,6 +66,19 @@ export type IconName =
   | 'alert'
   | 'sliders'
   | 'pencil'
+  | 'bold'
+  | 'italic'
+  | 'strikethrough'
+  | 'list-ordered'
+  | 'checklist'
+  | 'quote'
+  | 'code'
+  | 'code-block'
+  | 'indent'
+  | 'outdent'
+  | 'heading'
+  | 'eraser'
+  | 'help'
 
 const PATHS: Record<IconName, JSX.Element> = {
   search: (
@@ -332,6 +345,42 @@ const PATHS: Record<IconName, JSX.Element> = {
     <>
       <path d="M12 4 2.5 20h19L12 4Z" />
       <path d="M12 10v4M12 17h.01" />
+    </>
+  ),
+  // The markdown toolbar (#118). A bulleted list is `list`, above.
+  bold: <path d="M7 5h6a3.5 3.5 0 0 1 0 7H7V5ZM7 12h7a3.5 3.5 0 0 1 0 7H7v-7Z" />,
+  italic: <path d="M10 5h8M6 19h8M14.5 5l-5 14" />,
+  strikethrough: (
+    <path d="M4.5 12h15M16 7.5C15.4 5.9 13.9 5 12 5c-2.5 0-4 1.3-4 3 0 1.2.7 2.1 2 2.6M8.5 16.2C9 18 10.4 19 12.4 19c2.6 0 4.1-1.4 4.1-3.2 0-.6-.1-1.1-.4-1.5" />
+  ),
+  'list-ordered': (
+    <path d="M10 6h11M10 12h11M10 18h11M4 5h1.5v4M4 9h3M4 14.5a1.5 1.5 0 0 1 3 .3c0 .9-3 2.2-3 3.2h3" />
+  ),
+  checklist: (
+    <>
+      <path d="M11 6h10M11 12h10M11 18h10" />
+      <rect x="3" y="4" width="4.5" height="4.5" rx="1" />
+      <path d="m3.5 16.5 1.5 1.5 2.5-3" />
+    </>
+  ),
+  quote: <path d="M5 18v-5a5 5 0 0 1 4-5M5 13h4v5H5M14 18v-5a5 5 0 0 1 4-5M14 13h4v5h-4" />,
+  code: <path d="m8.5 8-4 4 4 4M15.5 8l4 4-4 4" />,
+  'code-block': (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <path d="m9.5 10-2 2 2 2M14.5 10l2 2-2 2" />
+    </>
+  ),
+  indent: <path d="M3 5h18M11 10h10M11 14h10M3 19h18M3 9.5l3.5 2.5L3 14.5" />,
+  outdent: <path d="M3 5h18M11 10h10M11 14h10M3 19h18M6.5 9.5 3 12l3.5 2.5" />,
+  heading: <path d="M6 5v14M18 5v14M6 12h12" />,
+  eraser: (
+    <path d="m7 20-3.5-3.5a1.8 1.8 0 0 1 0-2.5L13 4.5a1.8 1.8 0 0 1 2.5 0L20 9a1.8 1.8 0 0 1 0 2.5L11.5 20H7ZM8.5 9l7 7M11.5 20H21" />
+  ),
+  help: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.3M12 16.5h.01" />
     </>
   ),
 }
