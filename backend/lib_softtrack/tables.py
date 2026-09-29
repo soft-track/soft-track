@@ -1690,3 +1690,46 @@ class Expense(SQLModel, table=True):
     department: Optional[Department] = Relationship(
         sa_relationship_kwargs={"viewonly": True}
     )
+
+
+class Budget(SQLModel, table=True):
+    """What a department meant to spend in a period, in one currency (#134).
+
+    A period is a start and an end, so months, quarters and a fiscal year
+    from April are all just rows. One per department, period and currency: a
+    department paying in three currencies has three. The actuals it is
+    compared with are never entered -- they are summed from approved payroll
+    lines and reimbursed expenses, which is what makes the comparison honest.
+    No forecasting, encumbrances or ledger: a budget is a number to compare
+    against.
+    """
+
+    __table_args__ = (
+        UniqueConstraint(
+            "department_id",
+            "currency",
+            "period_start",
+            "period_end",
+            name="uq_budget_department_currency_period",
+        ),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    department_id: int = Field(foreign_key="department.id", index=True)
+    period_start: date
+    period_end: date
+    amount_minor: int
+    currency: str
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+    department: Optional[Department] = Relationship(
+        sa_relationship_kwargs={"viewonly": True}
+    )
+    created_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "Budget.created_by_id",
+            "viewonly": True,
+        }
+    )

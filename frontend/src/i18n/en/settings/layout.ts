@@ -26,5 +26,6 @@ export const layout = {
     expenses: 'Expenses',
     expenseClaims: 'Expense claims',
     reimbursements: 'Reimbursements',
+    budgets: 'Budgets',
   },
 } as const

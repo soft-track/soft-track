@@ -2,6 +2,7 @@ export * from './admin/admin';
 export * from './attachments/attachments';
 export * from './auth/auth';
 export * from './automations/automations';
+export * from './budgets/budgets';
 export * from './comments/comments';
 export * from './compensation/compensation';
 export * from './currencies/currencies';

@@ -9,6 +9,7 @@ import InvitePage from '@/auth/InvitePage'
 import LoginPage from '@/auth/LoginPage'
 import OAuthCallbackPage from '@/auth/OAuthCallbackPage'
 import NewTeamPage from '@/team/NewTeamPage'
+import BudgetsPage from '@/finance/BudgetsPage'
 import CompensationHistoryPage from '@/finance/CompensationHistoryPage'
 import CompensationPage from '@/finance/CompensationPage'
 import ExpenseClaimsPage from '@/finance/ExpenseClaimsPage'
@@ -114,6 +115,7 @@ export default function App() {
               <Route path="payroll/:runId" element={<PayrollRunPage />} />
               <Route path="expenses" element={<ExpenseClaimsPage />} />
               <Route path="reimbursements" element={<ReimbursementsPage />} />
+              <Route path="budgets" element={<BudgetsPage />} />
               <Route
                 path="reimbursements/batches/:batchId"
                 element={<ReimbursementBatchPage />}

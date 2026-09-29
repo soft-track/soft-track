@@ -17,7 +17,7 @@ from lib_identity.models.departments import (
     DepartmentRead,
     DepartmentUpdate,
 )
-from lib_softtrack.tables import Department, Expense, PayrollLine, User
+from lib_softtrack.tables import Budget, Department, Expense, PayrollLine, User
 from lib_utils.errors import ErrorCode, api_error
 
 
@@ -180,10 +180,10 @@ def delete_department(
     department = get_department_or_404(session, department_id)
     # Approved payroll lines (#132) and expense claims (#133) keep the
     # department they were paid under, which is what stops a reorg rewriting
-    # where past spend went (#134). Deleting it would leave that history
-    # pointing at nothing, so it stays: a department money has been approved
-    # under is renamed, never deleted. Says that there is such history, and
-    # nothing about it.
+    # where past spend went (#134), and budgets are set per department.
+    # Deleting it would leave that history pointing at nothing, so it stays: a
+    # department money has been approved or budgeted under is renamed, never
+    # deleted. Says that there is such history, and nothing about it.
     paid_under = (
         session.exec(
             select(PayrollLine.id).where(PayrollLine.department_id == department.id)
@@ -191,13 +191,16 @@ def delete_department(
         or session.exec(
             select(Expense.id).where(Expense.department_id == department.id)
         ).first()
+        or session.exec(
+            select(Budget.id).where(Budget.department_id == department.id)
+        ).first()
     )
     if paid_under is not None:
         raise api_error(
             status_code=409,
             code=ErrorCode.department_has_finance_history,
-            detail=f"Money has been approved under {department.name}, so it "
-            "stays for the record. Rename it instead.",
+            detail=f"Money has been approved or budgeted under {department.name}, "
+            "so it stays for the record. Rename it instead.",
         )
     members = session.exec(
         select(User).where(User.department_id == department.id)

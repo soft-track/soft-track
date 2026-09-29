@@ -134,6 +134,11 @@ export default function SettingsLayout() {
                 label: t('layout.nav.reimbursements'),
                 icon: 'undo' as IconName,
               },
+              {
+                to: '/settings/finance/budgets',
+                label: t('layout.nav.budgets'),
+                icon: 'building' as IconName,
+              },
             ],
           },
         ]

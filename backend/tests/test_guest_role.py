@@ -86,6 +86,9 @@ NOT_TEAM_WRITES = {
         "POST",
         "/finance/reimbursements/batches/{batch_id}/paid",
     ): "finance admins, not team roles",
+    ("POST", "/finance/budgets"): "finance admins, not team roles",
+    ("PATCH", "/finance/budgets/{budget_id}"): "finance admins, not team roles",
+    ("DELETE", "/finance/budgets/{budget_id}"): "finance admins, not team roles",
     # Your own expense claims (#133), which no team has anything to do with.
     ("POST", "/expenses"): "your own claims",
     ("PATCH", "/expenses/{expense_id}"): "your own claims",

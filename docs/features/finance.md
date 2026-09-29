@@ -293,3 +293,53 @@ On the API, all under `/finance/reimbursements`:
 | `GET /batches/{id}/export` | The CSV, once approved |
 | `POST /carry` | `{"run_id": …, "expense_ids": […]}` onto a draft run |
 | `DELETE /expenses/{id}/settlement` | Take a claim back out of a draft batch or run |
+
+## Budgets
+
+A budget is what a department meant to spend. **Finance → Budgets** puts it next
+to what the department actually spent, for a month, a quarter, a year or any
+days you choose, one row per department per currency.
+
+- **A budget is a row**: a department, a start and an end, an amount and a
+  currency. That makes months, quarters and a fiscal year from April all just
+  rows. There is one per department, period and currency
+  (`409 budget_exists`). A department paying in three currencies has three
+  budgets and three rows. **New budget** starts from the period on screen;
+  clicking a budget's amount changes or deletes it.
+- **The page shows the budget set for exactly the period chosen.** A quarterly
+  budget is not spread over its months. That would be a forecast, and nothing
+  on this page is guessed.
+- **Actuals are summed from real rows, never typed in.** An actual is:
+  - **approved payroll lines**: every line of a run that is approved or paid,
+    at its total with any adjustment, counted in the period that holds the
+    run's last day;
+  - **reimbursed expenses**: every claim paid back, in a batch or with a run,
+    counted in the period it was spent in.
+
+  Draft runs and claims not paid back yet are not actuals.
+- **Attribution is copied at approval.** A payroll line and an approved claim
+  copy the person's department onto themselves when they freeze. A reorg in
+  June doesn't move January's spend: if Omar moves to Operations in October,
+  his July, August and September lines stay with Engineering. The same copies
+  are why a department money has been approved or budgeted under can be
+  renamed but not deleted.
+- **Unattributed is a row, not a filter.** Spend approved while its person was
+  in no department shows as its own row. A bucket you can see is a prompt to
+  fix the data; one that is filtered out is money missing from every total.
+- **Over budget reads as over budget**: the row turns red and says
+  "112% · €1,660.00 over", with no softer colour and no rounding it away.
+- **Every actual shows where it comes from.** Click an actual to see each
+  run's approved lines and each batch of claims it sums, with how many rows
+  and how much.
+
+There is no forecasting, no encumbrances, no general ledger and no double-entry
+anything. A budget here is a number to compare against, and the comparison is
+honest because the actuals are the rows payroll and expenses already created.
+
+On the API, all under `/finance/budgets`:
+
+| | |
+| --- | --- |
+| `GET /?start=&end=` | Every department with a budget for exactly that period or spend in it, per currency; Unattributed last |
+| `GET /actuals?start=&end=&currency=&department_id=` | Where one actual comes from; leave `department_id` out for Unattributed |
+| `POST /`, `PATCH /{id}`, `DELETE /{id}` | Create, change or delete a budget |

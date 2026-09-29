@@ -1,4 +1,5 @@
 // Finance (#130-#137): one catalog per page, keyed by the page.
+import { budgets } from '@/i18n/en/finance/budgets'
 import { compensation } from '@/i18n/en/finance/compensation'
 import { expenses } from '@/i18n/en/finance/expenses'
 import { gate } from '@/i18n/en/finance/gate'
@@ -11,4 +12,5 @@ export const finance = {
   payroll,
   expenses,
   reimbursements,
+  budgets,
 } as const

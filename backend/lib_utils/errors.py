@@ -83,6 +83,7 @@ class ErrorCode(str, enum.Enum):
     expense_not_found = "expense_not_found"
     receipt_not_found = "receipt_not_found"
     reimbursement_batch_not_found = "reimbursement_batch_not_found"
+    budget_not_found = "budget_not_found"
     #: The person is not a member of the team the request is about.
     member_not_found = "member_not_found"
     #: A status, label, project or sprint id that belongs to another team.
@@ -181,6 +182,10 @@ class ErrorCode(str, enum.Enum):
     reimbursement_not_on_run = "reimbursement_not_on_run"
     reimbursement_batch_not_draft = "reimbursement_batch_not_draft"
     reimbursement_batch_not_approved = "reimbursement_batch_not_approved"
+    #: One budget per department, period and currency (#134).
+    budget_exists = "budget_exists"
+    #: A budget's period ends before it starts.
+    budget_period_invalid = "budget_period_invalid"
     #: A department that approved payroll (and, later, expenses and budgets)
     #: is attributed to is renamed, not deleted: the record keeps pointing at it.
     department_has_finance_history = "department_has_finance_history"

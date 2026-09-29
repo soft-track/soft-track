@@ -9290,6 +9290,294 @@
         }
       }
     },
+    "/finance/budgets": {
+      "get": {
+        "tags": [
+          "budgets"
+        ],
+        "summary": "Get Budget Overview",
+        "description": "Every department with a budget for exactly this period, or spend in\nit, per currency, beside what it actually spent -- and Unattributed.",
+        "operationId": "get_budget_overview_finance_budgets_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "The period's first day",
+              "title": "Start"
+            },
+            "description": "The period's first day"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "The period's last day",
+              "title": "End"
+            },
+            "description": "The period's last day"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetOverview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "budgets"
+        ],
+        "summary": "Create Budget",
+        "description": "One per department, period and currency (409 budget_exists).",
+        "operationId": "create_budget_finance_budgets_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BudgetCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/budgets/actuals": {
+      "get": {
+        "tags": [
+          "budgets"
+        ],
+        "summary": "Get Actual Breakdown",
+        "description": "Where one actual comes from: each run's approved lines, and each\nbatch or run of claims paid back.",
+        "operationId": "get_actual_breakdown_finance_budgets_actuals_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "End"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Currency"
+            }
+          },
+          {
+            "name": "department_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Leave it out for Unattributed",
+              "title": "Department Id"
+            },
+            "description": "Leave it out for Unattributed"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActualBreakdown"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/budgets/{budget_id}": {
+      "patch": {
+        "tags": [
+          "budgets"
+        ],
+        "summary": "Update Budget",
+        "operationId": "update_budget_finance_budgets__budget_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "budget_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Budget Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BudgetUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "budgets"
+        ],
+        "summary": "Delete Budget",
+        "operationId": "delete_budget_finance_budgets__budget_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "budget_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Budget Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -9312,6 +9600,125 @@
   },
   "components": {
     "schemas": {
+      "ActualBreakdown": {
+        "properties": {
+          "department": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Period End"
+          },
+          "total_minor": {
+            "type": "integer",
+            "title": "Total Minor"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/ActualSource"
+            },
+            "type": "array",
+            "title": "Sources"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "period_start",
+          "period_end",
+          "total_minor",
+          "sources"
+        ],
+        "title": "ActualBreakdown",
+        "description": "The rows one actual is the sum of (#134)."
+      },
+      "ActualSource": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ActualSourceKind"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Start"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          },
+          "pay_schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaySchedule"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rows": {
+            "type": "integer",
+            "title": "Rows"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "id",
+          "rows",
+          "amount_minor"
+        ],
+        "title": "ActualSource"
+      },
+      "ActualSourceKind": {
+        "type": "string",
+        "enum": [
+          "payroll_run",
+          "reimbursement_batch",
+          "reimbursed_on_run"
+        ],
+        "title": "ActualSourceKind",
+        "description": "Where part of an actual comes from."
+      },
       "AdminPasswordReset": {
         "properties": {
           "new_password": {
@@ -10268,6 +10675,206 @@
           "file"
         ],
         "title": "Body_upload_attachment_tickets__ticket_id__attachments_post"
+      },
+      "BudgetCreate": {
+        "properties": {
+          "department_id": {
+            "type": "integer",
+            "title": "Department Id"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Period End"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "period_start",
+          "period_end",
+          "amount_minor",
+          "currency"
+        ],
+        "title": "BudgetCreate"
+      },
+      "BudgetOverview": {
+        "properties": {
+          "period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Period End"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/BudgetRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period_start",
+          "period_end",
+          "rows"
+        ],
+        "title": "BudgetOverview"
+      },
+      "BudgetRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "department": {
+            "$ref": "#/components/schemas/DepartmentRef"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Period End"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/PersonRef"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "department",
+          "period_start",
+          "period_end",
+          "amount_minor",
+          "currency",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "BudgetRead"
+      },
+      "BudgetRow": {
+        "properties": {
+          "department": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "budget": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BudgetRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "actual_minor": {
+            "type": "integer",
+            "title": "Actual Minor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "actual_minor"
+        ],
+        "title": "BudgetRow",
+        "description": "One department in one currency over a period: meant, and spent."
+      },
+      "BudgetUpdate": {
+        "properties": {
+          "period_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Start"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          },
+          "amount_minor": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount Minor"
+          }
+        },
+        "type": "object",
+        "title": "BudgetUpdate",
+        "description": "Leaving a field out leaves it alone."
       },
       "Burndown": {
         "properties": {
@@ -17959,6 +18566,7 @@
           "expense_not_found",
           "receipt_not_found",
           "reimbursement_batch_not_found",
+          "budget_not_found",
           "member_not_found",
           "not_on_this_team",
           "user_not_on_team",
@@ -18020,6 +18628,8 @@
           "reimbursement_not_on_run",
           "reimbursement_batch_not_draft",
           "reimbursement_batch_not_approved",
+          "budget_exists",
+          "budget_period_invalid",
           "department_has_finance_history",
           "name_required",
           "body_required",

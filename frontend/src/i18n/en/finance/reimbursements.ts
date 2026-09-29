@@ -55,7 +55,8 @@ export const reimbursements = {
     deleteDraft: 'Delete draft',
     confirmDelete: 'Throw this draft away? Its claims go back to awaiting reimbursement.',
     approvedBy: 'Approved by <strong>{{name}}</strong> on {{date}}. It no longer changes.',
-    paidBy: 'Marked paid by <strong>{{name}}</strong> on {{date}}: every claim in it is reimbursed.',
+    paidBy:
+      'Marked paid by <strong>{{name}}</strong> on {{date}}: every claim in it is reimbursed.',
     columns: {
       person: 'Person',
       claims: 'Claims',

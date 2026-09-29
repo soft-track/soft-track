@@ -1,0 +1,71 @@
+/** Finance → Budgets (#134): what a department meant to spend, and did. */
+export const budgets = {
+  title: 'Budgets',
+  intro:
+    'Actuals are approved payroll lines plus reimbursed expenses, attributed to the department a person was in when each was approved. Compared per currency, never converted.',
+  newBudget: 'New budget',
+  loading: 'Loading budgets…',
+  empty: 'No budget for this period, and nothing spent in it yet.',
+  quarter: 'Q{{quarter}} {{year}} · {{start}} – {{end}}',
+  quarterShort: 'Q{{quarter}} {{year}}',
+  granularity: {
+    label: 'Period',
+    month: 'Month',
+    quarter: 'Quarter',
+    year: 'Year',
+    custom: 'Custom',
+  },
+  periodLabel: 'Which period',
+  from: 'From',
+  to: 'To',
+  columns: {
+    department: 'Department',
+    currency: 'Currency',
+    budget: 'Budget',
+    actual: 'Actual',
+    progress: 'Against the budget',
+  },
+  unattributed: 'Unattributed',
+  unattributedHint:
+    'Spend approved while its person was in no department. A row you can see, not a filter: it is a data-quality prompt, not money missing from the totals.',
+  noBudget: 'No budget',
+  left: '{{percent}} · {{amount}} left',
+  over: '{{percent}} · {{amount}} over',
+  editBudget: 'Change the {{currency}} budget for {{department}}',
+  showSources: 'Where {{department}}’s {{currency}} actual comes from',
+  /** Creating or changing a budget. */
+  dialog: {
+    newTitle: 'New budget',
+    editTitle: 'Budget for {{department}}',
+    department: 'Department',
+    chooseDepartment: 'Choose a department',
+    starts: 'Starts',
+    ends: 'Ends',
+    periodHint: 'Any start and end: months, quarters and odd fiscal years are all just rows.',
+    amount: 'Amount',
+    currency: 'Currency',
+    invalid: 'Enter an amount with at most {{count}} decimal places.',
+    create: 'Create budget',
+    save: 'Save',
+    saving: 'Saving…',
+    remove: 'Delete budget',
+    confirmRemove: 'Delete this budget? The spend stays; only the number to compare it with goes.',
+    error: 'Could not save that budget.',
+  },
+  /** Where an actual comes from. */
+  sources: {
+    title: '{{department}} · {{period}}',
+    loading: 'Adding it up…',
+    columns: {
+      source: 'Source',
+      rows: 'Rows',
+      amount: 'Amount',
+    },
+    payrollRun: 'Payroll run, {{run}} · approved lines',
+    batch: 'Reimbursed expenses (batch {{batch}})',
+    onRun: 'Reimbursed expenses (with the {{run}} payroll run)',
+    none: 'Nothing spent yet in this period.',
+    attribution:
+      'Each row copied its department when it was approved, so a reorg cannot move past spend. Draft lines and claims not paid back are not actuals yet.',
+  },
+} as const
