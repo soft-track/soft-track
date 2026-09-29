@@ -73,6 +73,8 @@ class ErrorCode(str, enum.Enum):
     invite_not_found = "invite_not_found"
     user_not_found = "user_not_found"
     department_not_found = "department_not_found"
+    #: A compensation record that does not exist, or is somebody else's (#131).
+    compensation_not_found = "compensation_not_found"
     #: The person is not a member of the team the request is about.
     member_not_found = "member_not_found"
     #: A status, label, project or sprint id that belongs to another team.
@@ -142,6 +144,9 @@ class ErrorCode(str, enum.Enum):
     manager_cycle = "manager_cycle"
     #: A deactivated account cannot take on new reports.
     manager_deactivated = "manager_deactivated"
+    #: A compensation record is corrected once; a second correction corrects
+    #: the first (#131).
+    compensation_already_corrected = "compensation_already_corrected"
 
     # --- what you sent is not usable ------------------------------------------
     name_required = "name_required"

@@ -10,7 +10,7 @@ import enum
 from datetime import date, datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Index, UniqueConstraint
+from sqlalchemy import Column, Enum, Index, UniqueConstraint
 from sqlmodel import SQLModel, Field, Relationship
 
 from lib_utils.password import is_usable_password
@@ -339,6 +339,31 @@ class PullRequestState(str, enum.Enum):
     open = "open"
     merged = "merged"
     closed = "closed"
+
+
+class PaySchedule(str, enum.Enum):
+    """How often somebody is paid (#131). A compensation amount is per pay
+    period of its schedule -- a month, half a month, two weeks -- so a monthly
+    and a bi-weekly amount are never added together, and nothing is
+    annualised behind anybody's back."""
+
+    monthly = "monthly"
+    semi_monthly = "semi_monthly"
+    bi_weekly = "bi_weekly"
+
+
+class CompensationKind(str, enum.Enum):
+    """What decision a compensation record is (#131).
+
+    `raise_` because `raise` is a keyword; the value, which is what the API
+    and the database hold, is "raise". A correction names the record it
+    corrects, and nothing else does.
+    """
+
+    hire = "hire"
+    raise_ = "raise"
+    correction = "correction"
+    other = "other"
 
 
 # ---------------------------------------------------------------------------
@@ -1344,3 +1369,74 @@ class CodeLink(SQLModel, table=True):
     author_name: Optional[str] = None
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Finance (#130-#137). Readable by finance admins only; see lib_finance.
+# ---------------------------------------------------------------------------
+
+
+class Compensation(SQLModel, table=True):
+    """One decision about somebody's pay (#131): this much, from this day.
+
+    A salary is not a value but a series of decisions -- hired at X, raised
+    to Y in March -- and a column loses the series the first time it is
+    updated, and with it the answer to "what was this person paid in Q1",
+    which is the question payroll runs and finance reports ask. So pay is
+    rows, and the rows are append-only: a raise is a new row, and a
+    correction is a new row naming the one it corrects. Nothing here is ever
+    updated or deleted.
+
+    What somebody is paid on a given day is the latest row in effect by then
+    that no correction replaces -- see `lib_finance/compensation.py`.
+    """
+
+    __table_args__ = (
+        # Corrected at most once. A second correction corrects the first, so
+        # the chain only ever reads one way.
+        UniqueConstraint("corrects_id", name="uq_compensation_corrects_id"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    #: Gross agreed pay for one period of `pay_schedule`, in the currency's
+    #: minor unit (lib_finance/money.py). An integer, never a float: floating
+    #: point and money is a bug that pays somebody a tenth of a cent forever.
+    amount_minor: int
+    #: An ISO 4217 code. Per record, and never converted into another.
+    currency: str
+    pay_schedule: PaySchedule
+    #: The day it takes effect. A date rather than a timestamp, like a start
+    #: date. Still in the future, it is scheduled.
+    effective_on: date
+    #: Stored by value, so the database says "raise" too.
+    kind: CompensationKind = Field(
+        sa_column=Column(
+            Enum(
+                CompensationKind,
+                name="compensationkind",
+                values_callable=lambda kinds: [kind.value for kind in kinds],
+            ),
+            nullable=False,
+        )
+    )
+    note: Optional[str] = None
+    #: The record this one replaces, when it is a correction.
+    corrects_id: Optional[int] = Field(default=None, foreign_key="compensation.id")
+    recorded_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+
+    # Read-only, and named: two links to `user` make the join ambiguous, and
+    # the rows are written through the ids.
+    user: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "Compensation.user_id",
+            "viewonly": True,
+        }
+    )
+    recorded_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "Compensation.recorded_by_id",
+            "viewonly": True,
+        }
+    )

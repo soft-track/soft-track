@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 
+from app_finance.compensation import router as compensation_router
+from app_finance.currencies import router as currencies_router
 from app_identity.admin import router as admin_router
 from app_identity.departments import router as departments_router
 from app_identity.identity import router as identity_router
@@ -158,6 +160,8 @@ app.include_router(automations_router)
 app.include_router(integrations_router)
 app.include_router(webhooks_router)
 app.include_router(outbound_router)
+app.include_router(currencies_router)
+app.include_router(compensation_router)
 
 
 @app.get("/health", tags=["health"])

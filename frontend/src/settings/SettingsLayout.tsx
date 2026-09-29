@@ -105,6 +105,22 @@ export default function SettingsLayout() {
           },
         ]
       : []),
+    // Money (#130): a section of its own, for finance admins only -- a site
+    // admin without the flag sees no Finance here at all.
+    ...(user.is_finance_admin
+      ? [
+          {
+            title: t('layout.groups.finance'),
+            entries: [
+              {
+                to: '/settings/finance/compensation',
+                label: t('layout.nav.compensation'),
+                icon: 'banknote' as IconName,
+              },
+            ],
+          },
+        ]
+      : []),
   ]
 
   const allEntries = groups.flatMap((group) => group.entries)

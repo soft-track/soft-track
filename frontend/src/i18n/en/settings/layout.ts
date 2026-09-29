@@ -6,6 +6,7 @@ export const layout = {
   groups: {
     account: 'Account',
     administration: 'Administration',
+    finance: 'Finance',
   },
   nav: {
     profile: 'Profile',
@@ -20,5 +21,6 @@ export const layout = {
     general: 'General',
     users: 'Users',
     departments: 'Departments',
+    compensation: 'Compensation',
   },
 } as const

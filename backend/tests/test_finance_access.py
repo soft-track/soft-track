@@ -1,10 +1,15 @@
 """Who can see money at all (#130): the finance-admin flag and its guard."""
 
+import importlib
+import inspect
 import logging
+import pkgutil
 
 import pytest
 from fastapi.routing import iter_route_contexts
+from pydantic import BaseModel
 
+import lib_finance.models
 from lib_finance.access import require_finance_admin
 from lib_softtrack.tables import User
 from lib_utils.errors import ApiError
@@ -236,3 +241,55 @@ def test_the_line_survives_the_migrations_the_app_runs_on_startup(tmp_path):
     logger = logging.getLogger("uvicorn.error")
     command.upgrade(_config(tmp_path / "startup.db"), "head")
     assert not logger.disabled
+
+
+#: Finance schemas a route outside /finance may return, and why. Everything
+#: else in lib_finance/models is for finance admins' eyes only.
+SHARED_FINANCE_SCHEMAS = {
+    "CurrencyRead": "a list of currencies is no secret",
+}
+
+
+def _finance_schemas() -> set[str]:
+    names = set()
+    for module in pkgutil.iter_modules(lib_finance.models.__path__):
+        loaded = importlib.import_module(f"lib_finance.models.{module.name}")
+        names |= {
+            name
+            for name, value in vars(loaded).items()
+            if inspect.isclass(value)
+            and issubclass(value, BaseModel)
+            and value.__module__ == loaded.__name__
+        }
+    return names
+
+
+def test_no_route_outside_finance_can_return_a_finance_schema():
+    """Finance fields live in their own schemas so that a model reused
+    somewhere else cannot carry a salary out with it (#130). Follow every
+    response outside /finance through every schema it points at."""
+    schema = app.openapi()
+    components = schema["components"]["schemas"]
+
+    def reach(node, found):
+        if isinstance(node, dict):
+            ref = node.get("$ref")
+            if ref and ref.rsplit("/", 1)[-1] not in found:
+                name = ref.rsplit("/", 1)[-1]
+                found.add(name)
+                reach(components[name], found)
+            for value in node.values():
+                reach(value, found)
+        elif isinstance(node, list):
+            for value in node:
+                reach(value, found)
+
+    outside: set[str] = set()
+    for path, operations in schema["paths"].items():
+        if not path.startswith("/finance"):
+            for operation in operations.values():
+                reach(operation.get("responses", {}), outside)
+
+    finance = _finance_schemas()
+    assert "CompensationRecordRead" in finance
+    assert outside & finance <= set(SHARED_FINANCE_SCHEMAS)

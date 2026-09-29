@@ -7488,6 +7488,255 @@
         }
       }
     },
+    "/currencies": {
+      "get": {
+        "tags": [
+          "currencies"
+        ],
+        "summary": "List Currencies",
+        "description": "Every currency an amount can be recorded in, and its decimal places.\n\nOpen to anyone signed in: a list of currencies is no secret, and the\nbrowser converts \"8,300.00\" to minor units with it rather than keeping a\ncopy of its own that could disagree.",
+        "operationId": "list_currencies_currencies_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CurrencyRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Currencies Currencies Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/finance/compensation": {
+      "get": {
+        "tags": [
+          "compensation"
+        ],
+        "summary": "List Compensation",
+        "description": "Everybody active and what they are paid today, with totals per currency\nand pay schedule over everybody the filters match. People with nothing in\neffect come last, and are counted in `missing`.",
+        "operationId": "list_compensation_finance_compensation_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search name or username",
+              "title": "Q"
+            },
+            "description": "Search name or username"
+          },
+          {
+            "name": "department_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Department Id"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Currency"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only people currently paid in this currency",
+              "title": "Currency"
+            },
+            "description": "Only people currently paid in this currency"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompensationPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/compensation/{username}": {
+      "get": {
+        "tags": [
+          "compensation"
+        ],
+        "summary": "Get Compensation History",
+        "description": "Every record somebody has, latest effective first, each marked\nscheduled, current, past or corrected.",
+        "operationId": "get_compensation_history_finance_compensation__username__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Username"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompensationHistory"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "compensation"
+        ],
+        "summary": "Record Compensation",
+        "description": "Record a decision about somebody's pay. A raise or a correction is a\nnew record; nothing is edited or deleted.",
+        "operationId": "record_compensation_finance_compensation__username__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Username"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompensationCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompensationRecordRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -8712,6 +8961,301 @@
         "title": "CommentUpdate",
         "description": "A new body for a comment (#93). The body is the only thing that changes:\nits files stay as they were posted, and removing one is done on the file."
       },
+      "CompensationCreate": {
+        "properties": {
+          "amount_minor": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "pay_schedule": {
+            "$ref": "#/components/schemas/PaySchedule"
+          },
+          "effective_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Effective On"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CompensationKind"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "corrects_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrects Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount_minor",
+          "currency",
+          "pay_schedule",
+          "effective_on",
+          "kind"
+        ],
+        "title": "CompensationCreate",
+        "description": "A new record. There is no update: a change is another record."
+      },
+      "CompensationHistory": {
+        "properties": {
+          "person": {
+            "$ref": "#/components/schemas/FinancePerson"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/CompensationRecordRead"
+            },
+            "type": "array",
+            "title": "Records"
+          }
+        },
+        "type": "object",
+        "required": [
+          "person",
+          "records"
+        ],
+        "title": "CompensationHistory"
+      },
+      "CompensationKind": {
+        "type": "string",
+        "enum": [
+          "hire",
+          "raise",
+          "correction",
+          "other"
+        ],
+        "title": "CompensationKind",
+        "description": "What decision a compensation record is (#131).\n\n`raise_` because `raise` is a keyword; the value, which is what the API\nand the database hold, is \"raise\". A correction names the record it\ncorrects, and nothing else does."
+      },
+      "CompensationPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CompensationRow"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/CompensationTotal"
+            },
+            "type": "array",
+            "title": "Totals"
+          },
+          "missing": {
+            "type": "integer",
+            "title": "Missing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "totals",
+          "missing"
+        ],
+        "title": "CompensationPage"
+      },
+      "CompensationRecordRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "pay_schedule": {
+            "$ref": "#/components/schemas/PaySchedule"
+          },
+          "effective_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Effective On"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CompensationKind"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "corrects_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrects Id"
+          },
+          "corrected_by_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrected By Id"
+          },
+          "standing": {
+            "$ref": "#/components/schemas/CompensationStanding"
+          },
+          "recorded_by": {
+            "$ref": "#/components/schemas/PersonRef"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "amount_minor",
+          "currency",
+          "pay_schedule",
+          "effective_on",
+          "kind",
+          "standing",
+          "recorded_by",
+          "created_at"
+        ],
+        "title": "CompensationRecordRead"
+      },
+      "CompensationRow": {
+        "properties": {
+          "person": {
+            "$ref": "#/components/schemas/FinancePerson"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompensationRecordRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "change_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Percent"
+          },
+          "scheduled": {
+            "items": {
+              "$ref": "#/components/schemas/CompensationRecordRead"
+            },
+            "type": "array",
+            "title": "Scheduled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "person",
+          "scheduled"
+        ],
+        "title": "CompensationRow",
+        "description": "One person on the compensation list."
+      },
+      "CompensationStanding": {
+        "type": "string",
+        "enum": [
+          "scheduled",
+          "current",
+          "past",
+          "corrected"
+        ],
+        "title": "CompensationStanding",
+        "description": "Where a record stands on the day it is read."
+      },
+      "CompensationTotal": {
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "pay_schedule": {
+            "$ref": "#/components/schemas/PaySchedule"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "people": {
+            "type": "integer",
+            "title": "People"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "pay_schedule",
+          "amount_minor",
+          "people"
+        ],
+        "title": "CompensationTotal",
+        "description": "Current pay summed for one currency on one schedule. Never across\neither: there is no rate to add euros to pounds, or a month to a\nfortnight."
+      },
       "ConnectedIdentity": {
         "properties": {
           "provider": {
@@ -8824,6 +9368,87 @@
           "days"
         ],
         "title": "CumulativeFlow"
+      },
+      "Currency": {
+        "type": "string",
+        "enum": [
+          "AED",
+          "ARS",
+          "AUD",
+          "BDT",
+          "BGN",
+          "BHD",
+          "BRL",
+          "CAD",
+          "CHF",
+          "CLP",
+          "CNY",
+          "COP",
+          "CZK",
+          "DKK",
+          "EGP",
+          "EUR",
+          "GBP",
+          "GHS",
+          "HKD",
+          "HUF",
+          "IDR",
+          "ILS",
+          "INR",
+          "ISK",
+          "JOD",
+          "JPY",
+          "KES",
+          "KRW",
+          "KWD",
+          "LKR",
+          "MAD",
+          "MXN",
+          "MYR",
+          "NGN",
+          "NOK",
+          "NZD",
+          "OMR",
+          "PEN",
+          "PHP",
+          "PKR",
+          "PLN",
+          "QAR",
+          "RON",
+          "RSD",
+          "SAR",
+          "SEK",
+          "SGD",
+          "THB",
+          "TND",
+          "TRY",
+          "TWD",
+          "UAH",
+          "USD",
+          "UYU",
+          "VND",
+          "ZAR"
+        ],
+        "title": "Currency",
+        "description": "The ISO 4217 currencies an amount can be recorded in.\n\nA closed list rather than any three letters, so a typo is refused instead\nof becoming a currency of its own that every subtotal then carries.\nAdding one is a line here and one in MINOR_UNITS; the column is plain\ntext, so it needs no migration."
+      },
+      "CurrencyRead": {
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "minor_units": {
+            "type": "integer",
+            "title": "Minor Units"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "minor_units"
+        ],
+        "title": "CurrencyRead",
+        "description": "A currency amounts can be recorded in, and its decimal places."
       },
       "DefaultViewUpdate": {
         "properties": {
@@ -9023,6 +9648,61 @@
           "by_assignee"
         ],
         "title": "EstimateSummary"
+      },
+      "FinancePerson": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "avatar_color": {
+            "type": "string",
+            "title": "Avatar Color"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "job_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Title"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "username",
+          "full_name",
+          "avatar_color",
+          "is_active"
+        ],
+        "title": "FinancePerson",
+        "description": "Who a finance row is about: enough to show them and find them."
       },
       "FlowPoint": {
         "properties": {
@@ -10253,6 +10933,16 @@
           "new_password"
         ],
         "title": "PasswordChange"
+      },
+      "PaySchedule": {
+        "type": "string",
+        "enum": [
+          "monthly",
+          "semi_monthly",
+          "bi_weekly"
+        ],
+        "title": "PaySchedule",
+        "description": "How often somebody is paid (#131). A compensation amount is per pay\nperiod of its schedule -- a month, half a month, two weeks -- so a monthly\nand a bi-weekly amount are never added together, and nothing is\nannualised behind anybody's back."
       },
       "PeoplePage": {
         "properties": {
@@ -14341,6 +15031,7 @@
           "invite_not_found",
           "user_not_found",
           "department_not_found",
+          "compensation_not_found",
           "member_not_found",
           "not_on_this_team",
           "user_not_on_team",
@@ -14387,6 +15078,7 @@
           "manager_is_self",
           "manager_cycle",
           "manager_deactivated",
+          "compensation_already_corrected",
           "name_required",
           "body_required",
           "invalid_colour",
