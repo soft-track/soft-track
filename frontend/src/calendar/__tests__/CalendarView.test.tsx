@@ -88,14 +88,26 @@ function renderCalendar(url = '/ENG?month=2026-09', canWrite = true) {
 
 const where = () => screen.getByTestId('where').textContent
 
+// The current month is left out of the URL (CalendarView), so what the
+// address says after paging depends on when the test runs. "Now" is pinned
+// well away from the months these tests page through: unpinned, two of them
+// failed for the whole of October 2026. Only Date is faked, so user-event's
+// own timers still run.
+const NOW = new Date('2026-06-10T12:00:00')
+
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(NOW)
   mocks.items = [
     ticket(1, '2026-09-15', 'Ship the retry fix'),
     ...[2, 3, 4, 5].map((n) => ticket(n, '2026-09-30')),
   ]
 })
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+})
 
 describe('CalendarView', () => {
   it('asks for the days the grid shows, with the board filters', () => {
@@ -164,6 +176,13 @@ describe('CalendarView', () => {
     await user.click(screen.getByRole('button', { name: 'Previous month' }))
     await user.click(screen.getByRole('button', { name: 'Previous month' }))
     expect(where()).toBe('/ENG?priority=high&month=2026-08')
+  })
+
+  it('leaves the current month out of the URL', async () => {
+    const user = renderCalendar('/ENG?priority=high&month=2026-07')
+    await user.click(screen.getByRole('button', { name: 'Previous month' }))
+    expect(screen.getByRole('heading', { name: 'June 2026' })).toBeTruthy()
+    expect(where()).toBe('/ENG?priority=high')
   })
 
   it('offers guests nothing to drag (#104)', () => {
