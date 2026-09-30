@@ -27,6 +27,10 @@ trace with `npx playwright show-trace path/to/trace.zip`.
 5. Search finds a ticket by a word only its description holds.
 6. Format a description with a shortcut and a toolbar button; the browser's
    own undo takes each step back, a mention from the menu included.
+7. Open a linked ticket in a modal over the one you are reading, and close
+   back to it with Escape and Back.
+8. A card's epic and labels shorten beside its due date, at every width a
+   card is drawn at, rather than running under it.
 
 ## Conventions
 
