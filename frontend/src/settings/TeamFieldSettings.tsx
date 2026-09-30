@@ -16,7 +16,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useQueryClient } from '@tanstack/react-query'
-import { type FormEvent, type RefObject, useEffect, useId, useRef, useState } from 'react'
+import { type FormEvent, useId, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 import { parseServerDate } from '@/api/dates'
@@ -46,6 +46,7 @@ import { TYPE_META, TYPE_ORDER } from '@/tickets/ticketMeta'
 import { useTeamByKey } from '@/team/useTeams'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
+import { useDismiss } from '@/ui/useDismiss'
 import { useFocusTrap } from '@/ui/useFocusTrap'
 
 /**
@@ -578,29 +579,6 @@ function AppliesToPicker({
       )}
     </div>
   )
-}
-
-/** Close a popover on a click outside it, or on Escape. */
-function useDismiss(
-  root: RefObject<HTMLElement | null>,
-  open: boolean,
-  close: () => void,
-) {
-  useEffect(() => {
-    if (!open) return
-    const onPointerDown = (event: PointerEvent) => {
-      if (!root.current?.contains(event.target as Node)) close()
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') close()
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [root, open, close])
 }
 
 /**

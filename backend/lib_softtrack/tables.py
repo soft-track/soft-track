@@ -10,7 +10,15 @@ import enum
 from datetime import date, datetime, timezone
 from typing import Optional
 
-from sqlalchemy import JSON, CheckConstraint, Column, Enum, Index, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    CheckConstraint,
+    Column,
+    Enum,
+    Index,
+    UniqueConstraint,
+    event,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import SQLModel, Field, Relationship
 
@@ -821,11 +829,33 @@ class Project(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow)
 
 
+def label_name_key(name: str) -> str:
+    """What makes two label names the same label: `Label.name_key`."""
+    return name.strip().casefold()
+
+
 class Label(SQLModel, table=True):
+    #: One label per name on a team, whatever the case (#321), so "feature"
+    #: cannot join "Feature" even when two people add it at once.
+    __table_args__ = (
+        UniqueConstraint("team_id", "name_key", name="uq_label_team_name_key"),
+    )
+
     id: Optional[int] = Field(default=None, primary_key=True)
     team_id: int = Field(foreign_key="team.id", index=True)
     name: str
     color: str = Field(default="#94a3b8")
+    #: `name` trimmed and case-folded. A column rather than an index on
+    #: `lower(name)`, as with `Department.name_key`. Kept in step with `name`
+    #: by `_keep_label_name_key` on every insert and update, so a caller that
+    #: only sets the name cannot leave it stale.
+    name_key: str = Field(default="")
+
+
+@event.listens_for(Label, "before_insert")
+@event.listens_for(Label, "before_update")
+def _keep_label_name_key(_mapper, _connection, label: Label) -> None:
+    label.name_key = label_name_key(label.name)
 
 
 class Ticket(SQLModel, table=True):

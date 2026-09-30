@@ -25,9 +25,12 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  DeleteLabelLabelsLabelIdDeleteParams,
   HTTPValidationError,
   LabelCreate,
-  LabelRead
+  LabelRead,
+  LabelUpdate,
+  LabelUsage
 } from '../../models';
 
 import { apiClient } from '../../../client';
@@ -210,3 +213,234 @@ export function useListLabelsTeamsTeamIdLabelsGet<TData = Awaited<ReturnType<typ
 
 
 
+/**
+ * For each label, how many tickets carry it and which saved views and
+ * automation rules name it (#321).
+ * @summary Label Usage
+ */
+export const labelUsageTeamsTeamIdLabelsUsageGet = (
+    teamId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<LabelUsage[]>(
+      {url: `/teams/${teamId}/labels/usage`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getLabelUsageTeamsTeamIdLabelsUsageGetQueryKey = (teamId: number,) => {
+    return [
+    `/teams/${teamId}/labels/usage`
+    ] as const;
+    }
+
+
+export const getLabelUsageTeamsTeamIdLabelsUsageGetQueryOptions = <TData = Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>, TError = HTTPValidationError>(teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getLabelUsageTeamsTeamIdLabelsUsageGetQueryKey(teamId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>> = ({ signal }) => labelUsageTeamsTeamIdLabelsUsageGet(teamId, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: teamId !== null && teamId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type LabelUsageTeamsTeamIdLabelsUsageGetQueryResult = NonNullable<Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>>
+export type LabelUsageTeamsTeamIdLabelsUsageGetQueryError = HTTPValidationError
+
+
+export function useLabelUsageTeamsTeamIdLabelsUsageGet<TData = Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>, TError = HTTPValidationError>(
+ teamId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>,
+          TError,
+          Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useLabelUsageTeamsTeamIdLabelsUsageGet<TData = Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>,
+          TError,
+          Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useLabelUsageTeamsTeamIdLabelsUsageGet<TData = Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Label Usage
+ */
+
+export function useLabelUsageTeamsTeamIdLabelsUsageGet<TData = Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof labelUsageTeamsTeamIdLabelsUsageGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getLabelUsageTeamsTeamIdLabelsUsageGetQueryOptions(teamId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Rename or recolour a label; every ticket carrying it follows.
+ * @summary Update Label
+ */
+export const updateLabelLabelsLabelIdPatch = (
+    labelId: number,
+    labelUpdate: LabelUpdate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<LabelRead>(
+      {url: `/labels/${labelId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: labelUpdate, signal
+    },
+      );
+    }
+
+
+
+
+export const getUpdateLabelLabelsLabelIdPatchMutationKey = () => ['updateLabelLabelsLabelIdPatch'] as const;
+
+export const getUpdateLabelLabelsLabelIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateLabelLabelsLabelIdPatch>>, TError,UpdateLabelLabelsLabelIdPatchMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateLabelLabelsLabelIdPatch>>, TError,UpdateLabelLabelsLabelIdPatchMutationVariables, TContext> => {
+
+const mutationKey = getUpdateLabelLabelsLabelIdPatchMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateLabelLabelsLabelIdPatch>>, UpdateLabelLabelsLabelIdPatchMutationVariables> = (props) => {
+          const {labelId,data} = props ?? {};
+
+          return  updateLabelLabelsLabelIdPatch(labelId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateLabelLabelsLabelIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateLabelLabelsLabelIdPatch>>>
+    export type UpdateLabelLabelsLabelIdPatchMutationBody = LabelUpdate
+    export type UpdateLabelLabelsLabelIdPatchMutationError = HTTPValidationError
+    export type UpdateLabelLabelsLabelIdPatchMutationVariables = {labelId: number;data: LabelUpdate}
+
+    /**
+ * @summary Update Label
+ */
+export const useUpdateLabelLabelsLabelIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateLabelLabelsLabelIdPatch>>, TError,UpdateLabelLabelsLabelIdPatchMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateLabelLabelsLabelIdPatch>>,
+        TError,
+        UpdateLabelLabelsLabelIdPatchMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateLabelLabelsLabelIdPatchMutationOptions(options), queryClient);
+    }
+    /**
+ * Delete a label. Team admins only.
+ * @summary Delete Label
+ */
+export const deleteLabelLabelsLabelIdDelete = (
+    labelId: number,
+    params?: DeleteLabelLabelsLabelIdDeleteParams,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/labels/${labelId}`, method: 'DELETE',
+        params, signal
+    },
+      );
+    }
+
+
+
+
+export const getDeleteLabelLabelsLabelIdDeleteMutationKey = () => ['deleteLabelLabelsLabelIdDelete'] as const;
+
+export const getDeleteLabelLabelsLabelIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteLabelLabelsLabelIdDelete>>, TError,DeleteLabelLabelsLabelIdDeleteMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteLabelLabelsLabelIdDelete>>, TError,DeleteLabelLabelsLabelIdDeleteMutationVariables, TContext> => {
+
+const mutationKey = getDeleteLabelLabelsLabelIdDeleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteLabelLabelsLabelIdDelete>>, DeleteLabelLabelsLabelIdDeleteMutationVariables> = (props) => {
+          const {labelId,params} = props ?? {};
+
+          return  deleteLabelLabelsLabelIdDelete(labelId,params,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteLabelLabelsLabelIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteLabelLabelsLabelIdDelete>>>
+
+    export type DeleteLabelLabelsLabelIdDeleteMutationError = HTTPValidationError
+    export type DeleteLabelLabelsLabelIdDeleteMutationVariables = {labelId: number;params?: DeleteLabelLabelsLabelIdDeleteParams}
+
+    /**
+ * @summary Delete Label
+ */
+export const useDeleteLabelLabelsLabelIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteLabelLabelsLabelIdDelete>>, TError,DeleteLabelLabelsLabelIdDeleteMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteLabelLabelsLabelIdDelete>>,
+        TError,
+        DeleteLabelLabelsLabelIdDeleteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteLabelLabelsLabelIdDeleteMutationOptions(options), queryClient);
+    }

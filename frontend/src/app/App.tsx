@@ -34,6 +34,7 @@ import SettingsLayout from '@/settings/SettingsLayout'
 import TeamAutomationSettings from '@/settings/TeamAutomationSettings'
 import TeamGeneralSettings from '@/settings/TeamGeneralSettings'
 import TeamIntegrationSettings from '@/settings/TeamIntegrationSettings'
+import TeamLabelSettings from '@/settings/TeamLabelSettings'
 import TeamMembersSettings from '@/settings/TeamMembersSettings'
 import TeamFieldSettings from '@/settings/TeamFieldSettings'
 import TeamStatusSettings from '@/settings/TeamStatusSettings'
@@ -93,6 +94,7 @@ export default function App() {
             <Route path="teams/:teamKey/members" element={<TeamMembersSettings />} />
             <Route path="teams/:teamKey/general" element={<TeamGeneralSettings />} />
             <Route path="teams/:teamKey/statuses" element={<TeamStatusSettings />} />
+            <Route path="teams/:teamKey/labels" element={<TeamLabelSettings />} />
             <Route path="teams/:teamKey/fields" element={<TeamFieldSettings />} />
             <Route path="teams/:teamKey/templates" element={<TeamTemplateSettings />} />
             <Route

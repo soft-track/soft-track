@@ -3,10 +3,12 @@ import { invites } from '@/i18n/en/team/invites'
 import { newTeam } from '@/i18n/en/team/newTeam'
 import { home } from '@/i18n/en/team/home'
 import { projects } from '@/i18n/en/team/projects'
+import { labels } from '@/i18n/en/team/labels'
 
 export const team = {
   invites,
   newTeam,
   home,
   projects,
+  labels,
 } as const

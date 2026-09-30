@@ -18,6 +18,7 @@ from lib_softtrack.tables import (
     AutomationRule,
     Comment,
     CustomField,
+    Label,
     Sprint,
     Ticket,
     TicketTemplate,
@@ -162,6 +163,7 @@ _TEAM_OWNED_BY_PATH = (
     ("project_id", Project, ErrorCode.project_not_found, "Project not found"),
     ("view_id", SavedView, ErrorCode.view_not_found, "View not found"),
     ("status_id", WorkflowStatus, ErrorCode.status_not_found, "Status not found"),
+    ("label_id", Label, ErrorCode.label_not_found, "Label not found"),
     ("rule_id", AutomationRule, ErrorCode.rule_not_found, "Rule not found"),
     (
         "repository_id",

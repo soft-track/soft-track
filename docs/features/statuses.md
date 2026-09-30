@@ -23,7 +23,9 @@ cannot be added to. That is the line between a workflow and a workflow engine,
 and unconstrained workflow states are how Jira became Jira.
 
 Changing the columns is a **team admin** action, unlike labels and epics
-which any member creates: this is the shape of everyone's board.
+which any member creates: this is the shape of everyone's board. (Deleting a
+label is an admin's too, since it rewrites views and rules: see
+[Labels](labels.md).)
 
 **Deleting a status asks where its tickets go.** It is a required choice, not a
 default — tickets are the point of the tracker, and guessing which column

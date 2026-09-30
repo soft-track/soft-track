@@ -17,6 +17,7 @@ import { integrations } from '@/i18n/en/settings/integrations'
 import { webhooks } from '@/i18n/en/settings/webhooks'
 import { templates } from '@/i18n/en/settings/templates'
 import { fields } from '@/i18n/en/settings/fields'
+import { labels } from '@/i18n/en/settings/labels'
 
 export const settings = {
   statuses,
@@ -37,4 +38,5 @@ export const settings = {
   webhooks,
   templates,
   fields,
+  labels,
 } as const

@@ -2330,6 +2330,173 @@
         }
       }
     },
+    "/teams/{team_id}/labels/usage": {
+      "get": {
+        "tags": [
+          "labels"
+        ],
+        "summary": "Label Usage",
+        "description": "For each label, how many tickets carry it and which saved views and\nautomation rules name it (#321).",
+        "operationId": "label_usage_teams__team_id__labels_usage_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LabelUsage"
+                  },
+                  "title": "Response Label Usage Teams  Team Id  Labels Usage Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/labels/{label_id}": {
+      "patch": {
+        "tags": [
+          "labels"
+        ],
+        "summary": "Update Label",
+        "description": "Rename or recolour a label; every ticket carrying it follows.",
+        "operationId": "update_label_labels__label_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "label_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Label Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabelUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "labels"
+        ],
+        "summary": "Delete Label",
+        "description": "Delete a label. Team admins only.",
+        "operationId": "delete_label_labels__label_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "label_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Label Id"
+            }
+          },
+          {
+            "name": "merge_into",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Another of the team's labels to move its tickets, saved views and automation rules to. Left out, the label is taken off its tickets and views, and rules naming it are switched off.",
+              "title": "Merge Into"
+            },
+            "description": "Another of the team's labels to move its tickets, saved views and automation rules to. Left out, the label is taken off its tickets and views, and rules naming it are switched off."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/teams/{team_id}/tickets": {
       "post": {
         "tags": [
@@ -13361,6 +13528,7 @@
           },
           "color": {
             "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$",
             "title": "Color",
             "default": "#94a3b8"
           }
@@ -13398,6 +13566,76 @@
           "color"
         ],
         "title": "LabelRead"
+      },
+      "LabelUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "title": "LabelUpdate",
+        "description": "A rename or a new colour (#321). Tickets point at the row, so both\nfollow every ticket that carries the label."
+      },
+      "LabelUsage": {
+        "properties": {
+          "label_id": {
+            "type": "integer",
+            "title": "Label Id"
+          },
+          "ticket_count": {
+            "type": "integer",
+            "title": "Ticket Count"
+          },
+          "views": {
+            "items": {
+              "$ref": "#/components/schemas/NamedRef"
+            },
+            "type": "array",
+            "title": "Views"
+          },
+          "hidden_view_count": {
+            "type": "integer",
+            "title": "Hidden View Count"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/NamedRef"
+            },
+            "type": "array",
+            "title": "Rules"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label_id",
+          "ticket_count",
+          "views",
+          "hidden_view_count",
+          "rules"
+        ],
+        "title": "LabelUsage",
+        "description": "What points at one label: shown beside it in settings, and counted\nbefore it is deleted, so nothing is left filtering by a label that has\ngone (#321)."
       },
       "LinkedTicket": {
         "properties": {
@@ -13463,6 +13701,24 @@
         ],
         "title": "MonthCost",
         "description": "One currency's approved payroll in one month."
+      },
+      "NamedRef": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "NamedRef"
       },
       "NotificationKind": {
         "type": "string",
@@ -19526,6 +19782,7 @@
           "project_not_found",
           "sprint_not_found",
           "status_not_found",
+          "label_not_found",
           "view_not_found",
           "rule_not_found",
           "link_not_found",
@@ -19558,6 +19815,7 @@
           "custom_field_name_taken",
           "rule_name_taken",
           "department_name_taken",
+          "label_name_taken",
           "already_member",
           "link_exists",
           "link_contradicts",
@@ -19578,6 +19836,7 @@
           "parent_is_subticket",
           "ticket_has_subtickets",
           "labels_conflict",
+          "label_merge_into_same",
           "status_order_incomplete",
           "template_order_incomplete",
           "custom_field_order_incomplete",

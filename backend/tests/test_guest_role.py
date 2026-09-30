@@ -223,6 +223,7 @@ def world(client, team, guest):
     field = post(
         f"/teams/{team_id}/custom-fields", json={"name": "Reviewer", "kind": "user"}
     )
+    label = post(f"/teams/{team_id}/labels", json={"name": "Bug"})
     return {
         "team_id": team_id,
         "ticket_id": ticket["id"],
@@ -240,6 +241,7 @@ def world(client, team, guest):
         "emoji": "thumbs_up",
         "template_id": template["id"],
         "field_id": field["id"],
+        "label_id": label["id"],
         "worklog_id": worklog["id"],
         # Somebody else on the team: changing *their* role is the write.
         "user_id": team["user"]["id"],

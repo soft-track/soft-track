@@ -6,8 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface LabelCreate {
+export interface NamedRef {
+  id: number;
   name: string;
-  /** @pattern ^#[0-9a-fA-F]{6}$ */
-  color?: string;
 }

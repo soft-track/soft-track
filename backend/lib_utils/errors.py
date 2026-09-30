@@ -61,6 +61,7 @@ class ErrorCode(str, enum.Enum):
     project_not_found = "project_not_found"
     sprint_not_found = "sprint_not_found"
     status_not_found = "status_not_found"
+    label_not_found = "label_not_found"
     view_not_found = "view_not_found"
     rule_not_found = "rule_not_found"
     link_not_found = "link_not_found"
@@ -106,6 +107,8 @@ class ErrorCode(str, enum.Enum):
     rule_name_taken = "rule_name_taken"
     #: Department names are unique whatever the case (#123).
     department_name_taken = "department_name_taken"
+    #: So are a team's label names (#321).
+    label_name_taken = "label_name_taken"
     already_member = "already_member"
     link_exists = "link_exists"
     link_contradicts = "link_contradicts"
@@ -132,6 +135,8 @@ class ErrorCode(str, enum.Enum):
     parent_is_subticket = "parent_is_subticket"
     ticket_has_subtickets = "ticket_has_subtickets"
     labels_conflict = "labels_conflict"
+    #: A label deleted by merging it into itself (#321).
+    label_merge_into_same = "label_merge_into_same"
     status_order_incomplete = "status_order_incomplete"
     template_order_incomplete = "template_order_incomplete"
     custom_field_order_incomplete = "custom_field_order_incomplete"
