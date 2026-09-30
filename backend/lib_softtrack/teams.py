@@ -7,6 +7,7 @@ from sqlmodel import Session, case, func, select
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.teams import (
     TeamCreate,
+    TeamDirectoryEntry,
     TeamMemberAdd,
     TeamMemberRead,
     TeamMemberUpdate,
@@ -294,6 +295,48 @@ def list_teams_for_user(session: Session, current_user: User) -> list[Team]:
         .where(TeamMember.user_id == current_user.id)
     )
     return session.exec(statement).all()
+
+
+def team_directory(session: Session) -> list[TeamDirectoryEntry]:
+    """Every team on the instance, with how many are on it and who runs it.
+
+    For somebody on no team (#318), who needs to know whom to ask to be added.
+    The same kind of thing the people directory already shows anybody signed
+    in: names and people, not work. Three queries however many teams there
+    are. Deactivated accounts are left out of both the count and the admins,
+    since neither can add anybody.
+    """
+    teams = session.exec(select(Team).order_by(func.lower(Team.name))).all()
+    counts = dict(
+        session.exec(
+            select(TeamMember.team_id, func.count())
+            .join(User, User.id == TeamMember.user_id)
+            .where(User.is_active == True)  # noqa: E712 -- SQL comparison
+            .group_by(TeamMember.team_id)
+        ).all()
+    )
+    admins: dict[int, list[UserPublic]] = {}
+    for team_id, user in session.exec(
+        select(TeamMember.team_id, User)
+        .join(User, User.id == TeamMember.user_id)
+        .where(
+            TeamMember.role == TeamRole.admin,
+            User.is_active == True,  # noqa: E712 -- SQL comparison
+        )
+        .order_by(TeamMember.joined_at)
+    ).all():
+        admins.setdefault(team_id, []).append(UserPublic.model_validate(user))
+    return [
+        TeamDirectoryEntry(
+            id=team.id,
+            name=team.name,
+            key=team.key,
+            description=team.description,
+            member_count=counts.get(team.id, 0),
+            admins=admins.get(team.id, []),
+        )
+        for team in teams
+    ]
 
 
 def get_team(session: Session, current_user: User, team_id: int) -> Team:

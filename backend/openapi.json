@@ -1319,6 +1319,37 @@
         ]
       }
     },
+    "/teams/directory": {
+      "get": {
+        "tags": [
+          "teams"
+        ],
+        "summary": "Team Directory",
+        "description": "Every team, with its size and admins: who to ask to be added (#318).",
+        "operationId": "team_directory_teams_directory_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TeamDirectoryEntry"
+                  },
+                  "type": "array",
+                  "title": "Response Team Directory Teams Directory Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/teams/{team_id}": {
       "get": {
         "tags": [
@@ -17034,6 +17065,54 @@
           "key"
         ],
         "title": "TeamCreate"
+      },
+      "TeamDirectoryEntry": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "member_count": {
+            "type": "integer",
+            "title": "Member Count"
+          },
+          "admins": {
+            "items": {
+              "$ref": "#/components/schemas/UserPublic"
+            },
+            "type": "array",
+            "title": "Admins"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "key",
+          "member_count",
+          "admins"
+        ],
+        "title": "TeamDirectoryEntry",
+        "description": "A team as somebody who is not on it sees it (#318).\n\nEnough to know who to ask to be added: its name, its size and its admins.\nNothing of its work -- no tickets, epics or sprints -- which still takes\nbeing on the team."
       },
       "TeamMemberAdd": {
         "properties": {

@@ -1,25 +1,23 @@
-import { Link, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 
-import { useMyInvitesAuthMeInvitesGet } from '@/api/generated/endpoints/auth/auth'
-import { Trans, useTranslation } from '@/i18n'
-import { InvitesBanner } from '@/team/InvitesBanner'
+import { NoTeamHome } from '@/team/NoTeamHome'
 import { useMyTeams } from '@/team/useTeams'
 import { Loading } from '@/ui/Loading'
-import { Logo } from '@/ui/Logo'
 
 /**
  * Landing route for authenticated users: their first team's board.
  *
- * With no teams it used to go straight to team creation. That was wrong for
- * the person who was invited here: they would land on "name your team" when
- * the thing they actually needed was one click away in their invitations.
+ * With no team it is a page of its own (#318): what there is to reach without
+ * one, the teams there are and who runs them, invitations when there are any,
+ * and creating a team as one option. It used to go straight to "name your
+ * team", which is the wrong first suggestion for nearly everybody who lands
+ * here -- somebody invited, a new hire waiting to be added, or somebody in
+ * finance or HR who has no reason to be on a delivery team at all.
  */
 export default function TeamsHome() {
   const { data: teams, isLoading } = useMyTeams()
-  const invites = useMyInvitesAuthMeInvitesGet()
-  const { t } = useTranslation(['team', 'common'])
 
-  if (isLoading || invites.isPending) {
+  if (isLoading) {
     return (
       <div className="h-screen">
         <Loading />
@@ -31,36 +29,5 @@ export default function TeamsHome() {
     return <Navigate to={`/${teams[0].key}`} replace />
   }
 
-  if ((invites.data ?? []).length === 0) {
-    return <Navigate to="/new-team" replace />
-  }
-
-  return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="pop-in w-full max-w-md">
-        <div className="mb-8 text-center">
-          <div className="mb-4 flex justify-center">
-            <Logo size={52} />
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
-            <Trans
-              t={t}
-              i18nKey="home.title"
-              components={{ highlight: <span className="text-gradient" /> }}
-            />
-          </h1>
-          <p className="mt-1.5 text-sm text-neutral-500">
-            {t('home.intro')}
-          </p>
-        </div>
-
-        <div className="glass-strong sheen rounded-panel p-5">
-          <InvitesBanner />
-          <Link to="/new-team" className="btn btn-secondary mt-4 h-10 w-full text-sm">
-            {t('home.createInstead')}
-          </Link>
-        </div>
-      </div>
-    </div>
-  )
+  return <NoTeamHome />
 }

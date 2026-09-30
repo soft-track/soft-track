@@ -47,6 +47,24 @@ class TeamMemberUpdate(BaseModel):
     reassign_to: Optional[int] = None
 
 
+class TeamDirectoryEntry(BaseModel):
+    """A team as somebody who is not on it sees it (#318).
+
+    Enough to know who to ask to be added: its name, its size and its admins.
+    Nothing of its work -- no tickets, epics or sprints -- which still takes
+    being on the team.
+    """
+
+    id: int
+    name: str
+    key: str
+    description: Optional[str] = None
+    #: Everybody on it with an active account, guests included.
+    member_count: int
+    #: Its active admins, longest-serving first.
+    admins: list[UserPublic]
+
+
 class TeamMemberRead(BaseModel):
     user: UserPublic
     role: TeamRole

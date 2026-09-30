@@ -342,7 +342,8 @@ export default function BoardPage() {
 
   if (!team) {
     if (teams.length > 0) return <Navigate to={`/${teams[0].key}`} replace />
-    return <Navigate to="/new-team" replace />
+    // The page for somebody on no team (#318), not straight to making one.
+    return <Navigate to="/" replace />
   }
 
   const openTicket = loadedTicket ?? (ticketNumber ? fetchedTicket.data : undefined)

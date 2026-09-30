@@ -125,6 +125,19 @@ did the work.
 A team's **key** cannot be changed. `ENG-42` is already in commit messages,
 chat logs and browser history by the time anyone wants to rename it.
 
+### Somebody on no team
+
+An account on no team lands on a page of its own at `/` (#318), not on the
+form for a new team. It links to what the sidebar would have offered -- People,
+their profile, their expenses, and Finance for a finance admin -- and lists the
+teams on the instance with their size and admins, so a new hire knows whom to
+ask to be added. Pending invitations come first. Creating a team is one option
+at the bottom, or the main one on an instance that has no teams yet.
+
+The list comes from `GET /teams/directory`: every team's name, key, size and
+active admins, readable by anybody signed in, the way the people directory is.
+It says nothing of a team's work. Asking to join from it is #259.
+
 ### Guests
 
 A guest sees what a member sees -- the board, the list, every ticket and its

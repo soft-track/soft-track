@@ -209,6 +209,7 @@ export * from './statusUpdate';
 export * from './teamCreate';
 export * from './teamCreatedVsResolvedTeamsTeamIdCreatedVsResolvedGetParams';
 export * from './teamCumulativeFlowTeamsTeamIdCumulativeFlowGetParams';
+export * from './teamDirectoryEntry';
 export * from './teamMemberAdd';
 export * from './teamMemberRead';
 export * from './teamMemberUpdate';

@@ -20,7 +20,7 @@ trace with `npx playwright show-trace path/to/trace.zip`.
 
 ## The journeys
 
-1. Sign up, create a team, land on its empty board.
+1. Sign up, create a team from the first page, land on its empty board.
 2. Create a ticket, see it on the board, open it, edit its title.
 3. Drag a card to another column; the status survives a reload.
 4. Comment with an @mention; the mentioned person's inbox shows it.
