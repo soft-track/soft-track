@@ -161,6 +161,16 @@ describe('interleave', () => {
     expect(items.map((item) => item.kind)).toEqual(['comment', 'event'])
   })
 
+  it('says when it went into the trash and came back out (#323)', () => {
+    const mei = { id: 7, full_name: 'Mei Tanaka' } as TicketEventRead['actor']
+    expect(
+      eventText({ ...event('trash', null, '2026-09-28T10:00:00+00:00'), actor: mei }),
+    ).toBe('Mei Tanaka moved this to the trash')
+    expect(
+      eventText({ ...event('trash', '2026-09-28T10:00:00+00:00', null), actor: mei }),
+    ).toBe('Mei Tanaka restored this from the trash')
+  })
+
   it('reads a move between teams as the keys (#98)', () => {
     expect(eventText(event('team', 'ENG-42', 'OPS-17'))).toBe(
       'Automation moved this from ENG-42 to OPS-17',

@@ -2189,7 +2189,7 @@
           "projects"
         ],
         "summary": "Delete Project",
-        "description": "Delete a project. Its tickets are kept and left with no project.\n\nSaved views that filtered on it stop filtering on it, and automation rules\nconditioned on it are switched off rather than widened to every ticket.",
+        "description": "Move an epic to the trash (#323). Its tickets keep pointing at it, and\nrejoin it if it is restored.\n\nWhen it is purged, its tickets are left with no epic, saved views that\nfiltered on it stop filtering on it, and automation rules conditioned on\nit are switched off rather than widened to every ticket.",
         "operationId": "delete_project_projects__project_id__delete",
         "security": [
           {
@@ -2955,7 +2955,7 @@
           "tickets"
         ],
         "summary": "Bulk Delete Tickets",
-        "description": "Delete up to 200 of the team's tickets, all of them or none.\n\nA POST rather than a DELETE with a body, which too many clients and\nproxies drop. Each ticket goes the way a single delete takes it --\nattachments with it, sub-tickets promoted.",
+        "description": "Move up to 200 of the team's tickets to the trash, all of them or none.\n\nA POST rather than a DELETE with a body, which too many clients and\nproxies drop. Each ticket goes the way a single delete takes it, and the\nteam's policy on who may delete is checked for every one first (#323).",
         "operationId": "bulk_delete_tickets_teams__team_id__tickets_bulk_delete_post",
         "security": [
           {
@@ -3501,7 +3501,7 @@
           "tickets"
         ],
         "summary": "Delete Ticket",
-        "description": "Delete a ticket and everything that only existed because of it.\n\nAttachments go with it, bytes included -- see\n`lib_softtrack/tickets.py`. Sub-tickets do not: they are promoted to top\nlevel rather than destroyed.",
+        "description": "Move a ticket to the trash (#323).\n\nEverything it has stays with it -- comments, links, attachments, history,\nsub-tickets -- until it is restored, or purged after the trash's\nretention. On a team that leaves deleting to a ticket's creator and its\nadmins, anybody else gets 403 `not_allowed_to_delete`.",
         "operationId": "delete_ticket_tickets__ticket_id__delete",
         "security": [
           {
@@ -6142,6 +6142,289 @@
             "schema": {
               "type": "integer",
               "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/trash": {
+      "get": {
+        "tags": [
+          "trash"
+        ],
+        "summary": "List Trash",
+        "description": "The team's deleted tickets and epics, newest first, with who deleted\neach and when it is purged (#323).",
+        "operationId": "list_trash_teams__team_id__trash_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Trash"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/trash/tickets/{number}": {
+      "get": {
+        "tags": [
+          "trash"
+        ],
+        "summary": "Get Trashed Ticket",
+        "description": "One deleted ticket, by number: what a link to it can say. The ticket\nitself answers 410 `ticket_in_trash` while it is in here.",
+        "operationId": "get_trashed_ticket_teams__team_id__trash_tickets__number__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrashedTicket"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/trash/tickets/{ticket_id}/restore": {
+      "post": {
+        "tags": [
+          "trash"
+        ],
+        "summary": "Restore Ticket",
+        "description": "Bring a ticket back with everything it had. Anybody on the team but a\nguest.",
+        "operationId": "restore_ticket_trash_tickets__ticket_id__restore_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/trash/tickets/{ticket_id}": {
+      "delete": {
+        "tags": [
+          "trash"
+        ],
+        "summary": "Purge Ticket",
+        "description": "Delete a ticket in the trash forever, before the trash would. Team\nadmins only. Its comments, links, history and attachments go with it;\nits sub-tickets are promoted to the top level.",
+        "operationId": "purge_ticket_trash_tickets__ticket_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/trash/projects/{project_id}/restore": {
+      "post": {
+        "tags": [
+          "trash"
+        ],
+        "summary": "Restore Project",
+        "description": "Bring an epic back. The tickets that were in it are in it again.",
+        "operationId": "restore_project_trash_projects__project_id__restore_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/trash/projects/{project_id}": {
+      "delete": {
+        "tags": [
+          "trash"
+        ],
+        "summary": "Purge Project",
+        "description": "Delete an epic in the trash forever. Team admins only. Its tickets are\nkept, with no epic.",
+        "operationId": "purge_project_trash_projects__project_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
             }
           }
         ],
@@ -17458,6 +17741,11 @@
             ],
             "title": "Description"
           },
+          "any_member_may_delete": {
+            "type": "boolean",
+            "title": "Any Member May Delete",
+            "default": false
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -17506,6 +17794,17 @@
               }
             ],
             "title": "Description"
+          },
+          "any_member_may_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Any Member May Delete"
           }
         },
         "type": "object",
@@ -17800,7 +18099,8 @@
           "priority",
           "due_date",
           "team",
-          "custom_field"
+          "custom_field",
+          "trash"
         ],
         "title": "TicketEventField",
         "description": "Which field a TicketEvent records a change to."
@@ -18795,6 +19095,151 @@
         ],
         "title": "TransferResult"
       },
+      "Trash": {
+        "properties": {
+          "tickets": {
+            "items": {
+              "$ref": "#/components/schemas/TrashedTicket"
+            },
+            "type": "array",
+            "title": "Tickets"
+          },
+          "epics": {
+            "items": {
+              "$ref": "#/components/schemas/TrashedEpic"
+            },
+            "type": "array",
+            "title": "Epics"
+          },
+          "retention_days": {
+            "type": "integer",
+            "title": "Retention Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tickets",
+          "epics",
+          "retention_days"
+        ],
+        "title": "Trash",
+        "description": "What a team has deleted and can still restore, newest first."
+      },
+      "TrashedEpic": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "ticket_count": {
+            "type": "integer",
+            "title": "Ticket Count"
+          },
+          "deleted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Deleted At"
+          },
+          "deleted_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "purge_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Purge At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "name",
+          "color",
+          "ticket_count",
+          "deleted_at",
+          "purge_at"
+        ],
+        "title": "TrashedEpic"
+      },
+      "TrashedTicket": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TicketType"
+          },
+          "deleted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Deleted At"
+          },
+          "deleted_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "purge_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Purge At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "number",
+          "identifier",
+          "title",
+          "type",
+          "deleted_at",
+          "purge_at"
+        ],
+        "title": "TrashedTicket",
+        "description": "A ticket in the trash (#323): what it was, who put it there and when,\nand when it goes for good."
+      },
       "UnreadCount": {
         "properties": {
           "unread": {
@@ -19449,6 +19894,8 @@
           "ticket.created",
           "ticket.updated",
           "ticket.status_changed",
+          "ticket.deleted",
+          "ticket.restored",
           "comment.created",
           "sprint.started",
           "sprint.completed",
@@ -19772,6 +20219,8 @@
           "not_team_member",
           "not_team_admin",
           "team_read_only",
+          "not_allowed_to_delete",
+          "ticket_in_trash",
           "not_site_admin",
           "not_finance_admin",
           "invite_only",
@@ -19783,6 +20232,7 @@
           "sprint_not_found",
           "status_not_found",
           "label_not_found",
+          "not_in_trash",
           "view_not_found",
           "rule_not_found",
           "link_not_found",

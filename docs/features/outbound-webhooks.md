@@ -9,6 +9,7 @@ warehouse without polling. They work well alongside [API tokens](api-tokens.md).
 | `ticket.created` | A ticket is filed (by hand, by import, by anyone) |
 | `ticket.updated` | Any of a ticket's fields change; `data.changes` says which, from and to -- a team's [own field](custom-fields.md) as `custom_fields.<key>` |
 | `ticket.status_changed` | It moved column; also sends `ticket.updated` |
+| `ticket.deleted`, `ticket.restored` | It was moved to the [trash](trash.md), or restored from it; `data.ticket` is the ticket |
 | `comment.created` | A comment is added |
 | `sprint.started`, `sprint.completed` | A sprint starts or completes |
 | `ping` | You pressed **Send a ping** |

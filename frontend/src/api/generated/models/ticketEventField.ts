@@ -22,4 +22,5 @@ export const TicketEventField = {
   due_date: 'due_date',
   team: 'team',
   custom_field: 'custom_field',
+  trash: 'trash',
 } as const;

@@ -23,6 +23,8 @@ os.environ.setdefault("DATABASE_URL", "sqlite://")
 # The suite sends webhooks by calling outbound.deliver_due itself, against
 # its own database; the app's loop would poll a different one (#91).
 os.environ.setdefault("WEBHOOK_DELIVERY", "false")
+# Likewise the trash (#323): the suite purges by calling the service itself.
+os.environ.setdefault("TRASH_PURGING", "false")
 
 import pytest
 from fastapi.testclient import TestClient
@@ -200,3 +202,19 @@ def status_ids(client, actor, team_id) -> dict[str, int]:
     response = client.get(f"/teams/{team_id}/statuses", headers=actor["headers"])
     assert response.status_code == 200, response.text
     return {row["name"]: row["id"] for row in response.json()}
+
+
+def delete_for_good(client, headers, ticket_id):
+    """Delete a ticket and purge it from the trash (#323) -- what deleting was
+    before there was a trash, for the tests about what goes with a ticket.
+    Returns the purge's response."""
+    moved = client.delete(f"/tickets/{ticket_id}", headers=headers)
+    assert moved.status_code == 204, moved.text
+    return client.delete(f"/trash/tickets/{ticket_id}", headers=headers)
+
+
+def delete_project_for_good(client, headers, project_id):
+    """Delete an epic and purge it from the trash (#323)."""
+    moved = client.delete(f"/projects/{project_id}", headers=headers)
+    assert moved.status_code == 204, moved.text
+    return client.delete(f"/trash/projects/{project_id}", headers=headers)

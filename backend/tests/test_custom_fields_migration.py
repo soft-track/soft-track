@@ -7,6 +7,7 @@ takes away the events and notifications the older code cannot read.
 """
 
 from alembic import command
+from sqlalchemy import text
 from sqlmodel import Session, create_engine, select
 
 from lib_softtrack.tables import (
@@ -15,13 +16,8 @@ from lib_softtrack.tables import (
     CustomFieldValue,
     Notification,
     NotificationKind,
-    StatusCategory,
-    Team,
-    Ticket,
     TicketEvent,
     TicketEventField,
-    User,
-    WorkflowStatus,
 )
 from tests.test_employee_profile_migration import _read
 from tests.test_reactions_migration import _config
@@ -38,32 +34,32 @@ def _tables(db_path):
 
 
 def _seed(engine) -> None:
-    """A ticket with a status event and a notification, written as of AFTER."""
+    """A ticket with a status event and a notification, written as of AFTER.
+
+    The team, account, status and ticket in SQL rather than through the
+    models: the models are the latest schema, and a column added to any of
+    those tables since AFTER (the trash's, #323) is not in this database.
+    """
+    with engine.begin() as connection:
+        for statement in (
+            "INSERT INTO team (id, name, key, next_ticket_number,"
+            " next_sprint_number, created_at)"
+            " VALUES (1, 'Engineering', 'ENG', 2, 1, '2026-01-01 00:00:00')",
+            "INSERT INTO user (id, email, username, hashed_password, full_name,"
+            " avatar_color, is_active, is_site_admin, is_finance_admin,"
+            " token_version, email_notifications, created_at)"
+            " VALUES (1, 'ada@softtrack.dev', 'ada', 'x', 'Ada', '#6366f1', 1, 0,"
+            " 0, 0, 1, '2026-01-01 00:00:00')",
+            "INSERT INTO workflowstatus (id, team_id, name, category, position,"
+            " color, created_at)"
+            " VALUES (1, 1, 'Todo', 'unstarted', 0, '#888', '2026-01-01 00:00:00')",
+            "INSERT INTO ticket (id, team_id, number, title, priority, type,"
+            " creator_id, created_at, updated_at, status_id)"
+            " VALUES (1, 1, 1, 'Work', 'no_priority', 'task', 1,"
+            " '2026-01-01 00:00:00', '2026-01-01 00:00:00', 1)",
+        ):
+            connection.execute(text(statement))
     with Session(engine) as session:
-        session.add(Team(id=1, name="Engineering", key="ENG"))
-        session.add(
-            User(
-                id=1,
-                email="ada@softtrack.dev",
-                username="ada",
-                hashed_password="x",
-                full_name="Ada",
-            )
-        )
-        session.add(
-            WorkflowStatus(
-                id=1,
-                team_id=1,
-                name="Todo",
-                category=StatusCategory.unstarted,
-                position=0,
-            )
-        )
-        session.flush()
-        session.add(
-            Ticket(id=1, team_id=1, number=1, title="Work", status_id=1, creator_id=1)
-        )
-        session.flush()
         session.add(
             TicketEvent(
                 ticket_id=1,
@@ -86,46 +82,29 @@ def test_fields_go_on_and_come_off_with_what_pointed_at_them(tmp_path):
     engine = create_engine(f"sqlite:///{db_path}")
     _seed(engine)
 
-    with Session(engine) as session:
-        field = CustomField(
-            team_id=1,
-            key="environment",
-            name="Environment",
-            kind=CustomFieldKind.select,
-            options=[{"id": "production", "name": "Production"}],
-            applies_to=["bug"],
-        )
-        session.add(field)
-        session.flush()
-        session.add(
-            CustomFieldValue(ticket_id=1, field_id=field.id, value="production")
-        )
-        session.add(
-            TicketEvent(
-                ticket_id=1,
-                team_id=1,
-                field=TicketEventField.custom_field,
-                custom_field_id=field.id,
-                new_value="production",
-                actor_id=1,
-            )
-        )
-        session.add(
-            Notification(
-                user_id=1,
-                kind=NotificationKind.field_assigned,
-                ticket_id=1,
-                custom_field_id=field.id,
-            )
-        )
-        session.commit()
-
-        value = session.exec(select(CustomFieldValue)).one()
-        assert value.value == "production"
-        assert session.get(CustomField, field.id).options == [
-            {"id": "production", "name": "Production"}
-        ]
+    # In SQL for the same reason as the seed: flushing a value through the
+    # models wakes listeners that read the ticket as the latest schema has it.
+    with engine.begin() as connection:
+        for statement in (
+            "INSERT INTO customfield (id, team_id, key, name, kind, options,"
+            " required, applies_to, position, created_at) VALUES (1, 1,"
+            " 'environment', 'Environment', 'select',"
+            ' \'[{"id": "production", "name": "Production"}]\', 0, \'["bug"]\','
+            " 0, '2026-01-01 00:00:00')",
+            "INSERT INTO customfieldvalue (ticket_id, field_id, value, updated_at)"
+            " VALUES (1, 1, '\"production\"', '2026-01-01 00:00:00')",
+            "INSERT INTO ticketevent (ticket_id, team_id, field, custom_field_id,"
+            " new_value, actor_id, created_at, opening) VALUES (1, 1,"
+            " 'custom_field', 1, 'production', 1, '2026-01-01 00:00:00', 0)",
+            "INSERT INTO notification (user_id, kind, ticket_id, custom_field_id,"
+            " created_at) VALUES (1, 'field_assigned', 1, 1, '2026-01-01 00:00:00')",
+        ):
+            connection.execute(text(statement))
     engine.dispose()
+    assert _read(db_path, "SELECT value FROM customfieldvalue") == [('"production"',)]
+    assert _read(db_path, "SELECT options FROM customfield") == [
+        ('[{"id": "production", "name": "Production"}]',)
+    ]
 
     command.downgrade(config, BEFORE)
     assert {"customfield", "customfieldvalue"}.isdisjoint(_tables(db_path))

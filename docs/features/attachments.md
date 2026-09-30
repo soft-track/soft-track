@@ -61,6 +61,7 @@ always the whole file. The content endpoint answers single byte ranges with
 `206 Partial Content` and ignores anything more elaborate, which the HTTP spec
 allows.
 
-Deleting a ticket deletes its attachments, rows and bytes both. The rows go
-first and the bytes after the commit: an orphaned file costs disk, while an
-orphaned row costs a broken image on somebody's ticket.
+A deleted ticket keeps its attachments while it is in the [trash](trash.md).
+Purging it deletes them, rows and bytes both. The rows go first and the bytes
+after the commit: an orphaned file costs disk, while an orphaned row costs a
+broken image on somebody's ticket.

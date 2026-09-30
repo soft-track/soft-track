@@ -6,6 +6,7 @@ import pytest
 from sqlmodel import select
 
 from lib_softtrack.tables import Worklog
+from tests.conftest import delete_for_good
 
 
 def join(client, team, person, role="member"):
@@ -179,10 +180,7 @@ def test_outsiders_see_nothing(client, auth, ticket):
 
 def test_deleting_the_ticket_deletes_its_time(client, team, ticket, session):
     log(client, team, ticket)
-    assert (
-        client.delete(f"/tickets/{ticket['id']}", headers=team["headers"]).status_code
-        == 204
-    )
+    assert delete_for_good(client, team["headers"], ticket["id"]).status_code == 204
     assert session.exec(select(Worklog)).all() == []
 
 

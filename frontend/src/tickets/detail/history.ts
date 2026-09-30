@@ -27,6 +27,7 @@ type HistoryKey =
   | `project.${'added' | 'moved' | 'removed'}`
   | 'team'
   | `field.${'set' | 'changed' | 'cleared' | 'ticked' | 'unticked'}`
+  | `trash.${'deleted' | 'restored'}`
   | 'other'
 
 /**
@@ -113,6 +114,11 @@ export function describeEvent(event: TicketEventRead): EventSentence {
       if (!from) return say('field.set', { ...values, to: after })
       return say('field.changed', { ...values, from: before, to: after })
     }
+
+    case 'trash':
+      // Into the trash and back out of it (#323). Only a ticket that came
+      // back has an Activity feed to show either in.
+      return say(to ? 'trash.deleted' : 'trash.restored')
 
     default:
       return say('other')

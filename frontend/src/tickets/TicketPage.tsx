@@ -6,22 +6,35 @@ import {
   useGetTicketTicketsTicketIdGet,
 } from '@/api/generated/endpoints/tickets/tickets'
 import type { TicketRead, TeamRead } from '@/api/generated/models'
+import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
+import {
+  useGetTrashedTicketTeamsTeamIdTrashTicketsNumberGet,
+  useRestoreTicketTrashTicketsTicketIdRestorePost,
+} from '@/api/generated/endpoints/trash/trash'
+import { useAuth } from '@/auth/useAuth'
 import { useTranslation } from '@/i18n'
+import { formatDate } from '@/i18n/format'
 import { TicketDetailBody } from '@/tickets/TicketDetailBody'
 import { TicketHeaderActions } from '@/tickets/TicketHeaderActions'
 import { TicketStack } from '@/tickets/TicketStack'
 import { TicketSurfaceContext, ticketPath } from '@/tickets/surface'
 import { useTeamEvents } from '@/realtime/useTeamEvents'
+import { canWriteIn } from '@/team/members'
 import { TeamProvider } from '@/team/TeamContext'
 import { useTeamData } from '@/team/useTeamData'
 import { useTeamByKey } from '@/team/useTeams'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 
-/** A 404 is an answer, not a failure: asking again will not make the ticket exist. */
+const statusOf = (error: unknown) => (error as { response?: { status?: number } })?.response?.status
+
+/**
+ * A 404 is an answer, not a failure: asking again will not make the ticket
+ * exist. Nor will it take one out of the trash (410, #323).
+ */
 const retryUnlessMissing = (failures: number, error: unknown) =>
-  failures < 1 && (error as { response?: { status?: number } })?.response?.status !== 404
+  failures < 1 && statusOf(error) !== 404 && statusOf(error) !== 410
 
 /**
  * A ticket on a page of its own (#112): what a link from Slack, a search
@@ -36,6 +49,7 @@ export function TicketPage() {
   const { teamKey, ticketNumber } = useParams<{ teamKey: string; ticketNumber: string }>()
   const { t } = useTranslation(['tickets', 'common'])
   const { team, teams, isLoading } = useTeamByKey(teamKey)
+  const { user } = useAuth()
   // The team's lists for the properties; not the board's column totals.
   const teamData = useTeamData(team, { estimates: false })
   // Other people's changes arrive as they happen (#103), as on the board.
@@ -57,9 +71,19 @@ export function TicketPage() {
 
   if (!team) return <Missing title={t('page.notFound')} body={t('common:teamNotFound')} />
 
+  if (valid && statusOf(found.error) === 410) {
+    return (
+      <Deleted
+        team={team}
+        number={number}
+        canRestore={canWriteIn(teamData.members, user?.id)}
+        onRestored={() => found.refetch()}
+      />
+    )
+  }
+
   if (!valid || !found.data) {
-    const missing =
-      !valid || (found.error as { response?: { status?: number } })?.response?.status === 404
+    const missing = !valid || statusOf(found.error) === 404
     return (
       <Missing
         team={team}
@@ -218,6 +242,85 @@ function PageFrame({ children }: { children: ReactNode }) {
 }
 
 /** No team by that key, or no ticket by that number on it. */
+/**
+ * A link to a ticket in the trash (#323): not a bare board and not a 404,
+ * but who deleted it, when, until when it can come back -- and the way back,
+ * for anybody on the team but a guest.
+ */
+function Deleted({
+  team,
+  number,
+  canRestore,
+  onRestored,
+}: {
+  team: TeamRead
+  number: number
+  canRestore: boolean
+  onRestored: () => void
+}) {
+  const { t } = useTranslation(['tickets', 'common'])
+  const trashed = useGetTrashedTicketTeamsTeamIdTrashTicketsNumberGet(team.id, number)
+  const restore = useRestoreTicketTrashTicketsTicketIdRestorePost()
+  const [error, setError] = useState<string | null>(null)
+  const identifier = `${team.key}-${number}`
+
+  const item = trashed.data
+  const body = item
+    ? ((item.deleted_by ? 'page.deletedBody' : 'page.deletedBodyNobody') satisfies
+        'page.deletedBody' | 'page.deletedBodyNobody')
+    : null
+
+  return (
+    <PageFrame>
+      <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 py-16 text-center">
+        <Icon name="trash" size={20} className="text-neutral-400" />
+        <h1 className="text-base font-semibold text-neutral-900">
+          {t('page.deleted', { identifier })}
+        </h1>
+        {item && body && (
+          <p className="max-w-sm text-sm text-neutral-500">
+            {t(body, {
+              name: item.deleted_by?.full_name ?? '',
+              on: formatDate(parseServerDate(item.deleted_at), t('page.datePattern')),
+              until: formatDate(parseServerDate(item.purge_at), t('page.untilPattern')),
+            })}
+          </p>
+        )}
+        {error && (
+          <p role="alert" className="text-sm text-danger-600">
+            {error}
+          </p>
+        )}
+        <div className="mt-3 flex flex-wrap justify-center gap-2">
+          {item && canRestore && (
+            <button
+              type="button"
+              disabled={restore.isPending}
+              onClick={async () => {
+                setError(null)
+                try {
+                  await restore.mutateAsync({ ticketId: item.id })
+                  onRestored()
+                } catch (err: unknown) {
+                  setError(errorDetail(err, t('page.restoreFailed')))
+                }
+              }}
+              className="btn btn-secondary btn-sm"
+            >
+              <Icon name="undo" size={14} />
+              {t('page.restore', { identifier })}
+            </button>
+          )}
+          <Link to={`/${team.key}`} className="btn btn-ghost btn-sm">
+            <Icon name="chevron-left" size={14} />
+            {t('page.backTo', { team: team.name })}
+          </Link>
+        </div>
+      </div>
+    </PageFrame>
+  )
+}
+
 function Missing({ team, title, body }: { team?: TeamRead; title: string; body: string }) {
   const { t } = useTranslation(['tickets', 'common'])
   return (

@@ -8,7 +8,8 @@ On the board, the arrow keys move between columns and cards and `Enter` opens
 the focused one. `⌘`/`Ctrl`-click adds a card or list row to a selection and
 `Shift`-click selects the range from the last one picked; a bar then sets
 status, priority, assignee, epic, sprint or labels on all of them in one
-transactional request, or deletes them after a confirmation. Dragging a
+transactional request, or moves them to the [trash](trash.md) after a
+confirmation. Dragging a
 selected card moves the whole selection, and `Esc` clears it. A card or row
 is also a link, so a middle click opens the ticket's page in a new tab.
 

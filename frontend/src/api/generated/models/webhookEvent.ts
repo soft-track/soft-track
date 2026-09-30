@@ -19,6 +19,8 @@ export const WebhookEvent = {
   ticketcreated: 'ticket.created',
   ticketupdated: 'ticket.updated',
   ticketstatus_changed: 'ticket.status_changed',
+  ticketdeleted: 'ticket.deleted',
+  ticketrestored: 'ticket.restored',
   commentcreated: 'comment.created',
   sprintstarted: 'sprint.started',
   sprintcompleted: 'sprint.completed',

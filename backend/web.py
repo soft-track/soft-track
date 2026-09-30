@@ -129,6 +129,12 @@ class Settings(BaseSettings):
     #: makes it a digest rather than a mail per event: someone triaging a
     #: dozen tickets generates one mail, not twelve.
     digest_delay_minutes: int = 10
+    #: How long a deleted ticket or epic stays in the trash before it is
+    #: purged, attachments and all (#323).
+    trash_retention_days: int = 30
+    #: Run the loop that purges it. Off only for the test suite, which purges
+    #: directly.
+    trash_purging: bool = True
 
     model_config = SettingsConfigDict(env_file=".env")
 

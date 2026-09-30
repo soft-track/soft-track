@@ -16,4 +16,15 @@ export const page = {
   notFoundBody: '{{identifier}} does not exist, or it was moved to another team.',
   // Where "not found" sends you when there is no team to go back to.
   home: 'Go to your teams',
+  // A link to a ticket in the trash (#323): who put it there, and until when
+  // it can come back.
+  deleted: '{{identifier}} was deleted',
+  deletedBody:
+    'By {{name}} on {{on}}. It can be restored until {{until}}, with its comments, links and attachments.',
+  deletedBodyNobody:
+    'On {{on}}. It can be restored until {{until}}, with its comments, links and attachments.',
+  restore: 'Restore {{identifier}}',
+  restoreFailed: 'Could not restore it.',
+  datePattern: 'd MMM yyyy',
+  untilPattern: 'd MMM',
 } as const

@@ -239,7 +239,7 @@ describe('bulk delete', () => {
     await pick(user, 'First', 'Second')
     await user.click(within(bar()).getByRole('button', { name: /Delete/ }))
 
-    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Delete 2 tickets?'))
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Move 2 tickets to the trash?'))
     expect(remove.mutateAsync).not.toHaveBeenCalled()
     expect(bar()).toBeTruthy()
   })

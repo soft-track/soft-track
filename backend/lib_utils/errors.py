@@ -45,6 +45,11 @@ class ErrorCode(str, enum.Enum):
     not_team_admin = "not_team_admin"
     #: A guest of the team (#104): may look, may not change anything.
     team_read_only = "team_read_only"
+    #: Deleting a ticket or an epic the team's policy leaves to its creator
+    #: -- an epic's lead -- and the team's admins (#323).
+    not_allowed_to_delete = "not_allowed_to_delete"
+    #: Reading a ticket that is in the trash, answered 410 (#323).
+    ticket_in_trash = "ticket_in_trash"
     not_site_admin = "not_site_admin"
     #: Money is for finance admins only (#130), whatever else the account may
     #: do -- a site admin included.
@@ -62,6 +67,8 @@ class ErrorCode(str, enum.Enum):
     sprint_not_found = "sprint_not_found"
     status_not_found = "status_not_found"
     label_not_found = "label_not_found"
+    #: Restoring or purging something that is not in the trash (#323).
+    not_in_trash = "not_in_trash"
     view_not_found = "view_not_found"
     rule_not_found = "rule_not_found"
     link_not_found = "link_not_found"

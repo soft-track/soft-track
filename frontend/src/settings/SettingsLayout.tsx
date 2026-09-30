@@ -92,6 +92,11 @@ export default function SettingsLayout() {
           icon: 'link' as IconName,
         },
         {
+          to: `/settings/teams/${team.key}/trash`,
+          label: t('layout.nav.trash'),
+          icon: 'trash' as IconName,
+        },
+        {
           to: `/settings/teams/${team.key}/general`,
           label: t('layout.nav.general'),
           icon: 'settings' as IconName,

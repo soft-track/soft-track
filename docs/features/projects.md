@@ -11,8 +11,9 @@ The API and the database still call an epic a *project* (`/projects`,
 An epic has a lead, a target date and a state (planned, in progress,
 completed, cancelled), all set by hand. "Every ticket is done" is evidence that
 an epic is finished, not a decision that it is. Archiving an epic takes it
-out of the pickers without touching the tickets already in it, and deleting one
-keeps its tickets and leaves them with no epic.
+out of the pickers without touching the tickets already in it. Deleting one
+moves it to the [trash](trash.md), where its tickets wait to rejoin it; when
+it is purged, they are kept and left with no epic.
 
 **Creating one.** The **+** beside Epics in the sidebar, or *Create an
 epic* in the command palette, asks for a name, a colour, a lead and a
@@ -89,7 +90,7 @@ would fold that into "remaining" and hide it.
 The chart is replayed from ticket history, like the [reports](reports.md), so
 every change to a ticket's epic is recorded along with its status, sprint
 and estimate changes. That includes tickets released when their epic is
-deleted.
+purged from the trash.
 
 - **Cancelled tickets count as neither scope nor completed work**, the same
   rule as progress.

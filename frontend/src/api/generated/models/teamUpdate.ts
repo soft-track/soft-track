@@ -16,4 +16,5 @@
 export interface TeamUpdate {
   name?: string | null;
   description?: string | null;
+  any_member_may_delete?: boolean | null;
 }

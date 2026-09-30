@@ -66,6 +66,7 @@ too, but still call an epic a *project* (`/teams/{team_id}/projects`,
 - [Roadmap](docs/roadmap.md)
 - [Statuses and categories](docs/features/statuses.md)
 - [Labels](docs/features/labels.md)
+- [The trash](docs/features/trash.md)
 - [Sprints and estimates](docs/features/sprints.md)
 - [Reports](docs/features/reports.md)
 - [Time tracking](docs/features/time-tracking.md)

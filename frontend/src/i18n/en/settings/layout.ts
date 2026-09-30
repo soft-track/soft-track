@@ -20,6 +20,7 @@ export const layout = {
     automation: 'Automation',
     repositories: 'Repositories',
     webhooks: 'Webhooks',
+    trash: 'Trash',
     general: 'General',
     users: 'Users',
     departments: 'Departments',

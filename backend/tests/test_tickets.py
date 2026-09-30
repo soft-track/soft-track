@@ -187,6 +187,16 @@ def test_deleting_a_bare_ticket(client, ticket, team):
         client.delete(f"/tickets/{ticket['id']}", headers=team["headers"]).status_code
         == 204
     )
+    # In the trash (#323), and saying so, until it is purged.
+    in_trash = client.get(f"/tickets/{ticket['id']}", headers=team["headers"])
+    assert in_trash.status_code == 410
+    assert in_trash.json()["code"] == "ticket_in_trash"
+    assert (
+        client.delete(
+            f"/trash/tickets/{ticket['id']}", headers=team["headers"]
+        ).status_code
+        == 204
+    )
     assert (
         client.get(f"/tickets/{ticket['id']}", headers=team["headers"]).status_code
         == 404

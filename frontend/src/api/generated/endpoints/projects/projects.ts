@@ -376,10 +376,12 @@ export const useUpdateProjectProjectsProjectIdPatch = <TError = HTTPValidationEr
       return useMutation(getUpdateProjectProjectsProjectIdPatchMutationOptions(options), queryClient);
     }
     /**
- * Delete a project. Its tickets are kept and left with no project.
+ * Move an epic to the trash (#323). Its tickets keep pointing at it, and
+ * rejoin it if it is restored.
  *
- * Saved views that filtered on it stop filtering on it, and automation rules
- * conditioned on it are switched off rather than widened to every ticket.
+ * When it is purged, its tickets are left with no epic, saved views that
+ * filtered on it stop filtering on it, and automation rules conditioned on
+ * it are switched off rather than widened to every ticket.
  * @summary Delete Project
  */
 export const deleteProjectProjectsProjectIdDelete = (

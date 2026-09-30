@@ -25,6 +25,7 @@ from lib_softtrack.storage import (
     build_storage,
 )
 from lib_softtrack.tables import Attachment
+from tests.conftest import delete_for_good
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
 JPEG = b"\xff\xd8\xff" + b"\x00" * 64
@@ -454,7 +455,7 @@ def test_deleting_a_ticket_deletes_its_attachments(client, team, storage, sessio
         session.get(Attachment, on_comment["id"]).storage_key,
     ]
 
-    response = client.delete(f"/tickets/{ticket['id']}", headers=team["headers"])
+    response = delete_for_good(client, team["headers"], ticket["id"])
     assert response.status_code == 204, response.text
 
     assert (

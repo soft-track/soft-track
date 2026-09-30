@@ -11,6 +11,9 @@ export const webhooks = {
     ticketCreated: 'Ticket created',
     ticketUpdated: 'Ticket updated',
     ticketStatusChanged: 'Ticket status changed',
+    // Moved to the trash, and restored from it (#323).
+    ticketDeleted: 'Ticket deleted',
+    ticketRestored: 'Ticket restored',
     commentCreated: 'Comment added',
     sprintStarted: 'Sprint started',
     sprintCompleted: 'Sprint completed',

@@ -43,6 +43,11 @@ export const history = {
     ticked: '<actor>{{actor}}</actor> ticked {{field}}',
     unticked: '<actor>{{actor}}</actor> unticked {{field}}',
   },
+  // Moved into the trash and restored from it (#323).
+  trash: {
+    deleted: '<actor>{{actor}}</actor> moved this to the trash',
+    restored: '<actor>{{actor}}</actor> restored this from the trash',
+  },
   other: '<actor>{{actor}}</actor> changed this',
   formerMember: 'a former member',
   deletedSprint: 'a deleted sprint',

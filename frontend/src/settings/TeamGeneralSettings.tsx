@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useId, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 import {
@@ -37,7 +37,90 @@ export default function TeamGeneralSettings() {
 
   // Keyed on the team so switching teams in the nav remounts the form with
   // that team's values, rather than needing an effect to copy them into state.
-  return <TeamGeneralForm key={team.id} team={team} isAdmin={isAdmin} />
+  return (
+    <div className="space-y-4">
+      <TeamGeneralForm key={team.id} team={team} isAdmin={isAdmin} />
+      <DeletePolicy key={`delete-${team.id}`} team={team} isAdmin={isAdmin} />
+    </div>
+  )
+}
+
+/**
+ * Who may delete tickets and epics (#323): their creator -- an epic's lead --
+ * and the team's admins, or every member. Saved as soon as it is chosen,
+ * apart from the form above, since it is a rule rather than a description.
+ */
+function DeletePolicy({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
+  const queryClient = useQueryClient()
+  const updateTeam = useUpdateTeamTeamsTeamIdPatch()
+  const [anyMember, setAnyMember] = useState(team.any_member_may_delete)
+  const [error, setError] = useState<string | null>(null)
+  const name = useId()
+
+  const choose = async (value: boolean) => {
+    const before = anyMember
+    setAnyMember(value)
+    setError(null)
+    try {
+      await updateTeam.mutateAsync({ teamId: team.id, data: { any_member_may_delete: value } })
+      queryClient.invalidateQueries({ queryKey: ['/teams'] })
+    } catch (err: unknown) {
+      setAnyMember(before)
+      setError(errorDetail(err, t('general.errors.deleting')))
+    }
+  }
+
+  const option = (value: boolean, label: string, hint: string) => (
+    <label className="flex items-start gap-2.5">
+      <input
+        type="radio"
+        name={name}
+        checked={anyMember === value}
+        disabled={!isAdmin || updateTeam.isPending}
+        onChange={() => choose(value)}
+        className="mt-0.5 h-4 w-4 accent-[var(--color-brand-600)]"
+      />
+      <span>
+        <span className="block text-sm text-neutral-800">{label}</span>
+        <span className="block text-xs text-neutral-500">{hint}</span>
+      </span>
+    </label>
+  )
+
+  return (
+    <section className="glass-strong rounded-panel p-6" aria-labelledby={`${name}-heading`}>
+      <p className="eyebrow">{t('general.deleting.heading')}</p>
+      <fieldset className="mt-2">
+        <legend id={`${name}-heading`} className="text-sm font-medium text-neutral-800">
+          {t('general.deleting.question')}
+        </legend>
+        <div className="mt-3 space-y-3">
+          {option(
+            false,
+            t('general.deleting.creatorAndAdmins'),
+            t('general.deleting.creatorAndAdminsHint'),
+          )}
+          {option(true, t('general.deleting.everyMember'), t('general.deleting.everyMemberHint'))}
+        </div>
+      </fieldset>
+      {error && (
+        <p
+          role="alert"
+          className="mt-3 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+        >
+          {error}
+        </p>
+      )}
+      <p className="mt-4 border-t border-neutral-900/8 pt-3 text-xs text-neutral-500">
+        <Trans
+          t={t}
+          i18nKey="general.deleting.note"
+          components={{ code: <code className="identifier" /> }}
+        />
+      </p>
+    </section>
+  )
 }
 
 function TeamGeneralForm({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {

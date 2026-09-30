@@ -11,5 +11,6 @@ export interface TeamRead {
   name: string;
   key: string;
   description?: string | null;
+  any_member_may_delete?: boolean;
   created_at: string;
 }

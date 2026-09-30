@@ -41,6 +41,7 @@ from lib_softtrack.tables import (
     WebhookEvent,
 )
 from lib_softtrack.teams import get_team_or_404, require_team_member
+from lib_softtrack.trash import INCLUDE_TRASHED
 from lib_utils.errors import ErrorCode, api_error
 
 #: Statuses that count as finished for sprint progress and for deciding what
@@ -345,9 +346,12 @@ def delete_sprint(session: Session, current_user: User, sprint_id: int) -> None:
         )
 
     # Its tickets go back to the backlog rather than being deleted with it, and
-    # they hold a foreign key here either way.
+    # they hold a foreign key here either way -- the ones in the trash too
+    # (#323), or the sprint could not go.
     for ticket in session.exec(
-        select(Ticket).where(Ticket.sprint_id == sprint_id)
+        select(Ticket)
+        .where(Ticket.sprint_id == sprint_id)
+        .execution_options(**INCLUDE_TRASHED)
     ).all():
         before = snapshot(ticket)
         ticket.sprint_id = None

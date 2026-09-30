@@ -3,14 +3,10 @@
 A project is what SoftTrack calls an epic -- see `tables.Project`.
 """
 
-from datetime import datetime, timezone
 from typing import Optional
 
 from sqlmodel import Session, select
 
-from lib_softtrack import automations as automations_service
-from lib_softtrack import views as views_service
-from lib_softtrack.history import record_changes, snapshot
 from lib_softtrack.models.projects import ProjectCreate, ProjectRead, ProjectUpdate
 from lib_softtrack.subtickets import progress_by
 from lib_softtrack.tables import Ticket, Project, TeamMember, User
@@ -128,37 +124,3 @@ def update_project(
     session.commit()
     session.refresh(project)
     return project_to_read(session, project)
-
-
-def delete_project(session: Session, current_user: User, project_id: int) -> None:
-    """Delete a project, keeping every ticket that was in it.
-
-    The tickets are the work; the project was only a way of grouping it. They
-    are released back to "no project" -- the same answer #13 gives a parent's
-    sub-tickets -- rather than deleted along with it. Archiving is the gentler
-    option and the one the UI offers first; this is for a project that should
-    never have existed.
-    """
-    project = get_project_or_404(session, project_id)
-    require_team_member(project.team_id, current_user, session)
-
-    now = datetime.now(timezone.utc)
-    for ticket in session.exec(select(Ticket).where(Ticket.project_id == project_id)):
-        before = snapshot(ticket)
-        ticket.project_id = None
-        ticket.updated_at = now
-        session.add(ticket)
-        # Leaving the project is a change like any other, and history is
-        # what the burnup replays -- a ticket released silently would still
-        # be "in" the deleted project for ever as far as the events know.
-        record_changes(session, ticket, before, current_user)
-
-    # A view left filtering on a project that no longer exists matches
-    # nothing, which reads as broken rather than empty.
-    views_service.clear_project(session, project_id)
-    # A rule conditioned on it is switched off -- see automations.clear_project.
-    automations_service.clear_project(session, project_id)
-    session.flush()
-
-    session.delete(project)
-    session.commit()

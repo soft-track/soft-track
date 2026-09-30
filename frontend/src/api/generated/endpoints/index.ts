@@ -30,6 +30,7 @@ export * from './statuses/statuses';
 export * from './teams/teams';
 export * from './templates/templates';
 export * from './tickets/tickets';
+export * from './trash/trash';
 export * from './views/views';
 export * from './webhooks/webhooks';
 export * from './worklogs/worklogs';

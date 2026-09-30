@@ -307,11 +307,11 @@ export const useBulkUpdateTicketsTeamsTeamIdTicketsBulkUpdatePost = <TError = HT
       return useMutation(getBulkUpdateTicketsTeamsTeamIdTicketsBulkUpdatePostMutationOptions(options), queryClient);
     }
     /**
- * Delete up to 200 of the team's tickets, all of them or none.
+ * Move up to 200 of the team's tickets to the trash, all of them or none.
  *
  * A POST rather than a DELETE with a body, which too many clients and
- * proxies drop. Each ticket goes the way a single delete takes it --
- * attachments with it, sub-tickets promoted.
+ * proxies drop. Each ticket goes the way a single delete takes it, and the
+ * team's policy on who may delete is checked for every one first (#323).
  * @summary Bulk Delete Tickets
  */
 export const bulkDeleteTicketsTeamsTeamIdTicketsBulkDeletePost = (
@@ -1010,11 +1010,12 @@ export const useUpdateTicketTicketsTicketIdPatch = <TError = HTTPValidationError
       return useMutation(getUpdateTicketTicketsTicketIdPatchMutationOptions(options), queryClient);
     }
     /**
- * Delete a ticket and everything that only existed because of it.
+ * Move a ticket to the trash (#323).
  *
- * Attachments go with it, bytes included -- see
- * `lib_softtrack/tickets.py`. Sub-tickets do not: they are promoted to top
- * level rather than destroyed.
+ * Everything it has stays with it -- comments, links, attachments, history,
+ * sub-tickets -- until it is restored, or purged after the trash's
+ * retention. On a team that leaves deleting to a ticket's creator and its
+ * admins, anybody else gets 403 `not_allowed_to_delete`.
  * @summary Delete Ticket
  */
 export const deleteTicketTicketsTicketIdDelete = (

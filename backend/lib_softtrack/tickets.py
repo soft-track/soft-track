@@ -17,7 +17,6 @@ from lib_softtrack import custom_fields as custom_fields_service
 from lib_softtrack import outbound
 from lib_softtrack.models.tickets import (
     TicketBulkChanges,
-    TicketBulkDelete,
     TicketBulkUpdate,
     TicketMove,
     TicketCreate,
@@ -61,13 +60,13 @@ from lib_softtrack.statuses import (
     in_category,
     resolve_for_team,
 )
-from lib_softtrack.storage import Storage
 from lib_softtrack.subtickets import child_progress, detach_children, validate_parent
 from lib_softtrack.teams import (
     get_team_or_404,
     require_assignable,
     require_team_member,
 )
+from lib_softtrack.trash import INCLUDE_TRASHED
 from lib_utils.errors import ErrorCode, api_error
 
 
@@ -610,10 +609,34 @@ def _export_rows(tickets: list[Ticket], session: Session) -> list[TicketExportRo
     ]
 
 
-def get_ticket(session: Session, current_user: User, ticket_id: int) -> TicketRead:
-    ticket = get_ticket_or_404(session, ticket_id)
+def _readable(session: Session, current_user: User, ticket: Optional[Ticket]) -> Ticket:
+    """A ticket somebody on its team may read, or why not.
+
+    Read with the trash included (#323), so a link to a deleted ticket gets
+    410 `ticket_in_trash` -- and a page that says who deleted it and offers it
+    back -- rather than a 404 that reads as a typo.
+    """
+    if ticket is None:
+        raise api_error(
+            status_code=404, code=ErrorCode.ticket_not_found, detail="Ticket not found"
+        )
     require_team_member(ticket.team_id, current_user, session)
-    return ticket_to_read(ticket, session)
+    if ticket.deleted_at is not None:
+        team = session.get(Team, ticket.team_id)
+        raise api_error(
+            status_code=410,
+            code=ErrorCode.ticket_in_trash,
+            detail=f"{team.key}-{ticket.number} is in the trash",
+            # A 410 is cacheable by default, and browsers do cache it: the
+            # page that restores the ticket would be served the old answer.
+            headers={"Cache-Control": "no-store"},
+        )
+    return ticket
+
+
+def get_ticket(session: Session, current_user: User, ticket_id: int) -> TicketRead:
+    ticket = session.get(Ticket, ticket_id, execution_options=INCLUDE_TRASHED)
+    return ticket_to_read(_readable(session, current_user, ticket), session)
 
 
 def get_ticket_by_number(
@@ -622,13 +645,11 @@ def get_ticket_by_number(
     get_team_or_404(team_id, session)
     require_team_member(team_id, current_user, session)
     ticket = session.exec(
-        select(Ticket).where(Ticket.team_id == team_id, Ticket.number == number)
+        select(Ticket)
+        .where(Ticket.team_id == team_id, Ticket.number == number)
+        .execution_options(**INCLUDE_TRASHED)
     ).one_or_none()
-    if not ticket:
-        raise api_error(
-            status_code=404, code=ErrorCode.ticket_not_found, detail="Ticket not found"
-        )
-    return ticket_to_read(ticket, session)
+    return ticket_to_read(_readable(session, current_user, ticket), session)
 
 
 def update_ticket(
@@ -843,18 +864,6 @@ def move_ticket(
     session.commit()
     session.refresh(ticket)
     return ticket_to_read(ticket, session)
-
-
-def delete_ticket(
-    session: Session, current_user: User, ticket_id: int, storage: Storage
-) -> None:
-    ticket = get_ticket_or_404(session, ticket_id)
-    require_team_member(ticket.team_id, current_user, session)
-
-    storage_keys = _delete_rows(session, ticket)
-    session.commit()
-
-    attachments_service.purge(storage, storage_keys)
 
 
 def _delete_rows(session: Session, ticket: Ticket) -> list[str]:
@@ -1085,32 +1094,3 @@ def bulk_update_tickets(
         raise
 
     return _expand_tickets(tickets, session)
-
-
-def bulk_delete_tickets(
-    session: Session,
-    current_user: User,
-    team_id: int,
-    payload: TicketBulkDelete,
-    storage: Storage,
-) -> None:
-    """Delete many tickets in one transaction, then purge their attachments.
-
-    Deleting a parent and one of its sub-tickets in the same batch is fine in
-    either order: the parent's delete promotes the child, and the child's
-    delete removes it.
-    """
-    get_team_or_404(team_id, session)
-    require_team_member(team_id, current_user, session)
-    tickets = _team_tickets_or_404(session, team_id, payload.ticket_ids)
-
-    storage_keys: list[str] = []
-    try:
-        for ticket in tickets:
-            storage_keys += _delete_rows(session, ticket)
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-
-    attachments_service.purge(storage, storage_keys)

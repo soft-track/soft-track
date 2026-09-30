@@ -16,6 +16,7 @@ from lib_softtrack.tables import (
     TicketEvent,
     TicketWatch,
 )
+from tests.conftest import delete_for_good
 
 
 def join(client, team, person, role="member"):
@@ -872,7 +873,7 @@ def test_deleting_a_ticket_takes_its_values(client, eng, people, session):
         eng["team_id"],
         custom_fields={"qa_assignee": people["priya"]["user"]["id"]},
     )
-    response = client.delete(f"/tickets/{ticket['id']}", headers=eng["headers"])
+    response = delete_for_good(client, eng["headers"], ticket["id"])
     assert response.status_code == 204, response.text
     assert session.exec(select(CustomFieldValue)).all() == []
 

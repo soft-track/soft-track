@@ -20,7 +20,8 @@ from app_identity.identity import router as identity_router
 from app_identity.oauth import router as oauth_router
 from app_identity.people import router as people_router
 from lib_identity.identity import warm_password_hasher
-from lib_softtrack import realtime
+from lib_softtrack import realtime, trash
+from lib_softtrack.deleting import trash_loop
 from lib_softtrack.digest import digest_loop
 from lib_softtrack.outbound import webhook_loop
 from app_softtrack.attachments import router as attachments_router
@@ -42,6 +43,7 @@ from app_softtrack.search import router as search_router
 from app_softtrack.statuses import router as statuses_router
 from app_softtrack.teams import router as teams_router
 from app_softtrack.templates import router as templates_router
+from app_softtrack.trash import router as trash_router
 from app_softtrack.webhooks import router as webhooks_router
 from app_softtrack.worklogs import router as worklogs_router
 from app_softtrack.workload import router as workload_router
@@ -82,17 +84,26 @@ async def lifespan(app: FastAPI):
     if settings.webhook_delivery:
         webhooks = asyncio.create_task(webhook_loop())
 
+    # The trash (#323) is purged of what has been there long enough.
+    purging: asyncio.Task | None = None
+    if settings.trash_purging:
+        purging = asyncio.create_task(trash_loop())
+
     yield
 
     if digest is not None:
         digest.cancel()
     if webhooks is not None:
         webhooks.cancel()
+    if purging is not None:
+        purging.cancel()
 
 
 # Real-time nudges (#103) are published from the ORM's own commit events, so
 # they are switched on once, here, for every session the app opens.
 realtime.install()
+# And the trash (#323) is kept out of every query the same way.
+trash.install()
 
 app = FastAPI(
     title=settings.app_name,
@@ -159,6 +170,7 @@ app.include_router(search_router)
 app.include_router(notifications_router)
 app.include_router(views_router)
 app.include_router(templates_router)
+app.include_router(trash_router)
 app.include_router(custom_fields_router)
 app.include_router(worklogs_router)
 app.include_router(workload_router)

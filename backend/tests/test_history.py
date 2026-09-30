@@ -8,6 +8,7 @@ what the charts do with it.
 from sqlmodel import select
 
 from lib_softtrack.tables import TicketEvent, TicketEventField
+from tests.conftest import delete_for_good
 
 
 def events(session, ticket_id, field=None):
@@ -164,8 +165,5 @@ def test_deleting_a_ticket_takes_its_history_with_it(client, team, session):
     )
     assert events(session, ticket["id"])
 
-    assert (
-        client.delete(f"/tickets/{ticket['id']}", headers=team["headers"]).status_code
-        == 204
-    )
+    assert delete_for_good(client, team["headers"], ticket["id"]).status_code == 204
     assert events(session, ticket["id"]) == []

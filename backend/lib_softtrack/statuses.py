@@ -33,6 +33,7 @@ from lib_softtrack.teams import (
     require_team_admin,
     require_team_member,
 )
+from lib_softtrack.trash import INCLUDE_TRASHED
 from lib_utils.errors import ErrorCode, api_error
 
 #: Work that is finished, one way or the other. Off the burndown, and unable
@@ -276,8 +277,11 @@ def delete_status(
     # the column they were sitting in was renamed out from under them -- and a
     # status event per ticket would put a step in every cumulative flow diagram
     # on the day an admin tidied up the board.
+    # The trash's tickets too (#323): they hold the foreign key all the same.
     for ticket in session.exec(
-        select(Ticket).where(Ticket.status_id == status.id)
+        select(Ticket)
+        .where(Ticket.status_id == status.id)
+        .execution_options(**INCLUDE_TRASHED)
     ).all():
         ticket.status_id = target.id
         session.add(ticket)

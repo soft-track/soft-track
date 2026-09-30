@@ -22,6 +22,7 @@ from lib_softtrack.tables import (
     WorkflowStatus,
 )
 from lib_softtrack.teams import require_team_member
+from lib_softtrack.trash import INCLUDE_TRASHED
 from lib_utils.errors import ErrorCode, api_error
 
 #: The fields worth a history row. The first four are what the reports chart;
@@ -175,8 +176,11 @@ def _labels(session: Session, events: list[TicketEvent]) -> dict[tuple, str]:
                 sprint.name or f"Sprint {sprint.number}"
             )
     if ids[TicketEventField.project]:
+        # An epic in the trash is still named (#323): the history happened.
         for project in session.exec(
-            select(Project).where(Project.id.in_(ids[TicketEventField.project]))
+            select(Project)
+            .where(Project.id.in_(ids[TicketEventField.project]))
+            .execution_options(**INCLUDE_TRASHED)
         ):
             labels[(TicketEventField.project, project.id)] = project.name
     return labels

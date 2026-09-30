@@ -27,8 +27,9 @@ is scope-based), no timers, no billing rates, no approvals.
   ever in it.** Time spent before a ticket was carried over to the next sprint
   stays with this one; counting the tickets currently in the sprint instead
   would move a finished sprint's hours whenever someone tidied the backlog.
-- Time belongs to the ticket: it moves with it to another team, and goes when
-  the ticket is deleted. Guests see it and cannot log it.
+- Time belongs to the ticket: it moves with it to another team, waits with it
+  in the [trash](trash.md), and goes when the ticket is purged. Guests see it
+  and cannot log it.
 
 ## API
 

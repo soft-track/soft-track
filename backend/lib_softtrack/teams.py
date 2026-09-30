@@ -33,6 +33,7 @@ from lib_softtrack.tables import (
     User,
     WorkflowStatus,
 )
+from lib_softtrack.trash import INCLUDE_TRASHED
 from lib_utils.errors import ErrorCode, api_error
 
 
@@ -231,7 +232,9 @@ def team_id_for_path(session: Session, path_params: Mapping[str, str]) -> int:
 
     for name, table, code, detail in _TEAM_OWNED_BY_PATH:
         if name in ids:
-            row = session.get(table, ids[name])
+            # The trash too (#323): restoring and purging name a row in it,
+            # and which team it is on is the question here either way.
+            row = session.get(table, ids[name], execution_options=INCLUDE_TRASHED)
             if row is None:
                 raise api_error(status_code=404, code=code, detail=detail)
             return row.team_id
@@ -364,6 +367,8 @@ def update_team(
         team.name = name
     if payload.description is not None:
         team.description = payload.description.strip() or None
+    if payload.any_member_may_delete is not None:
+        team.any_member_may_delete = payload.any_member_may_delete
 
     session.add(team)
     session.commit()

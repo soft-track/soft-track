@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from sqlmodel import select
 
 from lib_softtrack.tables import TicketEvent, TicketEventField
+from tests.conftest import delete_project_for_good
 
 
 def make_project(client, team, name="Platform"):
@@ -125,7 +126,7 @@ def test_deleting_a_project_records_its_tickets_leaving(client, team, session):
     """Otherwise the history would have them in a deleted project for ever."""
     project = make_project(client, team)
     ticket = make_ticket(client, team, project_id=project["id"])
-    client.delete(f"/projects/{project['id']}", headers=team["headers"])
+    delete_project_for_good(client, team["headers"], project["id"])
     assert project_events(session, ticket)[-1] == (str(project["id"]), None)
 
 

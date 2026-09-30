@@ -12,6 +12,7 @@ from sqlmodel import select
 
 from lib_softtrack.history import EVENT_LIMIT
 from lib_softtrack.tables import Ticket
+from tests.conftest import delete_project_for_good
 
 
 def make_ticket(client, team, title="Work", **fields):
@@ -112,7 +113,7 @@ def test_a_deleted_projects_name_is_gone_but_the_event_is_not(client, team):
     ).json()
     ticket = make_ticket(client, team)
     patch(client, team, ticket, project_id=project["id"])
-    client.delete(f"/projects/{project['id']}", headers=team["headers"])
+    delete_project_for_good(client, team["headers"], project["id"])
 
     joined, left = events(client, team, ticket)
     assert (joined["new_value"], joined["new_label"]) == (str(project["id"]), None)

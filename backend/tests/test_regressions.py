@@ -17,6 +17,7 @@ import pytest
 from sqlmodel import select
 
 from lib_softtrack.tables import Comment, TicketLabelLink, Label
+from tests.conftest import delete_for_good
 
 
 def test_deleting_a_ticket_that_has_a_label(client, team, session):
@@ -32,7 +33,7 @@ def test_deleting_a_ticket_that_has_a_label(client, team, session):
         headers=team["headers"],
     ).json()
 
-    response = client.delete(f"/tickets/{ticket['id']}", headers=team["headers"])
+    response = delete_for_good(client, team["headers"], ticket["id"])
     assert response.status_code == 204
 
     # the link row must be gone too, not merely orphaned
@@ -59,7 +60,7 @@ def test_deleting_a_ticket_that_has_a_comment(client, team, session):
         headers=team["headers"],
     )
 
-    response = client.delete(f"/tickets/{ticket['id']}", headers=team["headers"])
+    response = delete_for_good(client, team["headers"], ticket["id"])
     assert response.status_code == 204
 
     assert (

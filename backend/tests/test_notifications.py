@@ -8,6 +8,7 @@ import pytest
 from sqlmodel import select
 
 from lib_softtrack.tables import TicketWatch, Notification, User
+from tests.conftest import delete_for_good
 
 
 @pytest.fixture
@@ -459,7 +460,7 @@ def test_deleting_a_ticket_clears_its_inbox_rows(client, pair, session):
     comment(client, pair["member"], ticket, "hello")
     assert len(inbox(client, pair)) == 1
 
-    response = client.delete(f"/tickets/{ticket['id']}", headers=pair["headers"])
+    response = delete_for_good(client, pair["headers"], ticket["id"])
     assert response.status_code == 204, response.text
 
     assert inbox(client, pair) == []
