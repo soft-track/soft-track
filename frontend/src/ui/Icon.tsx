@@ -11,6 +11,7 @@ export type IconName =
   | 'chevron-up'
   | 'chevron-right'
   | 'chevron-left'
+  | 'arrow-left'
   | 'board'
   | 'list'
   | 'chart'
@@ -101,6 +102,8 @@ const PATHS: Record<IconName, JSX.Element> = {
   'chevron-up': <path d="m6 15 6-6 6 6" />,
   'chevron-right': <path d="m9 6 6 6-6 6" />,
   'chevron-left': <path d="m15 6-6 6 6 6" />,
+  // Back to where something came from: a linked ticket's modal (#114).
+  'arrow-left': <path d="M19 12H5M11 6l-6 6 6 6" />,
   board: (
     <>
       <rect x="3" y="4" width="5" height="16" rx="1.5" />

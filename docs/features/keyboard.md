@@ -29,7 +29,10 @@ just as dragging with the mouse does.
 
 On an open ticket, in the panel or on its page, `S`, `P`, `A` and `L` jump to
 status, priority, assignee and labels. The properties print those letters next
-to the fields, so the shortcut is discoverable from the thing it acts on.
+to the fields, so the shortcut is discoverable from the thing it acts on. With
+a linked ticket open in a modal over it, they act on the modal on top, and
+`Esc` closes that modal and nothing under it; see
+[the modal](ticket-views.md#a-linked-ticket-in-a-modal).
 
 **While writing** a description or comment, `⌘B`, `⌘I` and `⌘K` bold,
 italicise and link the selection. There, `⌘K` makes a link instead of opening
@@ -47,7 +50,8 @@ does not work is worse. One array makes both failures impossible.
 
 **Dialogs keep keyboard focus inside them while they're open.** This applies
 to every dialog that dims the page behind it: the new-ticket and new-sprint
-forms, the ticket panel, the command palette, the cheatsheet, and so on.
+forms, the ticket panel and a linked ticket's modal, the command palette, the
+cheatsheet, and so on.
 Opening one moves focus into it. Tab and Shift+Tab cycle through its controls
 and wrap at the ends, so they never reach the page behind it. Closing it puts
 focus back on whatever opened it. Each of these dialogs is marked

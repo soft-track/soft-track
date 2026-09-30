@@ -14,12 +14,21 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes, useNavigate, useParams } from 'react-router-dom'
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { TicketRead, SearchHit, TeamRead } from '@/api/generated/models'
 import TeamRoute from '@/app/TeamRoute'
 import type { BoardView } from '@/keyboard/useCommands'
+import { modalsIn, withModal } from '@/tickets/modals'
+import type { TicketRef } from '@/tickets/surface'
 
 const ENG: TeamRead = { id: 5, name: 'Engineering', key: 'ENG', created_at: '2026-01-01T00:00:00Z' }
 const TODO = { id: 1, team_id: 5, name: 'Todo', category: 'unstarted', position: 0, color: '#888' }
@@ -142,15 +151,39 @@ vi.mock('@/board/TopBar', () => ({
   ),
 }))
 
+// The panel, with a linked ticket to open in a modal over it the way its
+// stack does (#114), and the way out to a page that either takes.
+const LINKED = { id: 250, team_key: 'ENG', number: 25, identifier: 'ENG-25' }
+
 vi.mock('@/tickets/TicketDetailPanel', () => ({
-  TicketDetailPanel: ({ ticketId, onOpenAsPage }: { ticketId: number; onOpenAsPage?: () => void }) => (
-    <div>
-      <p>Panel for ticket {ticketId}</p>
-      <button type="button" onClick={onOpenAsPage}>
-        Open as page
-      </button>
-    </div>
-  ),
+  TicketDetailPanel: ({
+    ticketId,
+    openPage,
+  }: {
+    ticketId: number
+    openPage?: (ticket: TicketRef) => void
+  }) => {
+    const location = useLocation()
+    const navigate = useNavigate()
+    return (
+      <div>
+        <p>Panel for ticket {ticketId}</p>
+        <p>Modals over it: {modalsIn(location.state).length}</p>
+        <button type="button" onClick={() => openPage?.(STORM)}>
+          Open as page
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate(location, { state: withModal(location.state, LINKED) })}
+        >
+          Open the linked ticket
+        </button>
+        <button type="button" onClick={() => openPage?.(LINKED)}>
+          Open the linked ticket as a page
+        </button>
+      </div>
+    )
+  },
 }))
 
 vi.mock('@/tickets/TicketPage', () => ({
@@ -260,6 +293,23 @@ describe('leaving the board for a ticket page', () => {
     // The glance you left, over the view you left it on.
     await user.click(screen.getByRole('button', { name: 'Back' }))
     expect(screen.getByText('Panel for ticket 70')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'list' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('keeps the modals over the panel for Back, when one of them leaves for a page (#114)', async () => {
+    const user = renderApp()
+    await user.click(screen.getByRole('button', { name: 'list' }))
+    await user.click(screen.getByRole('link', { name: /ENG-7.*Retry storm/ }))
+    await user.click(screen.getByRole('button', { name: 'Open the linked ticket' }))
+    expect(screen.getByText('Modals over it: 1')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Open the linked ticket as a page' }))
+    expect(screen.getByText('Page for ENG-25')).toBeTruthy()
+
+    // Back to the panel as it was: the modal still over it, the list under it.
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByText('Panel for ticket 70')).toBeTruthy()
+    expect(screen.getByText('Modals over it: 1')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'list' }).getAttribute('aria-pressed')).toBe('true')
   })
 

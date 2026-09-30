@@ -63,17 +63,20 @@ export function useOpenTicket() {
 /**
  * The surface the ticket in front of you is on, set by that surface's chrome.
  *
- * Read by nothing but `useOpenRelatedTicket`: the sections below a surface's
- * header do not know where they are, they only ask it to open things.
+ * The sections below a surface's header do not read it: they do not know
+ * where they are, they only ask to open things (`useRelatedTickets`, in
+ * stackContext.ts). What reads it is the modals over the surface, to know
+ * where to stand, and `useOpenTicketHere`.
  */
 export const TicketSurfaceContext = createContext<TicketSurface>('page')
 
 /**
- * Open a ticket this one names -- its parent, a sub-ticket, a linked ticket --
- * on the surface you are already on. Following a link from the panel stays
- * over the board, and from the page stays a page.
+ * Go to a ticket on the surface you are already on: the panel stays over the
+ * board, and the page stays a page. For the ticket in front of you turning
+ * into another -- its new address after it moves teams -- not for a ticket it
+ * merely names, which opens in a modal over it (#114).
  */
-export function useOpenRelatedTicket() {
+export function useOpenTicketHere() {
   const surface = useContext(TicketSurfaceContext)
   const open = useOpenTicket()
   return useCallback((ticket: TicketRef) => open(ticket, surface), [open, surface])

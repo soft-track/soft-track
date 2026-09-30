@@ -1,4 +1,5 @@
-// Tickets (#106): the ticket card, the new-ticket form, the ticket panel and page.
+// Tickets (#106): the ticket card, the new-ticket form, the ticket panel and page, and
+// the linked-ticket modal (#114).
 import { meta } from '@/i18n/en/tickets/meta'
 import { history } from '@/i18n/en/tickets/history'
 import { card } from '@/i18n/en/tickets/card'
@@ -6,6 +7,7 @@ import { newTicket } from '@/i18n/en/tickets/newTicket'
 import { move } from '@/i18n/en/tickets/move'
 import { panel } from '@/i18n/en/tickets/panel'
 import { page } from '@/i18n/en/tickets/page'
+import { modal } from '@/i18n/en/tickets/modal'
 import { properties } from '@/i18n/en/tickets/properties'
 import { description } from '@/i18n/en/tickets/description'
 import { comments } from '@/i18n/en/tickets/comments'
@@ -23,6 +25,7 @@ export const tickets = {
   move,
   panel,
   page,
+  modal,
   properties,
   description,
   comments,

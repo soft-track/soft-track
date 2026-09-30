@@ -10,8 +10,9 @@ import {
 import { TicketLinkType, type TicketLinks, type TicketLinkRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useTranslation } from '@/i18n'
+import { OpensPageHint } from '@/tickets/detail/OpensPageHint'
 import { isResolved } from '@/tickets/ticketMeta'
-import { useOpenRelatedTicket } from '@/tickets/surface'
+import { type RelatedOpens, useRelatedTickets } from '@/tickets/stackContext'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 
@@ -45,8 +46,9 @@ export function TicketLinksSection({
 }) {
   const { t } = useTranslation(['tickets', 'common'])
   const { team } = useTeamContext()
-  // On whichever surface this ticket is on: see tickets/surface.ts.
-  const openTicket = useOpenRelatedTicket()
+  // Over this ticket in a modal, its page from the deepest modal, or back
+  // down to it when it is open beneath already (#114).
+  const related = useRelatedTickets()
   const queryClient = useQueryClient()
 
   const [adding, setAdding] = useState(false)
@@ -197,7 +199,9 @@ export function TicketLinksSection({
                   <LinkRow
                     key={row.id}
                     row={row}
-                    onOpen={() => openTicket(row.ticket)}
+                    onOpen={(opener) => related.open(row.ticket, opener)}
+                    opens={related.opens(row.ticket.id)}
+                    openAbove={related.openAbove === row.ticket.id}
                     onRemove={readOnly ? undefined : () => remove(row.id)}
                   />
                 ))}
@@ -213,10 +217,17 @@ export function TicketLinksSection({
 function LinkRow({
   row,
   onOpen,
+  opens,
+  openAbove,
   onRemove,
 }: {
   row: TicketLinkRead
-  onOpen: () => void
+  /** Follow the link; a modal it opens puts focus back on `opener` when it closes. */
+  onOpen: (opener: HTMLElement) => void
+  /** Whether that opens a modal, the ticket's page, or goes back down to it. */
+  opens: RelatedOpens
+  /** Its ticket is open in the modal over this one, which stands beside this row. */
+  openAbove: boolean
   onRemove?: () => void
 }) {
   const { t } = useTranslation('tickets')
@@ -224,11 +235,17 @@ function LinkRow({
   const resolved = isResolved(status)
 
   return (
-    <li className="group flex items-center gap-2 rounded-control px-2 py-1 transition hover:bg-neutral-900/4">
+    <li
+      className={`group flex items-center gap-2 rounded-control px-2 py-1 transition hover:bg-neutral-900/4 ${
+        openAbove ? 'opened-above' : ''
+      }`}
+    >
       <span className="dot" style={{ ['--dot' as string]: status.color }} title={status.name} />
       <button
         type="button"
-        onClick={onOpen}
+        onClick={(event) => onOpen(event.currentTarget)}
+        aria-haspopup={opens === 'modal' ? 'dialog' : undefined}
+        aria-expanded={opens === 'modal' ? openAbove : undefined}
         className="flex min-w-0 flex-1 items-baseline gap-2 text-left"
       >
         <span className="identifier shrink-0 text-xs text-neutral-400">
@@ -241,6 +258,7 @@ function LinkRow({
         >
           {row.ticket.title}
         </span>
+        {opens === 'page' && <OpensPageHint />}
       </button>
       {onRemove && (
         <button

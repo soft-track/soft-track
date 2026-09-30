@@ -965,4 +965,69 @@
     }
     .ticket-body-title { font-size: 1.5rem; }
   }
+
+  /* -- A linked ticket, in a modal over the one you are reading (#114) ------
+     The first one's scrim dims without blurring, so the ticket underneath
+     -- the row it was opened from -- stays readable. Where the screen has
+     room for both, it stands beside the panel rather than over it; short of
+     that, as far from the panel as it can. Over a page on a wide screen it
+     stands to the right, over the properties rather than the reading, and
+     is centred on a narrower one. On a phone it fills the width, as the
+     panel does. The second steps down, so the first one's header -- which
+     says what that was opened from -- shows above it, and its scrim blurs
+     as any other does: its own header names the whole trail. The sheet is
+     opaque, as a menu is (.glass-menu): over sharp text that nothing
+     blurred, a translucent one lets the text show through. */
+  .ticket-modal-scrim {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 0.5rem;
+  }
+  .ticket-modal-scrim[data-ticket-modal="1"] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .ticket-modal {
+    position: relative;
+    width: 100%;
+    max-width: 36rem;
+    max-height: 100%;
+  }
+  .ticket-modal-scrim[data-ticket-modal="2"] > .ticket-modal {
+    margin-top: 3.5rem;
+    max-height: calc(100% - 3.5rem);
+  }
+  @media (min-width: 40rem) {
+    .ticket-modal-scrim { padding: 4rem 0.75rem 0.75rem; }
+    .ticket-modal-scrim[data-over="panel"] { justify-content: flex-start; }
+    .ticket-modal-scrim[data-ticket-modal="2"] > .ticket-modal { left: 1.5rem; }
+  }
+  @media (min-width: 80rem) {
+    .ticket-modal-scrim { justify-content: flex-end; padding-right: 1.5rem; }
+    /* Clear of the panel: its width, its margin, and a gap. */
+    .ticket-modal-scrim[data-over="panel"] {
+      justify-content: flex-end;
+      padding-right: calc(36rem + 0.75rem + 1.25rem);
+    }
+    /* At the right edge already, so the second steps in instead. */
+    .ticket-modal-scrim[data-over="page"][data-ticket-modal="2"] > .ticket-modal { left: -1.5rem; }
+  }
+
+  /* Where a modal was opened from, and the way back there. */
+  .ticket-modal-from {
+    color: var(--color-brand-700);
+    background: color-mix(in oklab, var(--color-brand-500) 14%, transparent);
+  }
+  .ticket-modal-from:hover {
+    background: color-mix(in oklab, var(--color-brand-500) 22%, transparent);
+  }
+  :root[data-theme="dark"] .ticket-modal-from { color: var(--color-brand-300); }
+
+  /* The row a modal was opened from, while the modal stands beside it. */
+  .opened-above { background: color-mix(in oklab, var(--color-brand-500) 12%, transparent); }
+
+  /* "Opens the page", on a row in the deepest modal. */
+  .opens-page { color: var(--color-brand-600); }
+  :root[data-theme="dark"] .opens-page { color: var(--color-brand-300); }
 }

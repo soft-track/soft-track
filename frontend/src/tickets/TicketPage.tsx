@@ -8,9 +8,9 @@ import {
 import type { TicketRead, TeamRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useTranslation } from '@/i18n'
-import { useTicketShortcuts } from '@/tickets/detail/useTicketShortcuts'
 import { TicketDetailBody } from '@/tickets/TicketDetailBody'
 import { TicketHeaderActions } from '@/tickets/TicketHeaderActions'
+import { TicketStack } from '@/tickets/TicketStack'
 import { TicketSurfaceContext, ticketPath } from '@/tickets/surface'
 import { useTeamEvents } from '@/realtime/useTeamEvents'
 import { TeamProvider } from '@/team/TeamContext'
@@ -76,7 +76,11 @@ export function TicketPage() {
   return (
     <TeamProvider value={{ team, teams, ...teamData }}>
       <TicketSurfaceContext.Provider value="page">
-        <TicketPageView found={found.data} team={team} />
+        {/* S, P, A and L, as on the panel. A ticket this one links to opens
+            in a modal over it (#114), which is all Escape has to close. */}
+        <TicketStack ticket={found.data}>
+          <TicketPageView found={found.data} team={team} />
+        </TicketStack>
       </TicketSurfaceContext.Provider>
     </TeamProvider>
   )
@@ -89,8 +93,6 @@ function TicketPageView({ found, team }: { found: TicketRead; team: TeamRead }) 
   // by number already returned, so nothing waits on a second request.
   const { data } = useGetTicketTicketsTicketIdGet(found.id, { query: { initialData: found } })
   const ticket = data ?? found
-  // S, P, A and L, as on the panel. Escape has nothing to close here.
-  useTicketShortcuts()
 
   const documentTitle = t('page.documentTitle', {
     identifier: ticket.identifier,

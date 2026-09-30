@@ -25,12 +25,25 @@ function tabbables(root: HTMLElement): HTMLElement[] {
 const open: HTMLElement[] = []
 
 /**
+ * The innermost open modal dialog, or null: what the keyboard is for. A
+ * window-wide key listener asks, so that a dialog opened over its own --
+ * the cheatsheet over a ticket (#114) -- gets the Escape instead.
+ */
+export function topDialog(): HTMLElement | null {
+  return open[open.length - 1] ?? null
+}
+
+/**
  * Keep keyboard focus inside a modal dialog while it is open (#75).
  *
  * - On open, focus moves into the dialog, unless something in it has already
  *   taken focus with `autoFocus`.
  * - Tab and Shift+Tab cycle through the dialog's controls and wrap at the ends.
- * - On close, focus returns to whatever had it when the dialog opened.
+ * - On close, focus returns to whatever had it when the dialog opened -- or
+ *   to what `returnTo` gives, asked once on open, when the caller knows
+ *   better. Safari does not focus a button that is clicked, so a dialog
+ *   opened from a row (#114) names the row. If that is gone by then, the
+ *   dialog beneath takes focus instead.
  *
  * Put the returned ref on the element with `role="dialog"`, and give that
  * element `tabIndex={-1}` so it can hold focus itself when it has no
@@ -40,13 +53,15 @@ const open: HTMLElement[] = []
  * `focusin`: a dialog may own popups rendered in a portal outside it, and a
  * focusin guard would snatch focus back from them.
  */
-export function useFocusTrap<T extends HTMLElement>() {
+export function useFocusTrap<T extends HTMLElement>(returnTo?: () => HTMLElement | null) {
   const ref = useRef<T>(null)
   // Captured while rendering, before the commit: by the time an effect runs,
   // an `autoFocus` field inside the dialog has already taken focus, and the
   // opener would be lost.
-  const [opener] = useState(() =>
-    document.activeElement instanceof HTMLElement ? document.activeElement : null,
+  const [opener] = useState(
+    () =>
+      returnTo?.() ??
+      (document.activeElement instanceof HTMLElement ? document.activeElement : null),
   )
 
   useEffect(() => {
@@ -84,8 +99,14 @@ export function useFocusTrap<T extends HTMLElement>() {
       document.removeEventListener('keydown', onKeyDown)
       open.splice(open.indexOf(dialog), 1)
       // Only if it is still on the page: a card that was deleted from inside
-      // the dialog it opened has nowhere to be returned to.
+      // the dialog it opened has nowhere to be returned to. A dialog it was
+      // opened over is the next best place, rather than nowhere -- but only
+      // if focus is lost. Two dialogs closing together each get here, and
+      // the one beneath may already have put focus back where it belongs.
       if (opener?.isConnected) opener.focus()
+      else if (!document.activeElement || document.activeElement === document.body) {
+        open.findLast((beneath) => beneath.isConnected)?.focus()
+      }
     }
   }, [opener])
 

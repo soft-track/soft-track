@@ -29,7 +29,9 @@ vi.mock('@/api/generated/endpoints/custom-fields/custom-fields', async (importOr
   ...(await importOriginal<typeof import('@/api/generated/endpoints/custom-fields/custom-fields')>()),
   useListCustomFieldsTeamsTeamIdCustomFieldsGet: () => ({ data: mocks.fields }),
 }))
-vi.mock('@/tickets/surface', () => ({ useOpenRelatedTicket: () => vi.fn() }))
+vi.mock('@/tickets/stackContext', () => ({
+  useRelatedTickets: () => ({ open: vi.fn(), opensPage: false, openAbove: null }),
+}))
 
 const TEAM: TeamContextValue = {
   team: { id: 7, name: 'Engineering', key: 'ENG', created_at: '2026-01-01T00:00:00Z' },

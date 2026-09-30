@@ -23,11 +23,11 @@ import { Avatar } from '@/ui/Avatar'
  * Everything about one ticket below a surface's header (#112): the title and
  * description, its files, properties and sections, and the Activity feed.
  *
- * The panel over the board and the ticket's own page both render this, and
- * the linked-ticket modal (#114) will too; each brings its own chrome. Nothing
- * in here knows which surface it is in. The layout follows the width it is
- * given -- see `.ticket-body` in index.css -- and opening another ticket goes
- * through `useOpenRelatedTicket`, which asks the surface.
+ * The panel over the board, the ticket's own page and the linked-ticket modal
+ * (#114) all render this; each brings its own chrome. Nothing in here knows
+ * which surface it is in. The layout follows the width it is given -- see
+ * `.ticket-body` in index.css -- and opening another ticket goes through
+ * `useRelatedTickets`, which asks the stack the body is in.
  */
 export function TicketDetailBody({ ticketId }: { ticketId: number }) {
   const { t } = useTranslation(['tickets', 'common'])
@@ -42,16 +42,7 @@ export function TicketDetailBody({ ticketId }: { ticketId: number }) {
   // only decides whether to offer it.
   const isTeamAdmin = members.find((member) => member.user.id === user?.id)?.role === 'admin'
 
-  if (!ticket) {
-    return (
-      <div className="flex flex-1 flex-col gap-3 p-5" aria-busy="true">
-        <div className="skeleton h-7 w-3/4" />
-        <div className="skeleton h-4 w-full" />
-        <div className="skeleton h-4 w-5/6" />
-        <div className="skeleton mt-4 h-36 w-full" />
-      </div>
-    )
-  }
+  if (!ticket) return <TicketBodySkeleton />
 
   return (
     <div className="ticket-body">
@@ -151,6 +142,18 @@ export function TicketDetailBody({ ticketId }: { ticketId: number }) {
           />
         </div>
       </div>
+    </div>
+  )
+}
+
+/** The body's shape while its ticket loads. */
+export function TicketBodySkeleton() {
+  return (
+    <div className="flex flex-1 flex-col gap-3 p-5" aria-busy="true">
+      <div className="skeleton h-7 w-3/4" />
+      <div className="skeleton h-4 w-full" />
+      <div className="skeleton h-4 w-5/6" />
+      <div className="skeleton mt-4 h-36 w-full" />
     </div>
   )
 }

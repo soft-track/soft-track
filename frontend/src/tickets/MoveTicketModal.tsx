@@ -10,7 +10,7 @@ import type { TicketRead, TeamRead, TransferPlan } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useTranslation } from '@/i18n'
 import { formatList } from '@/i18n/format'
-import { useOpenRelatedTicket } from '@/tickets/surface'
+import { useOpenTicketHere } from '@/tickets/surface'
 import { Select } from '@/ui/Select'
 import { useFocusTrap } from '@/ui/useFocusTrap'
 
@@ -36,7 +36,7 @@ export function MoveTicketModal({
   const dialogRef = useFocusTrap<HTMLDivElement>()
   const titleId = useId()
   // Its new address, on the surface it was moved from.
-  const openTicket = useOpenRelatedTicket()
+  const openTicket = useOpenTicketHere()
   const queryClient = useQueryClient()
   const [teamId, setTeamId] = useState(teams.length === 1 ? String(teams[0].id) : '')
   const [error, setError] = useState<string | null>(null)

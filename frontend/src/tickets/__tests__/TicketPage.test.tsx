@@ -11,7 +11,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { TicketRead, TeamRead } from '@/api/generated/models'
 import { TicketPage } from '@/tickets/TicketPage'
-import { surfaceFor, useOpenRelatedTicket } from '@/tickets/surface'
+import { modalsIn } from '@/tickets/modals'
+import { useRelatedTickets } from '@/tickets/stackContext'
+import { surfaceFor } from '@/tickets/surface'
 
 const ENG: TeamRead = { id: 5, name: 'Engineering', key: 'ENG', created_at: '2026-01-01T00:00:00Z' }
 
@@ -82,12 +84,21 @@ vi.mock('@/api/generated/endpoints/tickets/tickets', async (importOriginal) => (
 // The body is its own subject; here it only has to show it was given the
 // right ticket, and follow a link the way a section would.
 vi.mock('@/tickets/TicketDetailBody', () => ({
+  TicketBodySkeleton: () => null,
   TicketDetailBody: ({ ticketId }: { ticketId: number }) => {
-    const open = useOpenRelatedTicket()
+    const related = useRelatedTickets()
     return (
       <div>
         <p>Body for ticket {ticketId}</p>
-        <button type="button" onClick={() => open({ team_key: 'ENG', number: 3 })}>
+        <button
+          type="button"
+          onClick={(event) =>
+            related.open(
+              { id: 30, team_key: 'ENG', number: 3, identifier: 'ENG-3' },
+              event.currentTarget,
+            )
+          }
+        >
           Open the parent
         </button>
       </div>
@@ -102,7 +113,11 @@ vi.mock('@/notifications/WatchToggle', () => ({
 function Where() {
   const location = useLocation()
   return (
-    <output data-testid="where" data-surface={surfaceFor(location.state)}>
+    <output
+      data-testid="where"
+      data-surface={surfaceFor(location.state)}
+      data-modals={modalsIn(location.state).length}
+    >
       {location.pathname}
     </output>
   )
@@ -183,15 +198,23 @@ describe('the ticket page', () => {
     expect(screen.getAllByText('Copied').length).toBeGreaterThan(0)
   })
 
-  it('stays a page when a link inside it is followed', async () => {
+  it('opens a ticket it links to in a modal over it, and stays where it is (#114)', async () => {
     renderPage('/ENG/ticket/7')
 
     await userEvent.click(screen.getByRole('button', { name: 'Open the parent' }))
 
-    expect(screen.getByText('Body for ticket 30')).toBeTruthy()
+    const modal = screen.getByRole('dialog', { name: 'ENG-3' })
+    expect(modal.textContent).toContain('Body for ticket 30')
+    expect(screen.getByText('Body for ticket 70')).toBeTruthy()
     const where = screen.getByTestId('where')
-    expect(where.textContent).toBe('/ENG/ticket/3')
+    expect(where.textContent).toBe('/ENG/ticket/7')
     expect(where.dataset.surface).toBe('page')
+    expect(where.dataset.modals).toBe('1')
+
+    // And Escape, which has nothing else to close here, closes it.
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(where.textContent).toBe('/ENG/ticket/7')
   })
 
   it('says so when the team has no ticket by that number', () => {
