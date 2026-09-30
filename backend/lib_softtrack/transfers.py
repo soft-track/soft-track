@@ -58,8 +58,8 @@ from lib_softtrack.tables import (
     WorkflowStatus,
 )
 from lib_softtrack.teams import (
+    can_be_assigned,
     get_team_or_404,
-    is_team_member,
     require_team_member,
     require_team_writer,
 )
@@ -128,7 +128,8 @@ def _plan_one(
         labels_dropped=dropped,
         clear_assignee=(
             ticket.assignee_id is not None
-            and not is_team_member(target.id, ticket.assignee_id, session)
+            # A guest there cannot hold it either (#316).
+            and not can_be_assigned(target.id, ticket.assignee_id, session)
         ),
         detach_parent=ticket.parent_id is not None
         and ticket.parent_id not in moving_ids,

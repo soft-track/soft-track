@@ -1,6 +1,6 @@
 """Team services, including the membership guards the other domains rely on."""
 
-from typing import Mapping
+from typing import Mapping, Optional
 
 from sqlmodel import Session, case, func, select
 
@@ -53,6 +53,48 @@ def is_team_member(team_id: int, user_id: int, session: Session) -> bool:
         ).first()
         is not None
     )
+
+
+def _role_on(team_id: int, user_id: int, session: Session) -> Optional[TeamRole]:
+    return session.exec(
+        select(TeamMember.role).where(
+            TeamMember.team_id == team_id, TeamMember.user_id == user_id
+        )
+    ).first()
+
+
+def can_be_assigned(team_id: int, user_id: int, session: Session) -> bool:
+    """Whether somebody may hold one of the team's tickets (#316).
+
+    An admin or a member. A guest is on the team to read it and could not move
+    the ticket along, and somebody on no team could not even open it. Every
+    path that puts a name on a ticket comes through here or through
+    `require_assignable`: creating one, editing one or many, a rule, a move
+    from another team, an import, and handing work on when somebody leaves.
+    """
+    role = _role_on(team_id, user_id, session)
+    return role is not None and role != TeamRole.guest
+
+
+def require_assignable(team_id: int, user_id: Optional[int], session: Session) -> None:
+    """Refuse an assignee who may not hold the team's tickets. None is nobody."""
+    if user_id is None:
+        return
+    role = _role_on(team_id, user_id, session)
+    if role is None:
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.user_not_on_team,
+            detail="The assignee is not a member of this team.",
+        )
+    if role == TeamRole.guest:
+        # The same code as a stranger: to a client both mean "pick somebody
+        # else". The sentence says which it was.
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.user_not_on_team,
+            detail="Guests can view this team but not be assigned its tickets.",
+        )
 
 
 def require_team_member(team_id: int, user: User, session: Session) -> TeamMember:
@@ -403,9 +445,21 @@ def update_team_member_role(
             code=ErrorCode.last_team_admin,
             detail="A team needs at least one admin",
         )
+    # A guest holds no tickets (#316), so becoming one hands on the open ones,
+    # the way leaving does.
+    becoming_a_guest = (
+        payload.role == TeamRole.guest and membership.role != TeamRole.guest
+    )
+    if becoming_a_guest:
+        _check_handover(session, team_id, member_user_id, payload.reassign_to)
 
     membership.role = payload.role
     session.add(membership)
+    if becoming_a_guest:
+        session.flush()
+        _hand_over_open_tickets(
+            session, current_user, team_id, member_user_id, payload.reassign_to
+        )
     session.commit()
     session.refresh(membership)
 
@@ -418,14 +472,21 @@ def update_team_member_role(
 
 
 def remove_team_member(
-    session: Session, current_user: User, team_id: int, member_user_id: int
+    session: Session,
+    current_user: User,
+    team_id: int,
+    member_user_id: int,
+    reassign_to: Optional[int] = None,
 ) -> None:
     """Remove someone from a team, or leave it yourself.
 
     One function for both because they are the same row and the same guards --
-    only who is allowed to ask differs. Tickets stay assigned to whoever left,
-    the way Jira leaves them: unassigning them would quietly rewrite history
-    and lose the one piece of information anybody still wants.
+    only who is allowed to ask differs.
+
+    Their open tickets go to `reassign_to`, or to nobody (#316). Left with
+    them, the tickets would count in the workload of somebody who can no
+    longer open them. Done and cancelled tickets keep their name: there it
+    records who did the work, which is what anybody still wants to know.
     """
     get_team_or_404(team_id, session)
 
@@ -443,6 +504,39 @@ def remove_team_member(
             code=ErrorCode.last_team_admin,
             detail="A team needs at least one admin",
         )
+    _check_handover(session, team_id, member_user_id, reassign_to)
 
+    # Gone before the tickets are handed on, so a rule that fires on the
+    # change cannot give one straight back to them.
     session.delete(membership)
+    session.flush()
+    _hand_over_open_tickets(session, current_user, team_id, member_user_id, reassign_to)
     session.commit()
+
+
+def _check_handover(
+    session: Session, team_id: int, member_user_id: int, reassign_to: Optional[int]
+) -> None:
+    """Refuse a handover before anything changes: to the person giving the
+    tickets up, or to somebody who could not hold them."""
+    if reassign_to == member_user_id:
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.user_not_on_team,
+            detail="Their tickets have to go to somebody else on the team.",
+        )
+    require_assignable(team_id, reassign_to, session)
+
+
+def _hand_over_open_tickets(
+    session: Session,
+    current_user: User,
+    team_id: int,
+    member_user_id: int,
+    reassign_to: Optional[int],
+) -> None:
+    # Imported here: the ticket service depends on this module for its
+    # membership guards.
+    from lib_softtrack.tickets import hand_over_open_tickets
+
+    hand_over_open_tickets(session, current_user, team_id, member_user_id, reassign_to)

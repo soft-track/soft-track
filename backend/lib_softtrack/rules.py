@@ -58,6 +58,7 @@ from lib_softtrack.tables import (
     User,
     WorkflowStatus,
 )
+from lib_softtrack.teams import can_be_assigned
 
 #: The ticket fields whose movement can set a rule off. Snapshotted before an
 #: update the way `history.snapshot` and `notifications.snapshot` are -- three
@@ -334,9 +335,17 @@ def _apply(
         and ticket.assignee_id != actions.set_assignee_id
     ):
         assignee = session.get(User, actions.set_assignee_id)
-        ticket.assignee_id = actions.set_assignee_id
-        lines.append(f"Assigned to {assignee.full_name}")
-        touched_ticket = True
+        # Checked again now, not only when the rule was saved: the person it
+        # names may have left the team since, or become a guest (#316).
+        if can_be_assigned(ticket.team_id, assignee.id, session):
+            ticket.assignee_id = actions.set_assignee_id
+            lines.append(f"Assigned to {assignee.full_name}")
+            touched_ticket = True
+        else:
+            lines.append(
+                f"Did not assign {assignee.full_name}, "
+                "who can no longer hold this team's tickets"
+            )
 
     if actions.add_label_id is not None and not _has_label(
         session, ticket.id, actions.add_label_id

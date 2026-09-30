@@ -9,4 +9,5 @@ import type { TeamRole } from './teamRole';
 
 export interface TeamMemberUpdate {
   role: TeamRole;
+  reassign_to?: number | null;
 }

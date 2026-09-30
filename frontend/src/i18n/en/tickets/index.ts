@@ -16,6 +16,7 @@ import { subTickets } from '@/i18n/en/tickets/subTickets'
 import { development } from '@/i18n/en/tickets/development'
 import { time } from '@/i18n/en/tickets/time'
 import { customFields } from '@/i18n/en/tickets/customFields'
+import { assignee } from '@/i18n/en/tickets/assignee'
 
 export const tickets = {
   meta,
@@ -34,4 +35,5 @@ export const tickets = {
   development,
   time,
   customFields,
+  assignee,
 } as const

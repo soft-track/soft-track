@@ -191,6 +191,11 @@ def list_tickets(
         None, description="Only tickets due on or before this day."
     ),
     type: Optional[TicketType] = Query(None, description="Only tickets of this type."),
+    resolved: Optional[bool] = Query(
+        None,
+        description="true for only done and cancelled tickets, false for only "
+        "the ones still open.",
+    ),
     sort: TicketSort = Query(TicketSort.created, description="What to order by."),
     direction: SortDirection = Query(
         SortDirection.desc,
@@ -218,6 +223,7 @@ def list_tickets(
         due_from=due_from,
         due_to=due_to,
         type=type,
+        resolved=resolved,
         sort=sort,
         direction=direction,
         limit=limit,

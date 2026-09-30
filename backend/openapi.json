@@ -1622,6 +1622,24 @@
               "type": "integer",
               "title": "User Id"
             }
+          },
+          {
+            "name": "reassign_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Who takes their open tickets on this team. Left out, the tickets are unassigned. Done and cancelled tickets keep their assignee.",
+              "title": "Reassign To"
+            },
+            "description": "Who takes their open tickets on this team. Left out, the tickets are unassigned. Done and cancelled tickets keep their assignee."
           }
         ],
         "responses": {
@@ -2582,6 +2600,24 @@
               "title": "Type"
             },
             "description": "Only tickets of this type."
+          },
+          {
+            "name": "resolved",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "true for only done and cancelled tickets, false for only the ones still open.",
+              "title": "Resolved"
+            },
+            "description": "true for only done and cancelled tickets, false for only the ones still open."
           },
           {
             "name": "sort",
@@ -17043,6 +17079,17 @@
         "properties": {
           "role": {
             "$ref": "#/components/schemas/TeamRole"
+          },
+          "reassign_to": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reassign To"
           }
         },
         "type": "object",

@@ -38,15 +38,55 @@ export const members = {
     revoke: 'Revoke',
   },
   confirm: {
-    leave: 'Leave {{team}}? You will lose access to its tickets.',
-    remove: 'Remove {{name}} from {{team}}? Their tickets stay assigned to them.',
     revoke: 'Revoke the invitation to {{email}}?',
+  },
+  // Asked before somebody stops being able to hold the team's tickets (#316):
+  // removed, leaving, or made a guest. Done and cancelled tickets keep their
+  // assignee, so only open ones are counted.
+  handover: {
+    title: {
+      remove: 'Remove {{name}} from {{team}}?',
+      leave: 'Leave {{team}}?',
+      guest: 'Make {{name}} a guest?',
+    },
+    intro: {
+      remove: 'They lose access to its tickets.',
+      leave: 'You will lose access to its tickets.',
+      guest: 'A guest can read {{team}} but not change it, or hold its tickets.',
+    },
+    counting: 'Counting their open tickets…',
+    holds_one:
+      '{{name}} has <strong>{{count}} open ticket</strong> on this team. It stays on the board either way.',
+    holds_other:
+      '{{name}} has <strong>{{count}} open tickets</strong> on this team. They stay on the board either way.',
+    youHold_one:
+      'You have <strong>{{count}} open ticket</strong> on this team. It stays on the board either way.',
+    youHold_other:
+      'You have <strong>{{count}} open tickets</strong> on this team. They stay on the board either way.',
+    legend_one: 'What happens to the open ticket',
+    legend_other: 'What happens to the open tickets',
+    unassign_one: 'Leave it unassigned',
+    unassign_other: 'Leave them unassigned',
+    reassign_one: 'Give it to somebody on the team',
+    reassign_other: 'Give them to somebody on the team',
+    choose: 'Choose a person',
+    more_one: 'and {{count}} more',
+    more_other: 'and {{count}} more',
+    confirm: {
+      remove: 'Remove member',
+      leave: 'Leave team',
+      guest: 'Make guest',
+    },
+    failed: {
+      remove: 'Could not remove that member.',
+      leave: 'Could not leave the team.',
+      guest: 'Could not change that role.',
+    },
   },
   errors: {
     invite: 'Could not send that invitation.',
     clipboard: 'Could not reach the clipboard. The link is {{link}}',
     role: 'Could not change that role.',
-    remove: 'Could not remove that member.',
     revoke: 'Could not revoke that invitation.',
     resend: 'Could not resend that invitation.',
   },

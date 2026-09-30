@@ -14,7 +14,7 @@ import {
   TYPE_META,
   TYPE_ORDER,
 } from '@/tickets/ticketMeta'
-import { activeMembers } from '@/team/members'
+import { AssigneeOptions } from '@/tickets/AssigneeOptions'
 import { pickableProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Select } from '@/ui/Select'
@@ -174,13 +174,9 @@ export function TicketProperties({
         >
           <option value="">{t('properties.unassigned')}</option>
           {/* The current assignee stays listed even if their account was
-              switched off, so opening the ticket does not quietly offer to
-              unassign it. */}
-          {activeMembers(members, ticket.assignee?.id).map((user) => (
-            <option key={user.id} value={user.id}>
-              {user.full_name}
-            </option>
-          ))}
+              switched off, or they are a guest now, so opening the ticket
+              does not quietly offer to unassign it. */}
+          <AssigneeOptions members={members} keepId={ticket.assignee?.id} />
         </Select>
       </Row>
 

@@ -99,6 +99,29 @@ Anyone can leave a team on their own. A team always keeps at least one **active*
 "active" matters, because a team whose other admin was deactivated months ago
 would otherwise be one departure away from having nobody who can add anyone.
 
+### Who can hold a ticket
+
+A ticket's assignee is an admin or a member of its team (#316). Somebody on no
+team could not open the ticket they were given, and a guest could not move it
+along, so the API refuses both with `400 user_not_on_team`, and the sentence
+says which it was. The one check, `can_be_assigned` in
+`backend/lib_softtrack/teams.py`, is asked on every path that puts a name on a
+ticket: creating one, editing one or many, an automation rule when it is saved
+and again when it fires, a move from another team, and a Jira import. Pickers
+list a team's guests in a group of their own, **Guests · read-only**, where
+they can be seen but not chosen. A ticket assigned to somebody before they
+became a guest keeps them until it is given to somebody else.
+
+When somebody stops being able to hold the team's tickets -- they are removed,
+they leave, or they are made a guest -- the members page counts the open
+tickets they hold and asks where those go: nowhere, leaving them unassigned,
+or to somebody else on the team. The API takes the answer as `reassign_to`
+(a query parameter on the `DELETE`, a field on the role change) and unassigns
+when it is left out. Each ticket changes hands the way a person would change
+it, so its history, the new assignee's inbox, webhooks and rules all hear of
+it. Done and cancelled tickets keep their assignee: there the name records who
+did the work.
+
 A team's **key** cannot be changed. `ENG-42` is already in commit messages,
 chat logs and browser history by the time anyone wants to rename it.
 

@@ -13,12 +13,13 @@ import {
   useRemoveTeamMemberTeamsTeamIdMembersUserIdDelete,
   useUpdateTeamMemberRoleTeamsTeamIdMembersUserIdPatch,
 } from '@/api/generated/endpoints/teams/teams'
-import type { InviteRead, TeamRole } from '@/api/generated/models'
+import type { InviteRead, TeamRole, UserPublic } from '@/api/generated/models'
 import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { formatRelative } from '@/i18n/format'
+import { type HandOver, HandOverDialog } from '@/settings/HandOverDialog'
 import { DeactivatedChip, RoleChip } from '@/settings/RoleChip'
 import { ROLE_HINTS, ROLE_LABELS } from '@/settings/roles'
 import { copyInviteLink, inviteUrl } from '@/settings/inviteLink'
@@ -66,6 +67,10 @@ export default function TeamMembersSettings() {
   const [emailIt, setEmailIt] = useState(true)
   const [copied, setCopied] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Somebody about to stop holding the team's tickets (#316), and why.
+  const [handover, setHandover] = useState<{ change: HandOver; person: UserPublic } | null>(
+    null,
+  )
 
   if (isLoading) return <Loading />
   if (!team) {
@@ -106,7 +111,13 @@ export default function TeamMembersSettings() {
     else window.setTimeout(() => setCopied(null), 2000)
   }
 
-  const onRoleChange = async (userId: number, role: TeamRole) => {
+  const onRoleChange = async (person: UserPublic, from: TeamRole, role: TeamRole) => {
+    // A guest holds no tickets, so becoming one asks what happens to theirs.
+    if (role === 'guest' && from !== 'guest') {
+      setHandover({ change: 'guest', person })
+      return
+    }
+    const userId = person.id
     setError(null)
     try {
       await updateRole.mutateAsync({ teamId: team.id, userId, data: { role } })
@@ -116,25 +127,38 @@ export default function TeamMembersSettings() {
     }
   }
 
-  const onRemove = async (userId: number, name: string) => {
-    const leaving = userId === user?.id
-    const question = leaving
-      ? t('members.confirm.leave', { team: team.name })
-      : t('members.confirm.remove', { name, team: team.name })
-    if (!window.confirm(question)) return
-
+  // Removing somebody, or leaving, asks the same question first.
+  const onRemove = (person: UserPublic) => {
     setError(null)
-    try {
-      await removeMember.mutateAsync({ teamId: team.id, userId })
-      if (leaving) {
-        queryClient.invalidateQueries({ queryKey: ['/teams'] })
-        navigate('/')
-        return
-      }
-      refreshMembers()
-    } catch (err: unknown) {
-      setError(errorDetail(err, t('members.errors.remove')))
+    setHandover({ change: person.id === user?.id ? 'leave' : 'remove', person })
+  }
+
+  // Errors are left to the dialog, which shows them and stays open.
+  const onHandOver = async (reassignTo: number | undefined) => {
+    if (!handover) return
+    const { change, person } = handover
+    if (change === 'guest') {
+      await updateRole.mutateAsync({
+        teamId: team.id,
+        userId: person.id,
+        data: { role: 'guest', reassign_to: reassignTo },
+      })
+    } else {
+      await removeMember.mutateAsync({
+        teamId: team.id,
+        userId: person.id,
+        params: reassignTo === undefined ? undefined : { reassign_to: reassignTo },
+      })
     }
+    setHandover(null)
+    // Their open tickets changed hands.
+    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/tickets`] })
+    if (change === 'leave') {
+      queryClient.invalidateQueries({ queryKey: ['/teams'] })
+      navigate('/')
+      return
+    }
+    refreshMembers()
   }
 
   const onRevoke = async (invite: InviteRead) => {
@@ -274,7 +298,9 @@ export default function TeamMembersSettings() {
                 <Select
                   dense
                   value={member.role}
-                  onChange={(e) => onRoleChange(member.user.id, e.target.value as TeamRole)}
+                  onChange={(e) =>
+                    onRoleChange(member.user, member.role, e.target.value as TeamRole)
+                  }
                   aria-label={t('members.list.roleFor', { name: member.user.full_name })}
                   title={ROLE_HINTS[member.role]}
                 >
@@ -287,7 +313,7 @@ export default function TeamMembersSettings() {
               {(isAdmin || member.user.id === user?.id) && (
                 <button
                   type="button"
-                  onClick={() => onRemove(member.user.id, member.user.full_name)}
+                  onClick={() => onRemove(member.user)}
                   className="btn btn-danger-ghost btn-sm"
                 >
                   {member.user.id === user?.id ? t('members.list.leave') : t('common:remove')}
@@ -381,6 +407,17 @@ export default function TeamMembersSettings() {
             </ul>
           )}
         </section>
+      )}
+
+      {handover && (
+        <HandOverDialog
+          change={handover.change}
+          person={handover.person}
+          team={team}
+          members={members.data ?? []}
+          onClose={() => setHandover(null)}
+          onConfirm={onHandOver}
+        />
       )}
     </div>
   )

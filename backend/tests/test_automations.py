@@ -236,7 +236,7 @@ def test_rewriting_a_rule_is_checked_against_its_team(client, pair, auth):
         headers=pair["headers"],
     )
     assert response.status_code == 400
-    assert "not on this team" in response.json()["detail"]
+    assert response.json()["code"] == "user_not_on_team"
 
 
 def test_a_rule_on_a_team_you_are_not_in_is_not_found(client, pair, auth):

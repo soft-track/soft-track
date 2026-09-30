@@ -141,11 +141,15 @@ def test_unsized_tickets_are_counted_not_treated_as_zero(client, team):
 
 def test_points_are_summed_per_assignee(client, team, auth):
     other = auth(email="second@softtrack.dev", full_name="Second User")
-    client.post(
+    # By email, which is what the route takes. It used to send a user id,
+    # which was refused, and the ticket below was assigned to somebody on no
+    # team anyway -- until that stopped being possible (#316).
+    added = client.post(
         f"/teams/{team['team']['id']}/members",
-        json={"user_id": other["user"]["id"]},
+        json={"email": other["user"]["email"]},
         headers=team["headers"],
     )
+    assert added.status_code == 200, added.text
 
     make_ticket(client, team, estimate=8, assignee_id=team["user"]["id"])
     make_ticket(client, team, estimate=3, assignee_id=other["user"]["id"])

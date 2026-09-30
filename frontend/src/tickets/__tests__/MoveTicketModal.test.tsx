@@ -138,7 +138,7 @@ describe('PlanSummary', () => {
       'Keeps bug.',
       'Loses frontend and design — no label by that name there.',
       'Leaves Sprint 4; sprints belong to one team.',
-      'Is unassigned from Maya Chen, who is not on that team.',
+      'Is unassigned from Maya Chen, who cannot hold tickets on that team.',
       'Clears Reviewer; fields belong to one team.',
       'Takes its sub-ticket ENG-43 with it.',
     ])

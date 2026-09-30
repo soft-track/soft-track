@@ -42,6 +42,9 @@ class TeamMemberAdd(BaseModel):
 
 class TeamMemberUpdate(BaseModel):
     role: TeamRole
+    #: Who takes the open tickets of somebody made a guest, who may not hold
+    #: any (#316). Left out, they are unassigned. Ignored for other changes.
+    reassign_to: Optional[int] = None
 
 
 class TeamMemberRead(BaseModel):

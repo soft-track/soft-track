@@ -38,7 +38,8 @@ class TransferPlan(BaseModel):
     #: Names of what is cleared, or null when there was nothing to clear.
     sprint_cleared: Optional[str] = None
     project_cleared: Optional[str] = None
-    #: The assignee, when they are not on the target team.
+    #: The assignee, when they cannot hold the target team's tickets: they
+    #: are not on it, or only a guest there (#316).
     assignee_cleared: Optional[str] = None
     #: The team's own fields (#117) the ticket has a value in, by name. They
     #: belong to the team it is leaving, so their values go.

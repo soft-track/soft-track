@@ -26,6 +26,7 @@ import type {
 
 import type {
   HTTPValidationError,
+  RemoveTeamMemberTeamsTeamIdMembersUserIdDeleteParams,
   TeamCreate,
   TeamMemberAdd,
   TeamMemberRead,
@@ -609,12 +610,14 @@ export const useUpdateTeamMemberRoleTeamsTeamIdMembersUserIdPatch = <TError = HT
 export const removeTeamMemberTeamsTeamIdMembersUserIdDelete = (
     teamId: number,
     userId: number,
+    params?: RemoveTeamMemberTeamsTeamIdMembersUserIdDeleteParams,
  signal?: AbortSignal
 ) => {
 
 
       return apiClient<void>(
-      {url: `/teams/${teamId}/members/${userId}`, method: 'DELETE', signal
+      {url: `/teams/${teamId}/members/${userId}`, method: 'DELETE',
+        params, signal
     },
       );
     }
@@ -639,9 +642,9 @@ const {mutation: mutationOptions} = options ?
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeTeamMemberTeamsTeamIdMembersUserIdDelete>>, RemoveTeamMemberTeamsTeamIdMembersUserIdDeleteMutationVariables> = (props) => {
-          const {teamId,userId} = props ?? {};
+          const {teamId,userId,params} = props ?? {};
 
-          return  removeTeamMemberTeamsTeamIdMembersUserIdDelete(teamId,userId,)
+          return  removeTeamMemberTeamsTeamIdMembersUserIdDelete(teamId,userId,params,)
         }
 
 
@@ -654,7 +657,7 @@ const {mutation: mutationOptions} = options ?
     export type RemoveTeamMemberTeamsTeamIdMembersUserIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof removeTeamMemberTeamsTeamIdMembersUserIdDelete>>>
 
     export type RemoveTeamMemberTeamsTeamIdMembersUserIdDeleteMutationError = HTTPValidationError
-    export type RemoveTeamMemberTeamsTeamIdMembersUserIdDeleteMutationVariables = {teamId: number;userId: number}
+    export type RemoveTeamMemberTeamsTeamIdMembersUserIdDeleteMutationVariables = {teamId: number;userId: number;params?: RemoveTeamMemberTeamsTeamIdMembersUserIdDeleteParams}
 
     /**
  * @summary Remove Team Member

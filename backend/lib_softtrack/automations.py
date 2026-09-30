@@ -38,12 +38,12 @@ from lib_softtrack.tables import (
     Label,
     Project,
     Team,
-    TeamMember,
     User,
     WorkflowStatus,
 )
 from lib_softtrack.teams import (
     get_team_or_404,
+    require_assignable,
     require_team_admin,
     require_team_member,
 )
@@ -126,19 +126,6 @@ def _belongs_to_team(session: Session, table, row_id: Optional[int], team_id: in
     return row
 
 
-def _is_member(session: Session, team_id: int, user_id: Optional[int]) -> bool:
-    if user_id is None:
-        return True
-    return (
-        session.exec(
-            select(TeamMember).where(
-                TeamMember.team_id == team_id, TeamMember.user_id == user_id
-            )
-        ).first()
-        is not None
-    )
-
-
 def _validate(
     session: Session, team_id: int, conditions: RuleConditions, actions: RuleActions
 ) -> None:
@@ -162,13 +149,10 @@ def _validate(
             "Use the active sprint instead.",
         )
 
+    # The condition as well as the action: a rule waiting for a guest to be
+    # assigned would wait forever (#316).
     for user_id in (conditions.if_assignee_id, actions.set_assignee_id):
-        if not _is_member(session, team_id, user_id):
-            raise api_error(
-                status_code=400,
-                code=ErrorCode.user_not_on_team,
-                detail="That person is not on this team",
-            )
+        require_assignable(team_id, user_id, session)
 
 
 def _assert_name_free(

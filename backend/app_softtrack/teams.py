@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, Response
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query, Response
 from sqlmodel import Session
 
 from app_softtrack.guards import team_writer
@@ -96,9 +98,16 @@ def update_team_member_role(
 def remove_team_member(
     team_id: int,
     user_id: int,
+    reassign_to: Optional[int] = Query(
+        None,
+        description="Who takes their open tickets on this team. Left out, the "
+        "tickets are unassigned. Done and cancelled tickets keep their assignee.",
+    ),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
     """Remove a member, or -- when the ids match -- leave the team yourself."""
-    teams_service.remove_team_member(session, current_user, team_id, user_id)
+    teams_service.remove_team_member(
+        session, current_user, team_id, user_id, reassign_to
+    )
     return Response(status_code=204)

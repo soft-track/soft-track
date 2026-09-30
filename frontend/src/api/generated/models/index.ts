@@ -173,6 +173,7 @@ export * from './reimbursementBatchPage';
 export * from './reimbursementBatchRead';
 export * from './reimbursementBatchSummary';
 export * from './reimbursementCarry';
+export * from './removeTeamMemberTeamsTeamIdMembersUserIdDeleteParams';
 export * from './reportLoad';
 export * from './repositoryCreate';
 export * from './repositoryLinkedItem';

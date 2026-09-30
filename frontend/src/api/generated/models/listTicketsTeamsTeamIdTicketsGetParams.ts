@@ -56,6 +56,10 @@ due_to?: string | null;
  */
 type?: TicketType | null;
 /**
+ * true for only done and cancelled tickets, false for only the ones still open.
+ */
+resolved?: boolean | null;
+/**
  * What to order by.
  */
 sort?: TicketSort;

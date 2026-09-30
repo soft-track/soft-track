@@ -20,6 +20,27 @@ export function activeMembers(
 }
 
 /**
+ * Who an assignee picker offers (#316): the people who may hold the team's
+ * tickets, and its guests apart from them. A guest reads the team and holds
+ * none of its work, and the API refuses one as an assignee, so a picker lists
+ * guests where they can be seen but not chosen.
+ *
+ * Deactivated accounts are left out as in `activeMembers`, and `keepId` is
+ * the same exception: whoever holds the ticket already stays listed, among
+ * the guests if that is what they are now.
+ */
+export function assigneeChoices(
+  members: TeamMemberRead[],
+  keepId?: number | null,
+): { assignable: UserPublic[]; guests: UserPublic[] } {
+  const listed = members.filter((member) => member.user.is_active || member.user.id === keepId)
+  return {
+    assignable: listed.filter((member) => member.role !== 'guest').map((member) => member.user),
+    guests: listed.filter((member) => member.role === 'guest').map((member) => member.user),
+  }
+}
+
+/**
  * Whether someone may change anything on this team (#104).
  *
  * Only a guest may not. Someone missing from the roster -- still loading, or
