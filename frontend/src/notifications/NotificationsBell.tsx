@@ -69,8 +69,11 @@ export function NotificationsBell({
       {/* A changing aria-label is never announced, so the poll's result also
           lands here. Outside the button, or it would double up in the name;
           always mounted, since a live region only announces changes made
-          after it exists. */}
-      <span aria-live="polite" className="sr-only">
+          after it exists. Browse mode does read the count twice, once in the
+          button's name and once here; hiding either would defeat its point.
+          aria-atomic so the whole sentence is read, not just the digits that
+          changed. */}
+      <span aria-live="polite" aria-atomic="true" className="sr-only">
         {unreadAnnouncement(unread)}
       </span>
 
