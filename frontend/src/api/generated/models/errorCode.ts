@@ -76,6 +76,7 @@ export const ErrorCode = {
   last_site_admin: 'last_site_admin',
   last_status: 'last_status',
   team_has_no_statuses: 'team_has_no_statuses',
+  team_has_tickets: 'team_has_tickets',
   cannot_deactivate_self: 'cannot_deactivate_self',
   cannot_demote_self: 'cannot_demote_self',
   sprint_completed: 'sprint_completed',

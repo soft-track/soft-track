@@ -411,7 +411,9 @@ def delete_team(session: Session, current_user: User, team_id: int) -> None:
     session.exec(delete(OutboundWebhook).where(OutboundWebhook.team_id == team_id))
     session.exec(delete(TicketTemplate).where(TicketTemplate.team_id == team_id))
 
-    field_ids = session.exec(select(CustomField.id).where(CustomField.team_id == team_id)).all()
+    field_ids = session.exec(
+        select(CustomField.id).where(CustomField.team_id == team_id)
+    ).all()
     if field_ids:
         session.exec(
             delete(CustomFieldValue).where(CustomFieldValue.field_id.in_(field_ids))

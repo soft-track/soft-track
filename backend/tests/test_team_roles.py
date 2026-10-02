@@ -219,7 +219,9 @@ def test_an_archived_team_rejects_member_removal_by_admin(client, team_with_memb
     member_id = team_with_member["member"]["user"]["id"]
 
     response = client.patch(
-        f"/teams/{team_id}", json={"archived": True}, headers=team_with_member["headers"]
+        f"/teams/{team_id}",
+        json={"archived": True},
+        headers=team_with_member["headers"],
     )
     assert response.status_code == 200
 

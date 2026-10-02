@@ -33,7 +33,9 @@ def upgrade() -> None:
         )
 
     with op.batch_alter_table("team", schema=None) as batch_op:
-        batch_op.alter_column("archived", existing_type=sa.Boolean(), server_default=None)
+        batch_op.alter_column(
+            "archived", existing_type=sa.Boolean(), server_default=None
+        )
 
 
 def downgrade() -> None:

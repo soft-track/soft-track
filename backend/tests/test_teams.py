@@ -296,9 +296,12 @@ def test_a_team_admin_cannot_change_metadata_while_restoring_an_archived_team(
     )
     assert response.status_code == 403
     assert response.json()["code"] == "team_read_only"
-    assert client.get(f"/teams/{team['team']['id']}", headers=team["headers"]).json()[
-        "name"
-    ] != "New Name"
+    assert (
+        client.get(f"/teams/{team['team']['id']}", headers=team["headers"]).json()[
+            "name"
+        ]
+        != "New Name"
+    )
 
 
 def test_a_site_admin_cannot_change_metadata_while_restoring_an_archived_team(
@@ -324,7 +327,10 @@ def test_a_site_admin_cannot_change_metadata_while_restoring_an_archived_team(
     )
     assert response.status_code == 403
     assert response.json()["code"] == "team_read_only"
-    assert client.get(f"/teams/{team_id}", headers=owner["headers"]).json()["name"] != "New Name"
+    assert (
+        client.get(f"/teams/{team_id}", headers=owner["headers"]).json()["name"]
+        != "New Name"
+    )
 
 
 def test_an_ordinary_member_cannot_archive_a_team(client, auth):
@@ -423,7 +429,9 @@ def test_a_site_admin_can_restore_a_team_they_do_not_own(client, auth, admin):
     assert "archived" in response.json()
 
 
-def test_team_read_includes_archived_for_active_and_archived_states(client, auth, admin):
+def test_team_read_includes_archived_for_active_and_archived_states(
+    client, auth, admin
+):
     owner = auth(email="owner@softtrack.dev", full_name="Owner User")
     team_response = client.post(
         "/teams",
@@ -451,7 +459,10 @@ def test_team_read_includes_archived_for_active_and_archived_states(client, auth
 def test_a_team_admin_can_delete_an_empty_team(client, team):
     response = client.delete(f"/teams/{team['team']['id']}", headers=team["headers"])
     assert response.status_code == 204
-    assert client.get(f"/teams/{team['team']['id']}", headers=team["headers"]).status_code == 404
+    assert (
+        client.get(f"/teams/{team['team']['id']}", headers=team["headers"]).status_code
+        == 404
+    )
 
 
 def test_a_site_admin_can_delete_another_teams_empty_team(client, auth, admin):
@@ -519,7 +530,10 @@ def test_a_team_with_tickets_cannot_be_deleted(client, team):
     assert response.status_code == 409
     assert response.json()["code"] == "team_has_tickets"
     assert "archive" in response.json()["detail"]
-    assert client.get(f"/teams/{team['team']['id']}", headers=team["headers"]).status_code == 200
+    assert (
+        client.get(f"/teams/{team['team']['id']}", headers=team["headers"]).status_code
+        == 200
+    )
 
 
 def test_an_archived_empty_team_can_be_deleted(client, team):
@@ -531,7 +545,10 @@ def test_an_archived_empty_team_can_be_deleted(client, team):
 
     response = client.delete(f"/teams/{team['team']['id']}", headers=team["headers"])
     assert response.status_code == 204
-    assert client.get(f"/teams/{team['team']['id']}", headers=team["headers"]).status_code == 404
+    assert (
+        client.get(f"/teams/{team['team']['id']}", headers=team["headers"]).status_code
+        == 404
+    )
 
 
 def test_a_team_with_a_default_saved_view_can_be_deleted(client, team, session):
@@ -551,7 +568,12 @@ def test_a_team_with_a_default_saved_view_can_be_deleted(client, team, session):
     assert response.status_code == 204
     assert session.get(Team, team["team"]["id"]) is None
     assert session.get(SavedView, view_id) is None
-    assert session.exec(select(UserDefaultView).where(UserDefaultView.team_id == team["team"]["id"])).all() == []
+    assert (
+        session.exec(
+            select(UserDefaultView).where(UserDefaultView.team_id == team["team"]["id"])
+        ).all()
+        == []
+    )
 
 
 def test_a_team_with_webhook_deliveries_can_be_deleted(client, team, session):
@@ -603,9 +625,9 @@ def test_a_team_with_custom_field_values_can_be_deleted(client, auth, session):
         headers=owner["headers"],
     )
     assert field_response.status_code == 200, field_response.text
-    field_id = session.exec(
-        select(CustomField).where(CustomField.team_id == team_id)
-    ).one().id
+    field_id = (
+        session.exec(select(CustomField).where(CustomField.team_id == team_id)).one().id
+    )
 
     other = auth(email="other@softtrack.dev", full_name="Other User")
     other_team = client.post(
