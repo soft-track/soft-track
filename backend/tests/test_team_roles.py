@@ -214,6 +214,22 @@ def test_an_admin_removes_a_member(client, team_with_member):
     assert [m["user"]["email"] for m in members] == ["demo@softtrack.dev"]
 
 
+def test_an_archived_team_rejects_member_removal_by_admin(client, team_with_member):
+    team_id = team_with_member["team"]["id"]
+    member_id = team_with_member["member"]["user"]["id"]
+
+    response = client.patch(
+        f"/teams/{team_id}", json={"archived": True}, headers=team_with_member["headers"]
+    )
+    assert response.status_code == 200
+
+    response = client.delete(
+        f"/teams/{team_id}/members/{member_id}", headers=team_with_member["headers"]
+    )
+    assert response.status_code == 403
+    assert response.json()["code"] == "team_read_only"
+
+
 def test_members_are_listed_admins_first(client, team_with_member):
     members = client.get(
         f"/teams/{team_with_member['team']['id']}/members",

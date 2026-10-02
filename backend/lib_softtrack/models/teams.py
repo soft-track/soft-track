@@ -21,6 +21,7 @@ class TeamRead(BaseModel):
     #: Whether any member may delete any ticket or epic, or only its creator
     #: -- an epic's lead -- and the team's admins (#323).
     any_member_may_delete: bool = False
+    archived: bool = False
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -39,6 +40,7 @@ class TeamUpdate(BaseModel):
     #: Who may delete (#323): any member, or only a ticket's creator -- an
     #: epic's lead -- and the team's admins.
     any_member_may_delete: Optional[bool] = None
+    archived: Optional[bool] = None
 
 
 class TeamMemberAdd(BaseModel):

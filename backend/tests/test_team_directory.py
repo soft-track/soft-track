@@ -51,6 +51,23 @@ def test_somebody_on_no_team_sees_every_team_and_who_runs_it(client, team, auth)
     assert [a["full_name"] for a in teams[0]["admins"]] == ["Amina Khan"]
 
 
+def test_the_directory_excludes_archived_teams(client, team):
+    archived = client.post(
+        "/teams",
+        json={"name": "Retired", "key": "RET"},
+        headers=team["headers"],
+    ).json()
+    client.patch(
+        f"/teams/{archived['id']}",
+        json={"archived": True},
+        headers=team["headers"],
+    )
+
+    teams = directory(client, team)
+    assert any(t["key"] == "ENG" for t in teams)
+    assert not any(t["id"] == archived["id"] for t in teams)
+
+
 def test_a_deactivated_account_is_neither_counted_nor_asked(
     client, team, auth, session
 ):

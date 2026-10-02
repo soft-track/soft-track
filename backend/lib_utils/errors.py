@@ -129,6 +129,9 @@ class ErrorCode(str, enum.Enum):
     #: A team must keep at least one status.
     last_status = "last_status"
     team_has_no_statuses = "team_has_no_statuses"
+    #: Deleting a team with tickets would leave the board and work history in
+    #: limbo, so the team must be empty first.
+    team_has_tickets = "team_has_tickets"
     cannot_deactivate_self = "cannot_deactivate_self"
     cannot_demote_self = "cannot_demote_self"
     #: A completed sprint's numbers are history and cannot change.

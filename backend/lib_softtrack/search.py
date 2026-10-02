@@ -62,7 +62,9 @@ def search_tickets(
 
     team_ids = list(
         session.exec(
-            select(TeamMember.team_id).where(TeamMember.user_id == current_user.id)
+            select(TeamMember.team_id)
+            .join(Team, Team.id == TeamMember.team_id)
+            .where(TeamMember.user_id == current_user.id, Team.archived == False)
         ).all()
     )
     if team_id is not None:

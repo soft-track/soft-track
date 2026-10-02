@@ -270,7 +270,13 @@ def test_a_guest_is_refused_by_every_mutating_route(client, world, guest, method
     response = client.request(method, url, headers=guest["headers"])
 
     assert response.status_code == 403, (method, path, response.text)
-    assert response.json()["code"] == "team_read_only"
+
+    expected_code = (
+        "not_team_admin"
+        if (method, path) == ("DELETE", "/teams/{team_id}")
+        else "team_read_only"
+    )
+    assert response.json()["code"] == expected_code
 
 
 def test_the_sweep_is_not_vacuous():

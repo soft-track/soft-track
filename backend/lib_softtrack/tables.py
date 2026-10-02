@@ -813,6 +813,7 @@ class Team(SQLModel, table=True):
     #: team; the teams there were before the trash keep True, which is what
     #: deleting always was.
     any_member_may_delete: bool = Field(default=False)
+    archived: bool = Field(default=False)
     created_at: datetime = Field(default_factory=utcnow)
 
 
