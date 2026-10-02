@@ -39,7 +39,6 @@ export function TicketDetailPanel({
   const dialogRef = useFocusTrap<HTMLDivElement>()
   // The body reads the same query; React Query makes it one request.
   const { data: ticket } = useGetTicketTicketsTicketIdGet(ticketId)
-
   return (
     <TicketSurfaceContext.Provider value="panel">
       <div className="scrim fixed inset-0 z-20 flex justify-end" onClick={onClose}>

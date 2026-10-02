@@ -67,6 +67,7 @@ function Harness({ onOpenTicket }: { onOpenTicket: (ticket: TicketRead) => void 
     openNewTicket: () => overlays.open('newTicket'),
     openShortcuts: () => {},
     suppressed: open,
+    hasOpenOverlay: true,
   })
   return (
     <>

@@ -14,6 +14,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useEffect } from 'react'
 import {
   MemoryRouter,
   Route,
@@ -165,6 +166,19 @@ vi.mock('@/tickets/TicketDetailPanel', () => ({
   }) => {
     const location = useLocation()
     const navigate = useNavigate()
+    useEffect(() => {
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (
+          event.key !== 'Escape' ||
+          (modalsIn(location.state).length === 0 && document.querySelector('[role="dialog"]'))
+        )
+          return
+        event.stopPropagation()
+        navigate(-1)
+      }
+      window.addEventListener('keydown', onKeyDown)
+      return () => window.removeEventListener('keydown', onKeyDown)
+    }, [navigate, location.state])
     return (
       <div>
         <p>Panel for ticket {ticketId}</p>
@@ -325,5 +339,48 @@ describe('leaving the board for a ticket page', () => {
     await user.type(screen.getByRole('textbox', { name: 'Command' }), 'storm')
     await user.keyboard('{Enter}')
     expect(screen.getByText('Page for ENG-7')).toBeTruthy()
+  })
+
+  it('closes the issue panel with Escape without navigating twice', async () => {
+    const user = renderApp()
+
+    await user.click(screen.getByRole('button', { name: 'list' }))
+    await user.click(screen.getByRole('link', { name: /ENG-7.*Retry storm/ }))
+
+    expect(screen.getByText('Panel for ticket 70')).toBeTruthy()
+
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByText('Panel for ticket 70')).toBeNull()
+    expect(screen.getByRole('button', { name: 'list' })).toBeTruthy()
+    expect(screen.queryByText(/Page for/)).toBeNull()
+  })
+
+  it('closes a linked-ticket modal before the panel', async () => {
+    const user = renderApp()
+
+    await user.click(screen.getByRole('button', { name: 'list' }))
+    await user.click(screen.getByRole('link', { name: /ENG-7.*Retry storm/ }))
+    await user.click(screen.getByRole('button', { name: 'Open the linked ticket' }))
+    expect(screen.getByText('Modals over it: 1')).toBeTruthy()
+
+    await user.keyboard('{Escape}')
+
+    expect(screen.getByText('Panel for ticket 70')).toBeTruthy()
+    expect(screen.getByText('Modals over it: 0')).toBeTruthy()
+  })
+
+  it('closes a palette over the panel before the panel', async () => {
+    const user = renderApp()
+
+    await user.click(screen.getByRole('button', { name: 'list' }))
+    await user.click(screen.getByRole('link', { name: /ENG-7.*Retry storm/ }))
+    await user.keyboard('{Meta>}k{/Meta}')
+    expect(screen.getByRole('dialog', { name: 'Command palette' })).toBeTruthy()
+
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('dialog', { name: 'Command palette' })).toBeNull()
+    expect(screen.getByText('Panel for ticket 70')).toBeTruthy()
   })
 })

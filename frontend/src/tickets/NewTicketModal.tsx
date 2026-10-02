@@ -1,9 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { type FormEvent, useId, useState } from 'react'
+import { type FormEvent, useId, useState, useRef } from 'react'
 
 import { errorDetail } from '@/api/errors'
 import { useCreateTicketTeamsTeamIdTicketsPost } from '@/api/generated/endpoints/tickets/tickets'
 import { useListTemplatesTeamsTeamIdTicketTemplatesGet } from '@/api/generated/endpoints/templates/templates'
+import { useSearchSearchGet } from '@/api/generated/endpoints/search/search'
+import { ticketPath } from '@/tickets/surface'
 import { TicketPriority, type TicketType } from '@/api/generated/models'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { formatList } from '@/i18n/format'
@@ -31,10 +33,28 @@ import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
 import { useFocusTrap } from '@/ui/useFocusTrap'
+import { useDebounced } from '@/search/useDebounced'
+
+const CJK_RE =
+  /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uac00-\ud7af]/
+
+function getSearchPhrase(value: string) {
+  const trimmed = value.trim()
+
+  if (!trimmed) return ''
+
+  if (CJK_RE.test(trimmed)) {
+    const compact = trimmed.replace(/\s+/g, '')
+    return Array.from(compact).length >= 3 ? trimmed : ''
+  }
+
+  return trimmed.split(/\s+/).filter(Boolean).length >= 3 ? trimmed : ''
+}
 
 export function NewTicketModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation(['tickets', 'common'])
   const dialogRef = useFocusTrap<HTMLDivElement>()
+  const titleInputRef = useRef<HTMLInputElement>(null)
   const titleId = useId()
   const { team, projects, labels, members, sprints, statuses } = useTeamContext()
   const queryClient = useQueryClient()
@@ -44,6 +64,34 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [suggestionsDismissed, setSuggestionsDismissed] = useState(false)
+  const [selectedSuggestion, setSelectedSuggestion] = useState(-1)
+
+  const searchPhrase = useDebounced(getSearchPhrase(title), 400)
+
+  const searchResults = useSearchSearchGet(
+    {
+      q: searchPhrase || 'x',
+      team_id: team.id,
+      limit: 3,
+    },
+    {
+      query: {
+        enabled: searchPhrase.length > 0 && !suggestionsDismissed,
+        staleTime: 30_000,
+      },
+    },
+  )
+
+  const suggestions = suggestionsDismissed
+    ? []
+    : (searchResults.data?.items ?? [])
+
+  const highlightedSuggestion =
+    suggestions.length > 0
+      ? Math.min(selectedSuggestion, suggestions.length - 1)
+      : -1
+
   // The template in use, and the text it put there -- which is how choosing
   // another one knows whether anything typed since would be lost (#97).
   const [templateId, setTemplateId] = useState('')
@@ -191,11 +239,138 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
               autoFocus
               required
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              ref={titleInputRef}
+              aria-controls="similar-issues-list"
+              aria-expanded={suggestions.length > 0}
+              aria-activedescendant={
+                highlightedSuggestion >= 0
+                  ? `similar-issue-${suggestions[highlightedSuggestion].id}`
+                  : undefined
+              }
+              onChange={(e) => {
+                setTitle(e.target.value)
+                setSelectedSuggestion(-1)
+              }}
+              onKeyDown={(event) => {
+                if (event.nativeEvent.isComposing) return
+
+                if (event.key === 'Escape') {
+                  if (suggestions.length > 0) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    setSuggestionsDismissed(true)
+                    return
+                  }
+                  return
+                }
+
+                if (suggestions.length === 0) return
+
+                if (event.key === 'ArrowDown') {
+                  event.preventDefault()
+                  setSelectedSuggestion((current) =>
+                    current < suggestions.length - 1 ? current + 1 : 0,
+                  )
+                  return
+                }
+
+                if (event.key === 'ArrowUp') {
+                  event.preventDefault()
+                  setSelectedSuggestion((current) =>
+                    current > 0 ? current - 1 : suggestions.length - 1,
+                  )
+                  return
+                }
+
+                if (event.key === 'Enter' && highlightedSuggestion >= 0) {
+                  event.preventDefault()
+                  window.open(
+                    ticketPath(suggestions[highlightedSuggestion]),
+                    '_blank',
+                    'noopener,noreferrer',
+                  )
+                }
+              }}
               placeholder={t('newTicket.ticketTitle')}
               aria-label={t('newTicket.ticketTitle')}
               className="w-full border-none bg-transparent p-0 text-lg font-semibold tracking-tight text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-0"
             />
+            {suggestions.length > 0 && (
+              <div className="well mt-2 overflow-hidden rounded-card">
+                <div className="flex items-center justify-between px-3 py-1.5">
+                  <span className="eyebrow">
+                    {t('newTicket.similarIssues')}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setSuggestionsDismissed(true)}
+                    className="btn btn-ghost btn-icon btn-xs text-neutral-400"
+                    aria-label={t('newTicket.dismissSimilarIssues')}
+                  >
+                    <Icon name="close" size={11} />
+                  </button>
+                </div>
+
+                <ul
+                  id="similar-issues-list"
+                  role="listbox"
+                  aria-label={t('newTicket.similarIssues')}
+                  className="divide-y divide-neutral-900/6"
+                >
+                  {suggestions.map((issue, index) => (
+                    <li key={issue.id}>
+                      <div className="flex items-center">
+                        <a
+                          id={`similar-issue-${issue.id}`}
+                          role="option"
+                          aria-selected={index === highlightedSuggestion}
+                          href={ticketPath(issue)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`min-w-0 flex-1 px-3 py-2 text-left transition-colors focus:outline-none ${
+                            index === highlightedSuggestion
+                              ? 'bg-brand-500/10'
+                              : 'hover:bg-neutral-900/4'
+                          }`}
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="identifier shrink-0 text-[11px] font-medium text-neutral-400">
+                              {issue.identifier}
+                            </span>
+
+                            <span className="min-w-0 flex-1 truncate text-xs font-medium text-neutral-800">
+                              {issue.title}
+                            </span>
+
+                            <span className="flex shrink-0 items-center gap-1.5 text-[10px] text-neutral-400">
+                            <span
+                              className="dot"
+                              style={{ ['--dot' as string]: issue.status.color }}
+                            />
+                              {issue.status.name}
+                            </span>
+                          </div>
+                        </a>
+                        <a
+                          href={ticketPath(issue)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Open ${issue.identifier} in new tab`}
+                          title={`Open ${issue.identifier} in new tab`}
+                          onClick={() => {
+                            titleInputRef.current?.focus()
+                          }}
+                          className="btn btn-ghost btn-icon btn-xs ml-1 text-neutral-400 no-underline visited:text-neutral-400" >
+                            <Icon name="external" size={13} />
+                        </a>
+                     </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <MarkdownEditor
               value={description}
               onChange={setDescription}

@@ -7,6 +7,8 @@ export const newTicket = {
   noTemplate: 'No template',
   ticketTitle: 'Ticket title',
   descriptionPlaceholder: 'Add a description… Markdown works here.',
+  similarIssues: 'Similar tickets',
+  dismissSimilarIssues: 'Dismiss similar tickets',
   status: 'Status',
   type: 'Type',
   priority: 'Priority',

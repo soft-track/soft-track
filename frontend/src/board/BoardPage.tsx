@@ -44,7 +44,7 @@ import { NewSprintModal } from '@/sprints/NewSprintModal'
 import { useTranslation } from '@/i18n'
 import { ImportJiraModal } from '@/imports/ImportJiraModal'
 import { TicketDetailPanel } from '@/tickets/TicketDetailPanel'
-import { type TicketRef, useOpenTicket } from '@/tickets/surface'
+import { type TicketRef,surfaceFor, useOpenTicket } from '@/tickets/surface'
 import { NewTicketModal } from '@/tickets/NewTicketModal'
 import { CommandPalette } from '@/keyboard/CommandPalette'
 import { ShortcutsCheatsheet } from '@/keyboard/ShortcutsCheatsheet'
@@ -109,7 +109,19 @@ export default function BoardPage() {
   // The sidebar is a drawer below the `lg` breakpoint.
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const overlays = useOverlays()
+  const { open: openOverlay, close: closeOverlay } = overlays
   const [editingView, setEditingView] = useState<SavedViewRead | null>(null)
+
+  useEffect(() => {
+    const isIssuePanel =
+      Boolean(ticketNumber) && surfaceFor(location.state) === 'panel'
+
+    if (isIssuePanel) {
+      openOverlay('ticketPanel')
+    } else {
+      closeOverlay('ticketPanel')
+    }
+  }, [ticketNumber, location.state, openOverlay, closeOverlay])
 
   // The URL is the filter state, not a copy of it. That is what makes any
   // board someone is looking at a link they can paste, and it gets working
@@ -255,12 +267,21 @@ export default function BoardPage() {
   const openShortcuts = useCallback(() => overlays.open('shortcuts'), [overlays])
   const togglePalette = useCallback(() => overlays.toggle('palette'), [overlays])
 
+  const closeTop = useCallback(() => {
+    if (overlays.top === 'ticketPanel') {
+      return
+    }
+
+    overlays.closeTop()
+  }, [overlays])
+
   useGlobalShortcuts({
     togglePalette,
-    closeTop: overlays.closeTop,
+    closeTop,
     openNewTicket,
     openShortcuts,
     suppressed: overlays.isOpen('palette') || overlays.isOpen('shortcuts'),
+    hasOpenOverlay: overlays.top !== null,
   })
   const commands = useCommands({
     view,

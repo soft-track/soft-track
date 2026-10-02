@@ -16,6 +16,7 @@
 export type Overlay =
   | 'newTicket'
   | 'palette'
+  | 'ticketPanel'
   | 'shortcuts'
   | 'newSprint'
   | 'newProject'
