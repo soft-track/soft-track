@@ -31,6 +31,33 @@ client-side total would quietly be "the total of whatever page happened to be
 loaded" — a different and much less useful number, with nothing on screen to
 say so.
 
+## Goals and retrospectives
+
+A sprint can say **what it is for** (#271): a sentence or two, written when it
+is planned, shown under its name in the sidebar and above its board.
+
+**Completing a sprint asks two more things**, both optional: whether the goal
+was **met, partly met or missed**, and the **retrospective** -- what went
+well, what did not, and what to change, three markdown sections. Either can
+be filled in later from the completed sprint's page (select it in the
+sidebar), where:
+
+- anybody on the team but a guest writes to it, until a team admin closes it
+  (`409 retrospective_closed` after);
+- each line of "what to change" has **Make a ticket**, which puts a ticket on
+  the backlog titled with the line and saying which sprint's retrospective it
+  came from, and shows its key beside the line from then on;
+- guests read all of it.
+
+While an upcoming sprint is selected, the last three completed ones are
+listed under its banner with their goal, outcome, points and how many actions
+came out of them: the next planning starts by reading the last. The
+`sprint.started` and `sprint.completed` webhooks carry the goal and the
+outcome.
+
+Not here, on purpose: anonymous voting, timers, and a board of cards in
+columns for the retrospective.
+
 ## Due dates
 
 A ticket can have a due date, which is a day rather than a time, set from the

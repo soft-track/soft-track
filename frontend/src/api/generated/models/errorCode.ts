@@ -80,6 +80,8 @@ export const ErrorCode = {
   cannot_demote_self: 'cannot_demote_self',
   sprint_completed: 'sprint_completed',
   sprint_already_active: 'sprint_already_active',
+  retrospective_closed: 'retrospective_closed',
+  sprint_not_completed: 'sprint_not_completed',
   sprint_dates_invalid: 'sprint_dates_invalid',
   link_to_self: 'link_to_self',
   parent_is_self: 'parent_is_self',

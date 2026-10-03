@@ -10,4 +10,5 @@ export interface SprintUpdate {
   name?: string | null;
   starts_at?: string | null;
   ends_at?: string | null;
+  goal?: string | null;
 }

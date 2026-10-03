@@ -34,6 +34,7 @@ from lib_softtrack import reactions as reactions_service
 from lib_softtrack import rules as rules_service
 from lib_softtrack.links import open_blocker_counts
 from lib_softtrack.tables import (
+    SprintAction,
     Comment,
     Sprint,
     DueFilter,
@@ -942,6 +943,12 @@ def _delete_rows(session: Session, ticket: Ticket) -> list[str]:
     worklogs_service.delete_for_ticket(session, ticket_id)
     # And its values for the team's own fields (#117).
     custom_fields_service.delete_for_ticket(session, ticket_id)
+    # And the retrospective action it was made from (#271): the line stays in
+    # the retrospective's text, without a ticket beside it.
+    for action in session.exec(
+        select(SprintAction).where(SprintAction.ticket_id == ticket_id)
+    ).all():
+        session.delete(action)
     session.flush()
 
     # Attachments before comments: a comment attachment holds a foreign key to
