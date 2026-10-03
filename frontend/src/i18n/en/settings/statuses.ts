@@ -22,6 +22,19 @@ export const statuses = {
     rename: 'Could not rename that column.',
     recategorise: 'Could not change that category.',
     delete: 'Could not delete that column.',
+    wip: 'Could not change that limit.',
+    wipSettings: 'Could not change how limits work.',
+  },
+  /** WIP limits (#270): how many tickets a column should hold at once. */
+  wip: {
+    limitOf: 'WIP limit for {{name}}',
+    none: 'No limit',
+    shown: 'limit {{count}}',
+    heading: 'WIP limits',
+    hard: 'Refuse a card over the limit',
+    hardHint: 'Off: the board warns when a column goes over. On: a move that would take it over is refused, with a sentence.',
+    subtickets: 'Sub-tickets count against limits',
+    subticketsHint: 'Off: only the work they are part of counts.',
   },
   deleteDialog: {
     title: 'Delete “{{name}}”',

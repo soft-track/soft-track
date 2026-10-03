@@ -401,6 +401,10 @@ def update_team(
         team.any_member_may_delete = payload.any_member_may_delete
     if payload.guests_may_comment is not None:
         team.guests_may_comment = payload.guests_may_comment
+    if payload.wip_limits_hard is not None:
+        team.wip_limits_hard = payload.wip_limits_hard
+    if payload.wip_counts_subtickets is not None:
+        team.wip_counts_subtickets = payload.wip_counts_subtickets
 
     session.add(team)
     session.commit()

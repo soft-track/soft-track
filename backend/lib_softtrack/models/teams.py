@@ -24,6 +24,10 @@ class TeamRead(BaseModel):
     #: Whether the team's guests may comment, react and attach files to their
     #: comments (#244).
     guests_may_comment: bool = False
+    #: What a WIP limit means (#270): a warning, or a refusal; and whether
+    #: sub-tickets count against it.
+    wip_limits_hard: bool = False
+    wip_counts_subtickets: bool = True
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -45,6 +49,9 @@ class TeamUpdate(BaseModel):
     #: Let the team's guests comment (#244). Off for every team until an admin
     #: turns it on.
     guests_may_comment: Optional[bool] = None
+    #: WIP limits (#270): refuse a move over one, and count sub-tickets.
+    wip_limits_hard: Optional[bool] = None
+    wip_counts_subtickets: Optional[bool] = None
 
 
 class EpicRef(BaseModel):

@@ -860,6 +860,12 @@ class Team(SQLModel, table=True):
     #: attach files to their comments, react, and edit or delete their own.
     #: They still change nothing else. Off unless a team admin turns it on.
     guests_may_comment: bool = Field(default=False)
+    #: What a status's WIP limit means (#270): False, the board warns when a
+    #: column goes over; True, a move that would take it over is refused.
+    wip_limits_hard: bool = Field(default=False)
+    #: Whether sub-tickets count against a column's limit, or only the work
+    #: they are part of.
+    wip_counts_subtickets: bool = Field(default=True)
     created_at: datetime = Field(default_factory=utcnow)
 
 
@@ -1451,6 +1457,10 @@ class WorkflowStatus(SQLModel, table=True):
     #: gaps are harmless and contiguity is not worth a transaction to maintain.
     position: int
     color: str = Field(default="#9b98b0")
+    #: How many tickets the column should hold at once (#270), or null for
+    #: no limit. Over it, the board says so; where the team makes limits hard
+    #: (`Team.wip_limits_hard`), a move that would go over is refused.
+    wip_limit: Optional[int] = None
     created_at: datetime = Field(default_factory=utcnow)
 
 

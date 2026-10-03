@@ -138,6 +138,9 @@ class ErrorCode(str, enum.Enum):
     retrospective_closed = "retrospective_closed"
     #: A retrospective is written about a sprint that has ended (#271).
     sprint_not_completed = "sprint_not_completed"
+    #: A move into a column at its WIP limit, where the team makes limits
+    #: hard (#270).
+    wip_limit_reached = "wip_limit_reached"
     sprint_dates_invalid = "sprint_dates_invalid"
     link_to_self = "link_to_self"
     parent_is_self = "parent_is_self"

@@ -20,6 +20,9 @@ type TicketPage = { items: TicketRead[]; total: number; limit: number; offset: n
 export function useStatusChange(
   team: TeamRead | undefined,
   ticketsParams: Parameters<typeof getListTicketsTeamsTeamIdTicketsGetQueryKey>[1],
+  /** Told when the server refuses, after the card is put back: a full
+   *  column where the team makes WIP limits hard, say (#270). */
+  onError?: (err: unknown) => void,
 ) {
   const queryClient = useQueryClient()
   const updateTicket = useUpdateTicketTicketsTicketIdPatch()
@@ -45,8 +48,9 @@ export function useStatusChange(
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/sprints`] })
       invalidateProjects(queryClient, team.id)
-    } catch {
+    } catch (err: unknown) {
       queryClient.setQueryData(queryKey, previous)
+      onError?.(err)
     }
   }
 }

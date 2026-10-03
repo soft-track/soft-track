@@ -11,4 +11,5 @@ export interface StatusUpdate {
   name?: string | null;
   category?: StatusCategory | null;
   color?: string | null;
+  wip_limit?: number | null;
 }

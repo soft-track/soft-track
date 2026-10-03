@@ -18,4 +18,6 @@ export interface TeamUpdate {
   description?: string | null;
   any_member_may_delete?: boolean | null;
   guests_may_comment?: boolean | null;
+  wip_limits_hard?: boolean | null;
+  wip_counts_subtickets?: boolean | null;
 }

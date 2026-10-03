@@ -82,6 +82,7 @@ export const ErrorCode = {
   sprint_already_active: 'sprint_already_active',
   retrospective_closed: 'retrospective_closed',
   sprint_not_completed: 'sprint_not_completed',
+  wip_limit_reached: 'wip_limit_reached',
   sprint_dates_invalid: 'sprint_dates_invalid',
   link_to_self: 'link_to_self',
   parent_is_self: 'parent_is_self',

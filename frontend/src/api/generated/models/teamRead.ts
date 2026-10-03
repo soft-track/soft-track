@@ -13,5 +13,7 @@ export interface TeamRead {
   description?: string | null;
   any_member_may_delete?: boolean;
   guests_may_comment?: boolean;
+  wip_limits_hard?: boolean;
+  wip_counts_subtickets?: boolean;
   created_at: string;
 }

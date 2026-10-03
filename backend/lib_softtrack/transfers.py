@@ -34,6 +34,7 @@ from typing import Optional
 
 from sqlmodel import Session, select
 
+from lib_softtrack import wip
 from lib_softtrack import custom_fields as custom_fields_service
 from lib_softtrack.history import record_changes, snapshot
 from lib_softtrack.tickets import get_ticket_or_404, ticket_to_read, set_labels
@@ -259,6 +260,15 @@ def transfer_ticket(
     ticket = get_ticket_or_404(session, ticket_id)
     move = _plan(session, current_user, ticket, target_team_id)
     target = session.get(Team, target_team_id)
+
+    # Into the other team's columns as its limits allow (#270), all of them
+    # checked before anything moves: the family goes together or not at all.
+    arriving: dict[int, list] = {}
+    for part in [move, *move.children]:
+        parent_id = None if part.detach_parent or part is move else move.ticket.id
+        arriving.setdefault(part.status.id, []).append((None, parent_id))
+    for status_id, tickets in arriving.items():
+        wip.require_room(session, target.id, status_id, tickets)
 
     try:
         _carry_out(session, move, target, current_user)
