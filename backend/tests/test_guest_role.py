@@ -128,6 +128,20 @@ def _mutating_routes() -> list[tuple[str, str]]:
 
 TEAM_WRITES = [route for route in _mutating_routes() if route not in NOT_TEAM_WRITES]
 
+#: The conversation (#244): refused to a guest like every other write, unless
+#: the team lets its guests comment. Then these, and only these, open up --
+#: commenting, attaching a file to the comment, reacting, and editing or
+#: deleting their own. The services keep "their own" to their own.
+GUEST_COMMENT_ROUTES = {
+    ("POST", "/tickets/{ticket_id}/comments"): "answering where they were asked",
+    ("PATCH", "/comments/{comment_id}"): "their own comment",
+    ("DELETE", "/comments/{comment_id}"): "their own comment",
+    ("PUT", "/comments/{comment_id}/reactions/{emoji}"): "reacting to a comment",
+    ("DELETE", "/comments/{comment_id}/reactions/{emoji}"): "their own reaction",
+    ("POST", "/tickets/{ticket_id}/attachments"): "a file for their comment",
+    ("DELETE", "/attachments/{attachment_id}"): "a file they attached",
+}
+
 
 def join(client, team, person, role):
     response = client.post(
@@ -271,6 +285,40 @@ def test_a_guest_is_refused_by_every_mutating_route(client, world, guest, method
 
     assert response.status_code == 403, (method, path, response.text)
     assert response.json()["code"] == "team_read_only"
+
+
+@pytest.mark.parametrize(
+    ("method", "path"), TEAM_WRITES, ids=[f"{m} {p}" for m, p in TEAM_WRITES]
+)
+def test_letting_guests_comment_opens_the_conversation_and_nothing_else(
+    client, team, world, guest, method, path
+):
+    """The sweep again, on a team that lets its guests comment (#244): the
+    conversation opens, and every other write stays shut."""
+    response = client.patch(
+        f"/teams/{world['team_id']}",
+        json={"guests_may_comment": True},
+        headers=team["headers"],
+    )
+    assert response.status_code == 200, response.text
+    names = re.findall(r"{(\w+)}", path)
+    url = path.format(**{name: world[name] for name in names})
+
+    response = client.request(method, url, headers=guest["headers"])
+
+    if (method, path) in GUEST_COMMENT_ROUTES:
+        # Past the guard: whatever it answers -- the file in `world` is not
+        # theirs, say -- it is not "guests read only".
+        body = response.json()
+        code = body.get("code") if isinstance(body, dict) else None
+        assert code != "team_read_only", (method, path, body)
+    else:
+        assert response.status_code == 403, (method, path, response.text)
+        assert response.json()["code"] == "team_read_only"
+
+
+def test_every_comment_route_is_a_real_route():
+    assert set(GUEST_COMMENT_ROUTES) <= set(TEAM_WRITES)
 
 
 def test_the_sweep_is_not_vacuous():

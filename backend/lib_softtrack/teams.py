@@ -153,6 +153,27 @@ def require_team_writer(team_id: int, user: User, session: Session) -> TeamMembe
     return membership
 
 
+def require_team_commenter(team_id: int, user: User, session: Session) -> TeamMember:
+    """The guard for joining a ticket's conversation (#244).
+
+    Admins and members pass, like `require_team_writer`. A guest passes too on
+    a team that lets its guests comment: they may write, react, attach files
+    to their comments and edit or delete their own, and still change nothing
+    else. The services decide what "their own" covers.
+    """
+    membership = require_team_member(team_id, user, session)
+    if membership.role == TeamRole.guest:
+        team = session.get(Team, team_id)
+        if not team.guests_may_comment:
+            raise api_error(
+                status_code=403,
+                code=ErrorCode.team_read_only,
+                detail="Guests of this team read the conversation and do not "
+                "comment",
+            )
+    return membership
+
+
 #: How a path parameter names the team a request acts on: the row it
 #: identifies, and what to answer when there is no such row -- the same code
 #: and sentence the route's own service would, so a guard running first does
@@ -369,6 +390,8 @@ def update_team(
         team.description = payload.description.strip() or None
     if payload.any_member_may_delete is not None:
         team.any_member_may_delete = payload.any_member_may_delete
+    if payload.guests_may_comment is not None:
+        team.guests_may_comment = payload.guests_may_comment
 
     session.add(team)
     session.commit()

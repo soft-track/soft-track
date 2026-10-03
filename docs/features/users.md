@@ -152,6 +152,19 @@ ticket (so they are notified like anyone else), choosing their own default view,
 and leaving. Admins make someone a guest from the invitation form or by
 changing an existing member's role.
 
+**Guests may comment** (#244) is a team setting under General, off unless a
+team admin turns it on. With it on, a guest can answer where the question was
+asked: write a comment, attach files to it, react, and edit or delete their
+own. They still change nothing else -- no status, no assignee, no new tickets.
+Their comment carries only the files they uploaded for it, a file of theirs
+no comment has claimed yet is a draft rather than the ticket's, and they can
+remove only files they attached (`not_your_attachment`). With it off, the
+ticket says guests of this team read and do not comment, rather than offering
+a box that would be refused. The routes that open up are `team_commenter` in
+`backend/app_softtrack/guards.py`, and the sweep lists them in
+`GUEST_COMMENT_ROUTES` with the reason, then runs again with the setting on to
+check nothing else did.
+
 The boundary is on the server, in one place. Every route that changes
 something inside a team declares `team_writer` (`backend/app_softtrack/guards.py`),
 which works out the team from the URL and refuses a guest before the request

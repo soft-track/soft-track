@@ -20,7 +20,7 @@ from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.tickets import get_ticket_or_404
 from lib_softtrack.storage import Storage
 from lib_softtrack.tables import Comment, Ticket, TeamRole, User, WebhookEvent, utcnow
-from lib_softtrack.teams import require_team_member, require_team_writer
+from lib_softtrack.teams import require_team_commenter, require_team_member
 from lib_utils.errors import ErrorCode, api_error
 
 
@@ -46,7 +46,7 @@ def create_comment(
     session: Session, current_user: User, ticket_id: int, payload: CommentCreate
 ) -> CommentRead:
     ticket = get_ticket_or_404(session, ticket_id)
-    require_team_member(ticket.team_id, current_user, session)
+    membership = require_team_commenter(ticket.team_id, current_user, session)
 
     comment = Comment(ticket_id=ticket_id, author_id=current_user.id, body=payload.body)
     session.add(comment)
@@ -55,7 +55,14 @@ def create_comment(
     # than leave a comment referring to files it does not own.
     session.flush()
     try:
-        attachments_service.claim_for_comment(session, comment, payload.attachment_ids)
+        attachments_service.claim_for_comment(
+            session,
+            comment,
+            payload.attachment_ids,
+            # A guest's comment carries the files they uploaded for it, and
+            # none of the ticket's own (#244).
+            uploaded_by=current_user.id if membership.role == TeamRole.guest else None,
+        )
         notifications_service.on_comment_created(session, ticket, comment, current_user)
         outbound.emit(
             session,
@@ -143,7 +150,8 @@ def _comment_for_change(
     """The comment, its ticket, and whether the caller is a team admin.
 
     Guests are refused here as well as by the route's guard, so the service is
-    safe to call from anywhere.
+    safe to call from anywhere -- unless the team lets its guests comment
+    (#244), and then only for their own comment, which the callers check.
     """
     comment = session.get(Comment, comment_id)
     if comment is None:
@@ -153,7 +161,7 @@ def _comment_for_change(
             detail="Comment not found",
         )
     ticket = get_ticket_or_404(session, comment.ticket_id)
-    membership = require_team_writer(ticket.team_id, current_user, session)
+    membership = require_team_commenter(ticket.team_id, current_user, session)
     return comment, ticket, membership.role == TeamRole.admin
 
 

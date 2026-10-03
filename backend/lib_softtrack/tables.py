@@ -813,6 +813,10 @@ class Team(SQLModel, table=True):
     #: team; the teams there were before the trash keep True, which is what
     #: deleting always was.
     any_member_may_delete: bool = Field(default=False)
+    #: Whether the team's guests may join the conversation (#244): comment,
+    #: attach files to their comments, react, and edit or delete their own.
+    #: They still change nothing else. Off unless a team admin turns it on.
+    guests_may_comment: bool = Field(default=False)
     created_at: datetime = Field(default_factory=utcnow)
 
 
@@ -1187,6 +1191,11 @@ class Attachment(SQLModel, table=True):
     #: Opaque key into whichever storage backend is configured.
     storage_key: str
     uploaded_by_id: int = Field(foreign_key="user.id")
+    #: Uploaded by a guest (#244), who attaches files to their comments and
+    #: to nothing else: until a comment claims it, the file is a draft and not
+    #: one of the ticket's. Recorded at upload, so a member later made a guest
+    #: keeps the files they put on tickets.
+    guest_draft: bool = Field(default=False)
     created_at: datetime = Field(default_factory=utcnow)
 
 

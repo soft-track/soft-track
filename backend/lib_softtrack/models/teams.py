@@ -21,6 +21,9 @@ class TeamRead(BaseModel):
     #: Whether any member may delete any ticket or epic, or only its creator
     #: -- an epic's lead -- and the team's admins (#323).
     any_member_may_delete: bool = False
+    #: Whether the team's guests may comment, react and attach files to their
+    #: comments (#244).
+    guests_may_comment: bool = False
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -39,6 +42,9 @@ class TeamUpdate(BaseModel):
     #: Who may delete (#323): any member, or only a ticket's creator -- an
     #: epic's lead -- and the team's admins.
     any_member_may_delete: Optional[bool] = None
+    #: Let the team's guests comment (#244). Off for every team until an admin
+    #: turns it on.
+    guests_may_comment: Optional[bool] = None
 
 
 class TeamMemberAdd(BaseModel):

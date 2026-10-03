@@ -12,5 +12,6 @@ export interface TeamRead {
   key: string;
   description?: string | null;
   any_member_may_delete?: boolean;
+  guests_may_comment?: boolean;
   created_at: string;
 }

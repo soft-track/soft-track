@@ -162,6 +162,8 @@ class ErrorCode(str, enum.Enum):
     #: Only a comment's author can edit it; its author or a team admin can
     #: delete it (#93).
     not_your_comment = "not_your_comment"
+    #: A guest who may comment removing a file somebody else attached (#244).
+    not_your_attachment = "not_your_attachment"
     #: A date worked that has not happened yet.
     worklog_in_future = "worklog_in_future"
     #: Moving a ticket to the team it is already on (#98).

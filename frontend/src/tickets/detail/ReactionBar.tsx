@@ -31,7 +31,10 @@ export function ReactionBar({
 }: {
   ticketId: number
   comment: CommentRead
-  /** False for a guest (#104): the chips are shown, not pressable. */
+  /**
+   * False for a guest (#104), unless the team lets its guests comment (#244):
+   * the chips are shown, not pressable.
+   */
   canReact: boolean
 }) {
   const { user } = useAuth()

@@ -26,5 +26,5 @@ extra request: each comment from `GET /tickets/{ticket_id}/comments` carries a
 `reactions` list, one entry per emoji anybody used, with the count, who, and
 whether you are one of them.
 
-Guests of a team ([user management](users.md#guests)) see reactions and cannot
-add them.
+Guests of a team ([user management](users.md#guests)) see reactions, and add
+them where the team lets its guests comment (#244).

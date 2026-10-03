@@ -36,7 +36,9 @@ export function TicketDetailBody({ ticketId }: { ticketId: number }) {
   const { ticket } = editor
   // A guest (#104) sees the whole ticket and can change none of it.
   const readOnly = !useCanWrite()
-  const { members } = useTeamContext()
+  const { members, team } = useTeamContext()
+  // A guest reads, and joins the conversation where the team allows (#244).
+  const canComment = !readOnly || Boolean(team.guests_may_comment)
   const { user } = useAuth()
   // Team admins may delete anybody's comment (#93). The server decides; this
   // only decides whether to offer it.
@@ -137,8 +139,9 @@ export function TicketDetailBody({ ticketId }: { ticketId: number }) {
             removeAttachment={files.remove}
             uploading={files.uploading}
             onFilesClaimed={files.invalidate}
-            canComment={!readOnly}
+            canComment={canComment}
             canModerate={isTeamAdmin}
+            guestOf={readOnly ? team.name : undefined}
           />
         </div>
       </div>

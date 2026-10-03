@@ -45,6 +45,7 @@ export function CommentsSection({
   onFilesClaimed,
   canComment = true,
   canModerate = false,
+  guestOf,
 }: {
   ticketId: number
   people: Mentionable[]
@@ -58,6 +59,11 @@ export function CommentsSection({
   canComment?: boolean
   /** A team admin, who may delete anybody's comment -- never edit it (#93). */
   canModerate?: boolean
+  /**
+   * The team's name, for a guest (#244): they comment if the team lets its
+   * guests, and are told so, or are told why there is no box.
+   */
+  guestOf?: string
 }) {
   const { t } = useTranslation('tickets')
   const queryClient = useQueryClient()
@@ -132,9 +138,24 @@ export function CommentsSection({
 
 
       {!canComment ? (
-        <p className="text-xs text-neutral-400">{t('comments.guest')}</p>
+        <p className="well flex items-start gap-2 rounded-control px-3 py-2 text-xs text-neutral-500">
+          <Icon name="lock" size={13} className="mt-px shrink-0" />
+          {t('comments.guest', { team: guestOf ?? '' })}
+        </p>
       ) : (
         <form onSubmit={submit}>
+          {guestOf !== undefined && (
+            <p className="mb-2 flex items-center gap-2 rounded-control border border-brand-500/25 bg-brand-500/8 px-3 py-2 text-xs text-neutral-700">
+              <Icon name="mail" size={13} className="shrink-0 text-brand-600" />
+              <span>
+                <Trans
+                  t={t}
+                  i18nKey="comments.guestMayComment"
+                  components={{ strong: <strong className="font-semibold" /> }}
+                />
+              </span>
+            </p>
+          )}
           <MarkdownEditor
             value={body}
             onChange={setBody}

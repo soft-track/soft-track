@@ -61,7 +61,11 @@ const MAYA = {
 
 const OLIVIA = { ...MAYA, id: 1, email: 'olivia@example.com', username: 'olivia', full_name: 'Olivia Owner' }
 
-function renderFeed({ canComment = true, canModerate = false } = {}) {
+function renderFeed({
+  canComment = true,
+  canModerate = false,
+  guestOf,
+}: { canComment?: boolean; canModerate?: boolean; guestOf?: string } = {}) {
   render(
     // A router, since an author's name is a link to their profile (#126).
     <MemoryRouter>
@@ -75,6 +79,7 @@ function renderFeed({ canComment = true, canModerate = false } = {}) {
           onFilesClaimed={vi.fn()}
           canComment={canComment}
           canModerate={canModerate}
+          guestOf={guestOf}
         />
       </QueryClientProvider>
     </MemoryRouter>,
@@ -179,12 +184,25 @@ describe('the Activity feed', () => {
       total: 1,
     }
     mocks.events.data = []
-    renderFeed({ canComment: false })
+    renderFeed({ canComment: false, guestOf: 'Engineering' })
 
     expect(screen.getByText('Deployed to staging.')).toBeTruthy()
     expect(screen.queryByRole('textbox', { name: 'Comment' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull()
-    expect(screen.getByText(/guest on this team/)).toBeTruthy()
+    // No box that would be refused, and the reason in its place (#244).
+    expect(
+      screen.getByText('Guests of Engineering read and do not comment. A team admin can change that.'),
+    ).toBeTruthy()
+  })
+
+  it('gives a guest the composer where the team lets guests comment, and says why (#244)', () => {
+    mocks.comments.data = { items: [], total: 0 }
+    mocks.events.data = []
+    renderFeed({ canComment: true, guestOf: 'Engineering' })
+    expect(screen.getByRole('textbox', { name: 'Comment' })).toBeTruthy()
+    expect(
+      screen.getByText(/Everything else here is read-only for guests/).textContent,
+    ).toContain('You can comment on this team’s tickets.')
   })
 
   it('offers members the composer', () => {

@@ -20,7 +20,7 @@ from lib_softtrack.tables import (
     ReactionEmoji,
     User,
 )
-from lib_softtrack.teams import require_team_writer
+from lib_softtrack.teams import require_team_commenter
 from lib_utils.errors import ErrorCode, api_error
 
 #: The order chips are shown in: the enum's, which is GitHub's.
@@ -73,7 +73,9 @@ def _authorised_comment(session: Session, user: User, comment_id: int) -> Commen
     comment = _comment_or_404(session, comment_id)
     # The route's guard has already done this; repeated here so the service is
     # safe to call from anywhere, which is what a service is for.
-    require_team_writer(session.get(Ticket, comment.ticket_id).team_id, user, session)
+    require_team_commenter(
+        session.get(Ticket, comment.ticket_id).team_id, user, session
+    )
     return comment
 
 

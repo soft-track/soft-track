@@ -3,7 +3,11 @@ export const comments = {
   title: 'Activity',
   empty: 'No comments yet. Start the conversation below.',
   emptyReadOnly: 'No comments yet.',
-  guest: 'You are a guest on this team, so you can follow this ticket but not comment on it.',
+  // A guest of a team that does not let its guests comment (#244).
+  guest: 'Guests of {{team}} read and do not comment. A team admin can change that.',
+  // A guest of a team that does: the one thing that works, and why.
+  guestMayComment:
+    '<strong>You can comment on this team’s tickets.</strong> Everything else here is read-only for guests.',
   placeholder: 'Leave a comment…',
   // The two keys are drawn in code (⌘ ↵); only their places are the sentence's.
   toSend: '<mod /><enter /> to send',

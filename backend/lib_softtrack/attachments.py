@@ -28,8 +28,8 @@ from sqlmodel import Session, select
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.attachments import AttachmentPreview, AttachmentRead
 from lib_softtrack.storage import ObjectNotFound, Storage
-from lib_softtrack.tables import Attachment, Comment, Ticket, User
-from lib_softtrack.teams import require_team_member
+from lib_softtrack.tables import Attachment, Comment, TeamRole, Ticket, User
+from lib_softtrack.teams import require_team_commenter, require_team_member
 from lib_utils.errors import ErrorCode, api_error
 
 logger = logging.getLogger(__name__)
@@ -330,7 +330,9 @@ def create_attachment(
     in hand.
     """
     ticket = _ticket_or_404(session, ticket_id)
-    require_team_member(ticket.team_id, current_user, session)
+    # A guest of a team that lets its guests comment uploads for a comment
+    # (#244); nobody else who only reads may upload at all.
+    membership = require_team_commenter(ticket.team_id, current_user, session)
 
     filename, content_type = check_upload(upload.filename or "", data)
 
@@ -346,6 +348,7 @@ def create_attachment(
         size_bytes=len(data),
         storage_key=key,
         uploaded_by_id=current_user.id,
+        guest_draft=membership.role == TeamRole.guest,
     )
     session.add(attachment)
     try:
@@ -372,7 +375,13 @@ def list_for_ticket(
 
     attachments = session.exec(
         select(Attachment)
-        .where(Attachment.ticket_id == ticket_id, Attachment.comment_id.is_(None))
+        .where(
+            Attachment.ticket_id == ticket_id,
+            Attachment.comment_id.is_(None),
+            # A guest uploads only for a comment (#244), so a file of theirs
+            # no comment has claimed yet is a draft, not the ticket's.
+            Attachment.guest_draft.is_(False),
+        )
         .order_by(Attachment.created_at, Attachment.id)
     ).all()
     return _expand(session, list(attachments))
@@ -397,13 +406,18 @@ def for_comments(
 
 
 def claim_for_comment(
-    session: Session, comment: Comment, attachment_ids: list[int]
+    session: Session,
+    comment: Comment,
+    attachment_ids: list[int],
+    uploaded_by: Optional[int] = None,
 ) -> None:
     """Hand a comment the files that were uploaded while it was being written.
 
     Only unclaimed attachments on the same ticket can be claimed, so a comment
     cannot adopt a file out of someone else's comment or off another ticket and
-    thereby carry it somewhere the uploader never put it.
+    thereby carry it somewhere the uploader never put it. With `uploaded_by`,
+    only that person's files: a guest's comment cannot take the ticket's own
+    (#244).
     """
     if not attachment_ids:
         return
@@ -420,6 +434,7 @@ def claim_for_comment(
             attachment is None
             or attachment.ticket_id != comment.ticket_id
             or attachment.comment_id is not None
+            or (uploaded_by is not None and attachment.uploaded_by_id != uploaded_by)
         ):
             raise api_error(
                 status_code=400,
@@ -434,6 +449,20 @@ def delete_attachment(
     session: Session, storage: Storage, current_user: User, attachment_id: int
 ) -> None:
     attachment = get_attachment_for_read(session, current_user, attachment_id)
+    ticket = session.get(Ticket, attachment.ticket_id)
+    membership = require_team_commenter(ticket.team_id, current_user, session)
+    # A guest who may comment removes the files they uploaded, and no others
+    # (#244): a draft's file taken back before sending, or one on a comment
+    # of their own.
+    if (
+        membership.role == TeamRole.guest
+        and attachment.uploaded_by_id != current_user.id
+    ):
+        raise api_error(
+            status_code=403,
+            code=ErrorCode.not_your_attachment,
+            detail="Guests can remove only the files they attached",
+        )
     key = attachment.storage_key
     session.delete(attachment)
     session.commit()

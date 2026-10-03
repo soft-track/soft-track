@@ -17746,6 +17746,11 @@
             "title": "Any Member May Delete",
             "default": false
           },
+          "guests_may_comment": {
+            "type": "boolean",
+            "title": "Guests May Comment",
+            "default": false
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -17805,6 +17810,17 @@
               }
             ],
             "title": "Any Member May Delete"
+          },
+          "guests_may_comment": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guests May Comment"
           }
         },
         "type": "object",
@@ -20297,6 +20313,7 @@
           "status_move_to_same",
           "not_your_worklog",
           "not_your_comment",
+          "not_your_attachment",
           "worklog_in_future",
           "transfer_same_team",
           "view_other_team",

@@ -10,6 +10,7 @@ import type { TeamRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { Trans, userText, useTranslation } from '@/i18n'
+import { formatList } from '@/i18n/format'
 import { useTeamByKey } from '@/team/useTeams'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
@@ -40,8 +41,89 @@ export default function TeamGeneralSettings() {
   return (
     <div className="space-y-4">
       <TeamGeneralForm key={team.id} team={team} isAdmin={isAdmin} />
+      <GuestsMayComment
+        key={`guests-${team.id}`}
+        team={team}
+        isAdmin={isAdmin}
+        guests={(members.data ?? [])
+          .filter((member) => member.role === 'guest')
+          .map((member) => member.user.full_name)}
+      />
       <DeletePolicy key={`delete-${team.id}`} team={team} isAdmin={isAdmin} />
     </div>
+  )
+}
+
+/**
+ * Whether the team's guests may join the conversation (#244): comment, attach
+ * files to their comments and react. Off unless an admin turns it on, and
+ * saved as soon as it is switched.
+ */
+function GuestsMayComment({
+  team,
+  isAdmin,
+  guests,
+}: {
+  team: TeamRead
+  isAdmin: boolean
+  guests: string[]
+}) {
+  const { t } = useTranslation(['settings', 'common'])
+  const queryClient = useQueryClient()
+  const updateTeam = useUpdateTeamTeamsTeamIdPatch()
+  const [on, setOn] = useState(team.guests_may_comment)
+  const [error, setError] = useState<string | null>(null)
+  const switchId = useId()
+
+  const toggle = async (value: boolean) => {
+    setOn(value)
+    setError(null)
+    try {
+      await updateTeam.mutateAsync({ teamId: team.id, data: { guests_may_comment: value } })
+      queryClient.invalidateQueries({ queryKey: ['/teams'] })
+    } catch (err: unknown) {
+      setOn(!value)
+      setError(errorDetail(err, t('general.errors.guests')))
+    }
+  }
+
+  return (
+    <section className="glass-strong rounded-panel p-6" aria-labelledby={`${switchId}-heading`}>
+      <p id={`${switchId}-heading`} className="eyebrow">
+        {t('general.guests.heading')}
+      </p>
+      <div className="mt-2 flex items-start justify-between gap-4">
+        <label htmlFor={switchId} className="min-w-0">
+          <span className="block text-sm font-medium text-neutral-800">
+            {t('general.guests.mayComment')}
+          </span>
+          <span className="block text-xs text-neutral-500">{t('general.guests.mayCommentHint')}</span>
+        </label>
+        <input
+          id={switchId}
+          type="checkbox"
+          role="switch"
+          className="switch mt-0.5 shrink-0"
+          checked={on}
+          disabled={!isAdmin || updateTeam.isPending}
+          onChange={(e) => toggle(e.target.checked)}
+        />
+      </div>
+      {error && (
+        <p role="alert" className="mt-3 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700">
+          {error}
+        </p>
+      )}
+      <p className="mt-4 border-t border-neutral-900/8 pt-3 text-xs text-neutral-500">
+        {guests.length === 0
+          ? t('general.guests.none', { team: team.name })
+          : t('general.guests.some', {
+              team: team.name,
+              count: guests.length,
+              names: formatList(guests),
+            })}
+      </p>
+    </section>
   )
 }
 

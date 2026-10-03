@@ -11,6 +11,16 @@ export const general = {
   keyFixed:
     'Cannot be changed — identifiers like <code>{{key}}-42</code> are already in commit messages and chat logs.',
   saveChanges: 'Save changes',
+  // Whether the team's guests may comment (#244).
+  guests: {
+    heading: 'Guests',
+    mayComment: 'Guests may comment',
+    mayCommentHint:
+      'Guests can write comments, attach files to them and react. They still change nothing else.',
+    none: '{{team}} has no guests.',
+    some_one: '{{team}} has 1 guest: {{names}}.',
+    some_other: '{{team}} has {{count}} guests: {{names}}.',
+  },
   // Who may delete tickets and epics (#323).
   deleting: {
     heading: 'Deleting',
@@ -24,5 +34,6 @@ export const general = {
   errors: {
     save: 'Could not save this team.',
     deleting: 'Could not change who may delete.',
+    guests: 'Could not change whether guests may comment.',
   },
 } as const
