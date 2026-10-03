@@ -14,6 +14,9 @@ class StatusLoad(BaseModel):
     # `points` as zero, because "nobody has sized these" and "these are free"
     # are different facts and a column of unsized work should look unfinished.
     unestimated_count: int
+    #: What counts against the column's WIP limit (#270): `ticket_count`, or
+    #: without its sub-tickets where the team does not count them.
+    wip_count: int = 0
 
 
 class AssigneeLoad(BaseModel):

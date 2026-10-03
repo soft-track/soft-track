@@ -10,7 +10,10 @@ import {
   useReorderStatusesTeamsTeamIdStatusesOrderPut,
   useUpdateStatusStatusesStatusIdPatch,
 } from '@/api/generated/endpoints/statuses/statuses'
-import { useListTeamMembersTeamsTeamIdMembersGet } from '@/api/generated/endpoints/teams/teams'
+import {
+  useListTeamMembersTeamsTeamIdMembersGet,
+  useUpdateTeamTeamsTeamIdPatch,
+} from '@/api/generated/endpoints/teams/teams'
 import { StatusCategory, type StatusRead, type TeamRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
@@ -193,6 +196,35 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
               </span>
             )}
 
+            {/* How many it should hold at once (#270); blank for no limit. */}
+            {isAdmin ? (
+              <input
+                type="number"
+                min={1}
+                max={999}
+                defaultValue={status.wip_limit ?? ''}
+                placeholder={t('statuses.wip.none')}
+                aria-label={t('statuses.wip.limitOf', { name: status.name })}
+                onBlur={(e) => {
+                  const value = e.target.value === '' ? null : Number(e.target.value)
+                  if (value === (status.wip_limit ?? null)) return
+                  if (value !== null && !(Number.isInteger(value) && value >= 1)) return
+                  run(
+                    () =>
+                      update.mutateAsync({ statusId: status.id, data: { wip_limit: value } }),
+                    t('statuses.errors.wip'),
+                  )
+                }}
+                className="field field-sm w-24 shrink-0"
+              />
+            ) : (
+              status.wip_limit != null && (
+                <span className="shrink-0 text-xs text-neutral-500">
+                  {t('statuses.wip.shown', { count: status.wip_limit })}
+                </span>
+              )
+            )}
+
             {isAdmin && (
               <span className="flex shrink-0 items-center">
                 <button
@@ -293,6 +325,8 @@ function StatusList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
         </p>
       )}
 
+      <WipSettings team={team} isAdmin={isAdmin} />
+
       {deleting && (
         <DeleteStatusModal
           status={deleting}
@@ -387,5 +421,83 @@ function DeleteStatusModal({
         </div>
       </form>
     </div>
+  )
+}
+
+/**
+ * What a column's WIP limit means on this team (#270): a warning or a
+ * refusal, and whether sub-tickets count. Saved as soon as it is switched.
+ */
+function WipSettings({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
+  const queryClient = useQueryClient()
+  const updateTeam = useUpdateTeamTeamsTeamIdPatch()
+  const [hard, setHard] = useState(team.wip_limits_hard ?? false)
+  const [subtickets, setSubtickets] = useState(team.wip_counts_subtickets ?? true)
+  const [error, setError] = useState<string | null>(null)
+  const hardId = useId()
+  const subticketsId = useId()
+
+  const save = async (data: { wip_limits_hard?: boolean; wip_counts_subtickets?: boolean }) => {
+    setError(null)
+    try {
+      await updateTeam.mutateAsync({ teamId: team.id, data })
+      queryClient.invalidateQueries({ queryKey: ['/teams'] })
+    } catch (err: unknown) {
+      setHard(team.wip_limits_hard ?? false)
+      setSubtickets(team.wip_counts_subtickets ?? true)
+      setError(errorDetail(err, t('statuses.errors.wipSettings')))
+    }
+  }
+
+  const rows = [
+    {
+      id: hardId,
+      label: t('statuses.wip.hard'),
+      hint: t('statuses.wip.hardHint'),
+      checked: hard,
+      onChange: (value: boolean) => {
+        setHard(value)
+        save({ wip_limits_hard: value })
+      },
+    },
+    {
+      id: subticketsId,
+      label: t('statuses.wip.subtickets'),
+      hint: t('statuses.wip.subticketsHint'),
+      checked: subtickets,
+      onChange: (value: boolean) => {
+        setSubtickets(value)
+        save({ wip_counts_subtickets: value })
+      },
+    },
+  ]
+
+  return (
+    <section className="mt-6 border-t border-neutral-900/8 pt-4">
+      <p className="eyebrow">{t('statuses.wip.heading')}</p>
+      {rows.map((row) => (
+        <div key={row.id} className="mt-3 flex items-start justify-between gap-4">
+          <label htmlFor={row.id} className="min-w-0">
+            <span className="block text-sm font-medium text-neutral-800">{row.label}</span>
+            <span className="block text-xs text-neutral-500">{row.hint}</span>
+          </label>
+          <input
+            id={row.id}
+            type="checkbox"
+            role="switch"
+            className="switch mt-0.5 shrink-0"
+            checked={row.checked}
+            disabled={!isAdmin || updateTeam.isPending}
+            onChange={(e) => row.onChange(e.target.checked)}
+          />
+        </div>
+      ))}
+      {error && (
+        <p role="alert" className="mt-3 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700">
+          {error}
+        </p>
+      )}
+    </section>
   )
 }

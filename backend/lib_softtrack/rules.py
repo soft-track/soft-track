@@ -43,7 +43,7 @@ from typing import Iterable, Optional
 from sqlmodel import Session, select
 
 from lib_softtrack import automations as automations_service
-from lib_softtrack import history, notifications as notifications_service, outbound
+from lib_softtrack import history, notifications as notifications_service, outbound, wip
 from lib_softtrack.automations import MAX_RUNS_PER_TEAM
 from lib_softtrack.models.automations import RuleActions
 from lib_softtrack.tables import (
@@ -316,9 +316,21 @@ def _apply(
 
     if actions.set_status_id is not None and ticket.status_id != actions.set_status_id:
         status = session.get(WorkflowStatus, actions.set_status_id)
-        ticket.status_id = actions.set_status_id
-        lines.append(f"Set status to {status.name}")
-        touched_ticket = True
+        # A rule follows the team's WIP limits like anybody (#270). It skips
+        # the move rather than failing whatever set it off, and says so in
+        # the run log, as it does for an assignee who cannot hold the ticket.
+        full = wip.room(
+            session,
+            ticket.team_id,
+            actions.set_status_id,
+            [(ticket.status_id, ticket.parent_id)],
+        )
+        if full is not None:
+            lines.append(f"Did not move it to {status.name}: {full}")
+        else:
+            ticket.status_id = actions.set_status_id
+            lines.append(f"Set status to {status.name}")
+            touched_ticket = True
 
     if actions.set_priority is not None and ticket.priority != actions.set_priority:
         ticket.priority = actions.set_priority

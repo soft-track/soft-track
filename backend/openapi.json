@@ -18812,6 +18812,11 @@
           "unestimated_count": {
             "type": "integer",
             "title": "Unestimated Count"
+          },
+          "wip_count": {
+            "type": "integer",
+            "title": "Wip Count",
+            "default": 0
           }
         },
         "type": "object",
@@ -18864,6 +18869,17 @@
           "color": {
             "type": "string",
             "title": "Color"
+          },
+          "wip_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wip Limit"
           }
         },
         "type": "object",
@@ -18913,6 +18929,19 @@
               }
             ],
             "title": "Color"
+          },
+          "wip_limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 999.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wip Limit"
           }
         },
         "type": "object",
@@ -19130,6 +19159,16 @@
             "title": "Guests May Comment",
             "default": false
           },
+          "wip_limits_hard": {
+            "type": "boolean",
+            "title": "Wip Limits Hard",
+            "default": false
+          },
+          "wip_counts_subtickets": {
+            "type": "boolean",
+            "title": "Wip Counts Subtickets",
+            "default": true
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -19200,6 +19239,28 @@
               }
             ],
             "title": "Guests May Comment"
+          },
+          "wip_limits_hard": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wip Limits Hard"
+          },
+          "wip_counts_subtickets": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wip Counts Subtickets"
           }
         },
         "type": "object",
@@ -21686,6 +21747,7 @@
           "sprint_already_active",
           "retrospective_closed",
           "sprint_not_completed",
+          "wip_limit_reached",
           "sprint_dates_invalid",
           "link_to_self",
           "parent_is_self",

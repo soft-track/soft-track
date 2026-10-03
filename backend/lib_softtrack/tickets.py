@@ -14,7 +14,7 @@ from sqlmodel import Session, select
 from lib_identity.models.identity import UserPublic
 from lib_softtrack import attachments as attachments_service
 from lib_softtrack import custom_fields as custom_fields_service
-from lib_softtrack import outbound, outside
+from lib_softtrack import outbound, outside, wip
 from lib_softtrack.models.tickets import (
     TicketBulkChanges,
     TicketBulkUpdate,
@@ -298,6 +298,8 @@ def create_ticket(
 
     if payload.parent_id is not None:
         ticket.parent_id = validate_parent(session, ticket, payload.parent_id).id
+    # A new ticket is new work in its column too (#270).
+    wip.require_room(session, team_id, ticket.status_id, [(None, ticket.parent_id)])
 
     session.add(ticket)
     session.commit()
@@ -757,6 +759,16 @@ def _apply_update(
         data.get("type") or ticket.type,
         custom_fields or {},
     )
+    # Into a column at its limit, where the team makes limits hard (#270).
+    # Before anything is set, like the checks above; in a bulk edit the
+    # tickets moved before this one already count.
+    if "status_id" in data and data["status_id"] != ticket.status_id:
+        wip.require_room(
+            session,
+            ticket.team_id,
+            data["status_id"],
+            [(ticket.status_id, data.get("parent_id", ticket.parent_id))],
+        )
     for field, value in data.items():
         setattr(ticket, field, value)
     ticket.updated_at = datetime.now(timezone.utc)
