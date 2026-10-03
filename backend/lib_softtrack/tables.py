@@ -1340,6 +1340,41 @@ class SavedView(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=utcnow)
 
 
+class ShareLink(SQLModel, table=True):
+    """A read-only link to an epic or a saved view, for somebody with no
+    account (#245): a client opening it on Monday morning to see what moved.
+
+    The link is a token, and only its hash is kept, the way a password reset
+    token is: a copy of the database opens nothing. It can expire, can ask
+    for a password, and is revoked rather than deleted, so the list of a
+    team's links still says who made one and how often it was opened.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    #: What it shows: an epic, or a saved view. Exactly one, until what it
+    #: pointed at goes -- then neither, and the link is revoked with it.
+    project_id: Optional[int] = Field(default=None, foreign_key="project.id")
+    view_id: Optional[int] = Field(default=None, foreign_key="savedview.id")
+    #: sha256 of the token. The token itself is shown once, when made.
+    token_hash: str = Field(index=True, unique=True)
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    expires_at: Optional[datetime] = None
+    revoked_at: Optional[datetime] = None
+    #: A password whoever opens it has to give as well, hashed like an
+    #: account's. Null for none.
+    password_hash: Optional[str] = None
+    #: What the page shows beside key, title, status and type. All off unless
+    #: the link turns them on.
+    show_comments: bool = Field(default=False)
+    show_assignees: bool = Field(default=False)
+    show_estimates: bool = Field(default=False)
+    show_attachments: bool = Field(default=False)
+    open_count: int = Field(default=0)
+    last_opened_at: Optional[datetime] = None
+
+
 class UserDefaultView(SQLModel, table=True):
     """One person's landing view for one team, overriding the team's default.
 

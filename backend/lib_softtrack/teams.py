@@ -29,6 +29,7 @@ from lib_softtrack.tables import (
     Project,
     Repository,
     SavedView,
+    ShareLink,
     Team,
     TeamMember,
     TeamRole,
@@ -203,6 +204,12 @@ _TEAM_OWNED_BY_PATH = (
         "Template not found",
     ),
     ("field_id", CustomField, ErrorCode.custom_field_not_found, "Field not found"),
+    (
+        "share_link_id",
+        ShareLink,
+        ErrorCode.share_link_not_found,
+        "Share link not found",
+    ),
 )
 
 

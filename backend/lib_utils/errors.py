@@ -182,6 +182,17 @@ class ErrorCode(str, enum.Enum):
     #: Something only somebody inside the organisation reaches (#317): the
     #: directory, departments, workloads, creating a team, expense claims.
     external_account = "external_account"
+    #: A share link that does not exist on this team (#245).
+    share_link_not_found = "share_link_not_found"
+    #: A share link's page that cannot be opened: revoked, expired, or never
+    #: a link at all -- one answer for all three, so it says nothing (#245).
+    share_link_inactive = "share_link_inactive"
+    #: A share link with a password, opened without one, or with the wrong
+    #: one (#245).
+    share_password_required = "share_password_required"
+    share_password_wrong = "share_password_wrong"
+    #: A share link names an epic or a saved view, and exactly one (#245).
+    share_target_required = "share_target_required"
     #: A date worked that has not happened yet.
     worklog_in_future = "worklog_in_future"
     #: Moving a ticket to the team it is already on (#98).

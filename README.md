@@ -90,6 +90,7 @@ too, but still call an epic a *project* (`/teams/{team_id}/projects`,
 - [Reactions](docs/features/reactions.md)
 - [Editing and deleting comments](docs/features/comments.md)
 - [Attachments](docs/features/attachments.md)
+- [Share links](docs/features/share-links.md)
 - [User management](docs/features/users.md)
 - [People: the directory, profiles and workload](docs/features/people.md)
 - [Payroll and finance](docs/features/finance.md)

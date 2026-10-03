@@ -44,6 +44,7 @@ from app_softtrack.search import router as search_router
 from app_softtrack.statuses import router as statuses_router
 from app_softtrack.teams import router as teams_router
 from app_softtrack.templates import router as templates_router
+from app_softtrack.sharing import router as sharing_router
 from app_softtrack.trash import router as trash_router
 from app_softtrack.webhooks import router as webhooks_router
 from app_softtrack.worklogs import router as worklogs_router
@@ -176,6 +177,7 @@ app.include_router(notifications_router)
 app.include_router(views_router)
 app.include_router(templates_router)
 app.include_router(trash_router)
+app.include_router(sharing_router)
 app.include_router(custom_fields_router)
 app.include_router(worklogs_router)
 app.include_router(workload_router)

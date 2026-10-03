@@ -18,6 +18,7 @@ from typing import Optional
 from sqlmodel import Session, or_, select
 
 from lib_identity.models.identity import UserPublic
+from lib_softtrack import sharing
 from lib_softtrack.models.views import (
     DefaultViewUpdate,
     SavedViewCreate,
@@ -305,8 +306,11 @@ def delete_view(session: Session, current_user: User, view_id: int) -> None:
     view = get_view_or_404(session, current_user, view_id)
     _require_can_edit(session, current_user, view)
 
-    # Before the row goes: both of these hold a foreign key to it.
+    # Before the row goes: both of these hold a foreign key to it, and so
+    # does a share link to it (#245), which is revoked with it.
     _withdraw_from_defaults(session, view)
+    sharing.forget_view(session, view.id)
+    session.flush()
     session.delete(view)
     session.commit()
 

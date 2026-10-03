@@ -240,6 +240,26 @@ webhook_by_address = Throttle(
     forget_after=15 * 60.0,
 )
 
+# Share links (#245), per address. The page needs no sign-in, so the token is
+# the credential: links that do not work and wrong passwords are what
+# somebody guessing at tokens produces, and are limited like failed sign-ins.
+share_failures_by_address = Throttle(
+    name="attempts to open share links from this address",
+    free_attempts=10,
+    base_delay=1.0,
+    max_delay=15 * 60.0,
+    forget_after=15 * 60.0,
+)
+# And opening at all, loosely: a client reading the page, reloading it and
+# downloading its files never comes near this, a scraper does.
+share_opens_by_address = Throttle(
+    name="share link pages from this address",
+    free_attempts=120,
+    base_delay=1.0,
+    max_delay=60.0,
+    forget_after=60.0,
+)
+
 _ALL = (
     login_by_address,
     login_by_account,
@@ -250,6 +270,8 @@ _ALL = (
     oauth_by_address,
     oauth_callback_by_address,
     webhook_by_address,
+    share_failures_by_address,
+    share_opens_by_address,
 )
 
 

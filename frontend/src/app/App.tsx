@@ -41,6 +41,8 @@ import TeamFieldSettings from '@/settings/TeamFieldSettings'
 import TeamStatusSettings from '@/settings/TeamStatusSettings'
 import TeamTemplateSettings from '@/settings/TeamTemplateSettings'
 import TeamTrashSettings from '@/settings/TeamTrashSettings'
+import TeamShareLinksSettings from '@/settings/TeamShareLinksSettings'
+import SharedPage from '@/sharing/SharedPage'
 import TeamWebhookSettings from '@/settings/TeamWebhookSettings'
 import { RequireSiteAdmin } from '@/settings/RequireSiteAdmin'
 
@@ -71,6 +73,9 @@ export default function App() {
             have an account yet, and the page has to say what they were
             invited to before asking them to sign in. */}
         <Route path="/invite/:token" element={<InvitePage />} />
+        {/* A share link's page (#245): for somebody with no account, so
+            outside everything that asks for one, like an invitation. */}
+        <Route path="/shared/:token" element={<SharedPage />} />
         {/* The one route that answers differently depending on who is
             asking: signed out it is the landing page, signed in it is
             TeamsHome exactly as when this lived inside RequireAuth below.
@@ -125,6 +130,7 @@ export default function App() {
             />
             <Route path="teams/:teamKey/webhooks" element={<TeamWebhookSettings />} />
             <Route path="teams/:teamKey/trash" element={<TeamTrashSettings />} />
+            <Route path="teams/:teamKey/share-links" element={<TeamShareLinksSettings />} />
             <Route element={<RequireSiteAdmin />}>
               <Route path="admin/users" element={<AdminUsersPage />} />
               <Route path="admin/departments" element={<AdminDepartmentsPage />} />

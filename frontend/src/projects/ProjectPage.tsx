@@ -3,6 +3,7 @@ import { type ReactNode, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { errorDetail } from '@/api/errors'
+import { useAuth } from '@/auth/useAuth'
 import {
   useListTicketsTeamsTeamIdTicketsGet,
   useUpdateTicketTicketsTicketIdPatch,
@@ -19,6 +20,7 @@ import { EstimateBadge } from '@/tickets/EstimateBadge'
 import { TicketDetailPanel } from '@/tickets/TicketDetailPanel'
 import { PriorityIcon } from '@/tickets/PriorityIcon'
 import { AddTicketsModal } from '@/projects/AddTicketsModal'
+import { ShareLinkDialog } from '@/sharing/ShareLinkDialog'
 import { ProjectBurnupChart } from '@/reports/ProjectBurnupChart'
 import { activeMembers } from '@/team/members'
 import {
@@ -98,6 +100,10 @@ function ProjectDetail({
   const burnup = useProjectBurnupProjectsProjectIdBurnupGet(project.id)
 
   const [adding, setAdding] = useState(false)
+  // Sharing it read-only with somebody with no account (#245): a team admin's.
+  const [sharing, setSharing] = useState(false)
+  const { user } = useAuth()
+  const isTeamAdmin = members.find((member) => member.user.id === user?.id)?.role === 'admin'
   const [openTicketId, setOpenTicketId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -151,6 +157,16 @@ function ProjectDetail({
             </span>
           )}
           <div className="ml-auto flex gap-2">
+            {isTeamAdmin && (
+              <button
+                type="button"
+                onClick={() => setSharing(true)}
+                className="btn btn-secondary btn-sm"
+              >
+                <Icon name="link" size={13} />
+                {t('page.share')}
+              </button>
+            )}
             <Link to={`/${team.key}?project=${project.id}`} className="btn btn-secondary btn-sm">
               <Icon name="board" size={13} />
               {t('page.onTheBoard')}
@@ -310,6 +326,13 @@ function ProjectDetail({
           project={project}
           alreadyIn={new Set(tickets.map((ticket) => ticket.id))}
           onClose={() => setAdding(false)}
+        />
+      )}
+      {sharing && (
+        <ShareLinkDialog
+          teamId={team.id}
+          target={{ kind: 'epic', id: project.id, name: project.name }}
+          onClose={() => setSharing(false)}
         />
       )}
       {openTicketId !== null && (

@@ -6445,6 +6445,279 @@
         }
       }
     },
+    "/teams/{team_id}/share-links": {
+      "post": {
+        "tags": [
+          "sharing"
+        ],
+        "summary": "Create Share Link",
+        "description": "A read-only link to an epic or a saved view (#245). Team admins only.\nThe token is in this response and nowhere else, ever.",
+        "operationId": "create_share_link_teams__team_id__share_links_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareLinkCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareLinkCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "sharing"
+        ],
+        "summary": "List Share Links",
+        "operationId": "list_share_links_teams__team_id__share_links_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShareLinkRead"
+                  },
+                  "title": "Response List Share Links Teams  Team Id  Share Links Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/share-links/{share_link_id}": {
+      "delete": {
+        "tags": [
+          "sharing"
+        ],
+        "summary": "Revoke Share Link",
+        "description": "Stop a link working. The row stays, for the team's list.",
+        "operationId": "revoke_share_link_share_links__share_link_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "share_link_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Share Link Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shared/{token}": {
+      "get": {
+        "tags": [
+          "sharing"
+        ],
+        "summary": "Open Shared Page",
+        "description": "The page a share link opens, for anybody holding it: no sign-in.\n\nA password, when the link asks for one, comes in `X-Share-Password` --\na header rather than the URL, which ends up in logs and history.",
+        "operationId": "open_shared_page_shared__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          },
+          {
+            "name": "X-Share-Password",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Share-Password"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharedPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shared/{token}/attachments/{attachment_id}": {
+      "get": {
+        "tags": [
+          "sharing"
+        ],
+        "summary": "Download Shared Attachment",
+        "description": "A file on a ticket the link shows, when the link shows files.",
+        "operationId": "download_shared_attachment_shared__token__attachments__attachment_id__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          },
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Attachment Id"
+            }
+          },
+          {
+            "name": "X-Share-Password",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Share-Password"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/teams/{team_id}/custom-fields": {
       "get": {
         "tags": [
@@ -17240,6 +17513,421 @@
         "title": "SettlementKind",
         "description": "How an approved claim is paid back (#137)."
       },
+      "ShareLinkCreate": {
+        "properties": {
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "view_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View Id"
+          },
+          "shows": {
+            "$ref": "#/components/schemas/ShareShows",
+            "default": {
+              "comments": false,
+              "assignees": false,
+              "estimates": false,
+              "attachments": false
+            }
+          },
+          "expires_in_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 365.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires In Days"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 4
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "title": "ShareLinkCreate",
+        "description": "A share link for an epic or a saved view: exactly one of the two."
+      },
+      "ShareLinkCreated": {
+        "properties": {
+          "link": {
+            "$ref": "#/components/schemas/ShareLinkRead"
+          },
+          "token": {
+            "type": "string",
+            "title": "Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "link",
+          "token"
+        ],
+        "title": "ShareLinkCreated"
+      },
+      "ShareLinkRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "target_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Name"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "epic",
+              "view"
+            ],
+            "title": "Kind"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "view_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View Id"
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/UserPublic"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "has_password": {
+            "type": "boolean",
+            "title": "Has Password"
+          },
+          "shows": {
+            "$ref": "#/components/schemas/ShareShows"
+          },
+          "open_count": {
+            "type": "integer",
+            "title": "Open Count"
+          },
+          "last_opened_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Opened At"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "kind",
+          "created_by",
+          "created_at",
+          "has_password",
+          "shows",
+          "open_count",
+          "active"
+        ],
+        "title": "ShareLinkRead",
+        "description": "A link in the team's list. Never the token: that is shown once."
+      },
+      "ShareShows": {
+        "properties": {
+          "comments": {
+            "type": "boolean",
+            "title": "Comments",
+            "default": false
+          },
+          "assignees": {
+            "type": "boolean",
+            "title": "Assignees",
+            "default": false
+          },
+          "estimates": {
+            "type": "boolean",
+            "title": "Estimates",
+            "default": false
+          },
+          "attachments": {
+            "type": "boolean",
+            "title": "Attachments",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "ShareShows",
+        "description": "What a share link's page shows beside key, title, status and type\n(#245). Each is off unless the link turns it on."
+      },
+      "SharedAttachment": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "content_type",
+          "size_bytes"
+        ],
+        "title": "SharedAttachment"
+      },
+      "SharedComment": {
+        "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "body",
+          "created_at"
+        ],
+        "title": "SharedComment"
+      },
+      "SharedPage": {
+        "properties": {
+          "team_name": {
+            "type": "string",
+            "title": "Team Name"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "epic",
+              "view"
+            ],
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          },
+          "ticket_count": {
+            "type": "integer",
+            "title": "Ticket Count"
+          },
+          "completed_ticket_count": {
+            "type": "integer",
+            "title": "Completed Ticket Count"
+          },
+          "tickets": {
+            "items": {
+              "$ref": "#/components/schemas/SharedTicket"
+            },
+            "type": "array",
+            "title": "Tickets"
+          },
+          "more": {
+            "type": "integer",
+            "title": "More",
+            "default": 0
+          },
+          "shows": {
+            "$ref": "#/components/schemas/ShareShows"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team_name",
+          "kind",
+          "title",
+          "ticket_count",
+          "completed_ticket_count",
+          "tickets",
+          "shows"
+        ],
+        "title": "SharedPage",
+        "description": "What whoever has a share link sees (#245): read-only, no sign-in."
+      },
+      "SharedStatus": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "$ref": "#/components/schemas/StatusCategory"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "category",
+          "color"
+        ],
+        "title": "SharedStatus"
+      },
       "SharedTeam": {
         "properties": {
           "id": {
@@ -17263,6 +17951,93 @@
         ],
         "title": "SharedTeam",
         "description": "A team on somebody's profile (#126), which the viewer is on too."
+      },
+      "SharedTicket": {
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TicketType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SharedStatus"
+          },
+          "assignee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee"
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimate"
+          },
+          "minutes_logged": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minutes Logged"
+          },
+          "comments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SharedComment"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comments"
+          },
+          "attachments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SharedAttachment"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attachments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "identifier",
+          "title",
+          "type",
+          "status"
+        ],
+        "title": "SharedTicket"
       },
       "SortDirection": {
         "type": "string",
@@ -20471,6 +21246,11 @@
           "epics_only_for_external",
           "external_cannot_administer",
           "external_account",
+          "share_link_not_found",
+          "share_link_inactive",
+          "share_password_required",
+          "share_password_wrong",
+          "share_target_required",
           "worklog_in_future",
           "transfer_same_team",
           "view_other_team",
