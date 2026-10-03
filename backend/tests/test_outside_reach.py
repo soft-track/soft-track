@@ -41,6 +41,7 @@ TEAM_SCOPED = {
     "worklog_id",
     "number",
     "emoji",
+    "share_link_id",
 }
 
 #: What an account from outside may reach beyond its teams, and why. Anything
@@ -80,6 +81,7 @@ EXTERNAL_MAY = {
     ("POST", "/webhooks/gitlab/{hook_token}"): "called by a code host, not a person",
     ("GET", "/currencies"): "a fixed list of ISO codes",
     ("GET", "/health"): "nobody's business but the load balancer's",
+    ("GET", "/shared/{token}"): "a share link's page, which needs no account (#245)",
 }
 
 

@@ -18,6 +18,7 @@ import { projects } from '@/i18n/en/projects'
 import { reports } from '@/i18n/en/reports'
 import { search } from '@/i18n/en/search'
 import { settings } from '@/i18n/en/settings'
+import { sharing } from '@/i18n/en/sharing'
 import { team } from '@/i18n/en/team'
 import { ui } from '@/i18n/en/ui'
 import { views } from '@/i18n/en/views'
@@ -48,5 +49,6 @@ export const resources = {
     markdown,
     ui,
     errors,
+    sharing,
   },
 } as const

@@ -25,6 +25,7 @@ export * from './realtime/realtime';
 export * from './reimbursements/reimbursements';
 export * from './reports/reports';
 export * from './search/search';
+export * from './sharing/sharing';
 export * from './sprints/sprints';
 export * from './statuses/statuses';
 export * from './teams/teams';
