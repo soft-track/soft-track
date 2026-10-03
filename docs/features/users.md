@@ -213,8 +213,21 @@ person.
   or a watch reaches them only on tickets in their epics.
 - **Off the books.** Payroll drafts leave accounts from outside out.
 
-What an account from outside may reach beyond its teams -- the directory,
-departments, creating a team, claiming expenses -- is #317.
+**Beside its teams** (#317), an account from outside reaches its own account,
+its invitations and its notifications, and nothing that asked only "is
+somebody signed in": the people directory and profiles, departments,
+anybody's workload, the team directory, creating a team and expense claims
+all answer `403 external_account` (`get_current_insider` in
+`backend/lib_identity/identity.py`). The browser offers none of them -- no
+People, Import or New team in the sidebar, no Expenses in settings -- and a
+pasted link to one opens a page saying why, as Finance does. It sees people
+by name and never by address: `UserPublic` leaves the email out when the
+caller is from outside, but for their own (`backend/lib_utils/viewer.py`), and
+a name is plain text rather than a link to a profile it cannot open.
+`backend/tests/test_outside_reach.py` sends every route that is not about one
+team's work as such an account; each is one it may reach (listed with the
+reason), an admin's, or refused, so a route added later that forgot the check
+fails the suite.
 
 ### Invitations, with or without a mail server
 

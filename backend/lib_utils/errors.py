@@ -179,6 +179,9 @@ class ErrorCode(str, enum.Enum):
     #: An account from outside made a site or finance admin, or such an admin
     #: marked as outside (#243).
     external_cannot_administer = "external_cannot_administer"
+    #: Something only somebody inside the organisation reaches (#317): the
+    #: directory, departments, workloads, creating a team, expense claims.
+    external_account = "external_account"
     #: A date worked that has not happened yet.
     worklog_in_future = "worklog_in_future"
     #: Moving a ticket to the team it is already on (#98).

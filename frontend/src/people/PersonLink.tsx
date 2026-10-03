@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
+import { useIsExternal } from '@/auth/useAuth'
 import { personPath } from '@/people/personPath'
 
 /**
@@ -18,6 +19,9 @@ export function PersonLink({
   className?: string
   children?: ReactNode
 }) {
+  // Somebody from outside the organisation sees a person by name, with no
+  // profile behind it (#317).
+  if (useIsExternal()) return <span className={className}>{children ?? person.full_name}</span>
   return (
     <Link to={personPath(person)} className={className}>
       {children ?? person.full_name}

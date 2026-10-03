@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, Response
 from sqlmodel import Session
 
 from app_softtrack.guards import team_writer
-from lib_identity.identity import get_current_user
+from lib_identity.identity import get_current_insider, get_current_user
 from lib_softtrack import teams as teams_service
 from lib_softtrack.models.teams import (
     TeamCreate,
@@ -25,7 +25,9 @@ router = APIRouter(prefix="/teams", tags=["teams"])
 def create_team(
     payload: TeamCreate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    # Not somebody from outside the organisation (#317): a client of the
+    # instance does not run a team on it.
+    current_user: User = Depends(get_current_insider),
 ):
     return teams_service.create_team(session, current_user, payload)
 
@@ -42,7 +44,7 @@ def list_my_teams(
 @router.get("/directory", response_model=list[TeamDirectoryEntry])
 def team_directory(
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_insider),
 ):
     """Every team, with its size and admins: who to ask to be added (#318)."""
     return teams_service.team_directory(session)

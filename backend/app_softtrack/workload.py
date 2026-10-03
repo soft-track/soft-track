@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
-from lib_identity.identity import get_current_user
+from lib_identity.identity import get_current_insider
 from lib_softtrack import workload as workload_service
 from lib_softtrack.models.page import MAX_LIMIT
 from lib_softtrack.models.workload import WorkloadRead
@@ -24,7 +24,7 @@ def get_workload(
     ),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
-    viewer: User = Depends(get_current_user),
+    viewer: User = Depends(get_current_insider),
 ):
     """Everything open assigned to somebody, in the teams you share with them.
 

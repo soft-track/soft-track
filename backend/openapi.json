@@ -20470,6 +20470,7 @@
           "account_outside_organisation",
           "epics_only_for_external",
           "external_cannot_administer",
+          "external_account",
           "worklog_in_future",
           "transfer_same_team",
           "view_other_team",

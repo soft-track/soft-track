@@ -104,6 +104,7 @@ export const ErrorCode = {
   account_outside_organisation: 'account_outside_organisation',
   epics_only_for_external: 'epics_only_for_external',
   external_cannot_administer: 'external_cannot_administer',
+  external_account: 'external_account',
   worklog_in_future: 'worklog_in_future',
   transfer_same_team: 'transfer_same_team',
   view_other_team: 'view_other_team',

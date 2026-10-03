@@ -16,6 +16,10 @@ export const home = {
   },
   teams: {
     heading: 'Teams you can ask to join',
+    // Somebody from outside the organisation (#317), who sees no directory.
+    headingOutside: 'Your team',
+    outside:
+      'Your account is from outside the organisation. Whoever invited you adds you to the team you work with, and it opens from here.',
     hint: 'Ask one of a team’s admins to add you.',
     loading: 'Loading teams…',
     empty: 'There are no teams on this SoftTrack yet.',

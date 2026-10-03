@@ -24,25 +24,41 @@ export function NoTeamHome() {
   const { user, logout } = useAuth()
   const { t } = useTranslation('team')
   const invites = useMyInvitesAuthMeInvitesGet({ query: { staleTime: 30_000 } })
-  const directory = useTeamDirectoryTeamsDirectoryGet()
+  // Somebody from outside the organisation (#317) reaches neither the team
+  // directory nor the people in it, nor starts a team: they wait to be added.
+  const outside = user?.is_external ?? false
+  const directory = useTeamDirectoryTeamsDirectoryGet({ query: { enabled: !outside } })
   const invited = (invites.data ?? []).length > 0
   const teams = directory.data ?? []
   const noTeamsAtAll = directory.isSuccess && teams.length === 0
 
   const tiles: { to: string; icon: IconName; title: string; body: string }[] = [
-    { to: '/people', icon: 'users', title: t('home.tiles.people'), body: t('home.tiles.peopleBody') },
+    ...(outside
+      ? []
+      : [
+          {
+            to: '/people',
+            icon: 'users' as const,
+            title: t('home.tiles.people'),
+            body: t('home.tiles.peopleBody'),
+          },
+        ]),
     {
       to: '/settings/profile',
       icon: 'briefcase',
       title: t('home.tiles.profile'),
       body: t('home.tiles.profileBody'),
     },
-    {
-      to: '/settings/expenses',
-      icon: 'receipt',
-      title: t('home.tiles.expenses'),
-      body: t('home.tiles.expensesBody'),
-    },
+    ...(outside
+      ? []
+      : [
+          {
+            to: '/settings/expenses',
+            icon: 'receipt' as const,
+            title: t('home.tiles.expenses'),
+            body: t('home.tiles.expensesBody'),
+          },
+        ]),
     ...(user?.is_finance_admin
       ? [
           {
@@ -86,7 +102,11 @@ export function NoTeamHome() {
 
         <ul
           className={`mx-auto grid max-w-2xl gap-3 ${
-            tiles.length === 4 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
+            tiles.length === 4
+              ? 'sm:grid-cols-2'
+              : tiles.length === 1
+                ? 'max-w-xs'
+                : 'sm:grid-cols-3'
           }`}
         >
           {tiles.map((tile) => (
@@ -110,9 +130,11 @@ export function NoTeamHome() {
           className="glass-strong mx-auto mt-3 max-w-2xl rounded-panel p-5"
         >
           <h2 id="teams-heading" className="eyebrow">
-            {t('home.teams.heading')}
+            {outside ? t('home.teams.headingOutside') : t('home.teams.heading')}
           </h2>
-          {directory.isPending ? (
+          {outside ? (
+            <p className="mt-3 text-sm text-neutral-500">{t('home.teams.outside')}</p>
+          ) : directory.isPending ? (
             <p className="mt-3 text-sm text-neutral-400">{t('home.teams.loading')}</p>
           ) : noTeamsAtAll ? (
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -137,7 +159,7 @@ export function NoTeamHome() {
         </section>
 
         <div className="mx-auto mt-4 flex max-w-2xl flex-wrap items-center justify-between gap-2 px-1 text-sm">
-          {noTeamsAtAll ? (
+          {noTeamsAtAll || outside ? (
             <span />
           ) : (
             <span className="text-neutral-500">

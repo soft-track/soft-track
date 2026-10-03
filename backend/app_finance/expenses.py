@@ -15,7 +15,7 @@ from lib_finance.models.expenses import (
     ExpenseRefusal,
     ExpenseUpdate,
 )
-from lib_identity.identity import get_current_user
+from lib_identity.identity import get_current_insider
 from lib_softtrack import attachments
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT
 from lib_softtrack.storage import ObjectNotFound, Storage, copy_stream, get_storage
@@ -59,7 +59,7 @@ def list_my_expenses(
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_insider),
 ):
     """Your own claims, the latest spent first. Nobody else's, whoever asks:
     an expense says where somebody was and what they bought."""
@@ -70,7 +70,7 @@ def list_my_expenses(
 def submit_expense(
     payload: ExpenseCreate,
     session: Session = Depends(get_session),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_insider),
 ):
     """Claim money you spent for work. The receipt is attached next, with
     PUT /expenses/{id}/receipt."""
@@ -82,7 +82,7 @@ def update_expense(
     expense_id: int,
     payload: ExpenseUpdate,
     session: Session = Depends(get_session),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_insider),
 ):
     """Change a claim that is still waiting. A decided one is a record."""
     return expenses_service.update(session, user, expense_id, payload)
@@ -93,7 +93,7 @@ def withdraw_expense(
     expense_id: int,
     session: Session = Depends(get_session),
     storage: Storage = Depends(get_storage),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_insider),
 ):
     """Withdraw a claim that is still waiting, receipt and all."""
     expenses_service.withdraw(session, storage, user, expense_id)
@@ -106,7 +106,7 @@ async def attach_receipt(
     file: UploadFile = File(..., description="A photo or PDF of the receipt."),
     session: Session = Depends(get_session),
     storage: Storage = Depends(get_storage),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_insider),
 ):
     """Attach the receipt, or replace it: an image or a PDF, checked the way
     ticket attachments are."""
@@ -128,7 +128,7 @@ def remove_receipt(
     expense_id: int,
     session: Session = Depends(get_session),
     storage: Storage = Depends(get_storage),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_insider),
 ):
     return expenses_service.remove_receipt(session, storage, user, expense_id)
 
@@ -138,7 +138,7 @@ def download_my_receipt(
     expense_id: int,
     session: Session = Depends(get_session),
     storage: Storage = Depends(get_storage),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_insider),
 ):
     return _receipt_response(
         storage, expenses_service.own_receipt(session, user, expense_id)

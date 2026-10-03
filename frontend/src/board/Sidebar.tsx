@@ -10,6 +10,7 @@ import { InvitesBanner } from '@/team/InvitesBanner'
 import { pickableProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
+import { ExternalChip } from '@/ui/ExternalChip'
 import { Icon } from '@/ui/Icon'
 import { Logo } from '@/ui/Logo'
 import { Select } from '@/ui/Select'
@@ -42,6 +43,8 @@ export function Sidebar({
   onImport?: () => void
 }) {
   const { user, logout } = useAuth()
+  // Somebody from outside the organisation (#243, #317).
+  const outside = user?.is_external ?? false
   const { team, teams, projects: allProjects, sprints } = useTeamContext()
   // Archived projects leave the sidebar, unless one is the filter in force --
   // the board is showing its tickets, so the row that toggles it off stays.
@@ -185,11 +188,16 @@ export function Sidebar({
       </div>
 
       <div className="space-y-0.5 px-3 pb-2">
-        {/* Everyone on the instance (#125), beside the members of this team. */}
-        <Link to="/people" className="nav-item text-neutral-500" data-active={onPeople}>
-          <Icon name="users" size={15} className="opacity-70" />
-          {t('sidebar.people')}
-        </Link>
+        {/* Everyone on the instance (#125), beside the members of this team.
+            Not for somebody from outside the organisation (#317), and nor
+            are importing or starting a team: the sidebar offers what the
+            account can reach. Members stays, the team they were invited to. */}
+        {!outside && (
+          <Link to="/people" className="nav-item text-neutral-500" data-active={onPeople}>
+            <Icon name="users" size={15} className="opacity-70" />
+            {t('sidebar.people')}
+          </Link>
+        )}
         <Link
           to={`/settings/teams/${team.key}/members`}
           className="nav-item text-neutral-500"
@@ -197,16 +205,18 @@ export function Sidebar({
           <Icon name="users" size={15} className="opacity-70" />
           {t('sidebar.members')}
         </Link>
-        {onImport && (
+        {onImport && !outside && (
           <button type="button" onClick={onImport} className="nav-item text-neutral-500">
             <Icon name="upload" size={15} className="opacity-70" />
             {t('sidebar.importJira')}
           </button>
         )}
-        <Link to="/new-team" className="nav-item text-neutral-500">
-          <Icon name="plus" size={15} className="opacity-70" />
-          {t('sidebar.newTeam')}
-        </Link>
+        {!outside && (
+          <Link to="/new-team" className="nav-item text-neutral-500">
+            <Icon name="plus" size={15} className="opacity-70" />
+            {t('sidebar.newTeam')}
+          </Link>
+        )}
       </div>
 
       {user && (
@@ -214,7 +224,11 @@ export function Sidebar({
           <Avatar user={user} size={30} decorative />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-neutral-900">{user.full_name}</p>
-            <p className="truncate text-[11px] text-neutral-400">{user.email}</p>
+            {/* Under the name, where it does not squeeze it (#317). */}
+            <p className="flex items-center gap-1.5 text-[11px] text-neutral-400">
+              {outside && <ExternalChip />}
+              <span className="truncate">{user.email}</span>
+            </p>
           </div>
           <Link
             to="/settings/profile"
