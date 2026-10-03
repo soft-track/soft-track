@@ -213,7 +213,12 @@ describe('the Activity feed', () => {
   })
 })
 
-function comment(id: number, author: typeof MAYA, body: string, extra = {}) {
+function comment(
+  id: number,
+  author: typeof MAYA & { is_external?: boolean },
+  body: string,
+  extra = {},
+) {
   return { id, body, author, attachments: [], created_at: '2026-09-25T09:00:00', ...extra }
 }
 
@@ -231,6 +236,18 @@ async function openMenu(text: string) {
   await userEvent.click(within(row(text)).getByRole('button', { name: 'More actions on this comment' }))
   return screen.getByRole('menu', { name: 'Comment actions' })
 }
+
+describe('somebody from outside the organisation (#243)', () => {
+  it('is marked External beside their name, and nobody else is', () => {
+    thread(
+      comment(1, { ...MAYA, id: 20, full_name: 'Carlos Rivera', is_external: true }, 'From the client.'),
+      comment(2, MAYA, 'From inside.'),
+    )
+    renderFeed()
+    expect(within(row('From the client.')).getByText('External')).toBeTruthy()
+    expect(within(row('From inside.')).queryByText('External')).toBeNull()
+  })
+})
 
 describe('editing and deleting a comment (#93)', () => {
   it('offers Edit and Delete on your own comment and nothing on anybody else\'s', async () => {

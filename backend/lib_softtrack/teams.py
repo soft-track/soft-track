@@ -5,7 +5,9 @@ from typing import Mapping, Optional
 from sqlmodel import Session, case, func, select
 
 from lib_identity.models.identity import UserPublic
+from lib_softtrack import outside
 from lib_softtrack.models.teams import (
+    EpicRef,
     TeamCreate,
     TeamDirectoryEntry,
     TeamMemberAdd,
@@ -426,14 +428,33 @@ def list_team_members(
         .order_by(_ROLE_ORDER, TeamMember.joined_at)
     ).all()
 
+    epics = outside.epics_by_member(
+        session, team_id, [user.id for _, user in rows if user.is_external]
+    )
     return [
-        TeamMemberRead(
-            user=UserPublic.model_validate(user),
-            role=membership.role,
-            joined_at=membership.joined_at,
-        )
+        _member_read(membership, user, epics.get(user.id, []))
         for membership, user in rows
     ]
+
+
+def _member_read(
+    membership: TeamMember, user: User, epics: list[Project]
+) -> TeamMemberRead:
+    return TeamMemberRead(
+        user=UserPublic.model_validate(user),
+        role=membership.role,
+        joined_at=membership.joined_at,
+        epics=[EpicRef.model_validate(epic) for epic in epics],
+    )
+
+
+def _refuse_epics_for_insiders(user: User) -> None:
+    raise api_error(
+        status_code=400,
+        code=ErrorCode.epics_only_for_external,
+        detail=f"{user.full_name} is inside the organisation and sees every "
+        "epic on the team",
+    )
 
 
 def add_team_member(
@@ -470,16 +491,20 @@ def add_team_member(
             detail="User is already a member",
         )
 
+    # Somebody from outside joins as a guest, seeing the epics chosen (#243).
+    outside.refuse_unless_guest(user, payload.role)
+    if payload.epic_ids and not user.is_external:
+        _refuse_epics_for_insiders(user)
+    epic_ids = outside.check_epics(session, team_id, payload.epic_ids)
+
     membership = TeamMember(team_id=team_id, user_id=user.id, role=payload.role)
     session.add(membership)
+    if user.is_external:
+        outside.set_epics(session, team_id, user.id, epic_ids)
     session.commit()
     session.refresh(membership)
 
-    return TeamMemberRead(
-        user=UserPublic.model_validate(user),
-        role=membership.role,
-        joined_at=membership.joined_at,
-    )
+    return _member_read(membership, user, outside.epics_of(session, user.id, team_id))
 
 
 def _membership_or_404(session: Session, team_id: int, user_id: int) -> TeamMember:
@@ -508,10 +533,21 @@ def update_team_member_role(
     require_team_admin(team_id, current_user, session)
 
     membership = _membership_or_404(session, team_id, member_user_id)
+    user = session.get(User, member_user_id)
+    role = payload.role if payload.role is not None else membership.role
 
-    demoting_an_admin = (
-        membership.role == TeamRole.admin and payload.role != TeamRole.admin
+    # Somebody from outside stays a guest, and is given epics (#243); nobody
+    # else is, since they see every epic already.
+    outside.refuse_unless_guest(user, role)
+    if payload.epic_ids is not None and not user.is_external:
+        _refuse_epics_for_insiders(user)
+    epic_ids = (
+        outside.check_epics(session, team_id, payload.epic_ids)
+        if payload.epic_ids is not None
+        else None
     )
+
+    demoting_an_admin = membership.role == TeamRole.admin and role != TeamRole.admin
     if demoting_an_admin and _active_admin_count(session, team_id) <= 1:
         raise api_error(
             status_code=409,
@@ -520,14 +556,14 @@ def update_team_member_role(
         )
     # A guest holds no tickets (#316), so becoming one hands on the open ones,
     # the way leaving does.
-    becoming_a_guest = (
-        payload.role == TeamRole.guest and membership.role != TeamRole.guest
-    )
+    becoming_a_guest = role == TeamRole.guest and membership.role != TeamRole.guest
     if becoming_a_guest:
         _check_handover(session, team_id, member_user_id, payload.reassign_to)
 
-    membership.role = payload.role
+    membership.role = role
     session.add(membership)
+    if epic_ids is not None:
+        outside.set_epics(session, team_id, member_user_id, epic_ids)
     if becoming_a_guest:
         session.flush()
         _hand_over_open_tickets(
@@ -536,11 +572,8 @@ def update_team_member_role(
     session.commit()
     session.refresh(membership)
 
-    user = session.get(User, member_user_id)
-    return TeamMemberRead(
-        user=UserPublic.model_validate(user),
-        role=membership.role,
-        joined_at=membership.joined_at,
+    return _member_read(
+        membership, user, outside.epics_of(session, member_user_id, team_id)
     )
 
 
@@ -580,8 +613,10 @@ def remove_team_member(
     _check_handover(session, team_id, member_user_id, reassign_to)
 
     # Gone before the tickets are handed on, so a rule that fires on the
-    # change cannot give one straight back to them.
+    # change cannot give one straight back to them. The epics somebody from
+    # outside was given here go with the membership (#243).
     session.delete(membership)
+    outside.forget_team(session, team_id, member_user_id)
     session.flush()
     _hand_over_open_tickets(session, current_user, team_id, member_user_id, reassign_to)
     session.commit()

@@ -5,10 +5,12 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
-import type { TeamRole } from './teamRole';
 
-export interface TeamMemberUpdate {
-  role?: TeamRole | null;
-  reassign_to?: number | null;
-  epic_ids?: number[] | null;
+/**
+ * An epic as a roster names it: an outside account's reach (#243).
+ */
+export interface EpicRef {
+  id: number;
+  name: string;
+  color: string;
 }

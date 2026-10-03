@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { DepartmentRef } from './departmentRef';
+import type { GuestOf } from './guestOf';
 import type { PersonRef } from './personRef';
 
 /**
@@ -18,6 +19,7 @@ export interface AdminUserRead {
   full_name: string;
   avatar_color: string;
   is_active: boolean;
+  is_external?: boolean;
   is_site_admin: boolean;
   is_finance_admin: boolean;
   has_password: boolean;
@@ -32,4 +34,5 @@ export interface AdminUserRead {
   report_count: number;
   finance_admin_since?: string | null;
   finance_admin_granted_by?: PersonRef | null;
+  guest_of?: GuestOf[];
 }

@@ -7,7 +7,8 @@
  */
 
 /**
- * The instance-wide roles the user directory filters by (#130).
+ * The instance-wide roles the user directory filters by (#130), and
+ * accounts from outside the organisation (#243).
  */
 export type AdminRole = typeof AdminRole[keyof typeof AdminRole];
 
@@ -15,4 +16,5 @@ export type AdminRole = typeof AdminRole[keyof typeof AdminRole];
 export const AdminRole = {
   site_admin: 'site_admin',
   finance_admin: 'finance_admin',
+  external: 'external',
 } as const;

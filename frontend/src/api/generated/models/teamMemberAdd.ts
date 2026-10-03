@@ -10,4 +10,5 @@ import type { TeamRole } from './teamRole';
 export interface TeamMemberAdd {
   email: string;
   role?: TeamRole;
+  epic_ids?: number[];
 }

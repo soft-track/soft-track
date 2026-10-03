@@ -97,27 +97,31 @@ export function Sidebar({
           />
         </div>
 
-        <div>
-          <div className="mb-1.5 flex items-center justify-between px-2">
-            <p className="eyebrow">{t('sidebar.sprints')}</p>
-            {onNewSprint && (
-              <button
-                type="button"
-                onClick={onNewSprint}
-                aria-label={t('sidebar.newSprint')}
-                title={t('sidebar.newSprint')}
-                className="btn btn-ghost btn-icon btn-xs"
-              >
-                <Icon name="plus" size={13} />
-              </button>
-            )}
+        {/* The team's sprints are its whole backlog, which somebody from
+            outside the organisation does not see (#243). */}
+        {!user?.is_external && (
+          <div>
+            <div className="mb-1.5 flex items-center justify-between px-2">
+              <p className="eyebrow">{t('sidebar.sprints')}</p>
+              {onNewSprint && (
+                <button
+                  type="button"
+                  onClick={onNewSprint}
+                  aria-label={t('sidebar.newSprint')}
+                  title={t('sidebar.newSprint')}
+                  className="btn btn-ghost btn-icon btn-xs"
+                >
+                  <Icon name="plus" size={13} />
+                </button>
+              )}
+            </div>
+            <SprintList
+              sprints={sprints}
+              activeSprintId={filters?.sprintId ?? null}
+              onSelect={(sprintId) => onFiltersChange({ ...(filters ?? NO_FILTERS), sprintId })}
+            />
           </div>
-          <SprintList
-            sprints={sprints}
-            activeSprintId={filters?.sprintId ?? null}
-            onSelect={(sprintId) => onFiltersChange({ ...(filters ?? NO_FILTERS), sprintId })}
-          />
-        </div>
+        )}
 
         <div>
           <div className="mb-1.5 flex items-center justify-between px-2">

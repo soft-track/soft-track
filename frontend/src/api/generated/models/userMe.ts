@@ -22,6 +22,7 @@ export interface UserMe {
   full_name: string;
   avatar_color: string;
   is_active: boolean;
+  is_external?: boolean;
   is_site_admin: boolean;
   is_finance_admin: boolean;
   has_password: boolean;

@@ -14,4 +14,7 @@ export const common = {
   teamNotFound: 'That team does not exist, or you are not a member of it.',
   /** Two dates as a span: "8 Sept – 22 Sept". */
   dateRange: '{{start}} – {{end}}',
+  /** Beside the name of somebody from outside the organisation (#243). */
+  external: 'External',
+  externalHint: 'From outside the organisation',
 } as const

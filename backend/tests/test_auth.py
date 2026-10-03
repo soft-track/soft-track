@@ -72,6 +72,8 @@ def test_me_returns_the_current_user(client, auth):
         "full_name",
         "avatar_color",
         "is_active",
+        # From outside the organisation (#243), shown beside the name.
+        "is_external",
         "is_site_admin",
         # Whether they can see money (#130). Separate from site admin.
         "is_finance_admin",

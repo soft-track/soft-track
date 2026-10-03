@@ -95,7 +95,11 @@ def _sorted(lines: list[_Line]) -> list[_Line]:
 def _draft_lines(session: Session, run: PayrollRun) -> list[_Line]:
     people = session.exec(
         select(User)
-        .where(User.is_active == True)  # noqa: E712 -- SQL comparison
+        .where(
+            User.is_active == True,  # noqa: E712 -- SQL comparison
+            # Off the books (#243): somebody from outside is nobody's payroll.
+            User.is_external == False,  # noqa: E712
+        )
         .options(selectinload(User.department))
     ).all()
     pay = pay_on(session, [person.id for person in people], run.period_end)

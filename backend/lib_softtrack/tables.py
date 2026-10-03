@@ -24,6 +24,11 @@ from sqlmodel import SQLModel, Field, Relationship
 
 from lib_utils.password import is_usable_password
 
+#: JSON everywhere, stored as `jsonb` on Postgres: it has equality and
+#: containment operators, which is what filtering by a field will need, and
+#: plain `json` has neither.
+JSONValue = JSON().with_variant(JSONB(), "postgresql")
+
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -450,6 +455,19 @@ class TeamMember(SQLModel, table=True):
     joined_at: datetime = Field(default_factory=utcnow)
 
 
+class GuestEpic(SQLModel, table=True):
+    """An epic an account from outside the organisation may see (#243).
+
+    Its membership's reach on that team: the tickets in these epics, and
+    nothing else. No row means no tickets. The team is the epic's, so a row
+    needs no team of its own; leaving the team takes that team's rows with
+    it, and so does the epic being purged from the trash.
+    """
+
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    project_id: int = Field(foreign_key="project.id", primary_key=True, index=True)
+
+
 class TicketLabelLink(SQLModel, table=True):
     ticket_id: int = Field(foreign_key="ticket.id", primary_key=True)
     label_id: int = Field(foreign_key="label.id", primary_key=True)
@@ -580,6 +598,15 @@ class User(SQLModel, table=True):
             "viewonly": True,
         }
     )
+
+    # --- Outside the organisation (#243) -----------------------------------
+
+    #: An account from outside: a client, a contractor's client, a partner.
+    #: Set on the invitation that created it or by a site admin, never by the
+    #: person. On a team it is only ever a guest, and it sees the tickets of
+    #: the epics it was given there and nothing else (`lib_softtrack/
+    #: outside.py`). Never a site or finance admin.
+    is_external: bool = Field(default=False)
 
     @property
     def has_password(self) -> bool:
@@ -786,6 +813,14 @@ class TeamInvite(SQLModel, table=True):
     invited_by_id: int = Field(foreign_key="user.id")
     created_at: datetime = Field(default_factory=utcnow)
     expires_at: datetime
+    #: For somebody outside the organisation (#243): the account it creates
+    #: is external, and its membership reaches only `epic_ids`, this team's
+    #: epics as they were chosen. Checked again on acceptance, so an epic
+    #: deleted in between is simply not given.
+    external: bool = Field(default=False)
+    epic_ids: list[int] = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
     #: When the current link was emailed to the address (#84), or null if it
     #: never was. "Attempted", not "delivered": SMTP accepting a message is
     #: all this instance can know. Cleared when a re-invite mints a new link
@@ -1071,12 +1106,6 @@ class TicketTemplate(SQLModel, table=True):
     position: int = 0
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
-
-
-#: JSON everywhere, stored as `jsonb` on Postgres: it has equality and
-#: containment operators, which is what filtering by a field will need, and
-#: plain `json` has neither.
-JSONValue = JSON().with_variant(JSONB(), "postgresql")
 
 
 class CustomField(SQLModel, table=True):

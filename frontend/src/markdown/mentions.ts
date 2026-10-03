@@ -15,6 +15,8 @@ export type Mentionable = {
   full_name: string
   email: string
   username: string
+  /** From outside the organisation (#243): marked in the suggestions. */
+  is_external?: boolean
 }
 
 /** A handle for each person. Unique by construction: usernames are unique. */

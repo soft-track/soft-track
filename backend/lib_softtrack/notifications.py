@@ -20,6 +20,7 @@ from typing import Iterable, Optional
 from sqlmodel import Session, func, select
 
 from lib_identity.models.identity import UserPublic
+from lib_softtrack import outside
 from lib_softtrack.mentions import mentioned_user_ids
 from lib_softtrack.models.notifications import (
     NotificationTicket,
@@ -149,8 +150,14 @@ def _raise(
     comment: Optional[Comment] = None,
     custom_field: Optional[CustomField] = None,
 ) -> None:
-    """Add a row per recipient. Flushed with whatever transaction is open."""
-    for user_id in _deliverable(session, ticket.team_id, recipients):
+    """Add a row per recipient. Flushed with whatever transaction is open.
+
+    Never to somebody from outside the organisation who cannot see the ticket
+    (#243): a mention or a watch reaches only as far as their epics do.
+    """
+    deliverable = _deliverable(session, ticket.team_id, recipients)
+    deliverable -= outside.unable_to_see(session, ticket, deliverable)
+    for user_id in deliverable:
         session.add(
             Notification(
                 user_id=user_id,

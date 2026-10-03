@@ -11,6 +11,23 @@ export const members = {
     send: 'Send invite',
     sending: 'Inviting…',
     emailIt: 'Email the invitation to them',
+    // Somebody from outside the organisation (#243).
+    outside: 'This person is outside the organisation',
+    outsideHint:
+      'They join as a guest and see only the epics chosen here. Marked External wherever their name appears.',
+  },
+  // What somebody from outside may see (#243).
+  epics: {
+    label: 'Epics they can see',
+    add: 'Add an epic',
+    remove: 'Remove {{name}}',
+    none: 'No epic chosen means no tickets.',
+  },
+  scope: {
+    only: '{{names}} only',
+    nothing: 'No epics, so no tickets',
+    change: 'Change epics',
+    done: 'Done',
   },
   lastInvite: {
     emailed:
@@ -89,5 +106,6 @@ export const members = {
     role: 'Could not change that role.',
     revoke: 'Could not revoke that invitation.',
     resend: 'Could not resend that invitation.',
+    epics: 'Could not change their epics.',
   },
 } as const

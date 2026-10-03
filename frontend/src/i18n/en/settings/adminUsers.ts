@@ -16,7 +16,16 @@ export const adminUsers = {
     everyone: 'Everyone',
     siteAdmins: 'Site admins',
     financeAdmins: 'Finance admins',
+    // Accounts from outside the organisation (#243).
+    external: 'External',
   },
+  emptyExternal: 'Nobody from outside the organisation has an account.',
+  /** Where an account from outside is a guest, and what it sees there (#243). */
+  guestOf: 'Guest of {{team}} · {{epics}}',
+  guestOfNothing: 'Guest of {{team}} · no epics, so no tickets',
+  markOutside: 'Mark as outside',
+  markInside: 'Mark as inside',
+  outsideIsNeverAdmin: 'An admin of any kind is inside the organisation',
   financeSince: 'finance access since {{date}}, granted by {{name}}',
   financeSinceUnknown: 'finance access since {{date}}',
   teams_one: '{{count}} team',

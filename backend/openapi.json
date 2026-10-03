@@ -10580,10 +10580,11 @@
         "type": "string",
         "enum": [
           "site_admin",
-          "finance_admin"
+          "finance_admin",
+          "external"
         ],
         "title": "AdminRole",
-        "description": "The instance-wide roles the user directory filters by (#130)."
+        "description": "The instance-wide roles the user directory filters by (#130), and\naccounts from outside the organisation (#243)."
       },
       "AdminUserRead": {
         "properties": {
@@ -10610,6 +10611,11 @@
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
+          },
+          "is_external": {
+            "type": "boolean",
+            "title": "Is External",
+            "default": false
           },
           "is_site_admin": {
             "type": "boolean",
@@ -10723,6 +10729,14 @@
                 "type": "null"
               }
             ]
+          },
+          "guest_of": {
+            "items": {
+              "$ref": "#/components/schemas/GuestOf"
+            },
+            "type": "array",
+            "title": "Guest Of",
+            "default": []
           }
         },
         "type": "object",
@@ -10777,6 +10791,17 @@
               }
             ],
             "title": "Is Finance Admin"
+          },
+          "is_external": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is External"
           },
           "full_name": {
             "anyOf": [
@@ -13171,6 +13196,30 @@
         "title": "DueFilter",
         "description": "The due-date questions the board can be narrowed to (#87).\n\nThree questions rather than a date range: they are what a standup asks,\nand \"this week\" means the viewer's week -- the client sends its own\ntoday, so a filter saved on a Sunday evening in Sydney does not quietly\nmean London's Sunday."
       },
+      "EpicRef": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "color"
+        ],
+        "title": "EpicRef",
+        "description": "An epic as a roster names it: an outside account's reach (#243)."
+      },
       "EstimateSummary": {
         "properties": {
           "total_points": {
@@ -13567,6 +13616,38 @@
         ],
         "title": "GitProvider"
       },
+      "GuestOf": {
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "team_name": {
+            "type": "string",
+            "title": "Team Name"
+          },
+          "team_key": {
+            "type": "string",
+            "title": "Team Key"
+          },
+          "epics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Epics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team_id",
+          "team_name",
+          "team_key",
+          "epics"
+        ],
+        "title": "GuestOf",
+        "description": "A team an account from outside is a guest of, and the epics it sees\nthere (#243): its reach, as the directory shows it."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -13685,6 +13766,19 @@
             "type": "boolean",
             "title": "Send Email",
             "default": false
+          },
+          "external": {
+            "type": "boolean",
+            "title": "External",
+            "default": false
+          },
+          "epic_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Epic Ids",
+            "default": []
           }
         },
         "type": "object",
@@ -13785,6 +13879,19 @@
               }
             ],
             "title": "Emailed At"
+          },
+          "external": {
+            "type": "boolean",
+            "title": "External",
+            "default": false
+          },
+          "epics": {
+            "items": {
+              "$ref": "#/components/schemas/EpicRef"
+            },
+            "type": "array",
+            "title": "Epics",
+            "default": []
           }
         },
         "type": "object",
@@ -17663,6 +17770,14 @@
           "role": {
             "$ref": "#/components/schemas/TeamRole",
             "default": "member"
+          },
+          "epic_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Epic Ids",
+            "default": []
           }
         },
         "type": "object",
@@ -17683,6 +17798,14 @@
             "type": "string",
             "format": "date-time",
             "title": "Joined At"
+          },
+          "epics": {
+            "items": {
+              "$ref": "#/components/schemas/EpicRef"
+            },
+            "type": "array",
+            "title": "Epics",
+            "default": []
           }
         },
         "type": "object",
@@ -17696,7 +17819,14 @@
       "TeamMemberUpdate": {
         "properties": {
           "role": {
-            "$ref": "#/components/schemas/TeamRole"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TeamRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "reassign_to": {
             "anyOf": [
@@ -17708,12 +17838,23 @@
               }
             ],
             "title": "Reassign To"
+          },
+          "epic_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epic Ids"
           }
         },
         "type": "object",
-        "required": [
-          "role"
-        ],
         "title": "TeamMemberUpdate"
       },
       "TeamRead": {
@@ -19390,6 +19531,11 @@
             "type": "boolean",
             "title": "Is Active"
           },
+          "is_external": {
+            "type": "boolean",
+            "title": "Is External",
+            "default": false
+          },
           "is_site_admin": {
             "type": "boolean",
             "title": "Is Site Admin"
@@ -19503,6 +19649,11 @@
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
+          },
+          "is_external": {
+            "type": "boolean",
+            "title": "Is External",
+            "default": false
           }
         },
         "type": "object",
@@ -20314,6 +20465,11 @@
           "not_your_worklog",
           "not_your_comment",
           "not_your_attachment",
+          "external_account_is_guest",
+          "account_inside_organisation",
+          "account_outside_organisation",
+          "epics_only_for_external",
+          "external_cannot_administer",
           "worklog_in_future",
           "transfer_same_team",
           "view_other_team",

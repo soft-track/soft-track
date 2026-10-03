@@ -8,23 +8,26 @@ import {
   useRevokeInviteTeamsTeamIdInvitesInviteIdDelete,
 } from '@/api/generated/endpoints/invites/invites'
 import { useGetNotificationSettingsNotificationsSettingsGet } from '@/api/generated/endpoints/notifications/notifications'
+import { useListProjectsTeamsTeamIdProjectsGet } from '@/api/generated/endpoints/projects/projects'
 import {
   useListTeamMembersTeamsTeamIdMembersGet,
   useRemoveTeamMemberTeamsTeamIdMembersUserIdDelete,
   useUpdateTeamMemberRoleTeamsTeamIdMembersUserIdPatch,
 } from '@/api/generated/endpoints/teams/teams'
-import type { InviteRead, TeamRole, UserPublic } from '@/api/generated/models'
+import type { InviteRead, TeamMemberRead, TeamRole, UserPublic } from '@/api/generated/models'
 import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { formatRelative } from '@/i18n/format'
+import { EpicPicker, EpicScope } from '@/settings/EpicPicker'
 import { type HandOver, HandOverDialog } from '@/settings/HandOverDialog'
 import { DeactivatedChip, RoleChip } from '@/settings/RoleChip'
 import { ROLE_HINTS, ROLE_LABELS } from '@/settings/roles'
 import { copyInviteLink, inviteUrl } from '@/settings/inviteLink'
 import { useTeamByKey } from '@/team/useTeams'
 import { Avatar } from '@/ui/Avatar'
+import { ExternalChip } from '@/ui/ExternalChip'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 import { Select } from '@/ui/Select'
@@ -49,6 +52,10 @@ export default function TeamMembersSettings() {
   const invites = useListInvitesTeamsTeamIdInvitesGet(teamId, {
     query: { enabled: Boolean(team) && isAdmin },
   })
+  // The epics an admin can give somebody from outside (#243).
+  const epics = useListProjectsTeamsTeamIdProjectsGet(teamId, {
+    query: { enabled: Boolean(team) && isAdmin },
+  })
 
   const createInvite = useCreateInviteTeamsTeamIdInvitesPost()
   const revokeInvite = useRevokeInviteTeamsTeamIdInvitesInviteIdDelete()
@@ -57,6 +64,12 @@ export default function TeamMembersSettings() {
 
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<TeamRole>('member')
+  // Somebody from outside the organisation (#243): a guest, and the epics
+  // they will see.
+  const [inviteOutside, setInviteOutside] = useState(false)
+  const [inviteEpics, setInviteEpics] = useState<number[]>([])
+  // The member whose epics are being changed, if anybody's.
+  const [changingEpics, setChangingEpics] = useState<number | null>(null)
   const [lastInvite, setLastInvite] = useState<InviteRead | null>(null)
   // Whether this instance can send mail at all (#84). The same answer the
   // notification settings use to decide whether to offer email digests.
@@ -94,10 +107,18 @@ export default function TeamMembersSettings() {
     try {
       const invite = await createInvite.mutateAsync({
         teamId: team.id,
-        data: { email: inviteEmail, role: inviteRole, send_email: canEmail && emailIt },
+        data: {
+          email: inviteEmail,
+          role: inviteRole,
+          send_email: canEmail && emailIt,
+          external: inviteOutside,
+          epic_ids: inviteOutside ? inviteEpics : [],
+        },
       })
       setLastInvite(invite)
       setInviteEmail('')
+      setInviteOutside(false)
+      setInviteEpics([])
       refreshInvites()
     } catch (err: unknown) {
       setError(errorDetail(err, t('members.errors.invite')))
@@ -124,6 +145,20 @@ export default function TeamMembersSettings() {
       refreshMembers()
     } catch (err: unknown) {
       setError(errorDetail(err, t('members.errors.role')))
+    }
+  }
+
+  const onEpicsChange = async (member: TeamMemberRead, next: number[]) => {
+    setError(null)
+    try {
+      await updateRole.mutateAsync({
+        teamId: team.id,
+        userId: member.user.id,
+        data: { epic_ids: next },
+      })
+      refreshMembers()
+    } catch (err: unknown) {
+      setError(errorDetail(err, t('members.errors.epics')))
     }
   }
 
@@ -212,6 +247,8 @@ export default function TeamMembersSettings() {
               onChange={(e) => setInviteRole(e.target.value as TeamRole)}
               aria-label={t('members.invite.roleLabel')}
               title={ROLE_HINTS[inviteRole]}
+              // Somebody from outside is only ever a guest (#243).
+              disabled={inviteOutside}
             >
               <RoleOptions />
             </Select>
@@ -229,6 +266,35 @@ export default function TeamMembersSettings() {
                 />
                 {t('members.invite.emailIt')}
               </label>
+            )}
+            <label className="flex w-full items-start gap-2 text-sm text-neutral-700">
+              <input
+                type="checkbox"
+                checked={inviteOutside}
+                onChange={(e) => {
+                  setInviteOutside(e.target.checked)
+                  if (e.target.checked) setInviteRole('guest')
+                }}
+                className="mt-0.5 h-4 w-4 accent-[var(--color-brand-600)]"
+              />
+              <span>
+                <span className="font-medium">{t('members.invite.outside')}</span>
+                <span className="block text-xs text-neutral-500">
+                  {t('members.invite.outsideHint')}
+                </span>
+              </span>
+            </label>
+            {inviteOutside && (
+              <div className="well w-full rounded-control p-3">
+                <p className="mb-2 text-xs font-medium text-neutral-500">
+                  {t('members.epics.label')}
+                </p>
+                <EpicPicker
+                  epics={epics.data ?? []}
+                  chosen={inviteEpics}
+                  onChange={setInviteEpics}
+                />
+              </div>
             )}
           </form>
         )}
@@ -284,6 +350,7 @@ export default function TeamMembersSettings() {
                   <span className="identifier text-xs font-normal text-neutral-400">
                     @{member.user.username}
                   </span>
+                  {member.user.is_external && <ExternalChip />}
                   {!member.user.is_active && <DeactivatedChip />}
                 </p>
                 <p className="text-xs text-neutral-400">
@@ -292,9 +359,43 @@ export default function TeamMembersSettings() {
                     when: formatRelative(parseServerDate(member.joined_at)),
                   })}
                 </p>
+                {member.user.is_external && (
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    {changingEpics === member.user.id ? (
+                      <>
+                        <EpicPicker
+                          epics={epics.data ?? []}
+                          chosen={(member.epics ?? []).map((epic) => epic.id)}
+                          onChange={(next) => onEpicsChange(member, next)}
+                          disabled={updateRole.isPending}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setChangingEpics(null)}
+                          className="btn btn-ghost btn-xs"
+                        >
+                          {t('members.scope.done')}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <EpicScope epics={member.epics ?? []} />
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => setChangingEpics(member.user.id)}
+                            className="btn btn-ghost btn-xs"
+                          >
+                            {t('members.scope.change')}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {isAdmin ? (
+              {isAdmin && !member.user.is_external ? (
                 <Select
                   dense
                   value={member.role}
@@ -337,9 +438,11 @@ export default function TeamMembersSettings() {
                 <li key={invite.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
                   <Icon name="mail" size={16} className="text-neutral-400" />
                   <div className="min-w-[14rem] flex-1">
-                    <p className="truncate text-sm font-medium text-neutral-900">
+                    <p className="flex items-center gap-2 truncate text-sm font-medium text-neutral-900">
                       {invite.email}
+                      {invite.external && <ExternalChip />}
                     </p>
+                    {invite.external && <EpicScope epics={invite.epics ?? []} />}
                     <p className="text-xs text-neutral-400">
                       {t('members.pending.invitedBy', {
                         name: invite.invited_by.full_name,
@@ -378,6 +481,8 @@ export default function TeamMembersSettings() {
                             email: invite.email,
                             role: invite.role,
                             send_email: canEmail && invite.emailed_at != null,
+                            external: invite.external,
+                            epic_ids: (invite.epics ?? []).map((epic) => epic.id),
                           },
                         })
                         .then((fresh) => {

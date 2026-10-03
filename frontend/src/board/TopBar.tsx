@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react'
 
 import { AXIOS_INSTANCE } from '@/api/client'
+import { useAuth } from '@/auth/useAuth'
 import { FilterBar } from '@/board/FilterBar'
 import { toQueryParams } from '@/board/filters'
 import type { BoardFilters } from '@/board/filters'
@@ -66,7 +67,10 @@ export function TopBar({
   onOpenNotifiedTicket: ComponentProps<typeof NotificationsBell>['onOpenTicket']
 }) {
   const { team } = useTeamContext()
+  const { user } = useAuth()
   const { t } = useTranslation(['board', 'common'])
+  // Somebody from outside sees their epics, not the team's reports (#243).
+  const views = VIEWS.filter((item) => !(user?.is_external && item.id === 'reports'))
 
   return (
     <header className="glass flex flex-wrap items-center gap-2 rounded-panel px-3 py-2">
@@ -84,7 +88,7 @@ export function TopBar({
       </h1>
 
       <div className="segmented" role="tablist" aria-label={t('topBar.viewLabel')}>
-        {VIEWS.map((item) => (
+        {views.map((item) => (
           <button
             key={item.id}
             type="button"

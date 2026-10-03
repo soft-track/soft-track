@@ -29,6 +29,8 @@ import { TeamProvider, type TeamContextValue } from '@/team/TeamContext'
 vi.mock('@/notifications/useNotifications', () => ({
   useUnreadCount: () => 0,
 }))
+// Somebody inside the organisation, who is offered every view (#243).
+vi.mock('@/auth/useAuth', () => ({ useAuth: () => ({ user: { id: 1, is_external: false } }) }))
 
 const OBJECT_URL = 'blob:http://localhost/tickets-csv'
 

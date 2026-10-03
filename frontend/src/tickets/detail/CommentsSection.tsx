@@ -29,6 +29,7 @@ import type { Mentionable } from '@/markdown/mentions'
 import { toggleTaskAtOffset } from '@/markdown/tasks'
 import { PersonLink } from '@/people/PersonLink'
 import { Avatar } from '@/ui/Avatar'
+import { ExternalChip } from '@/ui/ExternalChip'
 import { Icon } from '@/ui/Icon'
 
 /**
@@ -329,6 +330,8 @@ function CommentItem({
           ) : (
             <span className="text-sm font-medium text-neutral-900">{t('comments.automation')}</span>
           )}
+          {/* Somebody from outside the organisation (#243). */}
+          {comment.author?.is_external && <ExternalChip />}
           <span className="text-[11px] text-neutral-400">
             {formatRelative(parseServerDate(comment.created_at))}
           </span>

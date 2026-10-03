@@ -5,6 +5,7 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { EpicRef } from './epicRef';
 import type { TeamRole } from './teamRole';
 import type { UserPublic } from './userPublic';
 
@@ -12,4 +13,5 @@ export interface TeamMemberRead {
   user: UserPublic;
   role: TeamRole;
   joined_at: string;
+  epics?: EpicRef[];
 }

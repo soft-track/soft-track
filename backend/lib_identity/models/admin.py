@@ -8,10 +8,22 @@ from lib_identity.models.identity import PersonRef, UserMe
 
 
 class AdminRole(str, enum.Enum):
-    """The instance-wide roles the user directory filters by (#130)."""
+    """The instance-wide roles the user directory filters by (#130), and
+    accounts from outside the organisation (#243)."""
 
     site_admin = "site_admin"
     finance_admin = "finance_admin"
+    external = "external"
+
+
+class GuestOf(BaseModel):
+    """A team an account from outside is a guest of, and the epics it sees
+    there (#243): its reach, as the directory shows it."""
+
+    team_id: int
+    team_name: str
+    team_key: str
+    epics: list[str]
 
 
 class AdminUserRead(UserMe):
@@ -28,6 +40,9 @@ class AdminUserRead(UserMe):
     #: lives in the finance schemas, which nothing here reuses.
     finance_admin_since: Optional[datetime] = None
     finance_admin_granted_by: Optional[PersonRef] = None
+    #: For an account from outside (#243): where it is a guest and what it
+    #: sees there. Empty for everybody else.
+    guest_of: list[GuestOf] = []
 
 
 class AdminUserUpdate(BaseModel):
@@ -37,6 +52,10 @@ class AdminUserUpdate(BaseModel):
     #: may grant it to themselves: nothing is guarded by refusing, since they
     #: could grant it to anybody.
     is_finance_admin: Optional[bool] = None
+    #: From outside the organisation (#243). Set here or on the invitation,
+    #: never by the person. Refused for an admin of any kind, and while the
+    #: account is more than a guest on a team.
+    is_external: Optional[bool] = None
     full_name: Optional[str] = None
     #: When they started (#122). An explicit null clears it; leaving it out
     #: leaves it alone. Set here and nowhere else: it is the organisation's

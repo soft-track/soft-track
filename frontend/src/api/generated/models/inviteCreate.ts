@@ -11,4 +11,6 @@ export interface InviteCreate {
   email: string;
   role?: TeamRole;
   send_email?: boolean;
+  external?: boolean;
+  epic_ids?: number[];
 }

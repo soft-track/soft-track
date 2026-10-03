@@ -16,6 +16,7 @@ from lib_identity.usernames import (
     derive_username,
     normalise_username,
 )
+from lib_softtrack.outside import confine
 from lib_softtrack.tables import User, utcnow
 from lib_utils.password import hash_password, is_usable_password, verify_password
 from lib_utils.rate_limit import address_of, api_token_by_address
@@ -89,6 +90,7 @@ def get_current_user(
             api_token_by_address.record_attempt(address)
             raise credentials_exception
         request.state.via_api_token = True
+        confine(session, user)
         return user
 
     payload = decode_access_token(token)
@@ -108,6 +110,9 @@ def get_current_user(
     # upgrade itself.
     if payload.get("ver", 0) != user.token_version:
         raise credentials_exception
+    # Somebody from outside sees only the epics they were given (#243), on
+    # every query this request makes from here on.
+    confine(session, user)
     return user
 
 
@@ -145,6 +150,8 @@ def create_user(
     else:
         handle = derive_username(session, email)
 
+    from lib_softtrack.invites import invited_from_outside
+
     # The first account to exist owns the instance. Nobody else can grant it,
     # so it has to be automatic or a fresh install has no administrator.
     is_first = session.exec(select(func.count()).select_from(User)).one() == 0
@@ -156,6 +163,9 @@ def create_user(
         full_name=full_name,
         avatar_color=avatar_color_for(email),
         is_site_admin=is_first,
+        # Invited from outside the organisation (#243): what the account is
+        # from the start, decided by the invitation and never by the person.
+        is_external=not is_first and invited_from_outside(session, email),
         # Creating an account hands out a token, so it *is* a sign-in. Leaving
         # this null would show someone who signed up a minute ago as "never
         # signed in" in the admin directory.

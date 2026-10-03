@@ -47,16 +47,33 @@ class TeamUpdate(BaseModel):
     guests_may_comment: Optional[bool] = None
 
 
+class EpicRef(BaseModel):
+    """An epic as a roster names it: an outside account's reach (#243)."""
+
+    id: int
+    name: str
+    color: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class TeamMemberAdd(BaseModel):
     email: EmailStr
     role: TeamRole = TeamRole.member
+    #: For an account from outside the organisation (#243), which joins as a
+    #: guest: the epics of this team it may see. None means no tickets.
+    epic_ids: list[int] = []
 
 
 class TeamMemberUpdate(BaseModel):
-    role: TeamRole
+    #: Left out, the role stays as it is.
+    role: Optional[TeamRole] = None
     #: Who takes the open tickets of somebody made a guest, who may not hold
     #: any (#316). Left out, they are unassigned. Ignored for other changes.
     reassign_to: Optional[int] = None
+    #: The epics an account from outside may see (#243), all of them: the
+    #: list replaces the one there was. Left out, they stay as they are.
+    epic_ids: Optional[list[int]] = None
 
 
 class TeamDirectoryEntry(BaseModel):
@@ -81,3 +98,6 @@ class TeamMemberRead(BaseModel):
     user: UserPublic
     role: TeamRole
     joined_at: datetime
+    #: For an account from outside the organisation (#243), the epics it may
+    #: see on this team; empty for everybody else, who sees them all.
+    epics: list[EpicRef] = []

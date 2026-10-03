@@ -104,7 +104,11 @@ export default function BoardPage() {
 
   // Read once, on mount: Back from a ticket's page lands here.
   const [returning] = useState(() => boardReturnFrom(location.state))
-  const [view, setView] = useState<BoardView>(returning?.view ?? 'board')
+  const [view, setBoardView] = useState<BoardView>(returning?.view ?? 'board')
+  // The team's reports are not for somebody from outside the organisation
+  // (#243), who sees only the epics they were given.
+  const setView = (next: BoardView) =>
+    setBoardView(user?.is_external && next === 'reports' ? 'board' : next)
   const [search, setSearch] = useState(returning?.search ?? '')
   // The sidebar is a drawer below the `lg` breakpoint.
   const [sidebarOpen, setSidebarOpen] = useState(false)

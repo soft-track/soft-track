@@ -17,7 +17,17 @@ from sqlmodel import Session, delete, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.invites import InviteCreate, InvitePreview, InviteRead
-from lib_softtrack.tables import Team, TeamInvite, TeamMember, TeamRole, User, utcnow
+from lib_softtrack import outside
+from lib_softtrack.models.teams import EpicRef
+from lib_softtrack.tables import (
+    Project,
+    Team,
+    TeamInvite,
+    TeamMember,
+    TeamRole,
+    User,
+    utcnow,
+)
 from lib_softtrack.teams import get_team_or_404, require_team_admin
 from web import settings
 from lib_utils.errors import ErrorCode, api_error
@@ -52,8 +62,32 @@ def find_live_invite(session: Session, email: str) -> TeamInvite | None:
     ).first()
 
 
+def invited_from_outside(session: Session, email: str) -> bool:
+    """Whether a live invitation says `email` is from outside (#243): the
+    account created for it is external from its first sign-in."""
+    return (
+        session.exec(
+            select(TeamInvite).where(
+                TeamInvite.email == email.strip().lower(),
+                TeamInvite.expires_at > utcnow(),
+                TeamInvite.external == True,  # noqa: E712 -- SQL comparison
+            )
+        ).first()
+        is not None
+    )
+
+
 def _to_read(session: Session, invite: TeamInvite, team: Team) -> InviteRead:
     inviter = session.get(User, invite.invited_by_id)
+    epics = (
+        session.exec(
+            select(Project)
+            .where(Project.id.in_(invite.epic_ids), Project.team_id == team.id)
+            .order_by(Project.name, Project.id)
+        ).all()
+        if invite.epic_ids
+        else []
+    )
     return InviteRead(
         id=invite.id,
         team_id=invite.team_id,
@@ -66,6 +100,8 @@ def _to_read(session: Session, invite: TeamInvite, team: Team) -> InviteRead:
         created_at=invite.created_at,
         expires_at=invite.expires_at,
         emailed_at=invite.emailed_at,
+        external=invite.external,
+        epics=[EpicRef.model_validate(epic) for epic in epics],
     )
 
 
@@ -114,7 +150,39 @@ def create_invite(
 
     from lib_identity.identity import find_user_by_email
 
+    # Somebody from outside is a guest who sees the epics chosen (#243). The
+    # flag is the invitation's to set only for an account that does not exist
+    # yet; an existing one is what it is, and a site admin changes that.
+    if payload.external and payload.role != TeamRole.guest:
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.external_account_is_guest,
+            detail="Somebody from outside the organisation can only be a guest",
+        )
+    if payload.epic_ids and not payload.external:
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.epics_only_for_external,
+            detail="Only somebody from outside the organisation is given "
+            "epics; everybody else sees them all",
+        )
+    epic_ids = outside.check_epics(session, team_id, payload.epic_ids)
+
     existing_user = find_user_by_email(session, email)
+    if existing_user and existing_user.is_external and not payload.external:
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.account_outside_organisation,
+            detail=f"{existing_user.full_name} is from outside the organisation. "
+            "Invite them as a guest from outside, with the epics they can see.",
+        )
+    if existing_user and payload.external and not existing_user.is_external:
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.account_inside_organisation,
+            detail=f"{existing_user.full_name} already has an account inside the "
+            "organisation. A site admin can mark it as outside.",
+        )
     if existing_user:
         already = session.exec(
             select(TeamMember).where(
@@ -143,6 +211,8 @@ def create_invite(
         invite.role = payload.role
         invite.invited_by_id = current_user.id
         invite.created_at = utcnow()
+        invite.external = payload.external
+        invite.epic_ids = epic_ids
     else:
         invite = TeamInvite(
             team_id=team_id,
@@ -151,6 +221,8 @@ def create_invite(
             token=_new_token(),
             invited_by_id=current_user.id,
             expires_at=_expiry(),
+            external=payload.external,
+            epic_ids=epic_ids,
         )
     # Set on every create and resend, so an email sent with an older link is
     # never reported as if it carried this one.
@@ -246,6 +318,24 @@ def accept_invite(session: Session, current_user: User, token: str) -> Team:
     invite = _live_invite_or_404(session, token)
     _assert_addressed_to(invite, current_user)
 
+    # The account has to be what the invitation was for (#243): one inside
+    # the organisation does not become a client's by accepting, and a
+    # client's does not join as anything but the guest it was invited as.
+    if invite.external != current_user.is_external:
+        raise api_error(
+            status_code=403,
+            code=(
+                ErrorCode.account_inside_organisation
+                if invite.external
+                else ErrorCode.account_outside_organisation
+            ),
+            detail=(
+                "This invitation is for somebody from outside the organisation"
+                if invite.external
+                else "This invitation is for somebody inside the organisation"
+            ),
+        )
+
     team = session.get(Team, invite.team_id)
     existing = session.exec(
         select(TeamMember).where(
@@ -259,6 +349,13 @@ def accept_invite(session: Session, current_user: User, token: str) -> Team:
                 team_id=invite.team_id, user_id=current_user.id, role=invite.role
             )
         )
+        if invite.external:
+            outside.set_epics(
+                session,
+                invite.team_id,
+                current_user.id,
+                outside.live_epics(session, invite.team_id, invite.epic_ids),
+            )
 
     # Either way the invitation is spent. The membership row and its joined_at
     # are the record of what happened; a consumed invite is only clutter.

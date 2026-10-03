@@ -20,7 +20,7 @@ from app_identity.identity import router as identity_router
 from app_identity.oauth import router as oauth_router
 from app_identity.people import router as people_router
 from lib_identity.identity import warm_password_hasher
-from lib_softtrack import realtime, trash
+from lib_softtrack import outside, realtime, trash
 from lib_softtrack.deleting import trash_loop
 from lib_softtrack.digest import digest_loop
 from lib_softtrack.outbound import webhook_loop
@@ -104,6 +104,8 @@ async def lifespan(app: FastAPI):
 realtime.install()
 # And the trash (#323) is kept out of every query the same way.
 trash.install()
+# And an account from outside sees only its epics (#243), the same way again.
+outside.install()
 
 app = FastAPI(
     title=settings.app_name,

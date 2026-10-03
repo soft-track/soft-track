@@ -18,10 +18,15 @@ from lib_finance import access as finance_access
 from lib_identity import api_tokens, managers
 from lib_identity.departments import require_department
 from lib_identity.identity import get_current_user
-from lib_identity.models.admin import AdminRole, AdminUserRead, AdminUserUpdate
+from lib_identity.models.admin import (
+    AdminRole,
+    AdminUserRead,
+    AdminUserUpdate,
+    GuestOf,
+)
 from lib_identity.models.identity import PersonRef, UserMe
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
-from lib_softtrack.tables import TeamMember, User
+from lib_softtrack.tables import GuestEpic, Project, Team, TeamMember, TeamRole, User
 from lib_utils.password import hash_password
 from lib_utils.errors import ErrorCode, api_error
 
@@ -60,6 +65,8 @@ def list_users(
         filters.append(User.is_site_admin == True)  # noqa: E712 -- SQL comparison
     elif role is AdminRole.finance_admin:
         filters.append(User.is_finance_admin == True)  # noqa: E712
+    elif role is AdminRole.external:
+        filters.append(User.is_external == True)  # noqa: E712
     if reports_to_deactivated:
         # Active people whose manager has been deactivated (#124): the links
         # stay when a manager leaves, and this is where they are found again
@@ -110,11 +117,49 @@ def list_users(
     )
 
     reports = _report_counts(session, [u.id for u in users])
+    reach = _guest_of(session, [u.id for u in users if u.is_external])
     items = [
-        _to_read(user, counts.get(user.id, 0), reports.get(user.id, 0))
+        _to_read(
+            user,
+            counts.get(user.id, 0),
+            reports.get(user.id, 0),
+            reach.get(user.id, []),
+        )
         for user in users
     ]
     return Page(items=items, total=total, limit=limit, offset=offset)
+
+
+def _guest_of(session: Session, user_ids: list[int]) -> dict[int, list[GuestOf]]:
+    """Where each account from outside is a guest, and the epics it sees
+    there (#243), for a page of people in two queries."""
+    if not user_ids:
+        return {}
+    memberships = session.exec(
+        select(TeamMember.user_id, Team)
+        .join(Team, Team.id == TeamMember.team_id)
+        .where(col(TeamMember.user_id).in_(user_ids))
+        .order_by(Team.name, Team.id)
+    ).all()
+    epics: dict[tuple[int, int], list[str]] = {}
+    for user_id, project in session.exec(
+        select(GuestEpic.user_id, Project)
+        .join(Project, Project.id == GuestEpic.project_id)
+        .where(col(GuestEpic.user_id).in_(user_ids))
+        .order_by(Project.name, Project.id)
+    ).all():
+        epics.setdefault((user_id, project.team_id), []).append(project.name)
+    reach: dict[int, list[GuestOf]] = {}
+    for user_id, team in memberships:
+        reach.setdefault(user_id, []).append(
+            GuestOf(
+                team_id=team.id,
+                team_name=team.name,
+                team_key=team.key,
+                epics=epics.get((user_id, team.id), []),
+            )
+        )
+    return reach
 
 
 def _report_counts(session: Session, user_ids: list[int]) -> dict[int, int]:
@@ -131,7 +176,12 @@ def _report_counts(session: Session, user_ids: list[int]) -> dict[int, int]:
     )
 
 
-def _to_read(user: User, team_count: int, report_count: int) -> AdminUserRead:
+def _to_read(
+    user: User,
+    team_count: int,
+    report_count: int,
+    guest_of: Optional[list[GuestOf]] = None,
+) -> AdminUserRead:
     # Built from UserMe rather than field by field, so a column added to the
     # user's own view of themselves shows up here without a second edit.
     granted_by = user.finance_admin_granted_by
@@ -144,6 +194,7 @@ def _to_read(user: User, team_count: int, report_count: int) -> AdminUserRead:
         finance_admin_granted_by=(
             PersonRef.model_validate(granted_by) if granted_by else None
         ),
+        guest_of=guest_of or [],
     )
 
 
@@ -193,6 +244,8 @@ def update_user(
             detail="This instance needs at least one active site administrator",
         )
 
+    _check_outside(session, actor, user, payload)
+
     if payload.full_name is not None:
         name = payload.full_name.strip()
         if not name:
@@ -214,6 +267,8 @@ def update_user(
         user.is_site_admin = payload.is_site_admin
     if payload.is_finance_admin is not None:
         finance_access.set_finance_admin(actor, user, payload.is_finance_admin)
+    if payload.is_external is not None:
+        user.is_external = payload.is_external
     if payload.is_active is not None:
         if payload.is_active is False and user.is_active:
             # Deactivating has to end the sessions too, or the account keeps
@@ -238,8 +293,56 @@ def update_user(
         .where(TeamMember.user_id == user.id)
     ).one()
     return _to_read(
-        user, team_count, _report_counts(session, [user.id]).get(user.id, 0)
+        user,
+        team_count,
+        _report_counts(session, [user.id]).get(user.id, 0),
+        _guest_of(session, [user.id]).get(user.id, []) if user.is_external else [],
     )
+
+
+def _check_outside(
+    session: Session, actor: User, user: User, payload: AdminUserUpdate
+) -> None:
+    """The rules for an account from outside the organisation (#243): never an
+    admin of any kind, and only ever a guest on a team."""
+    external = (
+        payload.is_external if payload.is_external is not None else user.is_external
+    )
+    if not external:
+        return
+    site_admin = (
+        payload.is_site_admin
+        if payload.is_site_admin is not None
+        else user.is_site_admin
+    )
+    finance_admin = (
+        payload.is_finance_admin
+        if payload.is_finance_admin is not None
+        else user.is_finance_admin
+    )
+    if user.id == actor.id or site_admin or finance_admin:
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.external_cannot_administer,
+            detail="An account from outside the organisation cannot be a site "
+            "or finance admin",
+        )
+    if user.is_external:
+        return
+    above_guest = session.exec(
+        select(Team.name)
+        .join(TeamMember, TeamMember.team_id == Team.id)
+        .where(TeamMember.user_id == user.id, TeamMember.role != TeamRole.guest)
+        .order_by(Team.name)
+    ).all()
+    if above_guest:
+        raise api_error(
+            status_code=409,
+            code=ErrorCode.external_account_is_guest,
+            detail=f"{user.full_name} is more than a guest on "
+            f"{', '.join(above_guest)}. Make them a guest there first: somebody "
+            "from outside the organisation is only ever a guest.",
+        )
 
 
 def reset_password(

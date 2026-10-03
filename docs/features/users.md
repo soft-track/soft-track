@@ -179,6 +179,43 @@ not offer what would fail.
 Linking tickets across teams needs write access to both, because the link shows
 on both tickets.
 
+### Somebody from outside the organisation
+
+A guest from a neighbouring team should see the whole team. A client should
+not, so being from outside is something an account *is* (#243): `is_external`,
+set on the invitation that created it ("This person is outside the
+organisation") or by a site admin from the user directory, and never by the
+person.
+
+- **Only ever a guest.** Inviting, adding or changing an account from outside
+  to anything else is `400 external_account_is_guest`, and a site admin cannot
+  mark somebody as outside while they are more than a guest on a team (`409`,
+  naming the teams). An account from outside is never a site or finance admin
+  (`external_cannot_administer`).
+- **The epics it is given.** Its membership of a team reaches the tickets of
+  the epics chosen for it there, and nothing else: not the rest of the board,
+  not the backlog, not the other epics. No epic chosen means no tickets. The
+  epics are chosen on the invitation and changed from the member's row under
+  Settings → *Team* → Members (`epic_ids` on `PATCH /teams/{id}/members/{user_id}`).
+  Leaving the team, or the epic being purged from the trash, takes them away.
+- **For that account, the rest does not exist.** It is enforced in the ORM,
+  as the trash is: `backend/lib_softtrack/outside.py` adds "in one of their
+  epics" to every query that reads tickets, epics or ticket history while an
+  account from outside is signed in. A ticket outside its epics answers
+  `404 ticket_not_found`, as it would to a stranger; search, the export,
+  links, history and the reports over its epics follow without a clause of
+  their own. `backend/tests/test_external_accounts.py` sends every read route
+  in the schema as such an account, naming rows out of its reach and in it,
+  and fails if anything out of reach is in an answer.
+- **Marked everywhere.** An **External** chip beside the name in comments,
+  member lists, pending invitations, the mention picker and the user
+  directory, so nobody writes in front of a client without knowing. A mention
+  or a watch reaches them only on tickets in their epics.
+- **Off the books.** Payroll drafts leave accounts from outside out.
+
+What an account from outside may reach beyond its teams -- the directory,
+departments, creating a team, claiming expenses -- is #317.
+
 ### Invitations, with or without a mail server
 
 An invitation is a row and a link. A team admin invites an address from

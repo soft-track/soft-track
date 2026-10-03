@@ -22,7 +22,7 @@ from sqlmodel import Session, func, select
 from lib_identity.models.identity import UserPublic
 from lib_softtrack import attachments as attachments_service
 from lib_softtrack import automations as automations_service
-from lib_softtrack import outbound
+from lib_softtrack import outbound, outside
 from lib_softtrack import views as views_service
 from lib_softtrack.history import record_changes, snapshot
 from lib_softtrack.models.projects import ProjectRead
@@ -304,6 +304,8 @@ def _purge_project(session: Session, project: Project, actor: Optional[User]) ->
             record_changes(session, ticket, before, actor)
         views_service.clear_project(session, project.id)
         automations_service.clear_project(session, project.id)
+        # And guests from outside who were given it lose it (#243).
+        outside.forget_epic(session, project.id)
         session.flush()
         session.delete(project)
 

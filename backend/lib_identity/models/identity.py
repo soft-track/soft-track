@@ -31,6 +31,9 @@ class UserPublic(BaseModel):
     #: Shown as a "Deactivated" badge on rosters, and used to keep deactivated
     #: people out of assignee pickers without hiding work already assigned.
     is_active: bool
+    #: From outside the organisation (#243): marked "External" wherever the
+    #: name appears, so nobody writes in front of a client without knowing.
+    is_external: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

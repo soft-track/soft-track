@@ -14,7 +14,7 @@ from sqlmodel import Session, select
 from lib_identity.models.identity import UserPublic
 from lib_softtrack import attachments as attachments_service
 from lib_softtrack import custom_fields as custom_fields_service
-from lib_softtrack import outbound
+from lib_softtrack import outbound, outside
 from lib_softtrack.models.tickets import (
     TicketBulkChanges,
     TicketBulkUpdate,
@@ -527,11 +527,13 @@ def export_tickets(
         parent_id=parent_id,
         sprint_id=sprint_id,
     )
-    return _export_batches(filters, session.get_bind())
+    return _export_batches(filters, session.get_bind(), outside.confined_to(session))
 
 
 def _export_batches(
-    filters: list[ColumnElement[bool]], bind: Union[Engine, Connection]
+    filters: list[ColumnElement[bool]],
+    bind: Union[Engine, Connection],
+    confined_to: Optional[int] = None,
 ) -> Iterator[list[TicketExportRow]]:
     """Walk the matching tickets a batch at a time, on a session of our own.
 
@@ -548,8 +550,13 @@ def _export_batches(
     and every filter set pins the team, so this is both a stable cursor and
     one the index can seek to, where a deep OFFSET re-scans everything it
     skips.
+
+    Being a session of our own, it is confined to an outside account's epics
+    (#243) here as the request's was, or the export would be the one place
+    the rest of the team showed.
     """
     with Session(bind) as session:
+        outside.confine_to(session, confined_to)
         before: Optional[int] = None
         while True:
             window = list(filters)

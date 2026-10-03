@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr
 
 from lib_identity.models.identity import UserPublic
+from lib_softtrack.models.teams import EpicRef
 from lib_softtrack.tables import TeamRole
 
 
@@ -14,6 +15,11 @@ class InviteCreate(BaseModel):
     #: has never heard of this gets exactly the copy-a-link flow it had. Only
     #: possible where SMTP is configured; asking elsewhere is a 400.
     send_email: bool = False
+    #: Somebody from outside the organisation (#243): the account is external,
+    #: joins as a guest, and sees the tickets of `epic_ids` and nothing else.
+    external: bool = False
+    #: The epics of this team they may see. None chosen means no tickets.
+    epic_ids: list[int] = []
 
 
 class InviteRead(BaseModel):
@@ -37,6 +43,9 @@ class InviteRead(BaseModel):
     expires_at: datetime
     #: When this link was emailed to `email`, if it was.
     emailed_at: Optional[datetime] = None
+    #: For somebody from outside (#243), and the epics they will see.
+    external: bool = False
+    epics: list[EpicRef] = []
 
 
 class InvitePreview(BaseModel):

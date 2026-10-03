@@ -18,6 +18,7 @@ import { useDebounced } from '@/search/useDebounced'
 import { DeactivatedChip } from '@/settings/RoleChip'
 import { formatStartedOn } from '@/settings/startedOn'
 import { Avatar } from '@/ui/Avatar'
+import { ExternalChip } from '@/ui/ExternalChip'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 import { Select } from '@/ui/Select'
@@ -30,6 +31,7 @@ const ROLE_FILTERS = [
   { role: null, label: 'adminUsers.roles.everyone' },
   { role: AdminRole.site_admin, label: 'adminUsers.roles.siteAdmins' },
   { role: AdminRole.finance_admin, label: 'adminUsers.roles.financeAdmins' },
+  { role: AdminRole.external, label: 'adminUsers.roles.external' },
 ] as const
 
 export default function AdminUsersPage() {
@@ -209,7 +211,9 @@ export default function AdminUsersPage() {
           <p className="text-sm text-neutral-400">
             {role === AdminRole.finance_admin && !q
               ? t('adminUsers.emptyFinanceAdmins')
-              : t('adminUsers.empty')}
+              : role === AdminRole.external && !q
+                ? t('adminUsers.emptyExternal')
+                : t('adminUsers.empty')}
           </p>
         ) : (
           <ul className="divide-y divide-neutral-900/8">
@@ -259,8 +263,19 @@ export default function AdminUsersPage() {
                           {t('adminUsers.financeAdmin')}
                         </span>
                       )}
+                      {row.is_external && <ExternalChip />}
                       {!row.is_active && <DeactivatedChip />}
                     </p>
+                    {(row.guest_of ?? []).map((place) => (
+                      <p key={place.team_id} className="text-xs text-neutral-500">
+                        {place.epics.length > 0
+                          ? t('adminUsers.guestOf', {
+                              team: place.team_name,
+                              epics: formatList(place.epics),
+                            })
+                          : t('adminUsers.guestOfNothing', { team: place.team_name })}
+                      </p>
+                    ))}
                     {facts.length > 0 && (
                       <p className="text-xs text-neutral-500">{facts.join(' · ')}</p>
                     )}
@@ -364,6 +379,22 @@ export default function AdminUsersPage() {
                       className="btn btn-ghost btn-sm"
                     >
                       {t('adminUsers.resetPassword')}
+                    </button>
+                    {/* From outside the organisation (#243): set here or on
+                        the invitation, never by the person, and never for an
+                        admin of any kind. */}
+                    <button
+                      type="button"
+                      onClick={() => patch(row, { is_external: !row.is_external })}
+                      disabled={!row.is_external && (row.is_site_admin || row.is_finance_admin)}
+                      title={
+                        !row.is_external && (row.is_site_admin || row.is_finance_admin)
+                          ? t('adminUsers.outsideIsNeverAdmin')
+                          : undefined
+                      }
+                      className="btn btn-ghost btn-sm"
+                    >
+                      {row.is_external ? t('adminUsers.markInside') : t('adminUsers.markOutside')}
                     </button>
                   </div>
 

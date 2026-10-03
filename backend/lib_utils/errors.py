@@ -164,6 +164,21 @@ class ErrorCode(str, enum.Enum):
     not_your_comment = "not_your_comment"
     #: A guest who may comment removing a file somebody else attached (#244).
     not_your_attachment = "not_your_attachment"
+    #: An account from outside the organisation joins a team as a guest and
+    #: only as one (#243): invited, added or changed to anything else.
+    external_account_is_guest = "external_account_is_guest"
+    #: An invitation for somebody outside, addressed to an account that is
+    #: inside the organisation; a site admin is who changes that (#243).
+    account_inside_organisation = "account_inside_organisation"
+    #: An invitation from inside, addressed to an account from outside, which
+    #: has to be told which epics it may see (#243).
+    account_outside_organisation = "account_outside_organisation"
+    #: Epics chosen for somebody inside the organisation, who sees every
+    #: ticket on the team anyway (#243).
+    epics_only_for_external = "epics_only_for_external"
+    #: An account from outside made a site or finance admin, or such an admin
+    #: marked as outside (#243).
+    external_cannot_administer = "external_cannot_administer"
     #: A date worked that has not happened yet.
     worklog_in_future = "worklog_in_future"
     #: Moving a ticket to the team it is already on (#98).
