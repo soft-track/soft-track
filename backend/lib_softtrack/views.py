@@ -18,7 +18,6 @@ from typing import Optional
 from sqlmodel import Session, or_, select
 
 from lib_identity.models.identity import UserPublic
-from lib_softtrack import sharing
 from lib_softtrack.models.views import (
     DefaultViewUpdate,
     SavedViewCreate,
@@ -309,6 +308,9 @@ def delete_view(session: Session, current_user: User, view_id: int) -> None:
     # Before the row goes: both of these hold a foreign key to it, and so
     # does a share link to it (#245), which is revoked with it.
     _withdraw_from_defaults(session, view)
+    # Imported here: sharing reads tickets, which import this module.
+    from lib_softtrack import sharing
+
     sharing.forget_view(session, view.id)
     session.flush()
     session.delete(view)
