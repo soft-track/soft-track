@@ -383,7 +383,7 @@ def list_tickets(
         done_or_cancelled = in_category(*RESOLVED)
         filters.append(done_or_cancelled if resolved else ~done_or_cancelled)
     if due is not None:
-        filters.append(_due_filter(due, today or datetime.now(timezone.utc).date()))
+        filters.append(due_clause(due, today or datetime.now(timezone.utc).date()))
     # A date range, both ends inclusive (#105): the calendar asks for the days
     # its grid shows. Either end alone is an open range.
     if due_from is not None:
@@ -434,7 +434,32 @@ def _build_ticket_filters(
     """
     get_team_or_404(team_id, session)
     require_team_member(team_id, current_user, session)
+    return ticket_clauses(
+        team_id,
+        project_id=project_id,
+        status_id=status_id,
+        priority=priority,
+        assignee_id=assignee_id,
+        unassigned=unassigned,
+        label_id=label_id,
+        parent_id=parent_id,
+        sprint_id=sprint_id,
+    )
 
+
+def ticket_clauses(
+    team_id: int,
+    project_id: Optional[int] = None,
+    status_id: Optional[int] = None,
+    priority: Optional[TicketPriority] = None,
+    assignee_id: Optional[int] = None,
+    unassigned: bool = False,
+    label_id: Optional[int] = None,
+    parent_id: Optional[int] = None,
+    sprint_id: Optional[int] = None,
+) -> list[ColumnElement[bool]]:
+    """The WHERE clauses alone, with nobody asking: `_build_ticket_filters`
+    after its checks, and a share link (#245), whose reader has no account."""
     filters: list[ColumnElement[bool]] = [Ticket.team_id == team_id]
     if project_id is not None:
         filters.append(Ticket.project_id == project_id)
@@ -828,7 +853,7 @@ def _ordering(sort: TicketSort, direction: SortDirection, rank) -> list:
     return [key.desc() if descending else key.asc(), newest_first]
 
 
-def _due_filter(due: DueFilter, today: date):
+def due_clause(due: DueFilter, today: date):
     """One of the three due-date questions, as a condition on Ticket (#87)."""
     if due == DueFilter.none:
         return Ticket.due_date == None  # noqa: E711 -- SQL IS NULL

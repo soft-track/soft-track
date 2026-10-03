@@ -99,6 +99,12 @@ export default function SettingsLayout() {
           label: t('layout.nav.trash'),
           icon: 'trash' as IconName,
         },
+        // Read-only links for people with no account (#245).
+        {
+          to: `/settings/teams/${team.key}/share-links`,
+          label: t('layout.nav.shareLinks'),
+          icon: 'link' as IconName,
+        },
         {
           to: `/settings/teams/${team.key}/general`,
           label: t('layout.nav.general'),

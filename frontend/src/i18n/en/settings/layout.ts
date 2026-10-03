@@ -21,6 +21,7 @@ export const layout = {
     repositories: 'Repositories',
     webhooks: 'Webhooks',
     trash: 'Trash',
+    shareLinks: 'Share links',
     general: 'General',
     users: 'Users',
     departments: 'Departments',

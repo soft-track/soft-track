@@ -56,6 +56,9 @@ vi.mock('@/api/generated/endpoints/search/search', async (importOriginal) => ({
   useSearchSearchGet: () => mocks.search,
 }))
 
+// Ada is signed in; whether she is the team's admin decides Share (#245).
+vi.mock('@/auth/useAuth', () => ({ useAuth: () => ({ user: { id: 10 } }) }))
+
 vi.mock('@/tickets/TicketDetailPanel', () => ({
   TicketDetailPanel: ({ ticketId }: { ticketId: number }) => <p>Panel for ticket {ticketId}</p>,
 }))
@@ -149,6 +152,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  ADA.role = 'member'
   mocks.search.data = undefined
   mocks.burnup.data = undefined
   mocks.updateProject.mutateAsync.mockReset().mockResolvedValue(PLATFORM)
@@ -214,6 +218,21 @@ describe('what is in it and how far along', () => {
     showing({ ...PLATFORM, team_id: 99 }, [])
     renderPage()
     expect(screen.getByText(/does not exist on Engineering/)).toBeTruthy()
+  })
+})
+
+describe('sharing it (#245)', () => {
+  it('offers a team admin a read-only link, and nobody else', async () => {
+    showing(PLATFORM, [])
+    renderPage()
+    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull()
+    cleanup()
+
+    ADA.role = 'admin'
+    const user = renderPage()
+    await user.click(screen.getByRole('button', { name: 'Share' }))
+    expect(screen.getByRole('dialog', { name: 'Share Platform' })).toBeTruthy()
+    expect(screen.getByRole('checkbox', { name: 'Comments' })).toBeTruthy()
   })
 })
 
