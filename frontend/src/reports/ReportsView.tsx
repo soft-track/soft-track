@@ -12,6 +12,7 @@ import { useTranslation } from '@/i18n'
 import { BurndownChart } from '@/reports/BurndownChart'
 import { CreatedResolvedChart } from '@/reports/CreatedResolvedChart'
 import { FlowChart } from '@/reports/FlowChart'
+import { stageLimits } from '@/reports/stageLimits'
 import { TimeSpentChart } from '@/reports/TimeSpentChart'
 import { VelocityChart } from '@/reports/VelocityChart'
 import { useTeamContext } from '@/team/useTeamContext'
@@ -21,7 +22,7 @@ const WINDOWS = [14, 30, 90] as const
 
 export function ReportsView() {
   const { t } = useTranslation(['reports', 'common'])
-  const { team, sprints } = useTeamContext()
+  const { team, sprints, statuses } = useTeamContext()
 
   // Default to the sprint a team would actually want to look at.
   const preferred =
@@ -97,7 +98,7 @@ export function ReportsView() {
         )}
 
         {velocity.data && <VelocityChart data={velocity.data} />}
-        {flow.data && <FlowChart data={flow.data} />}
+        {flow.data && <FlowChart data={flow.data} limits={stageLimits(statuses)} />}
         {createdResolved.data && <CreatedResolvedChart data={createdResolved.data} />}
         {selected && sprintTime.data && (
           <TimeSpentChart

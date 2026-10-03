@@ -50,3 +50,39 @@ which is correct: nothing about the work changed.
 The Jira importer prefers a column the team already calls the same thing before
 falling back to the category, so importing "In Review" lands in a team's own
 "In Review" rather than merging into whatever else is `started`.
+
+## WIP limits
+
+A status can say how many tickets it should hold at once (#270): a number in
+its row under **Settings → *Team* → Statuses**, set by a team admin, blank for
+no limit.
+
+- **The column counts against it**: "4 / 3". Full, it says **full**; over,
+  **over by 1**, with an icon, since colour alone would not reach everyone.
+  The count is the whole stage on the team, whatever the board is filtered
+  to (`wip_count` in the team's estimates), so a filtered board still shows
+  how much work is in the column.
+- **By default a limit warns.** Dropping a card into a full column is
+  allowed, the header goes over, and the drop is announced as "Moved ENG-24
+  to In Progress. In Progress is now over its limit, 4 of 3." -- the keyboard
+  move (#80) and a pointer alike.
+- **Refuse a card over the limit** (a team setting under the same page)
+  makes it hard. Then every way a ticket changes status into a full column
+  is refused with `409 wip_limit_reached` and a sentence ("In Progress is
+  full. It holds 3, and this would make 4. Finish or move one first."): an
+  edit, the board's drag and drop (the card goes back, and the sentence shows
+  above the board), bulk edit (all or nothing), creating a ticket into the
+  column, and moving one to another team into a full column there. An
+  automation rule skips the move instead of failing what set it off, and its
+  run log says why. Tickets already in the column, and moves out of it, are
+  never held back.
+- **Sub-tickets count against limits** is on by default; off, only the work
+  they are part of counts.
+- **On the chart.** The cumulative flow chart draws a stage's limit -- the sum
+  of its columns' limits, where every column in the stage has one -- as a
+  dashed line that far above the band's lower edge.
+
+Grouped by epic, the board has no status columns to show a limit on; the
+limit is on the stage and holds all the same. A Jira import and deleting a
+status move tickets wherever they must go, and are not held back by a limit.
+Not here, on purpose: a limit per person or per swimlane.

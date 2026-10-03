@@ -9,6 +9,13 @@ export const kanban = {
   collapseColumn: 'Collapse column',
   dropHere: 'Drop here',
   noTickets: 'No tickets',
+  /** A column against its WIP limit (#270): "4 / 3", and in words when over. */
+  wip: {
+    count: '{{count}}/{{limit}}',
+    countTitle: '{{count}} tickets, against a limit of {{limit}}',
+    full: 'full',
+    overBy: 'over by {{count}}',
+  },
   expandNamed_one: 'Expand {{name}}, {{count}} ticket',
   expandNamed_other: 'Expand {{name}}, {{count}} tickets',
   collapsedTitle: '{{name}} · {{count}}',
@@ -28,6 +35,9 @@ export const kanban = {
     stays: '{{ticket}} stays in {{column}}.',
     movedWithin: 'Moved {{ticket}} within {{column}}.',
     movedTo: 'Moved {{ticket}} to {{column}}.',
+    // A WIP limit (#270): the same as a pointer sees.
+    movedOver: 'Moved {{ticket}} to {{column}}. {{column}} is now over its limit, {{count}} of {{limit}}.',
+    refused: '{{column}} is full, so {{ticket}} stays in {{from}}.',
     cancelled: 'Move cancelled. {{ticket}} stays in {{column}}.',
     /** Where a card with no column "stays" -- it should never happen. */
     itsColumn: 'its column',

@@ -113,6 +113,7 @@ export function announcements({
   columnName,
   startColumn,
   drag,
+  arriving = () => null,
 }: {
   ticketName: (id: UniqueIdentifier) => string
   /**
@@ -129,6 +130,14 @@ export function announcements({
    * instructions in the live region before anybody heard them.
    */
   drag: { moved: boolean }
+  /**
+   * What the card would do to the column it is dropped in, against the
+   * column's WIP limit (#270): take it over, or be refused.
+   */
+  arriving?: (
+    active: UniqueIdentifier,
+    over: UniqueIdentifier | undefined,
+  ) => { kind: 'over'; count: number; limit: number } | { kind: 'refused' } | null
 }): Announcements {
   return {
     onDragStart({ active }) {
@@ -170,6 +179,22 @@ export function announcements({
         return over?.id === active.id || typeof over?.id !== 'number'
           ? i18n.t('board:kanban.keyboard.stays', { ticket, column: to })
           : i18n.t('board:kanban.keyboard.movedWithin', { ticket, column: to })
+      }
+      const limit = arriving(active.id, over?.id)
+      if (limit?.kind === 'refused') {
+        return i18n.t('board:kanban.keyboard.refused', {
+          ticket,
+          column: to,
+          from: from ?? itsColumn(),
+        })
+      }
+      if (limit?.kind === 'over') {
+        return i18n.t('board:kanban.keyboard.movedOver', {
+          ticket,
+          column: to,
+          count: limit.count,
+          limit: limit.limit,
+        })
       }
       return i18n.t('board:kanban.keyboard.movedTo', { ticket, column: to })
     },

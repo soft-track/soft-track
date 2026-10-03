@@ -202,6 +202,9 @@ def update_status(
         status.category = payload.category
     if payload.color is not None:
         status.color = payload.color
+    # Set, changed, or -- with an explicit null -- removed (#270).
+    if "wip_limit" in payload.model_fields_set:
+        status.wip_limit = payload.wip_limit
 
     session.add(status)
     session.commit()

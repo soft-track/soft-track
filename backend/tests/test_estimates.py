@@ -135,6 +135,8 @@ def test_unsized_tickets_are_counted_not_treated_as_zero(client, team):
         "points": 5,
         "ticket_count": 2,
         "unestimated_count": 1,
+        # What counts against a WIP limit (#270): every ticket, by default.
+        "wip_count": 2,
     }
     assert data["unestimated_tickets"] == 1
 

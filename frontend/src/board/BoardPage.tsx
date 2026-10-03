@@ -7,6 +7,7 @@ import {
 } from '@/api/generated/endpoints/tickets/tickets'
 import { useSearchSearchGet } from '@/api/generated/endpoints/search/search'
 import type { SavedViewRead } from '@/api/generated/models'
+import { errorCode, errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { BulkActionBar } from '@/board/BulkActionBar'
 import {
@@ -64,6 +65,7 @@ import { ShellFrame } from '@/team/ShellFrame'
 import { TeamProvider } from '@/team/TeamContext'
 import { useTeamData } from '@/team/useTeamData'
 import { useTeamByKey } from '@/team/useTeams'
+import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 import { SaveViewModal } from '@/views/SaveViewModal'
 import { useSavedViews } from '@/views/useSavedViews'
@@ -214,8 +216,14 @@ export default function BoardPage() {
   const ticketsQuery = useListTicketsTeamsTeamIdTicketsGet(team?.id ?? 0, ticketsParams, {
     query: { enabled: Boolean(team) && filtersAreSettled && projectPageId === null },
   })
-  const changeStatus = useStatusChange(team, ticketsParams)
-  const moveTicket = useMoveTicket(team, ticketsParams)
+  // A move the server refused because the column is full (#270): its
+  // sentence, said where the card was dropped, until it is dismissed.
+  const [refusal, setRefusal] = useState<string | null>(null)
+  const onMoveRefused = (err: unknown) => {
+    if (errorCode(err) === 'wip_limit_reached') setRefusal(errorDetail(err, ''))
+  }
+  const changeStatus = useStatusChange(team, ticketsParams, onMoveRefused)
+  const moveTicket = useMoveTicket(team, ticketsParams, onMoveRefused)
 
   // Every filter is applied by the server now, so this page is already what
   // the board should show. Filtering it again here would only ever narrow the
@@ -444,6 +452,23 @@ export default function BoardPage() {
                 sprint={selectedSprint}
                 onOpenSprint={(sprintId) => setFilters({ ...filters, sprintId })}
               />
+            )}
+            {refusal && (
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-panel bg-danger-50 px-4 py-2.5 text-sm text-danger-700"
+              >
+                <Icon name="alert" size={15} className="mt-0.5 shrink-0" />
+                <span className="flex-1">{refusal}</span>
+                <button
+                  type="button"
+                  onClick={() => setRefusal(null)}
+                  aria-label={t('common:close')}
+                  className="btn btn-ghost btn-icon btn-xs"
+                >
+                  <Icon name="close" size={13} />
+                </button>
+              </div>
             )}
             <PeekContext.Provider value={peek}>
               <div className="min-h-0 flex-1">
