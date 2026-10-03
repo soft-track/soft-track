@@ -44,8 +44,11 @@ export default function SettingsLayout() {
           icon: 'bell',
         },
         { to: '/settings/security', label: t('layout.nav.security'), icon: 'shield' },
-        // Your own expense claims (#133): everybody's, and only their own.
-        { to: '/settings/expenses', label: t('layout.nav.expenses'), icon: 'receipt' },
+        // Your own expense claims (#133): everybody's, and only their own --
+        // everybody inside the organisation's (#317).
+        ...(user?.is_external
+          ? []
+          : [{ to: '/settings/expenses', label: t('layout.nav.expenses'), icon: 'receipt' as const }]),
       ],
     },
     ...(teams ?? []).map((team) => ({

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
 from lib_identity import people as people_service
-from lib_identity.identity import get_current_user
+from lib_identity.identity import get_current_insider
 from lib_identity.models.people import PeoplePage, ProfileRead
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT
 from lib_softtrack.tables import User
@@ -28,7 +28,7 @@ def list_people(
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
-    _: User = Depends(get_current_user),
+    _: User = Depends(get_current_insider),
 ):
     """Every active account, by name: the people directory.
 
@@ -50,7 +50,7 @@ def list_people(
 def get_profile(
     username: str,
     session: Session = Depends(get_session),
-    viewer: User = Depends(get_current_user),
+    viewer: User = Depends(get_current_insider),
 ):
     """Somebody's profile page: who they are, who they report to, who reports
     to them, and the teams they share with you.

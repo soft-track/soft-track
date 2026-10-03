@@ -116,6 +116,25 @@ def get_current_user(
     return user
 
 
+def get_current_insider(current_user: User = Depends(get_current_user)) -> User:
+    """`get_current_user`, for what only somebody inside the organisation
+    reaches (#317): the people directory and profiles, departments, anybody's
+    workload, the team directory, creating a team and claiming expenses.
+
+    Each of these asked only "is somebody signed in", which was the right
+    question while every account was a colleague's. An account from outside
+    (#243) gets its teams and its own account, and is refused the rest here,
+    before anything is read.
+    """
+    if current_user.is_external:
+        raise api_error(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code=ErrorCode.external_account,
+            detail="This is for people inside the organisation",
+        )
+    return current_user
+
+
 def ticket_token(user: User) -> Token:
     """A signed-in session for `user`: the bearer token plus their own record.
 

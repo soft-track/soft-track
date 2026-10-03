@@ -45,6 +45,15 @@ export interface AuthContextValue {
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
+/**
+ * Whether the signed-in account is from outside the organisation (#243).
+ * False with nobody signed in, and outside a provider, so a component that
+ * only words itself differently for them needs no session to render.
+ */
+export function useIsExternal(): boolean {
+  return useContext(AuthContext)?.user?.is_external ?? false
+}
+
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used within an AuthProvider')

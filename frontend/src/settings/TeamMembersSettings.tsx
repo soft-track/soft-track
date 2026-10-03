@@ -354,10 +354,15 @@ export default function TeamMembersSettings() {
                   {!member.user.is_active && <DeactivatedChip />}
                 </p>
                 <p className="text-xs text-neutral-400">
-                  {t('members.list.emailJoined', {
-                    email: member.user.email,
-                    when: formatRelative(parseServerDate(member.joined_at)),
-                  })}
+                  {/* No address for somebody from outside to read (#317). */}
+                  {member.user.email
+                    ? t('members.list.emailJoined', {
+                        email: member.user.email,
+                        when: formatRelative(parseServerDate(member.joined_at)),
+                      })
+                    : t('members.list.joined', {
+                        when: formatRelative(parseServerDate(member.joined_at)),
+                      })}
                 </p>
                 {member.user.is_external && (
                   <div className="mt-1 flex flex-wrap items-center gap-2">

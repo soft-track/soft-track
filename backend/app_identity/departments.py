@@ -5,7 +5,7 @@ from sqlmodel import Session
 
 from lib_identity import departments as departments_service
 from lib_identity.admin import require_site_admin
-from lib_identity.identity import get_current_user
+from lib_identity.identity import get_current_insider
 from lib_identity.models.departments import (
     DepartmentCreate,
     DepartmentDelete,
@@ -21,7 +21,7 @@ router = APIRouter(prefix="/departments", tags=["departments"])
 @router.get("", response_model=list[DepartmentRead])
 def list_departments(
     session: Session = Depends(get_session),
-    _: User = Depends(get_current_user),
+    _: User = Depends(get_current_insider),
 ):
     """Every department, by name, with how many people are in each.
 

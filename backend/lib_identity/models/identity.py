@@ -1,9 +1,10 @@
 from datetime import date, datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_serializer
 
 from lib_identity.models.departments import DepartmentRef
+from lib_utils.viewer import outside_viewer
 
 
 class UserCreate(BaseModel):
@@ -36,6 +37,13 @@ class UserPublic(BaseModel):
     is_external: bool = False
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_serializer("email")
+    def _address(self, email: str) -> str:
+        # Somebody from outside the organisation sees a person by name and
+        # never by address, but for their own (#317). See lib_utils/viewer.py.
+        asking = outside_viewer()
+        return email if asking is None or asking == self.id else ""
 
 
 class PersonRef(BaseModel):

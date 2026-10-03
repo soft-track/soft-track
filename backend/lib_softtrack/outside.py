@@ -39,6 +39,7 @@ from lib_softtrack.tables import (
     User,
 )
 from lib_utils.errors import ErrorCode, api_error
+from lib_utils.viewer import set_outside_viewer
 
 #: The tables rather than the models inside the criteria below: the models
 #: would have the criteria put on them too, recursively.
@@ -60,6 +61,8 @@ def confine(session: Session, user: User) -> None:
         session.info[_CONFINED_TO] = user.id
     else:
         session.info.pop(_CONFINED_TO, None)
+    # And the request's responses name people without their addresses (#317).
+    set_outside_viewer(user.id if user.is_external else None)
 
 
 def confined_to(session: Session) -> Optional[int]:

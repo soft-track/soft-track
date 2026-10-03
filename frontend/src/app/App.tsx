@@ -9,6 +9,7 @@ import InvitePage from '@/auth/InvitePage'
 import LoginPage from '@/auth/LoginPage'
 import OAuthCallbackPage from '@/auth/OAuthCallbackPage'
 import NewTeamPage from '@/team/NewTeamPage'
+import { InsidersOnly } from '@/team/InsidersOnly'
 import BudgetsPage from '@/finance/BudgetsPage'
 import CompensationHistoryPage from '@/finance/CompensationHistoryPage'
 import CompensationPage from '@/finance/CompensationPage'
@@ -77,7 +78,16 @@ export default function App() {
         <Route path="/" element={<HomeRoute />} />
 
         <Route element={<RequireAuth />}>
-          <Route path="/new-team" element={<NewTeamPage />} />
+          {/* Not for somebody from outside the organisation (#317), who is
+              told why rather than sent somewhere else. */}
+          <Route
+            path="/new-team"
+            element={
+              <InsidersOnly area="newTeam">
+                <NewTeamPage />
+              </InsidersOnly>
+            }
+          />
 
           {/* Above /:teamKey in the ranking React Router gives static
               segments, and team keys are at most six characters, so no team
@@ -87,7 +97,14 @@ export default function App() {
             <Route path="profile" element={<ProfileSettings />} />
             <Route path="security" element={<SecuritySettings />} />
             <Route path="notifications" element={<NotificationSettings />} />
-            <Route path="expenses" element={<MyExpensesPage />} />
+            <Route
+              path="expenses"
+              element={
+                <InsidersOnly area="expenses">
+                  <MyExpensesPage />
+                </InsidersOnly>
+              }
+            />
             <Route
               path="teams/:teamKey"
               element={<Navigate to="members" replace />}
@@ -138,7 +155,15 @@ export default function App() {
               -- the app always links a team by its upper-case key. The API
               answers on /users, keeping the two disjoint (see
               docs/deployment.md). */}
-          <Route path="/people" caseSensitive element={<PeopleLayout />}>
+          <Route
+            path="/people"
+            caseSensitive
+            element={
+              <InsidersOnly area="people">
+                <PeopleLayout />
+              </InsidersOnly>
+            }
+          >
             <Route index element={<DirectoryPage />} />
             {/* A profile behind every name (#126). */}
             <Route path=":username" element={<ProfilePage />} />

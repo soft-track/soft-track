@@ -24,6 +24,7 @@ from lib_softtrack import outside, realtime, trash
 from lib_softtrack.deleting import trash_loop
 from lib_softtrack.digest import digest_loop
 from lib_softtrack.outbound import webhook_loop
+from lib_utils.viewer import ViewerScope
 from app_softtrack.attachments import router as attachments_router
 from app_softtrack.automations import router as automations_router
 from app_softtrack.comments import router as comments_router
@@ -151,6 +152,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Who is asking, for the people in a response (#317): see lib_utils/viewer.py.
+app.add_middleware(ViewerScope)
 
 
 app.include_router(identity_router)

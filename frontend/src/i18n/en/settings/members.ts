@@ -14,7 +14,7 @@ export const members = {
     // Somebody from outside the organisation (#243).
     outside: 'This person is outside the organisation',
     outsideHint:
-      'They join as a guest and see only the epics chosen here. Marked External wherever their name appears.',
+      'A guest who sees only the epics chosen here. No directory, no team of their own, no expense claims. Marked External wherever their name appears.',
   },
   // What somebody from outside may see (#243).
   epics: {
@@ -43,6 +43,7 @@ export const members = {
     headingCount: 'Members · {{total}}',
     loading: 'Loading members…',
     emailJoined: '{{email}} · joined {{when}}',
+    joined: 'joined {{when}}',
     roleFor: 'Role for {{name}}',
     leave: 'Leave',
   },
