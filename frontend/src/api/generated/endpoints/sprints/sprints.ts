@@ -26,6 +26,10 @@ import type {
 
 import type {
   HTTPValidationError,
+  RetroActionCreate,
+  RetroActionRead,
+  RetrospectiveUpdate,
+  SprintCompleteRequest,
   SprintCompletion,
   SprintCreate,
   SprintRead,
@@ -507,17 +511,21 @@ export const useStartSprintSprintsSprintIdStartPost = <TError = HTTPValidationEr
  * Close the sprint, carrying unfinished tickets into the next one.
  *
  * Nothing is deleted: if there is no later sprint to carry into, the
- * unfinished tickets go back to the backlog.
+ * unfinished tickets go back to the backlog. The body, all of it optional,
+ * says whether the goal was met and starts the retrospective (#271).
  * @summary Complete Sprint
  */
 export const completeSprintSprintsSprintIdCompletePost = (
     sprintId: number,
+    sprintCompleteRequestNull?: SprintCompleteRequest | null,
  signal?: AbortSignal
 ) => {
 
 
       return apiClient<SprintCompletion>(
-      {url: `/sprints/${sprintId}/complete`, method: 'POST', signal
+      {url: `/sprints/${sprintId}/complete`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: sprintCompleteRequestNull, signal
     },
       );
     }
@@ -542,9 +550,9 @@ const {mutation: mutationOptions} = options ?
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeSprintSprintsSprintIdCompletePost>>, CompleteSprintSprintsSprintIdCompletePostMutationVariables> = (props) => {
-          const {sprintId} = props ?? {};
+          const {sprintId,data} = props ?? {};
 
-          return  completeSprintSprintsSprintIdCompletePost(sprintId,)
+          return  completeSprintSprintsSprintIdCompletePost(sprintId,data,)
         }
 
 
@@ -555,9 +563,9 @@ const {mutation: mutationOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type CompleteSprintSprintsSprintIdCompletePostMutationResult = NonNullable<Awaited<ReturnType<typeof completeSprintSprintsSprintIdCompletePost>>>
-
+    export type CompleteSprintSprintsSprintIdCompletePostMutationBody = SprintCompleteRequest | null | undefined
     export type CompleteSprintSprintsSprintIdCompletePostMutationError = HTTPValidationError
-    export type CompleteSprintSprintsSprintIdCompletePostMutationVariables = {sprintId: number}
+    export type CompleteSprintSprintsSprintIdCompletePostMutationVariables = {sprintId: number;data?: SprintCompleteRequest | null}
 
     /**
  * @summary Complete Sprint
@@ -571,4 +579,208 @@ export const useCompleteSprintSprintsSprintIdCompletePost = <TError = HTTPValida
         TContext
       > => {
       return useMutation(getCompleteSprintSprintsSprintIdCompletePostMutationOptions(options), queryClient);
+    }
+    /**
+ * Write to a completed sprint's retrospective, while it is open (#271).
+ * @summary Update Retrospective
+ */
+export const updateRetrospectiveSprintsSprintIdRetrospectivePatch = (
+    sprintId: number,
+    retrospectiveUpdate: RetrospectiveUpdate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<SprintRead>(
+      {url: `/sprints/${sprintId}/retrospective`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: retrospectiveUpdate, signal
+    },
+      );
+    }
+
+
+
+
+export const getUpdateRetrospectiveSprintsSprintIdRetrospectivePatchMutationKey = () => ['updateRetrospectiveSprintsSprintIdRetrospectivePatch'] as const;
+
+export const getUpdateRetrospectiveSprintsSprintIdRetrospectivePatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRetrospectiveSprintsSprintIdRetrospectivePatch>>, TError,UpdateRetrospectiveSprintsSprintIdRetrospectivePatchMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateRetrospectiveSprintsSprintIdRetrospectivePatch>>, TError,UpdateRetrospectiveSprintsSprintIdRetrospectivePatchMutationVariables, TContext> => {
+
+const mutationKey = getUpdateRetrospectiveSprintsSprintIdRetrospectivePatchMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateRetrospectiveSprintsSprintIdRetrospectivePatch>>, UpdateRetrospectiveSprintsSprintIdRetrospectivePatchMutationVariables> = (props) => {
+          const {sprintId,data} = props ?? {};
+
+          return  updateRetrospectiveSprintsSprintIdRetrospectivePatch(sprintId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateRetrospectiveSprintsSprintIdRetrospectivePatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateRetrospectiveSprintsSprintIdRetrospectivePatch>>>
+    export type UpdateRetrospectiveSprintsSprintIdRetrospectivePatchMutationBody = RetrospectiveUpdate
+    export type UpdateRetrospectiveSprintsSprintIdRetrospectivePatchMutationError = HTTPValidationError
+    export type UpdateRetrospectiveSprintsSprintIdRetrospectivePatchMutationVariables = {sprintId: number;data: RetrospectiveUpdate}
+
+    /**
+ * @summary Update Retrospective
+ */
+export const useUpdateRetrospectiveSprintsSprintIdRetrospectivePatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRetrospectiveSprintsSprintIdRetrospectivePatch>>, TError,UpdateRetrospectiveSprintsSprintIdRetrospectivePatchMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateRetrospectiveSprintsSprintIdRetrospectivePatch>>,
+        TError,
+        UpdateRetrospectiveSprintsSprintIdRetrospectivePatchMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateRetrospectiveSprintsSprintIdRetrospectivePatchMutationOptions(options), queryClient);
+    }
+    /**
+ * Stop the retrospective changing. A team admin's (#271).
+ * @summary Close Retrospective
+ */
+export const closeRetrospectiveSprintsSprintIdRetrospectiveClosePost = (
+    sprintId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<SprintRead>(
+      {url: `/sprints/${sprintId}/retrospective/close`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+
+export const getCloseRetrospectiveSprintsSprintIdRetrospectiveClosePostMutationKey = () => ['closeRetrospectiveSprintsSprintIdRetrospectiveClosePost'] as const;
+
+export const getCloseRetrospectiveSprintsSprintIdRetrospectiveClosePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof closeRetrospectiveSprintsSprintIdRetrospectiveClosePost>>, TError,CloseRetrospectiveSprintsSprintIdRetrospectiveClosePostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof closeRetrospectiveSprintsSprintIdRetrospectiveClosePost>>, TError,CloseRetrospectiveSprintsSprintIdRetrospectiveClosePostMutationVariables, TContext> => {
+
+const mutationKey = getCloseRetrospectiveSprintsSprintIdRetrospectiveClosePostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof closeRetrospectiveSprintsSprintIdRetrospectiveClosePost>>, CloseRetrospectiveSprintsSprintIdRetrospectiveClosePostMutationVariables> = (props) => {
+          const {sprintId} = props ?? {};
+
+          return  closeRetrospectiveSprintsSprintIdRetrospectiveClosePost(sprintId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CloseRetrospectiveSprintsSprintIdRetrospectiveClosePostMutationResult = NonNullable<Awaited<ReturnType<typeof closeRetrospectiveSprintsSprintIdRetrospectiveClosePost>>>
+
+    export type CloseRetrospectiveSprintsSprintIdRetrospectiveClosePostMutationError = HTTPValidationError
+    export type CloseRetrospectiveSprintsSprintIdRetrospectiveClosePostMutationVariables = {sprintId: number}
+
+    /**
+ * @summary Close Retrospective
+ */
+export const useCloseRetrospectiveSprintsSprintIdRetrospectiveClosePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof closeRetrospectiveSprintsSprintIdRetrospectiveClosePost>>, TError,CloseRetrospectiveSprintsSprintIdRetrospectiveClosePostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof closeRetrospectiveSprintsSprintIdRetrospectiveClosePost>>,
+        TError,
+        CloseRetrospectiveSprintsSprintIdRetrospectiveClosePostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCloseRetrospectiveSprintsSprintIdRetrospectiveClosePostMutationOptions(options), queryClient);
+    }
+    /**
+ * Make a ticket of a line from "what to change" (#271).
+ * @summary Create Retro Action
+ */
+export const createRetroActionSprintsSprintIdRetrospectiveActionsPost = (
+    sprintId: number,
+    retroActionCreate: RetroActionCreate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<RetroActionRead>(
+      {url: `/sprints/${sprintId}/retrospective/actions`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: retroActionCreate, signal
+    },
+      );
+    }
+
+
+
+
+export const getCreateRetroActionSprintsSprintIdRetrospectiveActionsPostMutationKey = () => ['createRetroActionSprintsSprintIdRetrospectiveActionsPost'] as const;
+
+export const getCreateRetroActionSprintsSprintIdRetrospectiveActionsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRetroActionSprintsSprintIdRetrospectiveActionsPost>>, TError,CreateRetroActionSprintsSprintIdRetrospectiveActionsPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createRetroActionSprintsSprintIdRetrospectiveActionsPost>>, TError,CreateRetroActionSprintsSprintIdRetrospectiveActionsPostMutationVariables, TContext> => {
+
+const mutationKey = getCreateRetroActionSprintsSprintIdRetrospectiveActionsPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createRetroActionSprintsSprintIdRetrospectiveActionsPost>>, CreateRetroActionSprintsSprintIdRetrospectiveActionsPostMutationVariables> = (props) => {
+          const {sprintId,data} = props ?? {};
+
+          return  createRetroActionSprintsSprintIdRetrospectiveActionsPost(sprintId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateRetroActionSprintsSprintIdRetrospectiveActionsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createRetroActionSprintsSprintIdRetrospectiveActionsPost>>>
+    export type CreateRetroActionSprintsSprintIdRetrospectiveActionsPostMutationBody = RetroActionCreate
+    export type CreateRetroActionSprintsSprintIdRetrospectiveActionsPostMutationError = HTTPValidationError
+    export type CreateRetroActionSprintsSprintIdRetrospectiveActionsPostMutationVariables = {sprintId: number;data: RetroActionCreate}
+
+    /**
+ * @summary Create Retro Action
+ */
+export const useCreateRetroActionSprintsSprintIdRetrospectiveActionsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRetroActionSprintsSprintIdRetrospectiveActionsPost>>, TError,CreateRetroActionSprintsSprintIdRetrospectiveActionsPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createRetroActionSprintsSprintIdRetrospectiveActionsPost>>,
+        TError,
+        CreateRetroActionSprintsSprintIdRetrospectiveActionsPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateRetroActionSprintsSprintIdRetrospectiveActionsPostMutationOptions(options), queryClient);
     }

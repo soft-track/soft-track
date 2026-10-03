@@ -4652,8 +4652,131 @@
           "sprints"
         ],
         "summary": "Complete Sprint",
-        "description": "Close the sprint, carrying unfinished tickets into the next one.\n\nNothing is deleted: if there is no later sprint to carry into, the\nunfinished tickets go back to the backlog.",
+        "description": "Close the sprint, carrying unfinished tickets into the next one.\n\nNothing is deleted: if there is no later sprint to carry into, the\nunfinished tickets go back to the backlog. The body, all of it optional,\nsays whether the goal was met and starts the retrospective (#271).",
         "operationId": "complete_sprint_sprints__sprint_id__complete_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sprint Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/SprintCompleteRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintCompletion"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sprints/{sprint_id}/retrospective": {
+      "patch": {
+        "tags": [
+          "sprints"
+        ],
+        "summary": "Update Retrospective",
+        "description": "Write to a completed sprint's retrospective, while it is open (#271).",
+        "operationId": "update_retrospective_sprints__sprint_id__retrospective_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sprint Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrospectiveUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sprints/{sprint_id}/retrospective/close": {
+      "post": {
+        "tags": [
+          "sprints"
+        ],
+        "summary": "Close Retrospective",
+        "description": "Stop the retrospective changing. A team admin's (#271).",
+        "operationId": "close_retrospective_sprints__sprint_id__retrospective_close_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4676,7 +4799,65 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SprintCompletion"
+                  "$ref": "#/components/schemas/SprintRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sprints/{sprint_id}/retrospective/actions": {
+      "post": {
+        "tags": [
+          "sprints"
+        ],
+        "summary": "Create Retro Action",
+        "description": "Make a ticket of a line from \"what to change\" (#271).",
+        "operationId": "create_retro_action_sprints__sprint_id__retrospective_actions_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sprint Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetroActionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetroActionRead"
                 }
               }
             }
@@ -16923,6 +17104,170 @@
         "title": "ResetPassword",
         "description": "The token from a reset link, and the password to set with it."
       },
+      "RetroActionCreate": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "RetroActionCreate",
+        "description": "A line from \"what to change\", to make a ticket of."
+      },
+      "RetroActionRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "ticket_id": {
+            "type": "integer",
+            "title": "Ticket Id"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "text",
+          "ticket_id",
+          "identifier",
+          "created_at"
+        ],
+        "title": "RetroActionRead",
+        "description": "A line from \"what to change\" that became a ticket (#271)."
+      },
+      "Retrospective": {
+        "properties": {
+          "went_well": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Went Well"
+          },
+          "did_not": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Did Not"
+          },
+          "to_change": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Change"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/RetroActionRead"
+            },
+            "type": "array",
+            "title": "Actions",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "Retrospective",
+        "description": "What the team learned from a sprint (#271): three markdown sections,\nany of them empty until somebody writes it."
+      },
+      "RetrospectiveUpdate": {
+        "properties": {
+          "outcome": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SprintOutcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "went_well": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Went Well"
+          },
+          "did_not": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Did Not"
+          },
+          "to_change": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Change"
+          }
+        },
+        "type": "object",
+        "title": "RetrospectiveUpdate",
+        "description": "Writing to a completed sprint's retrospective. Fields left out stay as\nthey are; an explicit null clears one."
+      },
       "RuleActions": {
         "properties": {
           "set_status_id": {
@@ -18047,6 +18392,59 @@
         ],
         "title": "SortDirection"
       },
+      "SprintCompleteRequest": {
+        "properties": {
+          "outcome": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SprintOutcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "went_well": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Went Well"
+          },
+          "did_not": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Did Not"
+          },
+          "to_change": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Change"
+          }
+        },
+        "type": "object",
+        "title": "SprintCompleteRequest",
+        "description": "What completing a sprint asks as well (#271), all of it optional: the\nretrospective can be written later."
+      },
       "SprintCompletion": {
         "properties": {
           "sprint": {
@@ -18098,6 +18496,18 @@
             "type": "string",
             "format": "date-time",
             "title": "Ends At"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal"
           }
         },
         "type": "object",
@@ -18106,6 +18516,16 @@
           "ends_at"
         ],
         "title": "SprintCreate"
+      },
+      "SprintOutcome": {
+        "type": "string",
+        "enum": [
+          "met",
+          "partly",
+          "missed"
+        ],
+        "title": "SprintOutcome",
+        "description": "Whether a sprint's goal was met (#271), said when it is completed."
       },
       "SprintProgress": {
         "properties": {
@@ -18197,6 +18617,37 @@
           },
           "progress": {
             "$ref": "#/components/schemas/SprintProgress"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal"
+          },
+          "goal_outcome": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SprintOutcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retrospective": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Retrospective"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -18258,6 +18709,18 @@
               }
             ],
             "title": "Ends At"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal"
           }
         },
         "type": "object",
@@ -21221,6 +21684,8 @@
           "cannot_demote_self",
           "sprint_completed",
           "sprint_already_active",
+          "retrospective_closed",
+          "sprint_not_completed",
           "sprint_dates_invalid",
           "link_to_self",
           "parent_is_self",

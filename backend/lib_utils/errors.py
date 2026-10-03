@@ -134,6 +134,10 @@ class ErrorCode(str, enum.Enum):
     #: A completed sprint's numbers are history and cannot change.
     sprint_completed = "sprint_completed"
     sprint_already_active = "sprint_already_active"
+    #: A sprint's retrospective a team admin has closed (#271).
+    retrospective_closed = "retrospective_closed"
+    #: A retrospective is written about a sprint that has ended (#271).
+    sprint_not_completed = "sprint_not_completed"
     sprint_dates_invalid = "sprint_dates_invalid"
     link_to_self = "link_to_self"
     parent_is_self = "parent_is_self"

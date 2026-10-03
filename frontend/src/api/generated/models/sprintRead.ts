@@ -5,6 +5,8 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { Retrospective } from './retrospective';
+import type { SprintOutcome } from './sprintOutcome';
 import type { SprintProgress } from './sprintProgress';
 import type { SprintState } from './sprintState';
 
@@ -19,4 +21,7 @@ export interface SprintRead {
   state: SprintState;
   completed_at?: string | null;
   progress: SprintProgress;
+  goal?: string | null;
+  goal_outcome?: SprintOutcome | null;
+  retrospective?: Retrospective | null;
 }

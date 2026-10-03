@@ -6,9 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SprintCreate {
-  name?: string | null;
-  starts_at: string;
-  ends_at: string;
-  goal?: string | null;
+/**
+ * A line from "what to change", to make a ticket of.
+ */
+export interface RetroActionCreate {
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  text: string;
 }

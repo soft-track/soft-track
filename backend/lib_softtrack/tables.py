@@ -204,6 +204,14 @@ class SprintState(str, enum.Enum):
     completed = "completed"
 
 
+class SprintOutcome(str, enum.Enum):
+    """Whether a sprint's goal was met (#271), said when it is completed."""
+
+    met = "met"
+    partly = "partly"
+    missed = "missed"
+
+
 class TicketEventField(str, enum.Enum):
     """Which field a TicketEvent records a change to."""
 
@@ -997,6 +1005,35 @@ class Sprint(SQLModel, table=True):
     ends_at: datetime
     state: SprintState = Field(default=SprintState.upcoming, index=True)
     completed_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=utcnow)
+
+    # --- What it was for, and what the team learned (#271) ------------------
+
+    #: A sentence or two, written when the sprint is planned.
+    goal: Optional[str] = None
+    #: Whether the goal was met, said when it is completed or after.
+    goal_outcome: Optional[SprintOutcome] = None
+    #: The retrospective: three markdown sections, any of them filled in when
+    #: the sprint is completed or later, by anybody on the team but a guest,
+    #: until a team admin closes it.
+    retro_went_well: Optional[str] = None
+    retro_did_not: Optional[str] = None
+    retro_to_change: Optional[str] = None
+    retro_closed_at: Optional[datetime] = None
+
+
+class SprintAction(SQLModel, table=True):
+    """Something to change, from a sprint's retrospective, made a ticket (#271).
+
+    The line it came from and the ticket it became, so the retrospective can
+    show which of its actions became work and the ticket can say where it
+    came from.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    sprint_id: int = Field(foreign_key="sprint.id", index=True)
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
+    text: str
     created_at: datetime = Field(default_factory=utcnow)
 
 

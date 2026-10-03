@@ -439,7 +439,12 @@ export default function BoardPage() {
               onCloseNotifications={() => overlays.close('notifications')}
               onOpenNotifiedTicket={leaveForTicket}
             />
-            {selectedSprint && !searchQuery && <SprintBanner sprint={selectedSprint} />}
+            {selectedSprint && !searchQuery && (
+              <SprintBanner
+                sprint={selectedSprint}
+                onOpenSprint={(sprintId) => setFilters({ ...filters, sprintId })}
+              />
+            )}
             <PeekContext.Provider value={peek}>
               <div className="min-h-0 flex-1">
                 {searchQuery ? (
