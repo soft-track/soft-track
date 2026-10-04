@@ -340,3 +340,62 @@ def test_title_and_location_are_not_the_admins_to_set(client, auth):
     )
     assert response.status_code == 200
     assert (response.json()["job_title"], response.json()["location"]) == (None, None)
+
+
+def test_admin_can_read_and_update_employment_type(client, auth):
+    """Issue #320: admin can read and update employment classification."""
+    admin = auth(email="admin@softtrack.dev")
+    ada = auth(email="ada@softtrack.dev")
+
+    # Default is employee
+    items = client.get("/admin/users", headers=admin["headers"]).json()["items"]
+    ada_row = next(u for u in items if u["email"] == "ada@softtrack.dev")
+    assert ada_row["employment_type"] == "employee"
+    assert ada_row["is_external"] is False
+
+    # Admin updates to contractor
+    response = client.patch(
+        f"/admin/users/{ada['user']['id']}",
+        json={"employment_type": "contractor"},
+        headers=admin["headers"],
+    )
+    assert response.status_code == 200
+    assert response.json()["employment_type"] == "contractor"
+    assert response.json()["is_external"] is False
+
+    # Admin updates to service_account
+    response = client.patch(
+        f"/admin/users/{ada['user']['id']}",
+        json={"employment_type": "service_account"},
+        headers=admin["headers"],
+    )
+    assert response.status_code == 200
+    assert response.json()["employment_type"] == "service_account"
+
+    # Admin updates to external -> syncs is_external = True
+    response = client.patch(
+        f"/admin/users/{ada['user']['id']}",
+        json={"employment_type": "external"},
+        headers=admin["headers"],
+    )
+    assert response.status_code == 200
+    assert response.json()["employment_type"] == "external"
+    assert response.json()["is_external"] is True
+
+    # Setting is_external = False reverts external to employee if employment_type not specified
+    response = client.patch(
+        f"/admin/users/{ada['user']['id']}",
+        json={"is_external": False},
+        headers=admin["headers"],
+    )
+    assert response.status_code == 200
+    assert response.json()["is_external"] is False
+    assert response.json()["employment_type"] == "employee"
+
+    # Non-admin cannot update employment_type
+    refused = client.patch(
+        f"/admin/users/{ada['user']['id']}",
+        json={"employment_type": "intern"},
+        headers=ada["headers"],
+    )
+    assert refused.status_code == 403

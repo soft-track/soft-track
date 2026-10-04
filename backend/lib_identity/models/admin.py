@@ -5,6 +5,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from lib_identity.models.identity import PersonRef, UserMe
+from lib_softtrack.tables import EmploymentType
 
 
 class AdminRole(str, enum.Enum):
@@ -56,6 +57,9 @@ class AdminUserUpdate(BaseModel):
     #: never by the person. Refused for an admin of any kind, and while the
     #: account is more than a guest on a team.
     is_external: Optional[bool] = None
+    #: The account's employment classification (#320). Only employee accounts
+    #: are on payroll by default.
+    employment_type: Optional[EmploymentType] = None
     full_name: Optional[str] = None
     #: When they started (#122). An explicit null clears it; leaving it out
     #: leaves it alone. Set here and nowhere else: it is the organisation's

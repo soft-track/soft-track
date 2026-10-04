@@ -468,3 +468,50 @@ def test_currencies_are_listed_with_their_decimal_places(client, people):
     places = {c["code"]: c["minor_units"] for c in response.json()}
     assert (places["USD"], places["JPY"], places["KWD"]) == (2, 0, 3)
     assert client.get("/currencies").status_code == 401
+
+
+def test_compensation_listing_excludes_non_payroll_accounts(client, people, auth):
+    """Issue #320: non-payroll accounts do not appear in the compensation list or increase missing count."""
+    grace, sofia = people["grace"], people["sofia"]
+
+    # Record pay for daniel
+    record(client, grace, "daniel")
+
+    # Create service account, external user, and contractor
+    bot = auth(email="bot@northwind.dev", full_name="Bot Account")
+    client.patch(
+        f"/admin/users/{bot['user']['id']}",
+        json={"employment_type": "service_account"},
+        headers=sofia["headers"],
+    )
+
+    external_user = auth(email="guest@partner.dev", full_name="Guest Account")
+    client.patch(
+        f"/admin/users/{external_user['user']['id']}",
+        json={"is_external": True},
+        headers=sofia["headers"],
+    )
+
+    contractor = auth(email="contractor@northwind.dev", full_name="Contractor Account")
+    client.patch(
+        f"/admin/users/{contractor['user']['id']}",
+        json={"employment_type": "contractor"},
+        headers=sofia["headers"],
+    )
+
+    page = listing(client, grace)
+    usernames = [item["person"]["username"] for item in page["items"]]
+
+    # Non-payroll accounts must not appear
+    assert "bot" not in usernames
+    assert "guest" not in usernames
+    assert "contractor" not in usernames
+
+    # Actual employee accounts without compensation still appear as missing
+    assert "ben" in usernames
+    assert "grace" in usernames
+    assert "amina" in usernames
+    assert "sofia" in usernames
+
+    # Total missing count only reflects employees without compensation (amina, ben, grace, sofia = 4)
+    assert page["missing"] == 4

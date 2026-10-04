@@ -513,6 +513,21 @@ class Department(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow)
 
 
+class EmploymentType(str, enum.Enum):
+    """What kind of account or engagement somebody has with the organisation (#320).
+
+    Only `employee` accounts are on payroll by default. Service accounts,
+    contractors, interns, and external accounts are left off payroll drafts
+    and the Compensation list.
+    """
+
+    employee = "employee"
+    contractor = "contractor"
+    intern = "intern"
+    external = "external"
+    service_account = "service_account"
+
+
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(index=True, unique=True)
@@ -615,6 +630,13 @@ class User(SQLModel, table=True):
     #: the epics it was given there and nothing else (`lib_softtrack/
     #: outside.py`). Never a site or finance admin.
     is_external: bool = Field(default=False)
+    #: What kind of account this is (#320). Defaults to employee; service
+    #: accounts, external accounts, contractors and interns are excluded from
+    #: payroll drafts unless pay is recorded for them.
+    employment_type: EmploymentType = Field(
+        default=EmploymentType.employee,
+        sa_column_kwargs={"server_default": "employee"},
+    )
 
     @property
     def has_password(self) -> bool:

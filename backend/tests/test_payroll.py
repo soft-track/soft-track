@@ -453,3 +453,92 @@ def test_a_department_paid_under_is_renamed_not_deleted(client, paid):
         ).status_code
         == 204
     )
+
+
+def test_non_payroll_accounts_left_off_draft_and_do_not_appear_as_missing(
+    client, paid, auth
+):
+    """Issue #320: guests and service accounts are not people missing pay."""
+    grace = paid["grace"]
+    sofia = paid["sofia"]
+
+    demo_bot = auth(email="bot@northwind.dev", full_name="Demo Bot")
+    client.patch(
+        f"/admin/users/{demo_bot['user']['id']}",
+        json={"employment_type": "service_account"},
+        headers=sofia["headers"],
+    )
+
+    guest = auth(email="carlos@partner.dev", full_name="Carlos Rivera")
+    client.patch(
+        f"/admin/users/{guest['user']['id']}",
+        json={"is_external": True},
+        headers=sofia["headers"],
+    )
+
+    contractor = auth(email="contractor@northwind.dev", full_name="Contractor Person")
+    client.patch(
+        f"/admin/users/{contractor['user']['id']}",
+        json={"employment_type": "contractor"},
+        headers=sofia["headers"],
+    )
+
+    run = create(client, grace)
+
+    line_usernames = [l["person"]["username"] for l in run["lines"]]
+    # Normal employee with compensation appears on the draft
+    assert "amina" in line_usernames
+    assert "daniel" in line_usernames
+    # Normal employee without compensation appears as missing
+    assert "ben" in line_usernames
+    assert "grace" in line_usernames
+    ben_line = next(l for l in run["lines"] if l["person"]["username"] == "ben")
+    assert ben_line["missing"] is True
+
+    # Service account does NOT appear as missing
+    assert "bot" not in line_usernames
+    # External account does NOT appear as missing
+    assert "carlos" not in line_usernames
+    # Contractor does NOT appear as missing
+    assert "contractor" not in line_usernames
+
+    # Non-payroll accounts do not increase missing_count
+    assert run["missing_count"] == 2
+
+    # Left-off accounts are reported correctly with their person details and employment classification
+    left_off_map = {
+        item["person"]["username"]: item["employment_type"] for item in run["left_off"]
+    }
+    assert left_off_map["bot"] == "service_account"
+    assert left_off_map["carlos"] == "external"
+    assert left_off_map["contractor"] == "contractor"
+
+
+def test_approved_and_paid_runs_remain_frozen(client, paid):
+    """Approved and paid payroll runs remain frozen and unchanged (#320)."""
+    grace, sofia = paid["grace"], paid["sofia"]
+    draft = create(client, grace)
+    approved = act(client, grace, draft, "approve")
+
+    # Deactivating or changing employment type of Daniel AFTER approval does not affect frozen lines
+    client.patch(
+        f"/admin/users/{paid['daniel']['user']['id']}",
+        json={"employment_type": "contractor"},
+        headers=sofia["headers"],
+    )
+
+    fetched_approved = get(client, grace, approved["id"])
+    assert any(
+        line["person"]["username"] == "daniel" and line["total_minor"] == 795000
+        for line in fetched_approved["lines"]
+    )
+    # Approved runs do not show left_off
+    assert fetched_approved["left_off"] == []
+
+    paid_run = act(client, grace, approved, "paid")
+    fetched_paid = get(client, grace, paid_run["id"])
+    assert any(
+        line["person"]["username"] == "daniel" and line["total_minor"] == 795000
+        for line in fetched_paid["lines"]
+    )
+    assert fetched_paid["left_off"] == []

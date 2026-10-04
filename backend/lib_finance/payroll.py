@@ -28,12 +28,13 @@ from typing import Iterator, Optional
 from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
-from sqlmodel import Session, col, func, select
+from sqlmodel import Session, col, func, or_, select
 
 from lib_finance.compensation import pay_on
 from lib_finance.models.money import FinancePerson
 from lib_finance.models.payroll import (
     PayrollAdjustment,
+    PayrollLeftOff,
     PayrollLineRead,
     PayrollReimbursementRead,
     PayrollRunCreate,
@@ -48,6 +49,7 @@ from lib_identity.models.identity import PersonRef
 from lib_softtrack.models.page import DEFAULT_LIMIT
 from lib_softtrack.tables import (
     Department,
+    EmploymentType,
     Expense,
     PayrollLine,
     PayrollRun,
@@ -99,6 +101,8 @@ def _draft_lines(session: Session, run: PayrollRun) -> list[_Line]:
             User.is_active == True,  # noqa: E712 -- SQL comparison
             # Off the books (#243): somebody from outside is nobody's payroll.
             User.is_external == False,  # noqa: E712
+            # Only employee accounts are on payroll by default (#320).
+            User.employment_type == EmploymentType.employee,
         )
         .options(selectinload(User.department))
     ).all()
@@ -153,6 +157,30 @@ def _lines(session: Session, run: PayrollRun) -> list[_Line]:
     if run.state is PayrollRunState.draft:
         return _draft_lines(session, run)
     return _frozen_lines(session, run)
+
+
+def _left_off(session: Session) -> list[PayrollLeftOff]:
+    """Active accounts excluded from payroll (#320): external accounts,
+    service accounts, contractors, etc."""
+    people = session.exec(
+        select(User)
+        .where(
+            User.is_active == True,  # noqa: E712 -- SQL comparison
+            or_(
+                User.is_external == True,  # noqa: E712
+                User.employment_type != EmploymentType.employee,
+            ),
+        )
+        .options(selectinload(User.department))
+    ).all()
+    sorted_people = sorted(people, key=lambda u: (u.full_name.lower(), u.id))
+    return [
+        PayrollLeftOff(
+            person=FinancePerson.model_validate(u),
+            employment_type=u.employment_type,
+        )
+        for u in sorted_people
+    ]
 
 
 @dataclass
@@ -331,6 +359,7 @@ def _read(session: Session, run: PayrollRun) -> PayrollRunRead:
             )
             for line in lines
         ],
+        left_off=_left_off(session) if run.state is PayrollRunState.draft else [],
     )
 
 

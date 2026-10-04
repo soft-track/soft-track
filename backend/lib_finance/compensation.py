@@ -40,7 +40,7 @@ from lib_finance.money import Currency
 from lib_identity.models.identity import PersonRef
 from lib_identity.people import find_by_username
 from lib_softtrack.models.page import DEFAULT_LIMIT
-from lib_softtrack.tables import Compensation, PaySchedule, User
+from lib_softtrack.tables import Compensation, EmploymentType, PaySchedule, User
 from lib_utils.errors import ErrorCode, api_error
 
 #: Totals are listed monthly first, the way pay is usually talked about.
@@ -185,7 +185,12 @@ def list_compensation(
     the ones a payroll run would otherwise quietly leave out.
     """
     effective = in_effect(day)
-    filters = [User.is_active == True]  # noqa: E712 -- SQL comparison
+    filters = [
+        User.is_active == True,  # noqa: E712 -- SQL comparison
+        # Off the books (#243, #320): only employee accounts are on payroll.
+        User.is_external == False,  # noqa: E712
+        User.employment_type == EmploymentType.employee,
+    ]
     if q and q.strip():
         needle = f"%{q.strip()}%"
         filters.append(
