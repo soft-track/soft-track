@@ -1,13 +1,14 @@
 """add employment type to user
 
-Revision ID: 320a1b2c3d4e
+Revision ID: a9ae2c8b879d
 Revises: 275db0819719
-Create Date: 2026-10-04
+Create Date: 2026-10-05
 
 Issue #320: `user.employment_type`, classifying an account as employee,
-contractor, intern, external or service_account. Only employees are on
-payroll by default. Defaults to 'employee', with existing external accounts
-migrated to 'external'.
+contractor, intern, or service_account. User.is_external remains the sole
+source of truth for access control. Employment type is nullable; NULL behaves
+like a normal employee for payroll eligibility. The canonical demo account
+is classified as service_account.
 """
 
 from typing import Sequence, Union
@@ -16,12 +17,12 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision: str = "320a1b2c3d4e"
+revision: str = "a9ae2c8b879d"
 down_revision: Union[str, Sequence[str], None] = "275db0819719"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-_EMPLOYMENT_TYPES = ("employee", "contractor", "intern", "external", "service_account")
+_EMPLOYMENT_TYPES = ("employee", "contractor", "intern", "service_account")
 
 
 def upgrade() -> None:
@@ -34,13 +35,14 @@ def upgrade() -> None:
             sa.Column(
                 "employment_type",
                 employment_type,
-                nullable=False,
-                server_default="employee",
+                nullable=True,
             )
         )
 
     op.execute(
-        sa.text("UPDATE \"user\" SET employment_type = 'external' WHERE is_external")
+        sa.text(
+            "UPDATE \"user\" SET employment_type = 'service_account' WHERE email = 'demo@softtrack.dev'"
+        )
     )
 
 

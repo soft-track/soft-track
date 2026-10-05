@@ -502,7 +502,7 @@ def test_compensation_listing_excludes_non_payroll_accounts(client, people, auth
     page = listing(client, grace)
     usernames = [item["person"]["username"] for item in page["items"]]
 
-    # Non-payroll accounts must not appear
+    # Non-payroll accounts without compensation must not appear
     assert "bot" not in usernames
     assert "guest" not in usernames
     assert "contractor" not in usernames
@@ -515,3 +515,25 @@ def test_compensation_listing_excludes_non_payroll_accounts(client, people, auth
 
     # Total missing count only reflects employees without compensation (amina, ben, grace, sofia = 4)
     assert page["missing"] == 4
+
+    # Contractor WITH compensation is included and not marked missing
+    record(
+        client,
+        grace,
+        contractor["user"]["username"],
+        amount_minor=500000,
+        currency="USD",
+    )
+    page_after = listing(client, grace)
+    contractor_row = next(
+        (
+            item
+            for item in page_after["items"]
+            if item["person"]["username"] == "contractor"
+        ),
+        None,
+    )
+    assert contractor_row is not None
+    assert contractor_row["current"]["amount_minor"] == 500000
+    # Missing count is still 4
+    assert page_after["missing"] == 4

@@ -455,63 +455,199 @@ def test_a_department_paid_under_is_renamed_not_deleted(client, paid):
     )
 
 
-def test_non_payroll_accounts_left_off_draft_and_do_not_appear_as_missing(
-    client, paid, auth
-):
-    """Issue #320: guests and service accounts are not people missing pay."""
+def test_payroll_eligibility_and_left_off_summary(client, paid, auth):
+    """Issue #320: payroll invariant and left-off preview behavior.
+
+    - Active employee/NULL with comp => paid line
+    - Active employee/NULL without comp => missing line
+    - Active contractor/intern/service_account with comp => paid line
+    - Active contractor/intern/service_account without comp => left_off
+    - Active external with comp => paid line
+    - Active external without comp => left_off
+    - Inactive users are excluded completely
+    """
+    from lib_utils.rate_limit import registration_by_address
+
     grace = paid["grace"]
     sofia = paid["sofia"]
 
-    demo_bot = auth(email="bot@northwind.dev", full_name="Demo Bot")
+    def create_user(email, full_name):
+        registration_by_address._records.clear()
+        return auth(email=email, full_name=full_name)
+
+    # 1. Contractor with compensation => paid
+    c_paid = create_user("c_paid@test.dev", "Carl Contractor Paid")
     client.patch(
-        f"/admin/users/{demo_bot['user']['id']}",
+        f"/admin/users/{c_paid['user']['id']}",
+        json={"employment_type": "contractor"},
+        headers=sofia["headers"],
+    )
+    record(
+        client,
+        grace,
+        c_paid["user"]["username"],
+        amount_minor=500000,
+        currency="USD",
+        effective_on=date(2024, 1, 1),
+    )
+
+    # 2. Contractor without compensation => left_off
+    c_unpaid = create_user("c_unpaid@test.dev", "Charlie Contractor Unpaid")
+    client.patch(
+        f"/admin/users/{c_unpaid['user']['id']}",
+        json={"employment_type": "contractor"},
+        headers=sofia["headers"],
+    )
+
+    # 3. Intern with compensation => paid
+    i_paid = create_user("i_paid@test.dev", "Ian Intern Paid")
+    client.patch(
+        f"/admin/users/{i_paid['user']['id']}",
+        json={"employment_type": "intern"},
+        headers=sofia["headers"],
+    )
+    record(
+        client,
+        grace,
+        i_paid["user"]["username"],
+        amount_minor=200000,
+        currency="USD",
+        effective_on=date(2024, 1, 1),
+    )
+
+    # 4. Intern without compensation => left_off
+    i_unpaid = create_user("i_unpaid@test.dev", "Iris Intern Unpaid")
+    client.patch(
+        f"/admin/users/{i_unpaid['user']['id']}",
+        json={"employment_type": "intern"},
+        headers=sofia["headers"],
+    )
+
+    # 5. Service account without compensation => left_off
+    sa_unpaid = create_user("sa@test.dev", "Sam Service Account")
+    client.patch(
+        f"/admin/users/{sa_unpaid['user']['id']}",
         json={"employment_type": "service_account"},
         headers=sofia["headers"],
     )
 
-    guest = auth(email="carlos@partner.dev", full_name="Carlos Rivera")
+    # 6. External with compensation => paid (and stays external!)
+    ext_paid = create_user("ext_paid@outside.dev", "Edward External Paid")
     client.patch(
-        f"/admin/users/{guest['user']['id']}",
+        f"/admin/users/{ext_paid['user']['id']}",
+        json={"is_external": True},
+        headers=sofia["headers"],
+    )
+    record(
+        client,
+        grace,
+        ext_paid["user"]["username"],
+        amount_minor=400000,
+        currency="USD",
+        effective_on=date(2024, 1, 1),
+    )
+
+    # 7. External without compensation => left_off
+    ext_unpaid = create_user("ext_unpaid@outside.dev", "Eve External Unpaid")
+    client.patch(
+        f"/admin/users/{ext_unpaid['user']['id']}",
         json={"is_external": True},
         headers=sofia["headers"],
     )
 
-    contractor = auth(email="contractor@northwind.dev", full_name="Contractor Person")
+    # 8. Inactive user => excluded completely
+    inactive = create_user("inactive@test.dev", "Inactive Person")
     client.patch(
-        f"/admin/users/{contractor['user']['id']}",
-        json={"employment_type": "contractor"},
+        f"/admin/users/{inactive['user']['id']}",
+        json={"is_active": False, "employment_type": "contractor"},
         headers=sofia["headers"],
     )
 
     run = create(client, grace)
 
-    line_usernames = [l["person"]["username"] for l in run["lines"]]
-    # Normal employee with compensation appears on the draft
+    line_usernames = {l["person"]["username"] for l in run["lines"]}
+    # Active internal employee/NULL with comp => paid
     assert "amina" in line_usernames
     assert "daniel" in line_usernames
-    # Normal employee without compensation appears as missing
+    # Active internal employee/NULL without comp => missing
     assert "ben" in line_usernames
     assert "grace" in line_usernames
     ben_line = next(l for l in run["lines"] if l["person"]["username"] == "ben")
     assert ben_line["missing"] is True
 
-    # Service account does NOT appear as missing
-    assert "bot" not in line_usernames
-    # External account does NOT appear as missing
-    assert "carlos" not in line_usernames
-    # Contractor does NOT appear as missing
-    assert "contractor" not in line_usernames
+    # Contractor with comp => paid
+    assert c_paid["user"]["username"] in line_usernames
+    # Intern with comp => paid
+    assert i_paid["user"]["username"] in line_usernames
+    # External with comp => paid
+    assert ext_paid["user"]["username"] in line_usernames
 
-    # Non-payroll accounts do not increase missing_count
+    # Check external account remains external
+    ext_user = client.get("/auth/me", headers=ext_paid["headers"]).json()
+    assert ext_user["is_external"] is True
+
+    # Excluded accounts are NOT on lines
+    assert c_unpaid["user"]["username"] not in line_usernames
+    assert i_unpaid["user"]["username"] not in line_usernames
+    assert sa_unpaid["user"]["username"] not in line_usernames
+    assert ext_unpaid["user"]["username"] not in line_usernames
+    assert inactive["user"]["username"] not in line_usernames
+
+    # Missing count reflects only employees/NULL without comp
     assert run["missing_count"] == 2
 
-    # Left-off accounts are reported correctly with their person details and employment classification
-    left_off_map = {
-        item["person"]["username"]: item["employment_type"] for item in run["left_off"]
-    }
-    assert left_off_map["bot"] == "service_account"
-    assert left_off_map["carlos"] == "external"
-    assert left_off_map["contractor"] == "contractor"
+    # Left-off count and preview
+    # c_unpaid, i_unpaid, sa_unpaid, ext_unpaid (and any default demo accounts if present)
+    assert run["left_off_count"] >= 4
+    preview = run["left_off_preview"]
+    assert len(preview) <= 5
+
+    # Check scalar structure of preview items: id, name, reason
+    for item in preview:
+        assert "id" in item
+        assert "name" in item
+        assert "reason" in item
+        assert item["reason"] in ("external", "contractor", "intern", "service_account")
+        # Ensure no full user or department serialization
+        assert "department" not in item
+        assert "email" not in item
+
+    # Check reasons
+    preview_reasons = {p["name"]: p["reason"] for p in preview}
+    if "Charlie Contractor Unpaid" in preview_reasons:
+        assert preview_reasons["Charlie Contractor Unpaid"] == "contractor"
+    if "Iris Intern Unpaid" in preview_reasons:
+        assert preview_reasons["Iris Intern Unpaid"] == "intern"
+    if "Sam Service Account" in preview_reasons:
+        assert preview_reasons["Sam Service Account"] == "service_account"
+    if "Eve External Unpaid" in preview_reasons:
+        assert preview_reasons["Eve External Unpaid"] == "external"
+
+    # Preview ordering is deterministic by lower(name), id
+    names = [p["name"].lower() for p in preview]
+    assert names == sorted(names)
+
+
+def test_left_off_preview_caps_at_five(client, paid, auth):
+    """When more than 5 accounts are left off, preview is capped at 5 and count is accurate."""
+    from lib_utils.rate_limit import registration_by_address
+
+    grace = paid["grace"]
+    sofia = paid["sofia"]
+
+    # Create 8 contractor accounts without compensation
+    for i in range(8):
+        registration_by_address._records.clear()
+        c = auth(email=f"extra_contractor_{i}@test.dev", full_name=f"Z-Contractor {i}")
+        client.patch(
+            f"/admin/users/{c['user']['id']}",
+            json={"employment_type": "contractor"},
+            headers=sofia["headers"],
+        )
+
+    run = create(client, grace)
+    assert run["left_off_count"] >= 8
+    assert len(run["left_off_preview"]) == 5
 
 
 def test_approved_and_paid_runs_remain_frozen(client, paid):
@@ -532,8 +668,9 @@ def test_approved_and_paid_runs_remain_frozen(client, paid):
         line["person"]["username"] == "daniel" and line["total_minor"] == 795000
         for line in fetched_approved["lines"]
     )
-    # Approved runs do not show left_off
-    assert fetched_approved["left_off"] == []
+    # Approved runs do not calculate left_off
+    assert fetched_approved["left_off_count"] == 0
+    assert fetched_approved["left_off_preview"] == []
 
     paid_run = act(client, grace, approved, "paid")
     fetched_paid = get(client, grace, paid_run["id"])
@@ -541,4 +678,5 @@ def test_approved_and_paid_runs_remain_frozen(client, paid):
         line["person"]["username"] == "daniel" and line["total_minor"] == 795000
         for line in fetched_paid["lines"]
     )
-    assert fetched_paid["left_off"] == []
+    assert fetched_paid["left_off_count"] == 0
+    assert fetched_paid["left_off_preview"] == []

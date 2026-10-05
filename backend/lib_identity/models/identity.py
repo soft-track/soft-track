@@ -85,7 +85,7 @@ class UserMe(UserPublic):
     has_password: bool
     created_at: datetime
     #: What kind of account or engagement this is (#320).
-    employment_type: EmploymentType = EmploymentType.employee
+    employment_type: Optional[EmploymentType] = None
     #: What the organisation knows about them (#122). Null until somebody
     #: fills it in. Title and location are theirs to edit; the start date is
     #: set by a site admin.

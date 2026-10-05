@@ -7,7 +7,7 @@ from lib_finance.models.money import FinancePerson
 from lib_finance.money import MAX_AMOUNT_MINOR, Currency
 from lib_identity.models.departments import DepartmentRef
 from lib_identity.models.identity import PersonRef
-from lib_softtrack.tables import EmploymentType, PayrollRunState, PaySchedule
+from lib_softtrack.tables import PayrollRunState, PaySchedule
 
 #: Room for "On-call, four weekends in September".
 ADJUSTMENT_NOTE_MAX = 200
@@ -104,11 +104,12 @@ class PayrollRunSummary(BaseModel):
     reimbursement_totals: list[PayrollTotal]
 
 
-class PayrollLeftOff(BaseModel):
+class PayrollLeftOffItem(BaseModel):
     """An active account deliberately excluded from payroll (#320)."""
 
-    person: FinancePerson
-    employment_type: EmploymentType
+    id: int
+    name: str
+    reason: str
 
 
 class PayrollRunRead(PayrollRunSummary):
@@ -117,7 +118,8 @@ class PayrollRunRead(PayrollRunSummary):
     #: Claims paid back on the run (#137), by name.
     reimbursements: list[PayrollReimbursementRead]
     #: Active accounts left off a draft run (#320).
-    left_off: list[PayrollLeftOff] = []
+    left_off_count: int = 0
+    left_off_preview: list[PayrollLeftOffItem] = []
 
 
 class PayrollRunPage(BaseModel):

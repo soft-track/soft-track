@@ -17,7 +17,7 @@ from lib_identity.usernames import (
     normalise_username,
 )
 from lib_softtrack.outside import confine
-from lib_softtrack.tables import EmploymentType, User, utcnow
+from lib_softtrack.tables import User, utcnow
 from lib_utils.password import hash_password, is_usable_password, verify_password
 from lib_utils.rate_limit import address_of, api_token_by_address
 from lib_utils.token import create_access_token, decode_access_token, is_access_token
@@ -186,9 +186,6 @@ def create_user(
         # Invited from outside the organisation (#243): what the account is
         # from the start, decided by the invitation and never by the person.
         is_external=external,
-        employment_type=(
-            EmploymentType.external if external else EmploymentType.employee
-        ),
         # Creating an account hands out a token, so it *is* a sign-in. Leaving
         # this null would show someone who signed up a minute ago as "never
         # signed in" in the admin directory.

@@ -28,13 +28,13 @@ from typing import Iterator, Optional
 from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
-from sqlmodel import Session, col, func, or_, select
+from sqlmodel import Session, and_, col, func, or_, select
 
-from lib_finance.compensation import pay_on
+from lib_finance.compensation import in_effect, pay_on
 from lib_finance.models.money import FinancePerson
 from lib_finance.models.payroll import (
     PayrollAdjustment,
-    PayrollLeftOff,
+    PayrollLeftOffItem,
     PayrollLineRead,
     PayrollReimbursementRead,
     PayrollRunCreate,
@@ -48,6 +48,7 @@ from lib_identity.models.departments import DepartmentRef
 from lib_identity.models.identity import PersonRef
 from lib_softtrack.models.page import DEFAULT_LIMIT
 from lib_softtrack.tables import (
+    Compensation,
     Department,
     EmploymentType,
     Expense,
@@ -95,14 +96,26 @@ def _sorted(lines: list[_Line]) -> list[_Line]:
 
 
 def _draft_lines(session: Session, run: PayrollRun) -> list[_Line]:
+    effective_comp = in_effect(run.period_end)
+    users_with_pay_this_schedule = select(Compensation.user_id).where(
+        col(Compensation.id).in_(effective_comp),
+        Compensation.pay_schedule == run.pay_schedule.value,
+    )
+
     people = session.exec(
         select(User)
         .where(
             User.is_active == True,  # noqa: E712 -- SQL comparison
-            # Off the books (#243): somebody from outside is nobody's payroll.
-            User.is_external == False,  # noqa: E712
-            # Only employee accounts are on payroll by default (#320).
-            User.employment_type == EmploymentType.employee,
+            or_(
+                and_(
+                    User.is_external == False,  # noqa: E712
+                    or_(
+                        User.employment_type == None,  # noqa: E711
+                        User.employment_type == EmploymentType.employee,
+                    ),
+                ),
+                col(User.id).in_(users_with_pay_this_schedule),
+            ),
         )
         .options(selectinload(User.department))
     ).all()
@@ -159,28 +172,54 @@ def _lines(session: Session, run: PayrollRun) -> list[_Line]:
     return _frozen_lines(session, run)
 
 
-def _left_off(session: Session) -> list[PayrollLeftOff]:
+def _left_off(
+    session: Session, run: PayrollRun
+) -> tuple[int, list[PayrollLeftOffItem]]:
     """Active accounts excluded from payroll (#320): external accounts,
-    service accounts, contractors, etc."""
-    people = session.exec(
-        select(User)
-        .where(
-            User.is_active == True,  # noqa: E712 -- SQL comparison
-            or_(
-                User.is_external == True,  # noqa: E712
-                User.employment_type != EmploymentType.employee,
+    service accounts, contractors, and interns with no pay on this run."""
+    effective_comp = in_effect(run.period_end)
+    users_with_pay_this_schedule = select(Compensation.user_id).where(
+        col(Compensation.id).in_(effective_comp),
+        Compensation.pay_schedule == run.pay_schedule.value,
+    )
+
+    excluded_filters = [
+        User.is_active == True,  # noqa: E712 -- SQL comparison
+        or_(
+            User.is_external == True,  # noqa: E712
+            User.employment_type.in_(
+                [
+                    EmploymentType.service_account,
+                    EmploymentType.contractor,
+                    EmploymentType.intern,
+                ]
+            ),
+        ),
+        col(User.id).not_in(users_with_pay_this_schedule),
+    ]
+
+    count = session.exec(
+        select(func.count()).select_from(User).where(*excluded_filters)
+    ).one()
+
+    rows = session.exec(
+        select(User.id, User.full_name, User.is_external, User.employment_type)
+        .where(*excluded_filters)
+        .order_by(func.lower(User.full_name), User.id)
+        .limit(5)
+    ).all()
+
+    preview = [
+        PayrollLeftOffItem(
+            id=u_id,
+            name=full_name,
+            reason=(
+                "external" if is_ext else (emp_type.value if emp_type else "contractor")
             ),
         )
-        .options(selectinload(User.department))
-    ).all()
-    sorted_people = sorted(people, key=lambda u: (u.full_name.lower(), u.id))
-    return [
-        PayrollLeftOff(
-            person=FinancePerson.model_validate(u),
-            employment_type=u.employment_type,
-        )
-        for u in sorted_people
+        for u_id, full_name, is_ext, emp_type in rows
     ]
+    return count, preview
 
 
 @dataclass
@@ -331,6 +370,9 @@ def _read(session: Session, run: PayrollRun) -> PayrollRunRead:
         total = reimbursed.setdefault(line.currency.value, [0, 0])
         total[0] += line.amount_minor
         total[1] += line.claims
+    left_off_count, left_off_preview = (
+        _left_off(session, run) if run.state is PayrollRunState.draft else (0, [])
+    )
     return PayrollRunRead(
         **_summary(
             run,
@@ -359,7 +401,8 @@ def _read(session: Session, run: PayrollRun) -> PayrollRunRead:
             )
             for line in lines
         ],
-        left_off=_left_off(session) if run.state is PayrollRunState.draft else [],
+        left_off_count=left_off_count,
+        left_off_preview=left_off_preview,
     )
 
 

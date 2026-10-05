@@ -5,13 +5,12 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
-import type { EmploymentType } from './employmentType';
-import type { FinancePerson } from './financePerson';
 
 /**
  * An active account deliberately excluded from payroll (#320).
  */
-export interface PayrollLeftOff {
-  person: FinancePerson;
-  employment_type: EmploymentType;
+export interface PayrollLeftOffItem {
+  id: number;
+  name: string;
+  reason: string;
 }

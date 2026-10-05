@@ -11089,8 +11089,14 @@
             "title": "Created At"
           },
           "employment_type": {
-            "$ref": "#/components/schemas/EmploymentType",
-            "default": "employee"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmploymentType"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "job_title": {
             "anyOf": [
@@ -13670,11 +13676,10 @@
           "employee",
           "contractor",
           "intern",
-          "external",
           "service_account"
         ],
         "title": "EmploymentType",
-        "description": "What kind of account or engagement somebody has with the organisation (#320).\n\nOnly `employee` accounts are on payroll by default. Service accounts,\ncontractors, interns, and external accounts are left off payroll drafts\nand the Compensation list."
+        "description": "What kind of account or engagement somebody has with the organisation (#320).\n\nInternal employee accounts (or accounts with no type set) are expected on\npayroll by default. Service accounts, contractors, and interns are\nexcluded from payroll drafts unless pay is recorded for them."
       },
       "EpicRef": {
         "properties": {
@@ -15493,21 +15498,28 @@
         "title": "PayrollAdjustment",
         "description": "A one-off amount on one line, in the line's currency, and why."
       },
-      "PayrollLeftOff": {
+      "PayrollLeftOffItem": {
         "properties": {
-          "person": {
-            "$ref": "#/components/schemas/FinancePerson"
+          "id": {
+            "type": "integer",
+            "title": "Id"
           },
-          "employment_type": {
-            "$ref": "#/components/schemas/EmploymentType"
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
           }
         },
         "type": "object",
         "required": [
-          "person",
-          "employment_type"
+          "id",
+          "name",
+          "reason"
         ],
-        "title": "PayrollLeftOff",
+        "title": "PayrollLeftOffItem",
         "description": "An active account deliberately excluded from payroll (#320)."
       },
       "PayrollLineRead": {
@@ -15856,12 +15868,17 @@
             "type": "array",
             "title": "Reimbursements"
           },
-          "left_off": {
+          "left_off_count": {
+            "type": "integer",
+            "title": "Left Off Count",
+            "default": 0
+          },
+          "left_off_preview": {
             "items": {
-              "$ref": "#/components/schemas/PayrollLeftOff"
+              "$ref": "#/components/schemas/PayrollLeftOffItem"
             },
             "type": "array",
-            "title": "Left Off",
+            "title": "Left Off Preview",
             "default": []
           }
         },
@@ -20843,8 +20860,14 @@
             "title": "Created At"
           },
           "employment_type": {
-            "$ref": "#/components/schemas/EmploymentType",
-            "default": "employee"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmploymentType"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "job_title": {
             "anyOf": [

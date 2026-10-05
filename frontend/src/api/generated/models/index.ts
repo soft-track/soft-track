@@ -148,7 +148,7 @@ export * from './parsedComment';
 export * from './parsedTicket';
 export * from './passwordChange';
 export * from './payrollAdjustment';
-export * from './payrollLeftOff';
+export * from './payrollLeftOffItem';
 export * from './payrollLineRead';
 export * from './payrollMonth';
 export * from './payrollReimbursementRead';

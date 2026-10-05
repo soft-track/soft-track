@@ -27,7 +27,6 @@ from lib_identity.models.admin import (
 from lib_identity.models.identity import PersonRef, UserMe
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.tables import (
-    EmploymentType,
     GuestEpic,
     Project,
     Team,
@@ -275,21 +274,10 @@ def update_user(
         user.is_site_admin = payload.is_site_admin
     if payload.is_finance_admin is not None:
         finance_access.set_finance_admin(actor, user, payload.is_finance_admin)
-    if payload.employment_type is not None:
+    if "employment_type" in payload.model_fields_set:
         user.employment_type = payload.employment_type
-        if payload.employment_type == EmploymentType.external:
-            user.is_external = True
-        elif payload.is_external is None and user.is_external:
-            user.is_external = False
     if payload.is_external is not None:
         user.is_external = payload.is_external
-        if payload.is_external:
-            user.employment_type = EmploymentType.external
-        elif (
-            user.employment_type == EmploymentType.external
-            and payload.employment_type is None
-        ):
-            user.employment_type = EmploymentType.employee
     if payload.is_active is not None:
         if payload.is_active is False and user.is_active:
             # Deactivating has to end the sessions too, or the account keeps
@@ -326,12 +314,9 @@ def _check_outside(
 ) -> None:
     """The rules for an account from outside the organisation (#243): never an
     admin of any kind, and only ever a guest on a team."""
-    if payload.is_external is not None:
-        external = payload.is_external
-    elif payload.employment_type is not None:
-        external = payload.employment_type == EmploymentType.external
-    else:
-        external = user.is_external
+    external = (
+        payload.is_external if payload.is_external is not None else user.is_external
+    )
     if not external:
         return
     site_admin = (

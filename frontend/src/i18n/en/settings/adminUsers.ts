@@ -68,6 +68,14 @@ export const adminUsers = {
     noManager: 'No manager',
     searchPeople: 'Search people',
     startDate: 'Start date',
+    employmentType: 'Employment type',
+    employmentTypeDefault: 'Default (Employee)',
+    employmentTypes: {
+      employee: 'Employee',
+      contractor: 'Contractor',
+      intern: 'Intern',
+      service_account: 'Service account',
+    },
     theirs: 'Job title and location are {{name}}’s to edit, from their own profile.',
   },
   /** People whose manager has been deactivated (#124). */

@@ -25,7 +25,7 @@ export interface AdminUserRead {
   is_finance_admin: boolean;
   has_password: boolean;
   created_at: string;
-  employment_type?: EmploymentType;
+  employment_type?: EmploymentType | null;
   job_title?: string | null;
   location?: string | null;
   started_on?: string | null;
