@@ -1,7 +1,7 @@
 """add employment type to user
 
 Revision ID: a9ae2c8b879d
-Revises: 275db0819719
+Revises: c5ed33d77db4
 Create Date: 2026-10-05
 
 Issue #320: `user.employment_type`, classifying an account as employee,
@@ -18,7 +18,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = "a9ae2c8b879d"
-down_revision: Union[str, Sequence[str], None] = "275db0819719"
+down_revision: Union[str, Sequence[str], None] = "c5ed33d77db4"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
