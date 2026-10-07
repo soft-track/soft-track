@@ -9,6 +9,7 @@ export const newTicket = {
   descriptionPlaceholder: 'Add a description… Markdown works here.',
   similarTickets: 'Similar tickets',
   dismissSimilarTickets: 'Dismiss similar tickets',
+  opensInNewTab: '(opens in a new tab)',
   status: 'Status',
   type: 'Type',
   priority: 'Priority',

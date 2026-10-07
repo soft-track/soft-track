@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useId, useState, useRef } from 'react'
 
 import { errorDetail } from '@/api/errors'
@@ -67,7 +67,8 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
   const [suggestionsDismissed, setSuggestionsDismissed] = useState(false)
   const [selectedSuggestion, setSelectedSuggestion] = useState(-1)
 
-  const searchPhrase = useDebounced(getSearchPhrase(title), 400)
+  const typedPhrase = getSearchPhrase(title)
+  const searchPhrase = useDebounced(typedPhrase, 400)
 
   const searchResults = useSearchSearchGet(
     {
@@ -79,13 +80,22 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
       query: {
         enabled: searchPhrase.length > 0 && !suggestionsDismissed,
         staleTime: 30_000,
+        // The last matches stay up while the next phrase is asked about,
+        // rather than the list blinking out on every pause in typing.
+        placeholderData: keepPreviousData,
+        // A nudge is not worth a second request: a failure shows nothing.
+        retry: false,
       },
     },
   )
 
-  const suggestions = suggestionsDismissed
-    ? []
-    : (searchResults.data?.items ?? [])
+  // Quiet means quiet (#95): a title cut back under three words hides the
+  // list at once, not when the debounce catches up, and a failed request
+  // shows nothing at all.
+  const suggestions =
+    suggestionsDismissed || !typedPhrase || searchResults.isError
+      ? []
+      : (searchResults.data?.items ?? [])
 
   const highlightedSuggestion =
     suggestions.length > 0
@@ -314,7 +324,7 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
                       key={ticket.id}
                       className={
                         index === highlightedSuggestion
-                          ? 'bg-brand-500/10'
+                          ? 'bg-neutral-900/6'
                           : 'hover:bg-neutral-900/4'
                       }
                     >
@@ -326,7 +336,7 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
                         onClick={() => {
                           titleInputRef.current?.focus()
                         }}
-                        className="block min-w-0 px-3 py-2 text-left transition-colors focus:outline-none"
+                        className="group block min-w-0 px-3 py-2 text-left transition-colors focus:outline-none"
                       >
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="identifier shrink-0 text-[11px] font-medium text-neutral-400">
@@ -337,12 +347,25 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
                             {ticket.title}
                           </span>
 
-                          <span className="flex shrink-0 items-center gap-1.5 text-[10px] text-neutral-400">
+                          <span className="flex shrink-0 items-center gap-1.5 text-[11px] text-neutral-500">
                             <span
                               className="dot"
                               style={{ ['--dot' as string]: ticket.status.color }}
                             />
                             {ticket.status.name}
+                          </span>
+
+                          <Icon
+                            name="external"
+                            size={12}
+                            className={`shrink-0 text-brand-600 ${
+                              index === highlightedSuggestion
+                                ? 'opacity-100'
+                                : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'
+                            }`}
+                          />
+                          <span className="sr-only">
+                            {t('newTicket.opensInNewTab')}
                           </span>
                         </div>
                       </a>
