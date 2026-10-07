@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import {
   useGetTicketByNumberTeamsTeamIdTicketsByNumberNumberGet,
@@ -112,6 +112,7 @@ export function TicketPage() {
 
 function TicketPageView({ found, team }: { found: TicketRead; team: TeamRead }) {
   const { t } = useTranslation(['tickets', 'common'])
+  const navigate = useNavigate()
   // By id from here on: the body reads this same query, and every write it
   // makes refreshes it, so the header keeps up. Seeded with what the lookup
   // by number already returned, so nothing waits on a second request.
@@ -185,7 +186,7 @@ function TicketPageView({ found, team }: { found: TicketRead; team: TeamRead }) 
         </nav>
         <span className="flex shrink-0 items-center gap-1">
           <CopyLinkButton ticket={ticket} />
-          <TicketHeaderActions ticket={ticket} />
+          <TicketHeaderActions ticket={ticket} onDeleted={() => navigate(`/${team.key}`, { replace: true })} />
         </span>
       </header>
 

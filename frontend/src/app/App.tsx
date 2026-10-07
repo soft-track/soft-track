@@ -45,6 +45,7 @@ import TeamShareLinksSettings from '@/settings/TeamShareLinksSettings'
 import SharedPage from '@/sharing/SharedPage'
 import TeamWebhookSettings from '@/settings/TeamWebhookSettings'
 import { RequireSiteAdmin } from '@/settings/RequireSiteAdmin'
+import { ToastHost } from '@/ui/ToastHost'
 
 export default function App() {
   return (
@@ -52,6 +53,7 @@ export default function App() {
       {/* The aurora sits behind every route; the glass surfaces above it are
           what give the interface its depth. */}
       <div className="aurora" aria-hidden="true" />
+      <ToastHost />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />

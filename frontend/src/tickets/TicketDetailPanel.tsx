@@ -76,7 +76,7 @@ export function TicketDetailPanel({
               )}
             </span>
             <span className="flex shrink-0 items-center gap-1">
-              {ticket && <TicketHeaderActions ticket={ticket} />}
+              {ticket && <TicketHeaderActions ticket={ticket} onDeleted={onClose} />}
               {ticket && (
                 // A link to the page it opens, so a middle click puts that
                 // page in a new tab and leaves the panel where it is.

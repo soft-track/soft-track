@@ -91,7 +91,11 @@ export function TicketActionsMenu({
                 setOpen(false)
                 action.onSelect()
               }}
-              className={`nav-item w-full text-left text-sm ${action.destructive ? 'text-danger-600' : ''}`}
+              className={`nav-item w-full text-left text-sm ${
+                action.destructive
+                  ? 'mt-1 border-t border-neutral-900/10 pt-2 text-danger-600'
+                  : ''
+              }`}
             >
               {action.label}
             </button>
