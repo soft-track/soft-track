@@ -36,6 +36,7 @@ const { mutateAsync, mutation, searchHook, searchState } = vi.hoisted(() => {
   const searchState = {
     data: { items: [] as unknown[] },
     isFetching: false,
+    isError: false,
   }
 
   return {
@@ -62,13 +63,15 @@ vi.mock('@/api/generated/endpoints/search/search', () => ({
         data: undefined,
         isLoading: false,
         isFetching: false,
+        isError: false,
       }
     }
 
     return {
-      data: searchState.data,
+      data: searchState.isError ? undefined : searchState.data,
       isLoading: false,
       isFetching: searchState.isFetching,
+      isError: searchState.isError,
     }
   },
 }))
@@ -219,6 +222,7 @@ beforeEach(() => {
   searchHook.mockReset()
   searchState.data = { items: [] }
   searchState.isFetching = false
+  searchState.isError = false
   mutation.isPending = false
   templates.data = []
   customFields.data = []
@@ -462,6 +466,54 @@ describe('NewTicketModal', () => {
     await user.type(title, ' now')
 
     expect(screen.queryByText('Fix the login button')).not.toBeNull()
+  })
+
+  it('hides the suggestions as soon as the title drops under three words', async () => {
+    searchState.data = { items: [SUGGESTION] }
+
+    const { user } = renderModal()
+    const title = screen.getByRole<HTMLInputElement>('textbox', { name: 'Ticket title' })
+
+    await user.type(title, 'fix login button')
+    expect(await screen.findByText('Fix the login button')).toBeTruthy()
+
+    // No wait for the debounce: the list goes with the keystroke.
+    await user.type(title, '{Backspace>7}')
+    expect(title.value).toBe('fix login')
+    expect(screen.queryByText('Fix the login button')).toBeNull()
+  })
+
+  it('shows nothing when the search fails', async () => {
+    searchState.data = { items: [SUGGESTION] }
+    searchState.isError = true
+
+    const { user } = renderModal()
+    const title = screen.getByRole<HTMLInputElement>('textbox', { name: 'Ticket title' })
+
+    await user.type(title, 'fix login button')
+    await waitFor(() => {
+      expect(searchHook).toHaveBeenLastCalledWith(
+        expect.objectContaining({ q: 'fix login button' }),
+        expect.anything(),
+      )
+    })
+
+    expect(screen.queryByText('Similar tickets')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Create ticket' })).toBeTruthy()
+  })
+
+  it('says a match opens in a new tab', async () => {
+    searchState.data = { items: [SUGGESTION] }
+
+    const { user } = renderModal()
+    await user.type(
+      screen.getByRole('textbox', { name: 'Ticket title' }),
+      'fix login button',
+    )
+
+    expect(
+      await screen.findByRole('link', { name: /Fix the login button.*opens in a new tab/ }),
+    ).toBeTruthy()
   })
 
   it('opens the selected suggestion with Enter', async () => {
