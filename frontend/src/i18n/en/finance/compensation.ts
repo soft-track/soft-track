@@ -45,6 +45,8 @@ export const compensation = {
   totalsHint: 'Per currency and schedule. Nothing is converted, and nothing is annualised.',
   missing_one: '{{count}} person has no pay in effect.',
   missing_other: '{{count}} people have no pay in effect.',
+  notOnPayrollHint:
+    'Contractors, interns, service accounts, and outside accounts without compensation are excluded from payroll expectations.',
   showing: 'Showing {{from}}–{{to}} of {{total}}',
   previous: 'Previous',
   next: 'Next',

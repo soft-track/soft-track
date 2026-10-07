@@ -26,7 +26,14 @@ from lib_identity.models.admin import (
 )
 from lib_identity.models.identity import PersonRef, UserMe
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
-from lib_softtrack.tables import GuestEpic, Project, Team, TeamMember, TeamRole, User
+from lib_softtrack.tables import (
+    GuestEpic,
+    Project,
+    Team,
+    TeamMember,
+    TeamRole,
+    User,
+)
 from lib_utils.password import hash_password
 from lib_utils.errors import ErrorCode, api_error
 
@@ -267,6 +274,8 @@ def update_user(
         user.is_site_admin = payload.is_site_admin
     if payload.is_finance_admin is not None:
         finance_access.set_finance_admin(actor, user, payload.is_finance_admin)
+    if "employment_type" in payload.model_fields_set:
+        user.employment_type = payload.employment_type
     if payload.is_external is not None:
         user.is_external = payload.is_external
     if payload.is_active is not None:

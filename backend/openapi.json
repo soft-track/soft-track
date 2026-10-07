@@ -11088,6 +11088,16 @@
             "format": "date-time",
             "title": "Created At"
           },
+          "employment_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmploymentType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "job_title": {
             "anyOf": [
               {
@@ -11256,6 +11266,16 @@
               }
             ],
             "title": "Is External"
+          },
+          "employment_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmploymentType"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "full_name": {
             "anyOf": [
@@ -13650,6 +13670,17 @@
         "title": "DueFilter",
         "description": "The due-date questions the board can be narrowed to (#87).\n\nThree questions rather than a date range: they are what a standup asks,\nand \"this week\" means the viewer's week -- the client sends its own\ntoday, so a filter saved on a Sunday evening in Sydney does not quietly\nmean London's Sunday."
       },
+      "EmploymentType": {
+        "type": "string",
+        "enum": [
+          "employee",
+          "contractor",
+          "intern",
+          "service_account"
+        ],
+        "title": "EmploymentType",
+        "description": "What kind of account or engagement somebody has with the organisation (#320).\n\nInternal employee accounts (or accounts with no type set) are expected on\npayroll by default. Service accounts, contractors, and interns are\nexcluded from payroll drafts unless pay is recorded for them."
+      },
       "EpicRef": {
         "properties": {
           "id": {
@@ -15467,6 +15498,30 @@
         "title": "PayrollAdjustment",
         "description": "A one-off amount on one line, in the line's currency, and why."
       },
+      "PayrollLeftOffItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "reason"
+        ],
+        "title": "PayrollLeftOffItem",
+        "description": "An active account deliberately excluded from payroll (#320)."
+      },
       "PayrollLineRead": {
         "properties": {
           "person": {
@@ -15812,6 +15867,19 @@
             },
             "type": "array",
             "title": "Reimbursements"
+          },
+          "left_off_count": {
+            "type": "integer",
+            "title": "Left Off Count",
+            "default": 0
+          },
+          "left_off_preview": {
+            "items": {
+              "$ref": "#/components/schemas/PayrollLeftOffItem"
+            },
+            "type": "array",
+            "title": "Left Off Preview",
+            "default": []
           }
         },
         "type": "object",
@@ -20851,6 +20919,16 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "employment_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmploymentType"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "job_title": {
             "anyOf": [

@@ -7,7 +7,7 @@ import {
   useUpdateUserAdminUsersUserIdPatch,
 } from '@/api/generated/endpoints/admin/admin'
 import { useListDepartmentsDepartmentsGet } from '@/api/generated/endpoints/departments/departments'
-import { AdminRole, type AdminUserRead, type AdminUserUpdate } from '@/api/generated/models'
+import { AdminRole, type AdminUserRead, type AdminUserUpdate, EmploymentType } from '@/api/generated/models'
 import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
@@ -235,6 +235,8 @@ export default function AdminUsersPage() {
                   ),
                 row.report_count > 0 && t('adminUsers.directReports', { count: row.report_count }),
                 row.location,
+                row.employment_type &&
+                  t(`adminUsers.editor.employmentTypes.${row.employment_type}`),
                 row.started_on &&
                   t('adminUsers.startedOn', { date: formatStartedOn(row.started_on) }),
               ].filter(Boolean)
@@ -582,6 +584,9 @@ function OrganisationEditor({
   const [manager, setManager] = useState<PersonOption | null>(target.manager ?? null)
   const [managerSearch, setManagerSearch] = useState('')
   const [startedOn, setStartedOn] = useState(target.started_on ?? '')
+  const [employmentType, setEmploymentType] = useState<EmploymentType | ''>(
+    target.employment_type ?? '',
+  )
   const [error, setError] = useState<string | null>(null)
 
   const managerQuery = useDebounced(managerSearch, 200)
@@ -599,6 +604,9 @@ function OrganisationEditor({
       department_id: departmentId ? Number(departmentId) : null,
       manager_id: manager?.id ?? null,
       started_on: startedOn || null,
+      ...(employmentType !== (target.employment_type ?? '')
+        ? { employment_type: (employmentType as EmploymentType) || null }
+        : {}),
     }
     try {
       await updateUser.mutateAsync({ userId: target.id, data })
@@ -615,7 +623,7 @@ function OrganisationEditor({
       aria-label={t('adminUsers.editor.label', { name: target.full_name })}
       className="well basis-full rounded-control p-3 sm:ml-[2.875rem]"
     >
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-neutral-500">
             {t('adminUsers.editor.department')}
@@ -658,6 +666,31 @@ function OrganisationEditor({
             onChange={(e) => setStartedOn(e.target.value)}
             className="field field-sm"
           />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-neutral-500">
+            {t('adminUsers.editor.employmentType')}
+          </span>
+          <Select
+            dense
+            block
+            value={employmentType}
+            onChange={(e) => setEmploymentType(e.target.value as EmploymentType | '')}
+          >
+            <option value="">{t('adminUsers.editor.employmentTypeDefault')}</option>
+            <option value={EmploymentType.employee}>
+              {t('adminUsers.editor.employmentTypes.employee')}
+            </option>
+            <option value={EmploymentType.contractor}>
+              {t('adminUsers.editor.employmentTypes.contractor')}
+            </option>
+            <option value={EmploymentType.intern}>
+              {t('adminUsers.editor.employmentTypes.intern')}
+            </option>
+            <option value={EmploymentType.service_account}>
+              {t('adminUsers.editor.employmentTypes.service_account')}
+            </option>
+          </Select>
         </label>
       </div>
       {error && (

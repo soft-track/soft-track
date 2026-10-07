@@ -218,6 +218,20 @@ describe('The admin user directory', () => {
     })
   })
 
+  it('updates employment type inline in the organisation editor', async () => {
+    const user = renderPage([DANIEL])
+    await user.click(screen.getByRole('button', { name: 'Edit Daniel Okafor' }))
+    const editor = screen.getByRole('form', { name: /Organisation details/ })
+
+    await user.selectOptions(within(editor).getByLabelText('Employment type'), 'Contractor')
+    await user.click(within(editor).getByRole('button', { name: 'Save' }))
+
+    expect(mocks.update.mutateAsync).toHaveBeenCalledWith({
+      userId: 2,
+      data: expect.objectContaining({ employment_type: 'contractor' }),
+    })
+  })
+
   it('picks from the keyboard, and "No manager" clears it', async () => {
     const user = renderPage([{ ...DANIEL, manager: AS_MANAGER(AMINA) }])
     await user.click(screen.getByRole('button', { name: 'Edit Daniel Okafor' }))

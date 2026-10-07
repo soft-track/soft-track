@@ -104,11 +104,22 @@ class PayrollRunSummary(BaseModel):
     reimbursement_totals: list[PayrollTotal]
 
 
+class PayrollLeftOffItem(BaseModel):
+    """An active account deliberately excluded from payroll (#320)."""
+
+    id: int
+    name: str
+    reason: str
+
+
 class PayrollRunRead(PayrollRunSummary):
     #: Paid lines by name, then the missing ones, by name.
     lines: list[PayrollLineRead]
     #: Claims paid back on the run (#137), by name.
     reimbursements: list[PayrollReimbursementRead]
+    #: Active accounts left off a draft run (#320).
+    left_off_count: int = 0
+    left_off_preview: list[PayrollLeftOffItem] = []
 
 
 class PayrollRunPage(BaseModel):

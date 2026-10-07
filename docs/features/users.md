@@ -211,7 +211,15 @@ person.
   member lists, pending invitations, the mention picker and the user
   directory, so nobody writes in front of a client without knowing. A mention
   or a watch reaches them only on tickets in their epics.
-- **Off the books.** Payroll drafts leave accounts from outside out.
+- **Off the books.** Payroll drafts leave accounts from outside out unless compensation is recorded for them (#320).
+
+### Employment type and access control
+
+A site admin sets an account's **Employment type** (`employee`, `contractor`, `intern`, `service_account`, or unset) in **Administration → Users** (#320).
+
+- **Access control is strictly separate:** `is_external` is the sole source of truth for access control and outside-account boundaries. Setting an employment type (such as `contractor`) never alters security boundaries or changes `is_external`. An outside contractor remains an outside account with external access restrictions.
+- **Payroll eligibility:** Internal employees (and accounts with no employment type set) are expected on payroll by default. Contractors, interns, service accounts, and outside accounts are off payroll unless compensation is explicitly recorded for them.
+- **Independent admin updates:** Updating `employment_type` never touches `is_external`, and updating `is_external` never touches `employment_type`. There is no hidden synchronization between the two fields.
 
 **Beside its teams** (#317), an account from outside reaches its own account,
 its invitations and its notifications, and nothing that asked only "is

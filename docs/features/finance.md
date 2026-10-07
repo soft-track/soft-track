@@ -100,6 +100,18 @@ record is a row. **Record pay** adds one.
 - **Nobody is quietly left out.** Somebody with nothing in effect is listed
   last, marked *Nothing recorded*, and counted. A new starter whose first
   record is still ahead says when they start.
+- **Who appears on compensation and payroll.** Internal employees and accounts
+  with no employment type set (`NULL`) are expected on payroll by default (#320).
+  Accounts classified with other employment types (`contractor`, `intern`,
+  `service_account`) or marked outside the organisation (`is_external=True`)
+  are off payroll by default and do not appear as missing or inflate the missing count.
+  However, if compensation is recorded for them, they are included on payroll
+  and in the compensation list.
+- **Left off payroll.** Active accounts deliberately left off a draft payroll run
+  are reported as a summary: `left_off_count` and `left_off_preview` (the first
+  five names and exclusion reasons: `contractor`, `intern`, `service_account`, or
+  `external`). Approved and paid runs are frozen historical records and do not
+  compute left-off previews.
 - **Totals are per currency and per schedule.** Current pay adds up as
   "EUR €24,700.00 monthly · USD $3,100.00 semi-monthly". Nothing is converted
   and nothing is annualised: there is no rate to add euros to pounds, or a
@@ -112,9 +124,10 @@ bureau's business.
 
 On the API, all finance-admin only:
 
-- `GET /finance/compensation` lists everybody active. It takes `q`,
-  `department_id`, `currency`, `limit` and `offset`, and returns `totals` and
-  `missing` with the rows.
+- `GET /finance/compensation` lists everybody active with compensation in effect,
+  plus active internal employees (or `NULL` employment type) with no compensation.
+  It takes `q`, `department_id`, `currency`, `limit` and `offset`, and returns `totals`
+  and `missing` with the rows.
 - `GET /finance/compensation/{username}` returns one person's history. Each
   record is marked `scheduled`, `current`, `past` or `corrected`.
 - `POST /finance/compensation/{username}` records pay. A correction carries
@@ -143,14 +156,25 @@ and they stay editable for payroll that runs from the 26th.
   September are two runs, because a period's lines only make sense for the
   people paid on that schedule. Runs on the same schedule never cover the same
   day twice (`409 payroll_run_overlaps`), so nobody is paid twice for it.
+- **Who is on a run.** Active internal employees (and accounts with `NULL`
+  employment type) are evaluated for payroll eligibility (#320). If they have
+  compensation in effect, they receive a paid line; if not, they appear as a
+  missing line. Contractors, interns, service accounts, and outside accounts
+  with compensation in effect for that schedule receive a paid line. If they
+  have no compensation in effect, they are left off without inflating missing
+  counts. Inactive users are excluded completely.
+- **Left off payroll summary.** Active accounts left off a draft are surfaced
+  via a bounded summary (`left_off_count` and `left_off_preview`, up to 5 items)
+  with deterministic ordering. Approved and paid runs remain frozen and do not
+  compute left-off summaries.
 - **A draft follows compensation as it changes.** Its lines are worked out
-  whenever it is read. That means everybody active whose pay in effect on the
-  period's last day is on this schedule, plus everybody active with no pay in
-  effect at all. Pay recorded, or an account opened, after the run was
-  generated is on it before it is approved. It is the pay on the last day, not
-  a share of the month: a raise halfway through is an adjustment somebody
-  decides, not a proration SoftTrack guesses.
-- **Missing, not skipped.** People with no compensation are on the run as
+  whenever it is read. That means anyone active with pay in effect on the period's
+  last day on this schedule, plus internal employees/NULL active with no pay in
+  effect at all. Pay recorded, or an account opened, after the run was generated
+  is on it before it is approved. It is the pay on the last day, not a share of
+  the month: a raise halfway through is an adjustment somebody decides, not a
+  proration SoftTrack guesses.
+- **Missing, not skipped.** Employees with no compensation are on the run as
   lines, at the bottom, named in a callout. **Record pay** on the line records
   it there and then. Approving warns who the run will not pay.
 - **A line takes a one-off adjustment** in its own currency, positive or

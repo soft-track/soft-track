@@ -74,6 +74,8 @@ def test_me_returns_the_current_user(client, auth):
         "is_active",
         # From outside the organisation (#243), shown beside the name.
         "is_external",
+        # Employment classification (#320).
+        "employment_type",
         "is_site_admin",
         # Whether they can see money (#130). Separate from site admin.
         "is_finance_admin",

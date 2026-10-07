@@ -340,3 +340,104 @@ def test_title_and_location_are_not_the_admins_to_set(client, auth):
     )
     assert response.status_code == 200
     assert (response.json()["job_title"], response.json()["location"]) == (None, None)
+
+
+def test_admin_can_read_and_update_employment_type(client, auth):
+    """Issue #320: admin can read and update employment classification.
+    employment_type and is_external are completely decoupled.
+    """
+    admin = auth(email="admin@softtrack.dev")
+    ada = auth(email="ada@softtrack.dev")
+
+    # Default is None (not set)
+    items = client.get("/admin/users", headers=admin["headers"]).json()["items"]
+    ada_row = next(u for u in items if u["email"] == "ada@softtrack.dev")
+    assert ada_row["employment_type"] is None
+    assert ada_row["is_external"] is False
+
+    # Admin updates to contractor
+    response = client.patch(
+        f"/admin/users/{ada['user']['id']}",
+        json={"employment_type": "contractor"},
+        headers=admin["headers"],
+    )
+    assert response.status_code == 200
+    assert response.json()["employment_type"] == "contractor"
+    assert response.json()["is_external"] is False
+
+    # Admin updates to service_account
+    response = client.patch(
+        f"/admin/users/{ada['user']['id']}",
+        json={"employment_type": "service_account"},
+        headers=admin["headers"],
+    )
+    assert response.status_code == 200
+    assert response.json()["employment_type"] == "service_account"
+
+    # Non-admin cannot update employment_type
+    refused = client.patch(
+        f"/admin/users/{ada['user']['id']}",
+        json={"employment_type": "intern"},
+        headers=ada["headers"],
+    )
+    assert refused.status_code == 403
+
+
+def test_employment_type_and_external_are_strictly_decoupled(client, auth):
+    """employment_type changes must NEVER touch is_external, and vice versa.
+    Outside accounts remain outside regardless of employment type.
+    """
+    admin = auth(email="admin@softtrack.dev")
+    guest = auth(email="guest@consulting.example")
+
+    # Mark as outside
+    res = client.patch(
+        f"/admin/users/{guest['user']['id']}",
+        json={"is_external": True},
+        headers=admin["headers"],
+    )
+    assert res.status_code == 200
+    assert res.json()["is_external"] is True
+    assert res.json()["employment_type"] is None
+
+    # Changing employment_type to contractor preserves is_external=True
+    res = client.patch(
+        f"/admin/users/{guest['user']['id']}",
+        json={"employment_type": "contractor"},
+        headers=admin["headers"],
+    )
+    assert res.status_code == 200
+    assert res.json()["is_external"] is True
+    assert res.json()["employment_type"] == "contractor"
+
+    # Regression: outside contractor still cannot access internal /users
+    users_res = client.get("/users", headers=guest["headers"])
+    assert users_res.status_code == 403
+
+    # {is_external: true, employment_type: "contractor"} in one payload is accepted and consistent
+    res = client.patch(
+        f"/admin/users/{guest['user']['id']}",
+        json={"is_external": True, "employment_type": "contractor"},
+        headers=admin["headers"],
+    )
+    assert res.status_code == 200
+    assert res.json()["is_external"] is True
+    assert res.json()["employment_type"] == "contractor"
+
+    # "external" employment_type is rejected by schema (422)
+    bad_res = client.patch(
+        f"/admin/users/{guest['user']['id']}",
+        json={"employment_type": "external"},
+        headers=admin["headers"],
+    )
+    assert bad_res.status_code == 422
+
+    # Explicit is_external changes still work and do not touch employment_type
+    res = client.patch(
+        f"/admin/users/{guest['user']['id']}",
+        json={"is_external": False},
+        headers=admin["headers"],
+    )
+    assert res.status_code == 200
+    assert res.json()["is_external"] is False
+    assert res.json()["employment_type"] == "contractor"

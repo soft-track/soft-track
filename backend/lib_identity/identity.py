@@ -175,6 +175,7 @@ def create_user(
     # so it has to be automatic or a fresh install has no administrator.
     is_first = session.exec(select(func.count()).select_from(User)).one() == 0
 
+    external = not is_first and invited_from_outside(session, email)
     user = User(
         email=email,
         username=handle,
@@ -184,7 +185,7 @@ def create_user(
         is_site_admin=is_first,
         # Invited from outside the organisation (#243): what the account is
         # from the start, decided by the invitation and never by the person.
-        is_external=not is_first and invited_from_outside(session, email),
+        is_external=external,
         # Creating an account hands out a token, so it *is* a sign-in. Leaving
         # this null would show someone who signed up a minute ago as "never
         # signed in" in the admin directory.

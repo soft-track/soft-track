@@ -24,7 +24,7 @@ from typing import Iterable, Optional
 from sqlalchemy import case
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
-from sqlmodel import Session, col, func, or_, select
+from sqlmodel import Session, and_, col, func, or_, select
 
 from lib_finance.models.compensation import (
     CompensationCreate,
@@ -40,7 +40,7 @@ from lib_finance.money import Currency
 from lib_identity.models.identity import PersonRef
 from lib_identity.people import find_by_username
 from lib_softtrack.models.page import DEFAULT_LIMIT
-from lib_softtrack.tables import Compensation, PaySchedule, User
+from lib_softtrack.tables import Compensation, EmploymentType, PaySchedule, User
 from lib_utils.errors import ErrorCode, api_error
 
 #: Totals are listed monthly first, the way pay is usually talked about.
@@ -185,7 +185,22 @@ def list_compensation(
     the ones a payroll run would otherwise quietly leave out.
     """
     effective = in_effect(day)
-    filters = [User.is_active == True]  # noqa: E712 -- SQL comparison
+    paid = col(User.id).in_(
+        select(Compensation.user_id).where(col(Compensation.id).in_(effective))
+    )
+    is_employee = and_(
+        User.is_external == False,  # noqa: E712
+        or_(
+            User.employment_type == None,  # noqa: E711
+            User.employment_type == EmploymentType.employee,
+        ),
+    )
+    filters = [
+        User.is_active == True,  # noqa: E712 -- SQL comparison
+        # Include anyone active with compensation, plus active internal employees
+        # who have no compensation (the ones who appear as missing pay).
+        or_(paid, is_employee),
+    ]
     if q and q.strip():
         needle = f"%{q.strip()}%"
         filters.append(
@@ -202,9 +217,6 @@ def list_compensation(
                 )
             )
         )
-    paid = col(User.id).in_(
-        select(Compensation.user_id).where(col(Compensation.id).in_(effective))
-    )
 
     total = session.exec(select(func.count()).select_from(User).where(*filters)).one()
     missing = session.exec(

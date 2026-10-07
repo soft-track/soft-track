@@ -164,6 +164,8 @@ export default function CompensationPage() {
                   </span>
                 </>
               )}
+              {' '}
+              <span>{t('compensation.notOnPayrollHint')}</span>
             </p>
           </div>
         )}
