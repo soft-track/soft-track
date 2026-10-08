@@ -27,6 +27,9 @@ import type {
 import type {
   HTTPValidationError,
   TicketTime,
+  TimerRead,
+  TimerStartRead,
+  TimerUpdate,
   WorklogCreate,
   WorklogRead,
   WorklogUpdate
@@ -213,6 +216,299 @@ export const useLogTimeTicketsTicketIdWorklogsPost = <TError = HTTPValidationErr
         TContext
       > => {
       return useMutation(getLogTimeTicketsTicketIdWorklogsPostMutationOptions(options), queryClient);
+    }
+    /**
+ * Start timing a ticket, replacing any other timer the caller had.
+ * @summary Start Timer
+ */
+export const startTimerTicketsTicketIdTimerPost = (
+    ticketId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TimerStartRead>(
+      {url: `/tickets/${ticketId}/timer`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+
+export const getStartTimerTicketsTicketIdTimerPostMutationKey = () => ['startTimerTicketsTicketIdTimerPost'] as const;
+
+export const getStartTimerTicketsTicketIdTimerPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startTimerTicketsTicketIdTimerPost>>, TError,StartTimerTicketsTicketIdTimerPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof startTimerTicketsTicketIdTimerPost>>, TError,StartTimerTicketsTicketIdTimerPostMutationVariables, TContext> => {
+
+const mutationKey = getStartTimerTicketsTicketIdTimerPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startTimerTicketsTicketIdTimerPost>>, StartTimerTicketsTicketIdTimerPostMutationVariables> = (props) => {
+          const {ticketId} = props ?? {};
+
+          return  startTimerTicketsTicketIdTimerPost(ticketId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartTimerTicketsTicketIdTimerPostMutationResult = NonNullable<Awaited<ReturnType<typeof startTimerTicketsTicketIdTimerPost>>>
+
+    export type StartTimerTicketsTicketIdTimerPostMutationError = HTTPValidationError
+    export type StartTimerTicketsTicketIdTimerPostMutationVariables = {ticketId: number}
+
+    /**
+ * @summary Start Timer
+ */
+export const useStartTimerTicketsTicketIdTimerPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startTimerTicketsTicketIdTimerPost>>, TError,StartTimerTicketsTicketIdTimerPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof startTimerTicketsTicketIdTimerPost>>,
+        TError,
+        StartTimerTicketsTicketIdTimerPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getStartTimerTicketsTicketIdTimerPostMutationOptions(options), queryClient);
+    }
+    /**
+ * Return the caller's one active timer, if there is one.
+ * @summary My Timer
+ */
+export const myTimerMeTimerGet = (
+
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TimerRead | null>(
+      {url: `/me/timer`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getMyTimerMeTimerGetQueryKey = () => {
+    return [
+    `/me/timer`
+    ] as const;
+    }
+
+
+export const getMyTimerMeTimerGetQueryOptions = <TData = Awaited<ReturnType<typeof myTimerMeTimerGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof myTimerMeTimerGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getMyTimerMeTimerGetQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof myTimerMeTimerGet>>> = ({ signal }) => myTimerMeTimerGet(signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof myTimerMeTimerGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type MyTimerMeTimerGetQueryResult = NonNullable<Awaited<ReturnType<typeof myTimerMeTimerGet>>>
+export type MyTimerMeTimerGetQueryError = unknown
+
+
+export function useMyTimerMeTimerGet<TData = Awaited<ReturnType<typeof myTimerMeTimerGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof myTimerMeTimerGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof myTimerMeTimerGet>>,
+          TError,
+          Awaited<ReturnType<typeof myTimerMeTimerGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useMyTimerMeTimerGet<TData = Awaited<ReturnType<typeof myTimerMeTimerGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof myTimerMeTimerGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof myTimerMeTimerGet>>,
+          TError,
+          Awaited<ReturnType<typeof myTimerMeTimerGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useMyTimerMeTimerGet<TData = Awaited<ReturnType<typeof myTimerMeTimerGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof myTimerMeTimerGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary My Timer
+ */
+
+export function useMyTimerMeTimerGet<TData = Awaited<ReturnType<typeof myTimerMeTimerGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof myTimerMeTimerGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getMyTimerMeTimerGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Stop the caller's timer and return its elapsed time for review.
+ * @summary Stop Timer
+ */
+export const stopTimerMeTimerDelete = (
+
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/me/timer`, method: 'DELETE', signal
+    },
+      );
+    }
+
+
+
+
+export const getStopTimerMeTimerDeleteMutationKey = () => ['stopTimerMeTimerDelete'] as const;
+
+export const getStopTimerMeTimerDeleteMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stopTimerMeTimerDelete>>, TError,void, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof stopTimerMeTimerDelete>>, TError,void, TContext> => {
+
+const mutationKey = getStopTimerMeTimerDeleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof stopTimerMeTimerDelete>>, void> = () => {
+
+
+          return  stopTimerMeTimerDelete()
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StopTimerMeTimerDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof stopTimerMeTimerDelete>>>
+
+    export type StopTimerMeTimerDeleteMutationError = unknown
+
+
+    /**
+ * @summary Stop Timer
+ */
+export const useStopTimerMeTimerDelete = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stopTimerMeTimerDelete>>, TError,void, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof stopTimerMeTimerDelete>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getStopTimerMeTimerDeleteMutationOptions(options), queryClient);
+    }
+    /**
+ * Pause or resume the caller's timer.
+ * @summary Update Timer
+ */
+export const updateTimerMeTimerPatch = (
+    timerUpdate: TimerUpdate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TimerRead>(
+      {url: `/me/timer`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: timerUpdate, signal
+    },
+      );
+    }
+
+
+
+
+export const getUpdateTimerMeTimerPatchMutationKey = () => ['updateTimerMeTimerPatch'] as const;
+
+export const getUpdateTimerMeTimerPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTimerMeTimerPatch>>, TError,UpdateTimerMeTimerPatchMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateTimerMeTimerPatch>>, TError,UpdateTimerMeTimerPatchMutationVariables, TContext> => {
+
+const mutationKey = getUpdateTimerMeTimerPatchMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateTimerMeTimerPatch>>, UpdateTimerMeTimerPatchMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateTimerMeTimerPatch(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateTimerMeTimerPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateTimerMeTimerPatch>>>
+    export type UpdateTimerMeTimerPatchMutationBody = TimerUpdate
+    export type UpdateTimerMeTimerPatchMutationError = HTTPValidationError
+    export type UpdateTimerMeTimerPatchMutationVariables = {data: TimerUpdate}
+
+    /**
+ * @summary Update Timer
+ */
+export const useUpdateTimerMeTimerPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTimerMeTimerPatch>>, TError,UpdateTimerMeTimerPatchMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateTimerMeTimerPatch>>,
+        TError,
+        UpdateTimerMeTimerPatchMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateTimerMeTimerPatchMutationOptions(options), queryClient);
     }
     /**
  * Change one of your own entries.

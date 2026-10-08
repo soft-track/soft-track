@@ -1124,6 +1124,30 @@ class Worklog(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=utcnow)
 
 
+class Timer(SQLModel, table=True):
+    """A running stopwatch for one user's work on a ticket.
+
+    The table stores only the active timer for a user, so a single user can
+    never have multiple overlapping timers. `accumulated_seconds` keeps the
+    elapsed time independent from the exact start/stop boundaries, which makes
+    pausing and resuming cheap to reason about in reports and UI code.
+    """
+
+    __table_args__ = (UniqueConstraint("user_id", name="uq_timer_user_id"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True, unique=True)
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
+    ticket_team_key: str
+    ticket_number: int
+    started_at: datetime
+    last_started_at: datetime
+    accumulated_seconds: int = Field(default=0)
+    paused_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
 class TicketTemplate(SQLModel, table=True):
     """A starting point for a new ticket's description (#97).
 

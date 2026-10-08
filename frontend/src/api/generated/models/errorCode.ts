@@ -42,6 +42,7 @@ export const ErrorCode = {
   template_not_found: 'template_not_found',
   custom_field_not_found: 'custom_field_not_found',
   worklog_not_found: 'worklog_not_found',
+  timer_not_found: 'timer_not_found',
   notification_not_found: 'notification_not_found',
   repository_not_found: 'repository_not_found',
   invite_not_found: 'invite_not_found',

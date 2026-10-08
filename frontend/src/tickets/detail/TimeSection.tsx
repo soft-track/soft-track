@@ -13,6 +13,8 @@ import type { WorklogRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { localToday } from '@/tickets/dueDate'
+import { formatTimerClock } from '@/tickets/timer/clock'
+import { useTimer } from '../timer/useTimer'
 import { formatDuration, parseDuration } from '@/tickets/duration'
 import { i18n, Trans, userText, useTranslation } from '@/i18n'
 import { formatDate } from '@/i18n/format'
@@ -26,11 +28,20 @@ const RECENT = 5
  * Time spent on the ticket (#102): the total, whose it was, and a way to log
  * more. The board cards show none of it, on purpose -- cards stay clean.
  */
-export function TimeSection({ ticketId, readOnly }: { ticketId: number; readOnly: boolean }) {
+export function TimeSection({
+  ticketId,
+  ticketIdentifier,
+  readOnly,
+}: {
+  ticketId: number
+  ticketIdentifier: string
+  readOnly: boolean
+}) {
   const { user } = useAuth()
   const { t } = useTranslation(['tickets', 'common'])
   const queryClient = useQueryClient()
   const query = useTicketTimeTicketsTicketIdWorklogsGet(ticketId)
+  const timer = useTimer()
   const [logging, setLogging] = useState(false)
   const [editing, setEditing] = useState<number | null>(null)
   const [showAll, setShowAll] = useState(false)
@@ -64,6 +75,68 @@ export function TimeSection({ ticketId, readOnly }: { ticketId: number; readOnly
           </button>
         )}
       </div>
+
+      {!readOnly && (
+        <div className={`mb-2 flex items-center flex-wrap justify-between gap-2 rounded-control px-2 py-1.5 ${timer.timer?.ticket_id === ticketId && !timer.timer.is_paused ? 'bg-brand-100' : 'bg-neutral-500/5'}`}>
+          {timer.timer?.ticket_id === ticketId ? (
+            <>
+              <p className="text-neutral-900 text-xs flex flex-wrap items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-brand-600" />
+                <span className="font-medium">{timer.timer.is_paused ? t('time.timer.paused') : t('time.timer.running')}</span>
+                <span className="font-mono">{formatTimerClock(timer.elapsedSeconds)}</span>
+                <span className="text-neutral-500">·</span>
+                <span className="text-neutral-500">
+                  {t('time.timer.startedAt', {
+                    time: new Intl.DateTimeFormat(undefined, {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    }).format(new Date(timer.timer.started_at)),
+                  })}
+                </span>
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void timer.setPaused(!timer.timer?.is_paused)}
+                  disabled={timer.busy}
+                  className="btn btn-ghost btn-xs"
+                >
+                  <Icon
+                    name={timer.timer.is_paused ? "play" : "pause"}
+                    size={12}
+                  />
+                  {t(
+                    timer.timer.is_paused
+                      ? 'time.timer.resume'
+                      : 'time.timer.pause',
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void timer.stopTimerAndOpenLog()}
+                  disabled={timer.busy}
+                  className="btn btn-secondary btn-xs"
+                >
+                  <Icon name="stop" size={12} />
+                  {t('time.timer.stopAndLog')}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="text-xs text-neutral-500">{t('time.timer.ready')}</span>
+              <button
+                type="button"
+                onClick={() => timer.handleStartTimer(ticketId, ticketIdentifier)}
+                disabled={timer.busy}
+                className="btn btn-secondary btn-xs"
+              >
+                <Icon name="timer" size={12} /> {t('time.timer.start')}
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {time.by_person.length > 1 && (
         <ul className="mb-2 flex flex-wrap gap-1.5" aria-label={t('time.byPerson')}>

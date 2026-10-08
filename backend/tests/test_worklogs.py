@@ -1,11 +1,12 @@
 """Time tracking: worklogs on tickets (#102)."""
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 from sqlmodel import select
 
 from lib_softtrack.tables import Worklog
+from lib_softtrack import worklogs as worklogs_service
 from tests.conftest import delete_for_good
 
 
@@ -182,6 +183,98 @@ def test_deleting_the_ticket_deletes_its_time(client, team, ticket, session):
     log(client, team, ticket)
     assert delete_for_good(client, team["headers"], ticket["id"]).status_code == 204
     assert session.exec(select(Worklog)).all() == []
+
+
+def test_timer_persists_server_elapsed_time_and_stops_without_logging(
+    client, team, ticket, monkeypatch
+):
+    now = datetime(2026, 10, 2, 12, tzinfo=timezone.utc)
+    monkeypatch.setattr(worklogs_service, "utcnow", lambda: now)
+    response = client.post(f"/tickets/{ticket['id']}/timer", headers=team["headers"])
+    assert response.status_code == 200, response.text
+    started = response.json()
+    assert started["duration_seconds"] == 0
+    assert set(started) == {
+        "ticket_id",
+        "ticket_identifier",
+        "ticket_team_key",
+        "ticket_number",
+        "started_at",
+        "duration_seconds",
+        "is_paused",
+        "paused_at",
+        "created_at",
+        "updated_at",
+        "replaced",
+    }
+    assert started["replaced"] is None
+    assert started["ticket_team_key"] == team["team"]["key"]
+    assert started["ticket_number"] == ticket["number"]
+    assert (
+        datetime.fromisoformat(started["created_at"]).replace(tzinfo=timezone.utc)
+        == now
+    )
+    assert (
+        datetime.fromisoformat(started["updated_at"]).replace(tzinfo=timezone.utc)
+        == now
+    )
+
+    now += timedelta(minutes=37)
+    current = client.get("/me/timer", headers=team["headers"]).json()
+    assert current["duration_seconds"] == 37 * 60
+    assert current["ticket_identifier"] == f"{team['team']['key']}-{ticket['number']}"
+
+    stopped = client.delete("/me/timer", headers=team["headers"])
+    assert stopped.status_code == 204, stopped.text
+    assert client.get("/me/timer", headers=team["headers"]).json() is None
+    assert time_on(client, team, ticket)["entries"] == []
+
+
+def test_timer_pauses_resumes_and_replaces_the_previous_ticket(
+    client, team, ticket, monkeypatch
+):
+    now = datetime(2026, 10, 2, 12, tzinfo=timezone.utc)
+    monkeypatch.setattr(worklogs_service, "utcnow", lambda: now)
+    client.post(f"/tickets/{ticket['id']}/timer", headers=team["headers"])
+
+    now += timedelta(minutes=20)
+    paused = client.patch(
+        "/me/timer", json={"paused": True}, headers=team["headers"]
+    ).json()
+    assert paused["duration_seconds"] == 20 * 60
+    assert paused["is_paused"] is True
+    assert (
+        datetime.fromisoformat(paused["updated_at"]).replace(tzinfo=timezone.utc) == now
+    )
+
+    now += timedelta(minutes=45)
+    assert (
+        client.get("/me/timer", headers=team["headers"]).json()["duration_seconds"]
+        == 20 * 60
+    )
+
+    now += timedelta(minutes=10)
+    resumed = client.patch(
+        "/me/timer", json={"paused": False}, headers=team["headers"]
+    ).json()
+    assert resumed["duration_seconds"] == 20 * 60
+    assert resumed["is_paused"] is False
+
+    second = make_ticket(client, team, team["team"]["id"], title="Another ticket")
+    now += timedelta(minutes=5)
+    started = client.post(f"/tickets/{second['id']}/timer", headers=team["headers"])
+    assert started.status_code == 200, started.text
+    assert started.json()["replaced"]["duration_seconds"] == 25 * 60
+    assert started.json()["ticket_id"] == second["id"]
+
+
+def test_guest_cannot_start_a_timer(client, team, auth, ticket):
+    guest = auth(email="timer-guest@softtrack.dev", full_name="Guest")
+    join(client, team, guest, "guest")
+
+    response = client.post(f"/tickets/{ticket['id']}/timer", headers=guest["headers"])
+    assert response.status_code == 403
+    assert response.json()["code"] == "team_read_only"
 
 
 def test_time_travels_with_a_ticket_to_another_team(client, team, ticket):

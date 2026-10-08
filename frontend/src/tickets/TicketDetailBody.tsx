@@ -104,7 +104,7 @@ export function TicketDetailBody({ ticketId }: { ticketId: number }) {
         <div className="ticket-body-rest">
           {!ticket.parent && <SubTicketsSection ticket={ticket} readOnly={readOnly} />}
           <TicketLinksSection ticketId={ticket.id} readOnly={readOnly} />
-          <TimeSection ticketId={ticket.id} readOnly={readOnly} />
+          <TimeSection ticketId={ticket.id} ticketIdentifier={ticket.identifier} readOnly={readOnly} />
 
           <div className="mt-5 flex items-center gap-2 text-xs text-neutral-400">
             <PriorityIcon priority={ticket.priority} size={12} />

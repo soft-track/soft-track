@@ -16,6 +16,17 @@ const MAYA = { id: 2, full_name: 'Maya Chen', avatar_color: '#456', is_active: t
 
 const mocks = vi.hoisted(() => ({
   time: { data: undefined as unknown },
+  timer: {
+    timer: null as {
+      ticket_id: number
+      is_paused: boolean
+      started_at: string
+    } | null,
+    busy: false,
+    handleStartTimer: vi.fn(),
+    stopTimerAndOpenLog: vi.fn(),
+    setPaused: vi.fn(),
+  },
   create: { mutateAsync: vi.fn(), isPending: false },
   update: { mutateAsync: vi.fn(), isPending: false },
   remove: { mutateAsync: vi.fn(), isPending: false },
@@ -32,6 +43,7 @@ vi.mock('@/api/generated/endpoints/worklogs/worklogs', async (importOriginal) =>
   useUpdateWorklogWorklogsWorklogIdPatch: () => mocks.update,
   useDeleteWorklogWorklogsWorklogIdDelete: () => mocks.remove,
 }))
+vi.mock('@/tickets/timer/useTimer', () => ({ useTimer: () => mocks.timer }))
 
 function entry(id: number, user: typeof ME, minutes: number, note: string | null = null) {
   return {
@@ -49,7 +61,7 @@ function entry(id: number, user: typeof ME, minutes: number, note: string | null
 function renderSection(readOnly = false) {
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <TimeSection ticketId={9} readOnly={readOnly} />
+      <TimeSection ticketId={9} ticketIdentifier='ENG-9' readOnly={readOnly} />
     </QueryClientProvider>,
   )
   return userEvent.setup()
@@ -65,6 +77,10 @@ beforeEach(() => {
     entries: [entry(1, ME, 90, 'debugging the webhook retry'), entry(2, MAYA, 120)],
   }
   for (const m of [mocks.create, mocks.update, mocks.remove]) m.mutateAsync.mockReset().mockResolvedValue({})
+  mocks.timer.timer = null
+  mocks.timer.handleStartTimer.mockReset()
+  mocks.timer.stopTimerAndOpenLog.mockReset()
+  mocks.timer.setPaused.mockReset()
 })
 
 afterEach(cleanup)
@@ -76,6 +92,23 @@ describe('TimeSection', () => {
     const people = screen.getByRole('list', { name: 'Time by person' })
     expect(people.textContent).toContain('Maya Chen2h')
     expect(screen.getByText(/debugging the webhook retry/)).toBeTruthy()
+  })
+
+  it('starts a timer from the ticket time section', async () => {
+    const user = renderSection()
+    await user.click(screen.getByRole('button', { name: 'Start timer' }))
+    expect(mocks.timer.handleStartTimer).toHaveBeenCalledWith(9, 'ENG-9')
+  })
+
+  it('pauses the timer running on this ticket', async () => {
+    mocks.timer.timer = {
+      ticket_id: 9,
+      is_paused: false,
+      started_at: '2026-10-02T12:00:00Z',
+    }
+    const user = renderSection()
+    await user.click(screen.getByRole('button', { name: 'Pause' }))
+    expect(mocks.timer.setPaused).toHaveBeenCalledWith(true)
   })
 
   it('logs time typed the way people type it, on today by default', async () => {
@@ -129,7 +162,7 @@ describe('TimeSection', () => {
     mocks.time.data = { total_minutes: 0, by_person: [], entries: [] }
     const { container } = render(
       <QueryClientProvider client={new QueryClient()}>
-        <TimeSection ticketId={9} readOnly />
+        <TimeSection ticketId={9} ticketIdentifier='ENG-9' readOnly />
       </QueryClientProvider>,
     )
     expect(container.textContent).toBe('')

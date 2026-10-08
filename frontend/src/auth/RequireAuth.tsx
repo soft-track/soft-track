@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/auth/useAuth'
+import { TimerProvider } from '@/tickets/timer/TimerProvider'
 import { Loading } from '@/ui/Loading'
 
 export function RequireAuth() {
@@ -19,5 +20,9 @@ export function RequireAuth() {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  return <Outlet />
+  return (
+    <TimerProvider>
+      <Outlet />
+    </TimerProvider>
+  )
 }

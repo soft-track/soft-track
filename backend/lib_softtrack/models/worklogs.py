@@ -50,6 +50,27 @@ class TicketTime(BaseModel):
     entries: list[WorklogRead]
 
 
+class TimerRead(BaseModel):
+    ticket_id: int
+    ticket_identifier: str
+    ticket_team_key: str
+    ticket_number: int
+    started_at: datetime
+    duration_seconds: int
+    is_paused: bool
+    paused_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class TimerStartRead(TimerRead):
+    replaced: Optional[TimerRead] = None
+
+
+class TimerUpdate(BaseModel):
+    paused: bool
+
+
 class TimeSpent(BaseModel):
     """A rollup for a report: how much time, and whose (#102)."""
 

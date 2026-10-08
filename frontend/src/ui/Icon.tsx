@@ -53,6 +53,10 @@ export type IconName =
   | 'briefcase'
   | 'banknote'
   | 'history'
+  | 'timer'
+  | 'pause'
+  | 'play'
+  | 'stop'
   | 'receipt'
   | 'undo'
   | 'user'
@@ -64,6 +68,7 @@ export type IconName =
   | 'external'
   | 'archive'
   | 'grip'
+  | 'move'
   | 'alert'
   | 'sliders'
   | 'pencil'
@@ -196,6 +201,15 @@ const PATHS: Record<IconName, JSX.Element> = {
       <path d="M3.5 4v4.5H8M12 7.5V12l3 2" />
     </>
   ),
+  timer: (
+    <>
+      <circle cx="12" cy="13" r="8" />
+      <path d="M12 9v4l2.5 1.5M9 2h6M12 2v3" />
+    </>
+  ),
+  pause: <path d="M8 5v14M16 5v14" />,
+  play: <path d="m8 5 11 7-11 7V5Z" />,
+  stop: <rect x="6" y="6" width="12" height="12" rx="1.5" />,
   building: (
     <>
       <rect x="5" y="3" width="14" height="18" rx="1.5" />
@@ -221,6 +235,7 @@ const PATHS: Record<IconName, JSX.Element> = {
       <path d="M3 3l18 18" />
     </>
   ),
+  move: <path d="M8 3 5 6l3 3M3 6h6m7-3 3 3-3 3m3-3h-6M8 21l-3-3 3-3m-3 3h6m7 3 3-3-3-3m3 3h-6M12 3v18" />,
   eye: (
     <>
       <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />

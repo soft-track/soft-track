@@ -7270,6 +7270,152 @@
         }
       }
     },
+    "/tickets/{ticket_id}/timer": {
+      "post": {
+        "tags": [
+          "worklogs"
+        ],
+        "summary": "Start Timer",
+        "description": "Start timing a ticket, replacing any other timer the caller had.",
+        "operationId": "start_timer_tickets__ticket_id__timer_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimerStartRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/timer": {
+      "get": {
+        "tags": [
+          "worklogs"
+        ],
+        "summary": "My Timer",
+        "description": "Return the caller's one active timer, if there is one.",
+        "operationId": "my_timer_me_timer_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TimerRead"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response My Timer Me Timer Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "worklogs"
+        ],
+        "summary": "Stop Timer",
+        "description": "Stop the caller's timer and return its elapsed time for review.",
+        "operationId": "stop_timer_me_timer_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "worklogs"
+        ],
+        "summary": "Update Timer",
+        "description": "Pause or resume the caller's timer.",
+        "operationId": "update_timer_me_timer_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimerUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimerRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/worklogs/{worklog_id}": {
       "patch": {
         "tags": [
@@ -20410,6 +20556,165 @@
         "title": "TimeSpent",
         "description": "A rollup for a report: how much time, and whose (#102)."
       },
+      "TimerRead": {
+        "properties": {
+          "ticket_id": {
+            "type": "integer",
+            "title": "Ticket Id"
+          },
+          "ticket_identifier": {
+            "type": "string",
+            "title": "Ticket Identifier"
+          },
+          "ticket_team_key": {
+            "type": "string",
+            "title": "Ticket Team Key"
+          },
+          "ticket_number": {
+            "type": "integer",
+            "title": "Ticket Number"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "title": "Duration Seconds"
+          },
+          "is_paused": {
+            "type": "boolean",
+            "title": "Is Paused"
+          },
+          "paused_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paused At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket_id",
+          "ticket_identifier",
+          "ticket_team_key",
+          "ticket_number",
+          "started_at",
+          "duration_seconds",
+          "is_paused",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TimerRead"
+      },
+      "TimerStartRead": {
+        "properties": {
+          "ticket_id": {
+            "type": "integer",
+            "title": "Ticket Id"
+          },
+          "ticket_identifier": {
+            "type": "string",
+            "title": "Ticket Identifier"
+          },
+          "ticket_team_key": {
+            "type": "string",
+            "title": "Ticket Team Key"
+          },
+          "ticket_number": {
+            "type": "integer",
+            "title": "Ticket Number"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "title": "Duration Seconds"
+          },
+          "is_paused": {
+            "type": "boolean",
+            "title": "Is Paused"
+          },
+          "paused_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paused At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "replaced": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimerRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket_id",
+          "ticket_identifier",
+          "ticket_team_key",
+          "ticket_number",
+          "started_at",
+          "duration_seconds",
+          "is_paused",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TimerStartRead"
+      },
+      "TimerUpdate": {
+        "properties": {
+          "paused": {
+            "type": "boolean",
+            "title": "Paused"
+          }
+        },
+        "type": "object",
+        "required": [
+          "paused"
+        ],
+        "title": "TimerUpdate"
+      },
       "Token": {
         "properties": {
           "access_token": {
@@ -21707,6 +22012,7 @@
           "template_not_found",
           "custom_field_not_found",
           "worklog_not_found",
+          "timer_not_found",
           "notification_not_found",
           "repository_not_found",
           "invite_not_found",
