@@ -179,6 +179,33 @@ def test_it_searches_every_team_you_are_in(client, team, auth):
     assert len(find(client, team, "Shared word")["items"]) == 2
 
 
+def test_it_excludes_archived_teams_from_default_search(client, team):
+    archived = client.post(
+        "/teams",
+        json={"name": "Retired", "key": "RET"},
+        headers=team["headers"],
+    ).json()
+    archived_ticket = client.post(
+        f"/teams/{archived['id']}/tickets",
+        json={"title": "Retired team ticket"},
+        headers=team["headers"],
+    ).json()
+    client.patch(
+        f"/teams/{archived['id']}",
+        json={"archived": True},
+        headers=team["headers"],
+    )
+
+    make_ticket(client, team, "Visible archive-safe match")
+
+    page = find(client, team, "archive-safe")
+    assert titles(page) == ["Visible archive-safe match"]
+
+    page = find(client, team, "retired")
+    assert titles(page) == []
+    assert not any(item["id"] == archived_ticket["id"] for item in page["items"])
+
+
 def test_it_can_be_narrowed_to_one_team(client, team, auth):
     make_ticket(client, team, "Shared word here")
     second = client.post(

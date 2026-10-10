@@ -28,6 +28,7 @@ class TeamRead(BaseModel):
     #: sub-tickets count against it.
     wip_limits_hard: bool = False
     wip_counts_subtickets: bool = True
+    archived: bool = False
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -52,6 +53,7 @@ class TeamUpdate(BaseModel):
     #: WIP limits (#270): refuse a move over one, and count sub-tickets.
     wip_limits_hard: Optional[bool] = None
     wip_counts_subtickets: Optional[bool] = None
+    archived: Optional[bool] = None
 
 
 class EpicRef(BaseModel):

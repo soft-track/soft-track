@@ -118,6 +118,19 @@ def test_resolve_finds_the_ticket_the_text_names(client, team, session):
     assert [i.id for i in found] == [ticket["id"]]
 
 
+def test_resolve_keeps_working_after_a_team_is_archived(client, team, session):
+    ticket = make_ticket(client, team, team["team"]["id"], title="After archive")
+    response = client.patch(
+        f"/teams/{team['team']['id']}",
+        json={"archived": True},
+        headers=team["headers"],
+    )
+    assert response.status_code == 200, response.text
+
+    found = resolve(session, team["team"]["id"], f"eng-{ticket['number']} after")
+    assert [i.id for i in found] == [ticket["id"]]
+
+
 def test_resolve_will_not_cross_a_team_boundary(client, two_teams, session):
     """The security property the whole integration rests on.
 

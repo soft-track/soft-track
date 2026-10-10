@@ -659,3 +659,25 @@ def test_a_long_filename_keeps_its_extension(client, team):
     body = attach(client, team, ticket, name="a" * 500 + ".png")
     assert body["filename"].endswith(".png")
     assert body["content_type"] == "image/png"
+
+
+def test_archived_team_rejects_comment_and_attachment_uploads(client, team):
+    ticket = make_ticket(client, team)
+    archived = client.patch(
+        f"/teams/{team['team']['id']}",
+        json={"archived": True},
+        headers=team["headers"],
+    )
+    assert archived.status_code == 200, archived.text
+
+    comment = client.post(
+        f"/tickets/{ticket['id']}/comments",
+        json={"body": "This should be refused"},
+        headers=team["headers"],
+    )
+    assert comment.status_code == 403, comment.text
+    assert comment.json()["code"] == "team_read_only"
+
+    attachment = upload(client, team["headers"], ticket)
+    assert attachment.status_code == 403, attachment.text
+    assert attachment.json()["code"] == "team_read_only"

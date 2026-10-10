@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlmodel import Session
 
 from app_softtrack.guards import team_writer
@@ -19,6 +19,14 @@ from lib_softtrack.tables import User
 from web import get_session
 
 router = APIRouter(prefix="/teams", tags=["teams"])
+
+
+def _require_team_patch_access(
+    request: Request,
+    session: Session = Depends(get_session),
+) -> None:
+    team_id = teams_service.team_id_for_path(session, request.path_params)
+    teams_service.get_team_or_404(team_id, session)
 
 
 @router.post("", response_model=TeamRead)
@@ -59,7 +67,21 @@ def get_team(
     return teams_service.get_team(session, current_user, team_id)
 
 
-@router.patch("/{team_id}", response_model=TeamRead, dependencies=[team_writer])
+@router.delete("/{team_id}", status_code=204, dependencies=[team_writer])
+def delete_team(
+    team_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    teams_service.delete_team(session, current_user, team_id)
+    return Response(status_code=204)
+
+
+@router.patch(
+    "/{team_id}",
+    response_model=TeamRead,
+    dependencies=[Depends(_require_team_patch_access)],
+)
 def update_team(
     team_id: int,
     payload: TeamUpdate,

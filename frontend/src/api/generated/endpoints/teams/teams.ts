@@ -401,6 +401,71 @@ export function useGetTeamTeamsTeamIdGet<TData = Awaited<ReturnType<typeof getTe
 
 
 /**
+ * @summary Delete Team
+ */
+export const deleteTeamTeamsTeamIdDelete = (
+    teamId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/teams/${teamId}`, method: 'DELETE', signal
+    },
+      );
+    }
+
+
+
+
+export const getDeleteTeamTeamsTeamIdDeleteMutationKey = () => ['deleteTeamTeamsTeamIdDelete'] as const;
+
+export const getDeleteTeamTeamsTeamIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTeamTeamsTeamIdDelete>>, TError,DeleteTeamTeamsTeamIdDeleteMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteTeamTeamsTeamIdDelete>>, TError,DeleteTeamTeamsTeamIdDeleteMutationVariables, TContext> => {
+
+const mutationKey = getDeleteTeamTeamsTeamIdDeleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTeamTeamsTeamIdDelete>>, DeleteTeamTeamsTeamIdDeleteMutationVariables> = (props) => {
+          const {teamId} = props ?? {};
+
+          return  deleteTeamTeamsTeamIdDelete(teamId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteTeamTeamsTeamIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTeamTeamsTeamIdDelete>>>
+
+    export type DeleteTeamTeamsTeamIdDeleteMutationError = HTTPValidationError
+    export type DeleteTeamTeamsTeamIdDeleteMutationVariables = {teamId: number}
+
+    /**
+ * @summary Delete Team
+ */
+export const useDeleteTeamTeamsTeamIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTeamTeamsTeamIdDelete>>, TError,DeleteTeamTeamsTeamIdDeleteMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteTeamTeamsTeamIdDelete>>,
+        TError,
+        DeleteTeamTeamsTeamIdDeleteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteTeamTeamsTeamIdDeleteMutationOptions(options), queryClient);
+    }
+    /**
  * @summary Update Team
  */
 export const updateTeamTeamsTeamIdPatch = (

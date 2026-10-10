@@ -866,6 +866,7 @@ class Team(SQLModel, table=True):
     #: Whether sub-tickets count against a column's limit, or only the work
     #: they are part of.
     wip_counts_subtickets: bool = Field(default=True)
+    archived: bool = Field(default=False)
     created_at: datetime = Field(default_factory=utcnow)
 
 

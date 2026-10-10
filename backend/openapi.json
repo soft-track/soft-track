@@ -1396,6 +1396,44 @@
           }
         }
       },
+      "delete": {
+        "tags": [
+          "teams"
+        ],
+        "summary": "Delete Team",
+        "operationId": "delete_team_teams__team_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "patch": {
         "tags": [
           "teams"
@@ -19169,6 +19207,11 @@
             "title": "Wip Counts Subtickets",
             "default": true
           },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived",
+            "default": false
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -19261,6 +19304,17 @@
               }
             ],
             "title": "Wip Counts Subtickets"
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
           }
         },
         "type": "object",
@@ -21741,6 +21795,7 @@
           "last_site_admin",
           "last_status",
           "team_has_no_statuses",
+          "team_has_tickets",
           "cannot_deactivate_self",
           "cannot_demote_self",
           "sprint_completed",

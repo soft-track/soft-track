@@ -20,4 +20,5 @@ export interface TeamUpdate {
   guests_may_comment?: boolean | null;
   wip_limits_hard?: boolean | null;
   wip_counts_subtickets?: boolean | null;
+  archived?: boolean | null;
 }
