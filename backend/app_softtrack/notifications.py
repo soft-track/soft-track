@@ -56,9 +56,7 @@ def update_notification_settings(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    return notifications_service.update_settings(
-        session, current_user, payload.email_notifications
-    )
+    return notifications_service.update_settings(session, current_user, payload)
 
 
 @router.post("/notifications/read-all", response_model=UnreadCount)

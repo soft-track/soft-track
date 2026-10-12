@@ -2,19 +2,41 @@
 export const notifications = {
   title: 'Notifications',
   intro: 'What reaches you, and where.',
-  inApp: {
-    heading: 'In the app',
-    body: 'You are told when a ticket is assigned to you, when someone mentions you, and when a ticket you are watching gets a comment or changes status. You watch a ticket automatically once you create it, comment on it, or are assigned it — and the Watch button on any ticket overrides that either way.',
-    alwaysOn: 'This cannot be turned off; the inbox is how the tracker reaches you at all.',
+  // The columns of the grid, one per channel.
+  channels: {
+    app: 'In the app',
+    email: 'By email',
   },
-  email: {
-    heading: 'By email',
-    digest: 'Send me a digest',
-    digestHint:
-      'One email gathering up anything you have not already read. Nothing is sent while you are keeping up with the inbox yourself.',
-    destination: 'Digests go to the address on your profile.',
-    notConfigured:
-      'This SoftTrack has no mail server configured, so nothing is sent by email. An administrator can set <code>SMTP_HOST</code> to turn digests on.',
+  // The rows, by the kind's key. A kind registered on the server without an
+  // entry here shows the English name and description it registered with.
+  kinds: {
+    assigned: {
+      name: 'Assigned to you',
+      description: 'A ticket becomes yours.',
+    },
+    mentioned: {
+      name: 'Mentioned',
+      description: 'Somebody writes @you.',
+    },
+    commented: {
+      name: 'A comment on a ticket you watch',
+      description: '',
+    },
+    status_changed: {
+      name: 'A status change on a ticket you watch',
+      description: '',
+    },
+  },
+  // In place of a switch for a kind that cannot be turned off in the app.
+  always: 'always',
+  alwaysHint: 'Always on: the inbox is how the tracker reaches you at all.',
+  // The accessible name of one switch: "Mentioned, by email".
+  switchLabel: '{{kind}}, {{channel}}',
+  noMailServer: 'This SoftTrack has no mail server configured, so there is no email column.',
+  teams: {
+    heading: 'Teams',
+    on: 'Everything the grid above allows.',
+    muted: 'Muted: nothing from it except assignments and mentions.',
   },
   errors: {
     save: 'Could not save that.',

@@ -15086,6 +15086,28 @@
         ],
         "title": "BurndownPoint"
       },
+      "ChannelSetting": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/NotificationChannel"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "locked": {
+            "type": "boolean",
+            "title": "Locked",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "enabled"
+        ],
+        "title": "ChannelSetting"
+      },
       "ClaimCounts": {
         "properties": {
           "submitted": {
@@ -17283,6 +17305,28 @@
         "title": "JoinRequestRead",
         "description": "A request to join, as the team's admins see it (#259): who is asking,\nwith their title, department and manager beside it, so the admin knows\nwho they are."
       },
+      "KindPreferenceUpdate": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/NotificationChannel"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "channel",
+          "enabled"
+        ],
+        "title": "KindPreferenceUpdate"
+      },
       "LabelCreate": {
         "properties": {
           "name": {
@@ -17829,6 +17873,15 @@
         ],
         "title": "NamedRef"
       },
+      "NotificationChannel": {
+        "type": "string",
+        "enum": [
+          "app",
+          "email"
+        ],
+        "title": "NotificationChannel",
+        "description": "Where a notification can reach somebody. A new channel is a new column."
+      },
       "NotificationKind": {
         "type": "string",
         "enum": [
@@ -17840,6 +17893,43 @@
         ],
         "title": "NotificationKind",
         "description": "Why a notification was raised.\n\nDeliberately about *what happened*, not about how the recipient came to\ncare -- \"someone commented\" reads the same whether you are watching the\nticket because you filed it or because you were assigned it. Which of\nthose is true is not information the inbox has any use for."
+      },
+      "NotificationKindSetting": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "through_mute": {
+            "type": "boolean",
+            "title": "Through Mute"
+          },
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/ChannelSetting"
+            },
+            "type": "array",
+            "title": "Channels"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "name",
+          "description",
+          "through_mute",
+          "channels"
+        ],
+        "title": "NotificationKindSetting",
+        "description": "One row of the grid: a registered kind, and where it reaches you."
       },
       "NotificationRead": {
         "properties": {
@@ -17907,34 +17997,63 @@
       },
       "NotificationSettings": {
         "properties": {
-          "email_notifications": {
-            "type": "boolean",
-            "title": "Email Notifications"
-          },
           "email_delivery_configured": {
             "type": "boolean",
             "title": "Email Delivery Configured"
+          },
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationChannel"
+            },
+            "type": "array",
+            "title": "Channels"
+          },
+          "kinds": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationKindSetting"
+            },
+            "type": "array",
+            "title": "Kinds"
+          },
+          "teams": {
+            "items": {
+              "$ref": "#/components/schemas/TeamNotificationSetting"
+            },
+            "type": "array",
+            "title": "Teams"
           }
         },
         "type": "object",
         "required": [
-          "email_notifications",
-          "email_delivery_configured"
+          "email_delivery_configured",
+          "channels",
+          "kinds",
+          "teams"
         ],
         "title": "NotificationSettings"
       },
       "NotificationSettingsUpdate": {
         "properties": {
-          "email_notifications": {
-            "type": "boolean",
-            "title": "Email Notifications"
+          "preferences": {
+            "items": {
+              "$ref": "#/components/schemas/KindPreferenceUpdate"
+            },
+            "type": "array",
+            "title": "Preferences",
+            "default": []
+          },
+          "teams": {
+            "items": {
+              "$ref": "#/components/schemas/TeamMuteUpdate"
+            },
+            "type": "array",
+            "title": "Teams",
+            "default": []
           }
         },
         "type": "object",
-        "required": [
-          "email_notifications"
-        ],
-        "title": "NotificationSettingsUpdate"
+        "title": "NotificationSettingsUpdate",
+        "description": "Any number of switches at once; the page sends one at a time."
       },
       "NotificationTicket": {
         "properties": {
@@ -22681,6 +22800,52 @@
         "type": "object",
         "title": "TeamMemberUpdate"
       },
+      "TeamMuteUpdate": {
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "muted": {
+            "type": "boolean",
+            "title": "Muted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team_id",
+          "muted"
+        ],
+        "title": "TeamMuteUpdate"
+      },
+      "TeamNotificationSetting": {
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "muted": {
+            "type": "boolean",
+            "title": "Muted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team_id",
+          "key",
+          "name",
+          "muted"
+        ],
+        "title": "TeamNotificationSetting"
+      },
       "TeamRead": {
         "properties": {
           "id": {
@@ -25666,6 +25831,7 @@
           "custom_field_not_found",
           "worklog_not_found",
           "notification_not_found",
+          "notification_kind_not_found",
           "repository_not_found",
           "invite_not_found",
           "user_not_found",
@@ -25700,6 +25866,8 @@
           "oauth_account_taken",
           "account_already_activated",
           "account_not_activated",
+          "notification_always_on",
+          "notification_channel_unavailable",
           "last_team_admin",
           "last_site_admin",
           "last_status",

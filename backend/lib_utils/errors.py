@@ -83,6 +83,8 @@ class ErrorCode(str, enum.Enum):
     custom_field_not_found = "custom_field_not_found"
     worklog_not_found = "worklog_not_found"
     notification_not_found = "notification_not_found"
+    #: A kind of notification nobody registered (#263).
+    notification_kind_not_found = "notification_kind_not_found"
     repository_not_found = "repository_not_found"
     invite_not_found = "invite_not_found"
     user_not_found = "user_not_found"
@@ -139,6 +141,10 @@ class ErrorCode(str, enum.Enum):
     account_not_activated = "account_not_activated"
 
     # --- a rule of the model says no ------------------------------------------
+    #: Being assigned and being mentioned cannot be turned off in the app (#263).
+    notification_always_on = "notification_always_on"
+    #: A channel this SoftTrack does not offer: email with no mail server (#263).
+    notification_channel_unavailable = "notification_channel_unavailable"
     #: The last admin of a team cannot leave, be removed or be demoted.
     last_team_admin = "last_team_admin"
     last_site_admin = "last_site_admin"

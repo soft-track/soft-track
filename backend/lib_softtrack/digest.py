@@ -1,8 +1,9 @@
 """The batched email digest, and the loop that drives it.
 
-Email is the optional half of notifications: everything lands in the in-app
-inbox whether or not an instance has SMTP configured, and this module only
-adds a nudge for the ones nobody has read yet.
+Email is the optional half of notifications: this module adds a nudge for the
+ones nobody has read yet, of the kinds each person chose to have by email
+(#263). A kind turned off in the app but kept by email is a row the inbox
+does not show, and so is never read: it goes out here like any other.
 
 Batched rather than one mail per event, which is the difference between a
 useful notification and a filter rule. A notification has to sit unread for
@@ -75,7 +76,9 @@ def render_digest(items: list[NotificationRead], base_url: str) -> tuple[str, st
     lines.append("Read them in SoftTrack:")
     lines.append(base)
     lines.append("")
-    lines.append("Turn these emails off in Settings → Notifications.")
+    lines.append(
+        "Choose which of these reach you by email in Settings → Notifications."
+    )
     return subject, "\n".join(lines)
 
 
@@ -122,7 +125,9 @@ def send_pending_digests(
             # somebody about something they have dealt with.
             Notification.read_at == None,  # noqa: E711 -- SQL IS NULL
             Notification.created_at <= cutoff,
-            User.email_notifications == True,  # noqa: E712 -- SQL comparison
+            # Whether this kind reaches this person by email, decided when
+            # it was raised (#263) -- see notifications._channels.
+            Notification.by_email == True,  # noqa: E712 -- SQL comparison
             User.is_active == True,  # noqa: E712 -- SQL comparison
         )
         .order_by(Notification.created_at)

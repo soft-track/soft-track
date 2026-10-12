@@ -469,40 +469,22 @@ def test_deleting_a_ticket_clears_its_inbox_rows(client, pair, session):
 
 
 # --- preferences ---------------------------------------------------------
+#
+# Kind by kind, and muting a team (#263): tests/test_notification_preferences.py.
 
 
-def test_email_is_on_by_default_and_can_be_switched_off(client, pair):
-    response = client.get("/notifications/settings", headers=pair["headers"])
-    assert response.status_code == 200, response.text
-    assert response.json() == {
-        "email_notifications": True,
-        # No SMTP host in the test settings, so the frontend knows to hide
-        # the switch rather than promise a digest nothing will send.
-        "email_delivery_configured": False,
-    }
+def test_switching_email_off_leaves_the_inbox_alone(client, pair, monkeypatch):
+    from web import settings
 
+    monkeypatch.setattr(settings, "smtp_host", "smtp.example.com")
     response = client.patch(
         "/notifications/settings",
-        json={"email_notifications": False},
+        json={
+            "preferences": [{"kind": "commented", "channel": "email", "enabled": False}]
+        },
         headers=pair["headers"],
     )
     assert response.status_code == 200, response.text
-    assert response.json()["email_notifications"] is False
-
-    assert (
-        client.get("/notifications/settings", headers=pair["headers"]).json()[
-            "email_notifications"
-        ]
-        is False
-    )
-
-
-def test_switching_email_off_leaves_the_inbox_alone(client, pair):
-    client.patch(
-        "/notifications/settings",
-        json={"email_notifications": False},
-        headers=pair["headers"],
-    )
     ticket = make_ticket(client, pair, pair["team"])
     comment(client, pair["member"], ticket, "hello")
 

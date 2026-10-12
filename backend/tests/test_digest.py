@@ -44,6 +44,10 @@ def pair(client, team, auth):
 @pytest.fixture
 def notified(client, pair):
     """One unread `commented` notification waiting for the team's admin."""
+    return comment_on_a_new_ticket(client, pair)
+
+
+def comment_on_a_new_ticket(client, pair):
     ticket = client.post(
         f"/teams/{pair['team']['id']}/tickets",
         json={"title": "The bug"},
@@ -204,12 +208,13 @@ def test_a_fresh_notification_waits_for_the_next_run(session, notified):
     assert send(session, mailer, now=later()) == 1
 
 
-def test_switching_email_off_stops_the_mail(session, notified, client):
-    client.patch(
-        "/notifications/settings",
-        json={"email_notifications": False},
-        headers=notified["headers"],
-    )
+def test_switching_email_off_stops_the_mail(session, pair, client):
+    """The single switch from before #263: off means off for every kind."""
+    user = session.exec(select(User).where(User.email == "demo@softtrack.dev")).one()
+    user.email_notifications = False
+    session.add(user)
+    session.commit()
+    comment_on_a_new_ticket(client, pair)
 
     mailer = FakeMailer()
     assert send(session, mailer) == 0

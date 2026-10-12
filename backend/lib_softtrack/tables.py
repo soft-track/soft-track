@@ -527,6 +527,10 @@ class TeamMember(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", primary_key=True)
     role: TeamRole = Field(default=TeamRole.member)
     joined_at: datetime = Field(default_factory=utcnow)
+    #: This member has muted the team's notifications (#263): nothing from it
+    #: reaches them except the kinds that get through a mute -- being assigned
+    #: and being mentioned. On the membership, so leaving the team forgets it.
+    notifications_muted: bool = Field(default=False)
 
 
 class GuestEpic(SQLModel, table=True):
@@ -597,9 +601,11 @@ class User(SQLModel, table=True):
     #: resets. The first account registered gets it. Distinct from TeamRole,
     #: which only ever means something inside one team.
     is_site_admin: bool = Field(default=False)
-    #: The per-user off switch for the email digest. Only consulted when the
-    #: instance has SMTP configured at all -- with no mail server there is
-    #: nothing to switch off, and the setting is hidden rather than lying.
+    #: Whether email is on for the kinds this person has not set one by one
+    #: (#263). It was the single digest switch before the grid; somebody who
+    #: had turned it off keeps every kind off by email, including kinds added
+    #: after they made that choice. Only consulted when the instance has SMTP
+    #: configured at all.
     email_notifications: bool = Field(default=True)
     #: Copied into every JWT as `ver` and compared on each request. Bumping it
     #: invalidates every token already issued for this user, which is what
@@ -1416,6 +1422,24 @@ class TicketWatch(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow)
 
 
+class NotificationPreference(SQLModel, table=True):
+    """One person's choice for one kind of notification on one channel (#263).
+
+    Only choices that were made: no row means the kind's registered default
+    (see `lib_softtrack.notification_kinds`). That is what lets a kind added
+    later arrive switched to its default for everybody, and what keeps the
+    defaults exactly today's behaviour for anybody who never opens the page.
+
+    `kind` and `channel` are plain strings rather than enum types, so a new
+    kind (#262) or a new channel (#265) needs no ALTER TYPE.
+    """
+
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    kind: str = Field(primary_key=True, max_length=40)
+    channel: str = Field(primary_key=True, max_length=20)
+    enabled: bool
+
+
 class Notification(SQLModel, table=True):
     """One thing that happened, addressed to one person.
 
@@ -1451,6 +1475,12 @@ class Notification(SQLModel, table=True):
         default=None, foreign_key="customfield.id", index=True
     )
     read_at: Optional[datetime] = Field(default=None, index=True)
+    #: Whether the inbox shows it (#263). False for a kind the person turned
+    #: off in the app but kept by email: the row exists only for the digest.
+    in_app: bool = Field(default=True)
+    #: Whether the digest may mail it (#263), decided when it was raised from
+    #: the person's preferences for its kind.
+    by_email: bool = Field(default=True)
     #: When this row went out in a digest. Set *before* the mail is sent and
     #: only on rows the update actually claimed, so two processes running the
     #: digest loop cannot both send the same notification.

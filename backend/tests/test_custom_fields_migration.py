@@ -14,8 +14,6 @@ from lib_softtrack.tables import (
     CustomField,
     CustomFieldKind,
     CustomFieldValue,
-    Notification,
-    NotificationKind,
     TicketEvent,
     TicketEventField,
 )
@@ -57,6 +55,9 @@ def _seed(engine) -> None:
             " creator_id, created_at, updated_at, status_id)"
             " VALUES (1, 1, 1, 'Work', 'no_priority', 'task', 1,"
             " '2026-01-01 00:00:00', '2026-01-01 00:00:00', 1)",
+            # In SQL too: `notification` has columns since (#263).
+            "INSERT INTO notification (user_id, kind, ticket_id, created_at)"
+            " VALUES (1, 'assigned', 1, '2026-01-01 00:00:00')",
         ):
             connection.execute(text(statement))
     with Session(engine) as session:
@@ -68,9 +69,6 @@ def _seed(engine) -> None:
                 new_value="started",
                 actor_id=1,
             )
-        )
-        session.add(
-            Notification(user_id=1, kind=NotificationKind.assigned, ticket_id=1)
         )
         session.commit()
 
