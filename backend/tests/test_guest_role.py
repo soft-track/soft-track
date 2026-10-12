@@ -111,6 +111,14 @@ NOT_TEAM_WRITES = {
     ("DELETE", "/expenses/{expense_id}/receipt"): "your own claims",
     ("POST", "/teams"): "a new team, which its creator admins",
     ("POST", "/teams/requests"): "asking for a new team (#306)",
+    # Finding a team and asking to join it (#259): somebody not on the team
+    # yet, whom a guest of it already is -- they are refused as a member.
+    ("POST", "/teams/{team_id}/join"): "joining a team you are not on",
+    ("POST", "/teams/{team_id}/join-requests"): "asking to join a team you are not on",
+    (
+        "DELETE",
+        "/teams/join-requests/{join_request_id}",
+    ): "withdrawing your own request to join",
     # The invite link is the authority, and it names the role.
     ("POST", "/invites/{token}/accept"): "the invitation decides the role",
     ("POST", "/invites/{token}/decline"): "the invitation decides the role",
@@ -184,7 +192,7 @@ def guest(client, team, auth):
 
 
 @pytest.fixture
-def world(client, team, guest):
+def world(client, team, guest, auth):
     """One of every row a mutating team route can name in its path.
 
     Keyed by the path parameter it fills. A route that names a parameter not
@@ -256,6 +264,12 @@ def world(client, team, guest):
     share_link = post(
         f"/teams/{team_id}/share-links", json={"project_id": project["id"]}
     )
+    # Somebody on no team asking to join it (#259): deciding is the write.
+    asker = auth(email="asker@example.com", full_name="Yuki Sato")
+    join_request = client.post(
+        f"/teams/{team_id}/join-requests", json={}, headers=asker["headers"]
+    )
+    assert join_request.status_code == 200, join_request.text
     return {
         "team_id": team_id,
         "ticket_id": ticket["id"],
@@ -276,6 +290,7 @@ def world(client, team, guest):
         "label_id": label["id"],
         "worklog_id": worklog["id"],
         "share_link_id": share_link["link"]["id"],
+        "join_request_id": join_request.json()["id"],
         # Somebody else on the team: changing *their* role is the write.
         "user_id": team["user"]["id"],
     }

@@ -55,6 +55,17 @@ export const members = {
     resend: 'Resend',
     revoke: 'Revoke',
   },
+  // Somebody not on the team asking to join it (#259).
+  asking: {
+    heading: 'Asking to join · {{count}}',
+    // "Junior Engineer · Engineering · reports to Amina Khan"
+    reportsTo: 'reports to {{name}}',
+    note: '“{{note}}”',
+    roleFor: 'Role for {{name}}',
+    approve: 'Approve',
+    decline: 'Decline',
+    expires: 'Asked {{asked}} · runs out {{when}}',
+  },
   confirm: {
     revoke: 'Revoke the invitation to {{email}}?',
   },
@@ -108,5 +119,7 @@ export const members = {
     revoke: 'Could not revoke that invitation.',
     resend: 'Could not resend that invitation.',
     epics: 'Could not change their epics.',
+    approve: 'Could not approve that request.',
+    decline: 'Could not decline that request.',
   },
 } as const

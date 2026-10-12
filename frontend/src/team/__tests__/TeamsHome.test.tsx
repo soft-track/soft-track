@@ -24,7 +24,7 @@ const person = (id: number, full_name: string) => ({
 const mocks = vi.hoisted(() => ({
   user: { full_name: 'Yuki Tanaka', is_finance_admin: false },
   teams: [] as unknown[],
-  directory: [] as unknown[],
+  directory: { teams: [] as unknown[], unlisted_count: 0 },
   invites: [] as unknown[],
   creation: { may_create: true, policy: 'anyone', site_admins: [], pending_requests: [] } as {
     may_create: boolean
@@ -98,7 +98,7 @@ const SUPPORT = {
 beforeEach(() => {
   mocks.user = { full_name: 'Yuki Tanaka', is_finance_admin: false }
   mocks.teams = []
-  mocks.directory = [ENGINEERING, SUPPORT]
+  mocks.directory = { teams: [ENGINEERING, SUPPORT], unlisted_count: 0 }
   mocks.invites = []
   mocks.creation = { may_create: true, policy: 'anyone', site_admins: [], pending_requests: [] }
 })
@@ -145,9 +145,15 @@ describe('TeamsHome with no team', () => {
     const list = screen.getByRole('region', { name: 'Teams you can ask to join' })
     const rows = within(list).getAllByRole('listitem')
     expect(rows.map((row) => row.textContent)).toEqual([
-      'ENGEngineering8 people · admins Amina Khan and Demo User',
-      'SUPSupport1 person · admin Nina Petrova',
+      'ENGEngineering8 people · admins Amina Khan, Demo UserAsk to join',
+      'SUPSupport1 person · admin Nina PetrovaAsk to join',
     ])
+  })
+
+  it('says how many teams keep themselves off the list (#259)', () => {
+    mocks.directory = { teams: [ENGINEERING], unlisted_count: 2 }
+    renderHome()
+    expect(screen.getByText('2 teams keep themselves off this list.')).toBeTruthy()
   })
 
   it('keeps creating a team as one option', async () => {
@@ -157,7 +163,7 @@ describe('TeamsHome with no team', () => {
   })
 
   it('puts creating the first team up front on an instance with none', () => {
-    mocks.directory = []
+    mocks.directory = { teams: [], unlisted_count: 0 }
     renderHome()
     expect(screen.getByText('There are no teams on this SoftTrack yet.')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Create the first team' }).getAttribute('href')).toBe(
@@ -203,7 +209,7 @@ describe('TeamsHome where creating a team is left to some (#306)', () => {
   })
 
   it('does not offer the first team either', () => {
-    mocks.directory = []
+    mocks.directory = { teams: [], unlisted_count: 0 }
     renderHome()
     expect(screen.queryByRole('link', { name: 'Create the first team' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Ask for a team' })).toBeTruthy()

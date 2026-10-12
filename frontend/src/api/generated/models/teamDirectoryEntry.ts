@@ -5,12 +5,14 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { MyJoinRequest } from './myJoinRequest';
+import type { TeamRole } from './teamRole';
 import type { UserPublic } from './userPublic';
 
 /**
- * A team as somebody who is not on it sees it (#318).
+ * A team as somebody who is not on it sees it (#318, #259).
  *
- * Enough to know who to ask to be added: its name, its size and its admins.
+ * Enough to know who to ask, and to ask: its name, its size and its admins.
  * Nothing of its work -- no tickets, epics or sprints -- which still takes
  * being on the team.
  */
@@ -21,4 +23,7 @@ export interface TeamDirectoryEntry {
   description?: string | null;
   member_count: number;
   admins: UserPublic[];
+  open_to_join?: boolean;
+  my_role?: TeamRole | null;
+  my_request?: MyJoinRequest | null;
 }

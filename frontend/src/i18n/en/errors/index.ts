@@ -41,6 +41,11 @@ export const errors = {
   already_team_admin: 'They are an admin of this team already.',
   team_not_empty: 'This team has tickets, so it can be archived and not deleted.',
 
+  // Finding a team and asking to join it (#259).
+  join_request_pending: 'You have asked to join this team already. Withdraw that request to send another.',
+  join_request_not_found: 'That request is no longer waiting: it was decided, withdrawn or ran out.',
+  team_not_open: 'This team takes requests to join. Ask to join it instead.',
+
   // Whose comment it is (#93).
   not_your_comment:
     'Only the person who wrote a comment can edit it. Its author or a team admin can delete it.',
