@@ -40,3 +40,19 @@ describe('useCommands', () => {
     expect(ids).not.toContain('new-project')
   })
 })
+
+describe('useCommands and My work (#258)', () => {
+  it('offers going to My work from the board', () => {
+    expect(commandIds({})).toContain('my-work')
+  })
+
+  it('offers neither My work nor switching views on My work itself', () => {
+    const { result } = renderHook(
+      () => useCommands({ team: undefined, teams: [], user: null, openShortcuts: () => {} }),
+      { wrapper: MemoryRouter },
+    )
+    const ids = result.current.map((command) => command.id)
+    expect(ids).not.toContain('my-work')
+    expect(ids).not.toContain('toggle-view')
+  })
+})

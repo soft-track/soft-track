@@ -20,7 +20,8 @@ export type PeopleOutlet = {
 }
 
 /**
- * The frame around the people pages (#125): the same sidebar as the board.
+ * The frame around the people pages (#125), and around My work (#258): the
+ * same sidebar as the board.
  *
  * The directory is nobody's team, but the sidebar is always some team's, so
  * it is the team whose board was open last -- opening People from OPS keeps

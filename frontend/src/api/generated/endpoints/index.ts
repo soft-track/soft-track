@@ -16,6 +16,7 @@ export * from './import/import';
 export * from './integrations/integrations';
 export * from './invites/invites';
 export * from './labels/labels';
+export * from './my-work/my-work';
 export * from './notifications/notifications';
 export * from './outbound-webhooks/outbound-webhooks';
 export * from './payroll/payroll';
