@@ -18,7 +18,7 @@ email, and which teams they have muted. `_channels` reads it for every row,
 so a hook never has to.
 """
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Iterable, Optional
 
 from sqlmodel import Session, func, select
@@ -47,6 +47,7 @@ from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.tables import (
     Comment,
     CustomField,
+    DueReminder,
     Ticket,
     TicketWatch,
     Notification,
@@ -164,14 +165,14 @@ def _raise(
     actor: Optional[User],
     comment: Optional[Comment] = None,
     custom_field: Optional[CustomField] = None,
+    due_date: Optional[date] = None,
 ) -> None:
     """Add a row per recipient. Flushed with whatever transaction is open.
 
     Never to somebody from outside the organisation who cannot see the ticket
     (#243): a mention or a watch reaches only as far as their epics do.
     """
-    deliverable = _deliverable(session, ticket.team_id, recipients)
-    deliverable -= outside.unable_to_see(session, ticket, deliverable)
+    deliverable = reachable(session, ticket, recipients)
     channels = _channels(session, spec_for(kind), ticket.team_id, deliverable)
     for user_id, (in_app, by_email) in channels.items():
         if not (in_app or by_email):
@@ -186,8 +187,36 @@ def _raise(
                 comment_id=comment.id if comment else None,
                 actor_id=actor.id if actor else None,
                 custom_field_id=custom_field.id if custom_field else None,
+                due_date=due_date,
             )
         )
+
+
+def reachable(session: Session, ticket: Ticket, user_ids: Iterable[int]) -> set[int]:
+    """Who of these may be told anything about this ticket at all: active
+    members of its team who can see it."""
+    deliverable = _deliverable(session, ticket.team_id, user_ids)
+    deliverable -= outside.unable_to_see(session, ticket, deliverable)
+    return deliverable
+
+
+def raise_reminder(
+    session: Session,
+    ticket: Ticket,
+    user_id: int,
+    kind: NotificationKind,
+    due_date: date,
+) -> None:
+    """A due-date reminder (#262), raised by `lib_softtrack.reminders`. Nobody
+    did it, so there is no actor; the person's switches still decide."""
+    _raise(
+        session,
+        recipients={user_id},
+        kind=kind,
+        ticket=ticket,
+        actor=None,
+        due_date=due_date,
+    )
 
 
 def _channels(
@@ -474,6 +503,11 @@ def delete_for_ticket(session: Session, ticket_id: int) -> None:
         select(TicketWatch).where(TicketWatch.ticket_id == ticket_id)
     ).all():
         session.delete(row)
+    # And the record of which reminders went out (#262).
+    for row in session.exec(
+        select(DueReminder).where(DueReminder.ticket_id == ticket_id)
+    ).all():
+        session.delete(row)
 
 
 # ---------------------------------------------------------------------------
@@ -574,6 +608,8 @@ def expand_notifications(
                 actor=UserPublic.model_validate(actor) if actor else None,
                 excerpt=excerpt(comment.body) if comment else None,
                 field_name=field_names.get(row.custom_field_id),
+                due_date=row.due_date,
+                assigned_to_you=ticket.assignee_id == row.user_id,
                 read=row.read_at is not None,
                 created_at=row.created_at,
             )

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel
@@ -37,6 +37,12 @@ class NotificationRead(BaseModel):
     #: For `field_assigned` (#117): the field the reader was named in --
     #: "Reviewer" -- as it is called now.
     field_name: Optional[str] = None
+    #: For a due-date reminder (#262): the date it was about, which may not
+    #: be the ticket's date any more.
+    due_date: Optional[date] = None
+    #: Whether the ticket is the reader's now. A reminder says so: "Due
+    #: 4 Oct, and assigned to you."
+    assigned_to_you: bool = False
     read: bool
     created_at: datetime
 

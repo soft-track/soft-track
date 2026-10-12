@@ -1,7 +1,7 @@
 import { describe as group, expect, it } from 'vitest'
 
 import type { NotificationRead } from '@/api/generated/models'
-import { badgeLabel, describe } from '@/notifications/notificationMeta'
+import { badgeLabel, describe, reminderDetail } from '@/notifications/notificationMeta'
 
 const base: NotificationRead = {
   id: 1,
@@ -49,6 +49,41 @@ group('describe', () => {
     expect(describe({ ...base, kind: 'status_changed', actor: null })).toBe(
       'Changed the status',
     )
+  })
+})
+
+group('a due-date reminder (#262)', () => {
+  const reminder: NotificationRead = {
+    ...base,
+    kind: 'due_tomorrow',
+    actor: null,
+    excerpt: null,
+    due_date: '2026-10-04',
+    assigned_to_you: true,
+    created_at: '2026-10-03T08:00:00',
+  }
+
+  it('says what is due, and when', () => {
+    expect(describe(reminder)).toBe('Due tomorrow')
+    expect(reminderDetail(reminder)).toBe('Due 4 Oct, and assigned to you.')
+    // An unassigned ticket reminds its watchers, whose it is not.
+    expect(reminderDetail({ ...reminder, assigned_to_you: false })).toBe('Due 4 Oct.')
+  })
+
+  it('is overdue the day after, and still overdue a week later', () => {
+    const late = {
+      ...reminder,
+      kind: 'overdue' as const,
+      due_date: '2026-09-29',
+      created_at: '2026-09-30T08:00:00',
+    }
+    expect(describe(late)).toBe('Overdue')
+    expect(reminderDetail(late)).toBe('Was due 29 Sep.')
+    expect(describe({ ...late, created_at: '2026-10-07T08:00:00' })).toBe('Still overdue')
+  })
+
+  it('has no detail line on anything a person did', () => {
+    expect(reminderDetail(base)).toBeNull()
   })
 })
 

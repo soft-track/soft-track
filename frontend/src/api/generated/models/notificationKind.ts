@@ -23,4 +23,6 @@ export const NotificationKind = {
   commented: 'commented',
   status_changed: 'status_changed',
   field_assigned: 'field_assigned',
+  due_tomorrow: 'due_tomorrow',
+  overdue: 'overdue',
 } as const;

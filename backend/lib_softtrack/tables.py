@@ -352,6 +352,11 @@ class NotificationKind(str, enum.Enum):
     #: reviewer or QA assignee. Assignment by another name, told the same
     #: way; `Notification.custom_field_id` says which field.
     field_assigned = "field_assigned"
+    #: The two that come from a date rather than a person (#262), raised by
+    #: the reminder sweep in `lib_softtrack/reminders.py`. No actor; the row's
+    #: `due_date` says which date it was about.
+    due_tomorrow = "due_tomorrow"
+    overdue = "overdue"
 
 
 class AutomationTrigger(str, enum.Enum):
@@ -1474,6 +1479,10 @@ class Notification(SQLModel, table=True):
     custom_field_id: Optional[int] = Field(
         default=None, foreign_key="customfield.id", index=True
     )
+    #: For a reminder (#262): the due date it was about. Kept on the row
+    #: rather than read through, unlike the ticket's title, because a moved
+    #: date is a new reminder and this one stays about the old one.
+    due_date: Optional[date] = None
     read_at: Optional[datetime] = Field(default=None, index=True)
     #: Whether the inbox shows it (#263). False for a kind the person turned
     #: off in the app but kept by email: the row exists only for the digest.
@@ -1486,6 +1495,25 @@ class Notification(SQLModel, table=True):
     #: digest loop cannot both send the same notification.
     emailed_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=utcnow, index=True)
+
+
+class DueReminder(SQLModel, table=True):
+    """A due-date reminder that has been claimed (#262): who, about which
+    ticket, for which date, and which of the three it was.
+
+    The primary key is the whole promise. A reminder goes out once per ticket
+    per date per person, so the sweep inserts this row *before* raising the
+    notification, and an insert that conflicts means another worker -- or an
+    earlier tick, before a restart -- already has it. A moved due date is a
+    different key, which is what "moving the date starts over" means.
+    """
+
+    ticket_id: int = Field(foreign_key="ticket.id", primary_key=True)
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    due_date: date = Field(primary_key=True)
+    #: `lib_softtrack.reminders.Stage`: due_tomorrow, overdue, still_overdue.
+    stage: str = Field(primary_key=True, max_length=20)
+    claimed_at: datetime = Field(default_factory=utcnow)
 
 
 class SavedView(SQLModel, table=True):

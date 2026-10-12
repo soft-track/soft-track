@@ -6,8 +6,10 @@ import { useTranslation } from '@/i18n'
 import { formatRelative } from '@/i18n/format'
 import {
   describe,
+  isReminder,
   KIND_META,
   panelPosition,
+  reminderDetail,
 } from '@/notifications/notificationMeta'
 import { useInbox } from '@/notifications/useNotifications'
 import { Avatar } from '@/ui/Avatar'
@@ -123,6 +125,10 @@ function NotificationRow({
 }) {
   const { t } = useTranslation('notifications')
   const meta = KIND_META[notification.kind]
+  // A reminder (#262) comes from a date: its icon stands where a person's
+  // avatar would, and the line under the ticket says which date.
+  const reminder = isReminder(notification)
+  const detail = reminderDetail(notification)
 
   return (
     <li className="hairline group relative border-b last:border-b-0">
@@ -135,6 +141,10 @@ function NotificationRow({
         <span className="mt-0.5 shrink-0">
           {notification.actor ? (
             <Avatar user={notification.actor} size={24} decorative />
+          ) : reminder ? (
+            <span className="flex size-6 items-center justify-center rounded-full bg-brand-500/10 text-brand-600">
+              <Icon name={meta.icon} size={13} />
+            </span>
           ) : (
             <Icon name={meta.icon} size={16} className="text-neutral-400" />
           )}
@@ -142,12 +152,14 @@ function NotificationRow({
 
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
-            <Icon
-              name={meta.icon}
-              size={11}
-              style={{ color: meta.color }}
-              aria-hidden="true"
-            />
+            {!reminder && (
+              <Icon
+                name={meta.icon}
+                size={11}
+                style={{ color: meta.color }}
+                aria-hidden="true"
+              />
+            )}
             <span className="truncate text-xs font-medium text-neutral-700">
               {describe(notification)}
             </span>
@@ -160,6 +172,7 @@ function NotificationRow({
               {notification.ticket.title}
             </span>
           </span>
+          {detail && <span className="mt-0.5 block text-xs text-neutral-500">{detail}</span>}
           {notification.excerpt && (
             <span className="mt-0.5 line-clamp-2 block text-xs text-neutral-500">
               {notification.excerpt}

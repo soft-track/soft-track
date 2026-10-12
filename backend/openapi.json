@@ -17889,7 +17889,9 @@
           "mentioned",
           "commented",
           "status_changed",
-          "field_assigned"
+          "field_assigned",
+          "due_tomorrow",
+          "overdue"
         ],
         "title": "NotificationKind",
         "description": "Why a notification was raised.\n\nDeliberately about *what happened*, not about how the recipient came to\ncare -- \"someone commented\" reads the same whether you are watching the\nticket because you filed it or because you were assigned it. Which of\nthose is true is not information the inbox has any use for."
@@ -17974,6 +17976,23 @@
               }
             ],
             "title": "Field Name"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "assigned_to_you": {
+            "type": "boolean",
+            "title": "Assigned To You",
+            "default": false
           },
           "read": {
             "type": "boolean",

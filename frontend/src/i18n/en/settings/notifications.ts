@@ -26,6 +26,14 @@ export const notifications = {
       name: 'A status change on a ticket you watch',
       description: '',
     },
+    due_tomorrow: {
+      name: 'Due tomorrow',
+      description: 'The day before a due date.',
+    },
+    overdue: {
+      name: 'Overdue',
+      description: 'The day after, and once more a week later.',
+    },
   },
   // In place of a switch for a kind that cannot be turned off in the app.
   always: 'always',

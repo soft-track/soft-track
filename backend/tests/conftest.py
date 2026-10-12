@@ -25,6 +25,8 @@ os.environ.setdefault("DATABASE_URL", "sqlite://")
 os.environ.setdefault("WEBHOOK_DELIVERY", "false")
 # Likewise the trash (#323): the suite purges by calling the service itself.
 os.environ.setdefault("TRASH_PURGING", "false")
+# And due-date reminders (#262): the suite sweeps by calling the service.
+os.environ.setdefault("DUE_REMINDERS", "false")
 
 import pytest
 from fastapi.testclient import TestClient

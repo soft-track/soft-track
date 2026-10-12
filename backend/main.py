@@ -24,6 +24,7 @@ from lib_softtrack import outside, realtime, trash
 from lib_softtrack.deleting import trash_loop
 from lib_softtrack.digest import digest_loop
 from lib_softtrack.outbound import webhook_loop
+from lib_softtrack.reminders import reminder_loop
 from lib_utils.viewer import ViewerScope
 from app_softtrack.attachments import router as attachments_router
 from app_softtrack.automations import router as automations_router
@@ -93,6 +94,13 @@ async def lifespan(app: FastAPI):
     if settings.trash_purging:
         purging = asyncio.create_task(trash_loop())
 
+    # Due-date reminders (#262). Not tied to the mail server, unlike the
+    # digest: a reminder is an inbox row first, and the digest mails it
+    # where there is somewhere to send it.
+    reminding: asyncio.Task | None = None
+    if settings.due_reminders:
+        reminding = asyncio.create_task(reminder_loop())
+
     yield
 
     if digest is not None:
@@ -101,6 +109,8 @@ async def lifespan(app: FastAPI):
         webhooks.cancel()
     if purging is not None:
         purging.cancel()
+    if reminding is not None:
+        reminding.cancel()
 
 
 # Real-time nudges (#103) are published from the ORM's own commit events, so

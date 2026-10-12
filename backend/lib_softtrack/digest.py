@@ -32,7 +32,53 @@ logger = logging.getLogger(__name__)
 MAX_LINES = 20
 
 
+#: The two that come from a date (#262), listed under their own heading.
+REMINDERS = (NotificationKind.due_tomorrow, NotificationKind.overdue)
+#: What happens on a ticket somebody watches, for the heading over the rest
+#: when that is all the rest is.
+WATCHED = (NotificationKind.commented, NotificationKind.status_changed)
+#: The rest, counted in a subject beside the reminders: "and 1 comment".
+_NOUNS = {
+    NotificationKind.assigned: ("assignment", "assignments"),
+    NotificationKind.field_assigned: ("assignment", "assignments"),
+    NotificationKind.mentioned: ("mention", "mentions"),
+    NotificationKind.commented: ("comment", "comments"),
+    NotificationKind.status_changed: ("status change", "status changes"),
+}
+
+
+def _day(value) -> str:
+    """A due date the way the inbox writes it, without the year: "29 Sep"."""
+    return f"{value.day} {value.strftime('%b')}"
+
+
+def _reminder(item: NotificationRead) -> str:
+    """What follows the ticket's title: "due tomorrow", "overdue since 29 Sep"."""
+    if item.kind == NotificationKind.due_tomorrow:
+        return "due tomorrow"
+    return f"overdue since {_day(item.due_date)}" if item.due_date else "overdue"
+
+
+def _counted(count: int, noun: tuple[str, str]) -> str:
+    return f"{count} {noun[0] if count == 1 else noun[1]}"
+
+
+def _subject_with_reminders(reminders: int, others: list[NotificationRead]) -> str:
+    """The reminders, and the rest by what they are when they are all one
+    thing: "2 reminders and 1 comment"."""
+    subject = _counted(reminders, ("reminder", "reminders"))
+    if not others:
+        return subject
+    nouns = {_NOUNS[item.kind] for item in others}
+    if len(nouns) == 1:
+        return f"{subject} and {_counted(len(others), nouns.pop())}"
+    other = ("other notification", "other notifications")
+    return f"{subject} and {_counted(len(others), other)}"
+
+
 def _sentence(item: NotificationRead) -> str:
+    if item.kind in REMINDERS:
+        return f"{item.ticket.identifier} is {_reminder(item)}"
     who = item.actor.full_name if item.actor else "Someone"
     if item.kind == NotificationKind.assigned:
         return f"{who} assigned {item.ticket.identifier} to you"
@@ -54,19 +100,48 @@ def render_digest(items: list[NotificationRead], base_url: str) -> tuple[str, st
     reader who is better served by it.
     """
     count = len(items)
+    reminders = [item for item in items if item.kind in REMINDERS]
+    others = [item for item in items if item.kind not in REMINDERS]
     if count == 1:
         subject = f"SoftTrack: {_sentence(items[0])}"
+    elif reminders:
+        subject = f"SoftTrack: {_subject_with_reminders(len(reminders), others)}"
     else:
         subject = f"SoftTrack: {count} new notifications"
 
     base = base_url.rstrip("/")
+
+    def link(item: NotificationRead) -> str:
+        return f"  {base}/{item.ticket.team_key}/ticket/{item.ticket.number}"
+
     lines: list[str] = []
-    for item in items[:MAX_LINES]:
+    shown = 0
+    # Reminders first, under their own heading (#262), and only with one
+    # when there are any: a digest of comments reads as it always did.
+    if reminders:
+        lines.append("REMINDERS")
+        lines.append("")
+        for item in reminders[:MAX_LINES]:
+            lines.append(
+                f"* {item.ticket.identifier} {item.ticket.title} · {_reminder(item)}"
+            )
+            lines.append(link(item))
+            lines.append("")
+            shown += 1
+        if others and shown < MAX_LINES:
+            heading = (
+                "ON TICKETS YOU WATCH"
+                if all(item.kind in WATCHED for item in others)
+                else "EVERYTHING ELSE"
+            )
+            lines.append(heading)
+            lines.append("")
+    for item in others[: MAX_LINES - shown]:
         lines.append(f"* {_sentence(item)}")
         lines.append(f"  {item.ticket.title}")
         if item.excerpt:
             lines.append(f"  “{item.excerpt}”")
-        lines.append(f"  {base}/{item.ticket.team_key}/ticket/{item.ticket.number}")
+        lines.append(link(item))
         lines.append("")
 
     if count > MAX_LINES:

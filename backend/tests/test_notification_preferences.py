@@ -113,6 +113,8 @@ def test_without_a_mail_server_there_is_no_email_column(client, pair):
         "mentioned",
         "commented",
         "status_changed",
+        "due_tomorrow",
+        "overdue",
     ]
     assigned = settings["kinds"][0]
     assert assigned["name"] == "Assigned to you"

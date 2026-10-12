@@ -5,6 +5,7 @@ neither routing (`app_*`) nor business logic (`lib_*`) lives here.
 """
 
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from typing import Literal, Optional
 
 from pydantic import model_validator
@@ -146,6 +147,13 @@ class Settings(BaseSettings):
     #: Run the loop that purges it. Off only for the test suite, which purges
     #: directly.
     trash_purging: bool = True
+    #: Run the loop that sends due-date reminders (#262). Off only for the
+    #: test suite, which sweeps directly.
+    due_reminders: bool = True
+    #: The instance's timezone, as an IANA name ("Europe/Berlin"). A due date
+    #: is a day, and a reminder goes out in the morning of it -- this one's
+    #: morning, until a person sets a timezone of their own (#252).
+    default_timezone: str = "UTC"
 
     model_config = SettingsConfigDict(env_file=".env")
 
@@ -182,6 +190,18 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"ATTACHMENT_STORAGE={self.attachment_storage!r} is not one of "
                 "'local' or 's3'."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _refuse_an_unknown_timezone(self) -> "Settings":
+        """Fail at startup rather than in the reminder loop, every tick."""
+        try:
+            ZoneInfo(self.default_timezone)
+        except (ZoneInfoNotFoundError, ValueError):
+            raise ValueError(
+                f"DEFAULT_TIMEZONE={self.default_timezone!r} is not a timezone "
+                "this server knows. Use an IANA name, such as 'Europe/Berlin'."
             )
         return self
 

@@ -103,3 +103,16 @@ register(
 )
 register(NotificationKind.commented, "A comment on a ticket you watch")
 register(NotificationKind.status_changed, "A status change on a ticket you watch")
+# The two that come from a date (#262). A muted team mutes them too: they are
+# the team's business like any comment, and an assignment that matters still
+# gets through the mute when it is made.
+register(
+    NotificationKind.due_tomorrow,
+    "Due tomorrow",
+    "The day before a due date.",
+)
+register(
+    NotificationKind.overdue,
+    "Overdue",
+    "The day after, and once more a week later.",
+)
