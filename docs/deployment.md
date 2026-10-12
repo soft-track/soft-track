@@ -100,6 +100,10 @@ Invitations are rows and links rather than email sends. One live invitation per 
 
 Set `OPEN_REGISTRATION=false` to require an invitation before registration is allowed.
 
+### Who may create teams
+
+A team takes a key, and a key is never given back. A site admin chooses who may create a team under Administration → Settings: anyone signed in (the default), site admins only, or named people. `TEAM_CREATION=anyone|site_admins|named_people` sets it from the environment instead, and wins; the named people are still chosen in the app. Anybody else can ask for a team with a name, a key and a reason; the site admins are emailed (when the instance sends mail) and approving creates the team with the person who asked as its admin. An account from outside the organisation never creates a team.
+
 ### Deactivate, not delete
 
 Accounts are never deleted; deactivation signs the user out immediately and prevents sign-in while preserving their tickets and history. A deactivated account is refused however it signs in, including through a provider.

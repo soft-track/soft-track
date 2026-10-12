@@ -1,11 +1,17 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Response
 from sqlmodel import Session
 
 from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_insider, get_current_user
+from lib_softtrack import team_creation
 from lib_softtrack import teams as teams_service
+from lib_softtrack.models.team_creation import (
+    TeamCreationAccess,
+    TeamRequestCreate,
+    TeamRequestRead,
+)
 from lib_softtrack.models.teams import (
     TeamCreate,
     TeamDirectoryEntry,
@@ -16,6 +22,7 @@ from lib_softtrack.models.teams import (
     TeamUpdate,
 )
 from lib_softtrack.tables import User
+from lib_utils.mailer import get_mailer
 from web import get_session
 
 router = APIRouter(prefix="/teams", tags=["teams"])
@@ -29,6 +36,8 @@ def create_team(
     # instance does not run a team on it.
     current_user: User = Depends(get_current_insider),
 ):
+    # And only whoever the instance lets (#306).
+    team_creation.require_may_create_team(session, current_user)
     return teams_service.create_team(session, current_user, payload)
 
 
@@ -48,6 +57,31 @@ def team_directory(
 ):
     """Every team, with its size and admins: who to ask to be added (#318)."""
     return teams_service.team_directory(session)
+
+
+@router.get("/creation", response_model=TeamCreationAccess)
+def team_creation_access(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Whether you may create a team (#306), and if not, who to ask."""
+    return team_creation.access(session, current_user)
+
+
+@router.post("/requests", response_model=TeamRequestRead)
+def request_team(
+    payload: TeamRequestCreate,
+    background: BackgroundTasks,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_insider),
+):
+    """Ask for a team (#306). The site admins are emailed, when this instance
+    sends mail, and find it under Administration -> Settings."""
+    request, messages = team_creation.request_team(session, current_user, payload)
+    mailer = get_mailer()
+    for message in messages:
+        background.add_task(mailer.send, *message)
+    return request
 
 
 @router.get("/{team_id}", response_model=TeamRead)

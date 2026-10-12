@@ -56,6 +56,9 @@ class ErrorCode(str, enum.Enum):
     not_finance_admin = "not_finance_admin"
     #: Registration is invite-only on this instance.
     invite_only = "invite_only"
+    #: Creating a team, on an instance that leaves it to site admins or to
+    #: named people (#306). Asking for one is open to the rest.
+    team_creation_restricted = "team_creation_restricted"
 
     # --- something you named does not exist ------------------------------------
     team_not_found = "team_not_found"
@@ -95,6 +98,8 @@ class ErrorCode(str, enum.Enum):
     receipt_not_found = "receipt_not_found"
     reimbursement_batch_not_found = "reimbursement_batch_not_found"
     budget_not_found = "budget_not_found"
+    #: A request for a team that does not exist (#306).
+    team_request_not_found = "team_request_not_found"
     #: The person is not a member of the team the request is about.
     member_not_found = "member_not_found"
     #: A status, label, project or sprint id that belongs to another team.
@@ -255,6 +260,11 @@ class ErrorCode(str, enum.Enum):
     #: A department that approved payroll (and, later, expenses and budgets)
     #: is attributed to is renamed, not deleted: the record keeps pointing at it.
     department_has_finance_history = "department_has_finance_history"
+    #: A request for a team is approved or declined once (#306).
+    team_request_decided = "team_request_decided"
+    #: Who may create teams is set in the environment (TEAM_CREATION), which
+    #: wins over the app (#306).
+    team_creation_from_environment = "team_creation_from_environment"
 
     # --- what you sent is not usable ------------------------------------------
     name_required = "name_required"

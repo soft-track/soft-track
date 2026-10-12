@@ -127,6 +127,12 @@ export default function SettingsLayout() {
                 label: t('layout.nav.departments'),
                 icon: 'building' as IconName,
               },
+              // The instance's own settings: who may create teams (#306).
+              {
+                to: '/settings/admin/settings',
+                label: t('layout.nav.instanceSettings'),
+                icon: 'settings' as IconName,
+              },
             ],
           },
         ]

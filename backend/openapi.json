@@ -1083,6 +1083,182 @@
         }
       }
     },
+    "/admin/team-creation": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get Team Creation",
+        "description": "Who may create teams, the people named, and the requests waiting.",
+        "operationId": "get_team_creation_admin_team_creation_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamCreationSettings"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Update Team Creation",
+        "operationId": "update_team_creation_admin_team_creation_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamCreationUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamCreationSettings"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/admin/team-requests/{request_id}/approve": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Approve Team Request",
+        "description": "Create the team, with the person who asked as its admin.",
+        "operationId": "approve_team_request_admin_team_requests__request_id__approve_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/team-requests/{request_id}/decline": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Decline Team Request",
+        "operationId": "decline_team_request_admin_team_requests__request_id__decline_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamRequestDecline"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamRequestRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users": {
       "get": {
         "tags": [
@@ -1338,6 +1514,80 @@
                   },
                   "type": "array",
                   "title": "Response Team Directory Teams Directory Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/teams/creation": {
+      "get": {
+        "tags": [
+          "teams"
+        ],
+        "summary": "Team Creation Access",
+        "description": "Whether you may create a team (#306), and if not, who to ask.",
+        "operationId": "team_creation_access_teams_creation_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamCreationAccess"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/teams/requests": {
+      "post": {
+        "tags": [
+          "teams"
+        ],
+        "summary": "Request Team",
+        "description": "Ask for a team (#306). The site admins are emailed, when this instance\nsends mail, and find it under Administration -> Settings.",
+        "operationId": "request_team_teams_requests_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamRequestCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamRequestRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -18979,6 +19229,104 @@
         ],
         "title": "TeamCreate"
       },
+      "TeamCreationAccess": {
+        "properties": {
+          "may_create": {
+            "type": "boolean",
+            "title": "May Create"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/TeamCreationPolicy"
+          },
+          "site_admins": {
+            "items": {
+              "$ref": "#/components/schemas/UserPublic"
+            },
+            "type": "array",
+            "title": "Site Admins"
+          },
+          "pending_requests": {
+            "items": {
+              "$ref": "#/components/schemas/TeamRequestRead"
+            },
+            "type": "array",
+            "title": "Pending Requests"
+          }
+        },
+        "type": "object",
+        "required": [
+          "may_create",
+          "policy",
+          "site_admins",
+          "pending_requests"
+        ],
+        "title": "TeamCreationAccess",
+        "description": "What the signed-in person may do about creating a team.\n\nWhat the sidebar, the new-team page and the page for somebody with no\nteam read to offer \"New team\", or to say who to ask instead."
+      },
+      "TeamCreationPolicy": {
+        "type": "string",
+        "enum": [
+          "anyone",
+          "site_admins",
+          "named_people"
+        ],
+        "title": "TeamCreationPolicy",
+        "description": "Who may create a team on this instance (#306).\n\nA team takes a key, and a key is never given back, so on an instance\nwith open registration \"anyone\" lets a stranger take ENG. `anyone` is\nthe default and what creating a team always asked: that somebody is\nsigned in. An account from outside the organisation (#243) never may,\nwhatever this says."
+      },
+      "TeamCreationSettings": {
+        "properties": {
+          "policy": {
+            "$ref": "#/components/schemas/TeamCreationPolicy"
+          },
+          "from_environment": {
+            "type": "boolean",
+            "title": "From Environment"
+          },
+          "named_people": {
+            "items": {
+              "$ref": "#/components/schemas/UserPublic"
+            },
+            "type": "array",
+            "title": "Named People"
+          },
+          "requests": {
+            "items": {
+              "$ref": "#/components/schemas/TeamRequestRead"
+            },
+            "type": "array",
+            "title": "Requests"
+          }
+        },
+        "type": "object",
+        "required": [
+          "policy",
+          "from_environment",
+          "named_people",
+          "requests"
+        ],
+        "title": "TeamCreationSettings",
+        "description": "The instance setting, as a site admin sees it."
+      },
+      "TeamCreationUpdate": {
+        "properties": {
+          "policy": {
+            "$ref": "#/components/schemas/TeamCreationPolicy"
+          },
+          "named_people_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Named People Ids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "policy"
+        ],
+        "title": "TeamCreationUpdate"
+      },
       "TeamDirectoryEntry": {
         "properties": {
           "id": {
@@ -19183,6 +19531,129 @@
           "created_at"
         ],
         "title": "TeamRead"
+      },
+      "TeamRequestCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "key": {
+            "type": "string",
+            "maxLength": 6,
+            "minLength": 2,
+            "title": "Key",
+            "description": "Short prefix, e.g. BRD"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "key",
+          "reason"
+        ],
+        "title": "TeamRequestCreate"
+      },
+      "TeamRequestDecline": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "title": "TeamRequestDecline"
+      },
+      "TeamRequestRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "requester": {
+            "$ref": "#/components/schemas/UserPublic"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "state": {
+            "$ref": "#/components/schemas/TeamRequestState"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decline_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decline Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "requester",
+          "name",
+          "key",
+          "reason",
+          "state",
+          "created_at"
+        ],
+        "title": "TeamRequestRead"
+      },
+      "TeamRequestState": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "approved",
+          "declined"
+        ],
+        "title": "TeamRequestState",
+        "description": "Where somebody's request for a team is (#306). Decided once."
       },
       "TeamRole": {
         "type": "string",
@@ -21690,6 +22161,7 @@
           "not_site_admin",
           "not_finance_admin",
           "invite_only",
+          "team_creation_restricted",
           "team_not_found",
           "ticket_not_found",
           "tickets_not_found",
@@ -21719,6 +22191,7 @@
           "receipt_not_found",
           "reimbursement_batch_not_found",
           "budget_not_found",
+          "team_request_not_found",
           "member_not_found",
           "not_on_this_team",
           "user_not_on_team",
@@ -21807,6 +22280,8 @@
           "budget_exists",
           "budget_period_invalid",
           "department_has_finance_history",
+          "team_request_decided",
+          "team_creation_from_environment",
           "name_required",
           "body_required",
           "custom_field_invalid_value",

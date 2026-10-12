@@ -70,6 +70,7 @@ EXTERNAL_MAY = {
     ("POST", "/invites/{token}/accept"): "an invitation addressed to them",
     ("POST", "/invites/{token}/decline"): "an invitation addressed to them",
     ("GET", "/teams"): "the teams they are a guest of",
+    ("GET", "/teams/creation"): "that they may not create a team (#306)",
     ("GET", "/search"): "search, confined to their epics (#243)",
     ("GET", "/notifications"): "their own notifications",
     ("GET", "/notifications/unread-count"): "their own notifications",

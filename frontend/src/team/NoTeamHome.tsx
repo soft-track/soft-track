@@ -6,7 +6,9 @@ import type { TeamDirectoryEntry } from '@/api/generated/models'
 import { useAuth } from '@/auth/useAuth'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { formatList } from '@/i18n/format'
+import { AskForTeamCard } from '@/team/AskForTeam'
 import { InvitesBanner } from '@/team/InvitesBanner'
+import { useTeamCreation } from '@/team/useTeams'
 import { Icon, type IconName } from '@/ui/Icon'
 import { Logo } from '@/ui/Logo'
 
@@ -31,6 +33,11 @@ export function NoTeamHome() {
   const invited = (invites.data ?? []).length > 0
   const teams = directory.data ?? []
   const noTeamsAtAll = directory.isSuccess && teams.length === 0
+  // Where creating a team is left to some (#306), the page says who to ask
+  // and offers to ask, and "Create a team" goes.
+  const creation = useTeamCreation()
+  const restricted = !outside && creation.isSuccess && !creation.mayCreate
+  const mayCreate = !outside && creation.mayCreate
 
   const tiles: { to: string; icon: IconName; title: string; body: string }[] = [
     ...(outside
@@ -100,6 +107,12 @@ export function NoTeamHome() {
           </div>
         )}
 
+        {restricted && creation.data && (
+          <div className="mx-auto mb-4 max-w-xl">
+            <AskForTeamCard access={creation.data} />
+          </div>
+        )}
+
         <ul
           className={`mx-auto grid max-w-2xl gap-3 ${
             tiles.length === 4
@@ -139,10 +152,12 @@ export function NoTeamHome() {
           ) : noTeamsAtAll ? (
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-neutral-500">{t('home.teams.empty')}</p>
-              <Link to="/new-team" className="btn btn-primary btn-sm">
-                <Icon name="plus" size={14} />
-                {t('home.createFirst')}
-              </Link>
+              {mayCreate && (
+                <Link to="/new-team" className="btn btn-primary btn-sm">
+                  <Icon name="plus" size={14} />
+                  {t('home.createFirst')}
+                </Link>
+              )}
             </div>
           ) : (
             <>
@@ -159,7 +174,7 @@ export function NoTeamHome() {
         </section>
 
         <div className="mx-auto mt-4 flex max-w-2xl flex-wrap items-center justify-between gap-2 px-1 text-sm">
-          {noTeamsAtAll || outside ? (
+          {noTeamsAtAll || !mayCreate ? (
             <span />
           ) : (
             <span className="text-neutral-500">

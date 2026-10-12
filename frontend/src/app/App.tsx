@@ -27,6 +27,7 @@ import ProfilePage from '@/people/ProfilePage'
 import RegisterPage from '@/auth/RegisterPage'
 import ResetPasswordPage from '@/auth/ResetPasswordPage'
 import AdminDepartmentsPage from '@/settings/AdminDepartmentsPage'
+import AdminSettingsPage from '@/settings/AdminSettingsPage'
 import AdminUsersPage from '@/settings/AdminUsersPage'
 import NotificationSettings from '@/settings/NotificationSettings'
 import ProfileSettings from '@/settings/ProfileSettings'
@@ -134,6 +135,7 @@ export default function App() {
             <Route element={<RequireSiteAdmin />}>
               <Route path="admin/users" element={<AdminUsersPage />} />
               <Route path="admin/departments" element={<AdminDepartmentsPage />} />
+              <Route path="admin/settings" element={<AdminSettingsPage />} />
             </Route>
             {/* Finance (#130): anyone without the flag who follows a link
                 here is told who can grant it, whatever the page. */}

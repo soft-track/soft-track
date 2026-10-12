@@ -5,6 +5,7 @@ neither routing (`app_*`) nor business logic (`lib_*`) lives here.
 """
 
 from pathlib import Path
+from typing import Literal, Optional
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -40,6 +41,12 @@ class Settings(BaseSettings):
     #: How long a "forgot password" link stays usable (#83). Short, because
     #: unlike an invitation it grants the account itself.
     password_reset_expire_minutes: int = 60
+    #: Who may create a team (#306): "anyone", "site_admins" or
+    #: "named_people". Unset, a site admin chooses in the app (Administration
+    #: -> Settings), and the default there is "anyone". Set, it wins, and the
+    #: app shows the choice as made here. The people named for
+    #: "named_people" are always chosen in the app.
+    team_creation: Optional[Literal["anyone", "site_admins", "named_people"]] = None
 
     # --- Signing in with Google or GitHub -------------------------------
     #: Both halves or neither: a provider is offered only when it has an id

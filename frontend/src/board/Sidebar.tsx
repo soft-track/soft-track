@@ -9,6 +9,7 @@ import { useTranslation } from '@/i18n'
 import { InvitesBanner } from '@/team/InvitesBanner'
 import { pickableProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
+import { useTeamCreation } from '@/team/useTeams'
 import { Avatar } from '@/ui/Avatar'
 import { ExternalChip } from '@/ui/ExternalChip'
 import { Icon } from '@/ui/Icon'
@@ -45,6 +46,7 @@ export function Sidebar({
   const { user, logout } = useAuth()
   // Somebody from outside the organisation (#243, #317).
   const outside = user?.is_external ?? false
+  const mayCreateTeam = useTeamCreation().mayCreate && !outside
   const { team, teams, projects: allProjects, sprints } = useTeamContext()
   // Archived projects leave the sidebar, unless one is the filter in force --
   // the board is showing its tickets, so the row that toggles it off stays.
@@ -211,7 +213,10 @@ export function Sidebar({
             {t('sidebar.importJira')}
           </button>
         )}
-        {!outside && (
+        {/* Only for whoever may create one (#306): never somebody from
+            outside, and on a restricted instance only site admins or the
+            people named. */}
+        {mayCreateTeam && (
           <Link to="/new-team" className="nav-item text-neutral-500">
             <Icon name="plus" size={15} className="opacity-70" />
             {t('sidebar.newTeam')}

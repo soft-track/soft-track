@@ -46,6 +46,15 @@ NOT_TEAM_WRITES = {
     ("POST", "/departments"): "site admins, not team roles",
     ("PATCH", "/departments/{department_id}"): "site admins, not team roles",
     ("DELETE", "/departments/{department_id}"): "site admins, not team roles",
+    ("PUT", "/admin/team-creation"): "site admins, not team roles",
+    (
+        "POST",
+        "/admin/team-requests/{request_id}/approve",
+    ): "site admins, not team roles",
+    (
+        "POST",
+        "/admin/team-requests/{request_id}/decline",
+    ): "site admins, not team roles",
     # Money (#130-#137): the finance flag decides, not any team role.
     ("POST", "/finance/compensation/{username}"): "finance admins, not team roles",
     ("POST", "/finance/payroll/runs"): "finance admins, not team roles",
@@ -96,6 +105,7 @@ NOT_TEAM_WRITES = {
     ("PUT", "/expenses/{expense_id}/receipt"): "your own claims",
     ("DELETE", "/expenses/{expense_id}/receipt"): "your own claims",
     ("POST", "/teams"): "a new team, which its creator admins",
+    ("POST", "/teams/requests"): "asking for a new team (#306)",
     # The invite link is the authority, and it names the role.
     ("POST", "/invites/{token}/accept"): "the invitation decides the role",
     ("POST", "/invites/{token}/decline"): "the invitation decides the role",

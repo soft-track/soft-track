@@ -34,6 +34,7 @@ from app_softtrack.events import router as events_router
 from app_softtrack.imports import router as imports_router
 from app_softtrack.integrations import router as integrations_router
 from app_softtrack.invites import router as invites_router
+from app_softtrack.team_creation import router as team_creation_router
 from app_softtrack.tickets import router as tickets_router
 from app_softtrack.labels import router as labels_router
 from app_softtrack.notifications import router as notifications_router
@@ -161,6 +162,7 @@ app.include_router(identity_router)
 app.include_router(oauth_router)
 app.include_router(admin_router)
 app.include_router(departments_router)
+app.include_router(team_creation_router)
 app.include_router(people_router)
 app.include_router(teams_router)
 app.include_router(invites_router)

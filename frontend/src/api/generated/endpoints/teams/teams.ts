@@ -28,11 +28,14 @@ import type {
   HTTPValidationError,
   RemoveTeamMemberTeamsTeamIdMembersUserIdDeleteParams,
   TeamCreate,
+  TeamCreationAccess,
   TeamDirectoryEntry,
   TeamMemberAdd,
   TeamMemberRead,
   TeamMemberUpdate,
   TeamRead,
+  TeamRequestCreate,
+  TeamRequestRead,
   TeamUpdate
 } from '../../models';
 
@@ -309,6 +312,168 @@ export function useTeamDirectoryTeamsDirectoryGet<TData = Awaited<ReturnType<typ
 
 
 /**
+ * Whether you may create a team (#306), and if not, who to ask.
+ * @summary Team Creation Access
+ */
+export const teamCreationAccessTeamsCreationGet = (
+
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TeamCreationAccess>(
+      {url: `/teams/creation`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getTeamCreationAccessTeamsCreationGetQueryKey = () => {
+    return [
+    `/teams/creation`
+    ] as const;
+    }
+
+
+export const getTeamCreationAccessTeamsCreationGetQueryOptions = <TData = Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getTeamCreationAccessTeamsCreationGetQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>> = ({ signal }) => teamCreationAccessTeamsCreationGet(signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type TeamCreationAccessTeamsCreationGetQueryResult = NonNullable<Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>>
+export type TeamCreationAccessTeamsCreationGetQueryError = unknown
+
+
+export function useTeamCreationAccessTeamsCreationGet<TData = Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>,
+          TError,
+          Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useTeamCreationAccessTeamsCreationGet<TData = Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>,
+          TError,
+          Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useTeamCreationAccessTeamsCreationGet<TData = Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Team Creation Access
+ */
+
+export function useTeamCreationAccessTeamsCreationGet<TData = Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamCreationAccessTeamsCreationGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getTeamCreationAccessTeamsCreationGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Ask for a team (#306). The site admins are emailed, when this instance
+ * sends mail, and find it under Administration -> Settings.
+ * @summary Request Team
+ */
+export const requestTeamTeamsRequestsPost = (
+    teamRequestCreate: TeamRequestCreate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TeamRequestRead>(
+      {url: `/teams/requests`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: teamRequestCreate, signal
+    },
+      );
+    }
+
+
+
+
+export const getRequestTeamTeamsRequestsPostMutationKey = () => ['requestTeamTeamsRequestsPost'] as const;
+
+export const getRequestTeamTeamsRequestsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestTeamTeamsRequestsPost>>, TError,RequestTeamTeamsRequestsPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof requestTeamTeamsRequestsPost>>, TError,RequestTeamTeamsRequestsPostMutationVariables, TContext> => {
+
+const mutationKey = getRequestTeamTeamsRequestsPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestTeamTeamsRequestsPost>>, RequestTeamTeamsRequestsPostMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestTeamTeamsRequestsPost(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestTeamTeamsRequestsPostMutationResult = NonNullable<Awaited<ReturnType<typeof requestTeamTeamsRequestsPost>>>
+    export type RequestTeamTeamsRequestsPostMutationBody = TeamRequestCreate
+    export type RequestTeamTeamsRequestsPostMutationError = HTTPValidationError
+    export type RequestTeamTeamsRequestsPostMutationVariables = {data: TeamRequestCreate}
+
+    /**
+ * @summary Request Team
+ */
+export const useRequestTeamTeamsRequestsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestTeamTeamsRequestsPost>>, TError,RequestTeamTeamsRequestsPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof requestTeamTeamsRequestsPost>>,
+        TError,
+        RequestTeamTeamsRequestsPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestTeamTeamsRequestsPostMutationOptions(options), queryClient);
+    }
+    /**
  * @summary Get Team
  */
 export const getTeamTeamsTeamIdGet = (

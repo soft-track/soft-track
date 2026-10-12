@@ -26,7 +26,14 @@ const mocks = vi.hoisted(() => ({
   teams: [] as unknown[],
   directory: [] as unknown[],
   invites: [] as unknown[],
+  creation: { may_create: true, policy: 'anyone', site_admins: [], pending_requests: [] } as {
+    may_create: boolean
+    policy: string
+    site_admins: unknown[]
+    pending_requests: unknown[]
+  },
   logout: vi.fn(),
+  ask: vi.fn(),
 }))
 
 vi.mock('@/auth/useAuth', async (importOriginal) => ({
@@ -44,6 +51,8 @@ vi.mock('@/api/generated/endpoints/teams/teams', async (importOriginal) => ({
     isPending: false,
     isSuccess: true,
   }),
+  useTeamCreationAccessTeamsCreationGet: () => ({ data: mocks.creation, isSuccess: true }),
+  useRequestTeamTeamsRequestsPost: () => ({ mutateAsync: mocks.ask, isPending: false }),
 }))
 vi.mock('@/api/generated/endpoints/auth/auth', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/generated/endpoints/auth/auth')>()),
@@ -91,6 +100,7 @@ beforeEach(() => {
   mocks.teams = []
   mocks.directory = [ENGINEERING, SUPPORT]
   mocks.invites = []
+  mocks.creation = { may_create: true, policy: 'anyone', site_admins: [], pending_requests: [] }
 })
 
 afterEach(() => {
@@ -171,5 +181,73 @@ describe('TeamsHome with no team', () => {
     const user = renderHome()
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(mocks.logout).toHaveBeenCalled()
+  })
+})
+
+describe('TeamsHome where creating a team is left to some (#306)', () => {
+  beforeEach(() => {
+    mocks.creation = {
+      may_create: false,
+      policy: 'site_admins',
+      site_admins: [person(9, 'Demo User')],
+      pending_requests: [],
+    }
+  })
+
+  it('says who to ask, and offers to ask, in place of creating one', () => {
+    renderHome()
+    expect(screen.getByText('Teams are created by site admins here')).toBeTruthy()
+    expect(screen.getByText('Ask Demo User, or ask for a team of your own.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Ask for a team' })).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'Create a team' })).toBeNull()
+  })
+
+  it('does not offer the first team either', () => {
+    mocks.directory = []
+    renderHome()
+    expect(screen.queryByRole('link', { name: 'Create the first team' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Ask for a team' })).toBeTruthy()
+  })
+
+  it('opens the dialog asking for a name, a key and a reason', async () => {
+    const user = renderHome()
+    await user.click(screen.getByRole('button', { name: 'Ask for a team' }))
+    const dialog = screen.getByRole('dialog', { name: 'Ask for a team' })
+    expect(within(dialog).getByLabelText('Name')).toBeTruthy()
+    expect(within(dialog).getByLabelText('Key')).toBeTruthy()
+    expect(within(dialog).getByLabelText('What it is for')).toBeTruthy()
+    expect(
+      within(dialog).getByText(
+        'The site admins are notified. You become the team’s admin when one of them approves.',
+      ),
+    ).toBeTruthy()
+  })
+
+  it('sends the name, the key in capitals and the reason', async () => {
+    mocks.ask.mockResolvedValue({})
+    const user = renderHome()
+    await user.click(screen.getByRole('button', { name: 'Ask for a team' }))
+    const dialog = screen.getByRole('dialog', { name: 'Ask for a team' })
+    await user.type(within(dialog).getByLabelText('Name'), 'Brand studio')
+    await user.type(within(dialog).getByLabelText('Key'), 'brd')
+    await user.type(within(dialog).getByLabelText('What it is for'), 'The rebrand')
+    await user.click(within(dialog).getByRole('button', { name: 'Ask' }))
+    expect(mocks.ask).toHaveBeenCalledWith({
+      data: { name: 'Brand studio', key: 'BRD', reason: 'The rebrand' },
+    })
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('shows a request still waiting', () => {
+    mocks.creation.pending_requests = [{ id: 1, name: 'Brand studio', key: 'BRD' }]
+    renderHome()
+    expect(
+      screen.getByText(
+        (_, node) =>
+          node?.tagName === 'SPAN' &&
+          node.textContent ===
+            'You asked for Brand studio · BRD. A site admin will approve or decline it.',
+      ),
+    ).toBeTruthy()
   })
 })

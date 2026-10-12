@@ -19,6 +19,7 @@ import { templates } from '@/i18n/en/settings/templates'
 import { fields } from '@/i18n/en/settings/fields'
 import { labels } from '@/i18n/en/settings/labels'
 import { trash } from '@/i18n/en/settings/trash'
+import { instance } from '@/i18n/en/settings/instance'
 
 export const settings = {
   statuses,
@@ -41,4 +42,5 @@ export const settings = {
   fields,
   labels,
   trash,
+  instance,
 } as const

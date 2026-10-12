@@ -451,6 +451,30 @@ class CompensationKind(str, enum.Enum):
     other = "other"
 
 
+class TeamCreationPolicy(str, enum.Enum):
+    """Who may create a team on this instance (#306).
+
+    A team takes a key, and a key is never given back, so on an instance
+    with open registration "anyone" lets a stranger take ENG. `anyone` is
+    the default and what creating a team always asked: that somebody is
+    signed in. An account from outside the organisation (#243) never may,
+    whatever this says.
+    """
+
+    anyone = "anyone"
+    site_admins = "site_admins"
+    #: The site admins, and the people named in `TeamCreator`.
+    named_people = "named_people"
+
+
+class TeamRequestState(str, enum.Enum):
+    """Where somebody's request for a team is (#306). Decided once."""
+
+    pending = "pending"
+    approved = "approved"
+    declined = "declined"
+
+
 # ---------------------------------------------------------------------------
 # Link tables
 # ---------------------------------------------------------------------------
@@ -2019,6 +2043,59 @@ class Budget(SQLModel, table=True):
     created_by: Optional[User] = Relationship(
         sa_relationship_kwargs={
             "foreign_keys": "Budget.created_by_id",
+            "viewonly": True,
+        }
+    )
+
+
+class InstanceSettings(SQLModel, table=True):
+    """Settings for the whole instance, kept in the database (#306).
+
+    One row, id 1, read through `lib_softtrack.team_creation`; no row means
+    every default. A setting here may also be set in the environment, which
+    wins -- see `web.Settings`.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_creation: TeamCreationPolicy = Field(default=TeamCreationPolicy.anyone)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
+class TeamCreator(SQLModel, table=True):
+    """Somebody named as allowed to create teams (#306), when the instance
+    leaves it to named people. Kept whatever the policy, so switching to
+    "site admins only" and back does not lose the list."""
+
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    added_by_id: int = Field(foreign_key="user.id")
+    added_at: datetime = Field(default_factory=utcnow)
+
+
+class TeamRequest(SQLModel, table=True):
+    """Somebody who may not create a team asking for one (#306).
+
+    The site admins are told, and approving creates the team with the person
+    who asked as its admin. A decided request stays, as the record of who
+    asked and who decided.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    requester_id: int = Field(foreign_key="user.id", index=True)
+    name: str
+    key: str
+    reason: str
+    state: TeamRequestState = Field(default=TeamRequestState.pending, index=True)
+    created_at: datetime = Field(default_factory=utcnow)
+    decided_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    decided_at: Optional[datetime] = None
+    #: Why it was declined, told to the person who asked. Optional.
+    decline_reason: Optional[str] = None
+    #: The team approving it created.
+    team_id: Optional[int] = Field(default=None, foreign_key="team.id")
+
+    requester: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "TeamRequest.requester_id",
             "viewonly": True,
         }
     )
