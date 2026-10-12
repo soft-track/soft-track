@@ -8659,6 +8659,137 @@
         }
       }
     },
+    "/me/work": {
+      "get": {
+        "tags": [
+          "my work"
+        ],
+        "summary": "Get My Work",
+        "description": "Everything open that is yours, across every team you are on.\n\n`tab` says whose: assigned to you, the tickets you watch, the ones you\ncreated. By team, each team has its count and points summed by the\ndatabase and a page of tickets; pass `team_id` and `offset` for a group's\nnext page. As one list (`grouping=none`), `tickets` is a page of it.\nOn Assigned to me, what is overdue or due in the next three days is in\n`due`, and left out of the groups and the list. `waiting` holds\ninvitations to you and requests to join the teams you run.\n\nAn account from outside the organisation sees its epics only, as\neverywhere; teams you are not on, and archived teams, are not counted.",
+        "operationId": "get_my_work_me_work_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tab",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/MyWorkTab",
+              "default": "assigned"
+            }
+          },
+          {
+            "name": "grouping",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/MyWorkGrouping",
+              "default": "team"
+            }
+          },
+          {
+            "name": "per_team",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 5,
+              "title": "Per Team"
+            }
+          },
+          {
+            "name": "team_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only this team's group, for its next page",
+              "title": "Team Id"
+            },
+            "description": "Only this team's group, for its next page"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "description": "As one list",
+              "default": 25,
+              "title": "Limit"
+            },
+            "description": "As one list"
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The viewer's today, for what is overdue or due soon. Defaults to today in UTC; a client should send its local date.",
+              "title": "Today"
+            },
+            "description": "The viewer's today, for what is overdue or due soon. Defaults to today in UTC; a client should send its local date."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWorkRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/teams/{team_id}/events": {
       "get": {
         "tags": [
@@ -12100,6 +12231,15 @@
   },
   "components": {
     "schemas": {
+      "ActivityKind": {
+        "type": "string",
+        "enum": [
+          "created",
+          "commented",
+          "changed"
+        ],
+        "title": "ActivityKind"
+      },
       "ActualBreakdown": {
         "properties": {
           "department": {
@@ -16269,6 +16409,56 @@
         "title": "LabelUsage",
         "description": "What points at one label: shown beside it in settings, and counted\nbefore it is deleted, so nothing is left filtering by a label that has\ngone (#321)."
       },
+      "LastActivity": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ActivityKind"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketEventField"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "new_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Label"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "at"
+        ],
+        "title": "LastActivity",
+        "description": "What last happened on a watched ticket: a comment, a change to one of\nthe fields its history records, or -- with neither -- its creation."
+      },
       "LinkedTicket": {
         "properties": {
           "id": {
@@ -16370,6 +16560,246 @@
         ],
         "title": "MyJoinRequest",
         "description": "Your own request to join a team (#259), as the directory shows it."
+      },
+      "MyWorkCounts": {
+        "properties": {
+          "assigned": {
+            "type": "integer",
+            "title": "Assigned"
+          },
+          "watching": {
+            "type": "integer",
+            "title": "Watching"
+          },
+          "created": {
+            "type": "integer",
+            "title": "Created"
+          }
+        },
+        "type": "object",
+        "required": [
+          "assigned",
+          "watching",
+          "created"
+        ],
+        "title": "MyWorkCounts",
+        "description": "The number beside each tab."
+      },
+      "MyWorkGrouping": {
+        "type": "string",
+        "enum": [
+          "team",
+          "none"
+        ],
+        "title": "MyWorkGrouping",
+        "description": "By team, each with its totals, or as one list."
+      },
+      "MyWorkRead": {
+        "properties": {
+          "tab": {
+            "$ref": "#/components/schemas/MyWorkTab"
+          },
+          "grouping": {
+            "$ref": "#/components/schemas/MyWorkGrouping"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/MyWorkCounts"
+          },
+          "due": {
+            "items": {
+              "$ref": "#/components/schemas/MyWorkTicket"
+            },
+            "type": "array",
+            "title": "Due"
+          },
+          "teams": {
+            "items": {
+              "$ref": "#/components/schemas/MyWorkTeam"
+            },
+            "type": "array",
+            "title": "Teams"
+          },
+          "tickets": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Page_MyWorkTicket_"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "waiting": {
+            "$ref": "#/components/schemas/WaitingOnMe"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tab",
+          "grouping",
+          "counts",
+          "due",
+          "teams",
+          "waiting"
+        ],
+        "title": "MyWorkRead",
+        "description": "My work (#258): the open tickets that are the viewer's, across every\nteam they are on.\n\nConfined the way everything is: tickets in the trash are not here, an\naccount from outside sees only its epics, and a team the viewer is not on\n-- or one a site admin archived -- is neither listed nor counted."
+      },
+      "MyWorkTab": {
+        "type": "string",
+        "enum": [
+          "assigned",
+          "watching",
+          "created"
+        ],
+        "title": "MyWorkTab",
+        "description": "Whose tickets: the three tabs of My work (#258)."
+      },
+      "MyWorkTeam": {
+        "properties": {
+          "team": {
+            "$ref": "#/components/schemas/SharedTeam"
+          },
+          "open_count": {
+            "type": "integer",
+            "title": "Open Count"
+          },
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          },
+          "listed_count": {
+            "type": "integer",
+            "title": "Listed Count"
+          },
+          "tickets": {
+            "items": {
+              "$ref": "#/components/schemas/MyWorkTicket"
+            },
+            "type": "array",
+            "title": "Tickets"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team",
+          "open_count",
+          "points",
+          "listed_count",
+          "tickets",
+          "offset",
+          "limit"
+        ],
+        "title": "MyWorkTeam",
+        "description": "One team's share, as the workload tab groups it."
+      },
+      "MyWorkTicket": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_key": {
+            "type": "string",
+            "title": "Team Key"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusRead"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TicketPriority"
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimate"
+          },
+          "sprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sprint"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TicketType"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "project": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EpicRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_activity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LastActivity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_key",
+          "number",
+          "identifier",
+          "title",
+          "status",
+          "priority",
+          "type"
+        ],
+        "title": "MyWorkTicket",
+        "description": "A row of My work: the workload's ticket, and what the row shows\nbeside it -- its type, its epic and when it is due."
       },
       "NamedRef": {
         "properties": {
@@ -16959,6 +17389,37 @@
           "offset"
         ],
         "title": "Page[CommentRead]"
+      },
+      "Page_MyWorkTicket_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MyWorkTicket"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[MyWorkTicket]"
       },
       "Page_NotificationRead_": {
         "properties": {
@@ -23494,6 +23955,59 @@
         "type": "object",
         "title": "ViewFilters",
         "description": "What a view narrows the ticket list to.\n\nNested rather than flattened into the view models so that the same shape\nis what the board sends, what a view stores, and what the frontend keeps\nin the URL -- one type to keep in step instead of three.\n\nNull everywhere means \"all tickets\", which is what an empty view is."
+      },
+      "WaitingJoinRequest": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team": {
+            "$ref": "#/components/schemas/SharedTeam"
+          },
+          "requester": {
+            "$ref": "#/components/schemas/PersonRef"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team",
+          "requester",
+          "created_at"
+        ],
+        "title": "WaitingJoinRequest",
+        "description": "Somebody asking to join a team the viewer is an admin of (#259)."
+      },
+      "WaitingOnMe": {
+        "properties": {
+          "invites": {
+            "items": {
+              "$ref": "#/components/schemas/InviteRead"
+            },
+            "type": "array",
+            "title": "Invites"
+          },
+          "join_requests": {
+            "items": {
+              "$ref": "#/components/schemas/WaitingJoinRequest"
+            },
+            "type": "array",
+            "title": "Join Requests"
+          }
+        },
+        "type": "object",
+        "required": [
+          "invites",
+          "join_requests"
+        ],
+        "title": "WaitingOnMe",
+        "description": "What only the viewer can move: invitations to them, and requests to\njoin their teams. The approvals of #248 and #296 join it as they ship."
       },
       "WatchState": {
         "properties": {

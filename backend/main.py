@@ -49,6 +49,7 @@ from app_softtrack.sharing import router as sharing_router
 from app_softtrack.trash import router as trash_router
 from app_softtrack.webhooks import router as webhooks_router
 from app_softtrack.worklogs import router as worklogs_router
+from app_softtrack.workload import me_router as my_work_router
 from app_softtrack.workload import router as workload_router
 from app_softtrack.views import router as views_router
 from lib_utils.errors import ApiError, ApiErrorBody, ErrorCode, api_error_handler
@@ -183,6 +184,7 @@ app.include_router(sharing_router)
 app.include_router(custom_fields_router)
 app.include_router(worklogs_router)
 app.include_router(workload_router)
+app.include_router(my_work_router)
 app.include_router(events_router)
 app.include_router(statuses_router)
 app.include_router(automations_router)

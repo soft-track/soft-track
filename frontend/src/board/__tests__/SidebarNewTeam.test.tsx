@@ -36,6 +36,7 @@ vi.mock('@/ui/theme', () => ({ useTheme: () => ({ theme: 'light', toggle: () => 
 vi.mock('@/views/ViewList', () => ({ ViewList: () => null }))
 vi.mock('@/sprints/SprintList', () => ({ SprintList: () => null }))
 vi.mock('@/team/InvitesBanner', () => ({ InvitesBanner: () => null }))
+vi.mock('@/mywork/MyWorkNavItem', () => ({ MyWorkNavItem: () => null }))
 
 function renderSidebar() {
   render(

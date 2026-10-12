@@ -10,6 +10,7 @@ export const shortcuts = {
   descriptions: {
     openPalette: 'Open the command palette',
     createTicket: 'Create a ticket',
+    myWork: 'Go to My work',
     focusSearch: 'Focus search',
     showList: 'Show this list',
     closeTop: 'Close whatever is open',

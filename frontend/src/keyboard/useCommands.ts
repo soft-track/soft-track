@@ -8,7 +8,8 @@ import type { Command } from '@/keyboard/CommandPalette'
 export const BOARD_VIEWS = ['board', 'list', 'calendar', 'roadmap', 'reports'] as const
 export type BoardView = (typeof BOARD_VIEWS)[number]
 
-/** What the command palette can do from the board, beyond jumping to tickets. */
+/** What the command palette can do from the board, beyond jumping to tickets --
+ *  and from My work (#258), which has no board views to switch between. */
 export function useCommands({
   view,
   setView,
@@ -19,8 +20,9 @@ export function useCommands({
   openNewProject,
   openShortcuts,
 }: {
-  view: BoardView
-  setView: (view: BoardView) => void
+  /** Absent off the board, and so is switching between board and list. */
+  view?: BoardView
+  setView?: (view: BoardView) => void
   team: TeamRead | undefined
   teams: TeamRead[]
   user: UserMe | null
@@ -58,12 +60,29 @@ export function useCommands({
             },
           ]
         : []),
-      {
-        id: 'toggle-view',
-        label: view === 'board' ? t('commands.switchToList') : t('commands.switchToBoard'),
-        group: actions,
-        run: () => setView(view === 'board' ? 'list' : 'board'),
-      },
+      ...(view && setView
+        ? [
+            {
+              id: 'toggle-view',
+              label: view === 'board' ? t('commands.switchToList') : t('commands.switchToBoard'),
+              group: actions,
+              run: () => setView(view === 'board' ? 'list' : 'board'),
+            },
+          ]
+        : []),
+      // Everything that is mine, across every team (#258). Not offered on
+      // the page itself.
+      ...(view
+        ? [
+            {
+              id: 'my-work',
+              label: t('commands.myWork'),
+              hint: 'M',
+              group: actions,
+              run: () => navigate('/my-work'),
+            },
+          ]
+        : []),
       {
         id: 'shortcuts',
         label: t('commands.showShortcuts'),

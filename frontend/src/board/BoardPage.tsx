@@ -266,11 +266,13 @@ export default function BoardPage() {
   const openNewProject = canWrite ? openNewProjectNow : undefined
   const openShortcuts = useCallback(() => overlays.open('shortcuts'), [overlays])
   const togglePalette = useCallback(() => overlays.toggle('palette'), [overlays])
+  const openMyWork = useCallback(() => navigate('/my-work'), [navigate])
 
   useGlobalShortcuts({
     togglePalette,
     closeTop: overlays.closeTop,
     openNewTicket,
+    openMyWork,
     openShortcuts,
     suppressed: overlays.isOpen('palette') || overlays.isOpen('shortcuts'),
   })

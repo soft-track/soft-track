@@ -20,6 +20,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
   group('anywhere', [
     shortcut(['⌘', 'K'], 'openPalette'),
     shortcut(['C'], 'createTicket'),
+    shortcut(['M'], 'myWork'),
     shortcut(['/'], 'focusSearch'),
     shortcut(['?'], 'showList'),
     shortcut(['Esc'], 'closeTop'),

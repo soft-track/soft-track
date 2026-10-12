@@ -4,6 +4,7 @@ import type { SavedViewRead } from '@/api/generated/models'
 import { useAuth } from '@/auth/useAuth'
 import { type BoardFilters, NO_FILTERS } from '@/board/filters'
 import type { Arrangement } from '@/board/sorting'
+import { MyWorkNavItem } from '@/mywork/MyWorkNavItem'
 import { SprintList } from '@/sprints/SprintList'
 import { useTranslation } from '@/i18n'
 import { InvitesBanner } from '@/team/InvitesBanner'
@@ -53,7 +54,8 @@ export function Sidebar({
   const projects = pickableProjects(allProjects, filters?.projectId ?? null)
   const navigate = useNavigate()
   const { projectId: openProjectId } = useParams<{ projectId?: string }>()
-  const onPeople = useLocation().pathname.startsWith('/people')
+  const { pathname } = useLocation()
+  const onPeople = pathname.startsWith('/people')
   const { theme, toggle: toggleTheme } = useTheme()
   const { t } = useTranslation(['board', 'common'])
 
@@ -88,6 +90,10 @@ export function Sidebar({
       </div>
 
       <nav className="scroll-thin flex-1 space-y-5 overflow-y-auto px-3 pb-3">
+        {/* Everything that is mine, across every team (#258): above this
+            team's views, being nobody's team. */}
+        <MyWorkNavItem />
+
         <div>
           <p className="eyebrow mb-1.5 px-2">{t('sidebar.views')}</p>
           {/* Members deliberately does not live here any more. It is a link
@@ -185,9 +191,12 @@ export function Sidebar({
         </div>
       </nav>
 
-      <div className="px-3 pb-2 empty:hidden">
-        <InvitesBanner compact />
-      </div>
+      {/* My work lists invitations under "Waiting on me" already. */}
+      {pathname !== '/my-work' && (
+        <div className="px-3 pb-2 empty:hidden">
+          <InvitesBanner compact />
+        </div>
+      )}
 
       <div className="space-y-0.5 px-3 pb-2">
         {/* Everyone on the instance (#125), beside the members of this team.

@@ -10,6 +10,8 @@ import LoginPage from '@/auth/LoginPage'
 import OAuthCallbackPage from '@/auth/OAuthCallbackPage'
 import NewTeamPage from '@/team/NewTeamPage'
 import TeamsPage from '@/team/TeamsPage'
+import MyWorkPage from '@/mywork/MyWorkPage'
+import MyWorkRoute from '@/mywork/MyWorkRoute'
 import { InsidersOnly } from '@/team/InsidersOnly'
 import BudgetsPage from '@/finance/BudgetsPage'
 import CompensationHistoryPage from '@/finance/CompensationHistoryPage'
@@ -165,6 +167,12 @@ export default function App() {
               />
               <Route path="*" element={<Navigate to="/settings/finance" replace />} />
             </Route>
+          </Route>
+
+          {/* Everything that is mine, across every team (#258): where signing
+              in lands. With no team, the page for somebody on none (#318). */}
+          <Route path="/my-work" element={<MyWorkRoute />}>
+            <Route index element={<MyWorkPage />} />
           </Route>
 
           {/* The teams there are, and asking to join one (#259). Case-

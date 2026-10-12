@@ -68,6 +68,7 @@ function renderHome() {
       <MemoryRouter initialEntries={['/']}>
         <Routes>
           <Route path="/" element={<TeamsHome />} />
+          <Route path="/my-work" element={<p>My work</p>} />
           <Route path="/:teamKey" element={<p>Board</p>} />
           <Route path="/new-team" element={<p>New team form</p>} />
           <Route path="/people" element={<p>Directory</p>} />
@@ -109,10 +110,11 @@ afterEach(() => {
 })
 
 describe('TeamsHome with no team', () => {
-  it('goes to the first board when there is a team', () => {
+  it('goes to My work when there is a team (#258)', () => {
     mocks.teams = [{ id: 1, key: 'ENG', name: 'Engineering' }]
     renderHome()
-    expect(screen.getByText('Board')).toBeTruthy()
+    expect(screen.getByText('My work')).toBeTruthy()
+    expect(screen.queryByText('Board')).toBeNull()
   })
 
   it('offers what the sidebar would have, not a form for a new team', () => {

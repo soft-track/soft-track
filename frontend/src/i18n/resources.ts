@@ -12,6 +12,7 @@ import { tickets } from '@/i18n/en/tickets'
 import { keyboard } from '@/i18n/en/keyboard'
 import { landing } from '@/i18n/en/landing'
 import { markdown } from '@/i18n/en/markdown'
+import { mywork } from '@/i18n/en/mywork'
 import { notifications } from '@/i18n/en/notifications'
 import { people } from '@/i18n/en/people'
 import { projects } from '@/i18n/en/projects'
@@ -50,5 +51,6 @@ export const resources = {
     ui,
     errors,
     sharing,
+    mywork,
   },
 } as const

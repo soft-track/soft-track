@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { isPlainKey, isTypingTarget } from '@/keyboard/typing'
 
 /**
- * The app-wide keys: ⌘K, C, ?, / and Escape.
+ * The app-wide keys: ⌘K, C, M, ?, / and Escape.
  *
  * Every single-key binding is gated on `isTypingTarget` first. Without that
  * guard, typing a ticket title containing "c" fires "create ticket" -- which
@@ -13,6 +13,7 @@ export function useGlobalShortcuts({
   togglePalette,
   closeTop,
   openNewTicket,
+  openMyWork,
   openShortcuts,
   suppressed,
 }: {
@@ -21,6 +22,8 @@ export function useGlobalShortcuts({
   closeTop: () => void
   /** Absent for a guest (#104), who has nothing to create. */
   openNewTicket?: () => void
+  /** M: My work (#258). Absent on My work itself. */
+  openMyWork?: () => void
   openShortcuts: () => void
   /** True while the palette or the cheatsheet is up, so C and ? stay quiet. */
   suppressed: boolean
@@ -44,6 +47,9 @@ export function useGlobalShortcuts({
       if (event.key === 'c' && openNewTicket) {
         event.preventDefault()
         openNewTicket()
+      } else if (event.key === 'm' && openMyWork) {
+        event.preventDefault()
+        openMyWork()
       } else if (event.key === '?') {
         event.preventDefault()
         openShortcuts()
@@ -58,5 +64,5 @@ export function useGlobalShortcuts({
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [togglePalette, closeTop, openNewTicket, openShortcuts, suppressed])
+  }, [togglePalette, closeTop, openNewTicket, openMyWork, openShortcuts, suppressed])
 }
