@@ -13,6 +13,7 @@ import { CompleteSprintDialog } from '@/sprints/CompleteSprintDialog'
 import { OutcomeChip } from '@/sprints/OutcomeChip'
 import { PastSprints } from '@/sprints/PastSprints'
 import { RetrospectivePanel } from '@/sprints/RetrospectivePanel'
+import { SprintTimeCard } from '@/sprints/TimeRollup'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 
@@ -168,6 +169,8 @@ export function SprintBanner({
         {message && <p className="mt-1.5 text-xs text-brand-700">{message}</p>}
         {error && <p className="mt-1.5 text-xs text-danger-600">{error}</p>}
       </div>
+      {/* Estimated, logged and remaining (#268), for a team estimating in hours. */}
+      {(team.estimate_unit ?? 'points') !== 'points' && <SprintTimeCard sprint={sprint} />}
       {sprint.state === 'completed' && <RetrospectivePanel sprint={sprint} />}
       {sprint.state === 'upcoming' && onOpenSprint && (
         <PastSprints sprints={sprints} onOpen={onOpenSprint} />

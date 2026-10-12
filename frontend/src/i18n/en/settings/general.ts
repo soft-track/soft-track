@@ -39,7 +39,18 @@ export const general = {
     everyMemberHint: 'What every team did before there was a trash.',
     note: 'Guests never delete. Deleted tickets and epics wait in the trash, where anybody on the team but a guest can restore them. Deleting and restoring are in the ticket’s history, and outbound webhooks get <code>ticket.deleted</code> and <code>ticket.restored</code>.',
   },
+  // What the team estimates in (#268): points, hours or both.
+  estimates: {
+    heading: 'Estimates',
+    question: 'This team estimates in',
+    points: 'Points',
+    pointsHint: 'The default. A team that leaves it sees no change.',
+    hours: 'Hours',
+    both: 'Both',
+    bothHint: 'Points for size, hours for cost.',
+  },
   errors: {
+    estimates: 'Could not change what this team estimates in.',
     save: 'Could not save this team.',
     deleting: 'Could not change who may delete.',
     guests: 'Could not change whether guests may comment.',

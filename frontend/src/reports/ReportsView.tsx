@@ -31,6 +31,12 @@ export function ReportsView() {
     sprints[0]
   const [sprintId, setSprintId] = useState<number | null>(preferred?.id ?? null)
   const [days, setDays] = useState<(typeof WINDOWS)[number]>(30)
+  // The burndown in points or in remaining hours (#268): whichever the team
+  // estimates in, and a choice for a team that estimates in both.
+  const estimateUnit = team.estimate_unit ?? 'points'
+  const [chosenUnit, setChosenUnit] = useState<'points' | 'hours'>('points')
+  const burndownUnit =
+    estimateUnit === 'both' ? chosenUnit : estimateUnit === 'hours' ? 'hours' : 'points'
 
   const selected = sprints.find((sprint) => sprint.id === sprintId) ?? preferred ?? null
 
@@ -83,11 +89,29 @@ export function ReportsView() {
             </button>
           ))}
         </div>
+
+        {estimateUnit === 'both' && (
+          <div className="segmented" role="tablist" aria-label={t('burndown.unit')}>
+            {(['points', 'hours'] as const).map((unit) => (
+              <button
+                key={unit}
+                type="button"
+                role="tab"
+                aria-selected={burndownUnit === unit}
+                data-active={burndownUnit === unit}
+                onClick={() => setChosenUnit(unit)}
+                className="segmented-item"
+              >
+                {unit === 'points' ? t('burndown.unitPoints') : t('burndown.unitHours')}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-3 xl:grid-cols-2">
         {selected && burndown.data ? (
-          <BurndownChart data={burndown.data} />
+          <BurndownChart data={burndown.data} unit={burndownUnit} />
         ) : (
           <figure className="glass rounded-panel p-4">
             <h3 className="text-sm font-semibold text-neutral-900">{t('view.burndown')}</h3>

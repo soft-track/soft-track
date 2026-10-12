@@ -9551,6 +9551,150 @@
         }
       }
     },
+    "/tickets/{ticket_id}/time-estimate": {
+      "get": {
+        "tags": [
+          "time estimates"
+        ],
+        "summary": "Ticket Time Estimate",
+        "description": "The ticket's time estimate against what is logged and what is left,\non its own and with its sub-tickets (#268).",
+        "operationId": "ticket_time_estimate_tickets__ticket_id__time_estimate_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketTimeEstimate"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sprints/{sprint_id}/time": {
+      "get": {
+        "tags": [
+          "time estimates"
+        ],
+        "summary": "Sprint Time",
+        "description": "Estimated, logged and remaining time across the sprint, and the\ntickets in it that are over their estimate.",
+        "operationId": "sprint_time_sprints__sprint_id__time_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sprint Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeRollup"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project_id}/time": {
+      "get": {
+        "tags": [
+          "time estimates"
+        ],
+        "summary": "Project Time",
+        "description": "Estimated, logged and remaining time across the epic, and the tickets\nin it that are over their estimate.",
+        "operationId": "project_time_projects__project_id__time_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeRollup"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/{username}/workload": {
       "get": {
         "tags": [
@@ -15278,6 +15422,22 @@
           "ideal_remaining": {
             "type": "number",
             "title": "Ideal Remaining"
+          },
+          "minutes_remaining": {
+            "type": "integer",
+            "title": "Minutes Remaining"
+          },
+          "minutes_total": {
+            "type": "integer",
+            "title": "Minutes Total"
+          },
+          "minutes_logged": {
+            "type": "integer",
+            "title": "Minutes Logged"
+          },
+          "ideal_minutes_remaining": {
+            "type": "number",
+            "title": "Ideal Minutes Remaining"
           }
         },
         "type": "object",
@@ -15287,7 +15447,11 @@
           "tickets_remaining",
           "points_completed",
           "points_total",
-          "ideal_remaining"
+          "ideal_remaining",
+          "minutes_remaining",
+          "minutes_total",
+          "minutes_logged",
+          "ideal_minutes_remaining"
         ],
         "title": "BurndownPoint"
       },
@@ -16752,6 +16916,16 @@
           "by_assignee"
         ],
         "title": "EstimateSummary"
+      },
+      "EstimateUnit": {
+        "type": "string",
+        "enum": [
+          "points",
+          "hours",
+          "both"
+        ],
+        "title": "EstimateUnit",
+        "description": "What a team estimates in (#268): story points, hours, or both.\n\nPoints is the default, and a team that leaves it sees no change. There is\nno conversion between the two: points say how big a piece of work is,\nhours what it was meant to cost, and a team may ask both."
       },
       "ExpenseCreate": {
         "properties": {
@@ -18640,6 +18814,55 @@
         },
         "type": "object",
         "title": "OutboundWebhookUpdate"
+      },
+      "OverTicket": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_key": {
+            "type": "string",
+            "title": "Team Key"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "title": "Estimated Minutes"
+          },
+          "logged_minutes": {
+            "type": "integer",
+            "title": "Logged Minutes"
+          },
+          "remaining_minutes": {
+            "type": "integer",
+            "title": "Remaining Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_key",
+          "number",
+          "identifier",
+          "title",
+          "estimated_minutes",
+          "logged_minutes",
+          "remaining_minutes"
+        ],
+        "title": "OverTicket",
+        "description": "A ticket that has had more time logged than it was estimated at."
       },
       "Page_AdminTeamRead_": {
         "properties": {
@@ -23609,6 +23832,10 @@
             "title": "Wip Counts Subtickets",
             "default": true
           },
+          "estimate_unit": {
+            "$ref": "#/components/schemas/EstimateUnit",
+            "default": "points"
+          },
           "listed": {
             "type": "boolean",
             "title": "Listed",
@@ -23834,6 +24061,16 @@
               }
             ],
             "title": "Wip Counts Subtickets"
+          },
+          "estimate_unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstimateUnit"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "listed": {
             "anyOf": [
@@ -24152,7 +24389,9 @@
           "team",
           "custom_field",
           "trash",
-          "schedule"
+          "schedule",
+          "time_estimate",
+          "remaining"
         ],
         "title": "TicketEventField",
         "description": "Which field a TicketEvent records a change to."
@@ -24488,6 +24727,28 @@
             ],
             "title": "Estimate"
           },
+          "time_estimate_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Estimate Minutes"
+          },
+          "remaining_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Minutes"
+          },
           "blocked_by_count": {
             "type": "integer",
             "title": "Blocked By Count"
@@ -24774,6 +25035,56 @@
         "title": "TicketTime",
         "description": "Everything the ticket panel shows about time spent on one ticket."
       },
+      "TicketTimeEstimate": {
+        "properties": {
+          "estimated_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Minutes"
+          },
+          "logged_minutes": {
+            "type": "integer",
+            "title": "Logged Minutes"
+          },
+          "remaining_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Minutes"
+          },
+          "remaining_set": {
+            "type": "boolean",
+            "title": "Remaining Set"
+          },
+          "total": {
+            "$ref": "#/components/schemas/TimeTotals"
+          },
+          "subticket_count": {
+            "type": "integer",
+            "title": "Subticket Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "logged_minutes",
+          "remaining_set",
+          "total",
+          "subticket_count"
+        ],
+        "title": "TicketTimeEstimate",
+        "description": "One ticket's estimate against what is logged on it.\n\nThe ticket's own figures are what logging time on it works from; the\ntotals add its sub-tickets, one level deep, and are what its bar shows."
+      },
       "TicketTransfer": {
         "properties": {
           "team_id": {
@@ -24929,6 +25240,34 @@
             ],
             "title": "Due Date"
           },
+          "time_estimate_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 60000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Estimate Minutes",
+            "description": "Minutes. Null means no time estimate."
+          },
+          "remaining_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 60000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Minutes",
+            "description": "Minutes left, set by hand. Null means worked out: the time estimate less what is logged."
+          },
           "label_ids": {
             "anyOf": [
               {
@@ -24984,6 +25323,38 @@
         "type": "object",
         "title": "TicketUpdate"
       },
+      "TimeRollup": {
+        "properties": {
+          "estimated_minutes": {
+            "type": "integer",
+            "title": "Estimated Minutes"
+          },
+          "logged_minutes": {
+            "type": "integer",
+            "title": "Logged Minutes"
+          },
+          "remaining_minutes": {
+            "type": "integer",
+            "title": "Remaining Minutes"
+          },
+          "over": {
+            "items": {
+              "$ref": "#/components/schemas/OverTicket"
+            },
+            "type": "array",
+            "title": "Over"
+          }
+        },
+        "type": "object",
+        "required": [
+          "estimated_minutes",
+          "logged_minutes",
+          "remaining_minutes",
+          "over"
+        ],
+        "title": "TimeRollup",
+        "description": "A sprint's or an epic's time: its totals, and the tickets that are over."
+      },
       "TimeSpent": {
         "properties": {
           "total_minutes": {
@@ -25005,6 +25376,30 @@
         ],
         "title": "TimeSpent",
         "description": "A rollup for a report: how much time, and whose (#102)."
+      },
+      "TimeTotals": {
+        "properties": {
+          "estimated_minutes": {
+            "type": "integer",
+            "title": "Estimated Minutes"
+          },
+          "logged_minutes": {
+            "type": "integer",
+            "title": "Logged Minutes"
+          },
+          "remaining_minutes": {
+            "type": "integer",
+            "title": "Remaining Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "estimated_minutes",
+          "logged_minutes",
+          "remaining_minutes"
+        ],
+        "title": "TimeTotals",
+        "description": "Estimated, logged and remaining minutes over some tickets.\n\nLogged is every minute logged on them, estimated or not. Remaining is\nover the tickets that have a time estimate or a remaining set by hand,\nand is nothing for a ticket that is done or cancelled."
       },
       "Token": {
         "properties": {
@@ -26409,6 +26804,20 @@
               }
             ],
             "title": "Note"
+          },
+          "remaining_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 60000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Minutes",
+            "description": "Minutes left, set by hand. Null means worked out: the time estimate less what is logged."
           }
         },
         "type": "object",

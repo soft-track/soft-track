@@ -87,6 +87,9 @@ RESERVED_KEYS = frozenset(
         "created",
         "updated",
         "parent_key",
+        "time_estimate_hours",
+        "time_logged_hours",
+        "time_remaining_hours",
     }
 )
 

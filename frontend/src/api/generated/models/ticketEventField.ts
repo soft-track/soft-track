@@ -24,4 +24,6 @@ export const TicketEventField = {
   custom_field: 'custom_field',
   trash: 'trash',
   schedule: 'schedule',
+  time_estimate: 'time_estimate',
+  remaining: 'remaining',
 } as const;

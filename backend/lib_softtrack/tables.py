@@ -245,6 +245,10 @@ class TicketEventField(str, enum.Enum):
     #: removed. Never an opening value: it is the line the Activity feed
     #: shows for how the ticket began.
     schedule = "schedule"
+    #: The time estimate, and remaining set by hand (#268), in minutes. What
+    #: the burndown in hours replays.
+    time_estimate = "time_estimate"
+    remaining = "remaining"
 
 
 class DueFilter(str, enum.Enum):
@@ -517,6 +521,19 @@ class TeamCreationPolicy(str, enum.Enum):
     site_admins = "site_admins"
     #: The site admins, and the people named in `TeamCreator`.
     named_people = "named_people"
+
+
+class EstimateUnit(str, enum.Enum):
+    """What a team estimates in (#268): story points, hours, or both.
+
+    Points is the default, and a team that leaves it sees no change. There is
+    no conversion between the two: points say how big a piece of work is,
+    hours what it was meant to cost, and a team may ask both.
+    """
+
+    points = "points"
+    hours = "hours"
+    both = "both"
 
 
 class TeamRequestState(str, enum.Enum):
@@ -998,6 +1015,9 @@ class Team(SQLModel, table=True):
     #: Whether sub-tickets count against a column's limit, or only the work
     #: they are part of.
     wip_counts_subtickets: bool = Field(default=True)
+    #: Points, hours or both (#268). Which estimates the ticket panel offers,
+    #: and what the board's "Has no estimate" asks about.
+    estimate_unit: EstimateUnit = Field(default=EstimateUnit.points)
     created_at: datetime = Field(default_factory=utcnow)
     #: Whether the team is in the team directory (#259), where people who are
     #: not on it see its name, key, size and admins and can ask to join. On
@@ -1107,6 +1127,14 @@ class Ticket(SQLModel, table=True):
     # Story points. Null means "not sized yet", which is a different thing
     # from zero -- a burndown has to be able to tell them apart.
     estimate: Optional[int] = Field(default=None)
+    #: How long it was meant to take, in minutes (#268), beside the points
+    #: rather than in their place. Minutes, like `Worklog.minutes`, so the two
+    #: subtract exactly.
+    time_estimate_minutes: Optional[int] = Field(default=None)
+    #: What is left, in minutes, when somebody has said so by hand. Null means
+    #: worked out: the time estimate less what is logged, never below zero.
+    #: See lib_softtrack/time_estimates.py.
+    remaining_minutes: Optional[int] = Field(default=None)
     #: When it is due (#87). A date rather than a datetime, like a project's
     #: target: "due Friday" is a day, and a timestamp would move it across
     #: midnight for anybody in another timezone.

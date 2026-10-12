@@ -9,6 +9,7 @@ import type {
 import { i18n } from '@/i18n'
 import { formatNumber } from '@/i18n/format'
 import { shortDue } from '@/tickets/dueDate'
+import { formatDuration } from '@/tickets/duration'
 import { CATEGORY_META, PRIORITY_META } from '@/tickets/ticketMeta'
 
 /** A history sentence: its catalog key and what fills it, bar the actor. */
@@ -21,6 +22,8 @@ type HistoryKey =
   | 'status'
   | `priority.${'set' | 'changed' | 'removed'}`
   | `estimate.${'set' | 'changed' | 'cleared'}`
+  | `timeEstimate.${'set' | 'changed' | 'cleared'}`
+  | `remaining.${'set' | 'cleared'}`
   | `assignee.${'assigned' | 'reassigned' | 'unassigned'}`
   | `sprint.${'added' | 'moved' | 'removed'}`
   | `due.${'set' | 'moved' | 'removed'}`
@@ -65,6 +68,15 @@ export function describeEvent(event: TicketEventRead): EventSentence {
       if (!to) return say('estimate.cleared', { from: points(from) })
       if (!from) return say('estimate.set', { to: points(to) })
       return say('estimate.changed', { from: points(from), to: points(to) })
+
+    case 'time_estimate':
+      if (!to) return say('timeEstimate.cleared', { from: minutes(from) })
+      if (!from) return say('timeEstimate.set', { to: minutes(to) })
+      return say('timeEstimate.changed', { from: minutes(from), to: minutes(to) })
+
+    case 'remaining':
+      if (to == null) return say('remaining.cleared', { from: minutes(from) })
+      return say('remaining.set', { to: minutes(to) })
 
     case 'assignee': {
       const before = named(event.old_label, 'formerMember')
@@ -156,6 +168,10 @@ function priority(value: string | null | undefined): string {
 
 function points(value: string | null | undefined): string {
   return i18n.t('tickets:history.points', { count: Number(value) })
+}
+
+function minutes(value: string | null | undefined): string {
+  return formatDuration(Number(value ?? 0))
 }
 
 /**

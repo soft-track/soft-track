@@ -12,6 +12,16 @@ export const history = {
     changed: '<actor>{{actor}}</actor> changed the estimate from {{from}} to {{to}}',
     cleared: '<actor>{{actor}}</actor> cleared the estimate (was {{from}})',
   },
+  // The time estimate, and what is left when somebody says so (#268).
+  timeEstimate: {
+    set: '<actor>{{actor}}</actor> set the time estimate to {{to}}',
+    changed: '<actor>{{actor}}</actor> changed the time estimate from {{from}} to {{to}}',
+    cleared: '<actor>{{actor}}</actor> cleared the time estimate (was {{from}})',
+  },
+  remaining: {
+    set: '<actor>{{actor}}</actor> said {{to}} is left',
+    cleared: '<actor>{{actor}}</actor> left what is left to be worked out (was {{from}})',
+  },
   points_one: '{{count}} point',
   points_other: '{{count}} points',
   assignee: {

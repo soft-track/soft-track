@@ -73,7 +73,18 @@ CSV_COLUMNS = [
     "created",
     "updated",
     "parent_key",
+    # Time estimates (#268), in hours: estimated, logged and remaining.
+    "time_estimate_hours",
+    "time_logged_hours",
+    "time_remaining_hours",
 ]
+
+
+def _csv_hours(minutes: Optional[int]) -> str:
+    """Minutes as hours a spreadsheet sums: `7.5`, `10`. Nothing is empty."""
+    if minutes is None:
+        return ""
+    return f"{minutes / 60:.2f}".rstrip("0").rstrip(".")
 
 
 def _csv_timestamp(value: datetime) -> str:
@@ -111,6 +122,9 @@ def _csv_row(row: TicketExportRow, fields: list[CustomFieldRead]) -> list[str]:
         _csv_timestamp(ticket.created_at),
         _csv_timestamp(ticket.updated_at),
         ticket.parent.identifier if ticket.parent is not None else "",
+        _csv_hours(ticket.time_estimate_minutes),
+        _csv_hours(row.logged_minutes),
+        _csv_hours(row.remaining_minutes),
         *custom_fields_service.export_cells(fields, ticket.custom_fields),
     ]
 

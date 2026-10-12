@@ -25,8 +25,10 @@ from lib_softtrack.statuses import RESOLVED, in_category
 from lib_softtrack.tables import (
     DateWindow,
     DueFilter,
+    EstimateUnit,
     LabelMatch,
     MissingField,
+    Team,
     Ticket,
     TicketLabelLink,
     TicketWatch,
@@ -39,12 +41,31 @@ WINDOW_DAYS = {
     DateWindow.over_30_days: 30,
 }
 
-#: The column each "has no" asks about.
+#: The column each "has no" asks about. An estimate is a question for
+#: `no_estimate`: which one depends on the ticket's team.
 _MISSING = {
-    MissingField.estimate: Ticket.estimate,
     MissingField.epic: Ticket.project_id,
     MissingField.sprint: Ticket.sprint_id,
 }
+
+
+def _teams_in(*units: EstimateUnit):
+    return select(Team.id).where(Team.estimate_unit.in_(units))
+
+
+def no_estimate() -> ColumnElement[bool]:
+    """Tickets missing the estimate their team estimates in (#268): points,
+    a time estimate, or -- for a team that asks both -- either of them."""
+    return or_(
+        and_(
+            Ticket.estimate.is_(None),
+            Ticket.team_id.in_(_teams_in(EstimateUnit.points, EstimateUnit.both)),
+        ),
+        and_(
+            Ticket.time_estimate_minutes.is_(None),
+            Ticket.team_id.in_(_teams_in(EstimateUnit.hours, EstimateUnit.both)),
+        ),
+    )
 
 
 def due_clause(due: DueFilter, today: date):
@@ -220,5 +241,9 @@ def filter_clauses(
         )
     )
     for missing in filters.has_no:
-        clauses.append(_MISSING[missing].is_(None))
+        clauses.append(
+            no_estimate()
+            if missing == MissingField.estimate
+            else _MISSING[missing].is_(None)
+        )
     return [clause for clause in clauses if clause is not None]

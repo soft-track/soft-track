@@ -285,6 +285,9 @@ def test_the_export_header_names_every_column(client, export_board):
         "created",
         "updated",
         "parent_key",
+        "time_estimate_hours",
+        "time_logged_hours",
+        "time_remaining_hours",
     ]
 
 
@@ -314,6 +317,10 @@ def test_every_column_carries_its_value(client, export_board, session):
         stored.created_at.strftime("%Y-%m-%d %H:%M:%S"),
         stored.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
         export_board["parent"]["identifier"],
+        # No time estimate and nothing logged (#268).
+        "",
+        "0",
+        "",
     ]
 
 
@@ -323,8 +330,11 @@ def test_a_ticket_with_nothing_set_leaves_those_cells_empty(client, export_board
     rows = export_rows(client, export_board)
     row = next(r for r in rows[1:] if r[0] == parent["identifier"])
 
-    # assignee, labels, project, sprint, estimate, parent_key.
-    assert [row[5], row[6], row[7], row[8], row[9], row[13]] == ["", "", "", "", "", ""]
+    # assignee, labels, project, sprint, estimate, parent_key, and the time
+    # estimate and remaining (#268).
+    assert [row[5], row[6], row[7], row[8], row[9], row[13], row[14], row[16]] == [
+        "",
+    ] * 8
     assert row[1] == "Parent ticket"
     assert row[4] == "no_priority"
 

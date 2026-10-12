@@ -8,8 +8,7 @@ or delete your own. Board cards show none of it — cards stay clean.
 Reports gets two charts: time logged **in the chosen sprint**, and time logged
 on the team's tickets **over the chosen window**, one bar per person.
 
-Deliberately Jira-lite: no remaining-estimate burndown (SoftTrack's burndown
-is scope-based), no timers, no billing rates, no approvals.
+Deliberately Jira-lite: no timers, no billing rates, no approvals.
 
 ## Decisions worth knowing
 
@@ -31,9 +30,47 @@ is scope-based), no timers, no billing rates, no approvals.
   in the [trash](trash.md), and goes when the ticket is purged. Guests see it
   and cannot log it.
 
+## Time estimates
+
+A ticket's points say how big it is; a **time estimate** says what it was
+meant to cost. A team chooses in **Settings → General → Estimates**: points
+(the default — a team that leaves it sees no change), hours, or both. The
+ticket panel offers whichever the team estimates in, beside each other for
+both; a ticket that already has the other kind keeps showing it.
+
+- **Remaining** is the time estimate less what is logged, never below zero,
+  until somebody says otherwise. Logging time asks *How much is left?* with
+  that answer worked out; leaving it alone keeps it worked out, changing it
+  sets remaining by hand, and from then on each entry logged takes its time
+  off what was said. A ticket that is done or cancelled has nothing left.
+- The **Time** section shows logged against estimated as a bar, with what is
+  left. Over is said in words — *over by 4h* — not by colour alone. A parent's
+  bar includes its sub-tickets.
+- A team that estimates in hours sees a **sprint's** and an **epic's**
+  estimated, logged and remaining time, with the tickets that are over listed
+  under it. A sub-ticket with no sprint or epic of its own counts in its
+  parent's.
+- The **burndown** can be drawn in remaining hours (Reports → Hours, for a
+  team that estimates in both).
+- The CSV export has `time_estimate_hours`, `time_logged_hours` and
+  `time_remaining_hours`, as decimal hours a spreadsheet sums.
+- **Has no estimate** asks about what the team estimates in: points, a time
+  estimate, or — for both — either.
+
+There is no conversion between points and hours: they answer different
+questions. Estimates are minutes, like time logged, so the two subtract
+exactly, and the sums group by any column on a ticket
+(`lib_softtrack/time_estimates.totals_by`) — a person, a sprint, a week.
+
 ## API
 
 - `GET /tickets/{ticket_id}/worklogs` — the total, per person, and every entry.
-- `POST /tickets/{ticket_id}/worklogs` — `{minutes, worked_on?, note?}`.
+- `POST /tickets/{ticket_id}/worklogs` — `{minutes, worked_on?, note?, remaining_minutes?}`;
+  `remaining_minutes` sets what is left, and `null` hands it back to the sum.
 - `PATCH /worklogs/{worklog_id}`, `DELETE /worklogs/{worklog_id}` — your own only.
 - `GET /sprints/{sprint_id}/time-spent`, `GET /teams/{team_id}/time-spent?days=30`.
+- `PATCH /tickets/{ticket_id}` — `time_estimate_minutes` and `remaining_minutes`.
+- `GET /tickets/{ticket_id}/time-estimate` — estimated, logged and remaining,
+  on its own and with its sub-tickets.
+- `GET /sprints/{sprint_id}/time`, `GET /projects/{project_id}/time` —
+  estimated, logged and remaining, and the tickets that are over.

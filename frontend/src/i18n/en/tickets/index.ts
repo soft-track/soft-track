@@ -1,5 +1,5 @@
 // Tickets (#106): the ticket card, the new-ticket form, the ticket panel and page, and
-// the linked-ticket modal (#114).
+// the linked-ticket modal (#114), and time estimates in hours (#268).
 import { meta } from '@/i18n/en/tickets/meta'
 import { history } from '@/i18n/en/tickets/history'
 import { card } from '@/i18n/en/tickets/card'
@@ -15,6 +15,7 @@ import { links } from '@/i18n/en/tickets/links'
 import { subTickets } from '@/i18n/en/tickets/subTickets'
 import { development } from '@/i18n/en/tickets/development'
 import { time } from '@/i18n/en/tickets/time'
+import { timeEstimate } from '@/i18n/en/tickets/timeEstimate'
 import { customFields } from '@/i18n/en/tickets/customFields'
 import { assignee } from '@/i18n/en/tickets/assignee'
 
@@ -34,6 +35,7 @@ export const tickets = {
   subTickets,
   development,
   time,
+  timeEstimate,
   customFields,
   assignee,
 } as const

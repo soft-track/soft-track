@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from lib_identity.models.identity import UserPublic
-from lib_softtrack.tables import TeamRole
+from lib_softtrack.tables import EstimateUnit, TeamRole
 
 
 class TeamCreate(BaseModel):
@@ -28,6 +28,8 @@ class TeamRead(BaseModel):
     #: sub-tickets count against it.
     wip_limits_hard: bool = False
     wip_counts_subtickets: bool = True
+    #: What the team estimates in (#268): points, hours or both.
+    estimate_unit: EstimateUnit = EstimateUnit.points
     #: Who can find the team (#259): whether it is in the team directory, and
     #: whether anybody signed in may join it without asking.
     listed: bool = True
@@ -56,6 +58,8 @@ class TeamUpdate(BaseModel):
     #: WIP limits (#270): refuse a move over one, and count sub-tickets.
     wip_limits_hard: Optional[bool] = None
     wip_counts_subtickets: Optional[bool] = None
+    #: Points, hours or both (#268). Points is the default.
+    estimate_unit: Optional[EstimateUnit] = None
     #: Who can find the team (#259). Listed is the default; open is not.
     listed: Optional[bool] = None
     open_to_join: Optional[bool] = None

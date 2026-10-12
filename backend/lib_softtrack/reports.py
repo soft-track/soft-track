@@ -129,6 +129,53 @@ def _timelines(
 # --- burndown -----------------------------------------------------------
 
 
+class _HoursAt:
+    """A ticket's time estimate, time logged and remaining at the end of a
+    day (#268), replayed like the points: from the history of the estimate
+    and of remaining set by hand, and from the days time was logged on."""
+
+    def __init__(self, session: Session, ticket_ids: set[int]):
+        events: list[TicketEvent] = []
+        self._logged: dict[int, list[tuple[date, int]]] = defaultdict(list)
+        if ticket_ids:
+            events = session.exec(
+                select(TicketEvent).where(
+                    TicketEvent.ticket_id.in_(ticket_ids),
+                    TicketEvent.field.in_(
+                        [TicketEventField.time_estimate, TicketEventField.remaining]
+                    ),
+                )
+            ).all()
+            for ticket_id, worked_on, minutes in session.exec(
+                select(Worklog.ticket_id, Worklog.worked_on, Worklog.minutes).where(
+                    Worklog.ticket_id.in_(ticket_ids)
+                )
+            ).all():
+                self._logged[ticket_id].append((worked_on, minutes))
+        self._estimate = _Timeline(
+            event for event in events if event.field is TicketEventField.time_estimate
+        )
+        self._remaining = _Timeline(
+            event for event in events if event.field is TicketEventField.remaining
+        )
+
+    def at(self, ticket_id: int, day: date) -> tuple[int, int, int]:
+        """Estimated, logged and remaining minutes at the end of `day`, as if
+        the ticket were still open."""
+        moment = _end_of(day)
+        raw_estimate = self._estimate.value_at(ticket_id, moment)
+        estimate = int(raw_estimate) if raw_estimate else 0
+        logged = sum(
+            minutes
+            for worked_on, minutes in self._logged.get(ticket_id, ())
+            if worked_on <= day
+        )
+        raw_remaining = self._remaining.value_at(ticket_id, moment)
+        if raw_remaining:
+            return estimate, logged, int(raw_remaining)
+        return estimate, logged, max(estimate - logged, 0)
+
+
 def burndown(session: Session, current_user: User, sprint_id: int) -> Burndown:
     sprint = get_sprint_or_404(session, sprint_id)
     require_team_member(sprint.team_id, current_user, session)
@@ -152,6 +199,7 @@ def burndown(session: Session, current_user: User, sprint_id: int) -> Burndown:
     }
 
     status_at, sprint_at, estimate_at = _timelines(session, ever_in)
+    hours = _HoursAt(session, ever_in)
 
     start = _as_utc(sprint.starts_at).date()
     end = _as_utc(sprint.ends_at).date()
@@ -163,6 +211,7 @@ def burndown(session: Session, current_user: User, sprint_id: int) -> Burndown:
     points: list[BurndownPoint] = []
     scope_changes: list[ScopeChange] = []
     opening_total: Optional[int] = None
+    opening_minutes: Optional[int] = None
     previous: Optional[tuple[set[int], int]] = None
     span = max((end - start).days, 1)
 
@@ -170,6 +219,7 @@ def burndown(session: Session, current_user: User, sprint_id: int) -> Burndown:
         moment = _end_of(day)
         in_sprint: set[int] = set()
         total = remaining = completed = tickets_remaining = 0
+        minutes_total = minutes_logged = minutes_remaining = 0
 
         for ticket_id in ever_in:
             if sprint_at.value_at(ticket_id, moment) != str(sprint_id):
@@ -181,14 +231,22 @@ def burndown(session: Session, current_user: User, sprint_id: int) -> Burndown:
             status = status_at.value_at(ticket_id, moment)
 
             total += estimate
+            open_ = status not in {category.value for category in RESOLVED}
             if status == DELIVERED.value:
                 completed += estimate
-            elif status not in {category.value for category in RESOLVED}:
+            elif open_:
                 remaining += estimate
                 tickets_remaining += 1
 
+            time_estimate, logged, left = hours.at(ticket_id, day)
+            minutes_total += time_estimate
+            minutes_logged += logged
+            if open_:
+                minutes_remaining += left
+
         if opening_total is None:
             opening_total = total
+            opening_minutes = minutes_remaining
 
         points.append(
             BurndownPoint(
@@ -202,6 +260,14 @@ def burndown(session: Session, current_user: User, sprint_id: int) -> Burndown:
                 # quietly move the goalposts and the line would always look on
                 # track.
                 ideal_remaining=round(max(opening_total * (1 - offset / span), 0.0), 2),
+                minutes_remaining=minutes_remaining,
+                minutes_logged=minutes_logged,
+                minutes_total=minutes_total,
+                # From what was left on the first day, since time logged
+                # before the sprint is not the sprint's to burn.
+                ideal_minutes_remaining=round(
+                    max(opening_minutes * (1 - offset / span), 0.0), 2
+                ),
             )
         )
 

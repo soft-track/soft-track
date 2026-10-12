@@ -117,6 +117,8 @@ def ticket_to_read(ticket: Ticket, session: Session) -> TicketRead:
         rank=ticket.rank,
         assignee=UserPublic.model_validate(assignee) if assignee else None,
         estimate=ticket.estimate,
+        time_estimate_minutes=ticket.time_estimate_minutes,
+        remaining_minutes=ticket.remaining_minutes,
         blocked_by_count=open_blocker_counts(session, [ticket.id]).get(ticket.id, 0),
         sprint_id=ticket.sprint_id,
         due_date=ticket.due_date,
@@ -210,6 +212,8 @@ def _expand_tickets(tickets: list[Ticket], session: Session) -> list[TicketRead]
                 else None
             ),
             estimate=ticket.estimate,
+            time_estimate_minutes=ticket.time_estimate_minutes,
+            remaining_minutes=ticket.remaining_minutes,
             blocked_by_count=blocker_counts.get(ticket.id, 0),
             sprint_id=ticket.sprint_id,
             due_date=ticket.due_date,
@@ -527,6 +531,9 @@ class TicketExportRow(NamedTuple):
     ticket: TicketRead
     project_name: str
     sprint_name: str
+    #: Time logged on it, and what is left (#268) -- worked out, or as set.
+    logged_minutes: int = 0
+    remaining_minutes: Optional[int] = None
 
 
 def export_tickets(
@@ -626,16 +633,31 @@ def _export_rows(tickets: list[Ticket], session: Session) -> list[TicketExportRo
         ).all()
     }
 
-    return [
-        TicketExportRow(
-            ticket=read,
-            # `.get` rather than an `is None` check: a ticket with no project
-            # and one pointing at a deleted row both mean "no name to print".
-            project_name=project_names.get(read.project_id, ""),
-            sprint_name=sprint_names.get(read.sprint_id, ""),
+    # Imported here: time_estimates reads tickets through this module.
+    from lib_softtrack.time_estimates import logged_by, remaining_of
+
+    logged = logged_by(session, [ticket.id for ticket in tickets])
+    rows = []
+    for read in _expand_tickets(tickets, session):
+        spent = logged.get(read.id, 0)
+        rows.append(
+            TicketExportRow(
+                ticket=read,
+                # `.get` rather than an `is None` check: a ticket with no
+                # project and one pointing at a deleted row both mean "no
+                # name to print".
+                project_name=project_names.get(read.project_id, ""),
+                sprint_name=sprint_names.get(read.sprint_id, ""),
+                logged_minutes=spent,
+                remaining_minutes=remaining_of(
+                    read.time_estimate_minutes,
+                    read.remaining_minutes,
+                    spent,
+                    read.status.category in RESOLVED,
+                ),
+            )
         )
-        for read in _expand_tickets(tickets, session)
-    ]
+    return rows
 
 
 def _readable(session: Session, current_user: User, ticket: Optional[Ticket]) -> Ticket:

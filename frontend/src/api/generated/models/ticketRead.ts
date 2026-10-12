@@ -28,6 +28,8 @@ export interface TicketRead {
   rank: string;
   assignee?: UserPublic | null;
   estimate?: number | null;
+  time_estimate_minutes?: number | null;
+  remaining_minutes?: number | null;
   blocked_by_count: number;
   sprint_id?: number | null;
   due_date?: string | null;

@@ -23,6 +23,10 @@ export interface TicketUpdate {
   parent_id?: number | null;
   sprint_id?: number | null;
   due_date?: string | null;
+  /** Minutes. Null means no time estimate. */
+  time_estimate_minutes?: number | null;
+  /** Minutes left, set by hand. Null means worked out: the time estimate less what is logged. */
+  remaining_minutes?: number | null;
   label_ids?: number[] | null;
   custom_fields?: TicketUpdateCustomFields;
 }

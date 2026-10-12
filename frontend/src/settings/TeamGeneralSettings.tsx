@@ -6,7 +6,7 @@ import {
   useListTeamMembersTeamsTeamIdMembersGet,
   useUpdateTeamTeamsTeamIdPatch,
 } from '@/api/generated/endpoints/teams/teams'
-import type { TeamRead } from '@/api/generated/models'
+import type { EstimateUnit, TeamRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { Trans, userText, useTranslation } from '@/i18n'
@@ -50,6 +50,7 @@ export default function TeamGeneralSettings() {
           .filter((member) => member.role === 'guest')
           .map((member) => member.user.full_name)}
       />
+      <EstimateUnitSetting key={`estimates-${team.id}`} team={team} isAdmin={isAdmin} />
       <DeletePolicy key={`delete-${team.id}`} team={team} isAdmin={isAdmin} />
     </div>
   )
@@ -199,6 +200,74 @@ function GuestsMayComment({
               names: formatList(guests),
             })}
       </p>
+    </section>
+  )
+}
+
+/**
+ * What the team estimates in (#268): points, hours or both. Points is the
+ * default, and a team that leaves it sees no change. Saved as soon as it is
+ * chosen, like who may delete.
+ */
+function EstimateUnitSetting({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
+  const queryClient = useQueryClient()
+  const updateTeam = useUpdateTeamTeamsTeamIdPatch()
+  const [unit, setUnit] = useState<EstimateUnit>(team.estimate_unit ?? 'points')
+  const [error, setError] = useState<string | null>(null)
+  const name = useId()
+
+  const choose = async (value: EstimateUnit) => {
+    const before = unit
+    setUnit(value)
+    setError(null)
+    try {
+      await updateTeam.mutateAsync({ teamId: team.id, data: { estimate_unit: value } })
+      queryClient.invalidateQueries({ queryKey: ['/teams'] })
+    } catch (err: unknown) {
+      setUnit(before)
+      setError(errorDetail(err, t('general.errors.estimates')))
+    }
+  }
+
+  const option = (value: EstimateUnit, label: string, hint?: string) => (
+    <label className="flex items-start gap-2.5">
+      <input
+        type="radio"
+        name={name}
+        checked={unit === value}
+        disabled={!isAdmin || updateTeam.isPending}
+        onChange={() => choose(value)}
+        className="mt-0.5 h-4 w-4 accent-[var(--color-brand-600)]"
+      />
+      <span>
+        <span className="block text-sm text-neutral-800">{label}</span>
+        {hint && <span className="block text-xs text-neutral-500">{hint}</span>}
+      </span>
+    </label>
+  )
+
+  return (
+    <section className="glass-strong rounded-panel p-6" aria-labelledby={`${name}-heading`}>
+      <p className="eyebrow">{t('general.estimates.heading')}</p>
+      <fieldset className="mt-2">
+        <legend id={`${name}-heading`} className="text-sm font-medium text-neutral-800">
+          {t('general.estimates.question')}
+        </legend>
+        <div className="mt-3 space-y-3">
+          {option('points', t('general.estimates.points'), t('general.estimates.pointsHint'))}
+          {option('hours', t('general.estimates.hours'))}
+          {option('both', t('general.estimates.both'), t('general.estimates.bothHint'))}
+        </div>
+      </fieldset>
+      {error && (
+        <p
+          role="alert"
+          className="mt-3 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+        >
+          {error}
+        </p>
+      )}
     </section>
   )
 }

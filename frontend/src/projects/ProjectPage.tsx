@@ -13,6 +13,7 @@ import {
   useUpdateProjectProjectsProjectIdPatch,
 } from '@/api/generated/endpoints/projects/projects'
 import { useProjectBurnupProjectsProjectIdBurnupGet } from '@/api/generated/endpoints/reports/reports'
+import { useProjectTimeProjectsProjectIdTimeGet } from '@/api/generated/endpoints/time-estimates/time-estimates'
 import type { TicketRead, ProjectRead, ProjectUpdate } from '@/api/generated/models'
 import { useTranslation } from '@/i18n'
 import { formatNumber } from '@/i18n/format'
@@ -22,6 +23,7 @@ import { PriorityIcon } from '@/tickets/PriorityIcon'
 import { AddTicketsModal } from '@/projects/AddTicketsModal'
 import { ShareLinkDialog } from '@/sharing/ShareLinkDialog'
 import { ProjectBurnupChart } from '@/reports/ProjectBurnupChart'
+import { TimeRollupBlock } from '@/sprints/TimeRollup'
 import { activeMembers } from '@/team/members'
 import {
   PROJECT_STATES,
@@ -92,12 +94,15 @@ function ProjectDetail({
   total: number
   isLoadingTickets: boolean
 }) {
-  const { t } = useTranslation(['projects', 'common'])
+  const { t } = useTranslation(['projects', 'common', 'tickets'])
   const { team, members, statuses } = useTeamContext()
   const queryClient = useQueryClient()
   const updateProject = useUpdateProjectProjectsProjectIdPatch()
   const updateTicket = useUpdateTicketTicketsTicketIdPatch()
   const burnup = useProjectBurnupProjectsProjectIdBurnupGet(project.id)
+  const time = useProjectTimeProjectsProjectIdTimeGet(project.id, {
+    query: { enabled: (team.estimate_unit ?? 'points') !== 'points' },
+  })
 
   const [adding, setAdding] = useState(false)
   // Sharing it read-only with somebody with no account (#245): a team admin's.
@@ -211,6 +216,16 @@ function ProjectDetail({
             {t('page.progressNote')}
           </p>
         </div>
+
+        {/* Estimated, logged and remaining (#268), for a team estimating in hours. */}
+        {time.data && (
+          <div className="well mt-4 rounded-card p-3">
+            <TimeRollupBlock
+              title={t('tickets:timeEstimate.rollup.epic', { name: project.name })}
+              rollup={time.data}
+            />
+          </div>
+        )}
 
         {error && (
           <div

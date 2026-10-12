@@ -37,6 +37,9 @@ TRACKED: dict[str, TicketEventField] = {
     "assignee_id": TicketEventField.assignee,
     "priority": TicketEventField.priority,
     "due_date": TicketEventField.due_date,
+    #: In minutes (#268): what the burndown in hours replays.
+    "time_estimate_minutes": TicketEventField.time_estimate,
+    "remaining_minutes": TicketEventField.remaining,
 }
 
 

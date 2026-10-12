@@ -5,6 +5,7 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { EstimateUnit } from './estimateUnit';
 
 /**
  * What an admin may change about a team.
@@ -20,6 +21,7 @@ export interface TeamUpdate {
   guests_may_comment?: boolean | null;
   wip_limits_hard?: boolean | null;
   wip_counts_subtickets?: boolean | null;
+  estimate_unit?: EstimateUnit | null;
   listed?: boolean | null;
   open_to_join?: boolean | null;
 }

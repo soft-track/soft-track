@@ -47,6 +47,8 @@ export const mywork = {
       custom_field: 'a field changed',
       trash: 'restored from the trash',
       schedule: 'created by a schedule',
+      time_estimate: 'time estimate changed',
+      remaining: 'time left changed',
     },
     title: '{{what}}, {{when}}',
   },
