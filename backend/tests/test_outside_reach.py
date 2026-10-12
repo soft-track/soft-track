@@ -77,6 +77,8 @@ EXTERNAL_MAY = {
     ("GET", "/teams/creation"): "that they may not create a team (#306)",
     ("GET", "/search"): "search, confined to their epics (#243)",
     ("GET", "/me/work"): "their own work, confined to their epics (#258)",
+    ("GET", "/me/worklogs"): "their own time, confined to their epics (#267)",
+    ("GET", "/me/worklogs/export"): "their own time, confined to their epics (#267)",
     ("GET", "/notifications"): "their own notifications",
     ("GET", "/notifications/unread-count"): "their own notifications",
     ("GET", "/notifications/settings"): "their own notifications",

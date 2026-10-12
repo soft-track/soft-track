@@ -77,4 +77,8 @@ export const errors = {
   team_has_no_statuses: 'This team has no statuses to put a ticket in.',
   last_status: 'A team needs at least one status; there would be nowhere to put its tickets.',
   status_move_to_same: 'Move the tickets to a different status.',
+
+  // Time (#102, #267).
+  worklog_in_future: 'Time can only be logged for a day that has started.',
+  timesheet_range_invalid: 'Choose a range that ends after it starts and covers at most a year.',
 } as const satisfies Partial<Record<ErrorCode, string>>

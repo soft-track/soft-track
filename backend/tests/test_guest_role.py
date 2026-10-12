@@ -300,6 +300,8 @@ def world(client, team, guest, auth):
         "label_id": label["id"],
         "schedule_id": schedule["id"],
         "worklog_id": worklog["id"],
+        # A timesheet cell (#267): my time on a ticket on a day.
+        "worked_on": date.today().isoformat(),
         "share_link_id": share_link["link"]["id"],
         "join_request_id": join_request.json()["id"],
         # Somebody else on the team: changing *their* role is the write.

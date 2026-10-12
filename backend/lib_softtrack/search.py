@@ -161,6 +161,7 @@ def search_tickets(
                 title=ticket.title,
                 status=StatusRead.model_validate(statuses[ticket.status_id]),
                 priority=ticket.priority,
+                type=ticket.type,
                 team_id=ticket.team_id,
                 team_key=teams[ticket.team_id].key,
                 number=ticket.number,

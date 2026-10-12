@@ -124,6 +124,7 @@ export const ErrorCode = {
   share_password_wrong: 'share_password_wrong',
   share_target_required: 'share_target_required',
   worklog_in_future: 'worklog_in_future',
+  timesheet_range_invalid: 'timesheet_range_invalid',
   transfer_same_team: 'transfer_same_team',
   view_other_team: 'view_other_team',
   view_private_default: 'view_private_default',

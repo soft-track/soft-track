@@ -9551,6 +9551,557 @@
         }
       }
     },
+    "/me/worklogs": {
+      "get": {
+        "tags": [
+          "timesheet"
+        ],
+        "summary": "My Timesheet",
+        "description": "My time, a row per ticket and a column per day, across every team I\nam on (#267): the totals per day and for the range, and which days are\nmarked -- a weekday with nothing logged, and a long one.",
+        "operationId": "my_timesheet_me_worklogs_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The first day. Omitted, this week's Monday in the instance's timezone.",
+              "title": "From"
+            },
+            "description": "The first day. Omitted, this week's Monday in the instance's timezone."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The last day, included. Omitted, six days after `from`.",
+              "title": "To"
+            },
+            "description": "The last day, included. Omitted, six days after `from`."
+          },
+          {
+            "name": "ticket_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Tickets added to the week by searching, shown with nothing logged yet.",
+              "default": [],
+              "title": "Ticket Id"
+            },
+            "description": "Tickets added to the week by searching, shown with nothing logged yet."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyTimesheet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/worklogs/export": {
+      "get": {
+        "tags": [
+          "timesheet"
+        ],
+        "summary": "Export My Timesheet",
+        "description": "My time over a range, as CSV: one line per entry.",
+        "operationId": "export_my_timesheet_me_worklogs_export_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The first day. Omitted, this week's Monday in the instance's timezone.",
+              "title": "From"
+            },
+            "description": "The first day. Omitted, this week's Monday in the instance's timezone."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The last day, included. Omitted, six days after `from`.",
+              "title": "To"
+            },
+            "description": "The last day, included. Omitted, six days after `from`."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tickets/{ticket_id}/worklogs/days/{worked_on}": {
+      "put": {
+        "tags": [
+          "timesheet"
+        ],
+        "summary": "Set My Day",
+        "description": "Make my time on the ticket on that day come to `minutes`, as typing in\na timesheet cell does. Logs, changes or removes my entries for the day\nthe way the ticket's Time section would; 0 removes them.",
+        "operationId": "set_my_day_tickets__ticket_id__worklogs_days__worked_on__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ticket Id"
+            }
+          },
+          {
+            "name": "worked_on",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Worked On"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimesheetDaySet"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimesheetCell"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/reports/worklogs": {
+      "get": {
+        "tags": [
+          "timesheet"
+        ],
+        "summary": "Reports Timesheet",
+        "description": "My direct reports' time, a row each -- on the teams I am on too, and\non no other.",
+        "operationId": "reports_timesheet_me_reports_worklogs_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The first day. Omitted, this week's Monday in the instance's timezone.",
+              "title": "From"
+            },
+            "description": "The first day. Omitted, this week's Monday in the instance's timezone."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The last day, included. Omitted, six days after `from`.",
+              "title": "To"
+            },
+            "description": "The last day, included. Omitted, six days after `from`."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeopleTimesheet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/reports/worklogs/export": {
+      "get": {
+        "tags": [
+          "timesheet"
+        ],
+        "summary": "Export Reports Timesheet",
+        "description": "My reports' time over a range, as CSV: one line per entry.",
+        "operationId": "export_reports_timesheet_me_reports_worklogs_export_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The first day. Omitted, this week's Monday in the instance's timezone.",
+              "title": "From"
+            },
+            "description": "The first day. Omitted, this week's Monday in the instance's timezone."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The last day, included. Omitted, six days after `from`.",
+              "title": "To"
+            },
+            "description": "The last day, included. Omitted, six days after `from`."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/worklogs": {
+      "get": {
+        "tags": [
+          "timesheet"
+        ],
+        "summary": "Team Timesheet",
+        "description": "A team's week, for its admins: a row per person, their time on the\nteam's tickets.",
+        "operationId": "team_timesheet_teams__team_id__worklogs_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The first day. Omitted, this week's Monday in the instance's timezone.",
+              "title": "From"
+            },
+            "description": "The first day. Omitted, this week's Monday in the instance's timezone."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The last day, included. Omitted, six days after `from`.",
+              "title": "To"
+            },
+            "description": "The last day, included. Omitted, six days after `from`."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeopleTimesheet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/worklogs/export": {
+      "get": {
+        "tags": [
+          "timesheet"
+        ],
+        "summary": "Export Team Timesheet",
+        "description": "The team's time over a range, as CSV, for its admins.",
+        "operationId": "export_team_timesheet_teams__team_id__worklogs_export_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The first day. Omitted, this week's Monday in the instance's timezone.",
+              "title": "From"
+            },
+            "description": "The first day. Omitted, this week's Monday in the instance's timezone."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The last day, included. Omitted, six days after `from`.",
+              "title": "To"
+            },
+            "description": "The last day, included. Omitted, six days after `from`."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/tickets/{ticket_id}/time-estimate": {
       "get": {
         "tags": [
@@ -18016,6 +18567,72 @@
         "title": "MyJoinRequest",
         "description": "Your own request to join a team (#259), as the directory shows it."
       },
+      "MyTimesheet": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "title": "End"
+          },
+          "today": {
+            "type": "string",
+            "format": "date",
+            "title": "Today"
+          },
+          "long_day_minutes": {
+            "type": "integer",
+            "title": "Long Day Minutes"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/TimesheetDay"
+            },
+            "type": "array",
+            "title": "Days"
+          },
+          "minutes": {
+            "type": "integer",
+            "title": "Minutes"
+          },
+          "tickets": {
+            "items": {
+              "$ref": "#/components/schemas/TimesheetTicketRow"
+            },
+            "type": "array",
+            "title": "Tickets"
+          },
+          "teams_i_run": {
+            "items": {
+              "$ref": "#/components/schemas/SharedTeam"
+            },
+            "type": "array",
+            "title": "Teams I Run"
+          },
+          "has_reports": {
+            "type": "boolean",
+            "title": "Has Reports"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "today",
+          "long_day_minutes",
+          "days",
+          "minutes",
+          "tickets",
+          "teams_i_run",
+          "has_reports"
+        ],
+        "title": "MyTimesheet",
+        "description": "My time (#267): a row per ticket, across every team I am on."
+      },
       "MyWorkCounts": {
         "properties": {
           "assigned": {
@@ -19933,6 +20550,69 @@
           "offset"
         ],
         "title": "PeoplePage"
+      },
+      "PeopleTimesheet": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "title": "End"
+          },
+          "today": {
+            "type": "string",
+            "format": "date",
+            "title": "Today"
+          },
+          "long_day_minutes": {
+            "type": "integer",
+            "title": "Long Day Minutes"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/TimesheetDay"
+            },
+            "type": "array",
+            "title": "Days"
+          },
+          "minutes": {
+            "type": "integer",
+            "title": "Minutes"
+          },
+          "team": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SharedTeam"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/TimesheetPersonRow"
+            },
+            "type": "array",
+            "title": "People"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "today",
+          "long_day_minutes",
+          "days",
+          "minutes",
+          "people"
+        ],
+        "title": "PeopleTimesheet",
+        "description": "A team's week, or a manager's reports: a row per person."
       },
       "PersonRead": {
         "properties": {
@@ -22143,6 +22823,9 @@
           "priority": {
             "$ref": "#/components/schemas/TicketPriority"
           },
+          "type": {
+            "$ref": "#/components/schemas/TicketType"
+          },
           "team_id": {
             "type": "integer",
             "title": "Team Id"
@@ -22176,6 +22859,7 @@
           "title",
           "status",
           "priority",
+          "type",
           "team_id",
           "team_key",
           "number",
@@ -25401,6 +26085,193 @@
         "title": "TimeTotals",
         "description": "Estimated, logged and remaining minutes over some tickets.\n\nLogged is every minute logged on them, estimated or not. Remaining is\nover the tickets that have a time estimate or a remaining set by hand,\nand is nothing for a ticket that is done or cancelled."
       },
+      "TimesheetCell": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "minutes": {
+            "type": "integer",
+            "title": "Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "minutes"
+        ],
+        "title": "TimesheetCell",
+        "description": "One row's time on one day."
+      },
+      "TimesheetDay": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "minutes": {
+            "type": "integer",
+            "title": "Minutes"
+          },
+          "nothing_logged": {
+            "type": "boolean",
+            "title": "Nothing Logged",
+            "default": false
+          },
+          "over": {
+            "type": "boolean",
+            "title": "Over",
+            "default": false
+          },
+          "people_without_time": {
+            "items": {
+              "$ref": "#/components/schemas/PersonRef"
+            },
+            "type": "array",
+            "title": "People Without Time",
+            "default": []
+          },
+          "people_over": {
+            "items": {
+              "$ref": "#/components/schemas/PersonRef"
+            },
+            "type": "array",
+            "title": "People Over",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "minutes"
+        ],
+        "title": "TimesheetDay",
+        "description": "A column: the day's total, and what is marked about it.\n\n`nothing_logged` is a weekday up to today with no time on it -- for a\nrow per person, somebody's (`people_without_time` says whose). `over`\nis more than the instance's long day (`TIMESHEET_LONG_DAY_HOURS`)."
+      },
+      "TimesheetDaySet": {
+        "properties": {
+          "minutes": {
+            "type": "integer",
+            "maximum": 1440.0,
+            "minimum": 0.0,
+            "title": "Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "minutes"
+        ],
+        "title": "TimesheetDaySet",
+        "description": "What my time on a ticket comes to on one day. Nothing clears it."
+      },
+      "TimesheetPersonRow": {
+        "properties": {
+          "person": {
+            "$ref": "#/components/schemas/PersonRef"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/TimesheetCell"
+            },
+            "type": "array",
+            "title": "Days"
+          },
+          "minutes": {
+            "type": "integer",
+            "title": "Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "person",
+          "days",
+          "minutes"
+        ],
+        "title": "TimesheetPersonRow"
+      },
+      "TimesheetTicket": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "team_key": {
+            "type": "string",
+            "title": "Team Key"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TicketType"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TicketPriority"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusRead"
+          },
+          "can_log": {
+            "type": "boolean",
+            "title": "Can Log"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "team_key",
+          "number",
+          "identifier",
+          "title",
+          "type",
+          "priority",
+          "status",
+          "can_log"
+        ],
+        "title": "TimesheetTicket"
+      },
+      "TimesheetTicketRow": {
+        "properties": {
+          "ticket": {
+            "$ref": "#/components/schemas/TimesheetTicket"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/TimesheetCell"
+            },
+            "type": "array",
+            "title": "Days"
+          },
+          "minutes": {
+            "type": "integer",
+            "title": "Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket",
+          "days",
+          "minutes"
+        ],
+        "title": "TimesheetTicketRow"
+      },
       "Token": {
         "properties": {
           "access_token": {
@@ -27039,6 +27910,7 @@
           "share_password_wrong",
           "share_target_required",
           "worklog_in_future",
+          "timesheet_range_invalid",
           "transfer_same_team",
           "view_other_team",
           "view_private_default",

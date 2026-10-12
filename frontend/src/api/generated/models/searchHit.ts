@@ -7,6 +7,7 @@
  */
 import type { StatusRead } from './statusRead';
 import type { TicketPriority } from './ticketPriority';
+import type { TicketType } from './ticketType';
 
 export interface SearchHit {
   id: number;
@@ -14,6 +15,7 @@ export interface SearchHit {
   title: string;
   status: StatusRead;
   priority: TicketPriority;
+  type: TicketType;
   team_id: number;
   team_key: string;
   number: number;

@@ -144,6 +144,11 @@ export default function MyWorkPage() {
           <option value="none">{t('grouping.none')}</option>
         </Select>
         <div className="flex-1" />
+        {/* My time (#267): the same work, as the hours it took. */}
+        <Link to="/my-work/time" className="btn btn-ghost btn-sm">
+          <Icon name="history" size={14} />
+          {t('myTime')}
+        </Link>
         {openNewTicket && (
           <button type="button" onClick={openNewTicket} className="btn btn-primary btn-sm">
             <Icon name="plus" size={14} />

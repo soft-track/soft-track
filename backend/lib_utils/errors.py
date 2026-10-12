@@ -226,6 +226,9 @@ class ErrorCode(str, enum.Enum):
     share_target_required = "share_target_required"
     #: A date worked that has not happened yet.
     worklog_in_future = "worklog_in_future"
+    #: A timesheet's range that ends before it starts, or covers more than a
+    #: year (#267).
+    timesheet_range_invalid = "timesheet_range_invalid"
     #: Moving a ticket to the team it is already on (#98).
     transfer_same_team = "transfer_same_team"
     view_other_team = "view_other_team"

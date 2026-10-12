@@ -8,7 +8,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from typing import Literal, Optional
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import inspect
 from sqlmodel import Session, create_engine
@@ -157,6 +157,9 @@ class Settings(BaseSettings):
     #: is a day, and a reminder goes out in the morning of it -- this one's
     #: morning, until a person sets a timezone of their own (#252).
     default_timezone: str = "UTC"
+    #: A day on the timesheet with more than this many hours logged is
+    #: marked (#267), as one with nothing logged is.
+    timesheet_long_day_hours: int = Field(default=10, ge=1, le=24)
 
     model_config = SettingsConfigDict(env_file=".env")
 

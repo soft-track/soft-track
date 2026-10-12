@@ -10,6 +10,39 @@ on the team's tickets **over the chosen window**, one bar per person.
 
 Deliberately Jira-lite: no timers, no billing rates, no approvals.
 
+## My time: the week as a grid
+
+**My work → My time** (`/my-work/time`) answers "what did I do this week":
+a row per ticket and a column per day, across every team you are on, with
+the totals per day and for the week.
+
+- **Type in a cell** to set your time on that ticket that day — `2h 30m`,
+  `45m`, `1.5h`, as the Time section takes it. An empty cell logs an entry;
+  a cell with one entry changes it; with several, the oldest are kept and
+  the newest takes the difference; emptying a cell removes the day's
+  entries. It goes through the same rules as logging from the ticket: your
+  own entries only, not on a day still to come, not as a guest, and a
+  remaining set by hand goes down by what is logged.
+- **Add a ticket** finds any ticket on a team you belong to, assigned to
+  you or not, and puts it in the week to type against.
+- **Previous week, next week, This week**, and any week by date. "This
+  week" and "today" are the instance's (`DEFAULT_TIMEZONE`).
+- Monday to Friday, and a Saturday or Sunday only when something is logged
+  on it.
+- **Marked days**, in words under the grid as well as in colour: a weekday
+  up to today with nothing logged, and a day over
+  `TIMESHEET_LONG_DAY_HOURS` (default 10).
+- **A team's week**, for its admins: the same grid with a row per person —
+  everybody on the team who can log time, whether they did or not — and
+  only the time on that team's tickets.
+- **My reports**, for a manager: a row per direct report, with their time
+  on the teams the manager is on too, and nothing on any other.
+- **Export CSV** — the week shown or any range of dates up to a year, one
+  line per entry: `date, person, team, ticket, title, hours, note`.
+
+No submitting a week for approval and no locking past weeks. Whether an
+hour is billable is #299.
+
 ## Decisions worth knowing
 
 - **Minutes, as an integer.** Every question asked of time is a sum, and
@@ -69,6 +102,15 @@ exactly, and the sums group by any column on a ticket
   `remaining_minutes` sets what is left, and `null` hands it back to the sum.
 - `PATCH /worklogs/{worklog_id}`, `DELETE /worklogs/{worklog_id}` — your own only.
 - `GET /sprints/{sprint_id}/time-spent`, `GET /teams/{team_id}/time-spent?days=30`.
+- `GET /me/worklogs?from=&to=&ticket_id=` — my time as a grid; neither date
+  is this week, `ticket_id` adds tickets with nothing logged yet.
+  `GET /me/worklogs/export?from=&to=` is the same range as CSV.
+- `PUT /tickets/{ticket_id}/worklogs/days/{worked_on}` — `{minutes}`: what my
+  time on the ticket that day comes to; `0` clears it.
+- `GET /teams/{team_id}/worklogs?from=&to=` and `/export` — a team's time, a
+  row per person, for its admins.
+- `GET /me/reports/worklogs?from=&to=` and `/export` — my direct reports',
+  on the teams I am on too.
 - `PATCH /tickets/{ticket_id}` — `time_estimate_minutes` and `remaining_minutes`.
 - `GET /tickets/{ticket_id}/time-estimate` — estimated, logged and remaining,
   on its own and with its sub-tickets.

@@ -138,6 +138,7 @@ def test_the_hit_carries_what_a_result_row_needs(client, team):
         "Avatar",
         "x",
         priority="urgent",
+        type="bug",
         status_id=team["status_ids"]["In Review"],
     )
     hit = find(client, team, "Avatar")["items"][0]
@@ -145,6 +146,8 @@ def test_the_hit_carries_what_a_result_row_needs(client, team):
     assert hit["identifier"].startswith("ENG-")
     assert hit["status"]["name"] == "In Review"
     assert hit["priority"] == "urgent"
+    # The timesheet's "Add a ticket" draws its type, as a list row does (#267).
+    assert hit["type"] == "bug"
 
 
 # --- tenancy -----------------------------------------------------------

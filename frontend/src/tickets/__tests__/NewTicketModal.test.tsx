@@ -172,6 +172,7 @@ const SUGGESTION: SearchHit = {
   title: 'Fix the login button',
   status: status(1, 'Todo'),
   priority: 'medium',
+  type: 'task',
   matched_in: 'title',
   snippet: '',
   updated_at: '2026-09-25T10:00:00',

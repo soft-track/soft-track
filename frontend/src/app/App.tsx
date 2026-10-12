@@ -12,6 +12,7 @@ import NewTeamPage from '@/team/NewTeamPage'
 import TeamsPage from '@/team/TeamsPage'
 import MyWorkPage from '@/mywork/MyWorkPage'
 import MyWorkRoute from '@/mywork/MyWorkRoute'
+import TimesheetPage from '@/mywork/TimesheetPage'
 import { InsidersOnly } from '@/team/InsidersOnly'
 import BudgetsPage from '@/finance/BudgetsPage'
 import CompensationHistoryPage from '@/finance/CompensationHistoryPage'
@@ -173,6 +174,8 @@ export default function App() {
               in lands. With no team, the page for somebody on none (#318). */}
           <Route path="/my-work" element={<MyWorkRoute />}>
             <Route index element={<MyWorkPage />} />
+            {/* My time (#267), beside it. */}
+            <Route path="time" element={<TimesheetPage />} />
           </Route>
 
           {/* The teams there are, and asking to join one (#259). Case-
