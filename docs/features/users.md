@@ -286,6 +286,28 @@ just stopped working.
   `joined_at` are the record worth keeping.
 - Links expire after `INVITE_EXPIRE_DAYS` (7 by default).
 
+### Inviting many people at once
+
+**Invite many at once**, on the Members page, takes pasted addresses
+(separated by commas, spaces or new lines; "Name <address>" is understood), a
+role, and one or more of the teams the admin administers. Before anything is
+sent it previews each address: will be invited, already a member, has a live
+invitation (and will get a fresh link), or not an address, with its line.
+Sending makes one invitation per address per team by the rules above, so a
+bulk link is as tied to its address as any other. With SMTP the links are
+emailed (the admin can untick that), and the summary afterwards counts what
+was sent, skipped and failed, with the reason for each, including any the
+mail server refused. Links nobody was emailed are listed to copy and can be
+downloaded as CSV. One submission takes up to `BULK_INVITE_LIMIT` addresses
+(100 by default). An account from outside the organisation is not invited in
+bulk; invite it on its own, with the epics it may see.
+
+A site admin can tick **Create accounts for anybody without one, and add
+everybody directly**: each address without an account gets one, as
+**New account** makes it (#303), and everybody is put on the teams straight
+away instead of being invited. The API is `POST /teams/{team_id}/invites/bulk`,
+which returns a result per address; `preview: true` changes nothing.
+
 ### Invite-only instances
 
 Set `OPEN_REGISTRATION=false` and `/auth/register` only accepts a registration

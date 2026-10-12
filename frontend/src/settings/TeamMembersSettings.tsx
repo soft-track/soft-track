@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import {
   useCreateInviteTeamsTeamIdInvitesPost,
@@ -285,6 +285,14 @@ export default function TeamMembersSettings() {
                 </span>
               </span>
             </label>
+            {/* Many addresses, several teams, one trip (#304). */}
+            <Link
+              to={`/settings/teams/${team.key}/members/invite`}
+              className="btn btn-ghost btn-sm"
+            >
+              <Icon name="users" size={14} />
+              {t('inviteMany.open')}
+            </Link>
             {inviteOutside && (
               <div className="well w-full rounded-control p-3">
                 <p className="mb-2 text-xs font-medium text-neutral-500">

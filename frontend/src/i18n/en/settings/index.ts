@@ -11,6 +11,7 @@ import { departments } from '@/i18n/en/settings/departments'
 import { requireSiteAdmin } from '@/i18n/en/settings/requireSiteAdmin'
 import { roles } from '@/i18n/en/settings/roles'
 import { members } from '@/i18n/en/settings/members'
+import { inviteMany } from '@/i18n/en/settings/inviteMany'
 import { general } from '@/i18n/en/settings/general'
 import { automation } from '@/i18n/en/settings/automation'
 import { integrations } from '@/i18n/en/settings/integrations'
@@ -35,6 +36,7 @@ export const settings = {
   requireSiteAdmin,
   roles,
   members,
+  inviteMany,
   general,
   automation,
   integrations,

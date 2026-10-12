@@ -41,6 +41,7 @@ import TeamGeneralSettings from '@/settings/TeamGeneralSettings'
 import TeamIntegrationSettings from '@/settings/TeamIntegrationSettings'
 import TeamLabelSettings from '@/settings/TeamLabelSettings'
 import TeamMembersSettings from '@/settings/TeamMembersSettings'
+import InviteManyPage from '@/settings/InviteManyPage'
 import TeamFieldSettings from '@/settings/TeamFieldSettings'
 import TeamStatusSettings from '@/settings/TeamStatusSettings'
 import TeamTemplateSettings from '@/settings/TeamTemplateSettings'
@@ -123,6 +124,7 @@ export default function App() {
               element={<Navigate to="members" replace />}
             />
             <Route path="teams/:teamKey/members" element={<TeamMembersSettings />} />
+            <Route path="teams/:teamKey/members/invite" element={<InviteManyPage />} />
             <Route path="teams/:teamKey/general" element={<TeamGeneralSettings />} />
             <Route path="teams/:teamKey/statuses" element={<TeamStatusSettings />} />
             <Route path="teams/:teamKey/labels" element={<TeamLabelSettings />} />

@@ -2801,6 +2801,64 @@
         }
       }
     },
+    "/teams/{team_id}/invites/bulk": {
+      "post": {
+        "tags": [
+          "invites"
+        ],
+        "summary": "Bulk Invite",
+        "description": "Invite many addresses to one or more teams the caller administers (#304).\n\nWith `preview`, says what would happen to each address and changes\nnothing. Otherwise makes one invitation per address per team, by the\nrules a single invitation follows, and returns a result per address.\nWith `send_email` the links are emailed before responding, so the result\ncan say which ones the mail server refused.",
+        "operationId": "bulk_invite_teams__team_id__invites_bulk_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkInviteCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkInviteResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/teams/{team_id}/invites/{invite_id}": {
       "delete": {
         "tags": [
@@ -13446,6 +13504,236 @@
         "title": "BudgetUpdate",
         "description": "Leaving a field out leaves it alone."
       },
+      "BulkInviteCreate": {
+        "properties": {
+          "addresses": {
+            "type": "string",
+            "maxLength": 50000,
+            "title": "Addresses"
+          },
+          "role": {
+            "$ref": "#/components/schemas/TeamRole",
+            "default": "member"
+          },
+          "team_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Team Ids",
+            "default": []
+          },
+          "send_email": {
+            "type": "boolean",
+            "title": "Send Email",
+            "default": false
+          },
+          "create_accounts": {
+            "type": "boolean",
+            "title": "Create Accounts",
+            "default": false
+          },
+          "preview": {
+            "type": "boolean",
+            "title": "Preview",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "addresses"
+        ],
+        "title": "BulkInviteCreate",
+        "description": "Many addresses, one role, one or more teams (#304)."
+      },
+      "BulkInviteEntry": {
+        "properties": {
+          "line": {
+            "type": "integer",
+            "title": "Line"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "is_address": {
+            "type": "boolean",
+            "title": "Is Address",
+            "default": true
+          },
+          "teams": {
+            "items": {
+              "$ref": "#/components/schemas/BulkInviteTeamResult"
+            },
+            "type": "array",
+            "title": "Teams",
+            "default": []
+          },
+          "welcome_link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Welcome Link"
+          }
+        },
+        "type": "object",
+        "required": [
+          "line",
+          "text"
+        ],
+        "title": "BulkInviteEntry",
+        "description": "One address as pasted, and what happens to it on each team."
+      },
+      "BulkInviteKind": {
+        "type": "string",
+        "enum": [
+          "invite",
+          "fresh_link",
+          "member",
+          "add",
+          "account",
+          "refused"
+        ],
+        "title": "BulkInviteKind"
+      },
+      "BulkInviteResult": {
+        "properties": {
+          "preview": {
+            "type": "boolean",
+            "title": "Preview"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/BulkInviteEntry"
+            },
+            "type": "array",
+            "title": "Entries"
+          },
+          "sent": {
+            "type": "integer",
+            "title": "Sent",
+            "default": 0
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped",
+            "default": 0
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "preview",
+          "entries"
+        ],
+        "title": "BulkInviteResult",
+        "description": "A result per address, and the totals. On a preview the totals are\nzero: nothing has been sent."
+      },
+      "BulkInviteStatus": {
+        "type": "string",
+        "enum": [
+          "sent",
+          "skipped",
+          "failed"
+        ],
+        "title": "BulkInviteStatus"
+      },
+      "BulkInviteTeamResult": {
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "team_name": {
+            "type": "string",
+            "title": "Team Name"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/BulkInviteKind"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BulkInviteStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "invite": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InviteRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "team_id",
+          "team_name",
+          "kind"
+        ],
+        "title": "BulkInviteTeamResult",
+        "description": "What happens to one address on one team."
+      },
       "Burndown": {
         "properties": {
           "sprint_id": {
@@ -23649,6 +23937,8 @@
           "api_token_not_allowed",
           "invite_wrong_recipient",
           "reset_link_invalid",
+          "too_many_addresses",
+          "no_addresses",
           "email_not_configured",
           "oauth_provider_unknown",
           "oauth_provider_disabled",

@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     #: How long an invitation link stays usable. Long enough to survive a
     #: holiday, short enough that a link found in an old inbox is dead.
     invite_expire_days: int = 7
+    #: How many addresses one bulk invitation takes (#304). Enough for a
+    #: department; a whole company is better done in a few goes, each with a
+    #: preview a person can actually read.
+    bulk_invite_limit: int = 100
     #: How long a "forgot password" link stays usable (#83). Short, because
     #: unlike an invitation it grants the account itself.
     password_reset_expire_minutes: int = 60

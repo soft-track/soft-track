@@ -3,8 +3,15 @@ from sqlmodel import Session
 
 from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
+from lib_softtrack import bulk_invites
 from lib_softtrack import invites as invites_service
-from lib_softtrack.models.invites import InviteCreate, InvitePreview, InviteRead
+from lib_softtrack.models.invites import (
+    BulkInviteCreate,
+    BulkInviteResult,
+    InviteCreate,
+    InvitePreview,
+    InviteRead,
+)
 from lib_softtrack.models.teams import TeamRead
 from lib_softtrack.tables import User
 from lib_utils.mailer import get_mailer
@@ -37,6 +44,30 @@ def create_invite(
     if message is not None:
         background.add_task(get_mailer().send, *message)
     return invite
+
+
+@router.post(
+    "/teams/{team_id}/invites/bulk",
+    response_model=BulkInviteResult,
+    dependencies=[team_writer],
+)
+def bulk_invite(
+    team_id: int,
+    payload: BulkInviteCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Invite many addresses to one or more teams the caller administers (#304).
+
+    With `preview`, says what would happen to each address and changes
+    nothing. Otherwise makes one invitation per address per team, by the
+    rules a single invitation follows, and returns a result per address.
+    With `send_email` the links are emailed before responding, so the result
+    can say which ones the mail server refused.
+    """
+    return bulk_invites.bulk_invite(
+        session, current_user, team_id, payload, get_mailer().send
+    )
 
 
 @router.get("/teams/{team_id}/invites", response_model=list[InviteRead])

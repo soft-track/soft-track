@@ -328,6 +328,10 @@ class ErrorCode(str, enum.Enum):
     invite_wrong_recipient = "invite_wrong_recipient"
     #: A password reset link that is wrong, used, expired or superseded.
     reset_link_invalid = "reset_link_invalid"
+    #: More addresses in one bulk invitation than this instance takes (#304),
+    #: or none at all.
+    too_many_addresses = "too_many_addresses"
+    no_addresses = "no_addresses"
     #: This instance has no SMTP server configured.
     email_not_configured = "email_not_configured"
     oauth_provider_unknown = "oauth_provider_unknown"

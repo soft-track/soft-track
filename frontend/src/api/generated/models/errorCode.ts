@@ -180,6 +180,8 @@ export const ErrorCode = {
   api_token_not_allowed: 'api_token_not_allowed',
   invite_wrong_recipient: 'invite_wrong_recipient',
   reset_link_invalid: 'reset_link_invalid',
+  too_many_addresses: 'too_many_addresses',
+  no_addresses: 'no_addresses',
   email_not_configured: 'email_not_configured',
   oauth_provider_unknown: 'oauth_provider_unknown',
   oauth_provider_disabled: 'oauth_provider_disabled',
