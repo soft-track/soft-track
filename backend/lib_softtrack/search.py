@@ -16,10 +16,12 @@ the cost is a fixed number of queries per page -- count, page, comments --
 rather than one per result.
 """
 
+from datetime import date, datetime, timezone
 from typing import Optional
 
 from sqlalchemy import (
     Float,
+    and_,
     Integer,
     String,
     cast,
@@ -32,7 +34,9 @@ from sqlalchemy import (
 from sqlmodel import Session, select
 
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
+from lib_softtrack.filters import filter_clauses
 from lib_softtrack.models.search import SearchHit
+from lib_softtrack.models.views import ViewFilters
 from lib_softtrack.models.statuses import StatusRead
 from lib_softtrack.search_fts import fts_query
 from lib_softtrack.tables import (
@@ -53,6 +57,8 @@ def search_tickets(
     current_user: User,
     query: str,
     team_id: Optional[int] = None,
+    filters: Optional[ViewFilters] = None,
+    today: Optional[date] = None,
     limit: int = DEFAULT_LIMIT,
     offset: int = 0,
 ) -> Page[SearchHit]:
@@ -85,6 +91,11 @@ def search_tickets(
         condition, order_by = _fts_query(match, team_ids)
     else:
         condition, order_by = _like_query(query, team_ids)
+    # The list's filters, read by the list's own code (#261), ANDed with the
+    # match and the caller's teams -- never instead of them.
+    if filters is not None:
+        today = today or datetime.now(timezone.utc).date()
+        condition = and_(condition, *filter_clauses(filters, today, current_user.id))
 
     total = session.exec(
         select(func.count()).select_from(Ticket).where(condition)

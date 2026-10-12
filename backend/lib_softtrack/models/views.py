@@ -1,12 +1,14 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.tables import (
+    DateWindow,
     DueFilter,
     LabelMatch,
+    MissingField,
     TicketGrouping,
     TicketPriority,
     TicketSort,
@@ -76,9 +78,49 @@ class ViewFilters(BaseModel):
     #: viewer's own today when the view is applied, not from when it was saved.
     due: Optional[DueFilter] = None
 
+    #: "Me" as one of the assignee choices (#261): whoever is looking, not
+    #: whoever saved the view -- so a shared "assigned to me" shows each
+    #: viewer their own tickets. Beside `assignee_id` it is "me, or Mei".
+    assignee_me: bool = False
+    #: Who created the ticket, in the same shape as the assignee (#261).
+    creator_id: list[int] = []
+    creator_me: bool = False
+    creator_exclude: bool = False
+    #: Only the tickets the viewer is watching.
+    watching: bool = False
+    #: When the ticket last changed: a window measured back from the viewer's
+    #: today, or a range of days, both ends included (UTC days). Either end
+    #: alone is "on or after" or "on or before".
+    updated: Optional[DateWindow] = None
+    updated_from: Optional[date] = None
+    updated_to: Optional[date] = None
+    #: When the ticket was created, the same way.
+    created: Optional[DateWindow] = None
+    created_from: Optional[date] = None
+    created_to: Optional[date] = None
+    #: Tickets with no estimate, no epic or no sprint -- each one asked narrows
+    #: further. No assignee and no due date are the assignee and due filters'.
+    has_no: list[MissingField] = []
+
     _lists = field_validator(
-        "status_id", "priority", "assignee_id", "label_id", "type", mode="before"
+        "status_id",
+        "priority",
+        "assignee_id",
+        "label_id",
+        "type",
+        "creator_id",
+        "has_no",
+        mode="before",
     )(_as_list)
+
+    @model_validator(mode="after")
+    def _ranges_run_forwards(self) -> "ViewFilters":
+        for field in ("updated", "created"):
+            start = getattr(self, f"{field}_from")
+            end = getattr(self, f"{field}_to")
+            if start is not None and end is not None and start > end:
+                raise ValueError(f"{field}_from is after {field}_to")
+        return self
 
 
 class SavedViewCreate(BaseModel):

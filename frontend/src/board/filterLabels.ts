@@ -5,9 +5,12 @@ import type {
   StatusRead,
   TeamMemberRead,
 } from '@/api/generated/models'
-import type { BoardFilters, FilterValue, ManyKey, OneKey } from '@/board/filters'
-import { MANY_KEYS, withoutFilter, withoutValue } from '@/board/filters'
+import { addDays, format, parseISO } from 'date-fns'
+
+import type { BoardFilters, FilterKey, FilterValue, ManyKey, WhenFilter } from '@/board/filters'
+import { FILTER_KEYS, MANY_KEYS, withoutFilter, withoutValue } from '@/board/filters'
 import { i18n } from '@/i18n'
+import { formatDate } from '@/i18n/format'
 import { DUE_FILTER_LABEL } from '@/tickets/dueDate'
 import { PRIORITY_META, TYPE_META } from '@/tickets/ticketMeta'
 
@@ -32,7 +35,7 @@ export type ChipPart = {
 
 export type FilterChip = {
   /** Which filter the chip is. */
-  key: ManyKey | OneKey
+  key: FilterKey
   /** "Assignee", "Label" -- what is being filtered on. */
   field: string
   /** "not", when the filter excludes its values. */
@@ -62,10 +65,32 @@ const FIELD = {
   projectId: 'project',
   sprintId: 'sprint',
   due: 'due',
-} as const satisfies Record<ManyKey | OneKey, string>
+  creator: 'creator',
+  updated: 'updated',
+  created: 'created',
+  hasNo: 'hasNo',
+  watching: 'watching',
+} as const satisfies Record<FilterKey, string>
+
+/**
+ * Status, priority, assignee and label first, as they always were; then the
+ * epic and sprint, then type and due; then what #261 added, in the order its
+ * chips were drawn: updated, created, has no, created by, watching.
+ */
+const CHIP_ORDER: readonly FilterKey[] = [
+  'status',
+  'priority',
+  'assignee',
+  'label',
+  'projectId',
+  'sprintId',
+  'type',
+  'due',
+  ...FILTER_KEYS.slice(FILTER_KEYS.indexOf('updated')),
+]
 
 /** A filter's field name: "Status", "Epic". */
-export function fieldName(key: ManyKey | OneKey): string {
+export function fieldName(key: FilterKey): string {
   return i18n.t(`board:filters.fields.${FIELD[key]}`)
 }
 
@@ -92,10 +117,13 @@ export function valueName<K extends ManyKey>(
     case 'priority':
       return PRIORITY_META[value as FilterValue<'priority'>].label
     case 'assignee':
-      return value === 'unassigned'
-        ? i18n.t('board:filters.unassigned')
-        : (lookups.members.find((member) => member.user.id === value)?.user.full_name ??
-            i18n.t('board:filters.missing.assignee'))
+    case 'creator':
+      if (value === 'me') return i18n.t('board:filters.me')
+      if (value === 'unassigned') return i18n.t('board:filters.unassigned')
+      return (
+        lookups.members.find((member) => member.user.id === value)?.user.full_name ??
+        i18n.t(key === 'creator' ? 'board:filters.missing.creator' : 'board:filters.missing.assignee')
+      )
     case 'label':
       return (
         lookups.labels.find((label) => label.id === value)?.name ??
@@ -107,7 +135,7 @@ export function valueName<K extends ManyKey>(
 }
 
 function chip(
-  key: ManyKey | OneKey,
+  key: FilterKey,
   parts: ChipPart[],
   prefix: string | null = null,
   joiner: string = i18n.t('board:filters.or'),
@@ -150,30 +178,76 @@ export function describeFilters(
       ),
     )
   }
-  const one = (key: OneKey, label: string) =>
+  const one = (key: FilterKey, label: string) =>
     chips.push(chip(key, [{ label, without: withoutFilter(filters, key) }]))
 
-  // Status, priority, assignee and label first, as they always were; then
-  // the epic and sprint, then type and due.
-  for (const key of MANY_KEYS.filter((key) => key !== 'type')) many(key)
-  if (filters.projectId !== null) {
-    one(
-      'projectId',
-      lookups.projects.find((p) => p.id === filters.projectId)?.name ??
-        i18n.t('board:filters.missing.project'),
-    )
+  for (const key of CHIP_ORDER) {
+    if ((MANY_KEYS as readonly string[]).includes(key)) {
+      many(key as ManyKey)
+    } else if (key === 'projectId' && filters.projectId !== null) {
+      one(
+        key,
+        lookups.projects.find((p) => p.id === filters.projectId)?.name ??
+          i18n.t('board:filters.missing.project'),
+      )
+    } else if (key === 'sprintId' && filters.sprintId !== null) {
+      one(
+        key,
+        lookups.sprints.find((s) => s.id === filters.sprintId)?.display_name ??
+          i18n.t('board:filters.missing.sprint'),
+      )
+    } else if (key === 'due' && filters.due !== null) {
+      one(key, DUE_FILTER_LABEL[filters.due])
+    } else if (key === 'updated' || key === 'created') {
+      const label = whenLabel(filters[key])
+      if (label) one(key, label)
+    } else if (key === 'hasNo' && filters.hasNo.length > 0) {
+      // Each one asked narrows further, so they are joined with "and".
+      const parts = filters.hasNo.map((field) => ({
+        label: i18n.t(`board:filters.hasNo.${field}`),
+        without: { ...filters, hasNo: filters.hasNo.filter((other) => other !== field) },
+      }))
+      chips.push(chip(key, parts, null, i18n.t('board:filters.and')))
+    } else if (key === 'watching' && filters.watching) {
+      const label = i18n.t('board:filters.watching.chipValue')
+      chips.push({
+        ...chip(key, [{ label, without: withoutFilter(filters, key) }]),
+        field: i18n.t('board:filters.watching.chipField'),
+      })
+    }
   }
-  if (filters.sprintId !== null) {
-    one(
-      'sprintId',
-      lookups.sprints.find((s) => s.id === filters.sprintId)?.display_name ??
-        i18n.t('board:filters.missing.sprint'),
-    )
-  }
-  many('type')
-  if (filters.due !== null) one('due', DUE_FILTER_LABEL[filters.due])
 
   return chips
+}
+
+/** A day as a chip shows it: "3 Sep 2026". */
+function chipDay(day: string): string {
+  return formatDate(parseISO(day), i18n.t('board:filters.chipDatePattern'))
+}
+
+/** A `yyyy-MM-dd` day moved by `days`. */
+export function shiftDay(day: string, days: number): string {
+  return format(addDays(parseISO(day), days), 'yyyy-MM-dd')
+}
+
+/**
+ * When, in a chip's words: "last 30 days", "before 3 Sep 2026" (#261). The
+ * API's days are both included, so "before" names the day after the last one
+ * and "after" the day before the first: the day that was picked.
+ */
+export function whenLabel(when: WhenFilter): string | null {
+  const parts: string[] = []
+  if (when.window) parts.push(i18n.t(`board:filters.whenChip.${when.window}`))
+  if (when.from && when.to) {
+    parts.push(
+      i18n.t('board:filters.whenChip.between', { from: chipDay(when.from), to: chipDay(when.to) }),
+    )
+  } else if (when.to) {
+    parts.push(i18n.t('board:filters.whenChip.before', { date: chipDay(shiftDay(when.to, 1)) }))
+  } else if (when.from) {
+    parts.push(i18n.t('board:filters.whenChip.after', { date: chipDay(shiftDay(when.from, -1)) }))
+  }
+  return parts.length > 0 ? parts.join(', ') : null
 }
 
 /** A one-line summary, for a saved view's row in the sidebar. */

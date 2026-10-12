@@ -15,6 +15,7 @@ import {
   fromSearchParams,
   fromViewFilters,
   sameFilters,
+  whenIsSet,
   searchString,
   toQueryParams,
   toSearchParams,
@@ -255,10 +256,15 @@ export default function BoardPage() {
   // Search runs on the server. The old client-side filter could only see the
   // page that was already loaded, and only matched titles.
   const searchQuery = useDebounced(search.trim(), 250)
-  const searchResults = useSearchSearchGet(
-    { q: searchQuery || 'x', team_id: team?.id, limit: 50 },
-    { query: { enabled: Boolean(team) && searchQuery.length > 0 } },
+  // The board's filters go with it (#261): a search is narrowed where it
+  // is, by the chips above it, rather than by leaving it for the list.
+  const searchRequest = useMemo(
+    () => ({ ...toQueryParams(filters), q: searchQuery || 'x', team_id: team?.id, limit: 50 }),
+    [filters, searchQuery, team?.id],
   )
+  const searchResults = useSearchSearchGet(searchRequest, {
+    query: { enabled: Boolean(team) && searchQuery.length > 0 },
+  })
 
   // A guest (#104) is offered nothing that writes. The server refuses them
   // regardless; this only keeps the board from offering what will fail.
@@ -509,6 +515,7 @@ export default function BoardPage() {
                   <TicketListView
                     tickets={tickets}
                     grouping={grouping}
+                    showUpdated={whenIsSet(filters.updated) || sort.sort === 'updated'}
                     selectedIds={selection.ids}
                     onSelect={canWrite ? selectTicket : undefined}
                   />

@@ -4127,6 +4127,196 @@
               "title": "Due"
             },
             "description": "Overdue, due this week, or with no due date."
+          },
+          {
+            "name": "assignee_me",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "The caller, as one more assignee choice: whoever asks, not whoever saved the view (#261).",
+              "default": false,
+              "title": "Assignee Me"
+            },
+            "description": "The caller, as one more assignee choice: whoever asks, not whoever saved the view (#261)."
+          },
+          {
+            "name": "creator_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets created by one of these people.",
+              "default": [],
+              "title": "Creator Id"
+            },
+            "description": "Only tickets created by one of these people."
+          },
+          {
+            "name": "creator_me",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "The caller, as one more creator choice.",
+              "default": false,
+              "title": "Creator Me"
+            },
+            "description": "The caller, as one more creator choice."
+          },
+          {
+            "name": "creator_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Creator Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "watching",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only tickets the caller watches.",
+              "default": false,
+              "title": "Watching"
+            },
+            "description": "Only tickets the caller watches."
+          },
+          {
+            "name": "updated",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DateWindow"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Updated in the last 7 or 30 days, or more than 30 days ago, counted from `today`.",
+              "title": "Updated"
+            },
+            "description": "Updated in the last 7 or 30 days, or more than 30 days ago, counted from `today`."
+          },
+          {
+            "name": "updated_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets last updated on or after this day (UTC).",
+              "title": "Updated From"
+            },
+            "description": "Only tickets last updated on or after this day (UTC)."
+          },
+          {
+            "name": "updated_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets last updated on or before this day (UTC).",
+              "title": "Updated To"
+            },
+            "description": "Only tickets last updated on or before this day (UTC)."
+          },
+          {
+            "name": "created",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DateWindow"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Created in the last 7 or 30 days, or before that.",
+              "title": "Created"
+            },
+            "description": "Created in the last 7 or 30 days, or before that."
+          },
+          {
+            "name": "created_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets created on or after this day (UTC).",
+              "title": "Created From"
+            },
+            "description": "Only tickets created on or after this day (UTC)."
+          },
+          {
+            "name": "created_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets created on or before this day (UTC).",
+              "title": "Created To"
+            },
+            "description": "Only tickets created on or before this day (UTC)."
+          },
+          {
+            "name": "has_no",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/MissingField"
+              },
+              "description": "Only tickets with no estimate, no epic or no sprint.",
+              "default": [],
+              "title": "Has No"
+            },
+            "description": "Only tickets with no estimate, no epic or no sprint."
           }
         ],
         "responses": {
@@ -4537,6 +4727,196 @@
               "title": "Due"
             },
             "description": "Overdue, due this week, or with no due date."
+          },
+          {
+            "name": "assignee_me",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "The caller, as one more assignee choice: whoever asks, not whoever saved the view (#261).",
+              "default": false,
+              "title": "Assignee Me"
+            },
+            "description": "The caller, as one more assignee choice: whoever asks, not whoever saved the view (#261)."
+          },
+          {
+            "name": "creator_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets created by one of these people.",
+              "default": [],
+              "title": "Creator Id"
+            },
+            "description": "Only tickets created by one of these people."
+          },
+          {
+            "name": "creator_me",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "The caller, as one more creator choice.",
+              "default": false,
+              "title": "Creator Me"
+            },
+            "description": "The caller, as one more creator choice."
+          },
+          {
+            "name": "creator_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Creator Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "watching",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only tickets the caller watches.",
+              "default": false,
+              "title": "Watching"
+            },
+            "description": "Only tickets the caller watches."
+          },
+          {
+            "name": "updated",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DateWindow"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Updated in the last 7 or 30 days, or more than 30 days ago, counted from `today`.",
+              "title": "Updated"
+            },
+            "description": "Updated in the last 7 or 30 days, or more than 30 days ago, counted from `today`."
+          },
+          {
+            "name": "updated_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets last updated on or after this day (UTC).",
+              "title": "Updated From"
+            },
+            "description": "Only tickets last updated on or after this day (UTC)."
+          },
+          {
+            "name": "updated_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets last updated on or before this day (UTC).",
+              "title": "Updated To"
+            },
+            "description": "Only tickets last updated on or before this day (UTC)."
+          },
+          {
+            "name": "created",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DateWindow"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Created in the last 7 or 30 days, or before that.",
+              "title": "Created"
+            },
+            "description": "Created in the last 7 or 30 days, or before that."
+          },
+          {
+            "name": "created_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets created on or after this day (UTC).",
+              "title": "Created From"
+            },
+            "description": "Only tickets created on or after this day (UTC)."
+          },
+          {
+            "name": "created_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets created on or before this day (UTC).",
+              "title": "Created To"
+            },
+            "description": "Only tickets created on or before this day (UTC)."
+          },
+          {
+            "name": "has_no",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/MissingField"
+              },
+              "description": "Only tickets with no estimate, no epic or no sprint.",
+              "default": [],
+              "title": "Has No"
+            },
+            "description": "Only tickets with no estimate, no epic or no sprint."
           }
         ],
         "responses": {
@@ -6708,7 +7088,7 @@
           "search"
         ],
         "summary": "Search",
-        "description": "Search ticket titles, descriptions and comments.\n\nAlways scoped to the teams the caller belongs to. Postgres uses full-text\nsearch with stemming and relevance ranking; SQLite falls back to a\nsubstring match.",
+        "description": "Search ticket titles, descriptions and comments.\n\nAlways scoped to the teams the caller belongs to. Postgres uses full-text\nsearch with stemming and relevance ranking; SQLite falls back to a\nsubstring match. Takes the same filters as the ticket list (#261), so a\nsearch can be narrowed without leaving it.",
         "operationId": "search_search_get",
         "security": [
           {
@@ -6747,6 +7127,25 @@
             "description": "Restrict to one team. Defaults to every team you are in."
           },
           {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The caller's own date, which `due` and the updated and created windows are measured from.",
+              "title": "Today"
+            },
+            "description": "The caller's own date, which `due` and the updated and created windows are measured from."
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -6768,6 +7167,408 @@
               "default": 0,
               "title": "Offset"
             }
+          },
+          {
+            "name": "status_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets in one of these statuses. Repeat for several.",
+              "default": [],
+              "title": "Status Id"
+            },
+            "description": "Only tickets in one of these statuses. Repeat for several."
+          },
+          {
+            "name": "status_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Status Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TicketPriority"
+              },
+              "description": "Only tickets with one of these priorities.",
+              "default": [],
+              "title": "Priority"
+            },
+            "description": "Only tickets with one of these priorities."
+          },
+          {
+            "name": "priority_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Priority Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "assignee_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets assigned to one of these people.",
+              "default": [],
+              "title": "Assignee Id"
+            },
+            "description": "Only tickets assigned to one of these people."
+          },
+          {
+            "name": "unassigned",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Nobody assigned, as one more assignee choice: alone, only unassigned tickets; with assignee_id, those people or nobody.",
+              "default": false,
+              "title": "Unassigned"
+            },
+            "description": "Nobody assigned, as one more assignee choice: alone, only unassigned tickets; with assignee_id, those people or nobody."
+          },
+          {
+            "name": "assignee_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Assignee Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "label_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets with these labels, any or all of them.",
+              "default": [],
+              "title": "Label Id"
+            },
+            "description": "Only tickets with these labels, any or all of them."
+          },
+          {
+            "name": "label_match",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/LabelMatch",
+              "description": "any: tickets with at least one of the labels. all: with every one of them.",
+              "default": "any"
+            },
+            "description": "any: tickets with at least one of the labels. all: with every one of them."
+          },
+          {
+            "name": "label_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Label Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TicketType"
+              },
+              "description": "Only tickets of these types.",
+              "default": [],
+              "title": "Type"
+            },
+            "description": "Only tickets of these types."
+          },
+          {
+            "name": "type_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Type Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets in this epic.",
+              "title": "Project Id"
+            },
+            "description": "Only tickets in this epic."
+          },
+          {
+            "name": "sprint_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets in this sprint.",
+              "title": "Sprint Id"
+            },
+            "description": "Only tickets in this sprint."
+          },
+          {
+            "name": "due",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DueFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Overdue, due this week, or with no due date.",
+              "title": "Due"
+            },
+            "description": "Overdue, due this week, or with no due date."
+          },
+          {
+            "name": "assignee_me",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "The caller, as one more assignee choice: whoever asks, not whoever saved the view (#261).",
+              "default": false,
+              "title": "Assignee Me"
+            },
+            "description": "The caller, as one more assignee choice: whoever asks, not whoever saved the view (#261)."
+          },
+          {
+            "name": "creator_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets created by one of these people.",
+              "default": [],
+              "title": "Creator Id"
+            },
+            "description": "Only tickets created by one of these people."
+          },
+          {
+            "name": "creator_me",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "The caller, as one more creator choice.",
+              "default": false,
+              "title": "Creator Me"
+            },
+            "description": "The caller, as one more creator choice."
+          },
+          {
+            "name": "creator_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Creator Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "watching",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only tickets the caller watches.",
+              "default": false,
+              "title": "Watching"
+            },
+            "description": "Only tickets the caller watches."
+          },
+          {
+            "name": "updated",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DateWindow"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Updated in the last 7 or 30 days, or more than 30 days ago, counted from `today`.",
+              "title": "Updated"
+            },
+            "description": "Updated in the last 7 or 30 days, or more than 30 days ago, counted from `today`."
+          },
+          {
+            "name": "updated_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets last updated on or after this day (UTC).",
+              "title": "Updated From"
+            },
+            "description": "Only tickets last updated on or after this day (UTC)."
+          },
+          {
+            "name": "updated_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets last updated on or before this day (UTC).",
+              "title": "Updated To"
+            },
+            "description": "Only tickets last updated on or before this day (UTC)."
+          },
+          {
+            "name": "created",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DateWindow"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Created in the last 7 or 30 days, or before that.",
+              "title": "Created"
+            },
+            "description": "Created in the last 7 or 30 days, or before that."
+          },
+          {
+            "name": "created_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets created on or after this day (UTC).",
+              "title": "Created From"
+            },
+            "description": "Only tickets created on or after this day (UTC)."
+          },
+          {
+            "name": "created_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets created on or before this day (UTC).",
+              "title": "Created To"
+            },
+            "description": "Only tickets created on or before this day (UTC)."
+          },
+          {
+            "name": "has_no",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/MissingField"
+              },
+              "description": "Only tickets with no estimate, no epic or no sprint.",
+              "default": [],
+              "title": "Has No"
+            },
+            "description": "Only tickets with no estimate, no epic or no sprint."
           }
         ],
         "responses": {
@@ -15492,6 +16293,16 @@
         "title": "CustomFieldUpdate",
         "description": "What an admin may change. Not the key and not the kind: both are what\nthe values already written mean."
       },
+      "DateWindow": {
+        "type": "string",
+        "enum": [
+          "last_7_days",
+          "last_30_days",
+          "over_30_days"
+        ],
+        "title": "DateWindow",
+        "description": "When a ticket was updated or created, as the common questions (#261).\n\nRelative, so a saved view keeps asking the same question as time passes:\n\"more than 30 days ago\" is measured from the viewer's today each time the\nview is opened, not from the day it was saved. Dates for anything else\nare a range beside it (`updated_from`, `updated_to`)."
+      },
       "DefaultViewUpdate": {
         "properties": {
           "view_id": {
@@ -16689,6 +17500,16 @@
         ],
         "title": "LinkedTicket",
         "description": "Just enough of the other ticket to render a row and click through."
+      },
+      "MissingField": {
+        "type": "string",
+        "enum": [
+          "estimate",
+          "epic",
+          "sprint"
+        ],
+        "title": "MissingField",
+        "description": "What a ticket can be filtered on having none of (#261).\n\nNo assignee and no due date were filters before this, and stay where\nthey are: nobody is one of the assignee choices, no due date one of the\ndue filter's."
       },
       "MonthCost": {
         "properties": {
@@ -19975,7 +20796,13 @@
               "label_match": "any",
               "label_exclude": false,
               "type": [],
-              "type_exclude": false
+              "type_exclude": false,
+              "assignee_me": false,
+              "creator_id": [],
+              "creator_me": false,
+              "creator_exclude": false,
+              "watching": false,
+              "has_no": []
             }
           },
           "group_by": {
@@ -24166,64 +24993,115 @@
                 "type": "null"
               }
             ]
+          },
+          "assignee_me": {
+            "type": "boolean",
+            "title": "Assignee Me",
+            "default": false
+          },
+          "creator_id": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Creator Id",
+            "default": []
+          },
+          "creator_me": {
+            "type": "boolean",
+            "title": "Creator Me",
+            "default": false
+          },
+          "creator_exclude": {
+            "type": "boolean",
+            "title": "Creator Exclude",
+            "default": false
+          },
+          "watching": {
+            "type": "boolean",
+            "title": "Watching",
+            "default": false
+          },
+          "updated": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DateWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updated_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated From"
+          },
+          "updated_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated To"
+          },
+          "created": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DateWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created From"
+          },
+          "created_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created To"
+          },
+          "has_no": {
+            "items": {
+              "$ref": "#/components/schemas/MissingField"
+            },
+            "type": "array",
+            "title": "Has No",
+            "default": []
           }
         },
         "type": "object",
         "title": "ViewFilters",
         "description": "What a view narrows the ticket list to.\n\nNested rather than flattened into the view models so that the same shape\nis what the board sends, what a view stores, and what the frontend keeps\nin the URL -- one type to keep in step instead of three. The ticket list\nand its CSV export read their query string into this too (see\napp_softtrack/filter_params.py), and lib_softtrack/filters.py turns it\ninto SQL, so a new filter is a field here, a parameter there and a clause\nthere.\n\nEach of the first five filters takes a list (#260). Several values in one\nfilter are alternatives -- Mei or Daniel -- and different filters narrow\neach other: Mei or Daniel, and bugs. Each has one switch, `*_exclude`, to\nturn it round: every status except Done. No grammar beyond that, and no\nnesting.\n\nEmpty everywhere means \"all tickets\", which is what an empty view is."
-      },
-      "WaitingJoinRequest": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "team": {
-            "$ref": "#/components/schemas/SharedTeam"
-          },
-          "requester": {
-            "$ref": "#/components/schemas/PersonRef"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "team",
-          "requester",
-          "created_at"
-        ],
-        "title": "WaitingJoinRequest",
-        "description": "Somebody asking to join a team the viewer is an admin of (#259)."
-      },
-      "WaitingOnMe": {
-        "properties": {
-          "invites": {
-            "items": {
-              "$ref": "#/components/schemas/InviteRead"
-            },
-            "type": "array",
-            "title": "Invites"
-          },
-          "join_requests": {
-            "items": {
-              "$ref": "#/components/schemas/WaitingJoinRequest"
-            },
-            "type": "array",
-            "title": "Join Requests"
-          }
-        },
-        "type": "object",
-        "required": [
-          "invites",
-          "join_requests"
-        ],
-        "title": "WaitingOnMe",
-        "description": "What only the viewer can move: invitations to them, and requests to\njoin their teams. The approvals of #248 and #296 join it as they ship."
       },
       "WaitingJoinRequest": {
         "properties": {

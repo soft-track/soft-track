@@ -5,8 +5,10 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { DateWindow } from './dateWindow';
 import type { DueFilter } from './dueFilter';
 import type { LabelMatch } from './labelMatch';
+import type { MissingField } from './missingField';
 import type { TicketPriority } from './ticketPriority';
 import type { TicketType } from './ticketType';
 
@@ -45,4 +47,16 @@ export interface ViewFilters {
   project_id?: number | null;
   sprint_id?: number | null;
   due?: DueFilter | null;
+  assignee_me?: boolean;
+  creator_id?: number[];
+  creator_me?: boolean;
+  creator_exclude?: boolean;
+  watching?: boolean;
+  updated?: DateWindow | null;
+  updated_from?: string | null;
+  updated_to?: string | null;
+  created?: DateWindow | null;
+  created_from?: string | null;
+  created_to?: string | null;
+  has_no?: MissingField[];
 }

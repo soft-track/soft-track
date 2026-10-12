@@ -7,7 +7,7 @@ import type {
   StatusRead,
   TeamMemberRead,
 } from '@/api/generated/models'
-import { describeFilters, summarise, withoutFilter } from '@/board/filterLabels'
+import { describeFilters, summarise, whenLabel, withoutFilter } from '@/board/filterLabels'
 import { NO_FILTERS } from '@/board/filters'
 
 const lookups = {
@@ -28,6 +28,7 @@ describe('describeFilters', () => {
   it('names every active filter and leaves the rest out', () => {
     const chips = describeFilters(
       {
+        ...NO_FILTERS,
         status: one(9),
         priority: one('urgent' as const),
         assignee: one(7),
@@ -134,5 +135,42 @@ describe('withoutFilter', () => {
       label: { values: [3], exclude: true, match: 'any' as const },
     }
     expect(withoutFilter(filters, 'label')).toEqual({ ...NO_FILTERS, priority: one('high') })
+  })
+})
+
+describe('the chips #261 added', () => {
+  it('reads a backlog review the way the mockup does', () => {
+    const chips = describeFilters(
+      {
+        ...NO_FILTERS,
+        updated: { window: 'over_30_days', from: null, to: null },
+        hasNo: ['estimate'],
+        creator: { values: [7], exclude: false },
+      },
+      lookups,
+    )
+    expect(chips.map((c) => `${c.field} ${c.value}`)).toEqual([
+      'Updated more than 30 days ago',
+      'Has no estimate',
+      'Created by Sam Rivera',
+    ])
+  })
+
+  it('names the day picked for before and after, and both for between', () => {
+    expect(whenLabel({ window: null, from: null, to: '2026-09-02' })).toBe('before 3 Sep 2026')
+    expect(whenLabel({ window: null, from: '2026-09-04', to: null })).toBe('after 3 Sep 2026')
+    expect(whenLabel({ window: null, from: '2026-09-01', to: '2026-09-30' })).toBe(
+      '1 Sep 2026 – 30 Sep 2026',
+    )
+    expect(whenLabel({ window: 'last_30_days', from: null, to: null })).toBe('last 30 days')
+    expect(whenLabel({ window: null, from: null, to: null })).toBeNull()
+  })
+
+  it('says me, and watched by me', () => {
+    const chips = describeFilters(
+      { ...NO_FILTERS, assignee: { values: ['me'], exclude: false }, watching: true },
+      lookups,
+    )
+    expect(chips.map((c) => `${c.field} ${c.value}`)).toEqual(['Assignee Me', 'Watched by me'])
   })
 })

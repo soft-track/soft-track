@@ -410,7 +410,13 @@ def _build_ticket_filters(
     """
     get_team_or_404(team_id, session)
     require_team_member(team_id, current_user, session)
-    return ticket_clauses(team_id, filters, parent_id=parent_id, today=today)
+    return ticket_clauses(
+        team_id,
+        filters,
+        parent_id=parent_id,
+        today=today,
+        viewer_id=current_user.id,
+    )
 
 
 def ticket_clauses(
@@ -418,17 +424,21 @@ def ticket_clauses(
     filters: Optional[ViewFilters] = None,
     parent_id: Optional[int] = None,
     today: Optional[date] = None,
+    viewer_id: Optional[int] = None,
 ) -> list[ColumnElement[bool]]:
     """The WHERE clauses alone, with nobody asking: `_build_ticket_filters`
     after its checks, and a share link (#245), whose reader has no account.
 
-    `today` is the caller's own date, which a due filter is measured from;
-    UTC's today when it does not say.
+    `today` is the caller's own date, which a due filter and the updated and
+    created windows are measured from; UTC's today when it does not say.
+    `viewer_id` is who "me" and "watching" mean (#261).
     """
     clauses: list[ColumnElement[bool]] = [Ticket.team_id == team_id]
     if filters is not None:
         clauses.extend(
-            filter_clauses(filters, today or datetime.now(timezone.utc).date())
+            filter_clauses(
+                filters, today or datetime.now(timezone.utc).date(), viewer_id
+            )
         )
     if parent_id is not None:
         clauses.append(Ticket.parent_id == parent_id)

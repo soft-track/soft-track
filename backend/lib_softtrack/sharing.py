@@ -107,12 +107,20 @@ def _target(
     return None, None
 
 
-def _clauses(project: Optional[Project], view: Optional[SavedView]) -> list:
+def _clauses(
+    link: ShareLink, project: Optional[Project], view: Optional[SavedView]
+) -> list:
     """Which tickets the page lists: the epic's, or the view's filters --
-    read by the same code the board's are, so a view and its link agree."""
+    read by the same code the board's are, so a view and its link agree.
+
+    Whoever reads a link has no account, so "me" and "watching" in a view
+    (#261) mean the person who made the link: the view as they saw it.
+    """
     if project is not None:
         return ticket_clauses(project.team_id, ViewFilters(project_id=project.id))
-    return ticket_clauses(view.team_id, view_filters(view))
+    return ticket_clauses(
+        view.team_id, view_filters(view), viewer_id=link.created_by_id
+    )
 
 
 def _is_active(link: ShareLink, target_found: bool) -> bool:
@@ -311,7 +319,7 @@ def open_page(
     session: Session, token: str, password: Optional[str], address: str
 ) -> SharedPage:
     link, project, view = _open(session, token, password, address)
-    clauses = _clauses(project, view)
+    clauses = _clauses(link, project, view)
 
     rows = session.exec(
         select(Ticket, WorkflowStatus)
@@ -470,7 +478,7 @@ def shared_attachment(
         and not attachment.guest_draft
         and session.exec(
             select(Ticket.id).where(
-                Ticket.id == attachment.ticket_id, *_clauses(project, view)
+                Ticket.id == attachment.ticket_id, *_clauses(link, project, view)
             )
         ).first()
         is not None

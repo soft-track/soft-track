@@ -1,6 +1,8 @@
 import type {
+  DateWindow,
   DueFilter,
   LabelMatch,
+  MissingField,
   TicketPriority,
   TicketType,
   ListTicketsTeamsTeamIdTicketsGetParams,
@@ -8,8 +10,21 @@ import type {
 } from '@/api/generated/models'
 import { localToday } from '@/tickets/dueDate'
 
-/** Someone in particular, or nobody at all: one of the assignee choices. */
-export type AssigneeChoice = number | 'unassigned'
+/**
+ * Someone in particular, nobody at all, or "me" -- whoever is looking, so a
+ * shared view saved as assigned to me shows each viewer their own (#261).
+ */
+export type AssigneeChoice = number | 'unassigned' | 'me'
+/** Who created a ticket: someone in particular, or "me". */
+export type CreatorChoice = number | 'me'
+
+/**
+ * When a ticket was updated or created (#261): a window back from today, or
+ * a range of days with both ends included. Either end alone is open.
+ */
+export type WhenFilter = { window: DateWindow | null; from: string | null; to: string | null }
+
+export const NO_WHEN: WhenFilter = { window: null, from: null, to: null }
 
 /**
  * A filter that takes several values (#260).
@@ -43,14 +58,52 @@ export type BoardFilters = {
   sprintId: number | null
   /** Overdue, due this week, or no due date (#87). */
   due: DueFilter | null
+  /** Who created the ticket (#261). */
+  creator: ManyFilter<CreatorChoice>
+  updated: WhenFilter
+  created: WhenFilter
+  /** No estimate, no epic, no sprint: each one ticked narrows further. */
+  hasNo: MissingField[]
+  /** Only the tickets the viewer watches. */
+  watching: boolean
 }
 
-/** The filters that take several values, in the order the menu and the chips show them. */
-export const MANY_KEYS = ['status', 'priority', 'assignee', 'label', 'type'] as const
+/** The filters that take several values, each with a switch to exclude them. */
+export const MANY_KEYS = ['status', 'priority', 'assignee', 'label', 'type', 'creator'] as const
 export type ManyKey = (typeof MANY_KEYS)[number]
 /** The filters that still take one value. */
 export const ONE_KEYS = ['projectId', 'sprintId', 'due'] as const
 export type OneKey = (typeof ONE_KEYS)[number]
+/** When a ticket changed or was made (#261). */
+export const WHEN_KEYS = ['updated', 'created'] as const
+export type WhenKey = (typeof WHEN_KEYS)[number]
+/** Every filter. */
+export type FilterKey = ManyKey | OneKey | WhenKey | 'hasNo' | 'watching'
+
+/**
+ * Every filter, in the order the menu lists them and the chips show them:
+ * the ones there always were, then those #261 added.
+ */
+export const FILTER_KEYS: readonly FilterKey[] = [
+  'status',
+  'priority',
+  'assignee',
+  'label',
+  'type',
+  'projectId',
+  'sprintId',
+  'due',
+  'updated',
+  'created',
+  'hasNo',
+  'creator',
+  'watching',
+]
+
+/** What "has no" can ask about, in the menu's order. */
+export const MISSING_ORDER: readonly MissingField[] = ['estimate', 'epic', 'sprint']
+/** The windows, in the menu's order. */
+export const WINDOW_ORDER: readonly DateWindow[] = ['last_7_days', 'last_30_days', 'over_30_days']
 
 export type FilterValue<K extends ManyKey> = BoardFilters[K]['values'][number]
 
@@ -63,11 +116,24 @@ export const NO_FILTERS: BoardFilters = {
   projectId: null,
   sprintId: null,
   due: null,
+  creator: { values: [], exclude: false },
+  updated: NO_WHEN,
+  created: NO_WHEN,
+  hasNo: [],
+  watching: false,
 }
 
 const PRIORITY_VALUES: readonly string[] = ['no_priority', 'urgent', 'high', 'medium', 'low']
 const DUE_VALUES: readonly string[] = ['overdue', 'this_week', 'none']
 const TYPE_VALUES: readonly string[] = ['bug', 'task', 'story']
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/
+
+/** A day as `YYYY-MM-DD`, or nothing: a mangled date is no filter. */
+function readDay(raw: string | null): string | null {
+  if (raw === null || !DAY.test(raw)) return null
+  return Number.isNaN(Date.parse(`${raw}T00:00:00Z`)) ? null : raw
+}
 
 function readNumber(raw: string | null): number | null {
   if (raw === null) return null
@@ -97,14 +163,37 @@ const MANY_URL: { [K in ManyKey]: { key: string; read: (raw: string) => FilterVa
     priority: { key: 'priority', read: readOneOf<TicketPriority>(PRIORITY_VALUES) },
     assignee: {
       key: 'assignee',
-      read: (raw) => (raw === 'unassigned' ? 'unassigned' : readNumber(raw)),
+      read: (raw) => (raw === 'unassigned' || raw === 'me' ? raw : readNumber(raw)),
     },
     label: { key: 'label', read: readNumber },
     type: { key: 'type', read: readOneOf<TicketType>(TYPE_VALUES) },
+    creator: { key: 'creator', read: (raw) => (raw === 'me' ? 'me' : readNumber(raw)) },
   }
+
+const WINDOW_VALUES: readonly string[] = WINDOW_ORDER
+const MISSING_VALUES: readonly string[] = MISSING_ORDER
+
+/** `?updated=over_30_days`, `?updated_from=2026-09-01&updated_to=2026-09-30`. */
+function readWhen(params: URLSearchParams, key: WhenKey): WhenFilter {
+  return {
+    window: readOneOf<DateWindow>(WINDOW_VALUES)(params.get(key) ?? ''),
+    from: readDay(params.get(`${key}_from`)),
+    to: readDay(params.get(`${key}_to`)),
+  }
+}
+
+function writeWhen(params: URLSearchParams, key: WhenKey, when: WhenFilter) {
+  if (when.window) params.set(key, when.window)
+  if (when.from) params.set(`${key}_from`, when.from)
+  if (when.to) params.set(`${key}_to`, when.to)
+}
 
 /** `?label_match=all`; any is the default and is not written. */
 const LABEL_MATCH_KEY = 'label_match'
+/** `?has_no=estimate&has_no=sprint`. */
+const HAS_NO_KEY = 'has_no'
+/** `?watching=1`. */
+const WATCHING_KEY = 'watching'
 
 const ONE_URL = { projectId: 'project', sprintId: 'sprint', due: 'due' } as const
 
@@ -158,6 +247,13 @@ export function fromSearchParams(params: URLSearchParams): BoardFilters {
     projectId: readNumber(params.get(ONE_URL.projectId)),
     sprintId: readNumber(params.get(ONE_URL.sprintId) ?? params.get(LEGACY_KEYS.sprintId)),
     due: readOneOf<DueFilter>(DUE_VALUES)(params.get(ONE_URL.due) ?? ''),
+    creator: readMany(params, 'creator'),
+    updated: readWhen(params, 'updated'),
+    created: readWhen(params, 'created'),
+    hasNo: MISSING_ORDER.filter((field) =>
+      params.getAll(HAS_NO_KEY).filter((raw) => MISSING_VALUES.includes(raw)).includes(field),
+    ),
+    watching: params.get(WATCHING_KEY) === '1',
   }
 }
 
@@ -180,6 +276,9 @@ export function toSearchParams(filters: BoardFilters): URLSearchParams {
   if (filters.projectId !== null) params.set(ONE_URL.projectId, String(filters.projectId))
   if (filters.sprintId !== null) params.set(ONE_URL.sprintId, String(filters.sprintId))
   if (filters.due) params.set(ONE_URL.due, filters.due)
+  for (const key of WHEN_KEYS) writeWhen(params, key, filters[key])
+  for (const field of filters.hasNo) params.append(HAS_NO_KEY, field)
+  if (filters.watching) params.set(WATCHING_KEY, '1')
   return params
 }
 
@@ -214,9 +313,11 @@ export function toQueryParams(
   const assignee = apiMany(filters.assignee)
   const label = apiMany(filters.label)
   const type = apiMany(filters.type)
-  const people = filters.assignee.values.filter(
-    (value): value is number => value !== 'unassigned',
-  )
+  const creator = apiMany(filters.creator)
+  const people = filters.assignee.values.filter((value): value is number => typeof value === 'number')
+  const creators = filters.creator.values.filter((value): value is number => typeof value === 'number')
+  // Today goes with anything measured from it, so it is the viewer's today.
+  const fromToday = Boolean(filters.due || filters.updated.window || filters.created.window)
   return {
     status_id: status.values,
     status_exclude: status.exclude,
@@ -224,6 +325,7 @@ export function toQueryParams(
     priority_exclude: priority.exclude,
     assignee_id: people.length > 0 ? people : undefined,
     unassigned: filters.assignee.values.includes('unassigned') ? true : undefined,
+    assignee_me: filters.assignee.values.includes('me') ? true : undefined,
     assignee_exclude: assignee.exclude,
     label_id: label.values,
     label_match:
@@ -234,7 +336,18 @@ export function toQueryParams(
     project_id: filters.projectId ?? undefined,
     sprint_id: filters.sprintId ?? undefined,
     due: filters.due ?? undefined,
-    today: filters.due ? today : undefined,
+    creator_id: creators.length > 0 ? creators : undefined,
+    creator_me: filters.creator.values.includes('me') ? true : undefined,
+    creator_exclude: creator.exclude,
+    updated: filters.updated.window ?? undefined,
+    updated_from: filters.updated.from ?? undefined,
+    updated_to: filters.updated.to ?? undefined,
+    created: filters.created.window ?? undefined,
+    created_from: filters.created.from ?? undefined,
+    created_to: filters.created.to ?? undefined,
+    has_no: filters.hasNo.length > 0 ? filters.hasNo : undefined,
+    watching: filters.watching ? true : undefined,
+    today: fromToday ? today : undefined,
   }
 }
 
@@ -258,6 +371,7 @@ export function fromViewFilters(filters: ViewFilters): BoardFilters {
     priority: { values: filters.priority ?? [], exclude: filters.priority_exclude ?? false },
     assignee: {
       values: [
+        ...(filters.assignee_me ? ['me' as const] : []),
         ...(filters.unassigned ? ['unassigned' as const] : []),
         ...(filters.assignee_id ?? []),
       ],
@@ -272,6 +386,22 @@ export function fromViewFilters(filters: ViewFilters): BoardFilters {
     projectId: filters.project_id ?? null,
     sprintId: filters.sprint_id ?? null,
     due: filters.due ?? null,
+    creator: {
+      values: [...(filters.creator_me ? ['me' as const] : []), ...(filters.creator_id ?? [])],
+      exclude: filters.creator_exclude ?? false,
+    },
+    updated: {
+      window: filters.updated ?? null,
+      from: filters.updated_from ?? null,
+      to: filters.updated_to ?? null,
+    },
+    created: {
+      window: filters.created ?? null,
+      from: filters.created_from ?? null,
+      to: filters.created_to ?? null,
+    },
+    hasNo: filters.has_no ?? [],
+    watching: filters.watching ?? false,
   }
 }
 
@@ -283,10 +413,9 @@ export function toViewFilters(filters: BoardFilters): ViewFilters {
     status_exclude: live(filters.status),
     priority: filters.priority.values,
     priority_exclude: live(filters.priority),
-    assignee_id: filters.assignee.values.filter(
-      (value): value is number => value !== 'unassigned',
-    ),
+    assignee_id: filters.assignee.values.filter((value): value is number => typeof value === 'number'),
     unassigned: filters.assignee.values.includes('unassigned'),
+    assignee_me: filters.assignee.values.includes('me'),
     assignee_exclude: live(filters.assignee),
     label_id: filters.label.values,
     label_match: filters.label.values.length > 1 ? filters.label.match : 'any',
@@ -296,20 +425,39 @@ export function toViewFilters(filters: BoardFilters): ViewFilters {
     project_id: filters.projectId,
     sprint_id: filters.sprintId,
     due: filters.due,
+    creator_id: filters.creator.values.filter((value): value is number => typeof value === 'number'),
+    creator_me: filters.creator.values.includes('me'),
+    creator_exclude: live(filters.creator),
+    updated: filters.updated.window,
+    updated_from: filters.updated.from,
+    updated_to: filters.updated.to,
+    created: filters.created.window,
+    created_from: filters.created.from,
+    created_to: filters.created.to,
+    has_no: filters.hasNo,
+    watching: filters.watching,
   }
 }
 
+/** Whether a when filter asks anything. */
+export function whenIsSet(when: WhenFilter): boolean {
+  return when.window !== null || when.from !== null || when.to !== null
+}
+
 /** Whether one filter is narrowing anything. */
-export function isSet(filters: BoardFilters, key: ManyKey | OneKey): boolean {
+export function isSet(filters: BoardFilters, key: FilterKey): boolean {
   if ((MANY_KEYS as readonly string[]).includes(key)) {
     return filters[key as ManyKey].values.length > 0
   }
+  if (key === 'updated' || key === 'created') return whenIsSet(filters[key])
+  if (key === 'hasNo') return filters.hasNo.length > 0
+  if (key === 'watching') return filters.watching
   return filters[key as OneKey] !== null
 }
 
 /** How many filters are set: a filter of several values counts once. */
 export function activeCount(filters: BoardFilters): number {
-  return [...MANY_KEYS, ...ONE_KEYS].filter((key) => isSet(filters, key)).length
+  return FILTER_KEYS.filter((key) => isSet(filters, key)).length
 }
 
 export function isEmpty(filters: BoardFilters): boolean {
@@ -345,12 +493,16 @@ export function withoutValue<K extends ManyKey>(
 }
 
 /** A filter cleared, switches and all. */
-export function withoutFilter(filters: BoardFilters, key: ManyKey | OneKey): BoardFilters {
+export function withoutFilter(filters: BoardFilters, key: FilterKey): BoardFilters {
   return { ...filters, [key]: NO_FILTERS[key] }
 }
 
 function sameValues<T>(a: T[], b: T[]): boolean {
   return a.length === b.length && a.every((value) => b.includes(value))
+}
+
+function sameWhen(a: WhenFilter, b: WhenFilter): boolean {
+  return a.window === b.window && a.from === b.from && a.to === b.to
 }
 
 function sameMany<T>(a: ManyFilter<T>, b: ManyFilter<T>): boolean {
@@ -380,6 +532,11 @@ export function sameFilters(a: BoardFilters, b: BoardFilters): boolean {
     sameMany(a.type, b.type) &&
     a.projectId === b.projectId &&
     a.sprintId === b.sprintId &&
-    a.due === b.due
+    a.due === b.due &&
+    sameMany(a.creator, b.creator) &&
+    sameWhen(a.updated, b.updated) &&
+    sameWhen(a.created, b.created) &&
+    sameValues(a.hasNo, b.hasNo) &&
+    a.watching === b.watching
   )
 }

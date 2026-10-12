@@ -4,6 +4,9 @@
  * (#260): checkboxes where there was a select, a switch per filter that turns
  * it round, labels any or all, and a chip whose values come off one at a time.
  *
+ * And the filters #261 added: created by, "me" as a value, updated and created
+ * windows or dates, has no, and watching.
+ *
  * The bar is controlled, so each test renders it inside a little holder that
  * keeps the filters it is handed back -- the way the board's URL does.
  */
@@ -16,6 +19,10 @@ import type { LabelRead, StatusRead, TeamMemberRead } from '@/api/generated/mode
 import { FilterBar } from '@/board/FilterBar'
 import { type BoardFilters, NO_FILTERS } from '@/board/filters'
 import { TeamProvider, type TeamContextValue } from '@/team/TeamContext'
+
+vi.mock('@/auth/useAuth', () => ({
+  useAuth: () => ({ user: { id: 10, full_name: 'Amina Khan', avatar_color: '#123' } }),
+}))
 
 function member(id: number, full_name: string): TeamMemberRead {
   return {
@@ -155,5 +162,72 @@ describe('FilterBar', () => {
     const user = renderBar({ ...NO_FILTERS, type: { values: ['bug'], exclude: false } })
     await user.click(screen.getByRole('button', { name: /^Filter/ }))
     expect(within(menu()).getByRole('checkbox', { name: 'Bug' })).toHaveProperty('checked', true)
+  })
+
+  it('offers me as an assignee, which is whoever is looking', async () => {
+    const user = renderBar()
+    await openSection(user, 'Assignee')
+    await user.click(within(menu()).getByRole('checkbox', { name: 'Me' }))
+    expect(latest.assignee.values).toEqual(['me'])
+    expect(screen.getByTestId('filter-chip-assignee').textContent).toBe('AssigneeMe')
+  })
+
+  it('filters by who created a ticket, people or me', async () => {
+    const user = renderBar()
+    await openSection(user, 'Created by')
+    await user.click(within(menu()).getByRole('checkbox', { name: 'Amina Khan' }))
+    await user.click(within(menu()).getByRole('checkbox', { name: 'Me' }))
+    expect(latest.creator).toEqual({ values: ['me', 10], exclude: false })
+    expect(screen.getByTestId('filter-chip-creator').textContent).toBe(
+      'Created byMeorAmina Khan',
+    )
+  })
+
+  it('narrows to what changed more than 30 days ago, and unticks it', async () => {
+    const user = renderBar()
+    await openSection(user, 'Updated')
+    const listbox = within(menu()).getByRole('listbox', { name: 'Updated' })
+    await user.click(within(listbox).getByRole('option', { name: 'More than 30 days ago' }))
+
+    expect(latest.updated).toEqual({ window: 'over_30_days', from: null, to: null })
+    expect(screen.getByTestId('filter-chip-updated').textContent).toBe(
+      'Updatedmore than 30 days ago',
+    )
+    expect(
+      within(listbox).getByRole('option', { name: 'More than 30 days ago' }),
+    ).toHaveProperty('ariaSelected', 'true')
+
+    await user.click(within(listbox).getByRole('option', { name: 'More than 30 days ago' }))
+    expect(latest.updated).toEqual({ window: null, from: null, to: null })
+  })
+
+  it('takes a date for before, and names the day that was picked', async () => {
+    const user = renderBar()
+    await user.click(screen.getByRole('button', { name: /^Filter/ }))
+    await user.click(within(menu()).getByRole('button', { name: /^Created(?! by)/ }))
+    await user.click(within(menu()).getByRole('option', { name: 'Before a date…' }))
+    const field = within(menu()).getByLabelText('Date')
+    await user.type(field, '2026-09-03')
+
+    // Both ends of the API's range are included: before the 3rd is to the 2nd.
+    expect(latest.created).toEqual({ window: null, from: null, to: '2026-09-02' })
+    expect(screen.getByTestId('filter-chip-created').textContent).toBe(
+      'Createdbefore 3 Sep 2026',
+    )
+  })
+
+  it('asks for tickets with no estimate, and only those I watch', async () => {
+    const user = renderBar()
+    await openSection(user, 'Has no')
+    await user.click(within(menu()).getByRole('checkbox', { name: 'estimate' }))
+    await user.click(within(menu()).getByRole('button', { name: /^Watching/ }))
+    await user.click(
+      within(menu()).getByRole('checkbox', { name: 'Only tickets I am watching' }),
+    )
+
+    expect(latest.hasNo).toEqual(['estimate'])
+    expect(latest.watching).toBe(true)
+    expect(screen.getByTestId('filter-chip-hasNo').textContent).toBe('Has noestimate')
+    expect(screen.getByTestId('filter-chip-watching').textContent).toBe('Watched byme')
   })
 })

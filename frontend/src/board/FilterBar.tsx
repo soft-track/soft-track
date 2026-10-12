@@ -1,20 +1,28 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import type { DueFilter } from '@/api/generated/models'
-import { describeFilters, fieldName, summarise, valueName } from '@/board/filterLabels'
+import type { DateWindow, DueFilter } from '@/api/generated/models'
+import { useAuth } from '@/auth/useAuth'
+import { describeFilters, fieldName, shiftDay, summarise, valueName } from '@/board/filterLabels'
 import {
   activeCount,
   type BoardFilters,
+  FILTER_KEYS,
+  type FilterKey,
   type FilterValue,
   isEmpty,
   isSet,
   MANY_KEYS,
   type ManyKey,
+  MISSING_ORDER,
   NO_FILTERS,
+  NO_WHEN,
   ONE_KEYS,
   type OneKey,
   toggleValue,
+  type WhenFilter,
+  type WhenKey,
+  WINDOW_ORDER,
   withoutFilter,
 } from '@/board/filters'
 import { useTranslation } from '@/i18n'
@@ -28,12 +36,29 @@ import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
 
-type Section = ManyKey | OneKey
+type Section = FilterKey
 
 /** Which section the menu opens on: the first filter already set, else status. */
 function firstSet(filters: BoardFilters): Section {
-  return [...MANY_KEYS, ...ONE_KEYS].find((key) => isSet(filters, key)) ?? 'status'
+  return FILTER_KEYS.find((key) => isSet(filters, key)) ?? 'status'
 }
+
+/** A section's summary with nothing chosen in it: "Any status", "Anyone". */
+const ANY_KEY = {
+  status: 'status',
+  priority: 'priority',
+  assignee: 'assignee',
+  label: 'label',
+  type: 'type',
+  projectId: 'project',
+  sprintId: 'sprint',
+  due: 'due',
+  creator: 'creator',
+  updated: 'updated',
+  created: 'created',
+  hasNo: 'hasNo',
+  watching: 'watching',
+} as const satisfies Record<FilterKey, string>
 
 /**
  * One button for every filter, and a chip for each one that is set.
@@ -164,7 +189,7 @@ export function FilterBar({
               }}
               className="glass-menu fixed z-50 w-[20rem] max-w-[calc(100vw-1rem)] overflow-y-auto rounded-panel p-1.5"
             >
-              {[...MANY_KEYS, ...ONE_KEYS].map((key) => (
+              {FILTER_KEYS.map((key) => (
                 <div key={key} className="border-b border-neutral-900/5 last:border-b-0">
                   <button
                     type="button"
@@ -176,7 +201,7 @@ export function FilterBar({
                     <span className="min-w-0 flex-1 truncate text-right text-xs text-neutral-500">
                       {isSet(filters, key)
                         ? summarise(onlyFilter(filters, key), lookups)
-                        : t(`filters.any.${key === 'projectId' ? 'project' : key === 'sprintId' ? 'sprint' : key}`)}
+                        : t(`filters.any.${ANY_KEY[key]}`)}
                     </span>
                     <Icon
                       name={section === key ? 'chevron-up' : 'chevron-down'}
@@ -192,8 +217,14 @@ export function FilterBar({
                           filters={filters}
                           onChange={onChange}
                         />
-                      ) : (
+                      ) : (ONE_KEYS as readonly string[]).includes(key) ? (
                         <OneSection name={key as OneKey} filters={filters} onChange={onChange} />
+                      ) : key === 'updated' || key === 'created' ? (
+                        <WhenSection name={key} filters={filters} onChange={onChange} />
+                      ) : key === 'hasNo' ? (
+                        <HasNoSection filters={filters} onChange={onChange} />
+                      ) : (
+                        <WatchingSection filters={filters} onChange={onChange} />
                       )}
                     </div>
                   )}
@@ -221,10 +252,15 @@ function useOptions<K extends ManyKey>(name: K): FilterValue<K>[] {
     case 'priority':
       return PRIORITY_ORDER as FilterValue<K>[]
     case 'assignee':
+      // "Me" first: whoever is looking, which is what a shared view about
+      // oneself needs (#261).
       return [
+        'me',
         'unassigned',
         ...activeMembers(members).map((user) => user.id),
       ] as FilterValue<K>[]
+    case 'creator':
+      return ['me', ...activeMembers(members).map((user) => user.id)] as FilterValue<K>[]
     case 'label':
       return labels.map((label) => label.id) as FilterValue<K>[]
     default:
@@ -322,7 +358,9 @@ function ManySection<K extends ManyKey>({
 /** The small mark before a value: an avatar, a status dot, an icon. */
 function OptionMark<K extends ManyKey>({ name, value }: { name: K; value: FilterValue<K> }) {
   const { members, statuses } = useTeamContext()
-  if (name === 'assignee') {
+  const { user: me } = useAuth()
+  if (name === 'assignee' || name === 'creator') {
+    if (value === 'me') return me ? <Avatar user={me} size={20} decorative /> : null
     if (value === 'unassigned') {
       return (
         <span
@@ -417,5 +455,175 @@ function OneSection({
         )}
       </Select>
     </div>
+  )
+}
+
+/**
+ * When a ticket was updated or created (#261): the common windows, or dates.
+ *
+ * The API's range includes both its days, so "before" a day is up to the day
+ * before it and "after" a day from the day after -- the chip names the day
+ * that was picked.
+ */
+type WhenMode = DateWindow | 'before' | 'after' | 'between'
+
+function modeOf(when: WhenFilter): WhenMode | null {
+  if (when.window) return when.window
+  if (when.from && when.to) return 'between'
+  if (when.to) return 'before'
+  if (when.from) return 'after'
+  return null
+}
+
+function WhenSection({
+  name,
+  filters,
+  onChange,
+}: {
+  name: WhenKey
+  filters: BoardFilters
+  onChange: (filters: BoardFilters) => void
+}) {
+  const { t } = useTranslation('board')
+  const when = filters[name]
+  // A choice of dates is open before a date has been picked for it.
+  const [mode, setMode] = useState<WhenMode | null>(() => modeOf(when))
+  const set = (next: WhenFilter) => onChange({ ...filters, [name]: next })
+  const choose = (next: WhenMode) => {
+    if (mode === next) {
+      setMode(null)
+      set(NO_WHEN)
+      return
+    }
+    setMode(next)
+    if ((WINDOW_ORDER as readonly string[]).includes(next)) {
+      set({ window: next as DateWindow, from: null, to: null })
+    } else {
+      set(NO_WHEN)
+    }
+  }
+  const modes: WhenMode[] = [...WINDOW_ORDER, 'before', 'after', 'between']
+
+  return (
+    <div>
+      <ul role="listbox" aria-label={fieldName(name)}>
+        {modes.map((option) => (
+          <li key={option}>
+            <button
+              type="button"
+              role="option"
+              aria-selected={mode === option}
+              data-active={mode === option}
+              onClick={() => choose(option)}
+              className="nav-item w-full justify-between"
+            >
+              {t(`filters.when.${option}`)}
+              {mode === option && <Icon name="check" size={13} className="text-brand-600" />}
+            </button>
+          </li>
+        ))}
+      </ul>
+      {(mode === 'before' || mode === 'after') && (
+        <label className="mt-1.5 block px-2.5">
+          <span className="mb-1 block text-xs text-neutral-500">{t('filters.when.date')}</span>
+          <input
+            type="date"
+            className="field"
+            value={
+              mode === 'before'
+                ? when.to
+                  ? shiftDay(when.to, 1)
+                  : ''
+                : when.from
+                  ? shiftDay(when.from, -1)
+                  : ''
+            }
+            onChange={(e) => {
+              const day = e.target.value
+              if (!day) return set(NO_WHEN)
+              set(
+                mode === 'before'
+                  ? { window: null, from: null, to: shiftDay(day, -1) }
+                  : { window: null, from: shiftDay(day, 1), to: null },
+              )
+            }}
+          />
+        </label>
+      )}
+      {mode === 'between' && (
+        <div className="mt-1.5 flex gap-2 px-2.5">
+          {(['from', 'to'] as const).map((end) => (
+            <label key={end} className="min-w-0 flex-1">
+              <span className="mb-1 block text-xs text-neutral-500">{t(`filters.when.${end}`)}</span>
+              <input
+                type="date"
+                className="field"
+                value={when[end] ?? ''}
+                min={end === 'to' ? (when.from ?? undefined) : undefined}
+                max={end === 'from' ? (when.to ?? undefined) : undefined}
+                onChange={(e) => set({ ...when, window: null, [end]: e.target.value || null })}
+              />
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** No estimate, no epic, no sprint (#261): a box for each. */
+function HasNoSection({
+  filters,
+  onChange,
+}: {
+  filters: BoardFilters
+  onChange: (filters: BoardFilters) => void
+}) {
+  const { t } = useTranslation('board')
+  return (
+    <ul>
+      {MISSING_ORDER.map((field) => (
+        <li key={field}>
+          <label className="nav-item cursor-pointer gap-2.5">
+            <input
+              type="checkbox"
+              checked={filters.hasNo.includes(field)}
+              onChange={() =>
+                onChange({
+                  ...filters,
+                  hasNo: MISSING_ORDER.filter(
+                    (other) => (other === field) !== filters.hasNo.includes(other),
+                  ),
+                })
+              }
+              className="h-3.5 w-3.5 shrink-0 accent-[var(--color-brand-600)]"
+            />
+            {t(`filters.hasNo.${field}`)}
+          </label>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** Only what the viewer watches (#261). */
+function WatchingSection({
+  filters,
+  onChange,
+}: {
+  filters: BoardFilters
+  onChange: (filters: BoardFilters) => void
+}) {
+  const { t } = useTranslation('board')
+  return (
+    <label className="nav-item cursor-pointer gap-2.5">
+      <input
+        type="checkbox"
+        checked={filters.watching}
+        onChange={(e) => onChange({ ...filters, watching: e.target.checked })}
+        className="h-3.5 w-3.5 shrink-0 accent-[var(--color-brand-600)]"
+      />
+      {t('filters.watching.option')}
+    </label>
   )
 }

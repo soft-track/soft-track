@@ -7,14 +7,27 @@ of tickets from the board it was taken from.
 A filter that takes several values repeats: `?assignee_id=3&assignee_id=4`.
 One value is a list of one, which is how every request made before filters
 took lists still means what it did.
+
+Search (`GET /search`) reads the same dependency (#261), so a search can be
+narrowed by the filters a list has.
 """
 
+from datetime import date
 from typing import Optional
 
 from fastapi import Query
+from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
 
 from lib_softtrack.models.views import ViewFilters
-from lib_softtrack.tables import DueFilter, LabelMatch, TicketPriority, TicketType
+from lib_softtrack.tables import (
+    DateWindow,
+    DueFilter,
+    LabelMatch,
+    MissingField,
+    TicketPriority,
+    TicketType,
+)
 
 _EXCLUDE = "Every ticket except those the filter matches."
 
@@ -53,21 +66,49 @@ def ticket_filters(
     due: Optional[DueFilter] = Query(
         None, description="Overdue, due this week, or with no due date."
     ),
+    assignee_me: bool = Query(
+        False,
+        description="The caller, as one more assignee choice: whoever asks, "
+        "not whoever saved the view (#261).",
+    ),
+    creator_id: list[int] = Query(
+        [], description="Only tickets created by one of these people."
+    ),
+    creator_me: bool = Query(
+        False, description="The caller, as one more creator choice."
+    ),
+    creator_exclude: bool = Query(False, description=_EXCLUDE),
+    watching: bool = Query(False, description="Only tickets the caller watches."),
+    updated: Optional[DateWindow] = Query(
+        None,
+        description="Updated in the last 7 or 30 days, or more than 30 days "
+        "ago, counted from `today`.",
+    ),
+    updated_from: Optional[date] = Query(
+        None, description="Only tickets last updated on or after this day (UTC)."
+    ),
+    updated_to: Optional[date] = Query(
+        None, description="Only tickets last updated on or before this day (UTC)."
+    ),
+    created: Optional[DateWindow] = Query(
+        None, description="Created in the last 7 or 30 days, or before that."
+    ),
+    created_from: Optional[date] = Query(
+        None, description="Only tickets created on or after this day (UTC)."
+    ),
+    created_to: Optional[date] = Query(
+        None, description="Only tickets created on or before this day (UTC)."
+    ),
+    has_no: list[MissingField] = Query(
+        [], description="Only tickets with no estimate, no epic or no sprint."
+    ),
 ) -> ViewFilters:
-    return ViewFilters(
-        status_id=status_id,
-        status_exclude=status_exclude,
-        priority=priority,
-        priority_exclude=priority_exclude,
-        assignee_id=assignee_id,
-        unassigned=unassigned,
-        assignee_exclude=assignee_exclude,
-        label_id=label_id,
-        label_match=label_match,
-        label_exclude=label_exclude,
-        type=type,
-        type_exclude=type_exclude,
-        project_id=project_id,
-        sprint_id=sprint_id,
-        due=due,
-    )
+    try:
+        # Every parameter above, by name: they are ViewFilters' own names.
+        return ViewFilters(**locals())
+    except ValidationError as error:
+        # A range that runs backwards is the caller's mistake: a 422 like any
+        # other bad query parameter, not a 500.
+        raise RequestValidationError(
+            error.errors(include_url=False, include_context=False)
+        ) from error

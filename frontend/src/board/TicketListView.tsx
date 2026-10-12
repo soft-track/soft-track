@@ -1,8 +1,10 @@
+import { parseServerDate } from '@/api/dates'
 import type { TicketRead } from '@/api/generated/models'
 import { type BoardGrouping, groupByProject } from '@/board/grouping'
 import { usePeekTrigger } from '@/board/peekContext'
 import { selectionGesture } from '@/board/selection'
 import { useTranslation } from '@/i18n'
+import { formatRelative } from '@/i18n/format'
 import { DueBadge } from '@/tickets/DueBadge'
 import { EstimateBadge } from '@/tickets/EstimateBadge'
 import { ProjectBadge } from '@/tickets/TicketCard'
@@ -21,6 +23,7 @@ export function TicketListView({
   grouping = 'status',
   selectedIds = [],
   onSelect,
+  showUpdated = false,
 }: {
   tickets: TicketRead[]
   /**
@@ -31,6 +34,11 @@ export function TicketListView({
   selectedIds?: readonly number[]
   /** `order` is the list as shown, which is what a shift-click range runs over. */
   onSelect?: OnSelect
+  /**
+   * Say on each row when it last changed: what a list narrowed or sorted by
+   * it is about (#261).
+   */
+  showUpdated?: boolean
 }) {
   const { t } = useTranslation(['board', 'common'])
   const { projects } = useTeamContext()
@@ -74,6 +82,7 @@ export function TicketListView({
                   selected={selectedIds.includes(ticket.id)}
                   onSelect={onSelect}
                   showProject={false}
+                  showUpdated={showUpdated}
                 />
               ))}
             </ul>
@@ -95,6 +104,7 @@ export function TicketListView({
             selected={selectedIds.includes(ticket.id)}
             onSelect={onSelect}
             showProject
+            showUpdated={showUpdated}
           />
         ))}
       </ul>
@@ -108,12 +118,14 @@ function TicketRow({
   selected,
   onSelect,
   showProject,
+  showUpdated,
 }: {
   ticket: TicketRead
   order: readonly number[]
   selected: boolean
   onSelect?: OnSelect
   showProject: boolean
+  showUpdated: boolean
 }) {
   const { t } = useTranslation(['board', 'common'])
   const openTicket = useOpenTicket()
@@ -172,6 +184,11 @@ function TicketRow({
         </span>
         <span className="dot" style={{ ['--dot' as string]: status.color }} title={status.name} />
         <span className="min-w-0 flex-1 truncate font-medium text-neutral-900">{ticket.title}</span>
+        {showUpdated && (
+          <span className="hidden shrink-0 text-xs text-neutral-500 sm:inline">
+            {t('list.updated', { when: formatRelative(parseServerDate(ticket.updated_at)) })}
+          </span>
+        )}
         <span className="hidden shrink-0 gap-1 sm:flex">
           {project && <ProjectBadge name={project.name} color={project.color} />}
           {ticket.labels?.map((label) => (

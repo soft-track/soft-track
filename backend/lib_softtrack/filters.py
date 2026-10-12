@@ -13,16 +13,38 @@ The filtering stays in the query. The list is paginated, and narrowing the page
 that happened to load would answer a different, worse question.
 """
 
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Any, Optional
 
-from sqlalchemy import and_, func, not_, or_
+from sqlalchemy import and_, false, func, not_, or_
 from sqlalchemy.sql.elements import ColumnElement
 from sqlmodel import select
 
 from lib_softtrack.models.views import ViewFilters
 from lib_softtrack.statuses import RESOLVED, in_category
-from lib_softtrack.tables import DueFilter, LabelMatch, Ticket, TicketLabelLink
+from lib_softtrack.tables import (
+    DateWindow,
+    DueFilter,
+    LabelMatch,
+    MissingField,
+    Ticket,
+    TicketLabelLink,
+    TicketWatch,
+)
+
+#: How far back each window reaches, in days from the viewer's today.
+WINDOW_DAYS = {
+    DateWindow.last_7_days: 7,
+    DateWindow.last_30_days: 30,
+    DateWindow.over_30_days: 30,
+}
+
+#: The column each "has no" asks about.
+_MISSING = {
+    MissingField.estimate: Ticket.estimate,
+    MissingField.epic: Ticket.project_id,
+    MissingField.sprint: Ticket.sprint_id,
+}
 
 
 def due_clause(due: DueFilter, today: date):
@@ -87,27 +109,116 @@ def labels_clause(
     return not_(clause) if exclude else clause
 
 
-def filter_clauses(filters: ViewFilters, today: date) -> list[ColumnElement[bool]]:
+def _midnight(day: date) -> datetime:
+    """The start of a day, in UTC, which is how every timestamp is stored."""
+    return datetime.combine(day, time.min, tzinfo=timezone.utc)
+
+
+def when_clauses(
+    column: Any,
+    window: Optional[DateWindow],
+    start: Optional[date],
+    end: Optional[date],
+    today: date,
+) -> list[ColumnElement[bool]]:
+    """A timestamp within a window back from `today`, and/or within a range of
+    days with both ends included (#261).
+
+    "In the last 7 days" is since the start of the day a week before today,
+    so it does not shift with the hour the list is opened; "more than 30
+    days ago" is everything before that same line for 30.
+    """
+    clauses = []
+    if window is not None:
+        line = _midnight(today - timedelta(days=WINDOW_DAYS[window]))
+        clauses.append(
+            column < line if window == DateWindow.over_30_days else column >= line
+        )
+    if start is not None:
+        clauses.append(column >= _midnight(start))
+    if end is not None:
+        clauses.append(column < _midnight(end + timedelta(days=1)))
+    return clauses
+
+
+def watched_by(viewer_id: int) -> ColumnElement[bool]:
+    """Tickets `viewer_id` is watching: a row saying yes, not one saying no
+    (see TicketWatch)."""
+    return Ticket.id.in_(
+        select(TicketWatch.ticket_id).where(
+            TicketWatch.user_id == viewer_id,
+            TicketWatch.watching == True,  # noqa: E712 -- SQL comparison
+        )
+    )
+
+
+def _with_me(ids: list[int], me: bool, viewer_id: Optional[int]) -> list[int]:
+    """`ids`, and the viewer's own when "me" is one of the choices."""
+    if me and viewer_id is not None and viewer_id not in ids:
+        return [*ids, viewer_id]
+    return ids
+
+
+def filter_clauses(
+    filters: ViewFilters, today: date, viewer_id: Optional[int] = None
+) -> list[ColumnElement[bool]]:
     """The WHERE clauses for `filters`, ANDed by whoever runs them.
 
-    `today` is the viewer's own, for the due filter's "this week".
+    `today` is the viewer's own, for the due filter's "this week" and the
+    updated and created windows. `viewer_id` is who "me" and "watching" mean
+    (#261): the person looking, so a view about "me" is about each viewer.
+    With nobody looking, "me" is nobody and nothing is watched.
     """
+    assignees = _with_me(filters.assignee_id, filters.assignee_me, viewer_id)
+    creators = _with_me(filters.creator_id, filters.creator_me, viewer_id)
     clauses = [
         one_of(Ticket.status_id, filters.status_id, filters.status_exclude),
         one_of(Ticket.priority, filters.priority, filters.priority_exclude),
         one_of(
             Ticket.assignee_id,
-            filters.assignee_id,
+            assignees,
             filters.assignee_exclude,
             or_none=filters.unassigned,
         ),
         labels_clause(filters.label_id, filters.label_match, filters.label_exclude),
         one_of(Ticket.type, filters.type, filters.type_exclude),
+        one_of(Ticket.creator_id, creators, filters.creator_exclude),
     ]
+    # "Me" with nobody looking is nobody: chosen alone, it matches nothing
+    # (and excluded, everything, which `one_of` already says).
+    if viewer_id is None:
+        if filters.assignee_me and not (
+            assignees or filters.unassigned or filters.assignee_exclude
+        ):
+            clauses.append(false())
+        if filters.creator_me and not (creators or filters.creator_exclude):
+            clauses.append(false())
     if filters.project_id is not None:
         clauses.append(Ticket.project_id == filters.project_id)
     if filters.sprint_id is not None:
         clauses.append(Ticket.sprint_id == filters.sprint_id)
     if filters.due is not None:
         clauses.append(due_clause(filters.due, today))
+    if filters.watching:
+        clauses.append(watched_by(viewer_id) if viewer_id is not None else false())
+    clauses.extend(
+        when_clauses(
+            Ticket.updated_at,
+            filters.updated,
+            filters.updated_from,
+            filters.updated_to,
+            today,
+        )
+    )
+    clauses.extend(
+        when_clauses(
+            Ticket.created_at,
+            filters.created,
+            filters.created_from,
+            filters.created_to,
+            today,
+        )
+    )
+    for missing in filters.has_no:
+        clauses.append(_MISSING[missing].is_(None))
     return [clause for clause in clauses if clause is not None]

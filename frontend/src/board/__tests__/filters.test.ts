@@ -20,6 +20,7 @@ import {
 const one = <T,>(value: T) => ({ values: [value], exclude: false })
 
 const some: BoardFilters = {
+  ...NO_FILTERS,
   status: one(9),
   priority: one('urgent' as const),
   assignee: one(7),
@@ -252,5 +253,85 @@ describe('activeCount', () => {
     expect(activeCount(several)).toBe(4)
     expect(isEmpty(NO_FILTERS)).toBe(true)
     expect(isEmpty({ ...NO_FILTERS, status: one(4) })).toBe(false)
+  })
+})
+
+/** Nothing has happened to these in a month, no estimate, filed by me (#261). */
+const backlogReview: BoardFilters = {
+  ...NO_FILTERS,
+  assignee: { values: ['me', 'unassigned', 4], exclude: false },
+  creator: { values: ['me', 3], exclude: true },
+  updated: { window: 'over_30_days', from: null, to: null },
+  created: { window: null, from: '2026-09-01', to: '2026-09-30' },
+  hasNo: ['estimate', 'sprint'],
+  watching: true,
+}
+
+describe('the filters #261 added', () => {
+  it('survive the URL, with me, windows and dates as a person can read them', () => {
+    const params = toSearchParams(backlogReview)
+    expect(searchString(params)).toBe(
+      'assignee=me&assignee=unassigned&assignee=4&creator!=me&creator!=3' +
+        '&updated=over_30_days&created_from=2026-09-01&created_to=2026-09-30' +
+        '&has_no=estimate&has_no=sprint&watching=1',
+    )
+    expect(fromSearchParams(params)).toEqual(backlogReview)
+  })
+
+  it('drop a date or a window that does not parse', () => {
+    const read = fromSearchParams(
+      new URLSearchParams('updated=yesterday&created_from=2026-13-45&has_no=title&creator=me'),
+    )
+    expect(read.updated).toEqual({ window: null, from: null, to: null })
+    expect(read.created.from).toBeNull()
+    expect(read.hasNo).toEqual([])
+    expect(read.creator.values).toEqual(['me'])
+  })
+
+  it('send me as a flag, never as an id, and today with a window', () => {
+    expect(toQueryParams(backlogReview, '2026-10-12')).toMatchObject({
+      assignee_id: [4],
+      assignee_me: true,
+      unassigned: true,
+      creator_id: [3],
+      creator_me: true,
+      creator_exclude: true,
+      updated: 'over_30_days',
+      created_from: '2026-09-01',
+      created_to: '2026-09-30',
+      has_no: ['estimate', 'sprint'],
+      watching: true,
+      today: '2026-10-12',
+    })
+    expect(
+      toQueryParams({ ...NO_FILTERS, created: { window: null, from: '2026-09-01', to: null } })
+        .today,
+    ).toBeUndefined()
+  })
+
+  it('survive a saved view, which stores me as me and not as whoever saved it', () => {
+    const stored = toViewFilters(backlogReview)
+    expect(stored.assignee_id).toEqual([4])
+    expect(stored.assignee_me).toBe(true)
+    expect(stored.creator_id).toEqual([3])
+    expect(fromViewFilters(stored)).toEqual(backlogReview)
+    expect(sameFilters(fromViewFilters(stored), backlogReview)).toBe(true)
+  })
+
+  it('tell a view apart by any of them', () => {
+    expect(sameFilters(backlogReview, { ...backlogReview, watching: false })).toBe(false)
+    expect(
+      sameFilters(backlogReview, {
+        ...backlogReview,
+        updated: { window: 'last_30_days', from: null, to: null },
+      }),
+    ).toBe(false)
+    expect(sameFilters(backlogReview, { ...backlogReview, hasNo: ['sprint', 'estimate'] })).toBe(
+      true,
+    )
+  })
+
+  it('each count once', () => {
+    expect(activeCount(backlogReview)).toBe(6)
   })
 })

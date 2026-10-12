@@ -64,6 +64,18 @@ def view_filters(view: SavedView) -> ViewFilters:
         project_id=view.project_id,
         sprint_id=view.sprint_id,
         due=view.due,
+        assignee_me=view.assignee_me,
+        creator_id=view.creator_ids,
+        creator_me=view.creator_me,
+        creator_exclude=view.creator_exclude,
+        watching=view.watching,
+        updated=view.updated,
+        updated_from=view.updated_from,
+        updated_to=view.updated_to,
+        created=view.created,
+        created_from=view.created_from,
+        created_to=view.created_to,
+        has_no=view.has_no,
     )
 
 
@@ -101,6 +113,18 @@ def _apply_filters(view: SavedView, filters: ViewFilters) -> None:
     view.project_id = filters.project_id
     view.sprint_id = filters.sprint_id
     view.due = filters.due
+    view.assignee_me = filters.assignee_me
+    view.creator_ids = list(filters.creator_id)
+    view.creator_me = filters.creator_me
+    view.creator_exclude = filters.creator_exclude
+    view.watching = filters.watching
+    view.updated = filters.updated
+    view.updated_from = filters.updated_from
+    view.updated_to = filters.updated_to
+    view.created = filters.created
+    view.created_from = filters.created_from
+    view.created_to = filters.created_to
+    view.has_no = [missing.value for missing in filters.has_no]
 
 
 def _validate_filters(session: Session, team_id: int, filters: ViewFilters) -> None:
@@ -151,14 +175,17 @@ def _validate_filters(session: Session, team_id: int, filters: ViewFilters) -> N
                 code=ErrorCode.not_on_this_team,
                 detail="No such sprint on this team",
             )
-    if filters.assignee_id:
+    # The people chosen as assignee or creator are the team's. Not "me",
+    # which is whoever looks, and always somebody on the team.
+    people = set(filters.assignee_id) | set(filters.creator_id)
+    if people:
         found = session.exec(
             select(func.count()).where(
                 TeamMember.team_id == team_id,
-                TeamMember.user_id.in_(filters.assignee_id),
+                TeamMember.user_id.in_(people),
             )
         ).one()
-        if found != len(filters.assignee_id):
+        if found != len(people):
             raise api_error(
                 status_code=400,
                 code=ErrorCode.user_not_on_team,

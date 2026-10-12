@@ -14,6 +14,11 @@ export const filters = {
     sprint: 'Sprint',
     type: 'Type',
     due: 'Due',
+    creator: 'Created by',
+    updated: 'Updated',
+    created: 'Created',
+    hasNo: 'Has no',
+    watching: 'Watching',
   },
   /** The × beside each value in a chip: "Remove Mei Tanaka from the assignee filter". */
   removeValue: 'Remove {{value}} from the {{field}} filter',
@@ -29,6 +34,7 @@ export const filters = {
     assignee: 'Everyone except these',
     label: 'Every ticket without these',
     type: 'Every type except these',
+    creator: 'Everyone except these',
   },
   /** The label filter's second question. */
   labelMatch: {
@@ -46,8 +52,51 @@ export const filters = {
     sprint: 'Any sprint',
     type: 'Any type',
     due: 'Any due date',
+    creator: 'Anyone',
+    updated: 'Any time',
+    created: 'Any time',
+    hasNo: 'Anything',
+    watching: 'Watched or not',
   },
   unassigned: 'Unassigned',
+  /** "Me" as a value of the assignee and created-by filters (#261): whoever is looking. */
+  me: 'Me',
+  /** When a ticket was updated or created (#261): the menu's choices. */
+  when: {
+    last_7_days: 'In the last 7 days',
+    last_30_days: 'In the last 30 days',
+    over_30_days: 'More than 30 days ago',
+    before: 'Before a date…',
+    after: 'After a date…',
+    between: 'Between two dates…',
+    /** The date fields under a choice of dates. */
+    date: 'Date',
+    from: 'From',
+    to: 'To',
+  },
+  /** The same, as a chip says it: "Updated more than 30 days ago". */
+  whenChip: {
+    last_7_days: 'last 7 days',
+    last_30_days: 'last 30 days',
+    over_30_days: 'more than 30 days ago',
+    before: 'before {{date}}',
+    after: 'after {{date}}',
+    between: '{{from}} – {{to}}',
+  },
+  /** A date in a chip: "3 Sep 2026". */
+  chipDatePattern: 'd MMM yyyy',
+  /** What a ticket can have none of: "Has no estimate". */
+  hasNo: {
+    estimate: 'estimate',
+    epic: 'epic',
+    sprint: 'sprint',
+  },
+  /** The watching filter's one box, and its chip: "Watched by me". */
+  watching: {
+    option: 'Only tickets I am watching',
+    chipField: 'Watched by',
+    chipValue: 'me',
+  },
   /** A chip whose filter points at something that has since gone. */
   missing: {
     status: 'Deleted status',
@@ -55,6 +104,7 @@ export const filters = {
     label: 'Deleted label',
     project: 'Deleted epic',
     sprint: 'Deleted sprint',
+    creator: 'Someone else',
   },
   /** A saved view with no filters, in the sidebar. */
   allTickets: 'All tickets',

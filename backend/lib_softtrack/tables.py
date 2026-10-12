@@ -272,6 +272,35 @@ class LabelMatch(str, enum.Enum):
     all = "all"
 
 
+class DateWindow(str, enum.Enum):
+    """When a ticket was updated or created, as the common questions (#261).
+
+    Relative, so a saved view keeps asking the same question as time passes:
+    "more than 30 days ago" is measured from the viewer's today each time the
+    view is opened, not from the day it was saved. Dates for anything else
+    are a range beside it (`updated_from`, `updated_to`).
+    """
+
+    last_7_days = "last_7_days"
+    last_30_days = "last_30_days"
+    #: Nothing in the last 30 days: where a backlog review starts.
+    over_30_days = "over_30_days"
+
+
+class MissingField(str, enum.Enum):
+    """What a ticket can be filtered on having none of (#261).
+
+    No assignee and no due date were filters before this, and stay where
+    they are: nobody is one of the assignee choices, no due date one of the
+    due filter's.
+    """
+
+    estimate = "estimate"
+    #: No epic (the column is `project_id`).
+    epic = "epic"
+    sprint = "sprint"
+
+
 class TeamRole(str, enum.Enum):
     """What someone may do inside one team.
 
@@ -1494,6 +1523,31 @@ class SavedView(SQLModel, table=True):
     #: broken rather than empty.
     sprint_id: Optional[int] = Field(default=None, foreign_key="sprint.id")
     due: Optional[DueFilter] = None
+
+    #: "Me" as an assignee or creator (#261): whoever is looking when the view
+    #: is opened, not whoever saved it, so a shared "assigned to me" shows
+    #: each person their own tickets.
+    assignee_me: bool = Field(default=False)
+    #: User ids of who created the ticket, with the same switch as the rest.
+    creator_ids: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    creator_me: bool = Field(default=False)
+    creator_exclude: bool = Field(default=False)
+    #: Only the tickets the viewer watches -- the viewer's, as with "me".
+    watching: bool = Field(default=False)
+    #: When the ticket last changed, or was created: a window relative to the
+    #: viewer's today, and/or a range of days, both ends included.
+    updated: Optional[DateWindow] = None
+    updated_from: Optional[date] = None
+    updated_to: Optional[date] = None
+    created: Optional[DateWindow] = None
+    created_from: Optional[date] = None
+    created_to: Optional[date] = None
+    #: `MissingField` values: tickets with none of each.
+    has_no: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
 
     #: Not a filter -- it narrows nothing -- but part of what a view *is*: the
     #: same tickets read very differently by column and by project.
