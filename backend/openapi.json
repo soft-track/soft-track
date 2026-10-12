@@ -420,6 +420,7 @@
           "auth"
         ],
         "summary": "Sign Out Everywhere Route",
+        "description": "End every session but this one, which gets a fresh token.",
         "operationId": "sign_out_everywhere_route_auth_me_sign_out_everywhere_post",
         "responses": {
           "200": {
@@ -431,6 +432,98 @@
                 }
               }
             }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/auth/me/sessions": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "List My Sessions",
+        "description": "Where your account is signed in (#308), this device first.\n\nAPI tokens are not sessions: they are listed at `/auth/me/tokens`.",
+        "operationId": "list_my_sessions_auth_me_sessions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SessionRead"
+                  },
+                  "type": "array",
+                  "title": "Response List My Sessions Auth Me Sessions Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/auth/me/sessions/{session_id}": {
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Revoke My Session",
+        "description": "End one session. Its next request is refused; the others continue.",
+        "operationId": "revoke_my_session_auth_me_sessions__session_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/sign-out": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Sign Out",
+        "description": "Sign out in this browser: its session ends, so it leaves the list.\n\nThe browser forgets its token whatever this answers; this is so the list\nof sessions does not go on showing it.",
+        "operationId": "sign_out_auth_sign_out_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           }
         },
         "security": [
@@ -982,6 +1075,54 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{user_id}/end-sessions": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "End Sessions",
+        "description": "End every session the account has (#308), as its own \"Sign out\neverywhere\" would. Its API tokens are not sessions and keep working.",
+        "operationId": "end_sessions_admin_users__user_id__end_sessions_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserRead"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -8524,7 +8665,7 @@
           "realtime"
         ],
         "summary": "Team Events",
-        "description": "A server-sent event stream of what changes on the team (#103).\n\nEvents are invalidations -- `ticket_changed {\"id\"}`, `comment_added\n{\"ticket_id\"}`, `notification {}` for the caller's own inbox, and `resync`\nwhen the stream fell behind -- and never data: the client refetches\nthrough the ordinary endpoints. `close` means the stream is over and must\nnot be reopened as it was: the caller was signed out, deactivated or\nremoved from the team. A `: ping` comment every 25 seconds keeps proxies\nfrom dropping it.\n\nAuthenticated with the usual bearer header, which is why the browser\nreads this with `fetch` rather than `EventSource`: EventSource cannot send\none, and a token in the URL is exactly what this API refuses to do.",
+        "description": "A server-sent event stream of what changes on the team (#103).\n\nEvents are invalidations -- `ticket_changed {\"id\"}`, `comment_added\n{\"ticket_id\"}`, `notification {}` for the caller's own inbox, and `resync`\nwhen the stream fell behind -- and never data: the client refetches\nthrough the ordinary endpoints. `close` means the stream is over and must\nnot be reopened as it was: the caller was signed out, deactivated or\nremoved from the team, or the session it was opened with was revoked. A\n`: ping` comment every 25 seconds keeps proxies from dropping it.\n\nAuthenticated with the usual bearer header, which is why the browser\nreads this with `fetch` rather than `EventSource`: EventSource cannot send\none, and a token in the URL is exactly what this API refuses to do.",
         "operationId": "team_events_teams__team_id__events_get",
         "security": [
           {
@@ -12479,6 +12620,11 @@
                 "type": "null"
               }
             ]
+          },
+          "session_count": {
+            "type": "integer",
+            "title": "Session Count",
+            "default": 0
           }
         },
         "type": "object",
@@ -19491,6 +19637,64 @@
         ],
         "title": "SearchHit"
       },
+      "SessionRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "browser": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Browser"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System"
+          },
+          "ip_address": {
+            "type": "string",
+            "title": "Ip Address"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "last_used_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Used At"
+          },
+          "current": {
+            "type": "boolean",
+            "title": "Current"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ip_address",
+          "created_at",
+          "last_used_at",
+          "current"
+        ],
+        "title": "SessionRead",
+        "description": "One place the account is signed in (#308)."
+      },
       "Settlement": {
         "properties": {
           "kind": {
@@ -23931,6 +24135,7 @@
           "import_empty",
           "invite_invalid",
           "api_token_not_found",
+          "session_not_found",
           "webhook_not_found",
           "webhook_invalid",
           "webhook_target_private",

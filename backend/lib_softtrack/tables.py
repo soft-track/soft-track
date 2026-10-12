@@ -802,6 +802,42 @@ class ApiToken(SQLModel, table=True):
     expires_at: Optional[datetime] = None
 
 
+class AuthSession(SQLModel, table=True):
+    """One signed-in browser (#308): a row made at sign-in, whose id the
+    session's token carries as `sid`.
+
+    Live while it has not been ended, its token has not expired, the account's
+    `token_version` is still the one it was issued at -- so "sign out
+    everywhere", a password change and a deactivation end every row without
+    touching them -- and it has been used in the last thirty days. Ended and
+    stale rows are kept for a while, so a sign-in can tell a browser the
+    account has used before from a new one, and swept at the next sign-in.
+    API tokens are not sessions; see `ApiToken`.
+    """
+
+    #: Ids are never reused, even on SQLite, where a swept row would
+    #: otherwise hand its id -- and with it any old token that names it -- to
+    #: the account's next session.
+    __table_args__ = {"sqlite_autoincrement": True}
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    #: The browser's User-Agent header as sent, cut to 512 characters. Read
+    #: back as "Firefox on Linux"; nothing else is made of it.
+    user_agent: str = Field(default="")
+    #: The address it signed in from, as `address_of` sees it.
+    ip_address: str = Field(default="")
+    #: The account's `token_version` the session's token carries.
+    token_version: int = Field(default=0)
+    created_at: datetime = Field(default_factory=utcnow)
+    #: Updated at most once a minute, like an API token's.
+    last_used_at: datetime = Field(default_factory=utcnow)
+    #: When its token expires: a session cannot outlive the token it is.
+    expires_at: datetime
+    #: Revoked from the list, or signed out of. Null while it may be live.
+    ended_at: Optional[datetime] = None
+
+
 class PasswordReset(SQLModel, table=True):
     """A pending "forgot password" link (#83).
 

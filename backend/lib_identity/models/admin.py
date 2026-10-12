@@ -51,6 +51,9 @@ class AdminUserRead(UserMe):
     #: password, while one is live. Never the link itself -- only its hash is
     #: kept -- just when it was made and when it stops working.
     welcome_link: Optional["WelcomeLinkRead"] = None
+    #: How many live sessions the account has (#308): signed-in browsers, not
+    #: API tokens.
+    session_count: int = 0
 
 
 class AdminUserUpdate(BaseModel):

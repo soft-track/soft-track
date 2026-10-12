@@ -38,4 +38,5 @@ export interface AdminUserRead {
   finance_admin_granted_by?: PersonRef | null;
   guest_of?: GuestOf[];
   welcome_link?: WelcomeLinkRead | null;
+  session_count?: number;
 }

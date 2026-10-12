@@ -52,8 +52,8 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
  * when the stream fell behind -- and never data: the client refetches
  * through the ordinary endpoints. `close` means the stream is over and must
  * not be reopened as it was: the caller was signed out, deactivated or
- * removed from the team. A `: ping` comment every 25 seconds keeps proxies
- * from dropping it.
+ * removed from the team, or the session it was opened with was revoked. A
+ * `: ping` comment every 25 seconds keeps proxies from dropping it.
  *
  * Authenticated with the usual bearer header, which is why the browser
  * reads this with `fetch` rather than `EventSource`: EventSource cannot send

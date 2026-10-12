@@ -15,7 +15,7 @@ from sqlalchemy.orm import aliased, selectinload
 from sqlmodel import Session, col, func, or_, select
 
 from lib_finance import access as finance_access
-from lib_identity import accounts, api_tokens, managers
+from lib_identity import accounts, api_tokens, managers, sessions
 from lib_identity.departments import require_department
 from lib_identity.identity import get_current_user
 from lib_identity.models.admin import (
@@ -122,6 +122,7 @@ def list_users(
     reports = _report_counts(session, [u.id for u in users])
     reach = _guest_of(session, [u.id for u in users if u.is_external])
     links = accounts.live_links(session, [u.id for u in users if not u.is_activated])
+    live = sessions.live_counts(session, [u.id for u in users])
     items = [
         _to_read(
             user,
@@ -129,6 +130,7 @@ def list_users(
             reports.get(user.id, 0),
             reach.get(user.id, []),
             links.get(user.id),
+            live.get(user.id, 0),
         )
         for user in users
     ]
@@ -187,6 +189,7 @@ def _to_read(
     report_count: int,
     guest_of: Optional[list[GuestOf]] = None,
     welcome_link: Optional[WelcomeLinkRead] = None,
+    session_count: int = 0,
 ) -> AdminUserRead:
     # Built from UserMe rather than field by field, so a column added to the
     # user's own view of themselves shows up here without a second edit.
@@ -202,6 +205,7 @@ def _to_read(
         ),
         guest_of=guest_of or [],
         welcome_link=welcome_link,
+        session_count=session_count,
     )
 
 
@@ -222,7 +226,24 @@ def user_read(session: Session, user: User) -> AdminUserRead:
             if not user.is_activated
             else None
         ),
+        sessions.live_counts(session, [user.id]).get(user.id, 0),
     )
+
+
+def end_sessions(session: Session, user_id: int) -> AdminUserRead:
+    """Every session of one account ends (#308), the way its own "Sign out
+    everywhere" ends them: the version every token carries moves on. Better
+    than the old way to the same end, deactivating and reactivating, which
+    also took its API tokens and finance access."""
+    user = get_user_or_404(session, user_id)
+    # An account its owner has not activated (#303) has no sessions, and
+    # moving the version on would spend the welcome link waiting for them.
+    if user.is_activated:
+        user.token_version += 1
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+    return user_read(session, user)
 
 
 def get_user_or_404(session: Session, user_id: int) -> User:

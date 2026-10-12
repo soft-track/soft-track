@@ -440,6 +440,73 @@ export const useResetPasswordAdminUsersUserIdResetPasswordPost = <TError = HTTPV
       return useMutation(getResetPasswordAdminUsersUserIdResetPasswordPostMutationOptions(options), queryClient);
     }
     /**
+ * End every session the account has (#308), as its own "Sign out
+ * everywhere" would. Its API tokens are not sessions and keep working.
+ * @summary End Sessions
+ */
+export const endSessionsAdminUsersUserIdEndSessionsPost = (
+    userId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<AdminUserRead>(
+      {url: `/admin/users/${userId}/end-sessions`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+
+export const getEndSessionsAdminUsersUserIdEndSessionsPostMutationKey = () => ['endSessionsAdminUsersUserIdEndSessionsPost'] as const;
+
+export const getEndSessionsAdminUsersUserIdEndSessionsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endSessionsAdminUsersUserIdEndSessionsPost>>, TError,EndSessionsAdminUsersUserIdEndSessionsPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof endSessionsAdminUsersUserIdEndSessionsPost>>, TError,EndSessionsAdminUsersUserIdEndSessionsPostMutationVariables, TContext> => {
+
+const mutationKey = getEndSessionsAdminUsersUserIdEndSessionsPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof endSessionsAdminUsersUserIdEndSessionsPost>>, EndSessionsAdminUsersUserIdEndSessionsPostMutationVariables> = (props) => {
+          const {userId} = props ?? {};
+
+          return  endSessionsAdminUsersUserIdEndSessionsPost(userId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EndSessionsAdminUsersUserIdEndSessionsPostMutationResult = NonNullable<Awaited<ReturnType<typeof endSessionsAdminUsersUserIdEndSessionsPost>>>
+
+    export type EndSessionsAdminUsersUserIdEndSessionsPostMutationError = HTTPValidationError
+    export type EndSessionsAdminUsersUserIdEndSessionsPostMutationVariables = {userId: number}
+
+    /**
+ * @summary End Sessions
+ */
+export const useEndSessionsAdminUsersUserIdEndSessionsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endSessionsAdminUsersUserIdEndSessionsPost>>, TError,EndSessionsAdminUsersUserIdEndSessionsPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof endSessionsAdminUsersUserIdEndSessionsPost>>,
+        TError,
+        EndSessionsAdminUsersUserIdEndSessionsPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getEndSessionsAdminUsersUserIdEndSessionsPostMutationOptions(options), queryClient);
+    }
+    /**
  * Every team, with its size, dates and admins. Never its tickets.
  * @summary List Teams
  */

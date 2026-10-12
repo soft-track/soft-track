@@ -14,7 +14,7 @@ from lib_softtrack.models.invites import (
 )
 from lib_softtrack.models.teams import TeamRead
 from lib_softtrack.tables import User
-from lib_utils.mailer import get_mailer
+from lib_utils.mailer import get_mailer, send_quietly
 from web import get_session
 
 # No prefix: the team-scoped routes hang off /teams and the two the invitee
@@ -42,7 +42,7 @@ def create_invite(
         session, current_user, team_id, payload
     )
     if message is not None:
-        background.add_task(get_mailer().send, *message)
+        background.add_task(send_quietly, get_mailer(), *message)
     return invite
 
 

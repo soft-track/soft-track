@@ -33,7 +33,15 @@ export const adminUsers = {
   financeSinceUnknown: 'finance access since {{date}}',
   teams_one: '{{count}} team',
   teams_other: '{{count}} teams',
-  lastSeen: 'last seen {{when}}',
+  /** Signed-in browsers, not API tokens (#308). */
+  sessions_one: '{{count}} session',
+  sessions_other: '{{count}} sessions',
+  noSessions: 'no sessions',
+  lastSignedIn: 'last signed in {{when}}',
+  endSessions: 'End all sessions',
+  confirmEndSessions:
+    'End every session {{name}} has? They are signed out on every browser and device, and sign in again to carry on. Their API tokens keep working.',
+  sessionsEnded: 'Every session {{name}} had has ended.',
   neverSignedIn: 'never signed in',
   joined: 'joined {{date}}',
   startedOn: 'started {{date}}',

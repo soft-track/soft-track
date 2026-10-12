@@ -216,6 +216,7 @@ export * from './savedViewUpdate';
 export * from './scopeChange';
 export * from './searchHit';
 export * from './searchSearchGetParams';
+export * from './sessionRead';
 export * from './settlement';
 export * from './settlementKind';
 export * from './sharedAttachment';

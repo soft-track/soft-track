@@ -1,7 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import Axios from 'axios'
 
-import { AUTH_TOKEN_STORAGE_KEY } from '@/api/client'
+import { AUTH_TOKEN_STORAGE_KEY, AXIOS_INSTANCE } from '@/api/client'
 import {
   getMeAuthMeGetQueryKey,
   useLoginAuthLoginPost,
@@ -61,6 +62,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = () => {
+    // Ends this browser's session on the server too (#308), so it leaves the
+    // list of sessions. Best effort, and deliberately not through the shared
+    // client: an answer of 401 there would bounce the page to /login, and the
+    // browser forgets the token whatever the server says.
+    const current = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+    if (current) {
+      Axios.post(`${AXIOS_INSTANCE.defaults.baseURL}/auth/sign-out`, null, {
+        headers: { Authorization: `Bearer ${current}` },
+      }).catch(() => {})
+    }
     localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
     setToken(null)
     queryClient.clear()

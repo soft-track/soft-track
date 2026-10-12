@@ -40,6 +40,7 @@ import type {
   OAuthLinked,
   PasswordChange,
   ResetPassword,
+  SessionRead,
   Token,
   UserCreate,
   UserMe,
@@ -920,6 +921,7 @@ export const useRevokeApiTokenAuthMeTokensTokenIdDelete = <TError = HTTPValidati
       return useMutation(getRevokeApiTokenAuthMeTokensTokenIdDeleteMutationOptions(options), queryClient);
     }
     /**
+ * End every session but this one, which gets a fresh token.
  * @summary Sign Out Everywhere Route
  */
 export const signOutEverywhereRouteAuthMeSignOutEverywherePost = (
@@ -983,6 +985,236 @@ export const useSignOutEverywhereRouteAuthMeSignOutEverywherePost = <TError = un
         TContext
       > => {
       return useMutation(getSignOutEverywhereRouteAuthMeSignOutEverywherePostMutationOptions(options), queryClient);
+    }
+    /**
+ * Where your account is signed in (#308), this device first.
+ *
+ * API tokens are not sessions: they are listed at `/auth/me/tokens`.
+ * @summary List My Sessions
+ */
+export const listMySessionsAuthMeSessionsGet = (
+
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<SessionRead[]>(
+      {url: `/auth/me/sessions`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getListMySessionsAuthMeSessionsGetQueryKey = () => {
+    return [
+    `/auth/me/sessions`
+    ] as const;
+    }
+
+
+export const getListMySessionsAuthMeSessionsGetQueryOptions = <TData = Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMySessionsAuthMeSessionsGetQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>> = ({ signal }) => listMySessionsAuthMeSessionsGet(signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListMySessionsAuthMeSessionsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>>
+export type ListMySessionsAuthMeSessionsGetQueryError = unknown
+
+
+export function useListMySessionsAuthMeSessionsGet<TData = Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListMySessionsAuthMeSessionsGet<TData = Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListMySessionsAuthMeSessionsGet<TData = Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List My Sessions
+ */
+
+export function useListMySessionsAuthMeSessionsGet<TData = Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMySessionsAuthMeSessionsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListMySessionsAuthMeSessionsGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * End one session. Its next request is refused; the others continue.
+ * @summary Revoke My Session
+ */
+export const revokeMySessionAuthMeSessionsSessionIdDelete = (
+    sessionId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/auth/me/sessions/${sessionId}`, method: 'DELETE', signal
+    },
+      );
+    }
+
+
+
+
+export const getRevokeMySessionAuthMeSessionsSessionIdDeleteMutationKey = () => ['revokeMySessionAuthMeSessionsSessionIdDelete'] as const;
+
+export const getRevokeMySessionAuthMeSessionsSessionIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeMySessionAuthMeSessionsSessionIdDelete>>, TError,RevokeMySessionAuthMeSessionsSessionIdDeleteMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof revokeMySessionAuthMeSessionsSessionIdDelete>>, TError,RevokeMySessionAuthMeSessionsSessionIdDeleteMutationVariables, TContext> => {
+
+const mutationKey = getRevokeMySessionAuthMeSessionsSessionIdDeleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeMySessionAuthMeSessionsSessionIdDelete>>, RevokeMySessionAuthMeSessionsSessionIdDeleteMutationVariables> = (props) => {
+          const {sessionId} = props ?? {};
+
+          return  revokeMySessionAuthMeSessionsSessionIdDelete(sessionId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevokeMySessionAuthMeSessionsSessionIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof revokeMySessionAuthMeSessionsSessionIdDelete>>>
+
+    export type RevokeMySessionAuthMeSessionsSessionIdDeleteMutationError = HTTPValidationError
+    export type RevokeMySessionAuthMeSessionsSessionIdDeleteMutationVariables = {sessionId: number}
+
+    /**
+ * @summary Revoke My Session
+ */
+export const useRevokeMySessionAuthMeSessionsSessionIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeMySessionAuthMeSessionsSessionIdDelete>>, TError,RevokeMySessionAuthMeSessionsSessionIdDeleteMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof revokeMySessionAuthMeSessionsSessionIdDelete>>,
+        TError,
+        RevokeMySessionAuthMeSessionsSessionIdDeleteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRevokeMySessionAuthMeSessionsSessionIdDeleteMutationOptions(options), queryClient);
+    }
+    /**
+ * Sign out in this browser: its session ends, so it leaves the list.
+ *
+ * The browser forgets its token whatever this answers; this is so the list
+ * of sessions does not go on showing it.
+ * @summary Sign Out
+ */
+export const signOutAuthSignOutPost = (
+
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/auth/sign-out`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+
+export const getSignOutAuthSignOutPostMutationKey = () => ['signOutAuthSignOutPost'] as const;
+
+export const getSignOutAuthSignOutPostMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signOutAuthSignOutPost>>, TError,void, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof signOutAuthSignOutPost>>, TError,void, TContext> => {
+
+const mutationKey = getSignOutAuthSignOutPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signOutAuthSignOutPost>>, void> = () => {
+
+
+          return  signOutAuthSignOutPost()
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SignOutAuthSignOutPostMutationResult = NonNullable<Awaited<ReturnType<typeof signOutAuthSignOutPost>>>
+
+    export type SignOutAuthSignOutPostMutationError = unknown
+
+
+    /**
+ * @summary Sign Out
+ */
+export const useSignOutAuthSignOutPost = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signOutAuthSignOutPost>>, TError,void, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof signOutAuthSignOutPost>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getSignOutAuthSignOutPostMutationOptions(options), queryClient);
     }
     /**
  * @summary My Invites

@@ -5,6 +5,7 @@ import { profile } from '@/i18n/en/settings/profile'
 import { security } from '@/i18n/en/settings/security'
 import { notifications } from '@/i18n/en/settings/notifications'
 import { apiTokens } from '@/i18n/en/settings/apiTokens'
+import { sessions } from '@/i18n/en/settings/sessions'
 import { connectedAccounts } from '@/i18n/en/settings/connectedAccounts'
 import { adminUsers } from '@/i18n/en/settings/adminUsers'
 import { departments } from '@/i18n/en/settings/departments'
@@ -30,6 +31,7 @@ export const settings = {
   security,
   notifications,
   apiTokens,
+  sessions,
   connectedAccounts,
   adminUsers,
   departments,

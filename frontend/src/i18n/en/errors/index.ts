@@ -17,6 +17,7 @@ export const errors = {
   current_password_incorrect: 'That is not your current password.',
   reset_link_invalid:
     'This reset link is invalid or has expired. Ask for a new one below.',
+  session_not_found: 'That session has already ended.',
 
   // What a team lets you do.
   not_team_member: 'You are not a member of this team.',

@@ -1,4 +1,11 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Request,
+    Response,
+)
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 
@@ -11,9 +18,10 @@ from lib_identity.identity import (
     sign_out_everywhere,
     update_profile,
 )
-from lib_identity import api_tokens, password_reset
+from lib_identity import api_tokens, password_reset, sessions
 from lib_identity.api_tokens import RequireSession
 from lib_identity.models.api_tokens import ApiTokenCreate, ApiTokenCreated, ApiTokenRead
+from lib_identity.models.sessions import SessionRead
 from lib_identity.models.identity import (
     AuthConfig,
     ForgotPassword,
@@ -27,7 +35,7 @@ from lib_identity.models.identity import (
 from lib_identity.oauth_providers import configured_providers
 from lib_softtrack.models.invites import InviteRead
 from lib_softtrack.tables import User
-from lib_utils.mailer import get_mailer
+from lib_utils.mailer import get_mailer, send_quietly
 from lib_utils.rate_limit import (
     address_of,
     login_by_account,
@@ -80,12 +88,14 @@ def register(
         full_name=payload.full_name,
         username=payload.username,
         invite_token=payload.invite_token,
+        request=request,
     )
 
 
 @router.post("/login", response_model=Token)
 def login(
     request: Request,
+    background: BackgroundTasks,
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session),
 ):
@@ -100,7 +110,11 @@ def login(
 
     try:
         token = login_user(
-            session=session, email=form_data.username, password=form_data.password
+            session=session,
+            email=form_data.username,
+            password=form_data.password,
+            request=request,
+            background=background,
         )
     except HTTPException as exc:
         # A deactivated account is not a failed guess: the password was right,
@@ -139,7 +153,7 @@ def forgot_password(
 
     message = password_reset.request_reset(session, payload.email)
     if message is not None:
-        background.add_task(get_mailer().send, *message)
+        background.add_task(send_quietly, get_mailer(), *message)
 
 
 @router.post("/reset-password", status_code=204)
@@ -169,6 +183,7 @@ def update_me(
 @router.post("/me/password", response_model=Token)
 def change_my_password(
     payload: PasswordChange,
+    request: Request,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
     # A leaked API token must not be able to take the account (#90).
@@ -176,7 +191,11 @@ def change_my_password(
 ):
     """Change the password, and return a token so this tab stays signed in."""
     return change_password(
-        session, current_user, payload.current_password, payload.new_password
+        session,
+        current_user,
+        payload.current_password,
+        payload.new_password,
+        request,
     )
 
 
@@ -219,10 +238,53 @@ def revoke_api_token(
 
 @router.post("/me/sign-out-everywhere", response_model=Token)
 def sign_out_everywhere_route(
+    request: Request,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    return sign_out_everywhere(session, current_user)
+    """End every session but this one, which gets a fresh token."""
+    return sign_out_everywhere(session, current_user, request)
+
+
+@router.get("/me/sessions", response_model=list[SessionRead])
+def list_my_sessions(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    _session_only: None = RequireSession,
+    session: Session = Depends(get_session),
+):
+    """Where your account is signed in (#308), this device first.
+
+    API tokens are not sessions: they are listed at `/auth/me/tokens`.
+    """
+    return sessions.list_sessions(session, current_user, request)
+
+
+@router.delete("/me/sessions/{session_id}", status_code=204)
+def revoke_my_session(
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+    _session_only: None = RequireSession,
+    session: Session = Depends(get_session),
+):
+    """End one session. Its next request is refused; the others continue."""
+    sessions.revoke(session, current_user, session_id)
+    return Response(status_code=204)
+
+
+@router.post("/sign-out", status_code=204)
+def sign_out(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Sign out in this browser: its session ends, so it leaves the list.
+
+    The browser forgets its token whatever this answers; this is so the list
+    of sessions does not go on showing it.
+    """
+    sessions.end_current(session, current_user, request)
+    return Response(status_code=204)
 
 
 @router.get("/me/invites", response_model=list[InviteRead])
