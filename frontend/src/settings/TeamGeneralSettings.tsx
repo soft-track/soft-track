@@ -51,6 +51,7 @@ export default function TeamGeneralSettings() {
           .map((member) => member.user.full_name)}
       />
       <EstimateUnitSetting key={`estimates-${team.id}`} team={team} isAdmin={isAdmin} />
+      <CapacityDefaults key={`capacity-${team.id}`} team={team} isAdmin={isAdmin} />
       <DeletePolicy key={`delete-${team.id}`} team={team} isAdmin={isAdmin} />
     </div>
   )
@@ -269,6 +270,105 @@ function EstimateUnitSetting({ team, isAdmin }: { team: TeamRead; isAdmin: boole
         </p>
       )}
     </section>
+  )
+}
+
+/**
+ * What each person can take in a sprint before anybody changes it (#269):
+ * points for a whole sprint, and hours for each working day. Both shrink
+ * with the days somebody is away, and either can be changed per person and
+ * per sprint on the Plan tab.
+ */
+function CapacityDefaults({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
+  const queryClient = useQueryClient()
+  const updateTeam = useUpdateTeamTeamsTeamIdPatch()
+  const [points, setPoints] = useState(String(team.capacity_points ?? 10))
+  const [hours, setHours] = useState(String((team.capacity_minutes_per_day ?? 360) / 60))
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+  const id = useId()
+
+  const onSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    setError(null)
+    setSaved(false)
+    try {
+      await updateTeam.mutateAsync({
+        teamId: team.id,
+        data: {
+          capacity_points: Math.max(Math.round(Number(points) || 0), 0),
+          capacity_minutes_per_day: Math.max(Math.round((Number(hours) || 0) * 60), 0),
+        },
+      })
+      queryClient.invalidateQueries({ queryKey: ['/teams'] })
+      // The plans worked out from the old defaults.
+      queryClient.invalidateQueries({
+        predicate: (query) => String(query.queryKey[0] ?? '').endsWith('/plan'),
+      })
+      setSaved(true)
+    } catch (err: unknown) {
+      setError(errorDetail(err, t('general.errors.capacity')))
+    }
+  }
+
+  return (
+    <form
+      onSubmit={onSubmit}
+      className="glass-strong rounded-panel p-6"
+      aria-labelledby={`${id}-heading`}
+    >
+      <p className="eyebrow" id={`${id}-heading`}>
+        {t('general.capacity.heading')}
+      </p>
+      <p className="mt-2 text-sm text-neutral-600">{t('general.capacity.intro')}</p>
+      <div className="mt-3 flex flex-wrap items-end gap-4">
+        <label className="text-sm text-neutral-800">
+          <span className="mb-1 block text-xs text-neutral-500">
+            {t('general.capacity.points')}
+          </span>
+          <input
+            type="number"
+            min={0}
+            max={1000}
+            step={1}
+            value={points}
+            disabled={!isAdmin}
+            onChange={(e) => setPoints(e.target.value)}
+            className="field w-24"
+          />
+        </label>
+        <label className="text-sm text-neutral-800">
+          <span className="mb-1 block text-xs text-neutral-500">
+            {t('general.capacity.hours')}
+          </span>
+          <input
+            type="number"
+            min={0}
+            max={24}
+            step={0.5}
+            value={hours}
+            disabled={!isAdmin}
+            onChange={(e) => setHours(e.target.value)}
+            className="field w-24"
+          />
+        </label>
+        {isAdmin && (
+          <button type="submit" className="btn btn-primary" disabled={updateTeam.isPending}>
+            {t('general.capacity.save')}
+          </button>
+        )}
+        {saved && <span className="text-xs text-neutral-500">{t('general.capacity.saved')}</span>}
+      </div>
+      {error && (
+        <p
+          role="alert"
+          className="mt-3 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+        >
+          {error}
+        </p>
+      )}
+    </form>
   )
 }
 

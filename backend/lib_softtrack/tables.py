@@ -1018,6 +1018,11 @@ class Team(SQLModel, table=True):
     #: Points, hours or both (#268). Which estimates the ticket panel offers,
     #: and what the board's "Has no estimate" asks about.
     estimate_unit: EstimateUnit = Field(default=EstimateUnit.points)
+    #: What one person can take in a sprint (#269), before anybody changes it
+    #: for a sprint: points for a whole sprint, and minutes for each working
+    #: day. Both shrink with the days somebody is away.
+    capacity_points: int = Field(default=10)
+    capacity_minutes_per_day: int = Field(default=6 * 60)
     created_at: datetime = Field(default_factory=utcnow)
     #: Whether the team is in the team directory (#259), where people who are
     #: not on it see its name, key, size and admins and can ask to join. On
@@ -1213,6 +1218,23 @@ class SprintAction(SQLModel, table=True):
     ticket_id: int = Field(foreign_key="ticket.id", index=True)
     text: str
     created_at: datetime = Field(default_factory=utcnow)
+
+
+class SprintCapacity(SQLModel, table=True):
+    """One person's capacity in one sprint, where it is not the team's
+    default (#269).
+
+    No row means the default, in proportion to the sprint's working days.
+    `days_off` takes days away from that; a capacity set by hand replaces it,
+    in its own unit only -- null in either unit is still worked out. Leave
+    (#248) and public holidays (#250) will feed the days away when they exist.
+    """
+
+    sprint_id: int = Field(foreign_key="sprint.id", primary_key=True)
+    user_id: int = Field(foreign_key="user.id", primary_key=True, index=True)
+    days_off: int = Field(default=0)
+    points: Optional[int] = None
+    minutes: Optional[int] = None
 
 
 class TicketEvent(SQLModel, table=True):

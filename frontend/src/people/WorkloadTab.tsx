@@ -2,9 +2,15 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { getWorkloadUsersUsernameWorkloadGet } from '@/api/generated/endpoints/people/people'
-import type { WorkloadRead, WorkloadTeam, WorkloadTicket } from '@/api/generated/models'
+import type {
+  TeamCapacity,
+  WorkloadRead,
+  WorkloadTeam,
+  WorkloadTicket,
+} from '@/api/generated/models'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { PriorityIcon } from '@/tickets/PriorityIcon'
+import { formatDuration } from '@/tickets/duration'
 import { ticketPath } from '@/tickets/surface'
 import { Icon } from '@/ui/Icon'
 
@@ -33,20 +39,28 @@ export function WorkloadTab({
 }) {
   const { t } = useTranslation(['people', 'common'])
 
+  const capacity = (workload.capacity ?? []).length > 0 && (
+    <Capacities name={name} isYou={isYou} capacity={workload.capacity ?? []} />
+  )
+
   if (workload.open_count === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
-        <Icon name="check" size={26} className="text-neutral-300" />
-        <p className="text-sm text-neutral-800">
-          {isYou ? t('workload.emptyYours') : t('workload.empty', { name })}
-        </p>
-        <p className="text-xs text-neutral-400">{t('workload.emptyHint')}</p>
+      <div className="space-y-4">
+        {capacity}
+        <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+          <Icon name="check" size={26} className="text-neutral-300" />
+          <p className="text-sm text-neutral-800">
+            {isYou ? t('workload.emptyYours') : t('workload.empty', { name })}
+          </p>
+          <p className="text-xs text-neutral-400">{t('workload.emptyHint')}</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
+      {capacity}
       <p className="text-sm text-neutral-500">
         <Trans
           t={t}
@@ -65,6 +79,83 @@ export function WorkloadTab({
         <TeamGroup key={group.team.id} username={username} group={group} />
       ))}
     </div>
+  )
+}
+
+/**
+ * Somebody's capacity on each team you share with them (#269), in the
+ * sprint each is planning: what they have against what they can take.
+ * Capacity is per team, so somebody on two teams has one in each.
+ */
+function Capacities({
+  name,
+  isYou,
+  capacity,
+}: {
+  name: string
+  isYou: boolean
+  capacity: TeamCapacity[]
+}) {
+  const { t } = useTranslation(['people', 'common'])
+  const title = isYou ? t('workload.capacity.titleYours') : t('workload.capacity.title', { name })
+  return (
+    <section aria-label={title} className="well rounded-card px-4 py-3">
+      <p className="eyebrow">{title}</p>
+      <ul className="mt-2 space-y-3">
+        {capacity.map((row) => {
+          const hours = row.unit === 'hours'
+          const assigned = hours ? row.minutes_assigned : row.points_assigned
+          const most = hours ? row.minutes_capacity : row.points_capacity
+          const over = assigned > most
+          const ratio = most > 0 ? Math.min(assigned / most, 1) : assigned > 0 ? 1 : 0
+          const amount = hours
+            ? t('workload.capacity.hours', {
+                assigned: formatDuration(assigned),
+                capacity: formatDuration(most),
+              })
+            : t('workload.capacity.points', { assigned, capacity: most })
+          return (
+            <li key={row.team.id}>
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="truncate text-neutral-900">
+                  <Link to={`/${row.team.key}`} className="hover:underline">
+                    {row.team.name}
+                  </Link>
+                  <span className="ml-2 text-xs text-neutral-400">{row.sprint}</span>
+                </span>
+                <span className="flex items-center gap-2">
+                  {over && (
+                    <span
+                      className="chip"
+                      style={{ ['--chip' as string]: 'var(--color-danger-600)' }}
+                    >
+                      {t('workload.capacity.over')}
+                    </span>
+                  )}
+                  <span className="identifier text-xs text-neutral-600">{amount}</span>
+                </span>
+              </div>
+              <div
+                role="progressbar"
+                aria-label={t('workload.capacity.bar', { team: row.team.name })}
+                aria-valuemin={0}
+                aria-valuemax={most}
+                aria-valuenow={Math.min(assigned, most)}
+                className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-neutral-900/8"
+              >
+                <div
+                  className={`h-full rounded-full ${
+                    over ? 'bg-danger-500' : 'bg-linear-to-r from-brand-500 to-accent-sky'
+                  }`}
+                  style={{ width: `${ratio * 100}%` }}
+                />
+              </div>
+            </li>
+          )
+        })}
+      </ul>
+      <p className="mt-3 text-xs text-neutral-500">{t('workload.capacity.hint')}</p>
+    </section>
   )
 }
 

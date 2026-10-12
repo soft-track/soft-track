@@ -25,6 +25,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  CapacityUpdate,
   HTTPValidationError,
   RetroActionCreate,
   RetroActionRead,
@@ -32,6 +33,7 @@ import type {
   SprintCompleteRequest,
   SprintCompletion,
   SprintCreate,
+  SprintPlan,
   SprintRead,
   SprintUpdate
 } from '../../models';
@@ -783,4 +785,174 @@ export const useCreateRetroActionSprintsSprintIdRetrospectiveActionsPost = <TErr
         TContext
       > => {
       return useMutation(getCreateRetroActionSprintsSprintIdRetrospectiveActionsPostMutationOptions(options), queryClient);
+    }
+    /**
+ * What each person can take in the sprint against what they have (#269).
+ *
+ * A row per person who can be assigned the team's work -- not guests --
+ * with their capacity in points and in hours, a row for unassigned tickets,
+ * the scope beside the capacity, and the last three completed sprints'
+ * delivery as a line to plan against. Over capacity is shown, never refused.
+ * An account from outside the organisation is refused: it is about people.
+ * @summary Sprint Plan
+ */
+export const sprintPlanSprintsSprintIdPlanGet = (
+    sprintId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<SprintPlan>(
+      {url: `/sprints/${sprintId}/plan`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getSprintPlanSprintsSprintIdPlanGetQueryKey = (sprintId: number,) => {
+    return [
+    `/sprints/${sprintId}/plan`
+    ] as const;
+    }
+
+
+export const getSprintPlanSprintsSprintIdPlanGetQueryOptions = <TData = Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>, TError = HTTPValidationError>(sprintId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSprintPlanSprintsSprintIdPlanGetQueryKey(sprintId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>> = ({ signal }) => sprintPlanSprintsSprintIdPlanGet(sprintId, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: sprintId !== null && sprintId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SprintPlanSprintsSprintIdPlanGetQueryResult = NonNullable<Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>>
+export type SprintPlanSprintsSprintIdPlanGetQueryError = HTTPValidationError
+
+
+export function useSprintPlanSprintsSprintIdPlanGet<TData = Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>, TError = HTTPValidationError>(
+ sprintId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>,
+          TError,
+          Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSprintPlanSprintsSprintIdPlanGet<TData = Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>, TError = HTTPValidationError>(
+ sprintId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>,
+          TError,
+          Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSprintPlanSprintsSprintIdPlanGet<TData = Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>, TError = HTTPValidationError>(
+ sprintId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Sprint Plan
+ */
+
+export function useSprintPlanSprintsSprintIdPlanGet<TData = Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>, TError = HTTPValidationError>(
+ sprintId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sprintPlanSprintsSprintIdPlanGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSprintPlanSprintsSprintIdPlanGetQueryOptions(sprintId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Set people's capacity in the sprint: the days they are away, and a
+ * capacity by hand in points or in minutes. Fields left out are left as
+ * they are; a capacity sent as null goes back to the team's default.
+ * @summary Set Capacity
+ */
+export const setCapacitySprintsSprintIdCapacityPut = (
+    sprintId: number,
+    capacityUpdate: CapacityUpdate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<SprintPlan>(
+      {url: `/sprints/${sprintId}/capacity`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: capacityUpdate, signal
+    },
+      );
+    }
+
+
+
+
+export const getSetCapacitySprintsSprintIdCapacityPutMutationKey = () => ['setCapacitySprintsSprintIdCapacityPut'] as const;
+
+export const getSetCapacitySprintsSprintIdCapacityPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCapacitySprintsSprintIdCapacityPut>>, TError,SetCapacitySprintsSprintIdCapacityPutMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof setCapacitySprintsSprintIdCapacityPut>>, TError,SetCapacitySprintsSprintIdCapacityPutMutationVariables, TContext> => {
+
+const mutationKey = getSetCapacitySprintsSprintIdCapacityPutMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setCapacitySprintsSprintIdCapacityPut>>, SetCapacitySprintsSprintIdCapacityPutMutationVariables> = (props) => {
+          const {sprintId,data} = props ?? {};
+
+          return  setCapacitySprintsSprintIdCapacityPut(sprintId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetCapacitySprintsSprintIdCapacityPutMutationResult = NonNullable<Awaited<ReturnType<typeof setCapacitySprintsSprintIdCapacityPut>>>
+    export type SetCapacitySprintsSprintIdCapacityPutMutationBody = CapacityUpdate
+    export type SetCapacitySprintsSprintIdCapacityPutMutationError = HTTPValidationError
+    export type SetCapacitySprintsSprintIdCapacityPutMutationVariables = {sprintId: number;data: CapacityUpdate}
+
+    /**
+ * @summary Set Capacity
+ */
+export const useSetCapacitySprintsSprintIdCapacityPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCapacitySprintsSprintIdCapacityPut>>, TError,SetCapacitySprintsSprintIdCapacityPutMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setCapacitySprintsSprintIdCapacityPut>>,
+        TError,
+        SetCapacitySprintsSprintIdCapacityPutMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetCapacitySprintsSprintIdCapacityPutMutationOptions(options), queryClient);
     }

@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from lib_identity.models.identity import PersonRef
 from lib_identity.models.people import SharedTeam
+from lib_softtrack.models.capacity import TeamCapacity
 from lib_softtrack.models.statuses import StatusRead
 from lib_softtrack.tables import TicketPriority
 
@@ -63,3 +64,7 @@ class WorkloadRead(BaseModel):
     #: manager's profile shows beside each name. Empty when a single team's
     #: page was asked for.
     reports: list[ReportLoad]
+    #: Their capacity on each team you share with them, in the sprint it is
+    #: planning (#269): what they have against what they can take. Empty when
+    #: a single team's page was asked for.
+    capacity: list[TeamCapacity] = []

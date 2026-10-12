@@ -453,6 +453,10 @@ def update_team(
         team.wip_counts_subtickets = payload.wip_counts_subtickets
     if payload.estimate_unit is not None:
         team.estimate_unit = payload.estimate_unit
+    if payload.capacity_points is not None:
+        team.capacity_points = payload.capacity_points
+    if payload.capacity_minutes_per_day is not None:
+        team.capacity_minutes_per_day = payload.capacity_minutes_per_day
     if payload.listed is not None:
         team.listed = payload.listed
     if payload.open_to_join is not None:

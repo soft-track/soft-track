@@ -16,7 +16,7 @@ an accounting event, not a reason to lose anything.
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import case, func
+from sqlalchemy import case, delete, func
 from sqlmodel import Session, select
 
 from lib_softtrack import outbound
@@ -40,6 +40,7 @@ from lib_softtrack.statuses import in_category
 from lib_softtrack.tables import (
     Sprint,
     SprintAction,
+    SprintCapacity,
     SprintState,
     Team,
     Ticket,
@@ -540,6 +541,8 @@ def delete_sprint(session: Session, current_user: User, sprint_id: int) -> None:
     # Saved views hold one too. A view left filtering on a sprint that no
     # longer exists matches nothing, which reads as broken rather than empty.
     views_service.clear_sprint(session, sprint_id)
+    # And the capacities set for it (#269), which mean nothing without it.
+    session.exec(delete(SprintCapacity).where(SprintCapacity.sprint_id == sprint_id))
     # And any rule that moved work into it, which is switched off rather than
     # left enabled doing less than it says -- see automations.clear_sprint.
     automations_service.clear_sprint(session, sprint_id)

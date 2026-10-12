@@ -32,6 +32,7 @@ from app_softtrack.automations import router as automations_router
 from app_softtrack.comments import router as comments_router
 from app_softtrack.custom_fields import router as custom_fields_router
 from app_softtrack.sprints import router as sprints_router
+from app_softtrack.capacity import router as capacity_router
 from app_softtrack.events import router as events_router
 from app_softtrack.imports import router as imports_router
 from app_softtrack.integrations import router as integrations_router
@@ -195,6 +196,7 @@ app.include_router(tickets_router)
 app.include_router(comments_router)
 app.include_router(attachments_router)
 app.include_router(sprints_router)
+app.include_router(capacity_router)
 app.include_router(reports_router)
 app.include_router(imports_router)
 app.include_router(search_router)

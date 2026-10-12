@@ -58,6 +58,39 @@ outcome.
 Not here, on purpose: anonymous voting, timers, and a board of cards in
 columns for the retrospective.
 
+## Capacity
+
+The **Plan** tab, beside Reports, shows a sprint against what the team can
+take: a row per person with what is assigned to them in the sprint against
+their capacity, the days they are here ("8 of 10 days · away 2 days"), and
+"room for 3" or, in red and in words, "over by 3". Unassigned tickets in the
+sprint are a row of their own, and the sprint's scope sits beside its total
+capacity. Over capacity is shown, never refused: assigning carries on as
+before, and nothing is assigned or levelled for anybody.
+
+It plans the next sprint to start, or the one under way when none is lined
+up; any other sprint can be picked. It counts in the unit the team estimates
+in: points, hours (the tickets' time estimates), or a choice of either for a
+team that estimates in both.
+
+Capacity starts from the team's default under Settings → General → Capacity:
+10 points for a whole sprint and 6 hours for each working day, until an admin
+changes them. Working days are the weekdays from the sprint's first day to its
+last. **Set capacity** changes it per person and per sprint: the days somebody
+is here, which shrink the points in proportion and the hours day by day, and a
+capacity typed by hand, which replaces the default in its unit. The days away
+are entered by hand for now; approved leave and public holidays will fill
+them in when SoftTrack has them.
+
+Under the table, the last three completed sprints are a line to plan against
+("The last three sprints delivered 34, 39 and 36 points: 36 on average"), and
+a chart shows each of them, what it held when it started against what it
+delivered, beside what the planned sprint holds.
+
+Guests have no capacity and no row. Capacity is per team: somebody on two
+teams has one in each, and their workload tab shows each team's, in the sprint
+it is planning.
+
 ## Due dates
 
 A ticket can have a due date, which is a day rather than a time, set from the

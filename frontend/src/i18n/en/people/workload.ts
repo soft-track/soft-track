@@ -27,4 +27,14 @@ export const workload = {
   emptyHint: 'Done and cancelled tickets don’t count.',
   reportLoad: '{{open}} · {{points}}',
   openWorkload: 'Workload of {{name}}: {{load}}',
+  // Capacity on each team you share, in the sprint it is planning (#269).
+  capacity: {
+    title: '{{name}}, across their teams',
+    titleYours: 'You, across your teams',
+    points: '{{assigned}} / {{capacity}} pts',
+    hours: '{{assigned}} / {{capacity}}',
+    over: 'over',
+    bar: 'Assigned against capacity on {{team}}',
+    hint: 'Capacity is per team, in the sprint each is planning. Somebody on two teams has one in each.',
+  },
 } as const

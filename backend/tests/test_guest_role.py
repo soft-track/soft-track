@@ -399,6 +399,7 @@ def test_a_guest_sees_what_a_member_sees(client, team, guest, world):
         f"/tickets/{ticket_id}/attachments",
         f"/tickets/{ticket_id}/links",
         f"/sprints/{world['sprint_id']}/burndown",
+        f"/sprints/{world['sprint_id']}/plan",
         f"/attachments/{world['attachment_id']}/content",
     ):
         response = client.get(path, headers=guest["headers"])

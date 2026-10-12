@@ -49,7 +49,18 @@ export const general = {
     both: 'Both',
     bothHint: 'Points for size, hours for cost.',
   },
+  // What each person can take in a sprint, before it is changed (#269).
+  capacity: {
+    heading: 'Capacity',
+    intro:
+      'What each person can take in a sprint, before it is changed for somebody on the Plan tab. Both shrink with the days somebody is away.',
+    points: 'Points a sprint',
+    hours: 'Hours a working day',
+    save: 'Save',
+    saved: 'Saved.',
+  },
   errors: {
+    capacity: 'Could not change the capacity.',
     estimates: 'Could not change what this team estimates in.',
     save: 'Could not save this team.',
     deleting: 'Could not change who may delete.',

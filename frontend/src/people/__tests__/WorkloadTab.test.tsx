@@ -172,4 +172,61 @@ describe('The Workload tab', () => {
     expect(screen.getByText('Nothing open for Daniel Okafor in the teams you share.')).toBeTruthy()
     expect(screen.getByText('Done and cancelled tickets don’t count.')).toBeTruthy()
   })
+
+  it('shows a capacity on each team, in the sprint each is planning (#269)', () => {
+    renderTab({
+      ...WORKLOAD,
+      capacity: [
+        {
+          team: ENG,
+          sprint_id: 15,
+          sprint: 'Sprint 15',
+          unit: 'points',
+          points_assigned: 8,
+          points_capacity: 8,
+          minutes_assigned: 0,
+          minutes_capacity: 2880,
+        },
+        {
+          team: PLT,
+          sprint_id: 4,
+          sprint: 'Sprint 4',
+          unit: 'hours',
+          points_assigned: 0,
+          points_capacity: 3,
+          minutes_assigned: 25 * 60,
+          minutes_capacity: 20 * 60,
+        },
+      ],
+    })
+    const card = screen.getByRole('region', { name: 'Daniel Okafor, across their teams' })
+    const [eng, platform] = within(card).getAllByRole('listitem')
+    expect(eng.textContent).toContain('Engineering')
+    expect(eng.textContent).toContain('8 / 8 pts')
+    expect(within(eng).queryByText('over')).toBeNull()
+    expect(platform.textContent).toContain('25h / 20h')
+    expect(within(platform).getByText('over')).toBeTruthy()
+  })
+
+  it('shows the capacity even with nothing open', () => {
+    renderTab({
+      open_count: 0,
+      points: 0,
+      teams: [],
+      reports: [],
+      capacity: [
+        {
+          team: ENG,
+          sprint_id: 15,
+          sprint: 'Sprint 15',
+          unit: 'points',
+          points_assigned: 0,
+          points_capacity: 10,
+          minutes_assigned: 0,
+          minutes_capacity: 3600,
+        },
+      ],
+    })
+    expect(screen.getByText('0 / 10 pts')).toBeTruthy()
+  })
 })

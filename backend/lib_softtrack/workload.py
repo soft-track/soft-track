@@ -15,6 +15,7 @@ from sqlmodel import Session, col, select
 from lib_identity.models.identity import PersonRef
 from lib_identity.models.people import SharedTeam
 from lib_identity.people import find_by_username
+from lib_softtrack import capacity as capacity_service
 from lib_softtrack.models.statuses import StatusRead
 from lib_softtrack.models.workload import (
     ReportLoad,
@@ -146,6 +147,21 @@ def workload(
             for group_team_id, count, points, _ in groups
         ],
         reports=_report_loads(session, viewer, person) if team_id is None else [],
+        capacity=(
+            capacity_service.across_teams(
+                session,
+                person,
+                list(
+                    session.exec(
+                        select(TeamMember.team_id).where(
+                            TeamMember.user_id == viewer.id
+                        )
+                    ).all()
+                ),
+            )
+            if team_id is None
+            else []
+        ),
     )
 
 

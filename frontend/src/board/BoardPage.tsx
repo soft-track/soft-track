@@ -59,6 +59,7 @@ import { ProjectPage } from '@/projects/ProjectPage'
 import { RoadmapView } from '@/projects/RoadmapView'
 import { useTeamEvents } from '@/realtime/useTeamEvents'
 import { ReportsView } from '@/reports/ReportsView'
+import { PlanView } from '@/sprints/PlanView'
 import { SearchResults } from '@/search/SearchResults'
 import { useDebounced } from '@/search/useDebounced'
 import { rememberTeam } from '@/team/lastTeam'
@@ -112,7 +113,7 @@ export default function BoardPage() {
   // The team's reports are not for somebody from outside the organisation
   // (#243), who sees only the epics they were given.
   const setView = (next: BoardView) =>
-    setBoardView(user?.is_external && next === 'reports' ? 'board' : next)
+    setBoardView(user?.is_external && (next === 'reports' || next === 'plan') ? 'board' : next)
   const [search, setSearch] = useState(returning?.search ?? '')
   // The sidebar is a drawer below the `lg` breakpoint.
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -499,6 +500,8 @@ export default function BoardPage() {
                   <RoadmapView />
                 ) : view === 'reports' ? (
                   <ReportsView />
+                ) : view === 'plan' ? (
+                  <PlanView />
                 ) : view === 'board' ? (
                   <KanbanBoard
                     tickets={tickets}

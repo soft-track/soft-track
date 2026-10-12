@@ -22,6 +22,8 @@ export interface TeamUpdate {
   wip_limits_hard?: boolean | null;
   wip_counts_subtickets?: boolean | null;
   estimate_unit?: EstimateUnit | null;
+  capacity_points?: number | null;
+  capacity_minutes_per_day?: number | null;
   listed?: boolean | null;
   open_to_join?: boolean | null;
 }

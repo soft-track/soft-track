@@ -17,6 +17,8 @@ export interface TeamRead {
   wip_limits_hard?: boolean;
   wip_counts_subtickets?: boolean;
   estimate_unit?: EstimateUnit;
+  capacity_points?: number;
+  capacity_minutes_per_day?: number;
   listed?: boolean;
   open_to_join?: boolean;
   created_at: string;

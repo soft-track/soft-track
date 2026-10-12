@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from lib_identity.models.identity import UserPublic
+from lib_softtrack.models.capacity import MAX_CAPACITY_POINTS
 from lib_softtrack.tables import EstimateUnit, TeamRole
 
 
@@ -30,6 +31,10 @@ class TeamRead(BaseModel):
     wip_counts_subtickets: bool = True
     #: What the team estimates in (#268): points, hours or both.
     estimate_unit: EstimateUnit = EstimateUnit.points
+    #: What one person can take in a sprint, by default (#269): points for a
+    #: whole sprint, and minutes for each working day.
+    capacity_points: int = 10
+    capacity_minutes_per_day: int = 6 * 60
     #: Who can find the team (#259): whether it is in the team directory, and
     #: whether anybody signed in may join it without asking.
     listed: bool = True
@@ -60,6 +65,9 @@ class TeamUpdate(BaseModel):
     wip_counts_subtickets: Optional[bool] = None
     #: Points, hours or both (#268). Points is the default.
     estimate_unit: Optional[EstimateUnit] = None
+    #: The capacity each person starts from in a sprint (#269).
+    capacity_points: Optional[int] = Field(default=None, ge=0, le=MAX_CAPACITY_POINTS)
+    capacity_minutes_per_day: Optional[int] = Field(default=None, ge=0, le=24 * 60)
     #: Who can find the team (#259). Listed is the default; open is not.
     listed: Optional[bool] = None
     open_to_join: Optional[bool] = None

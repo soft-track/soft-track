@@ -105,3 +105,29 @@ describe('what a team estimates in', () => {
     expect(choice(/^Hours/).disabled).toBe(true)
   })
 })
+
+describe('the capacity each person starts from (#269)', () => {
+  it('is ten points a sprint and six hours a day until an admin changes it', async () => {
+    const user = renderPage()
+    const points = screen.getByLabelText<HTMLInputElement>('Points a sprint')
+    const hours = screen.getByLabelText<HTMLInputElement>('Hours a working day')
+    expect(points.value).toBe('10')
+    expect(hours.value).toBe('6')
+    await user.clear(points)
+    await user.type(points, '8')
+    await user.clear(hours)
+    await user.type(hours, '5.5')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(mocks.update).toHaveBeenCalledWith({
+      teamId: 7,
+      data: { capacity_points: 8, capacity_minutes_per_day: 330 },
+    })
+    expect(await screen.findByText('Saved.')).toBeTruthy()
+  })
+
+  it('is not a member’s to change', () => {
+    mocks.role = 'member'
+    renderPage()
+    expect(screen.getByLabelText<HTMLInputElement>('Points a sprint').disabled).toBe(true)
+  })
+})

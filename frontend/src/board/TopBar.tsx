@@ -22,6 +22,8 @@ const VIEWS: Array<{ id: BoardView; icon: IconName }> = [
   { id: 'calendar', icon: 'calendar-grid' },
   { id: 'roadmap', icon: 'calendar' },
   { id: 'reports', icon: 'chart' },
+  // Sprint capacity (#269): beside Reports.
+  { id: 'plan', icon: 'users' },
 ]
 
 export function TopBar({
@@ -69,8 +71,11 @@ export function TopBar({
   const { team } = useTeamContext()
   const { user } = useAuth()
   const { t } = useTranslation(['board', 'common'])
-  // Somebody from outside sees their epics, not the team's reports (#243).
-  const views = VIEWS.filter((item) => !(user?.is_external && item.id === 'reports'))
+  // Somebody from outside sees their epics, not the team's reports (#243)
+  // or who can take what (#269).
+  const views = VIEWS.filter(
+    (item) => !(user?.is_external && (item.id === 'reports' || item.id === 'plan')),
+  )
 
   return (
     <header className="glass flex flex-wrap items-center gap-2 rounded-panel px-3 py-2">

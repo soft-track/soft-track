@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ReportLoad } from './reportLoad';
+import type { TeamCapacity } from './teamCapacity';
 import type { WorkloadTeam } from './workloadTeam';
 
 /**
@@ -20,4 +21,5 @@ export interface WorkloadRead {
   points: number;
   teams: WorkloadTeam[];
   reports: ReportLoad[];
+  capacity?: TeamCapacity[];
 }

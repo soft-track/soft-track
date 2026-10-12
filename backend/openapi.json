@@ -6638,6 +6638,112 @@
         }
       }
     },
+    "/sprints/{sprint_id}/plan": {
+      "get": {
+        "tags": [
+          "sprints"
+        ],
+        "summary": "Sprint Plan",
+        "description": "What each person can take in the sprint against what they have (#269).\n\nA row per person who can be assigned the team's work -- not guests --\nwith their capacity in points and in hours, a row for unassigned tickets,\nthe scope beside the capacity, and the last three completed sprints'\ndelivery as a line to plan against. Over capacity is shown, never refused.\nAn account from outside the organisation is refused: it is about people.",
+        "operationId": "sprint_plan_sprints__sprint_id__plan_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sprint Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintPlan"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sprints/{sprint_id}/capacity": {
+      "put": {
+        "tags": [
+          "sprints"
+        ],
+        "summary": "Set Capacity",
+        "description": "Set people's capacity in the sprint: the days they are away, and a\ncapacity by hand in points or in minutes. Fields left out are left as\nthey are; a capacity sent as null goes back to the team's default.",
+        "operationId": "set_capacity_sprints__sprint_id__capacity_put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sprint Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CapacityUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintPlan"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sprints/{sprint_id}/burndown": {
       "get": {
         "tags": [
@@ -16006,6 +16112,76 @@
         ],
         "title": "BurndownPoint"
       },
+      "CapacityChange": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "days_off": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 366.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Off"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 60000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "CapacityChange",
+        "description": "One person's capacity in the sprint. A field left out is left as it\nis; a capacity sent as null goes back to the team's default."
+      },
+      "CapacityUpdate": {
+        "properties": {
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/CapacityChange"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "title": "People"
+          }
+        },
+        "type": "object",
+        "required": [
+          "people"
+        ],
+        "title": "CapacityUpdate"
+      },
       "ChannelSetting": {
         "properties": {
           "channel": {
@@ -17262,6 +17438,40 @@
         "type": "object",
         "title": "DefaultViewUpdate",
         "description": "Null clears the default rather than setting one."
+      },
+      "DeliveredSprint": {
+        "properties": {
+          "sprint_id": {
+            "type": "integer",
+            "title": "Sprint Id"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "points_planned": {
+            "type": "integer",
+            "title": "Points Planned"
+          },
+          "points_delivered": {
+            "type": "integer",
+            "title": "Points Delivered"
+          },
+          "minutes_delivered": {
+            "type": "integer",
+            "title": "Minutes Delivered"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sprint_id",
+          "display_name",
+          "points_planned",
+          "points_delivered",
+          "minutes_delivered"
+        ],
+        "title": "DeliveredSprint",
+        "description": "One of the last completed sprints: what it held when it started, and\nwhat was done in it."
       },
       "DepartmentCreate": {
         "properties": {
@@ -20614,6 +20824,64 @@
         "title": "PeopleTimesheet",
         "description": "A team's week, or a manager's reports: a row per person."
       },
+      "PersonCapacity": {
+        "properties": {
+          "person": {
+            "$ref": "#/components/schemas/PersonRef"
+          },
+          "days_here": {
+            "type": "integer",
+            "title": "Days Here"
+          },
+          "days_off": {
+            "type": "integer",
+            "title": "Days Off"
+          },
+          "tickets": {
+            "type": "integer",
+            "title": "Tickets"
+          },
+          "points_assigned": {
+            "type": "integer",
+            "title": "Points Assigned"
+          },
+          "points_capacity": {
+            "type": "integer",
+            "title": "Points Capacity"
+          },
+          "points_set": {
+            "type": "boolean",
+            "title": "Points Set"
+          },
+          "minutes_assigned": {
+            "type": "integer",
+            "title": "Minutes Assigned"
+          },
+          "minutes_capacity": {
+            "type": "integer",
+            "title": "Minutes Capacity"
+          },
+          "minutes_set": {
+            "type": "boolean",
+            "title": "Minutes Set"
+          }
+        },
+        "type": "object",
+        "required": [
+          "person",
+          "days_here",
+          "days_off",
+          "tickets",
+          "points_assigned",
+          "points_capacity",
+          "points_set",
+          "minutes_assigned",
+          "minutes_capacity",
+          "minutes_set"
+        ],
+        "title": "PersonCapacity",
+        "description": "One person's row: what is assigned to them in the sprint against what\nthey can take.\n\nCapacity is the team's default in proportion to the days they are here,\nin each unit, unless somebody set it by hand for this sprint. Assigned\ncounts every ticket in the sprint, done ones too: the plan is the whole\nsprint's."
+      },
       "PersonRead": {
         "properties": {
           "id": {
@@ -20768,6 +21036,41 @@
           "minutes"
         ],
         "title": "PersonTime"
+      },
+      "PlanSprint": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starts At"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ends At"
+          },
+          "state": {
+            "$ref": "#/components/schemas/SprintState"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "display_name",
+          "starts_at",
+          "ends_at",
+          "state"
+        ],
+        "title": "PlanSprint",
+        "description": "The sprint being planned, as the view's heading names it."
       },
       "ProfileRead": {
         "properties": {
@@ -23673,6 +23976,30 @@
         ],
         "title": "SprintCreate"
       },
+      "SprintLoad": {
+        "properties": {
+          "tickets": {
+            "type": "integer",
+            "title": "Tickets"
+          },
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          },
+          "minutes": {
+            "type": "integer",
+            "title": "Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tickets",
+          "points",
+          "minutes"
+        ],
+        "title": "SprintLoad",
+        "description": "Tickets in the sprint that are on nobody's plate -- or on the plate of\nsomebody who has no capacity here."
+      },
       "SprintOutcome": {
         "type": "string",
         "enum": [
@@ -23682,6 +24009,104 @@
         ],
         "title": "SprintOutcome",
         "description": "Whether a sprint's goal was met (#271), said when it is completed."
+      },
+      "SprintPlan": {
+        "properties": {
+          "sprint": {
+            "$ref": "#/components/schemas/PlanSprint"
+          },
+          "estimate_unit": {
+            "$ref": "#/components/schemas/EstimateUnit"
+          },
+          "working_days": {
+            "type": "integer",
+            "title": "Working Days"
+          },
+          "default_points": {
+            "type": "integer",
+            "title": "Default Points"
+          },
+          "default_minutes_per_day": {
+            "type": "integer",
+            "title": "Default Minutes Per Day"
+          },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/PersonCapacity"
+            },
+            "type": "array",
+            "title": "People"
+          },
+          "unassigned": {
+            "$ref": "#/components/schemas/SprintLoad"
+          },
+          "elsewhere": {
+            "$ref": "#/components/schemas/SprintLoad"
+          },
+          "scope_points": {
+            "type": "integer",
+            "title": "Scope Points"
+          },
+          "capacity_points": {
+            "type": "integer",
+            "title": "Capacity Points"
+          },
+          "scope_minutes": {
+            "type": "integer",
+            "title": "Scope Minutes"
+          },
+          "capacity_minutes": {
+            "type": "integer",
+            "title": "Capacity Minutes"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/DeliveredSprint"
+            },
+            "type": "array",
+            "title": "History"
+          },
+          "average_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Points"
+          },
+          "average_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sprint",
+          "estimate_unit",
+          "working_days",
+          "default_points",
+          "default_minutes_per_day",
+          "people",
+          "unassigned",
+          "elsewhere",
+          "scope_points",
+          "capacity_points",
+          "scope_minutes",
+          "capacity_minutes",
+          "history"
+        ],
+        "title": "SprintPlan",
+        "description": "A sprint's plan (#269): a row per person who can be assigned the team's\nwork, a row for what is unassigned, the sprint's scope beside its\ncapacity, and the last three sprints as a line to plan against.\n\nGuests have no capacity and no row. Everything is in both units; the\nteam's `estimate_unit` says which to show."
       },
       "SprintProgress": {
         "properties": {
@@ -24103,6 +24528,53 @@
         "type": "object",
         "title": "StatusUpdate"
       },
+      "TeamCapacity": {
+        "properties": {
+          "team": {
+            "$ref": "#/components/schemas/SharedTeam"
+          },
+          "sprint_id": {
+            "type": "integer",
+            "title": "Sprint Id"
+          },
+          "sprint": {
+            "type": "string",
+            "title": "Sprint"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/EstimateUnit"
+          },
+          "points_assigned": {
+            "type": "integer",
+            "title": "Points Assigned"
+          },
+          "points_capacity": {
+            "type": "integer",
+            "title": "Points Capacity"
+          },
+          "minutes_assigned": {
+            "type": "integer",
+            "title": "Minutes Assigned"
+          },
+          "minutes_capacity": {
+            "type": "integer",
+            "title": "Minutes Capacity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team",
+          "sprint_id",
+          "sprint",
+          "unit",
+          "points_assigned",
+          "points_capacity",
+          "minutes_assigned",
+          "minutes_capacity"
+        ],
+        "title": "TeamCapacity",
+        "description": "Somebody's capacity on one team, in the sprint it is planning: what the\nworkload tab shows for each team (#269)."
+      },
       "TeamCreate": {
         "properties": {
           "name": {
@@ -24520,6 +24992,16 @@
             "$ref": "#/components/schemas/EstimateUnit",
             "default": "points"
           },
+          "capacity_points": {
+            "type": "integer",
+            "title": "Capacity Points",
+            "default": 10
+          },
+          "capacity_minutes_per_day": {
+            "type": "integer",
+            "title": "Capacity Minutes Per Day",
+            "default": 360
+          },
           "listed": {
             "type": "boolean",
             "title": "Listed",
@@ -24755,6 +25237,32 @@
                 "type": "null"
               }
             ]
+          },
+          "capacity_points": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity Points"
+          },
+          "capacity_minutes_per_day": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1440.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity Minutes Per Day"
           },
           "listed": {
             "anyOf": [
@@ -27527,6 +28035,14 @@
             },
             "type": "array",
             "title": "Reports"
+          },
+          "capacity": {
+            "items": {
+              "$ref": "#/components/schemas/TeamCapacity"
+            },
+            "type": "array",
+            "title": "Capacity",
+            "default": []
           }
         },
         "type": "object",

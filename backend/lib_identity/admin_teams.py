@@ -48,6 +48,7 @@ from lib_softtrack.tables import (
     Sprint,
     ScheduleRun,
     SprintAction,
+    SprintCapacity,
     Team,
     TeamInvite,
     TeamJoinRequest,
@@ -344,6 +345,9 @@ def delete_team(session: Session, actor: User, team_id: int) -> None:
         delete(SavedView).where(SavedView.team_id == team_id),
         delete(GuestEpic).where(col(GuestEpic.project_id).in_(of_team(Project))),
         delete(SprintAction).where(col(SprintAction.sprint_id).in_(of_team(Sprint))),
+        delete(SprintCapacity).where(
+            col(SprintCapacity.sprint_id).in_(of_team(Sprint))
+        ),
         delete(TicketEvent).where(TicketEvent.team_id == team_id),
         delete(Notification).where(
             col(Notification.custom_field_id).in_(of_team(CustomField))

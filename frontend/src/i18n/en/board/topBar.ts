@@ -8,6 +8,7 @@ export const topBar = {
     calendar: 'Calendar',
     roadmap: 'Roadmap',
     reports: 'Reports',
+    plan: 'Plan',
   },
   groupBy: 'Group by',
   sortBy: 'Sort by',
