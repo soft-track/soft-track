@@ -100,6 +100,9 @@ class ErrorCode(str, enum.Enum):
     budget_not_found = "budget_not_found"
     #: A request for a team that does not exist (#306).
     team_request_not_found = "team_request_not_found"
+    #: A request to join a team (#259) that does not exist, has run out, or
+    #: is somebody else's or another team's.
+    join_request_not_found = "join_request_not_found"
     #: The person is not a member of the team the request is about.
     member_not_found = "member_not_found"
     #: A status, label, project or sprint id that belongs to another team.
@@ -267,6 +270,11 @@ class ErrorCode(str, enum.Enum):
     #: Only a team with no tickets, in the trash or not, is deleted (#307);
     #: one with work in it is archived.
     team_not_empty = "team_not_empty"
+    #: Asking to join a team (#259) you have already asked to join: one open
+    #: request per person per team.
+    join_request_pending = "join_request_pending"
+    #: Joining a team without asking (#259) that has to be asked.
+    team_not_open = "team_not_open"
     #: Who may create teams is set in the environment (TEAM_CREATION), which
     #: wins over the app (#306).
     team_creation_from_environment = "team_creation_from_environment"

@@ -15,5 +15,7 @@ export interface TeamRead {
   guests_may_comment?: boolean;
   wip_limits_hard?: boolean;
   wip_counts_subtickets?: boolean;
+  listed?: boolean;
+  open_to_join?: boolean;
   created_at: string;
 }

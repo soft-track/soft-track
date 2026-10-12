@@ -1843,7 +1843,7 @@
           "teams"
         ],
         "summary": "Team Directory",
-        "description": "Every team, with its size and admins: who to ask to be added (#318).",
+        "description": "The teams there are, with their size and admins (#318), and where you\nstand with each: on it, asked to join it, or neither (#259).",
         "operationId": "team_directory_teams_directory_get",
         "responses": {
           "200": {
@@ -1851,11 +1851,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/TeamDirectoryEntry"
-                  },
-                  "type": "array",
-                  "title": "Response Team Directory Teams Directory Get"
+                  "$ref": "#/components/schemas/TeamDirectory"
                 }
               }
             }
@@ -1866,6 +1862,47 @@
             "OAuth2PasswordBearer": []
           }
         ]
+      }
+    },
+    "/teams/join-requests/{join_request_id}": {
+      "delete": {
+        "tags": [
+          "teams"
+        ],
+        "summary": "Withdraw Join Request",
+        "description": "Withdraw your own request to join a team (#259).",
+        "operationId": "withdraw_join_request_teams_join_requests__join_request_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "join_request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Join Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/teams/creation": {
@@ -2263,6 +2300,278 @@
               "title": "Reassign To"
             },
             "description": "Who takes their open tickets on this team. Left out, the tickets are unassigned. Done and cancelled tickets keep their assignee."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/join": {
+      "post": {
+        "tags": [
+          "teams"
+        ],
+        "summary": "Join Open Team",
+        "description": "Join a team that is open to join, as a member, without asking.",
+        "operationId": "join_open_team_teams__team_id__join_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/join-requests": {
+      "post": {
+        "tags": [
+          "teams"
+        ],
+        "summary": "Ask To Join",
+        "description": "Ask to join a team, with an optional note. Its admins are emailed,\nwhen this instance sends mail, and find it under Settings -> Members.",
+        "operationId": "ask_to_join_teams__team_id__join_requests_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinRequestCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyJoinRequest"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "teams"
+        ],
+        "summary": "List Join Requests",
+        "description": "The requests to join waiting on the team, oldest first. Admins only.",
+        "operationId": "list_join_requests_teams__team_id__join_requests_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JoinRequestRead"
+                  },
+                  "title": "Response List Join Requests Teams  Team Id  Join Requests Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/join-requests/{join_request_id}/approve": {
+      "post": {
+        "tags": [
+          "teams"
+        ],
+        "summary": "Approve Join Request",
+        "description": "Put the person on the team with the role chosen. They are emailed.",
+        "operationId": "approve_join_request_teams__team_id__join_requests__join_request_id__approve_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "join_request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Join Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinRequestApprove"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMemberRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/join-requests/{join_request_id}/decline": {
+      "post": {
+        "tags": [
+          "teams"
+        ],
+        "summary": "Decline Join Request",
+        "operationId": "decline_join_request_teams__team_id__join_requests__join_request_id__decline_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "join_request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Join Request Id"
+            }
           }
         ],
         "responses": {
@@ -15056,6 +15365,112 @@
         "title": "InviteRead",
         "description": "A pending invitation, as an admin of the team (or its recipient) sees it.\n\nCarries the token so the link can be copied out of this response and sent\nby whatever the team already uses -- which works on every instance, with\nor without a mail server. Only ever returned to a team admin or to the\nperson the invite is addressed to."
       },
+      "JoinRequestApprove": {
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/TeamRole",
+            "default": "member"
+          }
+        },
+        "type": "object",
+        "title": "JoinRequestApprove"
+      },
+      "JoinRequestCreate": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "title": "JoinRequestCreate"
+      },
+      "JoinRequestRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "requester": {
+            "$ref": "#/components/schemas/UserPublic"
+          },
+          "job_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Title"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department"
+          },
+          "manager": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "requester",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "JoinRequestRead",
+        "description": "A request to join, as the team's admins see it (#259): who is asking,\nwith their title, department and manager beside it, so the admin knows\nwho they are."
+      },
       "LabelCreate": {
         "properties": {
           "name": {
@@ -15237,6 +15652,43 @@
         ],
         "title": "MonthCost",
         "description": "One currency's approved payroll in one month."
+      },
+      "MyJoinRequest": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "MyJoinRequest",
+        "description": "Your own request to join a team (#259), as the directory shows it."
       },
       "NamedRef": {
         "properties": {
@@ -19800,6 +20252,28 @@
         ],
         "title": "TeamCreationUpdate"
       },
+      "TeamDirectory": {
+        "properties": {
+          "teams": {
+            "items": {
+              "$ref": "#/components/schemas/TeamDirectoryEntry"
+            },
+            "type": "array",
+            "title": "Teams"
+          },
+          "unlisted_count": {
+            "type": "integer",
+            "title": "Unlisted Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "teams",
+          "unlisted_count"
+        ],
+        "title": "TeamDirectory",
+        "description": "The teams there are (#259): every listed team, the ones you are on, and\nthe ones you have asked to join."
+      },
       "TeamDirectoryEntry": {
         "properties": {
           "id": {
@@ -19835,6 +20309,31 @@
             },
             "type": "array",
             "title": "Admins"
+          },
+          "open_to_join": {
+            "type": "boolean",
+            "title": "Open To Join",
+            "default": false
+          },
+          "my_role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TeamRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "my_request": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MyJoinRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -19846,7 +20345,7 @@
           "admins"
         ],
         "title": "TeamDirectoryEntry",
-        "description": "A team as somebody who is not on it sees it (#318).\n\nEnough to know who to ask to be added: its name, its size and its admins.\nNothing of its work -- no tickets, epics or sprints -- which still takes\nbeing on the team."
+        "description": "A team as somebody who is not on it sees it (#318, #259).\n\nEnough to know who to ask, and to ask: its name, its size and its admins.\nNothing of its work -- no tickets, epics or sprints -- which still takes\nbeing on the team."
       },
       "TeamMemberAdd": {
         "properties": {
@@ -19989,6 +20488,16 @@
             "type": "boolean",
             "title": "Wip Counts Subtickets",
             "default": true
+          },
+          "listed": {
+            "type": "boolean",
+            "title": "Listed",
+            "default": true
+          },
+          "open_to_join": {
+            "type": "boolean",
+            "title": "Open To Join",
+            "default": false
           },
           "created_at": {
             "type": "string",
@@ -20205,6 +20714,28 @@
               }
             ],
             "title": "Wip Counts Subtickets"
+          },
+          "listed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Listed"
+          },
+          "open_to_join": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open To Join"
           }
         },
         "type": "object",
@@ -22665,6 +23196,7 @@
           "reimbursement_batch_not_found",
           "budget_not_found",
           "team_request_not_found",
+          "join_request_not_found",
           "member_not_found",
           "not_on_this_team",
           "user_not_on_team",
@@ -22756,6 +23288,8 @@
           "department_has_finance_history",
           "team_request_decided",
           "team_not_empty",
+          "join_request_pending",
+          "team_not_open",
           "team_creation_from_environment",
           "name_required",
           "body_required",

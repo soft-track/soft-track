@@ -8,7 +8,7 @@ import { useMyTeams } from '@/team/useTeams'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 
-export type InsidersArea = 'people' | 'expenses' | 'newTeam'
+export type InsidersArea = 'people' | 'expenses' | 'newTeam' | 'teams'
 
 /**
  * The frontend's version of the 403 `external_account` (#317): what only

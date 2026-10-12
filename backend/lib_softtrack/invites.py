@@ -17,7 +17,7 @@ from sqlmodel import Session, delete, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.invites import InviteCreate, InvitePreview, InviteRead
-from lib_softtrack import outside
+from lib_softtrack import joining, outside
 from lib_softtrack.models.teams import EpicRef
 from lib_softtrack.tables import (
     Project,
@@ -358,8 +358,10 @@ def accept_invite(session: Session, current_user: User, token: str) -> Team:
             )
 
     # Either way the invitation is spent. The membership row and its joined_at
-    # are the record of what happened; a consumed invite is only clutter.
+    # are the record of what happened; a consumed invite is only clutter. So
+    # is a request of theirs to join (#259).
     session.delete(invite)
+    joining.forget(session, invite.team_id, current_user.id)
     session.commit()
     return team
 

@@ -213,6 +213,13 @@ export function Sidebar({
             {t('sidebar.importJira')}
           </button>
         )}
+        {/* The teams there are, and asking to join one (#259). */}
+        {!outside && (
+          <Link to="/teams" className="nav-item text-neutral-500">
+            <Icon name="search" size={15} className="opacity-70" />
+            {t('sidebar.findTeam')}
+          </Link>
+        )}
         {/* Only for whoever may create one (#306): never somebody from
             outside, and on a restricted instance only site admins or the
             people named. */}

@@ -20,16 +20,9 @@ export const home = {
     headingOutside: 'Your team',
     outside:
       'Your account is from outside the organisation. Whoever invited you adds you to the team you work with, and it opens from here.',
-    hint: 'Ask one of a team’s admins to add you.',
+    hint: 'Ask to join one and its admins decide. Seeing a team’s work takes membership.',
     loading: 'Loading teams…',
     empty: 'There are no teams on this SoftTrack yet.',
-    // "8 people · admins Amina Khan and Demo User"
-    meta: '{{size}} · {{admins}}',
-    size_one: '{{count}} person',
-    size_other: '{{count}} people',
-    admins_one: 'admin {{names}}',
-    admins_other: 'admins {{names}}',
-    noAdmin: 'no active admin',
   },
   startSomething: 'Starting something new?',
   create: 'Create a team',

@@ -11,6 +11,14 @@ export const general = {
   keyFixed:
     'Cannot be changed — identifiers like <code>{{key}}-42</code> are already in commit messages and chat logs.',
   saveChanges: 'Save changes',
+  // Who can find the team (#259): the team directory, and joining without asking.
+  findable: {
+    heading: 'Who can find this team',
+    listed: 'Listed in Teams',
+    listedHint: 'People who are not members see the name, the key and the admins.',
+    open: 'Open to join',
+    openHint: 'Anybody signed in joins as a member without asking.',
+  },
   // Whether the team's guests may comment (#244).
   guests: {
     heading: 'Guests',
@@ -35,5 +43,6 @@ export const general = {
     save: 'Could not save this team.',
     deleting: 'Could not change who may delete.',
     guests: 'Could not change whether guests may comment.',
+    findable: 'Could not change who can find this team.',
   },
 } as const

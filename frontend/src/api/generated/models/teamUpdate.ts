@@ -20,4 +20,6 @@ export interface TeamUpdate {
   guests_may_comment?: boolean | null;
   wip_limits_hard?: boolean | null;
   wip_counts_subtickets?: boolean | null;
+  listed?: boolean | null;
+  open_to_join?: boolean | null;
 }

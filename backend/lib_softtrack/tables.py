@@ -891,6 +891,14 @@ class Team(SQLModel, table=True):
     #: they are part of.
     wip_counts_subtickets: bool = Field(default=True)
     created_at: datetime = Field(default_factory=utcnow)
+    #: Whether the team is in the team directory (#259), where people who are
+    #: not on it see its name, key, size and admins and can ask to join. On
+    #: unless a team admin takes it off.
+    listed: bool = Field(default=True)
+    #: Whether anybody signed in -- not an account from outside the
+    #: organisation -- joins it as a member without asking (#259). Off unless
+    #: a team admin turns it on.
+    open_to_join: bool = Field(default=False)
     #: When a site admin archived it from Administration -> Teams (#307);
     #: null for a team in use. What being archived does to the team itself
     #: -- read-only, out of the switcher and the pickers -- is #322's.
@@ -2103,3 +2111,29 @@ class TeamRequest(SQLModel, table=True):
             "viewonly": True,
         }
     )
+
+
+class TeamJoinRequest(SQLModel, table=True):
+    """Somebody asking to join a team (#259), with an optional note.
+
+    The team's admins are told, and approve with a role or decline. Like an
+    invitation, a row that disappears: approving makes the TeamMember row,
+    which is the record that matters, and declining or withdrawing leaves
+    nothing to keep. One open request per person per team, enforced in the
+    database, and it runs out when an invitation sent at the same moment
+    would (INVITE_EXPIRE_DAYS).
+    """
+
+    __table_args__ = (
+        UniqueConstraint(
+            "team_id", "requester_id", name="uq_team_join_request_team_requester"
+        ),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    requester_id: int = Field(foreign_key="user.id", index=True)
+    #: In their own words, for the admins. Optional.
+    note: Optional[str] = None
+    created_at: datetime = Field(default_factory=utcnow)
+    expires_at: datetime

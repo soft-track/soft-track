@@ -28,6 +28,10 @@ class TeamRead(BaseModel):
     #: sub-tickets count against it.
     wip_limits_hard: bool = False
     wip_counts_subtickets: bool = True
+    #: Who can find the team (#259): whether it is in the team directory, and
+    #: whether anybody signed in may join it without asking.
+    listed: bool = True
+    open_to_join: bool = False
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -52,6 +56,9 @@ class TeamUpdate(BaseModel):
     #: WIP limits (#270): refuse a move over one, and count sub-tickets.
     wip_limits_hard: Optional[bool] = None
     wip_counts_subtickets: Optional[bool] = None
+    #: Who can find the team (#259). Listed is the default; open is not.
+    listed: Optional[bool] = None
+    open_to_join: Optional[bool] = None
 
 
 class EpicRef(BaseModel):
@@ -83,10 +90,22 @@ class TeamMemberUpdate(BaseModel):
     epic_ids: Optional[list[int]] = None
 
 
-class TeamDirectoryEntry(BaseModel):
-    """A team as somebody who is not on it sees it (#318).
+class MyJoinRequest(BaseModel):
+    """Your own request to join a team (#259), as the directory shows it."""
 
-    Enough to know who to ask to be added: its name, its size and its admins.
+    id: int
+    note: Optional[str] = None
+    created_at: datetime
+    #: When it runs out, as an invitation sent at the same moment would.
+    expires_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TeamDirectoryEntry(BaseModel):
+    """A team as somebody who is not on it sees it (#318, #259).
+
+    Enough to know who to ask, and to ask: its name, its size and its admins.
     Nothing of its work -- no tickets, epics or sprints -- which still takes
     being on the team.
     """
@@ -99,6 +118,52 @@ class TeamDirectoryEntry(BaseModel):
     member_count: int
     #: Its active admins, longest-serving first.
     admins: list[UserPublic]
+    #: Anybody signed in joins it as a member without asking (#259).
+    open_to_join: bool = False
+    #: Your role on it, or null when you are not on it.
+    my_role: Optional[TeamRole] = None
+    #: Your request to join it still waiting, or null.
+    my_request: Optional[MyJoinRequest] = None
+
+
+class TeamDirectory(BaseModel):
+    """The teams there are (#259): every listed team, the ones you are on, and
+    the ones you have asked to join."""
+
+    teams: list[TeamDirectoryEntry]
+    #: How many teams in use keep themselves off the list, and are not yours.
+    unlisted_count: int
+
+
+#: Long enough for a sentence or two to the admins.
+JOIN_NOTE_MAX = 500
+
+
+class JoinRequestCreate(BaseModel):
+    #: To the team's admins, in your own words. Optional.
+    note: Optional[str] = Field(default=None, max_length=JOIN_NOTE_MAX)
+
+
+class JoinRequestApprove(BaseModel):
+    #: The role they join with. Somebody from outside the organisation is
+    #: only ever a guest.
+    role: TeamRole = TeamRole.member
+
+
+class JoinRequestRead(BaseModel):
+    """A request to join, as the team's admins see it (#259): who is asking,
+    with their title, department and manager beside it, so the admin knows
+    who they are."""
+
+    id: int
+    team_id: int
+    requester: UserPublic
+    job_title: Optional[str] = None
+    department: Optional[str] = None
+    manager: Optional[UserPublic] = None
+    note: Optional[str] = None
+    created_at: datetime
+    expires_at: datetime
 
 
 class TeamMemberRead(BaseModel):

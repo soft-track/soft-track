@@ -5,7 +5,7 @@ from sqlmodel import Session
 
 from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_insider, get_current_user
-from lib_softtrack import team_creation
+from lib_softtrack import joining, team_creation
 from lib_softtrack import teams as teams_service
 from lib_softtrack.models.team_creation import (
     TeamCreationAccess,
@@ -13,8 +13,12 @@ from lib_softtrack.models.team_creation import (
     TeamRequestRead,
 )
 from lib_softtrack.models.teams import (
+    JoinRequestApprove,
+    JoinRequestCreate,
+    JoinRequestRead,
+    MyJoinRequest,
     TeamCreate,
-    TeamDirectoryEntry,
+    TeamDirectory,
     TeamMemberAdd,
     TeamMemberRead,
     TeamMemberUpdate,
@@ -50,13 +54,25 @@ def list_my_teams(
 
 
 # Before /{team_id}, which would otherwise read "directory" as a team id.
-@router.get("/directory", response_model=list[TeamDirectoryEntry])
+@router.get("/directory", response_model=TeamDirectory)
 def team_directory(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_insider),
 ):
-    """Every team, with its size and admins: who to ask to be added (#318)."""
-    return teams_service.team_directory(session)
+    """The teams there are, with their size and admins (#318), and where you
+    stand with each: on it, asked to join it, or neither (#259)."""
+    return teams_service.team_directory(session, current_user)
+
+
+@router.delete("/join-requests/{join_request_id}", status_code=204)
+def withdraw_join_request(
+    join_request_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_insider),
+):
+    """Withdraw your own request to join a team (#259)."""
+    joining.withdraw(session, current_user, join_request_id)
+    return Response(status_code=204)
 
 
 @router.get("/creation", response_model=TeamCreationAccess)
@@ -157,4 +173,85 @@ def remove_team_member(
     teams_service.remove_team_member(
         session, current_user, team_id, user_id, reassign_to
     )
+    return Response(status_code=204)
+
+
+# --- finding a team and asking to join it (#259) ------------------------------
+
+
+@router.post("/{team_id}/join", response_model=TeamRead)
+def join_open_team(
+    team_id: int,
+    session: Session = Depends(get_session),
+    # Not somebody from outside the organisation (#317), who is invited.
+    current_user: User = Depends(get_current_insider),
+):
+    """Join a team that is open to join, as a member, without asking."""
+    return joining.join_open_team(session, current_user, team_id)
+
+
+@router.post("/{team_id}/join-requests", response_model=MyJoinRequest)
+def ask_to_join(
+    team_id: int,
+    payload: JoinRequestCreate,
+    background: BackgroundTasks,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_insider),
+):
+    """Ask to join a team, with an optional note. Its admins are emailed,
+    when this instance sends mail, and find it under Settings -> Members."""
+    request, messages = joining.ask_to_join(session, current_user, team_id, payload)
+    mailer = get_mailer()
+    for message in messages:
+        background.add_task(mailer.send, *message)
+    return request
+
+
+@router.get("/{team_id}/join-requests", response_model=list[JoinRequestRead])
+def list_join_requests(
+    team_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """The requests to join waiting on the team, oldest first. Admins only."""
+    return joining.list_requests(session, current_user, team_id)
+
+
+@router.post(
+    "/{team_id}/join-requests/{join_request_id}/approve",
+    response_model=TeamMemberRead,
+    dependencies=[team_writer],
+)
+def approve_join_request(
+    team_id: int,
+    join_request_id: int,
+    payload: JoinRequestApprove,
+    background: BackgroundTasks,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Put the person on the team with the role chosen. They are emailed."""
+    member, message = joining.approve(
+        session, current_user, team_id, join_request_id, payload
+    )
+    if message is not None:
+        background.add_task(get_mailer().send, *message)
+    return member
+
+
+@router.post(
+    "/{team_id}/join-requests/{join_request_id}/decline",
+    status_code=204,
+    dependencies=[team_writer],
+)
+def decline_join_request(
+    team_id: int,
+    join_request_id: int,
+    background: BackgroundTasks,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    message = joining.decline(session, current_user, team_id, join_request_id)
+    if message is not None:
+        background.add_task(get_mailer().send, *message)
     return Response(status_code=204)

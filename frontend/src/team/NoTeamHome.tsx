@@ -2,12 +2,11 @@ import { Link } from 'react-router-dom'
 
 import { useMyInvitesAuthMeInvitesGet } from '@/api/generated/endpoints/auth/auth'
 import { useTeamDirectoryTeamsDirectoryGet } from '@/api/generated/endpoints/teams/teams'
-import type { TeamDirectoryEntry } from '@/api/generated/models'
 import { useAuth } from '@/auth/useAuth'
 import { Trans, userText, useTranslation } from '@/i18n'
-import { formatList } from '@/i18n/format'
 import { AskForTeamCard } from '@/team/AskForTeam'
 import { InvitesBanner } from '@/team/InvitesBanner'
+import { TeamDirectoryList } from '@/team/TeamDirectory'
 import { useTeamCreation } from '@/team/useTeams'
 import { Icon, type IconName } from '@/ui/Icon'
 import { Logo } from '@/ui/Logo'
@@ -20,7 +19,8 @@ import { Logo } from '@/ui/Logo'
  * else. Now it has what the sidebar would have offered -- People, their own
  * profile, their expenses, and Finance for whoever holds the flag -- the teams
  * there are with who to ask to be added, and creating a team as one option
- * among them. Invitations, when there are any, come first.
+ * among them. Invitations, when there are any, come first; then the teams,
+ * with asking to join one (#259), which is what most people here came to do.
  */
 export function NoTeamHome() {
   const { user, logout } = useAuth()
@@ -31,8 +31,9 @@ export function NoTeamHome() {
   const outside = user?.is_external ?? false
   const directory = useTeamDirectoryTeamsDirectoryGet({ query: { enabled: !outside } })
   const invited = (invites.data ?? []).length > 0
-  const teams = directory.data ?? []
-  const noTeamsAtAll = directory.isSuccess && teams.length === 0
+  const teams = directory.data?.teams ?? []
+  const unlisted = directory.data?.unlisted_count ?? 0
+  const noTeamsAtAll = directory.isSuccess && teams.length === 0 && unlisted === 0
   // Where creating a team is left to some (#306), the page says who to ask
   // and offers to ask, and "Create a team" goes.
   const creation = useTeamCreation()
@@ -107,6 +108,45 @@ export function NoTeamHome() {
           </div>
         )}
 
+        {/* Finding a team and asking to join it (#259) leads. */}
+        <section
+          aria-labelledby="teams-heading"
+          className="glass-strong mx-auto mb-4 max-w-2xl rounded-panel p-5"
+        >
+          <h2 id="teams-heading" className="eyebrow">
+            {outside ? t('home.teams.headingOutside') : t('home.teams.heading')}
+          </h2>
+          {outside ? (
+            <p className="mt-3 text-sm text-neutral-500">{t('home.teams.outside')}</p>
+          ) : directory.isPending ? (
+            <p className="mt-3 text-sm text-neutral-400">{t('home.teams.loading')}</p>
+          ) : noTeamsAtAll ? (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-neutral-500">{t('home.teams.empty')}</p>
+              {mayCreate && (
+                <Link to="/new-team" className="btn btn-primary btn-sm">
+                  <Icon name="plus" size={14} />
+                  {t('home.createFirst')}
+                </Link>
+              )}
+            </div>
+          ) : (
+            <>
+              <p className="mt-1 text-xs text-neutral-500">{t('home.teams.hint')}</p>
+              {/* Scrolls on an instance with many teams, so the way to make
+                  one and to sign out stay in reach. */}
+              <div className="scroll-thin -mr-2 mt-2 max-h-[26rem] overflow-y-auto pr-2">
+                <TeamDirectoryList teams={teams} />
+              </div>
+              {unlisted > 0 && (
+                <p className="mt-2 border-t border-neutral-900/8 pt-3 text-xs text-neutral-500">
+                  {t('directory.unlisted', { count: unlisted })}
+                </p>
+              )}
+            </>
+          )}
+        </section>
+
         {restricted && creation.data && (
           <div className="mx-auto mb-4 max-w-xl">
             <AskForTeamCard access={creation.data} />
@@ -138,40 +178,6 @@ export function NoTeamHome() {
           ))}
         </ul>
 
-        <section
-          aria-labelledby="teams-heading"
-          className="glass-strong mx-auto mt-3 max-w-2xl rounded-panel p-5"
-        >
-          <h2 id="teams-heading" className="eyebrow">
-            {outside ? t('home.teams.headingOutside') : t('home.teams.heading')}
-          </h2>
-          {outside ? (
-            <p className="mt-3 text-sm text-neutral-500">{t('home.teams.outside')}</p>
-          ) : directory.isPending ? (
-            <p className="mt-3 text-sm text-neutral-400">{t('home.teams.loading')}</p>
-          ) : noTeamsAtAll ? (
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-neutral-500">{t('home.teams.empty')}</p>
-              {mayCreate && (
-                <Link to="/new-team" className="btn btn-primary btn-sm">
-                  <Icon name="plus" size={14} />
-                  {t('home.createFirst')}
-                </Link>
-              )}
-            </div>
-          ) : (
-            <>
-              <p className="mt-1 text-xs text-neutral-500">{t('home.teams.hint')}</p>
-              {/* Scrolls on an instance with many teams, so the way to make
-                  one and to sign out stay in reach. */}
-              <ul className="scroll-thin -mr-2 mt-2 max-h-[26rem] divide-y divide-neutral-900/8 overflow-y-auto pr-2">
-                {teams.map((team) => (
-                  <TeamRow key={team.id} team={team} />
-                ))}
-              </ul>
-            </>
-          )}
-        </section>
 
         <div className="mx-auto mt-4 flex max-w-2xl flex-wrap items-center justify-between gap-2 px-1 text-sm">
           {noTeamsAtAll || !mayCreate ? (
@@ -195,33 +201,5 @@ export function NoTeamHome() {
         </div>
       </div>
     </div>
-  )
-}
-
-/**
- * A team and who to ask: its size and its admins. Asking from here is #259;
- * until then the row names them and stops there.
- */
-function TeamRow({ team }: { team: TeamDirectoryEntry }) {
-  const { t } = useTranslation('team')
-  const admins = team.admins.map((admin) => admin.full_name)
-  return (
-    <li className="flex items-center gap-3 py-3">
-      <span className="identifier flex h-8 w-16 shrink-0 items-center justify-center rounded-control bg-brand-500/12 text-[11px] font-semibold text-brand-700">
-        {team.key}
-      </span>
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-neutral-900">{team.name}</p>
-        <p className="text-xs text-neutral-500">
-          {t('home.teams.meta', {
-            size: t('home.teams.size', { count: team.member_count }),
-            admins:
-              admins.length > 0
-                ? t('home.teams.admins', { count: admins.length, names: formatList(admins) })
-                : t('home.teams.noAdmin'),
-          })}
-        </p>
-      </div>
-    </li>
   )
 }

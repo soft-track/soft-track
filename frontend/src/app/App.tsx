@@ -9,6 +9,7 @@ import InvitePage from '@/auth/InvitePage'
 import LoginPage from '@/auth/LoginPage'
 import OAuthCallbackPage from '@/auth/OAuthCallbackPage'
 import NewTeamPage from '@/team/NewTeamPage'
+import TeamsPage from '@/team/TeamsPage'
 import { InsidersOnly } from '@/team/InsidersOnly'
 import BudgetsPage from '@/finance/BudgetsPage'
 import CompensationHistoryPage from '@/finance/CompensationHistoryPage'
@@ -158,6 +159,19 @@ export default function App() {
               <Route path="*" element={<Navigate to="/settings/finance" replace />} />
             </Route>
           </Route>
+
+          {/* The teams there are, and asking to join one (#259). Case-
+              sensitive for the reason /people is, below: /TEAMS is where a
+              team keyed TEAMS would live. */}
+          <Route
+            path="/teams"
+            caseSensitive
+            element={
+              <InsidersOnly area="teams">
+                <TeamsPage />
+              </InsidersOnly>
+            }
+          />
 
           {/* People (#125): everyone on the instance. Case-sensitive, unlike
               every other route: React Router otherwise matches without

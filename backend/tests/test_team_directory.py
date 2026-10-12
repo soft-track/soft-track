@@ -21,7 +21,7 @@ def join(client, owner, team_id, email, role="member"):
 def directory(client, actor):
     response = client.get("/teams/directory", headers=actor["headers"])
     assert response.status_code == 200, response.text
-    return response.json()
+    return response.json()["teams"]
 
 
 def test_somebody_on_no_team_sees_every_team_and_who_runs_it(client, team, auth):
@@ -74,7 +74,17 @@ def test_it_says_nothing_about_the_work(client, team):
         headers=team["headers"],
     )
     (entry,) = directory(client, team)
-    assert set(entry) == {"id", "name", "key", "description", "member_count", "admins"}
+    assert set(entry) == {
+        "id",
+        "name",
+        "key",
+        "description",
+        "member_count",
+        "admins",
+        "open_to_join",
+        "my_role",
+        "my_request",
+    }
     assert "Private roadmap item" not in str(entry)
 
 

@@ -49,6 +49,7 @@ from lib_softtrack.tables import (
     SprintAction,
     Team,
     TeamInvite,
+    TeamJoinRequest,
     TeamMember,
     TeamRequest,
     TeamRole,
@@ -351,6 +352,7 @@ def delete_team(session: Session, actor: User, team_id: int) -> None:
         delete(WorkflowStatus).where(WorkflowStatus.team_id == team_id),
         delete(TicketTemplate).where(TicketTemplate.team_id == team_id),
         delete(TeamInvite).where(TeamInvite.team_id == team_id),
+        delete(TeamJoinRequest).where(TeamJoinRequest.team_id == team_id),
         delete(TeamMember).where(TeamMember.team_id == team_id),
         update(TeamRequest).where(TeamRequest.team_id == team_id).values(team_id=None),
     ):

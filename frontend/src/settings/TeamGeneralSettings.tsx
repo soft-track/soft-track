@@ -41,6 +41,7 @@ export default function TeamGeneralSettings() {
   return (
     <div className="space-y-4">
       <TeamGeneralForm key={team.id} team={team} isAdmin={isAdmin} />
+      <Findable key={`findable-${team.id}`} team={team} isAdmin={isAdmin} />
       <GuestsMayComment
         key={`guests-${team.id}`}
         team={team}
@@ -51,6 +52,81 @@ export default function TeamGeneralSettings() {
       />
       <DeletePolicy key={`delete-${team.id}`} team={team} isAdmin={isAdmin} />
     </div>
+  )
+}
+
+/**
+ * Who can find the team (#259): whether it is in the team directory, and
+ * whether anybody signed in joins it as a member without asking. Listed is
+ * the default and open is not. Each saved as soon as it is switched.
+ */
+function Findable({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
+  const queryClient = useQueryClient()
+  const updateTeam = useUpdateTeamTeamsTeamIdPatch()
+  const [listed, setListed] = useState(team.listed ?? true)
+  const [open, setOpen] = useState(team.open_to_join ?? false)
+  const [error, setError] = useState<string | null>(null)
+  const id = useId()
+
+  const save = async (data: { listed?: boolean; open_to_join?: boolean }, undo: () => void) => {
+    setError(null)
+    try {
+      await updateTeam.mutateAsync({ teamId: team.id, data })
+      queryClient.invalidateQueries({ queryKey: ['/teams'] })
+    } catch (err: unknown) {
+      undo()
+      setError(errorDetail(err, t('general.errors.findable')))
+    }
+  }
+
+  const row = (
+    switchId: string,
+    label: string,
+    hint: string,
+    checked: boolean,
+    onChange: (value: boolean) => void,
+  ) => (
+    <div className="flex items-start justify-between gap-4">
+      <label htmlFor={switchId} className="min-w-0">
+        <span className="block text-sm font-medium text-neutral-800">{label}</span>
+        <span className="block text-xs text-neutral-500">{hint}</span>
+      </label>
+      <input
+        id={switchId}
+        type="checkbox"
+        role="switch"
+        className="switch mt-0.5 shrink-0"
+        checked={checked}
+        disabled={!isAdmin || updateTeam.isPending}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+    </div>
+  )
+
+  return (
+    <section className="glass-strong rounded-panel p-6" aria-labelledby={`${id}-heading`}>
+      <p id={`${id}-heading`} className="eyebrow">
+        {t('general.findable.heading')}
+      </p>
+      <div className="mt-2">
+        {row(`${id}-listed`, t('general.findable.listed'), t('general.findable.listedHint'), listed, (value) => {
+          setListed(value)
+          void save({ listed: value }, () => setListed(!value))
+        })}
+      </div>
+      <div className="mt-4 border-t border-neutral-900/8 pt-4">
+        {row(`${id}-open`, t('general.findable.open'), t('general.findable.openHint'), open, (value) => {
+          setOpen(value)
+          void save({ open_to_join: value }, () => setOpen(!value))
+        })}
+      </div>
+      {error && (
+        <p role="alert" className="mt-3 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700">
+          {error}
+        </p>
+      )}
+    </section>
   )
 }
 

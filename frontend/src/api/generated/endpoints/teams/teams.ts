@@ -26,10 +26,14 @@ import type {
 
 import type {
   HTTPValidationError,
+  JoinRequestApprove,
+  JoinRequestCreate,
+  JoinRequestRead,
+  MyJoinRequest,
   RemoveTeamMemberTeamsTeamIdMembersUserIdDeleteParams,
   TeamCreate,
   TeamCreationAccess,
-  TeamDirectoryEntry,
+  TeamDirectory,
   TeamMemberAdd,
   TeamMemberRead,
   TeamMemberUpdate,
@@ -219,7 +223,8 @@ export const useCreateTeamTeamsPost = <TError = HTTPValidationError,
       return useMutation(getCreateTeamTeamsPostMutationOptions(options), queryClient);
     }
     /**
- * Every team, with its size and admins: who to ask to be added (#318).
+ * The teams there are, with their size and admins (#318), and where you
+ * stand with each: on it, asked to join it, or neither (#259).
  * @summary Team Directory
  */
 export const teamDirectoryTeamsDirectoryGet = (
@@ -228,7 +233,7 @@ export const teamDirectoryTeamsDirectoryGet = (
 ) => {
 
 
-      return apiClient<TeamDirectoryEntry[]>(
+      return apiClient<TeamDirectory>(
       {url: `/teams/directory`, method: 'GET', signal
     },
       );
@@ -312,6 +317,72 @@ export function useTeamDirectoryTeamsDirectoryGet<TData = Awaited<ReturnType<typ
 
 
 /**
+ * Withdraw your own request to join a team (#259).
+ * @summary Withdraw Join Request
+ */
+export const withdrawJoinRequestTeamsJoinRequestsJoinRequestIdDelete = (
+    joinRequestId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/teams/join-requests/${joinRequestId}`, method: 'DELETE', signal
+    },
+      );
+    }
+
+
+
+
+export const getWithdrawJoinRequestTeamsJoinRequestsJoinRequestIdDeleteMutationKey = () => ['withdrawJoinRequestTeamsJoinRequestsJoinRequestIdDelete'] as const;
+
+export const getWithdrawJoinRequestTeamsJoinRequestsJoinRequestIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawJoinRequestTeamsJoinRequestsJoinRequestIdDelete>>, TError,WithdrawJoinRequestTeamsJoinRequestsJoinRequestIdDeleteMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof withdrawJoinRequestTeamsJoinRequestsJoinRequestIdDelete>>, TError,WithdrawJoinRequestTeamsJoinRequestsJoinRequestIdDeleteMutationVariables, TContext> => {
+
+const mutationKey = getWithdrawJoinRequestTeamsJoinRequestsJoinRequestIdDeleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof withdrawJoinRequestTeamsJoinRequestsJoinRequestIdDelete>>, WithdrawJoinRequestTeamsJoinRequestsJoinRequestIdDeleteMutationVariables> = (props) => {
+          const {joinRequestId} = props ?? {};
+
+          return  withdrawJoinRequestTeamsJoinRequestsJoinRequestIdDelete(joinRequestId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type WithdrawJoinRequestTeamsJoinRequestsJoinRequestIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof withdrawJoinRequestTeamsJoinRequestsJoinRequestIdDelete>>>
+
+    export type WithdrawJoinRequestTeamsJoinRequestsJoinRequestIdDeleteMutationError = HTTPValidationError
+    export type WithdrawJoinRequestTeamsJoinRequestsJoinRequestIdDeleteMutationVariables = {joinRequestId: number}
+
+    /**
+ * @summary Withdraw Join Request
+ */
+export const useWithdrawJoinRequestTeamsJoinRequestsJoinRequestIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawJoinRequestTeamsJoinRequestsJoinRequestIdDelete>>, TError,WithdrawJoinRequestTeamsJoinRequestsJoinRequestIdDeleteMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof withdrawJoinRequestTeamsJoinRequestsJoinRequestIdDelete>>,
+        TError,
+        WithdrawJoinRequestTeamsJoinRequestsJoinRequestIdDeleteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getWithdrawJoinRequestTeamsJoinRequestsJoinRequestIdDeleteMutationOptions(options), queryClient);
+    }
+    /**
  * Whether you may create a team (#306), and if not, who to ask.
  * @summary Team Creation Access
  */
@@ -930,4 +1001,369 @@ export const useRemoveTeamMemberTeamsTeamIdMembersUserIdDelete = <TError = HTTPV
         TContext
       > => {
       return useMutation(getRemoveTeamMemberTeamsTeamIdMembersUserIdDeleteMutationOptions(options), queryClient);
+    }
+    /**
+ * Join a team that is open to join, as a member, without asking.
+ * @summary Join Open Team
+ */
+export const joinOpenTeamTeamsTeamIdJoinPost = (
+    teamId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TeamRead>(
+      {url: `/teams/${teamId}/join`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+
+export const getJoinOpenTeamTeamsTeamIdJoinPostMutationKey = () => ['joinOpenTeamTeamsTeamIdJoinPost'] as const;
+
+export const getJoinOpenTeamTeamsTeamIdJoinPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof joinOpenTeamTeamsTeamIdJoinPost>>, TError,JoinOpenTeamTeamsTeamIdJoinPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof joinOpenTeamTeamsTeamIdJoinPost>>, TError,JoinOpenTeamTeamsTeamIdJoinPostMutationVariables, TContext> => {
+
+const mutationKey = getJoinOpenTeamTeamsTeamIdJoinPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof joinOpenTeamTeamsTeamIdJoinPost>>, JoinOpenTeamTeamsTeamIdJoinPostMutationVariables> = (props) => {
+          const {teamId} = props ?? {};
+
+          return  joinOpenTeamTeamsTeamIdJoinPost(teamId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type JoinOpenTeamTeamsTeamIdJoinPostMutationResult = NonNullable<Awaited<ReturnType<typeof joinOpenTeamTeamsTeamIdJoinPost>>>
+
+    export type JoinOpenTeamTeamsTeamIdJoinPostMutationError = HTTPValidationError
+    export type JoinOpenTeamTeamsTeamIdJoinPostMutationVariables = {teamId: number}
+
+    /**
+ * @summary Join Open Team
+ */
+export const useJoinOpenTeamTeamsTeamIdJoinPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof joinOpenTeamTeamsTeamIdJoinPost>>, TError,JoinOpenTeamTeamsTeamIdJoinPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof joinOpenTeamTeamsTeamIdJoinPost>>,
+        TError,
+        JoinOpenTeamTeamsTeamIdJoinPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getJoinOpenTeamTeamsTeamIdJoinPostMutationOptions(options), queryClient);
+    }
+    /**
+ * Ask to join a team, with an optional note. Its admins are emailed,
+ * when this instance sends mail, and find it under Settings -> Members.
+ * @summary Ask To Join
+ */
+export const askToJoinTeamsTeamIdJoinRequestsPost = (
+    teamId: number,
+    joinRequestCreate: JoinRequestCreate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<MyJoinRequest>(
+      {url: `/teams/${teamId}/join-requests`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: joinRequestCreate, signal
+    },
+      );
+    }
+
+
+
+
+export const getAskToJoinTeamsTeamIdJoinRequestsPostMutationKey = () => ['askToJoinTeamsTeamIdJoinRequestsPost'] as const;
+
+export const getAskToJoinTeamsTeamIdJoinRequestsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof askToJoinTeamsTeamIdJoinRequestsPost>>, TError,AskToJoinTeamsTeamIdJoinRequestsPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof askToJoinTeamsTeamIdJoinRequestsPost>>, TError,AskToJoinTeamsTeamIdJoinRequestsPostMutationVariables, TContext> => {
+
+const mutationKey = getAskToJoinTeamsTeamIdJoinRequestsPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof askToJoinTeamsTeamIdJoinRequestsPost>>, AskToJoinTeamsTeamIdJoinRequestsPostMutationVariables> = (props) => {
+          const {teamId,data} = props ?? {};
+
+          return  askToJoinTeamsTeamIdJoinRequestsPost(teamId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AskToJoinTeamsTeamIdJoinRequestsPostMutationResult = NonNullable<Awaited<ReturnType<typeof askToJoinTeamsTeamIdJoinRequestsPost>>>
+    export type AskToJoinTeamsTeamIdJoinRequestsPostMutationBody = JoinRequestCreate
+    export type AskToJoinTeamsTeamIdJoinRequestsPostMutationError = HTTPValidationError
+    export type AskToJoinTeamsTeamIdJoinRequestsPostMutationVariables = {teamId: number;data: JoinRequestCreate}
+
+    /**
+ * @summary Ask To Join
+ */
+export const useAskToJoinTeamsTeamIdJoinRequestsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof askToJoinTeamsTeamIdJoinRequestsPost>>, TError,AskToJoinTeamsTeamIdJoinRequestsPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof askToJoinTeamsTeamIdJoinRequestsPost>>,
+        TError,
+        AskToJoinTeamsTeamIdJoinRequestsPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAskToJoinTeamsTeamIdJoinRequestsPostMutationOptions(options), queryClient);
+    }
+    /**
+ * The requests to join waiting on the team, oldest first. Admins only.
+ * @summary List Join Requests
+ */
+export const listJoinRequestsTeamsTeamIdJoinRequestsGet = (
+    teamId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<JoinRequestRead[]>(
+      {url: `/teams/${teamId}/join-requests`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getListJoinRequestsTeamsTeamIdJoinRequestsGetQueryKey = (teamId: number,) => {
+    return [
+    `/teams/${teamId}/join-requests`
+    ] as const;
+    }
+
+
+export const getListJoinRequestsTeamsTeamIdJoinRequestsGetQueryOptions = <TData = Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>, TError = HTTPValidationError>(teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListJoinRequestsTeamsTeamIdJoinRequestsGetQueryKey(teamId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>> = ({ signal }) => listJoinRequestsTeamsTeamIdJoinRequestsGet(teamId, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: teamId !== null && teamId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListJoinRequestsTeamsTeamIdJoinRequestsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>>
+export type ListJoinRequestsTeamsTeamIdJoinRequestsGetQueryError = HTTPValidationError
+
+
+export function useListJoinRequestsTeamsTeamIdJoinRequestsGet<TData = Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>, TError = HTTPValidationError>(
+ teamId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListJoinRequestsTeamsTeamIdJoinRequestsGet<TData = Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListJoinRequestsTeamsTeamIdJoinRequestsGet<TData = Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Join Requests
+ */
+
+export function useListJoinRequestsTeamsTeamIdJoinRequestsGet<TData = Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listJoinRequestsTeamsTeamIdJoinRequestsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListJoinRequestsTeamsTeamIdJoinRequestsGetQueryOptions(teamId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Put the person on the team with the role chosen. They are emailed.
+ * @summary Approve Join Request
+ */
+export const approveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePost = (
+    teamId: number,
+    joinRequestId: number,
+    joinRequestApprove: JoinRequestApprove,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TeamMemberRead>(
+      {url: `/teams/${teamId}/join-requests/${joinRequestId}/approve`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: joinRequestApprove, signal
+    },
+      );
+    }
+
+
+
+
+export const getApproveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePostMutationKey = () => ['approveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePost'] as const;
+
+export const getApproveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePost>>, TError,ApproveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof approveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePost>>, TError,ApproveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePostMutationVariables, TContext> => {
+
+const mutationKey = getApproveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePost>>, ApproveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePostMutationVariables> = (props) => {
+          const {teamId,joinRequestId,data} = props ?? {};
+
+          return  approveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePost(teamId,joinRequestId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePostMutationResult = NonNullable<Awaited<ReturnType<typeof approveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePost>>>
+    export type ApproveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePostMutationBody = JoinRequestApprove
+    export type ApproveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePostMutationError = HTTPValidationError
+    export type ApproveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePostMutationVariables = {teamId: number;joinRequestId: number;data: JoinRequestApprove}
+
+    /**
+ * @summary Approve Join Request
+ */
+export const useApproveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePost>>, TError,ApproveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof approveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePost>>,
+        TError,
+        ApproveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getApproveJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdApprovePostMutationOptions(options), queryClient);
+    }
+    /**
+ * @summary Decline Join Request
+ */
+export const declineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePost = (
+    teamId: number,
+    joinRequestId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/teams/${teamId}/join-requests/${joinRequestId}/decline`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+
+export const getDeclineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePostMutationKey = () => ['declineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePost'] as const;
+
+export const getDeclineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePost>>, TError,DeclineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof declineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePost>>, TError,DeclineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePostMutationVariables, TContext> => {
+
+const mutationKey = getDeclineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof declineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePost>>, DeclineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePostMutationVariables> = (props) => {
+          const {teamId,joinRequestId} = props ?? {};
+
+          return  declineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePost(teamId,joinRequestId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeclineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePostMutationResult = NonNullable<Awaited<ReturnType<typeof declineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePost>>>
+
+    export type DeclineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePostMutationError = HTTPValidationError
+    export type DeclineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePostMutationVariables = {teamId: number;joinRequestId: number}
+
+    /**
+ * @summary Decline Join Request
+ */
+export const useDeclineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePost>>, TError,DeclineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof declineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePost>>,
+        TError,
+        DeclineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeclineJoinRequestTeamsTeamIdJoinRequestsJoinRequestIdDeclinePostMutationOptions(options), queryClient);
     }
