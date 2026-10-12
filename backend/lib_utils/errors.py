@@ -122,6 +122,8 @@ class ErrorCode(str, enum.Enum):
     #: So are a team's label names (#321).
     label_name_taken = "label_name_taken"
     already_member = "already_member"
+    #: Appointing an admin of a team who is one already (#307).
+    already_team_admin = "already_team_admin"
     link_exists = "link_exists"
     link_contradicts = "link_contradicts"
     repository_already_connected = "repository_already_connected"
@@ -262,6 +264,9 @@ class ErrorCode(str, enum.Enum):
     department_has_finance_history = "department_has_finance_history"
     #: A request for a team is approved or declined once (#306).
     team_request_decided = "team_request_decided"
+    #: Only a team with no tickets, in the trash or not, is deleted (#307);
+    #: one with work in it is archived.
+    team_not_empty = "team_not_empty"
     #: Who may create teams is set in the environment (TEAM_CREATION), which
     #: wins over the app (#306).
     team_creation_from_environment = "team_creation_from_environment"

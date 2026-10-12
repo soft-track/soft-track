@@ -26,13 +26,18 @@ import type {
 
 import type {
   AdminPasswordReset,
+  AdminTeamAppoint,
+  AdminTeamRead,
   AdminUserRead,
   AdminUserUpdate,
   HTTPValidationError,
+  ListTeamsAdminTeamsGetParams,
   ListUsersAdminUsersGetParams,
+  PageAdminTeamRead,
   PageAdminUserRead,
   TeamCreationSettings,
   TeamCreationUpdate,
+  TeamMemberRead,
   TeamRead,
   TeamRequestDecline,
   TeamRequestRead
@@ -286,6 +291,457 @@ export const useResetPasswordAdminUsersUserIdResetPasswordPost = <TError = HTTPV
         TContext
       > => {
       return useMutation(getResetPasswordAdminUsersUserIdResetPasswordPostMutationOptions(options), queryClient);
+    }
+    /**
+ * Every team, with its size, dates and admins. Never its tickets.
+ * @summary List Teams
+ */
+export const listTeamsAdminTeamsGet = (
+    params?: ListTeamsAdminTeamsGetParams,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<PageAdminTeamRead>(
+      {url: `/admin/teams`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+
+
+
+
+export const getListTeamsAdminTeamsGetQueryKey = (params?: ListTeamsAdminTeamsGetParams,) => {
+    return [
+    `/admin/teams`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListTeamsAdminTeamsGetQueryOptions = <TData = Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>, TError = HTTPValidationError>(params?: ListTeamsAdminTeamsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTeamsAdminTeamsGetQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>> = ({ signal }) => listTeamsAdminTeamsGet(params, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListTeamsAdminTeamsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>>
+export type ListTeamsAdminTeamsGetQueryError = HTTPValidationError
+
+
+export function useListTeamsAdminTeamsGet<TData = Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListTeamsAdminTeamsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListTeamsAdminTeamsGet<TData = Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>, TError = HTTPValidationError>(
+ params?: ListTeamsAdminTeamsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListTeamsAdminTeamsGet<TData = Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>, TError = HTTPValidationError>(
+ params?: ListTeamsAdminTeamsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Teams
+ */
+
+export function useListTeamsAdminTeamsGet<TData = Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>, TError = HTTPValidationError>(
+ params?: ListTeamsAdminTeamsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTeamsAdminTeamsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListTeamsAdminTeamsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Who is on the team and as what, for appointing its next admin.
+ * @summary List Team Members
+ */
+export const listTeamMembersAdminTeamsTeamIdMembersGet = (
+    teamId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<TeamMemberRead[]>(
+      {url: `/admin/teams/${teamId}/members`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getListTeamMembersAdminTeamsTeamIdMembersGetQueryKey = (teamId: number,) => {
+    return [
+    `/admin/teams/${teamId}/members`
+    ] as const;
+    }
+
+
+export const getListTeamMembersAdminTeamsTeamIdMembersGetQueryOptions = <TData = Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>, TError = HTTPValidationError>(teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTeamMembersAdminTeamsTeamIdMembersGetQueryKey(teamId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>> = ({ signal }) => listTeamMembersAdminTeamsTeamIdMembersGet(teamId, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: teamId !== null && teamId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListTeamMembersAdminTeamsTeamIdMembersGetQueryResult = NonNullable<Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>>
+export type ListTeamMembersAdminTeamsTeamIdMembersGetQueryError = HTTPValidationError
+
+
+export function useListTeamMembersAdminTeamsTeamIdMembersGet<TData = Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>, TError = HTTPValidationError>(
+ teamId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>,
+          TError,
+          Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListTeamMembersAdminTeamsTeamIdMembersGet<TData = Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>,
+          TError,
+          Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListTeamMembersAdminTeamsTeamIdMembersGet<TData = Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Team Members
+ */
+
+export function useListTeamMembersAdminTeamsTeamIdMembersGet<TData = Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTeamMembersAdminTeamsTeamIdMembersGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListTeamMembersAdminTeamsTeamIdMembersGetQueryOptions(teamId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * @summary Appoint Team Admin
+ */
+export const appointTeamAdminAdminTeamsTeamIdAdminsPost = (
+    teamId: number,
+    adminTeamAppoint: AdminTeamAppoint,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<AdminTeamRead>(
+      {url: `/admin/teams/${teamId}/admins`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: adminTeamAppoint, signal
+    },
+      );
+    }
+
+
+
+
+export const getAppointTeamAdminAdminTeamsTeamIdAdminsPostMutationKey = () => ['appointTeamAdminAdminTeamsTeamIdAdminsPost'] as const;
+
+export const getAppointTeamAdminAdminTeamsTeamIdAdminsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof appointTeamAdminAdminTeamsTeamIdAdminsPost>>, TError,AppointTeamAdminAdminTeamsTeamIdAdminsPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof appointTeamAdminAdminTeamsTeamIdAdminsPost>>, TError,AppointTeamAdminAdminTeamsTeamIdAdminsPostMutationVariables, TContext> => {
+
+const mutationKey = getAppointTeamAdminAdminTeamsTeamIdAdminsPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof appointTeamAdminAdminTeamsTeamIdAdminsPost>>, AppointTeamAdminAdminTeamsTeamIdAdminsPostMutationVariables> = (props) => {
+          const {teamId,data} = props ?? {};
+
+          return  appointTeamAdminAdminTeamsTeamIdAdminsPost(teamId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AppointTeamAdminAdminTeamsTeamIdAdminsPostMutationResult = NonNullable<Awaited<ReturnType<typeof appointTeamAdminAdminTeamsTeamIdAdminsPost>>>
+    export type AppointTeamAdminAdminTeamsTeamIdAdminsPostMutationBody = AdminTeamAppoint
+    export type AppointTeamAdminAdminTeamsTeamIdAdminsPostMutationError = HTTPValidationError
+    export type AppointTeamAdminAdminTeamsTeamIdAdminsPostMutationVariables = {teamId: number;data: AdminTeamAppoint}
+
+    /**
+ * @summary Appoint Team Admin
+ */
+export const useAppointTeamAdminAdminTeamsTeamIdAdminsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof appointTeamAdminAdminTeamsTeamIdAdminsPost>>, TError,AppointTeamAdminAdminTeamsTeamIdAdminsPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof appointTeamAdminAdminTeamsTeamIdAdminsPost>>,
+        TError,
+        AppointTeamAdminAdminTeamsTeamIdAdminsPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAppointTeamAdminAdminTeamsTeamIdAdminsPostMutationOptions(options), queryClient);
+    }
+    /**
+ * @summary Archive Team
+ */
+export const archiveTeamAdminTeamsTeamIdArchivePost = (
+    teamId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<AdminTeamRead>(
+      {url: `/admin/teams/${teamId}/archive`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+
+export const getArchiveTeamAdminTeamsTeamIdArchivePostMutationKey = () => ['archiveTeamAdminTeamsTeamIdArchivePost'] as const;
+
+export const getArchiveTeamAdminTeamsTeamIdArchivePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveTeamAdminTeamsTeamIdArchivePost>>, TError,ArchiveTeamAdminTeamsTeamIdArchivePostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof archiveTeamAdminTeamsTeamIdArchivePost>>, TError,ArchiveTeamAdminTeamsTeamIdArchivePostMutationVariables, TContext> => {
+
+const mutationKey = getArchiveTeamAdminTeamsTeamIdArchivePostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof archiveTeamAdminTeamsTeamIdArchivePost>>, ArchiveTeamAdminTeamsTeamIdArchivePostMutationVariables> = (props) => {
+          const {teamId} = props ?? {};
+
+          return  archiveTeamAdminTeamsTeamIdArchivePost(teamId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ArchiveTeamAdminTeamsTeamIdArchivePostMutationResult = NonNullable<Awaited<ReturnType<typeof archiveTeamAdminTeamsTeamIdArchivePost>>>
+
+    export type ArchiveTeamAdminTeamsTeamIdArchivePostMutationError = HTTPValidationError
+    export type ArchiveTeamAdminTeamsTeamIdArchivePostMutationVariables = {teamId: number}
+
+    /**
+ * @summary Archive Team
+ */
+export const useArchiveTeamAdminTeamsTeamIdArchivePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveTeamAdminTeamsTeamIdArchivePost>>, TError,ArchiveTeamAdminTeamsTeamIdArchivePostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof archiveTeamAdminTeamsTeamIdArchivePost>>,
+        TError,
+        ArchiveTeamAdminTeamsTeamIdArchivePostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getArchiveTeamAdminTeamsTeamIdArchivePostMutationOptions(options), queryClient);
+    }
+    /**
+ * @summary Unarchive Team
+ */
+export const unarchiveTeamAdminTeamsTeamIdUnarchivePost = (
+    teamId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<AdminTeamRead>(
+      {url: `/admin/teams/${teamId}/unarchive`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+
+export const getUnarchiveTeamAdminTeamsTeamIdUnarchivePostMutationKey = () => ['unarchiveTeamAdminTeamsTeamIdUnarchivePost'] as const;
+
+export const getUnarchiveTeamAdminTeamsTeamIdUnarchivePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unarchiveTeamAdminTeamsTeamIdUnarchivePost>>, TError,UnarchiveTeamAdminTeamsTeamIdUnarchivePostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof unarchiveTeamAdminTeamsTeamIdUnarchivePost>>, TError,UnarchiveTeamAdminTeamsTeamIdUnarchivePostMutationVariables, TContext> => {
+
+const mutationKey = getUnarchiveTeamAdminTeamsTeamIdUnarchivePostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unarchiveTeamAdminTeamsTeamIdUnarchivePost>>, UnarchiveTeamAdminTeamsTeamIdUnarchivePostMutationVariables> = (props) => {
+          const {teamId} = props ?? {};
+
+          return  unarchiveTeamAdminTeamsTeamIdUnarchivePost(teamId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnarchiveTeamAdminTeamsTeamIdUnarchivePostMutationResult = NonNullable<Awaited<ReturnType<typeof unarchiveTeamAdminTeamsTeamIdUnarchivePost>>>
+
+    export type UnarchiveTeamAdminTeamsTeamIdUnarchivePostMutationError = HTTPValidationError
+    export type UnarchiveTeamAdminTeamsTeamIdUnarchivePostMutationVariables = {teamId: number}
+
+    /**
+ * @summary Unarchive Team
+ */
+export const useUnarchiveTeamAdminTeamsTeamIdUnarchivePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unarchiveTeamAdminTeamsTeamIdUnarchivePost>>, TError,UnarchiveTeamAdminTeamsTeamIdUnarchivePostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof unarchiveTeamAdminTeamsTeamIdUnarchivePost>>,
+        TError,
+        UnarchiveTeamAdminTeamsTeamIdUnarchivePostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUnarchiveTeamAdminTeamsTeamIdUnarchivePostMutationOptions(options), queryClient);
+    }
+    /**
+ * Only a team with no tickets, the trash included.
+ * @summary Delete Team
+ */
+export const deleteTeamAdminTeamsTeamIdDelete = (
+    teamId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<void>(
+      {url: `/admin/teams/${teamId}`, method: 'DELETE', signal
+    },
+      );
+    }
+
+
+
+
+export const getDeleteTeamAdminTeamsTeamIdDeleteMutationKey = () => ['deleteTeamAdminTeamsTeamIdDelete'] as const;
+
+export const getDeleteTeamAdminTeamsTeamIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTeamAdminTeamsTeamIdDelete>>, TError,DeleteTeamAdminTeamsTeamIdDeleteMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteTeamAdminTeamsTeamIdDelete>>, TError,DeleteTeamAdminTeamsTeamIdDeleteMutationVariables, TContext> => {
+
+const mutationKey = getDeleteTeamAdminTeamsTeamIdDeleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTeamAdminTeamsTeamIdDelete>>, DeleteTeamAdminTeamsTeamIdDeleteMutationVariables> = (props) => {
+          const {teamId} = props ?? {};
+
+          return  deleteTeamAdminTeamsTeamIdDelete(teamId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteTeamAdminTeamsTeamIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTeamAdminTeamsTeamIdDelete>>>
+
+    export type DeleteTeamAdminTeamsTeamIdDeleteMutationError = HTTPValidationError
+    export type DeleteTeamAdminTeamsTeamIdDeleteMutationVariables = {teamId: number}
+
+    /**
+ * @summary Delete Team
+ */
+export const useDeleteTeamAdminTeamsTeamIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTeamAdminTeamsTeamIdDelete>>, TError,DeleteTeamAdminTeamsTeamIdDeleteMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteTeamAdminTeamsTeamIdDelete>>,
+        TError,
+        DeleteTeamAdminTeamsTeamIdDeleteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteTeamAdminTeamsTeamIdDeleteMutationOptions(options), queryClient);
     }
     /**
  * Who may create teams, the people named, and the requests waiting.

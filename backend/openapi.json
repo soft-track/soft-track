@@ -893,6 +893,348 @@
         }
       }
     },
+    "/admin/teams": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Teams",
+        "description": "Every team, with its size, dates and admins. Never its tickets.",
+        "operationId": "list_teams_admin_teams_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search name or key",
+              "title": "Q"
+            },
+            "description": "Search name or key"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AdminTeamFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only quiet teams, teams with one admin, or archived ones",
+              "title": "Filter"
+            },
+            "description": "Only quiet teams, teams with one admin, or archived ones"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_AdminTeamRead_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/teams/{team_id}/members": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Team Members",
+        "description": "Who is on the team and as what, for appointing its next admin.",
+        "operationId": "list_team_members_admin_teams__team_id__members_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamMemberRead"
+                  },
+                  "title": "Response List Team Members Admin Teams  Team Id  Members Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/teams/{team_id}/admins": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Appoint Team Admin",
+        "operationId": "appoint_team_admin_admin_teams__team_id__admins_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminTeamAppoint"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTeamRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/teams/{team_id}/archive": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Archive Team",
+        "operationId": "archive_team_admin_teams__team_id__archive_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTeamRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/teams/{team_id}/unarchive": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Unarchive Team",
+        "operationId": "unarchive_team_admin_teams__team_id__unarchive_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTeamRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/teams/{team_id}": {
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Delete Team",
+        "description": "Only a team with no tickets, the trash included.",
+        "operationId": "delete_team_admin_teams__team_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/departments": {
       "get": {
         "tags": [
@@ -11290,6 +11632,106 @@
         "title": "AdminRole",
         "description": "The instance-wide roles the user directory filters by (#130), and\naccounts from outside the organisation (#243)."
       },
+      "AdminTeamAppoint": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "AdminTeamAppoint",
+        "description": "Who becomes an admin of the team (#307). Somebody on it already is\npromoted; anybody else joins it as an admin."
+      },
+      "AdminTeamFilter": {
+        "type": "string",
+        "enum": [
+          "quiet",
+          "one_admin",
+          "archived"
+        ],
+        "title": "AdminTeamFilter",
+        "description": "The teams Administration -> Teams narrows to (#307). Quiet and one\nadmin are about teams in use, so neither includes an archived one."
+      },
+      "AdminTeamRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "member_count": {
+            "type": "integer",
+            "title": "Member Count"
+          },
+          "admins": {
+            "items": {
+              "$ref": "#/components/schemas/PersonRef"
+            },
+            "type": "array",
+            "title": "Admins"
+          },
+          "ticket_count": {
+            "type": "integer",
+            "title": "Ticket Count"
+          },
+          "last_activity_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Activity At"
+          },
+          "quiet": {
+            "type": "boolean",
+            "title": "Quiet"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "key",
+          "created_at",
+          "member_count",
+          "admins",
+          "ticket_count",
+          "last_activity_at",
+          "quiet",
+          "can_delete"
+        ],
+        "title": "AdminTeamRead",
+        "description": "A team as the site admin looks after it (#307): sizes, dates and names.\n\nNothing of what the team works on. The ticket count is a number, and\nreading a team's tickets still takes being on it."
+      },
       "AdminUserRead": {
         "properties": {
           "id": {
@@ -15260,6 +15702,37 @@
         },
         "type": "object",
         "title": "OutboundWebhookUpdate"
+      },
+      "Page_AdminTeamRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminTeamRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[AdminTeamRead]"
       },
       "Page_AdminUserRead_": {
         "properties": {
@@ -22206,6 +22679,7 @@
           "department_name_taken",
           "label_name_taken",
           "already_member",
+          "already_team_admin",
           "link_exists",
           "link_contradicts",
           "repository_already_connected",
@@ -22281,6 +22755,7 @@
           "budget_period_invalid",
           "department_has_finance_history",
           "team_request_decided",
+          "team_not_empty",
           "team_creation_from_environment",
           "name_required",
           "body_required",

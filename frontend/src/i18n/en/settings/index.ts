@@ -20,6 +20,7 @@ import { fields } from '@/i18n/en/settings/fields'
 import { labels } from '@/i18n/en/settings/labels'
 import { trash } from '@/i18n/en/settings/trash'
 import { instance } from '@/i18n/en/settings/instance'
+import { adminTeams } from '@/i18n/en/settings/adminTeams'
 
 export const settings = {
   statuses,
@@ -43,4 +44,5 @@ export const settings = {
   labels,
   trash,
   instance,
+  adminTeams,
 } as const
