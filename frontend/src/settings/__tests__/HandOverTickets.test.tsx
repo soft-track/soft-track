@@ -116,7 +116,7 @@ describe('handing over tickets', () => {
     expect(dialog.textContent).toContain('Tomas Silva has 3 open tickets on this team.')
     expect(within(dialog).getByText('ENG-18 · ENG-23 · ENG-31')).toBeTruthy()
     // Open tickets only, and theirs.
-    expect(mocks.heldParams.at(-1)).toMatchObject({ assignee_id: 11, resolved: false })
+    expect(mocks.heldParams.at(-1)).toMatchObject({ assignee_id: [11], resolved: false })
   })
 
   it('leaves them unassigned unless told otherwise', async () => {

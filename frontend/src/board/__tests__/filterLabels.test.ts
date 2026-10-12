@@ -22,18 +22,20 @@ const lookups = {
   ] as unknown as StatusRead[],
 }
 
+const one = <T,>(value: T) => ({ values: [value], exclude: false })
+
 describe('describeFilters', () => {
   it('names every active filter and leaves the rest out', () => {
     const chips = describeFilters(
       {
-        statusId: 9,
-        priority: 'urgent',
-        assignee: 7,
-        labelId: 3,
+        status: one(9),
+        priority: one('urgent' as const),
+        assignee: one(7),
+        label: { ...one(3), match: 'any' },
         projectId: 2,
         sprintId: 5,
         due: 'overdue',
-        type: 'bug',
+        type: one('bug' as const),
       },
       lookups,
     )
@@ -49,12 +51,42 @@ describe('describeFilters', () => {
     ])
   })
 
+  it('reads several values as alternatives, and an exclusion as not (#260)', () => {
+    const chips = describeFilters(
+      {
+        ...NO_FILTERS,
+        assignee: { values: [7, 'unassigned'], exclude: false },
+        status: { values: [9], exclude: true },
+        type: { values: ['bug', 'story'], exclude: false },
+      },
+      lookups,
+    )
+    expect(chips.map((c) => `${c.field}: ${c.value}`)).toEqual([
+      'Status: not In Review',
+      'Assignee: Sam Rivera or Unassigned',
+      'Type: Bug or Story',
+    ])
+  })
+
+  it('joins labels with and when every one of them must be there', () => {
+    const labels = [...lookups.labels, { id: 4, team_id: 1, name: 'Design', color: '#00f' }]
+    const filters = { ...NO_FILTERS, label: { values: [3, 4], exclude: false, match: 'all' as const } }
+    expect(describeFilters(filters, { ...lookups, labels })[0].value).toBe('Bug and Design')
+  })
+
+  it('takes one value out of a chip and leaves the others', () => {
+    const filters = { ...NO_FILTERS, type: { values: ['bug' as const, 'story' as const], exclude: true } }
+    const [chip] = describeFilters(filters, lookups)
+    expect(chip.parts.map((part) => part.label)).toEqual(['Bug', 'Story'])
+    expect(chip.parts[0].without.type).toEqual({ values: ['story'], exclude: true })
+  })
+
   it('has nothing to say about an unfiltered board', () => {
     expect(describeFilters(NO_FILTERS, lookups)).toEqual([])
   })
 
   it('distinguishes unassigned from a person', () => {
-    const [chip] = describeFilters({ ...NO_FILTERS, assignee: 'unassigned' }, lookups)
+    const [chip] = describeFilters({ ...NO_FILTERS, assignee: one('unassigned' as const) }, lookups)
     expect(chip.value).toBe('Unassigned')
   })
 
@@ -63,7 +95,7 @@ describe('describeFilters', () => {
     // dismissible -- dropping the chip would leave a board filtered for no
     // reason anyone can see. A status can be deleted now too.
     const chips = describeFilters(
-      { ...NO_FILTERS, statusId: 777, labelId: 999, sprintId: 888 },
+      { ...NO_FILTERS, status: one(777), label: { ...one(999), match: 'any' }, sprintId: 888 },
       lookups,
     )
     expect(chips.map((c) => c.value)).toEqual([
@@ -74,16 +106,19 @@ describe('describeFilters', () => {
   })
 
   it('works before the team data has loaded', () => {
-    const [chip] = describeFilters({ ...NO_FILTERS, assignee: 7 })
+    const [chip] = describeFilters({ ...NO_FILTERS, assignee: one(7) })
     expect(chip.field).toBe('Assignee')
   })
 })
 
 describe('summarise', () => {
   it('describes a saved view in one line', () => {
-    expect(summarise({ ...NO_FILTERS, priority: 'urgent', labelId: 3 }, lookups)).toBe(
-      'Urgent · Bug',
-    )
+    expect(
+      summarise(
+        { ...NO_FILTERS, priority: one('urgent' as const), label: { ...one(3), match: 'any' } },
+        lookups,
+      ),
+    ).toBe('Urgent · Bug')
   })
 
   it('calls an empty view what it is', () => {
@@ -93,7 +128,11 @@ describe('summarise', () => {
 
 describe('withoutFilter', () => {
   it('clears one filter and leaves the others', () => {
-    const filters = { ...NO_FILTERS, priority: 'high' as const, labelId: 3 }
-    expect(withoutFilter(filters, 'labelId')).toEqual({ ...NO_FILTERS, priority: 'high' })
+    const filters = {
+      ...NO_FILTERS,
+      priority: one('high' as const),
+      label: { values: [3], exclude: true, match: 'any' as const },
+    }
+    expect(withoutFilter(filters, 'label')).toEqual({ ...NO_FILTERS, priority: one('high') })
   })
 })

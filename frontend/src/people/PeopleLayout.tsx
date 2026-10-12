@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/auth/useAuth'
-import { toSearchParams } from '@/board/filters'
+import { searchString, toSearchParams } from '@/board/filters'
 import { withGrouping } from '@/board/grouping'
 import { Sidebar } from '@/board/Sidebar'
 import { DEFAULT_SORT, withSort } from '@/board/sorting'
@@ -66,7 +66,7 @@ export default function PeopleLayout() {
           withGrouping(toSearchParams(filters), arrangement?.grouping ?? 'status'),
           arrangement?.sort ?? DEFAULT_SORT,
         )
-        navigate({ pathname: `/${team.key}`, search: search.toString() })
+        navigate({ pathname: `/${team.key}`, search: searchString(search) })
       }}
       isAdmin={isTeamAdmin}
     />

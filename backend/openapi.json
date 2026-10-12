@@ -3761,6 +3761,7 @@
           "tickets"
         ],
         "summary": "List Tickets",
+        "description": "One page of the team's tickets.\n\nA filter that takes several values repeats in the query string\n(`?assignee_id=3&assignee_id=4`): values in one filter are alternatives,\nand different filters narrow each other (#260).",
         "operationId": "list_tickets_teams__team_id__tickets_get",
         "security": [
           {
@@ -3776,102 +3777,6 @@
               "type": "integer",
               "title": "Team Id"
             }
-          },
-          {
-            "name": "project_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Project Id"
-            }
-          },
-          {
-            "name": "status_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Only tickets in this status.",
-              "title": "Status Id"
-            },
-            "description": "Only tickets in this status."
-          },
-          {
-            "name": "priority",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/TicketPriority"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Priority"
-            }
-          },
-          {
-            "name": "assignee_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Assignee Id"
-            }
-          },
-          {
-            "name": "unassigned",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "Only tickets with nobody assigned. Overrides assignee_id.",
-              "default": false,
-              "title": "Unassigned"
-            },
-            "description": "Only tickets with nobody assigned. Overrides assignee_id."
-          },
-          {
-            "name": "label_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Only tickets with this label.",
-              "title": "Label Id"
-            },
-            "description": "Only tickets with this label."
           },
           {
             "name": "parent_id",
@@ -3890,42 +3795,6 @@
               "title": "Parent Id"
             },
             "description": "Only sub-tickets of this ticket."
-          },
-          {
-            "name": "sprint_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Only tickets in this sprint.",
-              "title": "Sprint Id"
-            },
-            "description": "Only tickets in this sprint."
-          },
-          {
-            "name": "due",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/DueFilter"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Overdue, due this week, or with no due date.",
-              "title": "Due"
-            },
-            "description": "Overdue, due this week, or with no due date."
           },
           {
             "name": "today",
@@ -3983,24 +3852,6 @@
               "title": "Due To"
             },
             "description": "Only tickets due on or before this day."
-          },
-          {
-            "name": "type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/TicketType"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Only tickets of this type.",
-              "title": "Type"
-            },
-            "description": "Only tickets of this type."
           },
           {
             "name": "resolved",
@@ -4064,6 +3915,218 @@
               "default": 0,
               "title": "Offset"
             }
+          },
+          {
+            "name": "status_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets in one of these statuses. Repeat for several.",
+              "default": [],
+              "title": "Status Id"
+            },
+            "description": "Only tickets in one of these statuses. Repeat for several."
+          },
+          {
+            "name": "status_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Status Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TicketPriority"
+              },
+              "description": "Only tickets with one of these priorities.",
+              "default": [],
+              "title": "Priority"
+            },
+            "description": "Only tickets with one of these priorities."
+          },
+          {
+            "name": "priority_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Priority Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "assignee_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets assigned to one of these people.",
+              "default": [],
+              "title": "Assignee Id"
+            },
+            "description": "Only tickets assigned to one of these people."
+          },
+          {
+            "name": "unassigned",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Nobody assigned, as one more assignee choice: alone, only unassigned tickets; with assignee_id, those people or nobody.",
+              "default": false,
+              "title": "Unassigned"
+            },
+            "description": "Nobody assigned, as one more assignee choice: alone, only unassigned tickets; with assignee_id, those people or nobody."
+          },
+          {
+            "name": "assignee_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Assignee Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "label_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets with these labels, any or all of them.",
+              "default": [],
+              "title": "Label Id"
+            },
+            "description": "Only tickets with these labels, any or all of them."
+          },
+          {
+            "name": "label_match",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/LabelMatch",
+              "description": "any: tickets with at least one of the labels. all: with every one of them.",
+              "default": "any"
+            },
+            "description": "any: tickets with at least one of the labels. all: with every one of them."
+          },
+          {
+            "name": "label_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Label Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TicketType"
+              },
+              "description": "Only tickets of these types.",
+              "default": [],
+              "title": "Type"
+            },
+            "description": "Only tickets of these types."
+          },
+          {
+            "name": "type_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Type Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets in this epic.",
+              "title": "Project Id"
+            },
+            "description": "Only tickets in this epic."
+          },
+          {
+            "name": "sprint_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets in this sprint.",
+              "title": "Sprint Id"
+            },
+            "description": "Only tickets in this sprint."
+          },
+          {
+            "name": "due",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DueFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Overdue, due this week, or with no due date.",
+              "title": "Due"
+            },
+            "description": "Overdue, due this week, or with no due date."
           }
         ],
         "responses": {
@@ -4227,102 +4290,6 @@
             }
           },
           {
-            "name": "project_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Project Id"
-            }
-          },
-          {
-            "name": "status_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Only tickets in this status.",
-              "title": "Status Id"
-            },
-            "description": "Only tickets in this status."
-          },
-          {
-            "name": "priority",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/TicketPriority"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Priority"
-            }
-          },
-          {
-            "name": "assignee_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Assignee Id"
-            }
-          },
-          {
-            "name": "unassigned",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "Only tickets with nobody assigned. Overrides assignee_id.",
-              "default": false,
-              "title": "Unassigned"
-            },
-            "description": "Only tickets with nobody assigned. Overrides assignee_id."
-          },
-          {
-            "name": "label_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Only tickets with this label.",
-              "title": "Label Id"
-            },
-            "description": "Only tickets with this label."
-          },
-          {
             "name": "parent_id",
             "in": "query",
             "required": false,
@@ -4341,6 +4308,201 @@
             "description": "Only sub-tickets of this ticket."
           },
           {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The caller's own date, which `due` is measured from.",
+              "title": "Today"
+            },
+            "description": "The caller's own date, which `due` is measured from."
+          },
+          {
+            "name": "status_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets in one of these statuses. Repeat for several.",
+              "default": [],
+              "title": "Status Id"
+            },
+            "description": "Only tickets in one of these statuses. Repeat for several."
+          },
+          {
+            "name": "status_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Status Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TicketPriority"
+              },
+              "description": "Only tickets with one of these priorities.",
+              "default": [],
+              "title": "Priority"
+            },
+            "description": "Only tickets with one of these priorities."
+          },
+          {
+            "name": "priority_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Priority Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "assignee_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets assigned to one of these people.",
+              "default": [],
+              "title": "Assignee Id"
+            },
+            "description": "Only tickets assigned to one of these people."
+          },
+          {
+            "name": "unassigned",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Nobody assigned, as one more assignee choice: alone, only unassigned tickets; with assignee_id, those people or nobody.",
+              "default": false,
+              "title": "Unassigned"
+            },
+            "description": "Nobody assigned, as one more assignee choice: alone, only unassigned tickets; with assignee_id, those people or nobody."
+          },
+          {
+            "name": "assignee_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Assignee Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "label_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets with these labels, any or all of them.",
+              "default": [],
+              "title": "Label Id"
+            },
+            "description": "Only tickets with these labels, any or all of them."
+          },
+          {
+            "name": "label_match",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/LabelMatch",
+              "description": "any: tickets with at least one of the labels. all: with every one of them.",
+              "default": "any"
+            },
+            "description": "any: tickets with at least one of the labels. all: with every one of them."
+          },
+          {
+            "name": "label_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Label Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TicketType"
+              },
+              "description": "Only tickets of these types.",
+              "default": [],
+              "title": "Type"
+            },
+            "description": "Only tickets of these types."
+          },
+          {
+            "name": "type_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Type Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tickets in this epic.",
+              "title": "Project Id"
+            },
+            "description": "Only tickets in this epic."
+          },
+          {
             "name": "sprint_id",
             "in": "query",
             "required": false,
@@ -4357,6 +4519,24 @@
               "title": "Sprint Id"
             },
             "description": "Only tickets in this sprint."
+          },
+          {
+            "name": "due",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DueFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Overdue, due this week, or with no due date.",
+              "title": "Due"
+            },
+            "description": "Overdue, due this week, or with no due date."
           }
         ],
         "responses": {
@@ -16311,6 +16491,15 @@
         ],
         "title": "LabelCreate"
       },
+      "LabelMatch": {
+        "type": "string",
+        "enum": [
+          "any",
+          "all"
+        ],
+        "title": "LabelMatch",
+        "description": "How a filter on several labels reads them (#260).\n\nThe one filter with a second question: a ticket carries many labels, so\n\"Bug and Design\" can mean either pile or only the design bugs."
+      },
       "LabelRead": {
         "properties": {
           "id": {
@@ -19775,7 +19964,18 @@
           "filters": {
             "$ref": "#/components/schemas/ViewFilters",
             "default": {
-              "unassigned": false
+              "status_id": [],
+              "status_exclude": false,
+              "priority": [],
+              "priority_exclude": false,
+              "assignee_id": [],
+              "unassigned": false,
+              "assignee_exclude": false,
+              "label_id": [],
+              "label_match": "any",
+              "label_exclude": false,
+              "type": [],
+              "type_exclude": false
             }
           },
           "group_by": {
@@ -23862,52 +24062,78 @@
       "ViewFilters": {
         "properties": {
           "status_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status Id"
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Status Id",
+            "default": []
+          },
+          "status_exclude": {
+            "type": "boolean",
+            "title": "Status Exclude",
+            "default": false
           },
           "priority": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TicketPriority"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "items": {
+              "$ref": "#/components/schemas/TicketPriority"
+            },
+            "type": "array",
+            "title": "Priority",
+            "default": []
+          },
+          "priority_exclude": {
+            "type": "boolean",
+            "title": "Priority Exclude",
+            "default": false
           },
           "assignee_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Assignee Id"
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Assignee Id",
+            "default": []
           },
           "unassigned": {
             "type": "boolean",
             "title": "Unassigned",
             "default": false
           },
+          "assignee_exclude": {
+            "type": "boolean",
+            "title": "Assignee Exclude",
+            "default": false
+          },
           "label_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label Id"
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Label Id",
+            "default": []
+          },
+          "label_match": {
+            "$ref": "#/components/schemas/LabelMatch",
+            "default": "any"
+          },
+          "label_exclude": {
+            "type": "boolean",
+            "title": "Label Exclude",
+            "default": false
+          },
+          "type": {
+            "items": {
+              "$ref": "#/components/schemas/TicketType"
+            },
+            "type": "array",
+            "title": "Type",
+            "default": []
+          },
+          "type_exclude": {
+            "type": "boolean",
+            "title": "Type Exclude",
+            "default": false
           },
           "project_id": {
             "anyOf": [
@@ -23940,21 +24166,11 @@
                 "type": "null"
               }
             ]
-          },
-          "type": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TicketType"
-              },
-              {
-                "type": "null"
-              }
-            ]
           }
         },
         "type": "object",
         "title": "ViewFilters",
-        "description": "What a view narrows the ticket list to.\n\nNested rather than flattened into the view models so that the same shape\nis what the board sends, what a view stores, and what the frontend keeps\nin the URL -- one type to keep in step instead of three.\n\nNull everywhere means \"all tickets\", which is what an empty view is."
+        "description": "What a view narrows the ticket list to.\n\nNested rather than flattened into the view models so that the same shape\nis what the board sends, what a view stores, and what the frontend keeps\nin the URL -- one type to keep in step instead of three. The ticket list\nand its CSV export read their query string into this too (see\napp_softtrack/filter_params.py), and lib_softtrack/filters.py turns it\ninto SQL, so a new filter is a field here, a parameter there and a clause\nthere.\n\nEach of the first five filters takes a list (#260). Several values in one\nfilter are alternatives -- Mei or Daniel -- and different filters narrow\neach other: Mei or Daniel, and bugs. Each has one switch, `*_exclude`, to\nturn it round: every status except Done. No grammar beyond that, and no\nnesting.\n\nEmpty everywhere means \"all tickets\", which is what an empty view is."
       },
       "WaitingJoinRequest": {
         "properties": {

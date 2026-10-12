@@ -237,7 +237,7 @@ def test_merging_moves_tickets_views_and_rules_to_the_other_label(
     # The ticket that carried both keeps one Feature.
     assert names_on(client, named, named["both"]) == ["Feature"]
     assert names_on(client, named, named["release"]) == ["Feature"]
-    assert session.get(SavedView, named["view"]["id"]).label_id == feature["id"]
+    assert session.get(SavedView, named["view"]["id"]).label_ids == [feature["id"]]
     rule = session.get(AutomationRule, named["rule"]["id"])
     assert (rule.if_label_id, rule.add_label_id, rule.is_enabled) == (
         feature["id"],
@@ -256,11 +256,56 @@ def test_removing_takes_it_off_tickets_and_views_and_switches_rules_off(
     assert names_on(client, named, named["both"]) == ["Feature"]
     assert names_on(client, named, named["release"]) == []
     # The view widens rather than filtering by a label that is gone.
-    assert session.get(SavedView, named["view"]["id"]).label_id is None
+    assert session.get(SavedView, named["view"]["id"]).label_ids == []
     # The rule would match every ticket with its condition cleared, so it is
     # switched off with the label taken out of it.
     rule = session.get(AutomationRule, named["rule"]["id"])
     assert (rule.if_label_id, rule.add_label_id, rule.is_enabled) == (None, None, False)
+
+
+def test_merging_into_a_label_a_view_already_lists_keeps_it_once(
+    client, board, session
+):
+    """A view on Release 1.2 and Feature (#260), merged one into the other,
+    lists Feature once -- and keeps the other labels it named."""
+    release, feature, bug = (
+        board["labels"][name] for name in ("Release 1.2", "Feature", "Bug")
+    )
+    view = client.post(
+        f"/teams/{board['team_id']}/views",
+        json={
+            "name": "Release features",
+            "filters": {
+                "label_id": [release["id"], feature["id"], bug["id"]],
+                "label_match": "all",
+            },
+        },
+        headers=board["headers"],
+    ).json()
+    assert delete(client, board, release, merge_into=feature["id"]).status_code == 204
+
+    stored = session.get(SavedView, view["id"])
+    session.refresh(stored)
+    assert stored.label_ids == [feature["id"], bug["id"]]
+    assert stored.label_all is True
+
+
+def test_label_usage_names_a_view_listing_several_labels(client, board):
+    team_id = board["team_id"]
+    bug, feature = board["labels"]["Bug"], board["labels"]["Feature"]
+    client.post(
+        f"/teams/{team_id}/views",
+        json={"name": "Either", "filters": {"label_id": [bug["id"], feature["id"]]}},
+        headers=board["headers"],
+    )
+    usage = {
+        row["label_id"]: [view["name"] for view in row["views"]]
+        for row in client.get(
+            f"/teams/{team_id}/labels/usage", headers=board["headers"]
+        ).json()
+    }
+    assert usage[bug["id"]] == ["Either"]
+    assert usage[feature["id"]] == ["Either"]
 
 
 def test_only_a_team_admin_deletes_a_label(client, board):

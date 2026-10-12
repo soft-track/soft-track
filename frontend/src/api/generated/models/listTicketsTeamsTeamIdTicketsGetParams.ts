@@ -6,39 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { DueFilter } from './dueFilter';
+import type { LabelMatch } from './labelMatch';
 import type { SortDirection } from './sortDirection';
 import type { TicketPriority } from './ticketPriority';
 import type { TicketSort } from './ticketSort';
 import type { TicketType } from './ticketType';
 
 export type ListTicketsTeamsTeamIdTicketsGetParams = {
-project_id?: number | null;
-/**
- * Only tickets in this status.
- */
-status_id?: number | null;
-priority?: TicketPriority | null;
-assignee_id?: number | null;
-/**
- * Only tickets with nobody assigned. Overrides assignee_id.
- */
-unassigned?: boolean;
-/**
- * Only tickets with this label.
- */
-label_id?: number | null;
 /**
  * Only sub-tickets of this ticket.
  */
 parent_id?: number | null;
-/**
- * Only tickets in this sprint.
- */
-sprint_id?: number | null;
-/**
- * Overdue, due this week, or with no due date.
- */
-due?: DueFilter | null;
 /**
  * The caller's own date, which `due` is measured from. Defaults to today in UTC; a client should send its local date, so that 'this week' is its week.
  */
@@ -51,10 +29,6 @@ due_from?: string | null;
  * Only tickets due on or before this day.
  */
 due_to?: string | null;
-/**
- * Only tickets of this type.
- */
-type?: TicketType | null;
 /**
  * true for only done and cancelled tickets, false for only the ones still open.
  */
@@ -76,4 +50,64 @@ limit?: number;
  * @minimum 0
  */
 offset?: number;
+/**
+ * Only tickets in one of these statuses. Repeat for several.
+ */
+status_id?: number[];
+/**
+ * Every ticket except those the filter matches.
+ */
+status_exclude?: boolean;
+/**
+ * Only tickets with one of these priorities.
+ */
+priority?: TicketPriority[];
+/**
+ * Every ticket except those the filter matches.
+ */
+priority_exclude?: boolean;
+/**
+ * Only tickets assigned to one of these people.
+ */
+assignee_id?: number[];
+/**
+ * Nobody assigned, as one more assignee choice: alone, only unassigned tickets; with assignee_id, those people or nobody.
+ */
+unassigned?: boolean;
+/**
+ * Every ticket except those the filter matches.
+ */
+assignee_exclude?: boolean;
+/**
+ * Only tickets with these labels, any or all of them.
+ */
+label_id?: number[];
+/**
+ * any: tickets with at least one of the labels. all: with every one of them.
+ */
+label_match?: LabelMatch;
+/**
+ * Every ticket except those the filter matches.
+ */
+label_exclude?: boolean;
+/**
+ * Only tickets of these types.
+ */
+type?: TicketType[];
+/**
+ * Every ticket except those the filter matches.
+ */
+type_exclude?: boolean;
+/**
+ * Only tickets in this epic.
+ */
+project_id?: number | null;
+/**
+ * Only tickets in this sprint.
+ */
+sprint_id?: number | null;
+/**
+ * Overdue, due this week, or with no due date.
+ */
+due?: DueFilter | null;
 };

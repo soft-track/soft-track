@@ -80,7 +80,7 @@ def test_a_saved_view_keeps_the_type_filter(client, team):
         headers=team["headers"],
     )
     assert response.status_code == 200, response.text
-    assert response.json()["filters"]["type"] == "bug"
+    assert response.json()["filters"]["type"] == ["bug"]
 
 
 def test_a_rule_can_be_conditioned_on_the_type(client, team):

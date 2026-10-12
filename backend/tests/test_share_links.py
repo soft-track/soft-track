@@ -194,6 +194,33 @@ def test_a_saved_view_is_shared_by_its_filters(client, portal):
     assert [t["title"] for t in page["tickets"]] == ["Portal: sign-in with magic link"]
 
 
+def test_a_shared_view_reads_its_lists_like_the_board(client, portal):
+    """Not Done, and Amina or nobody (#260): the link lists what the board
+    would, through the same clauses."""
+    view = _ok(
+        client.post(
+            f"/teams/{portal['team_id']}/views",
+            json={
+                "name": "Anything open",
+                "is_shared": True,
+                "filters": {
+                    "status_id": [portal["status_ids"]["Done"]],
+                    "status_exclude": True,
+                    "assignee_id": [portal["user"]["id"]],
+                    "unassigned": True,
+                },
+            },
+            headers=portal["headers"],
+        )
+    )
+    created = _ok(share(client, portal, project_id=None, view_id=view["id"]))
+    page = open_page(client, created["token"]).json()
+    assert sorted(t["title"] for t in page["tickets"]) == [
+        "Portal: sign-in with magic link",
+        "Salary bands",
+    ]
+
+
 def test_only_the_tokens_hash_is_kept(client, portal, session):
     created = _ok(share(client, portal))
     stored = session.exec(select(ShareLink)).one()

@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react'
 import { AXIOS_INSTANCE } from '@/api/client'
 import { useAuth } from '@/auth/useAuth'
 import { FilterBar } from '@/board/FilterBar'
-import { toQueryParams } from '@/board/filters'
+import { toQueryString } from '@/board/filters'
 import type { BoardFilters } from '@/board/filters'
 import type { BoardGrouping } from '@/board/grouping'
 import { type BoardSort, SORT_OPTIONS } from '@/board/sorting'
@@ -247,10 +247,9 @@ function ExportCsvButton({
     setLoading(true)
     setFailed(false)
     try {
-      const params = new URLSearchParams()
-      for (const [key, value] of Object.entries(toQueryParams(filters))) {
-        if (value !== undefined && value !== null) params.set(key, String(value))
-      }
+      // The board's own filters, lists repeated, so the file holds what the
+      // board shows (#260).
+      const params = toQueryString(filters)
 
       // The generated client rather than a hand-written URL would be nicer,
       // but its mutator resolves every response as JSON: a download needs

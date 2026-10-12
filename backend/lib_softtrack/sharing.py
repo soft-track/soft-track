@@ -32,6 +32,7 @@ from sqlalchemy import case
 from sqlmodel import Session, func, select
 
 from lib_identity.models.identity import UserPublic
+from lib_softtrack.models.views import ViewFilters
 from lib_softtrack.models.sharing import (
     ShareLinkCreate,
     ShareLinkCreated,
@@ -59,7 +60,8 @@ from lib_softtrack.tables import (
     utcnow,
 )
 from lib_softtrack.teams import get_team_or_404, require_team_admin
-from lib_softtrack.tickets import due_clause, ticket_clauses
+from lib_softtrack.tickets import ticket_clauses
+from lib_softtrack.views import view_filters
 from lib_utils.errors import ErrorCode, api_error
 from lib_utils.password import hash_password, verify_password
 from lib_utils.rate_limit import share_failures_by_address, share_opens_by_address
@@ -106,24 +108,11 @@ def _target(
 
 
 def _clauses(project: Optional[Project], view: Optional[SavedView]) -> list:
-    """Which tickets the page lists: the epic's, or the view's filters."""
+    """Which tickets the page lists: the epic's, or the view's filters --
+    read by the same code the board's are, so a view and its link agree."""
     if project is not None:
-        return ticket_clauses(project.team_id, project_id=project.id)
-    clauses = ticket_clauses(
-        view.team_id,
-        project_id=view.project_id,
-        status_id=view.status_id,
-        priority=view.priority,
-        assignee_id=view.assignee_id,
-        unassigned=view.unassigned,
-        label_id=view.label_id,
-        sprint_id=view.sprint_id,
-    )
-    if view.type is not None:
-        clauses.append(Ticket.type == view.type)
-    if view.due is not None:
-        clauses.append(due_clause(view.due, datetime.now(timezone.utc).date()))
-    return clauses
+        return ticket_clauses(project.team_id, ViewFilters(project_id=project.id))
+    return ticket_clauses(view.team_id, view_filters(view))
 
 
 def _is_active(link: ShareLink, target_found: bool) -> bool:

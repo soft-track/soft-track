@@ -1,24 +1,51 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import type { DueFilter, TicketPriority, TicketType } from '@/api/generated/models'
-import { describeFilters, withoutFilter } from '@/board/filterLabels'
-import { activeCount, type BoardFilters, isEmpty, NO_FILTERS } from '@/board/filters'
+import type { DueFilter } from '@/api/generated/models'
+import { describeFilters, fieldName, summarise, valueName } from '@/board/filterLabels'
+import {
+  activeCount,
+  type BoardFilters,
+  type FilterValue,
+  isEmpty,
+  isSet,
+  MANY_KEYS,
+  type ManyKey,
+  NO_FILTERS,
+  ONE_KEYS,
+  type OneKey,
+  toggleValue,
+  withoutFilter,
+} from '@/board/filters'
 import { useTranslation } from '@/i18n'
 import { DUE_FILTER_LABEL } from '@/tickets/dueDate'
-import { PRIORITY_META, PRIORITY_ORDER, TYPE_META, TYPE_ORDER } from '@/tickets/ticketMeta'
+import { PriorityIcon } from '@/tickets/PriorityIcon'
+import { PRIORITY_ORDER, TYPE_META, TYPE_ORDER } from '@/tickets/ticketMeta'
 import { activeMembers } from '@/team/members'
 import { pickableProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
+import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
 
+type Section = ManyKey | OneKey
+
+/** Which section the menu opens on: the first filter already set, else status. */
+function firstSet(filters: BoardFilters): Section {
+  return [...MANY_KEYS, ...ONE_KEYS].find((key) => isSet(filters, key)) ?? 'status'
+}
+
 /**
- * One button for all six filters, and a chip for each one that is set.
+ * One button for every filter, and a chip for each one that is set.
  *
- * Six dropdowns across the top bar was never going to fit, and the chips do a
- * job dropdowns cannot: they say what is being hidden. A board narrowed by a
- * filter you cannot see is a board that looks like it has lost your tickets.
+ * A dropdown per filter across the top bar was never going to fit, and the
+ * chips do a job dropdowns cannot: they say what is being hidden. A board
+ * narrowed by a filter you cannot see is a board that looks like it has lost
+ * your tickets.
+ *
+ * The filters that take several values (#260) are checkboxes in the menu,
+ * one section open at a time, each with a switch that turns it round. In a
+ * chip, each chosen value can be removed on its own.
  */
 export function FilterBar({
   filters,
@@ -33,8 +60,9 @@ export function FilterBar({
   canSave: boolean
 }) {
   const { t } = useTranslation(['board', 'common'])
-  const { members, labels, projects, sprints, statuses } = useTeamContext()
+  const lookups = useTeamContext()
   const [open, setOpen] = useState(false)
+  const [section, setSection] = useState<Section>('status')
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [anchor, setAnchor] = useState<DOMRect | null>(null)
 
@@ -49,16 +77,17 @@ export function FilterBar({
   }, [open])
 
   const count = activeCount(filters)
-  const chips = describeFilters(filters, { members, labels, projects, sprints, statuses })
-  const set = <K extends keyof BoardFilters>(key: K, value: BoardFilters[K]) =>
-    onChange({ ...filters, [key]: value })
+  const chips = describeFilters(filters, lookups)
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <button
         ref={buttonRef}
         type="button"
-        onClick={() => setOpen((it) => !it)}
+        onClick={() => {
+          if (!open) setSection(firstSet(filters))
+          setOpen((it) => !it)
+        }}
         aria-expanded={open}
         data-active={count > 0}
         className="btn btn-secondary btn-sm data-[active=true]:text-neutral-900"
@@ -73,17 +102,23 @@ export function FilterBar({
       </button>
 
       {chips.map((chip) => (
-        <span key={chip.key} className="chip">
+        <span key={chip.key} className="chip" data-testid={`filter-chip-${chip.key}`}>
           <span className="text-neutral-400">{chip.field}</span>
-          {chip.value}
-          <button
-            type="button"
-            onClick={() => onChange(withoutFilter(filters, chip.key))}
-            aria-label={t(`filters.clearChip.${chip.key}`)}
-            className="-mr-0.5 rounded-full p-0.5 text-neutral-400 hover:text-neutral-800"
-          >
-            <Icon name="close" size={11} />
-          </button>
+          {chip.prefix && <span>{chip.prefix}</span>}
+          {chip.parts.map((part, index) => (
+            <span key={part.label + index} className="inline-flex items-center gap-0.5">
+              {index > 0 && <span className="mr-0.5 text-neutral-400">{chip.joiner}</span>}
+              {part.label}
+              <button
+                type="button"
+                onClick={() => onChange(part.without)}
+                aria-label={t('filters.removeValue', { value: part.label, field: chip.field })}
+                className="rounded-full p-0.5 text-neutral-400 hover:text-neutral-800"
+              >
+                <Icon name="close" size={11} />
+              </button>
+            </span>
+          ))}
         </span>
       ))}
 
@@ -124,152 +159,46 @@ export function FilterBar({
               aria-label={t('filters.dialogLabel')}
               style={{
                 top: anchor.bottom + 8,
-                left: Math.max(8, Math.min(anchor.left, window.innerWidth - 288)),
+                left: Math.max(8, Math.min(anchor.left, window.innerWidth - 328)),
+                maxHeight: `calc(100vh - ${anchor.bottom + 24}px)`,
               }}
-              className="glass-menu fixed z-50 w-[17.5rem] max-w-[calc(100vw-1rem)] rounded-panel p-3"
+              className="glass-menu fixed z-50 w-[20rem] max-w-[calc(100vw-1rem)] overflow-y-auto rounded-panel p-1.5"
             >
-              <div className="space-y-2.5">
-                <Field label={t('filters.fields.status')}>
-                  <Select
-                    block
-                    dense
-                    value={filters.statusId ?? ''}
-                    onChange={(e) =>
-                      set('statusId', e.target.value ? Number(e.target.value) : null)
-                    }
+              {[...MANY_KEYS, ...ONE_KEYS].map((key) => (
+                <div key={key} className="border-b border-neutral-900/5 last:border-b-0">
+                  <button
+                    type="button"
+                    aria-expanded={section === key}
+                    onClick={() => setSection(key)}
+                    className="flex w-full items-center gap-2 rounded-control px-2.5 py-2 text-left hover:bg-neutral-900/[0.03]"
                   >
-                    <option value="">{t('filters.any.status')}</option>
-                    {statuses.map((status) => (
-                      <option key={status.id} value={status.id}>
-                        {status.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-
-                <Field label={t('filters.fields.priority')}>
-                  <Select
-                    block
-                    dense
-                    value={filters.priority ?? ''}
-                    onChange={(e) =>
-                      set('priority', (e.target.value || null) as TicketPriority | null)
-                    }
-                  >
-                    <option value="">{t('filters.any.priority')}</option>
-                    {PRIORITY_ORDER.map((priority) => (
-                      <option key={priority} value={priority}>
-                        {PRIORITY_META[priority].label}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-
-                <Field label={t('filters.fields.assignee')}>
-                  <Select
-                    block
-                    dense
-                    value={filters.assignee === null ? '' : String(filters.assignee)}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      set(
-                        'assignee',
-                        value === '' ? null : value === 'unassigned' ? 'unassigned' : Number(value),
-                      )
-                    }}
-                  >
-                    <option value="">{t('filters.any.assignee')}</option>
-                    <option value="unassigned">{t('filters.unassigned')}</option>
-                    {activeMembers(members).map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.full_name}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-
-                <Field label={t('filters.fields.label')}>
-                  <Select
-                    block
-                    dense
-                    value={filters.labelId ?? ''}
-                    onChange={(e) => set('labelId', e.target.value ? Number(e.target.value) : null)}
-                  >
-                    <option value="">{t('filters.any.label')}</option>
-                    {labels.map((label) => (
-                      <option key={label.id} value={label.id}>
-                        {label.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-
-                <Field label={t('filters.fields.project')}>
-                  <Select
-                    block
-                    dense
-                    value={filters.projectId ?? ''}
-                    onChange={(e) =>
-                      set('projectId', e.target.value ? Number(e.target.value) : null)
-                    }
-                  >
-                    <option value="">{t('filters.any.project')}</option>
-                    {pickableProjects(projects, filters.projectId).map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-
-                <Field label={t('filters.fields.sprint')}>
-                  <Select
-                    block
-                    dense
-                    value={filters.sprintId ?? ''}
-                    onChange={(e) => set('sprintId', e.target.value ? Number(e.target.value) : null)}
-                  >
-                    <option value="">{t('filters.any.sprint')}</option>
-                    {sprints.map((sprint) => (
-                      <option key={sprint.id} value={sprint.id}>
-                        {sprint.display_name}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-
-                <Field label={t('filters.fields.type')}>
-                  <Select
-                    block
-                    dense
-                    value={filters.type ?? ''}
-                    onChange={(e) => set('type', (e.target.value || null) as TicketType | null)}
-                  >
-                    <option value="">{t('filters.any.type')}</option>
-                    {TYPE_ORDER.map((type) => (
-                      <option key={type} value={type}>
-                        {TYPE_META[type].label}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-
-                <Field label={t('filters.fields.due')}>
-                  <Select
-                    block
-                    dense
-                    value={filters.due ?? ''}
-                    onChange={(e) => set('due', (e.target.value || null) as DueFilter | null)}
-                  >
-                    <option value="">{t('filters.any.due')}</option>
-                    {(Object.keys(DUE_FILTER_LABEL) as DueFilter[]).map((due) => (
-                      <option key={due} value={due}>
-                        {DUE_FILTER_LABEL[due]}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-              </div>
+                    <span className="eyebrow shrink-0">{fieldName(key)}</span>
+                    <span className="min-w-0 flex-1 truncate text-right text-xs text-neutral-500">
+                      {isSet(filters, key)
+                        ? summarise(onlyFilter(filters, key), lookups)
+                        : t(`filters.any.${key === 'projectId' ? 'project' : key === 'sprintId' ? 'sprint' : key}`)}
+                    </span>
+                    <Icon
+                      name={section === key ? 'chevron-up' : 'chevron-down'}
+                      size={12}
+                      className="shrink-0 text-neutral-400"
+                    />
+                  </button>
+                  {section === key && (
+                    <div className="px-1 pb-2">
+                      {(MANY_KEYS as readonly string[]).includes(key) ? (
+                        <ManySection
+                          name={key as ManyKey}
+                          filters={filters}
+                          onChange={onChange}
+                        />
+                      ) : (
+                        <OneSection name={key as OneKey} filters={filters} onChange={onChange} />
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </>,
           document.body,
@@ -278,11 +207,215 @@ export function FilterBar({
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+/** Only `key` of the filters, for a menu section's one-line summary. */
+function onlyFilter(filters: BoardFilters, key: Section): BoardFilters {
+  return { ...NO_FILTERS, [key]: filters[key] }
+}
+
+/** The values a filter offers, in the order the menu lists them. */
+function useOptions<K extends ManyKey>(name: K): FilterValue<K>[] {
+  const { members, labels, statuses } = useTeamContext()
+  switch (name) {
+    case 'status':
+      return statuses.map((status) => status.id) as FilterValue<K>[]
+    case 'priority':
+      return PRIORITY_ORDER as FilterValue<K>[]
+    case 'assignee':
+      return [
+        'unassigned',
+        ...activeMembers(members).map((user) => user.id),
+      ] as FilterValue<K>[]
+    case 'label':
+      return labels.map((label) => label.id) as FilterValue<K>[]
+    default:
+      return TYPE_ORDER as FilterValue<K>[]
+  }
+}
+
+/** A multi-value filter: a checkbox per value, and its switches. */
+function ManySection<K extends ManyKey>({
+  name,
+  filters,
+  onChange,
+}: {
+  name: K
+  filters: BoardFilters
+  onChange: (filters: BoardFilters) => void
+}) {
+  const { t } = useTranslation('board')
+  const lookups = useTeamContext()
+  const offered = useOptions(name)
+  const chosen = filters[name].values as FilterValue<K>[]
+  // Something chosen that the menu no longer offers -- a person who left,
+  // a label deleted -- is still listed, so it can be unticked.
+  const options = [...offered, ...chosen.filter((value) => !offered.includes(value))]
+  const switchId = `filter-except-${name}`
+
   return (
-    <label className="block">
-      <span className="eyebrow mb-1 block">{label}</span>
-      {children}
-    </label>
+    <div>
+      <ul className="max-h-60 overflow-y-auto">
+        {options.map((value) => (
+          <li key={String(value)}>
+            <label className="nav-item cursor-pointer gap-2.5">
+              <input
+                type="checkbox"
+                checked={chosen.includes(value)}
+                onChange={() => onChange(toggleValue(filters, name, value, offered))}
+                className="h-3.5 w-3.5 shrink-0 accent-[var(--color-brand-600)]"
+              />
+              <OptionMark name={name} value={value} />
+              {name === 'label' ? (
+                <span
+                  className="chip"
+                  style={{
+                    ['--chip' as string]: lookups.labels.find((label) => label.id === value)?.color,
+                  }}
+                >
+                  {valueName(name, value, lookups)}
+                </span>
+              ) : (
+                <span className="min-w-0 truncate">{valueName(name, value, lookups)}</span>
+              )}
+            </label>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-1.5 space-y-2 border-t border-neutral-900/5 px-2.5 pt-2.5">
+        {name === 'label' && (
+          <div className="segmented" role="radiogroup" aria-label={t('filters.labelMatch.label')}>
+            {(['any', 'all'] as const).map((match) => (
+              <button
+                key={match}
+                type="button"
+                role="radio"
+                aria-checked={filters.label.match === match}
+                data-active={filters.label.match === match}
+                onClick={() => onChange({ ...filters, label: { ...filters.label, match } })}
+                className="segmented-item"
+              >
+                {t(`filters.labelMatch.${match}`)}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor={switchId} className="text-sm text-neutral-600">
+            {t(`filters.except.${name}`)}
+          </label>
+          <input
+            id={switchId}
+            type="checkbox"
+            role="switch"
+            className="switch"
+            checked={filters[name].exclude}
+            onChange={(e) =>
+              onChange({ ...filters, [name]: { ...filters[name], exclude: e.target.checked } })
+            }
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** The small mark before a value: an avatar, a status dot, an icon. */
+function OptionMark<K extends ManyKey>({ name, value }: { name: K; value: FilterValue<K> }) {
+  const { members, statuses } = useTeamContext()
+  if (name === 'assignee') {
+    if (value === 'unassigned') {
+      return (
+        <span
+          aria-hidden="true"
+          className="h-5 w-5 shrink-0 rounded-full border border-dashed border-neutral-400"
+        />
+      )
+    }
+    const user = members.find((member) => member.user.id === value)?.user
+    return user ? <Avatar user={user} size={20} decorative /> : null
+  }
+  if (name === 'status') {
+    const color = statuses.find((status) => status.id === value)?.color
+    return (
+      <span
+        aria-hidden="true"
+        className="h-2.5 w-2.5 shrink-0 rounded-full"
+        style={{ background: color }}
+      />
+    )
+  }
+  if (name === 'priority') {
+    return <PriorityIcon priority={value as FilterValue<'priority'>} size={13} />
+  }
+  if (name === 'type') {
+    const meta = TYPE_META[value as FilterValue<'type'>]
+    return <Icon name={meta.icon} size={13} style={{ color: meta.color }} />
+  }
+  return null
+}
+
+/** The filters that still take one value: a select, as before. */
+function OneSection({
+  name,
+  filters,
+  onChange,
+}: {
+  name: OneKey
+  filters: BoardFilters
+  onChange: (filters: BoardFilters) => void
+}) {
+  const { t } = useTranslation('board')
+  const { projects, sprints } = useTeamContext()
+  const set = (value: string) =>
+    onChange(
+      value === ''
+        ? withoutFilter(filters, name)
+        : {
+            ...filters,
+            [name]: name === 'due' ? (value as DueFilter) : Number(value),
+          },
+    )
+
+  return (
+    <div className="px-1.5 pt-0.5">
+      <Select
+        block
+        dense
+        aria-label={fieldName(name)}
+        value={filters[name] ?? ''}
+        onChange={(e) => set(e.target.value)}
+      >
+        {name === 'projectId' && (
+          <>
+            <option value="">{t('filters.any.project')}</option>
+            {pickableProjects(projects, filters.projectId).map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </>
+        )}
+        {name === 'sprintId' && (
+          <>
+            <option value="">{t('filters.any.sprint')}</option>
+            {sprints.map((sprint) => (
+              <option key={sprint.id} value={sprint.id}>
+                {sprint.display_name}
+              </option>
+            ))}
+          </>
+        )}
+        {name === 'due' && (
+          <>
+            <option value="">{t('filters.any.due')}</option>
+            {(Object.keys(DUE_FILTER_LABEL) as DueFilter[]).map((due) => (
+              <option key={due} value={due}>
+                {DUE_FILTER_LABEL[due]}
+              </option>
+            ))}
+          </>
+        )}
+      </Select>
+    </div>
   )
 }

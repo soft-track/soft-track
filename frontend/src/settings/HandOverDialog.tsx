@@ -47,7 +47,7 @@ export function HandOverDialog({
   const [error, setError] = useState<string | null>(null)
 
   const held = useListTicketsTeamsTeamIdTicketsGet(team.id, {
-    assignee_id: person.id,
+    assignee_id: [person.id],
     resolved: false,
     sort: 'created',
     direction: 'asc',

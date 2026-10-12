@@ -135,6 +135,11 @@ export const useCreateTicketTeamsTeamIdTicketsPost = <TError = HTTPValidationErr
       return useMutation(getCreateTicketTeamsTeamIdTicketsPostMutationOptions(options), queryClient);
     }
     /**
+ * One page of the team's tickets.
+ *
+ * A filter that takes several values repeats in the query string
+ * (`?assignee_id=3&assignee_id=4`): values in one filter are alternatives,
+ * and different filters narrow each other (#260).
  * @summary List Tickets
  */
 export const listTicketsTeamsTeamIdTicketsGet = (

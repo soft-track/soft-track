@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from collections.abc import Iterator
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 from typing import NamedTuple, Optional, Union
 
 from fastapi import HTTPException
@@ -26,25 +26,25 @@ from lib_softtrack.models.tickets import (
 )
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.models.statuses import StatusRead
+from lib_softtrack.models.views import ViewFilters
 from lib_softtrack.history import record_changes, record_creation, snapshot
 from lib_softtrack import notifications as notifications_service
 from lib_softtrack import automations as automations_service
 from lib_softtrack import integrations as integrations_service
 from lib_softtrack import reactions as reactions_service
 from lib_softtrack import rules as rules_service
+from lib_softtrack.filters import filter_clauses
 from lib_softtrack.links import open_blocker_counts
 from lib_softtrack.tables import (
     SprintAction,
     Comment,
     Sprint,
-    DueFilter,
     Ticket,
     TicketEvent,
     TicketLabelLink,
     TicketLink,
     TicketPriority,
     TicketSort,
-    TicketType,
     Label,
     Project,
     SortDirection,
@@ -340,19 +340,11 @@ def list_tickets(
     session: Session,
     current_user: User,
     team_id: int,
-    project_id: Optional[int] = None,
-    status_id: Optional[int] = None,
-    priority: Optional[TicketPriority] = None,
-    assignee_id: Optional[int] = None,
-    unassigned: bool = False,
-    label_id: Optional[int] = None,
+    filters: Optional[ViewFilters] = None,
     parent_id: Optional[int] = None,
-    sprint_id: Optional[int] = None,
-    due: Optional[DueFilter] = None,
     today: Optional[date] = None,
     due_from: Optional[date] = None,
     due_to: Optional[date] = None,
-    type: Optional[TicketType] = None,
     resolved: Optional[bool] = None,
     sort: TicketSort = TicketSort.created,
     direction: SortDirection = SortDirection.desc,
@@ -367,40 +359,26 @@ def list_tickets(
     fifty most recent", which is a different and much less useful thing, and
     silently so.
     """
-    filters = _build_ticket_filters(
-        session,
-        current_user,
-        team_id,
-        project_id=project_id,
-        status_id=status_id,
-        priority=priority,
-        assignee_id=assignee_id,
-        unassigned=unassigned,
-        label_id=label_id,
-        parent_id=parent_id,
-        sprint_id=sprint_id,
+    clauses = _build_ticket_filters(
+        session, current_user, team_id, filters, parent_id=parent_id, today=today
     )
-    if type is not None:
-        filters.append(Ticket.type == type)
     if resolved is not None:
         done_or_cancelled = in_category(*RESOLVED)
-        filters.append(done_or_cancelled if resolved else ~done_or_cancelled)
-    if due is not None:
-        filters.append(due_clause(due, today or datetime.now(timezone.utc).date()))
+        clauses.append(done_or_cancelled if resolved else ~done_or_cancelled)
     # A date range, both ends inclusive (#105): the calendar asks for the days
     # its grid shows. Either end alone is an open range.
     if due_from is not None:
-        filters.append(Ticket.due_date >= due_from)
+        clauses.append(Ticket.due_date >= due_from)
     if due_to is not None:
-        filters.append(Ticket.due_date <= due_to)
+        clauses.append(Ticket.due_date <= due_to)
 
     # `total` counts everything matching the filters, not the page, so the UI
     # can show "50 of 1,204" without a second request.
-    total = session.exec(select(func.count()).select_from(Ticket).where(*filters)).one()
+    total = session.exec(select(func.count()).select_from(Ticket).where(*clauses)).one()
 
     tickets = session.exec(
         select(Ticket)
-        .where(*filters)
+        .where(*clauses)
         .order_by(*_ordering(sort, direction, rank_order(session)))
         .offset(offset)
         .limit(limit)
@@ -418,14 +396,9 @@ def _build_ticket_filters(
     session: Session,
     current_user: User,
     team_id: int,
-    project_id: Optional[int] = None,
-    status_id: Optional[int] = None,
-    priority: Optional[TicketPriority] = None,
-    assignee_id: Optional[int] = None,
-    unassigned: bool = False,
-    label_id: Optional[int] = None,
+    filters: Optional[ViewFilters] = None,
     parent_id: Optional[int] = None,
-    sprint_id: Optional[int] = None,
+    today: Optional[date] = None,
 ) -> list[ColumnElement[bool]]:
     """The WHERE clauses for a team's ticket list, after checking who is asking.
 
@@ -437,61 +410,29 @@ def _build_ticket_filters(
     """
     get_team_or_404(team_id, session)
     require_team_member(team_id, current_user, session)
-    return ticket_clauses(
-        team_id,
-        project_id=project_id,
-        status_id=status_id,
-        priority=priority,
-        assignee_id=assignee_id,
-        unassigned=unassigned,
-        label_id=label_id,
-        parent_id=parent_id,
-        sprint_id=sprint_id,
-    )
+    return ticket_clauses(team_id, filters, parent_id=parent_id, today=today)
 
 
 def ticket_clauses(
     team_id: int,
-    project_id: Optional[int] = None,
-    status_id: Optional[int] = None,
-    priority: Optional[TicketPriority] = None,
-    assignee_id: Optional[int] = None,
-    unassigned: bool = False,
-    label_id: Optional[int] = None,
+    filters: Optional[ViewFilters] = None,
     parent_id: Optional[int] = None,
-    sprint_id: Optional[int] = None,
+    today: Optional[date] = None,
 ) -> list[ColumnElement[bool]]:
     """The WHERE clauses alone, with nobody asking: `_build_ticket_filters`
-    after its checks, and a share link (#245), whose reader has no account."""
-    filters: list[ColumnElement[bool]] = [Ticket.team_id == team_id]
-    if project_id is not None:
-        filters.append(Ticket.project_id == project_id)
-    if status_id is not None:
-        filters.append(Ticket.status_id == status_id)
-    if priority is not None:
-        filters.append(Ticket.priority == priority)
-    if unassigned:
-        # Distinct from leaving assignee_id null, which means "anybody".
-        filters.append(Ticket.assignee_id == None)  # noqa: E711 -- SQL IS NULL
-    elif assignee_id is not None:
-        filters.append(Ticket.assignee_id == assignee_id)
-    if label_id is not None:
-        # A subquery rather than a join: a ticket joined to its label links
-        # would come back once per matching link, so `list_tickets` would count
-        # it that many times and the export would repeat the row.
-        filters.append(
-            Ticket.id.in_(
-                select(TicketLabelLink.ticket_id).where(
-                    TicketLabelLink.label_id == label_id
-                )
-            )
+    after its checks, and a share link (#245), whose reader has no account.
+
+    `today` is the caller's own date, which a due filter is measured from;
+    UTC's today when it does not say.
+    """
+    clauses: list[ColumnElement[bool]] = [Ticket.team_id == team_id]
+    if filters is not None:
+        clauses.extend(
+            filter_clauses(filters, today or datetime.now(timezone.utc).date())
         )
     if parent_id is not None:
-        filters.append(Ticket.parent_id == parent_id)
-    if sprint_id is not None:
-        filters.append(Ticket.sprint_id == sprint_id)
-
-    return filters
+        clauses.append(Ticket.parent_id == parent_id)
+    return clauses
 
 
 #: How many tickets an export reads, expands and hands over at a time.
@@ -524,14 +465,9 @@ def export_tickets(
     session: Session,
     current_user: User,
     team_id: int,
-    project_id: Optional[int] = None,
-    status_id: Optional[int] = None,
-    priority: Optional[TicketPriority] = None,
-    assignee_id: Optional[int] = None,
-    unassigned: bool = False,
-    label_id: Optional[int] = None,
+    filters: Optional[ViewFilters] = None,
     parent_id: Optional[int] = None,
-    sprint_id: Optional[int] = None,
+    today: Optional[date] = None,
 ) -> Iterator[list[TicketExportRow]]:
     """Every ticket matching the filters, newest number first, in batches.
 
@@ -542,20 +478,10 @@ def export_tickets(
     lazy, because the caller is a streaming response: see
     `_export_batches` for why it opens a session of its own.
     """
-    filters = _build_ticket_filters(
-        session,
-        current_user,
-        team_id,
-        project_id=project_id,
-        status_id=status_id,
-        priority=priority,
-        assignee_id=assignee_id,
-        unassigned=unassigned,
-        label_id=label_id,
-        parent_id=parent_id,
-        sprint_id=sprint_id,
+    clauses = _build_ticket_filters(
+        session, current_user, team_id, filters, parent_id=parent_id, today=today
     )
-    return _export_batches(filters, session.get_bind(), outside.confined_to(session))
+    return _export_batches(clauses, session.get_bind(), outside.confined_to(session))
 
 
 def _export_batches(
@@ -864,19 +790,6 @@ def _ordering(sort: TicketSort, direction: SortDirection, rank) -> list:
             newest_first,
         ]
     return [key.desc() if descending else key.asc(), newest_first]
-
-
-def due_clause(due: DueFilter, today: date):
-    """One of the three due-date questions, as a condition on Ticket (#87)."""
-    if due == DueFilter.none:
-        return Ticket.due_date == None  # noqa: E711 -- SQL IS NULL
-    if due == DueFilter.overdue:
-        # Late only while it is still open: finished work is not overdue,
-        # however late it was finished.
-        return (Ticket.due_date < today) & ~in_category(*RESOLVED)
-    # Monday is 0, so this is the coming Sunday -- or today, on a Sunday.
-    end_of_week = today + timedelta(days=6 - today.weekday())
-    return (Ticket.due_date >= today) & (Ticket.due_date <= end_of_week)
 
 
 def move_ticket(

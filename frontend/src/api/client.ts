@@ -4,6 +4,9 @@ export const AUTH_TOKEN_STORAGE_KEY = 'softtrack.token'
 
 export const AXIOS_INSTANCE = Axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000',
+  // A list repeats its key, `?status_id=1&status_id=2`, which is what the API
+  // reads (#260). Axios would otherwise write `status_id[]=1`, which it does not.
+  paramsSerializer: { indexes: null },
 })
 
 AXIOS_INSTANCE.interceptors.request.use((config) => {

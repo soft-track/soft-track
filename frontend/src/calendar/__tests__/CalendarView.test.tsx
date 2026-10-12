@@ -72,7 +72,7 @@ function renderCalendar(url = '/ENG?month=2026-09', canWrite = true) {
               path="/ENG"
               element={
                 <>
-                  <CalendarView params={{ priority: 'high' }} canWrite={canWrite} />
+                  <CalendarView params={{ priority: ['high'] }} canWrite={canWrite} />
                   <Where />
                 </>
               }
@@ -113,7 +113,7 @@ describe('CalendarView', () => {
   it('asks for the days the grid shows, with the board filters', () => {
     renderCalendar()
     expect(mocks.params[1]).toMatchObject({
-      priority: 'high',
+      priority: ['high'],
       due_from: '2026-08-31',
       due_to: '2026-10-04',
     })

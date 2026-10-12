@@ -295,7 +295,41 @@ def test_deleting_a_status_widens_the_views_that_filtered_on_it(client, pair):
         f"/teams/{pair['team']['id']}/views", headers=pair["headers"]
     ).json()["items"]
     assert [row["id"] for row in listed] == [view["id"]]
-    assert listed[0]["filters"]["status_id"] is None
+    assert listed[0]["filters"]["status_id"] == []
+
+
+def test_deleting_one_of_a_views_statuses_keeps_the_others(client, pair):
+    """A view on several statuses (#260) loses only the one deleted -- and a
+    "not these" view that loses its last one loses its switch too."""
+    ids = {row["name"]: row["id"] for row in statuses(client, pair, pair["team"]["id"])}
+    both = client.post(
+        f"/teams/{pair['team']['id']}/views",
+        json={
+            "name": "Reviewing or done",
+            "filters": {"status_id": [ids["In Review"], ids["Done"]]},
+        },
+        headers=pair["headers"],
+    ).json()
+    not_review = client.post(
+        f"/teams/{pair['team']['id']}/views",
+        json={
+            "name": "Not in review",
+            "filters": {"status_id": [ids["In Review"]], "status_exclude": True},
+        },
+        headers=pair["headers"],
+    ).json()
+
+    delete_status(client, pair, ids["In Review"], ids["Todo"])
+
+    listed = {
+        row["id"]: row["filters"]
+        for row in client.get(
+            f"/teams/{pair['team']['id']}/views", headers=pair["headers"]
+        ).json()["items"]
+    }
+    assert listed[both["id"]]["status_id"] == [ids["Done"]]
+    assert listed[not_review["id"]]["status_id"] == []
+    assert listed[not_review["id"]]["status_exclude"] is False
 
 
 def test_a_member_cannot_delete_a_status(client, pair):

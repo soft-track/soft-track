@@ -259,6 +259,19 @@ class DueFilter(str, enum.Enum):
     none = "none"
 
 
+class LabelMatch(str, enum.Enum):
+    """How a filter on several labels reads them (#260).
+
+    The one filter with a second question: a ticket carries many labels, so
+    "Bug and Design" can mean either pile or only the design bugs.
+    """
+
+    #: Tickets carrying at least one of the labels.
+    any = "any"
+    #: Tickets carrying every one of them.
+    all = "all"
+
+
 class TeamRole(str, enum.Enum):
     """What someone may do inside one team.
 
@@ -1419,17 +1432,18 @@ class Notification(SQLModel, table=True):
 class SavedView(SQLModel, table=True):
     """A named set of filters over one team's tickets.
 
-    The filters are columns rather than a JSON blob. The set is small, fixed
-    and already described by enums the API publishes, so columns get typed
-    request and response models -- and therefore a typed frontend client --
-    where a blob would reach the browser as `unknown`. Foreign keys also mean
-    a view cannot outlive the label or sprint it filters on without somebody
-    having to decide what happens, which is the conversation a blob quietly
-    skips.
+    Each filter is a list (#260): several values in one filter are
+    alternatives, and different filters narrow each other. The lists are JSON
+    columns rather than a link table per filter, because a view is read and
+    written whole and never searched by what it filters on. What the foreign
+    keys used to stand for is kept where it always really lived -- in the code
+    that deletes or merges a status or a label, which takes it out of every
+    view's list (lib_softtrack/statuses.py, lib_softtrack/labels.py). The API
+    still publishes each list with its enum or id type, so the frontend client
+    stays typed.
 
-    Every field is nullable and null means "no opinion", so a view with
-    nothing set is "all tickets" rather than a contradiction that matches
-    nothing.
+    Empty everywhere means "no opinion", so a view with nothing set is "all
+    tickets" rather than a contradiction that matches nothing.
     """
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -1441,21 +1455,45 @@ class SavedView(SQLModel, table=True):
     #: is a tracker where people paste URLs to each other instead.
     is_shared: bool = Field(default=False, index=True)
 
-    #: Cleared when the status is deleted -- see lib_softtrack/statuses.py.
-    status_id: Optional[int] = Field(default=None, foreign_key="workflowstatus.id")
-    priority: Optional[TicketPriority] = None
-    assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
-    #: Distinct from `assignee_id is None`, which means "any assignee". The two
-    #: are mutually exclusive and the request model rejects setting both.
+    #: Status ids. Cleared of a status when it is deleted -- see
+    #: lib_softtrack/statuses.py.
+    status_ids: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: Each `*_exclude` turns its filter round: every value except these.
+    status_exclude: bool = Field(default=False)
+    #: `TicketPriority` values.
+    priorities: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    priority_exclude: bool = Field(default=False)
+    #: User ids.
+    assignee_ids: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: Nobody assigned, as one more choice beside `assignee_ids`: alone it is
+    #: "unassigned", with them it is "Mei, or nobody".
     unassigned: bool = Field(default=False)
-    label_id: Optional[int] = Field(default=None, foreign_key="label.id")
+    assignee_exclude: bool = Field(default=False)
+    #: Label ids. Merged or cleared with the label -- see lib_softtrack/labels.py.
+    label_ids: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: Every one of the labels rather than any of them (`LabelMatch.all`).
+    label_all: bool = Field(default=False)
+    label_exclude: bool = Field(default=False)
+    #: `TicketType` values.
+    types: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    type_exclude: bool = Field(default=False)
+
     project_id: Optional[int] = Field(default=None, foreign_key="project.id")
     #: Cleared when the sprint is deleted -- see lib_softtrack/sprints.py. A view
     #: pointing at a sprint that no longer exists would match nothing and look
     #: broken rather than empty.
     sprint_id: Optional[int] = Field(default=None, foreign_key="sprint.id")
     due: Optional[DueFilter] = None
-    type: Optional[TicketType] = None
 
     #: Not a filter -- it narrows nothing -- but part of what a view *is*: the
     #: same tickets read very differently by column and by project.

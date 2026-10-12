@@ -121,6 +121,7 @@ export * from './joinRequestApprove';
 export * from './joinRequestCreate';
 export * from './joinRequestRead';
 export * from './labelCreate';
+export * from './labelMatch';
 export * from './labelRead';
 export * from './labelUpdate';
 export * from './labelUsage';

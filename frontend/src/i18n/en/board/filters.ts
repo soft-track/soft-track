@@ -2,7 +2,7 @@
 export const filters = {
   button: 'Filter',
   dialogLabel: 'Filter tickets',
-  clearAll: 'Clear',
+  clearAll: 'Clear all',
   saveView: 'Save view',
   /** What is being filtered on: the popover's field labels and each chip's first word. */
   fields: {
@@ -15,17 +15,28 @@ export const filters = {
     type: 'Type',
     due: 'Due',
   },
-  /** The ×'s label on each chip, by the filter it clears. */
-  clearChip: {
-    statusId: 'Clear status filter',
-    priority: 'Clear priority filter',
-    assignee: 'Clear assignee filter',
-    labelId: 'Clear label filter',
-    projectId: 'Clear epic filter',
-    sprintId: 'Clear sprint filter',
-    type: 'Clear type filter',
-    due: 'Clear due filter',
+  /** The × beside each value in a chip: "Remove Mei Tanaka from the assignee filter". */
+  removeValue: 'Remove {{value}} from the {{field}} filter',
+  /** Between the values in a chip: "Mei or Daniel"; labels that must all be there: "Bug and Design". */
+  or: 'or',
+  and: 'and',
+  /** Before the values of a filter that excludes them: "not Done". */
+  not: 'not',
+  /** Each filter's switch in the menu, which turns it round (#260). */
+  except: {
+    status: 'Every status except these',
+    priority: 'Every priority except these',
+    assignee: 'Everyone except these',
+    label: 'Every ticket without these',
+    type: 'Every type except these',
   },
+  /** The label filter's second question. */
+  labelMatch: {
+    label: 'Match',
+    any: 'Any of these',
+    all: 'All of these',
+  },
+  /** A menu section's summary when nothing is chosen in it. */
   any: {
     status: 'Any status',
     priority: 'Any priority',

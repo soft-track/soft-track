@@ -15,6 +15,7 @@ import {
   fromSearchParams,
   fromViewFilters,
   sameFilters,
+  searchString,
   toQueryParams,
   toSearchParams,
 } from '@/board/filters'
@@ -120,7 +121,7 @@ export default function BoardPage() {
   // The URL is the filter state, not a copy of it. That is what makes any
   // board someone is looking at a link they can paste, and it gets working
   // back and forward buttons for free.
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()
   const filters = useMemo(() => fromSearchParams(searchParams), [searchParams])
   const grouping = groupingFromSearchParams(searchParams)
   const sort = sortFromSearchParams(searchParams)
@@ -133,15 +134,17 @@ export default function BoardPage() {
       nextSort: BoardSort,
       options?: { replace: boolean },
     ) =>
-      setSearchParams((current) => {
-        const next = withSort(withGrouping(toSearchParams(nextFilters), nextGrouping), nextSort)
-        // The calendar's month (#105) is not a filter, but narrowing the
-        // calendar should not also jump it back to this month.
-        const month = current.get('month')
-        if (month) next.set('month', month)
-        return next
-      }, options),
-    [setSearchParams],
+    {
+      const next = withSort(withGrouping(toSearchParams(nextFilters), nextGrouping), nextSort)
+      // The calendar's month (#105) is not a filter, but narrowing the
+      // calendar should not also jump it back to this month.
+      const month = searchParams.get('month')
+      if (month) next.set('month', month)
+      // Navigated to rather than set, so an excluded filter reads `status!=5`
+      // in the address bar instead of `status%21=5` (#260).
+      navigate({ pathname: location.pathname, search: searchString(next) }, options)
+    },
+    [navigate, location.pathname, searchParams],
   )
   /** Undefined leaves the arrangement as it is; a saved view brings its own. */
   const setFilters = useCallback(

@@ -143,17 +143,18 @@ def label_usage(session: Session, current_user: User, team_id: int) -> list[Labe
     )
     views: dict[int, list[NamedRef]] = {}
     hidden: dict[int, int] = {}
+    # A view names its labels in a list (#260), so the team's views are read
+    # and the lists checked here; a team has tens of views, not thousands.
     for view in session.exec(
-        select(SavedView)
-        .where(SavedView.label_id.in_(label_ids))
-        .order_by(SavedView.name)
+        select(SavedView).where(SavedView.team_id == team_id).order_by(SavedView.name)
     ).all():
-        if view.is_shared or view.owner_id == current_user.id:
-            views.setdefault(view.label_id, []).append(
-                NamedRef(id=view.id, name=view.name)
-            )
-        else:
-            hidden[view.label_id] = hidden.get(view.label_id, 0) + 1
+        for label_id in view.label_ids:
+            if view.is_shared or view.owner_id == current_user.id:
+                views.setdefault(label_id, []).append(
+                    NamedRef(id=view.id, name=view.name)
+                )
+            else:
+                hidden[label_id] = hidden.get(label_id, 0) + 1
     rules: dict[int, list[NamedRef]] = {}
     for rule in session.exec(
         select(AutomationRule)
@@ -245,10 +246,13 @@ def _merge(session: Session, label: Label, target: Label) -> None:
         session.delete(link)
         if link.ticket_id not in already:
             session.add(TicketLabelLink(ticket_id=link.ticket_id, label_id=target.id))
-    for view in session.exec(
-        select(SavedView).where(SavedView.label_id == label.id)
-    ).all():
-        view.label_id = target.id
+    for view in _views_naming(session, label):
+        merged: list[int] = []
+        for label_id in view.label_ids:
+            label_id = target.id if label_id == label.id else label_id
+            if label_id not in merged:
+                merged.append(label_id)
+        view.label_ids = merged
         session.add(view)
     for rule in _rules_naming(session, label):
         if rule.if_label_id == label.id:
@@ -264,10 +268,12 @@ def _remove(session: Session, label: Label) -> None:
         select(TicketLabelLink).where(TicketLabelLink.label_id == label.id)
     ).all():
         session.delete(link)
-    for view in session.exec(
-        select(SavedView).where(SavedView.label_id == label.id)
-    ).all():
-        view.label_id = None
+    for view in _views_naming(session, label):
+        view.label_ids = [kept for kept in view.label_ids if kept != label.id]
+        # A list left empty is no filter, and its switches go with it.
+        if not view.label_ids:
+            view.label_exclude = False
+            view.label_all = False
         session.add(view)
     for rule in _rules_naming(session, label):
         if rule.if_label_id == label.id:
@@ -277,6 +283,17 @@ def _remove(session: Session, label: Label) -> None:
         rule.is_enabled = False
         session.add(rule)
     session.flush()
+
+
+def _views_naming(session: Session, label: Label) -> list[SavedView]:
+    """The team's saved views whose label filter lists this label."""
+    return [
+        view
+        for view in session.exec(
+            select(SavedView).where(SavedView.team_id == label.team_id)
+        ).all()
+        if label.id in view.label_ids
+    ]
 
 
 def _rules_naming(session: Session, label: Label) -> list[AutomationRule]:

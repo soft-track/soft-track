@@ -96,14 +96,13 @@ const TEAM: TeamContextValue = {
 
 /** Every filter set at once, so one export pins the whole mapping. */
 const ALL_FILTERS: BoardFilters = {
-  statusId: 3,
-  priority: 'high',
-  assignee: 'unassigned',
-  labelId: LABEL.id,
+  ...NO_FILTERS,
+  status: { values: [3], exclude: false },
+  priority: { values: ['high'], exclude: false },
+  assignee: { values: ['unassigned'], exclude: false },
+  label: { values: [LABEL.id], exclude: false, match: 'any' },
   projectId: PROJECT.id,
   sprintId: SPRINT.id,
-  due: null,
-  type: null,
 }
 
 function renderTopBar({
@@ -144,7 +143,8 @@ function requestedUrl() {
   expect(get).toHaveBeenCalledTimes(1)
   const [url, config] = get.mock.calls[0]
   const [path, query = ''] = String(url).split('?')
-  return { path, params: Object.fromEntries(new URLSearchParams(query)), config }
+  const search = new URLSearchParams(query)
+  return { path, params: Object.fromEntries(search), search, config }
 }
 
 type Download = { href: string | null; download: string; mounted: boolean }
@@ -226,10 +226,32 @@ describe('TopBar export', () => {
   })
 
   it('sends a named assignee as an id', async () => {
-    const user = renderTopBar({ filters: { ...NO_FILTERS, assignee: 10 } })
+    const user = renderTopBar({
+      filters: { ...NO_FILTERS, assignee: { values: [10], exclude: false } },
+    })
     await user.click(exportButton())
 
     expect(requestedUrl().params).toEqual({ assignee_id: '10' })
+  })
+
+  it('repeats a filter of several values, with its switches (#260)', async () => {
+    const user = renderTopBar({
+      filters: {
+        ...NO_FILTERS,
+        assignee: { values: ['unassigned', 10, 11], exclude: false },
+        status: { values: [3], exclude: true },
+        label: { values: [4, 8], exclude: false, match: 'all' },
+      },
+    })
+    await user.click(exportButton())
+
+    const { search } = requestedUrl()
+    expect(search.getAll('assignee_id')).toEqual(['10', '11'])
+    expect(search.get('unassigned')).toBe('true')
+    expect(search.getAll('status_id')).toEqual(['3'])
+    expect(search.get('status_exclude')).toBe('true')
+    expect(search.getAll('label_id')).toEqual(['4', '8'])
+    expect(search.get('label_match')).toBe('all')
   })
 
   it('hands the returned CSV to the browser as a download', async () => {

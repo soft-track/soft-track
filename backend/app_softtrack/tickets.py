@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
+from app_softtrack.filter_params import ticket_filters
 from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_identity.models.identity import UserPublic
@@ -32,16 +33,14 @@ from lib_softtrack.models.tickets import (
 )
 from lib_softtrack.models.links import TicketLinkCreate, TicketLinkRead, TicketLinks
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
+from lib_softtrack.models.views import ViewFilters
 from lib_softtrack.models.transfers import (
     TicketTransfer,
     TransferPlan,
     TransferResult,
 )
 from lib_softtrack.tables import (
-    DueFilter,
-    TicketPriority,
     TicketSort,
-    TicketType,
     SortDirection,
     User,
 )
@@ -161,20 +160,9 @@ def create_ticket(
 @router.get("/teams/{team_id}/tickets", response_model=Page[TicketRead])
 def list_tickets(
     team_id: int,
-    project_id: Optional[int] = None,
-    status_id: Optional[int] = Query(None, description="Only tickets in this status."),
-    priority: Optional[TicketPriority] = None,
-    assignee_id: Optional[int] = None,
-    unassigned: bool = Query(
-        False, description="Only tickets with nobody assigned. Overrides assignee_id."
-    ),
-    label_id: Optional[int] = Query(None, description="Only tickets with this label."),
+    filters: ViewFilters = Depends(ticket_filters),
     parent_id: Optional[int] = Query(
         None, description="Only sub-tickets of this ticket."
-    ),
-    sprint_id: Optional[int] = Query(None, description="Only tickets in this sprint."),
-    due: Optional[DueFilter] = Query(
-        None, description="Overdue, due this week, or with no due date."
     ),
     today: Optional[date] = Query(
         None,
@@ -190,7 +178,6 @@ def list_tickets(
     due_to: Optional[date] = Query(
         None, description="Only tickets due on or before this day."
     ),
-    type: Optional[TicketType] = Query(None, description="Only tickets of this type."),
     resolved: Optional[bool] = Query(
         None,
         description="true for only done and cancelled tickets, false for only "
@@ -206,23 +193,21 @@ def list_tickets(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
+    """One page of the team's tickets.
+
+    A filter that takes several values repeats in the query string
+    (`?assignee_id=3&assignee_id=4`): values in one filter are alternatives,
+    and different filters narrow each other (#260).
+    """
     return tickets_service.list_tickets(
         session,
         current_user,
         team_id,
-        project_id=project_id,
-        status_id=status_id,
-        priority=priority,
-        assignee_id=assignee_id,
-        unassigned=unassigned,
-        label_id=label_id,
+        filters,
         parent_id=parent_id,
-        sprint_id=sprint_id,
-        due=due,
         today=today,
         due_from=due_from,
         due_to=due_to,
-        type=type,
         resolved=resolved,
         sort=sort,
         direction=direction,
@@ -280,18 +265,13 @@ def bulk_delete_tickets(
 )
 def export_tickets_csv(
     team_id: int,
-    project_id: Optional[int] = None,
-    status_id: Optional[int] = Query(None, description="Only tickets in this status."),
-    priority: Optional[TicketPriority] = None,
-    assignee_id: Optional[int] = None,
-    unassigned: bool = Query(
-        False, description="Only tickets with nobody assigned. Overrides assignee_id."
-    ),
-    label_id: Optional[int] = Query(None, description="Only tickets with this label."),
+    filters: ViewFilters = Depends(ticket_filters),
     parent_id: Optional[int] = Query(
         None, description="Only sub-tickets of this ticket."
     ),
-    sprint_id: Optional[int] = Query(None, description="Only tickets in this sprint."),
+    today: Optional[date] = Query(
+        None, description="The caller's own date, which `due` is measured from."
+    ),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
@@ -303,17 +283,7 @@ def export_tickets_csv(
     affordable -- nothing here, or under it, holds the whole team's tickets.
     """
     batches = tickets_service.export_tickets(
-        session,
-        current_user,
-        team_id,
-        project_id=project_id,
-        status_id=status_id,
-        priority=priority,
-        assignee_id=assignee_id,
-        unassigned=unassigned,
-        label_id=label_id,
-        parent_id=parent_id,
-        sprint_id=sprint_id,
+        session, current_user, team_id, filters, parent_id=parent_id, today=today
     )
     # Read now, on the request's session, like the filters: the columns are
     # the header, which goes out before any ticket is read.

@@ -119,7 +119,7 @@ describe('The people pages’ frame', () => {
     renderLayout()
     act(() =>
       sidebarProps().onFiltersChange(
-        { ...NO_FILTERS, priority: 'urgent' },
+        { ...NO_FILTERS, priority: { values: ['urgent'], exclude: false } },
         { grouping: 'project', sort: { sort: 'priority', direction: 'desc' } },
       ),
     )
