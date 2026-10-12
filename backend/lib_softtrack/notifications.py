@@ -317,7 +317,7 @@ def _own(actor: Optional[User]) -> set[int]:
 def on_ticket_created(
     session: Session,
     ticket: Ticket,
-    actor: User,
+    actor: Optional[User],
     named: Optional[dict[int, CustomField]] = None,
 ) -> None:
     """Filing a ticket watches it; assigning it to someone tells them, and so
@@ -326,11 +326,15 @@ def on_ticket_created(
     A mention does not auto-watch. Being named in a description is somebody
     else's decision about you, and it is a weaker signal than the three things
     you did yourself.
+
+    No actor is a ticket a schedule created (#264): nobody filed it, so
+    nobody watches it for having filed it, and its assignee is told.
     """
-    auto_watch(session, ticket.id, actor.id)
+    if actor is not None:
+        auto_watch(session, ticket.id, actor.id)
 
     assigned: set[int] = set()
-    if ticket.assignee_id and ticket.assignee_id != actor.id:
+    if ticket.assignee_id and ticket.assignee_id not in _own(actor):
         assigned = {ticket.assignee_id}
         auto_watch(session, ticket.id, ticket.assignee_id)
         _raise(
@@ -345,7 +349,7 @@ def on_ticket_created(
     mentioned = mentioned_user_ids(session, ticket.team_id, ticket.description)
     _raise(
         session,
-        recipients=mentioned - assigned - {actor.id},
+        recipients=mentioned - assigned - _own(actor),
         kind=NotificationKind.mentioned,
         ticket=ticket,
         actor=actor,

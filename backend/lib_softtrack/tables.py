@@ -240,6 +240,11 @@ class TicketEventField(str, enum.Enum):
     #: Moved to the trash, or restored from it (#323). The new value is when
     #: it went in, as ISO text; restoring writes an empty one.
     trash = "trash"
+    #: Created by a schedule (#264). The new value is the schedule's name as
+    #: it was then, so the line survives the schedule being renamed or
+    #: removed. Never an opening value: it is the line the Activity feed
+    #: shows for how the ticket began.
+    schedule = "schedule"
 
 
 class DueFilter(str, enum.Enum):
@@ -1819,6 +1824,95 @@ class AutomationRun(SQLModel, table=True):
     #: is now, which is exactly the question the log is not being asked.
     summary: str
     created_at: datetime = Field(default_factory=utcnow, index=True)
+
+
+class TicketSchedule(SQLModel, table=True):
+    """Work that comes back on a date (#264): what to create, and when.
+
+    The ninth thing that can start work, beside the eight triggers of an
+    automation rule, and the only one nobody has to remember. It creates an
+    ordinary ticket through the ordinary path (`tickets.create_scheduled`),
+    and from there the ticket is a ticket like any other; the schedule keeps
+    no hold on it beyond the `ScheduleRun` that says it made it.
+
+    **What it creates** is the ticket's own fields, as columns. Labels are a
+    JSON list of ids, read through the team's labels when a ticket is made,
+    so a deleted label drops out without anything having to clear it here.
+    The description is text: a template fills it in the dialog and nothing
+    remembers which (see TicketTemplate).
+
+    **When** is a frequency and what that frequency needs: weekdays and an
+    interval in weeks, or a day of the month -- a date, or its first or last
+    working day -- for a month, a quarter (January, April, July, October) or
+    a year (`month`). No cron syntax. `starts_on` is the week an interval of
+    weeks counts from; `active_since` is the first day an occurrence may be
+    for, moved to the day it is switched back on so a paused schedule does not
+    make up for the weeks it was off.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+
+    title: str = Field(max_length=200)
+    description: Optional[str] = None
+    type: TicketType = Field(default=TicketType.task)
+    priority: TicketPriority = Field(default=TicketPriority.no_priority)
+    #: Created unassigned once this person is no longer on the team, or no
+    #: longer active; the schedule keeps the name for when they are back.
+    assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    label_ids: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: The epic. Cleared when the epic is purged from the trash.
+    project_id: Optional[int] = Field(default=None, foreign_key="project.id")
+    estimate: Optional[int] = None
+    #: A due date this many days after the day the ticket is created; none
+    #: when null.
+    due_after_days: Optional[int] = None
+    #: Into the active sprint, or the backlog when there is none.
+    into_active_sprint: bool = Field(default=False)
+
+    #: `lib_softtrack.schedules.Frequency`.
+    frequency: str = Field(max_length=10)
+    #: Every this many weeks; 1 for every other frequency.
+    interval: int = Field(default=1)
+    #: Monday is 0, as Python counts them. For a weekly schedule.
+    weekdays: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: `lib_softtrack.schedules.MonthDay`, for a month, a quarter or a year.
+    month_day: Optional[str] = Field(default=None, max_length=20)
+    #: 1 to 31 when `month_day` is a date; the 31st of a short month is its
+    #: last day.
+    day_of_month: Optional[int] = None
+    #: 1 to 12, for a yearly schedule.
+    month: Optional[int] = None
+    #: Only once the ticket it made last is done or cancelled.
+    wait_for_previous: bool = Field(default=False)
+
+    starts_on: date
+    active_since: date
+    paused_at: Optional[datetime] = None
+    paused_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
+class ScheduleRun(SQLModel, table=True):
+    """One occurrence of a schedule, claimed (#264), and the ticket it made.
+
+    Keyed by schedule and day, and inserted *before* the ticket is created,
+    the way a `DueReminder` is: two workers waking at once both insert the
+    same key and only one insert takes, so each occurrence makes one ticket.
+    `ticket_id` is filled once the ticket exists, and cleared if the ticket
+    is purged -- the claim stays, so the occurrence is not made again.
+    """
+
+    schedule_id: int = Field(foreign_key="ticketschedule.id", primary_key=True)
+    occurs_on: date = Field(primary_key=True)
+    ticket_id: Optional[int] = Field(default=None, foreign_key="ticket.id", index=True)
+    claimed_at: datetime = Field(default_factory=utcnow)
 
 
 class Repository(SQLModel, table=True):

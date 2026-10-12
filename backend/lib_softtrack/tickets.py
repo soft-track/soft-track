@@ -36,11 +36,13 @@ from lib_softtrack import rules as rules_service
 from lib_softtrack.filters import filter_clauses
 from lib_softtrack.links import open_blocker_counts
 from lib_softtrack.tables import (
+    ScheduleRun,
     SprintAction,
     Comment,
     Sprint,
     Ticket,
     TicketEvent,
+    TicketEventField,
     TicketLabelLink,
     TicketLink,
     TicketPriority,
@@ -271,6 +273,55 @@ def create_ticket(
     )
     custom_fields_service.require_filled(session, team_id, payload.type, field_changes)
 
+    ticket = _insert_ticket(
+        session, team, payload, creator=current_user, actor=current_user
+    )
+    applied = custom_fields_service.write(
+        session, ticket, field_changes, current_user, record=False
+    )
+    return _announce_creation(session, ticket, payload, current_user, applied.named)
+
+
+def create_scheduled(
+    session: Session, team: Team, payload: TicketCreate, creator: User, name: str
+) -> Ticket:
+    """A ticket a schedule creates (#264), down the path a person's takes.
+
+    The same number, history, notifications, webhooks and rules; what
+    differs is who. Nobody did it, so the actor of all of that is null, as it
+    is for an automation rule, and the history opens with which schedule
+    created it. The creator is whoever wrote the schedule: the column needs
+    somebody, and that is who asked for the ticket. The caller has already
+    decided the fields -- an assignee who left is nobody, the active sprint
+    or the backlog -- and a schedule has no values for the team's own fields,
+    so a required one is left empty, as an import leaves it (#117), and a
+    column's limit does not hold it back, as it does not an import (#270):
+    work that comes back on a date arrives on the date.
+    """
+    ticket = _insert_ticket(session, team, payload, creator=creator, actor=None)
+    session.add(
+        TicketEvent(
+            ticket_id=ticket.id,
+            team_id=ticket.team_id,
+            field=TicketEventField.schedule,
+            new_value=name,
+            actor_id=None,
+            created_at=ticket.created_at,
+        )
+    )
+    _announce_creation(session, ticket, payload, None, {})
+    return ticket
+
+
+def _insert_ticket(
+    session: Session,
+    team: Team,
+    payload: TicketCreate,
+    creator: User,
+    actor: Optional[User],
+) -> Ticket:
+    """Number the ticket, write it and its opening history, and commit."""
+    team_id = team.id
     number = team.next_ticket_number
     team.next_ticket_number = number + 1
     session.add(team)
@@ -293,31 +344,38 @@ def create_ticket(
         due_date=payload.due_date,
         # On top of its column, where a new card is looked for.
         rank=top_rank(session, team_id),
-        creator_id=current_user.id,
+        creator_id=creator.id,
     )
 
     if payload.parent_id is not None:
         ticket.parent_id = validate_parent(session, ticket, payload.parent_id).id
-    # A new ticket is new work in its column too (#270).
-    wip.require_room(session, team_id, ticket.status_id, [(None, ticket.parent_id)])
+    # A new ticket is new work in its column too (#270) -- when somebody
+    # files it; see `create_scheduled` for the one that arrives on a date.
+    if actor is not None:
+        wip.require_room(session, team_id, ticket.status_id, [(None, ticket.parent_id)])
 
     session.add(ticket)
     session.commit()
     session.refresh(ticket)
+    record_creation(session, ticket, actor)
+    return ticket
 
-    applied = custom_fields_service.write(
-        session, ticket, field_changes, current_user, record=False
-    )
-    record_creation(session, ticket, current_user)
-    notifications_service.on_ticket_created(
-        session, ticket, current_user, named=applied.named
-    )
+
+def _announce_creation(
+    session: Session,
+    ticket: Ticket,
+    payload: TicketCreate,
+    actor: Optional[User],
+    named: dict,
+) -> TicketRead:
+    """Tell the people, the webhooks and the rules about a new ticket."""
+    notifications_service.on_ticket_created(session, ticket, actor, named=named)
     outbound.emit(
         session,
         ticket.team_id,
         WebhookEvent.ticket_created,
         lambda: {"ticket": ticket_to_read(ticket, session)},
-        current_user,
+        actor,
     )
     session.commit()
 
@@ -329,7 +387,7 @@ def create_ticket(
     # match on a label, and one that fired before the labels were attached
     # would be reading a ticket that does not exist yet as far as the person
     # filing it is concerned.
-    rules_service.on_ticket_created(session, ticket, current_user)
+    rules_service.on_ticket_created(session, ticket, actor)
     session.commit()
     session.refresh(ticket)
 
@@ -884,6 +942,13 @@ def _delete_rows(session: Session, ticket: Ticket) -> list[str]:
         select(SprintAction).where(SprintAction.ticket_id == ticket_id)
     ).all():
         session.delete(action)
+    # And the schedule that made it (#264) forgets which ticket it was, but
+    # not that the day was done: the claim stays, so it is not made again.
+    for run in session.exec(
+        select(ScheduleRun).where(ScheduleRun.ticket_id == ticket_id)
+    ).all():
+        run.ticket_id = None
+        session.add(run)
     session.flush()
 
     # Attachments before comments: a comment attachment holds a foreign key to

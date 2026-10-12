@@ -44,6 +44,7 @@ import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 import { Select } from '@/ui/Select'
+import { TeamSchedules } from '@/settings/TeamSchedules'
 import { useFocusTrap } from '@/ui/useFocusTrap'
 
 /** How much of the log the page shows. Older runs are in the table, not here. */
@@ -238,6 +239,14 @@ function Automation({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
           <p className="mt-4 text-xs text-neutral-400">{t('automation.adminsOnly')}</p>
         )}
       </div>
+
+      <TeamSchedules
+        team={team}
+        isAdmin={isAdmin}
+        members={members}
+        labels={labels}
+        projects={projects}
+      />
 
       <RunLog
         runs={runs.data?.items ?? []}

@@ -10409,6 +10409,211 @@
         }
       }
     },
+    "/teams/{team_id}/ticket-schedules": {
+      "get": {
+        "tags": [
+          "schedules"
+        ],
+        "summary": "List Schedules",
+        "description": "Every schedule on the team, paused or not (#264). Readable by every\nmember, written by its admins.",
+        "operationId": "list_schedules_teams__team_id__ticket_schedules_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScheduleRead"
+                  },
+                  "title": "Response List Schedules Teams  Team Id  Ticket Schedules Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "schedules"
+        ],
+        "summary": "Create Schedule",
+        "description": "Add a schedule. Team admins only, like the automation rules.",
+        "operationId": "create_schedule_teams__team_id__ticket_schedules_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleFields"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ticket-schedules/{schedule_id}": {
+      "patch": {
+        "tags": [
+          "schedules"
+        ],
+        "summary": "Update Schedule",
+        "description": "Pause it, switch it back on, or rewrite it.",
+        "operationId": "update_schedule_ticket_schedules__schedule_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Schedule Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "schedules"
+        ],
+        "summary": "Delete Schedule",
+        "description": "Remove a schedule. The tickets it made stay.",
+        "operationId": "delete_schedule_ticket_schedules__schedule_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Schedule Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/teams/{team_id}/repositories": {
       "get": {
         "tags": [
@@ -16897,6 +17102,18 @@
         ],
         "title": "ForgotPassword"
       },
+      "Frequency": {
+        "type": "string",
+        "enum": [
+          "daily",
+          "weekly",
+          "monthly",
+          "quarterly",
+          "yearly"
+        ],
+        "title": "Frequency",
+        "description": "How often a schedule comes round (#264). No cron syntax."
+      },
       "GitProvider": {
         "type": "string",
         "enum": [
@@ -17577,6 +17794,16 @@
         ],
         "title": "MonthCost",
         "description": "One currency's approved payroll in one month."
+      },
+      "MonthDay": {
+        "type": "string",
+        "enum": [
+          "date",
+          "first_working_day",
+          "last_working_day"
+        ],
+        "title": "MonthDay",
+        "description": "Which day of the month a monthly, quarterly or yearly schedule is on.\n\nA working day is Monday to Friday; there is no holiday calendar."
       },
       "MyJoinRequest": {
         "properties": {
@@ -21167,6 +21394,478 @@
         "title": "SavedViews",
         "description": "The whole sidebar in one response.\n\nThe defaults come back with the list rather than from their own endpoint\nbecause the sidebar cannot render a row without knowing whether it is\nstarred, and a second request would mean a frame where none of them are."
       },
+      "ScheduleFields": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TicketType",
+            "default": "task"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TicketPriority",
+            "default": "no_priority"
+          },
+          "assignee_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Id"
+          },
+          "label_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Label Ids",
+            "default": []
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              null,
+              1,
+              2,
+              3,
+              5,
+              8
+            ],
+            "title": "Estimate",
+            "description": "Story points on the scale 1, 2, 3, 5, 8. Null means not sized yet, which is distinct from an estimate of zero."
+          },
+          "due_after_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 365.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due After Days"
+          },
+          "into_active_sprint": {
+            "type": "boolean",
+            "title": "Into Active Sprint",
+            "default": false
+          },
+          "frequency": {
+            "$ref": "#/components/schemas/Frequency"
+          },
+          "interval": {
+            "type": "integer",
+            "maximum": 52.0,
+            "minimum": 1.0,
+            "title": "Interval",
+            "default": 1
+          },
+          "weekdays": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Weekdays",
+            "default": []
+          },
+          "month_day": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MonthDay"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "day_of_month": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 31.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Of Month"
+          },
+          "month": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 12.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Month"
+          },
+          "wait_for_previous": {
+            "type": "boolean",
+            "title": "Wait For Previous",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "frequency"
+        ],
+        "title": "ScheduleFields",
+        "description": "What a schedule creates, how often, and where it lands.\n\nThe whole form, sent whole: the dialog writes every field, so a create\nand an edit are the same shape, and the questions about the combination\n-- weekdays for a week, a day for a month -- are asked once, here. What a\nfrequency does not use is cleared rather than kept, so a schedule read\nback says only what it means."
+      },
+      "ScheduleRead": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TicketType",
+            "default": "task"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TicketPriority",
+            "default": "no_priority"
+          },
+          "assignee_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Id"
+          },
+          "label_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Label Ids",
+            "default": []
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              null,
+              1,
+              2,
+              3,
+              5,
+              8
+            ],
+            "title": "Estimate",
+            "description": "Story points on the scale 1, 2, 3, 5, 8. Null means not sized yet, which is distinct from an estimate of zero."
+          },
+          "due_after_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 365.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due After Days"
+          },
+          "into_active_sprint": {
+            "type": "boolean",
+            "title": "Into Active Sprint",
+            "default": false
+          },
+          "frequency": {
+            "$ref": "#/components/schemas/Frequency"
+          },
+          "interval": {
+            "type": "integer",
+            "maximum": 52.0,
+            "minimum": 1.0,
+            "title": "Interval",
+            "default": 1
+          },
+          "weekdays": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Weekdays",
+            "default": []
+          },
+          "month_day": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MonthDay"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "day_of_month": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 31.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Of Month"
+          },
+          "month": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 12.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Month"
+          },
+          "wait_for_previous": {
+            "type": "boolean",
+            "title": "Wait For Previous",
+            "default": false
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "assignee": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "paused_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paused At"
+          },
+          "paused_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/UserPublic"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "next_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next On"
+          },
+          "created_count": {
+            "type": "integer",
+            "title": "Created Count",
+            "default": 0
+          },
+          "recent_tickets": {
+            "items": {
+              "$ref": "#/components/schemas/ScheduleTicketRef"
+            },
+            "type": "array",
+            "title": "Recent Tickets",
+            "default": []
+          },
+          "waiting_on": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleTicketRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "frequency",
+          "id",
+          "team_id",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ScheduleRead"
+      },
+      "ScheduleTicketRef": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "identifier",
+          "title"
+        ],
+        "title": "ScheduleTicketRef",
+        "description": "A ticket a schedule created, as the schedule lists it."
+      },
+      "ScheduleUpdate": {
+        "properties": {
+          "paused": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paused"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleFields"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ScheduleUpdate",
+        "description": "Pausing and editing are separate gestures and each sends only its own:\n`paused` from the switch, `schedule` -- the whole form -- from the dialog."
+      },
       "ScopeChange": {
         "properties": {
           "day": {
@@ -23452,7 +24151,8 @@
           "due_date",
           "team",
           "custom_field",
-          "trash"
+          "trash",
+          "schedule"
         ],
         "title": "TicketEventField",
         "description": "Which field a TicketEvent records a change to."
@@ -25847,6 +26547,7 @@
           "attachment_not_found",
           "comment_not_found",
           "template_not_found",
+          "schedule_not_found",
           "custom_field_not_found",
           "worklog_not_found",
           "notification_not_found",

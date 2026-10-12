@@ -171,6 +171,12 @@ describe('interleave', () => {
     ).toBe('Mei Tanaka restored this from the trash')
   })
 
+  it('says which schedule created it, as it was named then (#264)', () => {
+    expect(eventText(event('schedule', null, 'Dependency updates'))).toBe(
+      'Created by the schedule Dependency updates',
+    )
+  })
+
   it('reads a move between teams as the keys (#98)', () => {
     expect(eventText(event('team', 'ENG-42', 'OPS-17'))).toBe(
       'Automation moved this from ENG-42 to OPS-17',

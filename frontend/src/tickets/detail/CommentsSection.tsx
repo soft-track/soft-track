@@ -463,7 +463,7 @@ function EventLine({ event }: { event: TicketEventRead }) {
         <Avatar user={event.actor} size={18} decorative />
       ) : (
         <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-neutral-900/6 text-neutral-400">
-          <Icon name="sparkle" size={11} />
+          <Icon name={event.field === 'schedule' ? 'history' : 'sparkle'} size={11} />
         </span>
       )}
       <p className="min-w-0">

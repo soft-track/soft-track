@@ -23,4 +23,5 @@ export const TicketEventField = {
   team: 'team',
   custom_field: 'custom_field',
   trash: 'trash',
+  schedule: 'schedule',
 } as const;

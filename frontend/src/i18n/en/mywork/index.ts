@@ -46,6 +46,7 @@ export const mywork = {
       team: 'moved to another team',
       custom_field: 'a field changed',
       trash: 'restored from the trash',
+      schedule: 'created by a schedule',
     },
     title: '{{what}}, {{when}}',
   },

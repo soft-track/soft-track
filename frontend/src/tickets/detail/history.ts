@@ -28,6 +28,7 @@ type HistoryKey =
   | 'team'
   | `field.${'set' | 'changed' | 'cleared' | 'ticked' | 'unticked'}`
   | `trash.${'deleted' | 'restored'}`
+  | 'schedule'
   | 'other'
 
 /**
@@ -119,6 +120,10 @@ export function describeEvent(event: TicketEventRead): EventSentence {
       // Into the trash and back out of it (#323). Only a ticket that came
       // back has an Activity feed to show either in.
       return say(to ? 'trash.deleted' : 'trash.restored')
+
+    case 'schedule':
+      // Created by a schedule (#264), named as it was then.
+      return say('schedule', { name: to ?? '' })
 
     default:
       return say('other')

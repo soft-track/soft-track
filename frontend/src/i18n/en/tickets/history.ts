@@ -48,6 +48,8 @@ export const history = {
     deleted: '<actor>{{actor}}</actor> moved this to the trash',
     restored: '<actor>{{actor}}</actor> restored this from the trash',
   },
+  // How a ticket a schedule made begins (#264): nobody did it.
+  schedule: 'Created by the schedule <actor>{{name}}</actor>',
   other: '<actor>{{actor}}</actor> changed this',
   formerMember: 'a former member',
   deletedSprint: 'a deleted sprint',

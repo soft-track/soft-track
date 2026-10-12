@@ -42,6 +42,7 @@ TEAM_SCOPED = {
     "number",
     "emoji",
     "share_link_id",
+    "schedule_id",
 }
 
 #: What an account from outside may reach beyond its teams, and why. Anything

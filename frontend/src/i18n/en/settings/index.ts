@@ -15,6 +15,7 @@ import { members } from '@/i18n/en/settings/members'
 import { inviteMany } from '@/i18n/en/settings/inviteMany'
 import { general } from '@/i18n/en/settings/general'
 import { automation } from '@/i18n/en/settings/automation'
+import { schedules } from '@/i18n/en/settings/schedules'
 import { integrations } from '@/i18n/en/settings/integrations'
 import { webhooks } from '@/i18n/en/settings/webhooks'
 import { templates } from '@/i18n/en/settings/templates'
@@ -41,6 +42,7 @@ export const settings = {
   inviteMany,
   general,
   automation,
+  schedules,
   integrations,
   webhooks,
   templates,

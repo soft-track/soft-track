@@ -25,6 +25,7 @@ from lib_softtrack.tables import (
     Label,
     Sprint,
     Ticket,
+    TicketSchedule,
     TicketTemplate,
     OutboundWebhook,
     Worklog,
@@ -207,6 +208,12 @@ _TEAM_OWNED_BY_PATH = (
         "Template not found",
     ),
     ("field_id", CustomField, ErrorCode.custom_field_not_found, "Field not found"),
+    (
+        "schedule_id",
+        TicketSchedule,
+        ErrorCode.schedule_not_found,
+        "Schedule not found",
+    ),
     (
         "share_link_id",
         ShareLink,

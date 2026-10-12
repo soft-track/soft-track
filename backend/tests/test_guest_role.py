@@ -267,6 +267,10 @@ def world(client, team, guest, auth):
         f"/teams/{team_id}/custom-fields", json={"name": "Reviewer", "kind": "user"}
     )
     label = post(f"/teams/{team_id}/labels", json={"name": "Bug"})
+    schedule = post(
+        f"/teams/{team_id}/ticket-schedules",
+        json={"title": "Dependency updates", "frequency": "weekly", "weekdays": [0]},
+    )
     share_link = post(
         f"/teams/{team_id}/share-links", json={"project_id": project["id"]}
     )
@@ -294,6 +298,7 @@ def world(client, team, guest, auth):
         "template_id": template["id"],
         "field_id": field["id"],
         "label_id": label["id"],
+        "schedule_id": schedule["id"],
         "worklog_id": worklog["id"],
         "share_link_id": share_link["link"]["id"],
         "join_request_id": join_request.json()["id"],

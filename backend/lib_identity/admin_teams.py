@@ -46,6 +46,7 @@ from lib_softtrack.tables import (
     SavedView,
     ShareLink,
     Sprint,
+    ScheduleRun,
     SprintAction,
     Team,
     TeamInvite,
@@ -55,6 +56,7 @@ from lib_softtrack.tables import (
     TeamRole,
     Ticket,
     TicketEvent,
+    TicketSchedule,
     TicketTemplate,
     User,
     UserDefaultView,
@@ -331,6 +333,10 @@ def delete_team(session: Session, actor: User, team_id: int) -> None:
         delete(OutboundWebhook).where(OutboundWebhook.team_id == team_id),
         delete(AutomationRun).where(AutomationRun.team_id == team_id),
         delete(AutomationRule).where(AutomationRule.team_id == team_id),
+        delete(ScheduleRun).where(
+            col(ScheduleRun.schedule_id).in_(of_team(TicketSchedule))
+        ),
+        delete(TicketSchedule).where(TicketSchedule.team_id == team_id),
         delete(CodeLink).where(col(CodeLink.repository_id).in_(of_team(Repository))),
         delete(Repository).where(Repository.team_id == team_id),
         delete(ShareLink).where(ShareLink.team_id == team_id),

@@ -150,6 +150,9 @@ class Settings(BaseSettings):
     #: Run the loop that sends due-date reminders (#262). Off only for the
     #: test suite, which sweeps directly.
     due_reminders: bool = True
+    #: Run the loop that creates recurring tickets (#264). Off only for the
+    #: test suite, which sweeps directly.
+    recurring_tickets: bool = True
     #: The instance's timezone, as an IANA name ("Europe/Berlin"). A due date
     #: is a day, and a reminder goes out in the morning of it -- this one's
     #: morning, until a person sets a timezone of their own (#252).

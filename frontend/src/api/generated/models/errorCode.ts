@@ -41,6 +41,7 @@ export const ErrorCode = {
   attachment_not_found: 'attachment_not_found',
   comment_not_found: 'comment_not_found',
   template_not_found: 'template_not_found',
+  schedule_not_found: 'schedule_not_found',
   custom_field_not_found: 'custom_field_not_found',
   worklog_not_found: 'worklog_not_found',
   notification_not_found: 'notification_not_found',

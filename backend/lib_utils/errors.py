@@ -78,6 +78,8 @@ class ErrorCode(str, enum.Enum):
     attachment_not_found = "attachment_not_found"
     comment_not_found = "comment_not_found"
     template_not_found = "template_not_found"
+    #: A recurring-ticket schedule (#264) that does not exist.
+    schedule_not_found = "schedule_not_found"
     #: A team's own field (#117) that does not exist -- by id in a path, or
     #: by key in a ticket's `custom_fields`.
     custom_field_not_found = "custom_field_not_found"

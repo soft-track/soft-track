@@ -27,6 +27,7 @@ os.environ.setdefault("WEBHOOK_DELIVERY", "false")
 os.environ.setdefault("TRASH_PURGING", "false")
 # And due-date reminders (#262): the suite sweeps by calling the service.
 os.environ.setdefault("DUE_REMINDERS", "false")
+os.environ.setdefault("RECURRING_TICKETS", "false")
 
 import pytest
 from fastapi.testclient import TestClient

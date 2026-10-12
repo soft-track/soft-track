@@ -16,6 +16,7 @@ from lib_softtrack.tables import (
     TeamRequest,
     TeamRequestState,
     Ticket,
+    TicketSchedule,
     utcnow,
 )
 
@@ -431,6 +432,10 @@ def test_an_empty_team_is_deleted_with_everything_it_had(
         },
     )
     post(
+        f"/teams/{team_id}/ticket-schedules",
+        {"title": "Demo prep", "frequency": "weekly", "weekdays": [0]},
+    )
+    post(
         f"/teams/{team_id}/outbound-webhooks",
         {"url": "https://93.184.216.34/softtrack", "events": ["ticket.created"]},
     )
@@ -464,7 +469,15 @@ def test_an_empty_team_is_deleted_with_everything_it_had(
 
     session.expire_all()
     assert session.get(Team, team_id) is None
-    for table in (Label, Project, Sprint, SavedView, TeamMember, Ticket):
+    for table in (
+        Label,
+        Project,
+        Sprint,
+        SavedView,
+        TeamMember,
+        Ticket,
+        TicketSchedule,
+    ):
         rows = select(func.count()).select_from(table).where(table.team_id == team_id)
         assert session.exec(rows.execution_options(include_trashed=True)).one() == 0
     request = session.exec(select(TeamRequest)).one()
