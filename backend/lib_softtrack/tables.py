@@ -891,6 +891,10 @@ class Team(SQLModel, table=True):
     #: they are part of.
     wip_counts_subtickets: bool = Field(default=True)
     created_at: datetime = Field(default_factory=utcnow)
+    #: When a site admin archived it from Administration -> Teams (#307);
+    #: null for a team in use. What being archived does to the team itself
+    #: -- read-only, out of the switcher and the pickers -- is #322's.
+    archived_at: Optional[datetime] = None
 
 
 class Project(SQLModel, table=True):

@@ -37,6 +37,10 @@ export const errors = {
     'Who may create teams is set as TEAM_CREATION in the environment, which wins over this page.',
   team_request_decided: 'Somebody has already approved or declined this request.',
 
+  // Every team on the instance (#307).
+  already_team_admin: 'They are an admin of this team already.',
+  team_not_empty: 'This team has tickets, so it can be archived and not deleted.',
+
   // Whose comment it is (#93).
   not_your_comment:
     'Only the person who wrote a comment can edit it. Its author or a team admin can delete it.',

@@ -71,3 +71,52 @@ class AdminUserUpdate(BaseModel):
 
 class AdminPasswordReset(BaseModel):
     new_password: str = Field(min_length=8)
+
+
+# --- Every team on the instance (#307) ---------------------------------------
+
+
+class AdminTeamFilter(str, enum.Enum):
+    """The teams Administration -> Teams narrows to (#307). Quiet and one
+    admin are about teams in use, so neither includes an archived one."""
+
+    #: Nothing has happened in it for thirty days.
+    quiet = "quiet"
+    #: One active admin, or none: one person on leave from nobody running it.
+    one_admin = "one_admin"
+    archived = "archived"
+
+
+class AdminTeamRead(BaseModel):
+    """A team as the site admin looks after it (#307): sizes, dates and names.
+
+    Nothing of what the team works on. The ticket count is a number, and
+    reading a team's tickets still takes being on it.
+    """
+
+    id: int
+    name: str
+    key: str
+    created_at: datetime
+    archived_at: Optional[datetime] = None
+    #: Everybody on it with an active account, guests included -- the same
+    #: count the team directory shows (#318).
+    member_count: int
+    #: Its active admins, longest-serving first.
+    admins: list[PersonRef]
+    #: Tickets outside the trash.
+    ticket_count: int
+    #: When something last happened in it: a ticket created or changed, a
+    #: comment, or the team being created.
+    last_activity_at: datetime
+    #: Nothing in thirty days, and not archived.
+    quiet: bool
+    #: Whether it may be deleted: no tickets at all, the trash included.
+    can_delete: bool
+
+
+class AdminTeamAppoint(BaseModel):
+    """Who becomes an admin of the team (#307). Somebody on it already is
+    promoted; anybody else joins it as an admin."""
+
+    user_id: int

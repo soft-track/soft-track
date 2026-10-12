@@ -424,7 +424,12 @@ def list_team_members(
 ) -> list[TeamMemberRead]:
     get_team_or_404(team_id, session)
     require_team_member(team_id, current_user, session)
+    return list_members_of(session, team_id)
 
+
+def list_members_of(session: Session, team_id: int) -> list[TeamMemberRead]:
+    """A team's roster, unguarded: the caller has decided who may read it --
+    a member, or a site admin choosing the team's next admin (#307)."""
     # One join rather than a session.get per row: a roster is read on every
     # board load, and the per-row version made it N+1 queries deep.
     rows = session.exec(

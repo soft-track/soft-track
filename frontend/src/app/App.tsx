@@ -27,6 +27,7 @@ import ProfilePage from '@/people/ProfilePage'
 import RegisterPage from '@/auth/RegisterPage'
 import ResetPasswordPage from '@/auth/ResetPasswordPage'
 import AdminDepartmentsPage from '@/settings/AdminDepartmentsPage'
+import AdminTeamsPage from '@/settings/AdminTeamsPage'
 import AdminSettingsPage from '@/settings/AdminSettingsPage'
 import AdminUsersPage from '@/settings/AdminUsersPage'
 import NotificationSettings from '@/settings/NotificationSettings'
@@ -135,6 +136,7 @@ export default function App() {
             <Route element={<RequireSiteAdmin />}>
               <Route path="admin/users" element={<AdminUsersPage />} />
               <Route path="admin/departments" element={<AdminDepartmentsPage />} />
+              <Route path="admin/teams" element={<AdminTeamsPage />} />
               <Route path="admin/settings" element={<AdminSettingsPage />} />
             </Route>
             {/* Finance (#130): anyone without the flag who follows a link

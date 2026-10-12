@@ -55,6 +55,11 @@ NOT_TEAM_WRITES = {
         "POST",
         "/admin/team-requests/{request_id}/decline",
     ): "site admins, not team roles",
+    # Every team on the instance (#307): the site admin's, on any team.
+    ("POST", "/admin/teams/{team_id}/admins"): "site admins, not team roles",
+    ("POST", "/admin/teams/{team_id}/archive"): "site admins, not team roles",
+    ("POST", "/admin/teams/{team_id}/unarchive"): "site admins, not team roles",
+    ("DELETE", "/admin/teams/{team_id}"): "site admins, not team roles",
     # Money (#130-#137): the finance flag decides, not any team role.
     ("POST", "/finance/compensation/{username}"): "finance admins, not team roles",
     ("POST", "/finance/payroll/runs"): "finance admins, not team roles",

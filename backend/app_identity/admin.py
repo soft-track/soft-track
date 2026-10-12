@@ -4,14 +4,19 @@ from fastapi import APIRouter, Depends, Query, Response
 from sqlmodel import Session
 
 from lib_identity import admin as admin_service
+from lib_identity import admin_teams
 from lib_identity.admin import require_site_admin
 from lib_identity.models.admin import (
     AdminPasswordReset,
     AdminRole,
+    AdminTeamAppoint,
+    AdminTeamFilter,
+    AdminTeamRead,
     AdminUserRead,
     AdminUserUpdate,
 )
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
+from lib_softtrack.models.teams import TeamMemberRead
 from lib_softtrack.tables import User
 from web import get_session
 
@@ -63,4 +68,74 @@ def reset_password(
     actor: User = Depends(require_site_admin),
 ):
     admin_service.reset_password(session, actor, user_id, payload.new_password)
+    return Response(status_code=204)
+
+
+# --- Every team on the instance (#307) ---------------------------------------
+
+
+@router.get("/teams", response_model=Page[AdminTeamRead])
+def list_teams(
+    q: Optional[str] = Query(default=None, description="Search name or key"),
+    filter: Optional[AdminTeamFilter] = Query(
+        default=None,
+        description="Only quiet teams, teams with one admin, or archived ones",
+    ),
+    limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
+    offset: int = Query(default=0, ge=0),
+    session: Session = Depends(get_session),
+    _: User = Depends(require_site_admin),
+):
+    """Every team, with its size, dates and admins. Never its tickets."""
+    return admin_teams.list_teams(
+        session, q=q, which=filter, limit=limit, offset=offset
+    )
+
+
+@router.get("/teams/{team_id}/members", response_model=list[TeamMemberRead])
+def list_team_members(
+    team_id: int,
+    session: Session = Depends(get_session),
+    _: User = Depends(require_site_admin),
+):
+    """Who is on the team and as what, for appointing its next admin."""
+    return admin_teams.list_members(session, team_id)
+
+
+@router.post("/teams/{team_id}/admins", response_model=AdminTeamRead)
+def appoint_team_admin(
+    team_id: int,
+    payload: AdminTeamAppoint,
+    session: Session = Depends(get_session),
+    actor: User = Depends(require_site_admin),
+):
+    return admin_teams.appoint_admin(session, actor, team_id, payload.user_id)
+
+
+@router.post("/teams/{team_id}/archive", response_model=AdminTeamRead)
+def archive_team(
+    team_id: int,
+    session: Session = Depends(get_session),
+    actor: User = Depends(require_site_admin),
+):
+    return admin_teams.set_archived(session, actor, team_id, True)
+
+
+@router.post("/teams/{team_id}/unarchive", response_model=AdminTeamRead)
+def unarchive_team(
+    team_id: int,
+    session: Session = Depends(get_session),
+    actor: User = Depends(require_site_admin),
+):
+    return admin_teams.set_archived(session, actor, team_id, False)
+
+
+@router.delete("/teams/{team_id}", status_code=204)
+def delete_team(
+    team_id: int,
+    session: Session = Depends(get_session),
+    actor: User = Depends(require_site_admin),
+):
+    """Only a team with no tickets, the trash included."""
+    admin_teams.delete_team(session, actor, team_id)
     return Response(status_code=204)
