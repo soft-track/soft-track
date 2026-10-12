@@ -784,6 +784,109 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Create User",
+        "description": "Create an account for somebody, without a password (#303).\n\nThe response carries the link its owner chooses a password from -- the\nonly time it is shown. With `send_email` it is emailed to them as well,\nafter the response. Not counted by the registration rate limit, and open\nwhether or not registration is.",
+        "operationId": "create_user_admin_users_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{user_id}/welcome-link": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "New Welcome Link",
+        "description": "A new link to choose a password, for an account not yet activated.\nThe link before it stops working.",
+        "operationId": "new_welcome_link_admin_users__user_id__welcome_link_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WelcomeLinkCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomeLinkCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/admin/users/{user_id}": {
@@ -11936,7 +12039,8 @@
         "enum": [
           "site_admin",
           "finance_admin",
-          "external"
+          "external",
+          "not_activated"
         ],
         "title": "AdminRole",
         "description": "The instance-wide roles the user directory filters by (#130), and\naccounts from outside the organisation (#243)."
@@ -12041,6 +12145,116 @@
         "title": "AdminTeamRead",
         "description": "A team as the site admin looks after it (#307): sizes, dates and names.\n\nNothing of what the team works on. The ticket count is a number, and\nreading a team's tickets still takes being on it."
       },
+      "AdminUserCreate": {
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "job_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Title"
+          },
+          "started_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started On"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "manager_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manager Id"
+          },
+          "teams": {
+            "items": {
+              "$ref": "#/components/schemas/AdminUserTeam"
+            },
+            "type": "array",
+            "title": "Teams",
+            "default": []
+          },
+          "send_email": {
+            "type": "boolean",
+            "title": "Send Email",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "full_name",
+          "email"
+        ],
+        "title": "AdminUserCreate",
+        "description": "An account for somebody, prepared before they arrive (#303). It has no\npassword: its owner chooses one from the link."
+      },
+      "AdminUserCreated": {
+        "properties": {
+          "link": {
+            "type": "string",
+            "title": "Link"
+          },
+          "welcome_link": {
+            "$ref": "#/components/schemas/WelcomeLinkRead"
+          },
+          "user": {
+            "$ref": "#/components/schemas/AdminUserRead"
+          }
+        },
+        "type": "object",
+        "required": [
+          "link",
+          "welcome_link",
+          "user"
+        ],
+        "title": "AdminUserCreated"
+      },
       "AdminUserRead": {
         "properties": {
           "id": {
@@ -12071,6 +12285,11 @@
             "type": "boolean",
             "title": "Is External",
             "default": false
+          },
+          "is_activated": {
+            "type": "boolean",
+            "title": "Is Activated",
+            "default": true
           },
           "is_site_admin": {
             "type": "boolean",
@@ -12192,6 +12411,16 @@
             "type": "array",
             "title": "Guest Of",
             "default": []
+          },
+          "welcome_link": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WelcomeLinkRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -12211,6 +12440,24 @@
         ],
         "title": "AdminUserRead",
         "description": "A row in the site admin's user directory."
+      },
+      "AdminUserTeam": {
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/TeamRole",
+            "default": "member"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team_id"
+        ],
+        "title": "AdminUserTeam",
+        "description": "A team the new account joins, and as what."
       },
       "AdminUserUpdate": {
         "properties": {
@@ -17216,6 +17463,11 @@
             "type": "boolean",
             "title": "Is Active"
           },
+          "is_activated": {
+            "type": "boolean",
+            "title": "Is Activated",
+            "default": true
+          },
           "job_title": {
             "anyOf": [
               {
@@ -17365,6 +17617,11 @@
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
+          },
+          "is_activated": {
+            "type": "boolean",
+            "title": "Is Activated",
+            "default": true
           },
           "job_title": {
             "anyOf": [
@@ -22310,6 +22567,11 @@
             "title": "Is External",
             "default": false
           },
+          "is_activated": {
+            "type": "boolean",
+            "title": "Is Activated",
+            "default": true
+          },
           "is_site_admin": {
             "type": "boolean",
             "title": "Is Site Admin"
@@ -22428,6 +22690,11 @@
             "type": "boolean",
             "title": "Is External",
             "default": false
+          },
+          "is_activated": {
+            "type": "boolean",
+            "title": "Is Activated",
+            "default": true
           }
         },
         "type": "object",
@@ -22872,6 +23139,68 @@
         "title": "WebhookReceipt",
         "description": "What the webhook endpoint answers with.\n\nMore than an empty 200 on purpose. Both providers show the response body\nin their delivery log, and that log is the entire debugging surface for\nwhoever is setting this up -- \"accepted, matched nothing\" is the answer to\nthe question they are about to ask, and it is much cheaper to read there\nthan to work out from a ticket page that did not change."
       },
+      "WelcomeLinkCreate": {
+        "properties": {
+          "send_email": {
+            "type": "boolean",
+            "title": "Send Email",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "WelcomeLinkCreate"
+      },
+      "WelcomeLinkCreated": {
+        "properties": {
+          "link": {
+            "type": "string",
+            "title": "Link"
+          },
+          "welcome_link": {
+            "$ref": "#/components/schemas/WelcomeLinkRead"
+          }
+        },
+        "type": "object",
+        "required": [
+          "link",
+          "welcome_link"
+        ],
+        "title": "WelcomeLinkCreated",
+        "description": "A new link to choose a password. The only time it is ever shown:\nafterwards just its hash is kept."
+      },
+      "WelcomeLinkRead": {
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "emailed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emailed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "created_at",
+          "expires_at"
+        ],
+        "title": "WelcomeLinkRead",
+        "description": "When an account's link to choose a password was made, whether it was\nemailed, and when it stops working."
+      },
       "WorkloadRead": {
         "properties": {
           "open_count": {
@@ -23216,6 +23545,8 @@
           "link_contradicts",
           "repository_already_connected",
           "oauth_account_taken",
+          "account_already_activated",
+          "account_not_activated",
           "last_team_admin",
           "last_site_admin",
           "last_status",

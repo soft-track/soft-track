@@ -156,6 +156,7 @@ def create_user(
     full_name: str,
     hashed_password: str,
     username: str | None = None,
+    activated: bool = True,
 ) -> User:
     """The row every new account starts as, however it was created.
 
@@ -187,8 +188,10 @@ def create_user(
         is_external=not is_first and invited_from_outside(session, email),
         # Creating an account hands out a token, so it *is* a sign-in. Leaving
         # this null would show someone who signed up a minute ago as "never
-        # signed in" in the admin directory.
-        last_login_at=utcnow(),
+        # signed in" in the admin directory. Not so for one a site admin
+        # prepared (#303): its owner has not been near it yet.
+        last_login_at=utcnow() if activated else None,
+        is_activated=activated,
     )
     session.add(user)
     session.commit()

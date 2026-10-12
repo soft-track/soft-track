@@ -1,8 +1,9 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Response
 from sqlmodel import Session
 
+from lib_identity import accounts
 from lib_identity import admin as admin_service
 from lib_identity import admin_teams
 from lib_identity.admin import require_site_admin
@@ -12,12 +13,17 @@ from lib_identity.models.admin import (
     AdminTeamAppoint,
     AdminTeamFilter,
     AdminTeamRead,
+    AdminUserCreate,
+    AdminUserCreated,
     AdminUserRead,
     AdminUserUpdate,
+    WelcomeLinkCreate,
+    WelcomeLinkCreated,
 )
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
 from lib_softtrack.models.teams import TeamMemberRead
 from lib_softtrack.tables import User
+from lib_utils.mailer import get_mailer
 from web import get_session
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -48,6 +54,42 @@ def list_users(
         reports_to_deactivated=reports_to_deactivated,
         role=role,
     )
+
+
+@router.post("/users", response_model=AdminUserCreated, status_code=201)
+def create_user(
+    payload: AdminUserCreate,
+    background: BackgroundTasks,
+    session: Session = Depends(get_session),
+    actor: User = Depends(require_site_admin),
+):
+    """Create an account for somebody, without a password (#303).
+
+    The response carries the link its owner chooses a password from -- the
+    only time it is shown. With `send_email` it is emailed to them as well,
+    after the response. Not counted by the registration rate limit, and open
+    whether or not registration is.
+    """
+    created, message = accounts.create_account(session, actor, payload)
+    if message is not None:
+        background.add_task(get_mailer().send, *message)
+    return created
+
+
+@router.post("/users/{user_id}/welcome-link", response_model=WelcomeLinkCreated)
+def new_welcome_link(
+    user_id: int,
+    payload: WelcomeLinkCreate,
+    background: BackgroundTasks,
+    session: Session = Depends(get_session),
+    actor: User = Depends(require_site_admin),
+):
+    """A new link to choose a password, for an account not yet activated.
+    The link before it stops working."""
+    created, message = accounts.new_link(session, actor, user_id, payload.send_email)
+    if message is not None:
+        background.add_task(get_mailer().send, *message)
+    return created
 
 
 @router.patch("/users/{user_id}", response_model=AdminUserRead)

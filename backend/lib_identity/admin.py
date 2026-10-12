@@ -15,7 +15,7 @@ from sqlalchemy.orm import aliased, selectinload
 from sqlmodel import Session, col, func, or_, select
 
 from lib_finance import access as finance_access
-from lib_identity import api_tokens, managers
+from lib_identity import accounts, api_tokens, managers
 from lib_identity.departments import require_department
 from lib_identity.identity import get_current_user
 from lib_identity.models.admin import (
@@ -23,6 +23,7 @@ from lib_identity.models.admin import (
     AdminUserRead,
     AdminUserUpdate,
     GuestOf,
+    WelcomeLinkRead,
 )
 from lib_identity.models.identity import PersonRef, UserMe
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
@@ -67,6 +68,8 @@ def list_users(
         filters.append(User.is_finance_admin == True)  # noqa: E712
     elif role is AdminRole.external:
         filters.append(User.is_external == True)  # noqa: E712
+    elif role is AdminRole.not_activated:
+        filters.append(User.is_activated == False)  # noqa: E712
     if reports_to_deactivated:
         # Active people whose manager has been deactivated (#124): the links
         # stay when a manager leaves, and this is where they are found again
@@ -118,12 +121,14 @@ def list_users(
 
     reports = _report_counts(session, [u.id for u in users])
     reach = _guest_of(session, [u.id for u in users if u.is_external])
+    links = accounts.live_links(session, [u.id for u in users if not u.is_activated])
     items = [
         _to_read(
             user,
             counts.get(user.id, 0),
             reports.get(user.id, 0),
             reach.get(user.id, []),
+            links.get(user.id),
         )
         for user in users
     ]
@@ -181,6 +186,7 @@ def _to_read(
     team_count: int,
     report_count: int,
     guest_of: Optional[list[GuestOf]] = None,
+    welcome_link: Optional[WelcomeLinkRead] = None,
 ) -> AdminUserRead:
     # Built from UserMe rather than field by field, so a column added to the
     # user's own view of themselves shows up here without a second edit.
@@ -195,10 +201,31 @@ def _to_read(
             PersonRef.model_validate(granted_by) if granted_by else None
         ),
         guest_of=guest_of or [],
+        welcome_link=welcome_link,
     )
 
 
-def _get_user_or_404(session: Session, user_id: int) -> User:
+def user_read(session: Session, user: User) -> AdminUserRead:
+    """One account as a row of the directory."""
+    team_count = session.exec(
+        select(func.count())
+        .select_from(TeamMember)
+        .where(TeamMember.user_id == user.id)
+    ).one()
+    return _to_read(
+        user,
+        team_count,
+        _report_counts(session, [user.id]).get(user.id, 0),
+        _guest_of(session, [user.id]).get(user.id, []) if user.is_external else [],
+        (
+            accounts.live_links(session, [user.id]).get(user.id)
+            if not user.is_activated
+            else None
+        ),
+    )
+
+
+def get_user_or_404(session: Session, user_id: int) -> User:
     user = session.get(User, user_id)
     if not user:
         raise api_error(
@@ -210,7 +237,7 @@ def _get_user_or_404(session: Session, user_id: int) -> User:
 def update_user(
     session: Session, actor: User, user_id: int, payload: AdminUserUpdate
 ) -> AdminUserRead:
-    user = _get_user_or_404(session, user_id)
+    user = get_user_or_404(session, user_id)
 
     # Locking yourself out is never what was meant, and on a single-admin
     # instance it is unrecoverable without database access.
@@ -286,18 +313,7 @@ def update_user(
     session.add(user)
     session.commit()
     session.refresh(user)
-
-    team_count = session.exec(
-        select(func.count())
-        .select_from(TeamMember)
-        .where(TeamMember.user_id == user.id)
-    ).one()
-    return _to_read(
-        user,
-        team_count,
-        _report_counts(session, [user.id]).get(user.id, 0),
-        _guest_of(session, [user.id]).get(user.id, []) if user.is_external else [],
-    )
+    return user_read(session, user)
 
 
 def _check_outside(
@@ -356,7 +372,16 @@ def reset_password(
     the right outcome whether the reset is routine or a response to a
     compromise.
     """
-    user = _get_user_or_404(session, user_id)
+    user = get_user_or_404(session, user_id)
+    # An account prepared for somebody (#303) gets its first password from its
+    # owner, through their link, and from nobody else.
+    if not user.is_activated:
+        raise api_error(
+            status_code=409,
+            code=ErrorCode.account_not_activated,
+            detail=f"{user.full_name} has not chosen a password yet. Send them "
+            "their link again instead.",
+        )
     user.hashed_password = hash_password(new_password)
     user.token_version += 1
     session.add(user)

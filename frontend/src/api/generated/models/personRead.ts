@@ -22,6 +22,7 @@ export interface PersonRead {
   full_name: string;
   avatar_color: string;
   is_active: boolean;
+  is_activated?: boolean;
   job_title?: string | null;
   location?: string | null;
   started_on?: string | null;

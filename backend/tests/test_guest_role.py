@@ -43,6 +43,9 @@ NOT_TEAM_WRITES = {
     ("DELETE", "/auth/me/identities/{provider}"): "your own account",
     ("PATCH", "/admin/users/{user_id}"): "site admins, not team roles",
     ("POST", "/admin/users/{user_id}/reset-password"): "site admins, not team roles",
+    # Accounts a site admin creates (#303).
+    ("POST", "/admin/users"): "site admins, not team roles",
+    ("POST", "/admin/users/{user_id}/welcome-link"): "site admins, not team roles",
     ("POST", "/departments"): "site admins, not team roles",
     ("PATCH", "/departments/{department_id}"): "site admins, not team roles",
     ("DELETE", "/departments/{department_id}"): "site admins, not team roles",

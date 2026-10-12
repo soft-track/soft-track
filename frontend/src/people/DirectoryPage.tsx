@@ -23,6 +23,7 @@ import { PersonPicker } from '@/people/PersonPicker'
 import { useDebounced } from '@/search/useDebounced'
 import { useOpenTicket } from '@/tickets/surface'
 import { Avatar } from '@/ui/Avatar'
+import { NotActivatedChip } from '@/ui/NotActivatedChip'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 import { Select } from '@/ui/Select'
@@ -265,8 +266,9 @@ function PeopleTable({ rows }: { rows: PersonRead[] }) {
               <div className="flex items-center gap-3">
                 <Avatar user={person} size={32} decorative />
                 <div className="min-w-0">
-                  <p className="truncate font-medium">
+                  <p className="flex items-center gap-2 truncate font-medium">
                     <PersonLink person={person} className="text-neutral-900 hover:underline" />
+                    {person.is_activated === false && <NotActivatedChip />}
                   </p>
                   <p className="identifier truncate text-xs text-neutral-400">@{person.username}</p>
                 </div>

@@ -28,6 +28,8 @@ import type {
   AdminPasswordReset,
   AdminTeamAppoint,
   AdminTeamRead,
+  AdminUserCreate,
+  AdminUserCreated,
   AdminUserRead,
   AdminUserUpdate,
   HTTPValidationError,
@@ -40,7 +42,9 @@ import type {
   TeamMemberRead,
   TeamRead,
   TeamRequestDecline,
-  TeamRequestRead
+  TeamRequestRead,
+  WelcomeLinkCreate,
+  WelcomeLinkCreated
 } from '../../models';
 
 import { apiClient } from '../../../client';
@@ -157,6 +161,149 @@ export function useListUsersAdminUsersGet<TData = Awaited<ReturnType<typeof list
 
 
 /**
+ * Create an account for somebody, without a password (#303).
+ *
+ * The response carries the link its owner chooses a password from -- the
+ * only time it is shown. With `send_email` it is emailed to them as well,
+ * after the response. Not counted by the registration rate limit, and open
+ * whether or not registration is.
+ * @summary Create User
+ */
+export const createUserAdminUsersPost = (
+    adminUserCreate: AdminUserCreate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<AdminUserCreated>(
+      {url: `/admin/users`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: adminUserCreate, signal
+    },
+      );
+    }
+
+
+
+
+export const getCreateUserAdminUsersPostMutationKey = () => ['createUserAdminUsersPost'] as const;
+
+export const getCreateUserAdminUsersPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createUserAdminUsersPost>>, TError,CreateUserAdminUsersPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createUserAdminUsersPost>>, TError,CreateUserAdminUsersPostMutationVariables, TContext> => {
+
+const mutationKey = getCreateUserAdminUsersPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createUserAdminUsersPost>>, CreateUserAdminUsersPostMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createUserAdminUsersPost(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateUserAdminUsersPostMutationResult = NonNullable<Awaited<ReturnType<typeof createUserAdminUsersPost>>>
+    export type CreateUserAdminUsersPostMutationBody = AdminUserCreate
+    export type CreateUserAdminUsersPostMutationError = HTTPValidationError
+    export type CreateUserAdminUsersPostMutationVariables = {data: AdminUserCreate}
+
+    /**
+ * @summary Create User
+ */
+export const useCreateUserAdminUsersPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createUserAdminUsersPost>>, TError,CreateUserAdminUsersPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createUserAdminUsersPost>>,
+        TError,
+        CreateUserAdminUsersPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateUserAdminUsersPostMutationOptions(options), queryClient);
+    }
+    /**
+ * A new link to choose a password, for an account not yet activated.
+ * The link before it stops working.
+ * @summary New Welcome Link
+ */
+export const newWelcomeLinkAdminUsersUserIdWelcomeLinkPost = (
+    userId: number,
+    welcomeLinkCreate: WelcomeLinkCreate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<WelcomeLinkCreated>(
+      {url: `/admin/users/${userId}/welcome-link`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: welcomeLinkCreate, signal
+    },
+      );
+    }
+
+
+
+
+export const getNewWelcomeLinkAdminUsersUserIdWelcomeLinkPostMutationKey = () => ['newWelcomeLinkAdminUsersUserIdWelcomeLinkPost'] as const;
+
+export const getNewWelcomeLinkAdminUsersUserIdWelcomeLinkPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof newWelcomeLinkAdminUsersUserIdWelcomeLinkPost>>, TError,NewWelcomeLinkAdminUsersUserIdWelcomeLinkPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof newWelcomeLinkAdminUsersUserIdWelcomeLinkPost>>, TError,NewWelcomeLinkAdminUsersUserIdWelcomeLinkPostMutationVariables, TContext> => {
+
+const mutationKey = getNewWelcomeLinkAdminUsersUserIdWelcomeLinkPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof newWelcomeLinkAdminUsersUserIdWelcomeLinkPost>>, NewWelcomeLinkAdminUsersUserIdWelcomeLinkPostMutationVariables> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  newWelcomeLinkAdminUsersUserIdWelcomeLinkPost(userId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type NewWelcomeLinkAdminUsersUserIdWelcomeLinkPostMutationResult = NonNullable<Awaited<ReturnType<typeof newWelcomeLinkAdminUsersUserIdWelcomeLinkPost>>>
+    export type NewWelcomeLinkAdminUsersUserIdWelcomeLinkPostMutationBody = WelcomeLinkCreate
+    export type NewWelcomeLinkAdminUsersUserIdWelcomeLinkPostMutationError = HTTPValidationError
+    export type NewWelcomeLinkAdminUsersUserIdWelcomeLinkPostMutationVariables = {userId: number;data: WelcomeLinkCreate}
+
+    /**
+ * @summary New Welcome Link
+ */
+export const useNewWelcomeLinkAdminUsersUserIdWelcomeLinkPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof newWelcomeLinkAdminUsersUserIdWelcomeLinkPost>>, TError,NewWelcomeLinkAdminUsersUserIdWelcomeLinkPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof newWelcomeLinkAdminUsersUserIdWelcomeLinkPost>>,
+        TError,
+        NewWelcomeLinkAdminUsersUserIdWelcomeLinkPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getNewWelcomeLinkAdminUsersUserIdWelcomeLinkPostMutationOptions(options), queryClient);
+    }
+    /**
  * @summary Update User
  */
 export const updateUserAdminUsersUserIdPatch = (

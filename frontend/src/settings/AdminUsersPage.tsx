@@ -3,9 +3,11 @@ import { type FormEvent, useId, useState } from 'react'
 
 import {
   useListUsersAdminUsersGet,
+  useNewWelcomeLinkAdminUsersUserIdWelcomeLinkPost,
   useResetPasswordAdminUsersUserIdResetPasswordPost,
   useUpdateUserAdminUsersUserIdPatch,
 } from '@/api/generated/endpoints/admin/admin'
+import { useGetNotificationSettingsNotificationsSettingsGet } from '@/api/generated/endpoints/notifications/notifications'
 import { useListDepartmentsDepartmentsGet } from '@/api/generated/endpoints/departments/departments'
 import { AdminRole, type AdminUserRead, type AdminUserUpdate } from '@/api/generated/models'
 import { parseServerDate } from '@/api/dates'
@@ -15,6 +17,8 @@ import { Trans, userText, useTranslation } from '@/i18n'
 import { formatDate, formatList, formatRelative } from '@/i18n/format'
 import { type PersonOption, PersonPicker } from '@/people/PersonPicker'
 import { useDebounced } from '@/search/useDebounced'
+import { copyText } from '@/settings/inviteLink'
+import { NewAccountDialog } from '@/settings/NewAccountDialog'
 import { DeactivatedChip } from '@/settings/RoleChip'
 import { formatStartedOn } from '@/settings/startedOn'
 import { Avatar } from '@/ui/Avatar'
@@ -32,7 +36,16 @@ const ROLE_FILTERS = [
   { role: AdminRole.site_admin, label: 'adminUsers.roles.siteAdmins' },
   { role: AdminRole.finance_admin, label: 'adminUsers.roles.financeAdmins' },
   { role: AdminRole.external, label: 'adminUsers.roles.external' },
+  // Accounts a site admin made, not signed into yet (#303).
+  { role: AdminRole.not_activated, label: 'adminUsers.roles.notActivated' },
 ] as const
+
+/** Whether a start date (#122) is still to come: "starts", not "started". */
+function isAhead(startedOn: string): boolean {
+  const today = new Date()
+  const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  return startedOn > iso
+}
 
 export default function AdminUsersPage() {
   const { t } = useTranslation(['settings', 'common'])
@@ -46,6 +59,8 @@ export default function AdminUsersPage() {
   const [role, setRole] = useState<AdminRole | null>(null)
   const [editing, setEditing] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
   /** Only the people whose manager is deactivated (#124), from the banner. */
   const [strandedOnly, setStrandedOnly] = useState(false)
 
@@ -65,7 +80,16 @@ export default function AdminUsersPage() {
     ...new Set((stranded.data?.items ?? []).map((row) => row.manager?.full_name ?? '')),
   ].filter(Boolean)
 
+  // Accounts nobody has signed into yet (#303), counted beside their filter.
+  const notActivated = useListUsersAdminUsersGet({ role: AdminRole.not_activated, limit: 1 })
+  const notActivatedCount = notActivated.data?.total ?? 0
+  // Whether this instance can send mail (#84): the link is emailed when it
+  // can, and only ever copied when it cannot.
+  const canEmail =
+    useGetNotificationSettingsNotificationsSettingsGet().data?.email_delivery_configured === true
+
   const updateUser = useUpdateUserAdminUsersUserIdPatch()
+  const newLink = useNewWelcomeLinkAdminUsersUserIdWelcomeLinkPost()
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['/admin/users'] })
@@ -76,6 +100,29 @@ export default function AdminUsersPage() {
     try {
       await updateUser.mutateAsync({ userId: target.id, data })
       refresh()
+    } catch (err: unknown) {
+      setError(errorDetail(err, t('adminUsers.errors.update')))
+    }
+  }
+
+  /** A new link for an account not yet activated: copied, or emailed. Either
+   *  way the one before stops working -- only its hash was ever kept. */
+  const onNewLink = async (target: AdminUserRead, sendEmail: boolean) => {
+    setError(null)
+    setNotice(null)
+    try {
+      const created = await newLink.mutateAsync({
+        userId: target.id,
+        data: { send_email: sendEmail },
+      })
+      refresh()
+      if (sendEmail) {
+        setNotice(t('adminUsers.linkResent', { email: target.email }))
+      } else if (await copyText(created.link)) {
+        setNotice(t('adminUsers.linkCopied', { name: target.full_name }))
+      } else {
+        setError(t('adminUsers.clipboardFailed', { link: created.link }))
+      }
     } catch (err: unknown) {
       setError(errorDetail(err, t('adminUsers.errors.update')))
     }
@@ -97,18 +144,35 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-4">
       <div className="glass-strong sheen rounded-panel p-6">
-        <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
-          {t('adminUsers.title')}
-        </h1>
-        <p className="mt-1 max-w-prose text-sm text-neutral-500">{t('adminUsers.intro')}</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
+              {t('adminUsers.title')}
+            </h1>
+            <p className="mt-1 max-w-prose text-sm text-neutral-500">{t('adminUsers.intro')}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="btn btn-primary btn-sm"
+          >
+            <Icon name="plus" size={14} />
+            {t('adminUsers.newAccount')}
+          </button>
+        </div>
 
         {error && (
           <div
             role="alert"
-            className="mt-4 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+            className="mt-4 break-all rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
           >
             {error}
           </div>
+        )}
+        {notice && (
+          <p role="status" className="mt-4 text-sm text-neutral-600">
+            {notice}
+          </p>
         )}
 
         {/* Deactivating a manager leaves the links alone (#124); this makes
@@ -176,6 +240,11 @@ export default function AdminUsersPage() {
                 className="segmented-item"
               >
                 {t(filter.label)}
+                {filter.role === AdminRole.not_activated && notActivatedCount > 0 && (
+                  <span className="ml-1.5 text-[10px] tabular-nums text-neutral-500">
+                    {notActivatedCount}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -213,12 +282,17 @@ export default function AdminUsersPage() {
               ? t('adminUsers.emptyFinanceAdmins')
               : role === AdminRole.external && !q
                 ? t('adminUsers.emptyExternal')
-                : t('adminUsers.empty')}
+                : role === AdminRole.not_activated && !q
+                  ? t('adminUsers.emptyNotActivated')
+                  : t('adminUsers.empty')}
           </p>
         ) : (
           <ul className="divide-y divide-neutral-900/8">
             {shown.map((row) => {
               const isSelf = row.id === user?.id
+              // Made by a site admin, and nobody has signed in yet (#303).
+              const pending = row.is_activated === false
+              const link = row.welcome_link
               // What the organisation knows about them (#122): their own
               // words for title and location, and the department and start
               // date an admin sets below. Nothing at all when none of it is
@@ -236,7 +310,9 @@ export default function AdminUsersPage() {
                 row.report_count > 0 && t('adminUsers.directReports', { count: row.report_count }),
                 row.location,
                 row.started_on &&
-                  t('adminUsers.startedOn', { date: formatStartedOn(row.started_on) }),
+                  t(isAhead(row.started_on) ? 'adminUsers.startsOn' : 'adminUsers.startedOn', {
+                    date: formatStartedOn(row.started_on),
+                  }),
               ].filter(Boolean)
               return (
                 <li key={row.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
@@ -264,6 +340,16 @@ export default function AdminUsersPage() {
                         </span>
                       )}
                       {row.is_external && <ExternalChip />}
+                      {pending && (
+                        <span
+                          className="chip"
+                          title={t('adminUsers.notActivatedHint')}
+                          style={{ ['--chip' as string]: 'var(--color-accent-amber)' }}
+                        >
+                          <Icon name="history" size={11} />
+                          {t('adminUsers.notActivated')}
+                        </span>
+                      )}
                       {!row.is_active && <DeactivatedChip />}
                     </p>
                     {(row.guest_of ?? []).map((place) => (
@@ -279,18 +365,33 @@ export default function AdminUsersPage() {
                     {facts.length > 0 && (
                       <p className="text-xs text-neutral-500">{facts.join(' · ')}</p>
                     )}
-                    <p className="text-xs text-neutral-400">
-                      {row.email} · {t('adminUsers.teams', { count: row.team_count })} ·{' '}
-                      {row.last_login_at
-                        ? t('adminUsers.lastSeen', {
-                            when: formatRelative(parseServerDate(row.last_login_at)),
-                          })
-                        : t('adminUsers.neverSignedIn')}{' '}
-                      ·{' '}
-                      {t('adminUsers.joined', {
-                        date: formatDate(parseServerDate(row.created_at), 'd MMM yyyy'),
-                      })}
-                    </p>
+                    {pending ? (
+                      <p className="text-xs text-neutral-400">
+                        {row.email} · {t('adminUsers.teams', { count: row.team_count })} ·{' '}
+                        {link
+                          ? t(link.emailed_at ? 'adminUsers.linkSent' : 'adminUsers.linkMade', {
+                              date: formatDate(
+                                parseServerDate(link.emailed_at ?? link.created_at),
+                                'd MMM',
+                              ),
+                              when: formatRelative(parseServerDate(link.expires_at)),
+                            })
+                          : t('adminUsers.linkExpired')}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-neutral-400">
+                        {row.email} · {t('adminUsers.teams', { count: row.team_count })} ·{' '}
+                        {row.last_login_at
+                          ? t('adminUsers.lastSeen', {
+                              when: formatRelative(parseServerDate(row.last_login_at)),
+                            })
+                          : t('adminUsers.neverSignedIn')}{' '}
+                        ·{' '}
+                        {t('adminUsers.joined', {
+                          date: formatDate(parseServerDate(row.created_at), 'd MMM yyyy'),
+                        })}
+                      </p>
+                    )}
                     {row.is_finance_admin && row.finance_admin_since && (
                       <p className="text-xs text-neutral-400">
                         {row.finance_admin_granted_by
@@ -323,79 +424,108 @@ export default function AdminUsersPage() {
                     >
                       {t('adminUsers.edit')}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => onDeactivate(row)}
-                      disabled={isSelf}
-                      title={
-                        isSelf ? t('adminUsers.cannotDeactivateSelf') : undefined
-                      }
-                      className={row.is_active ? 'btn btn-danger-ghost btn-sm' : 'btn btn-ghost btn-sm'}
-                    >
-                      {row.is_active ? t('adminUsers.deactivate') : t('adminUsers.reactivate')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => patch(row, { is_site_admin: !row.is_site_admin })}
-                      disabled={isSelf}
-                      title={
-                        isSelf ? t('adminUsers.cannotChangeOwnAdmin') : undefined
-                      }
-                      className="btn btn-ghost btn-sm"
-                    >
-                      <Icon name="shield" size={14} />
-                      {row.is_site_admin
-                        ? t('adminUsers.removeSiteAdmin')
-                        : t('adminUsers.makeSiteAdmin')}
-                    </button>
-                    {/* Granting asks first and says what it means; revoking
+                    {pending && row.is_active ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onNewLink(row, false)}
+                          disabled={newLink.isPending}
+                          title={t('adminUsers.copyLinkHint')}
+                          className="btn btn-ghost btn-sm"
+                        >
+                          <Icon name="copy" size={14} />
+                          {t('adminUsers.copyLink')}
+                        </button>
+                        {canEmail && (
+                          <button
+                            type="button"
+                            onClick={() => onNewLink(row, true)}
+                            disabled={newLink.isPending}
+                            title={t('adminUsers.sendAgainHint')}
+                            className="btn btn-secondary btn-sm"
+                          >
+                            <Icon name="mail" size={14} />
+                            {t('adminUsers.sendAgain')}
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onDeactivate(row)}
+                          disabled={isSelf}
+                          title={isSelf ? t('adminUsers.cannotDeactivateSelf') : undefined}
+                          className={
+                            row.is_active ? 'btn btn-danger-ghost btn-sm' : 'btn btn-ghost btn-sm'
+                          }
+                        >
+                          {row.is_active ? t('adminUsers.deactivate') : t('adminUsers.reactivate')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => patch(row, { is_site_admin: !row.is_site_admin })}
+                          disabled={isSelf}
+                          title={isSelf ? t('adminUsers.cannotChangeOwnAdmin') : undefined}
+                          className="btn btn-ghost btn-sm"
+                        >
+                          <Icon name="shield" size={14} />
+                          {row.is_site_admin
+                            ? t('adminUsers.removeSiteAdmin')
+                            : t('adminUsers.makeSiteAdmin')}
+                        </button>
+                        {/* Granting asks first and says what it means; revoking
                         takes access away, which is never the risky direction.
                         Nobody is granted it while deactivated -- coming back
                         is when to decide (#130). */}
-                    {row.is_finance_admin ? (
-                      <button
-                        type="button"
-                        onClick={() => patch(row, { is_finance_admin: false })}
-                        className="btn btn-danger-ghost btn-sm"
-                      >
-                        <Icon name="banknote" size={14} />
-                        {t('adminUsers.revokeFinance')}
-                      </button>
-                    ) : (
-                      row.is_active && (
+                        {row.is_finance_admin ? (
+                          <button
+                            type="button"
+                            onClick={() => patch(row, { is_finance_admin: false })}
+                            className="btn btn-danger-ghost btn-sm"
+                          >
+                            <Icon name="banknote" size={14} />
+                            {t('adminUsers.revokeFinance')}
+                          </button>
+                        ) : (
+                          row.is_active && (
+                            <button
+                              type="button"
+                              onClick={() => setGranting(row)}
+                              className="btn btn-ghost btn-sm"
+                            >
+                              <Icon name="banknote" size={14} />
+                              {t('adminUsers.grantFinance')}
+                            </button>
+                          )
+                        )}
                         <button
                           type="button"
-                          onClick={() => setGranting(row)}
+                          onClick={() => setResetting(row)}
                           className="btn btn-ghost btn-sm"
                         >
-                          <Icon name="banknote" size={14} />
-                          {t('adminUsers.grantFinance')}
+                          {t('adminUsers.resetPassword')}
                         </button>
-                      )
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setResetting(row)}
-                      className="btn btn-ghost btn-sm"
-                    >
-                      {t('adminUsers.resetPassword')}
-                    </button>
-                    {/* From outside the organisation (#243): set here or on
+                        {/* From outside the organisation (#243): set here or on
                         the invitation, never by the person, and never for an
                         admin of any kind. */}
-                    <button
-                      type="button"
-                      onClick={() => patch(row, { is_external: !row.is_external })}
-                      disabled={!row.is_external && (row.is_site_admin || row.is_finance_admin)}
-                      title={
-                        !row.is_external && (row.is_site_admin || row.is_finance_admin)
-                          ? t('adminUsers.outsideIsNeverAdmin')
-                          : undefined
-                      }
-                      className="btn btn-ghost btn-sm"
-                    >
-                      {row.is_external ? t('adminUsers.markInside') : t('adminUsers.markOutside')}
-                    </button>
+                        <button
+                          type="button"
+                          onClick={() => patch(row, { is_external: !row.is_external })}
+                          disabled={!row.is_external && (row.is_site_admin || row.is_finance_admin)}
+                          title={
+                            !row.is_external && (row.is_site_admin || row.is_finance_admin)
+                              ? t('adminUsers.outsideIsNeverAdmin')
+                              : undefined
+                          }
+                          className="btn btn-ghost btn-sm"
+                        >
+                          {row.is_external
+                            ? t('adminUsers.markInside')
+                            : t('adminUsers.markOutside')}
+                        </button>
+                      </>
+                    )}
                   </div>
 
                   {editing === row.id && (
@@ -449,6 +579,14 @@ export default function AdminUsersPage() {
           target={resetting}
           onClose={() => setResetting(null)}
           onDone={refresh}
+        />
+      )}
+
+      {creating && (
+        <NewAccountDialog
+          canEmail={canEmail}
+          onClose={() => setCreating(false)}
+          onCreated={refresh}
         />
       )}
 

@@ -15,3 +15,16 @@ export const resetPassword = {
     failed: 'Could not reset your password.',
   },
 } as const
+
+/** Choosing a first password for an account a site admin made, /welcome (#303). */
+export const welcome = {
+  title: 'Choose a password',
+  intro: 'An account was made for you. Choose a password to sign in.',
+  done: 'Your password is set. Sign in with your email and the password you chose.',
+  signIn: 'Sign in',
+  noToken: 'This page needs the link from the email that told you about your account. Ask whoever made it for a new one.',
+  invalid: 'This link is invalid or has expired. Ask whoever made your account to send it again.',
+  password: 'Password',
+  confirmPassword: 'Confirm password',
+  submit: 'Set password',
+} as const
