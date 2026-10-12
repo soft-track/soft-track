@@ -174,6 +174,7 @@ export const ErrorCode = {
   import_empty: 'import_empty',
   invite_invalid: 'invite_invalid',
   api_token_not_found: 'api_token_not_found',
+  session_not_found: 'session_not_found',
   webhook_not_found: 'webhook_not_found',
   webhook_invalid: 'webhook_invalid',
   webhook_target_private: 'webhook_target_private',

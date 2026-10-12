@@ -46,7 +46,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote, urlencode
 
-from fastapi import HTTPException
+from fastapi import BackgroundTasks, HTTPException, Request
 from jose import JWTError, jwt
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, select
@@ -636,7 +636,13 @@ def _linking_user(session: Session, claims: dict) -> User:
 # ---------------------------------------------------------------------------
 
 
-def exchange(session: Session, ticket: str, handshake: str) -> Token:
+def exchange(
+    session: Session,
+    ticket: str,
+    handshake: str,
+    request: Request,
+    background: BackgroundTasks | None = None,
+) -> Token:
     """Trade the callback's ticket for a session.
 
     The ticket travelled in a URL fragment and the handshake never left the
@@ -674,7 +680,9 @@ def exchange(session: Session, ticket: str, handshake: str) -> Token:
             detail="That sign-in has expired",
         )
 
-    return ticket_token(user)
+    # A session like any other (#308): listed, revocable, and announced by
+    # email when it is a browser the account has not used.
+    return ticket_token(session, user, request, background)
 
 
 # ---------------------------------------------------------------------------

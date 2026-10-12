@@ -1305,3 +1305,15 @@ def test_an_unexpected_service_refusal_is_still_a_page(
     assert path == "/login"
     assert params["error"] == "failed"
     assert "something the service refused" not in response.headers["location"]
+
+
+def test_signing_in_with_a_provider_makes_a_session_like_any_other(
+    client, configured, provider
+):
+    """#308: listed, marked as this device, and revocable."""
+    headers = signed_in(client)
+    rows = client.get("/auth/me/sessions", headers=headers).json()
+    assert [row["current"] for row in rows] == [True]
+    response = client.delete(f"/auth/me/sessions/{rows[0]['id']}", headers=headers)
+    assert response.status_code == 204
+    assert client.get("/auth/me", headers=headers).status_code == 401

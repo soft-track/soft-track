@@ -13,7 +13,7 @@ from lib_softtrack.models.team_creation import (
 )
 from lib_softtrack.models.teams import TeamRead
 from lib_softtrack.tables import User
-from lib_utils.mailer import get_mailer
+from lib_utils.mailer import get_mailer, send_quietly
 from web import get_session
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -47,7 +47,7 @@ def approve_team_request(
     """Create the team, with the person who asked as its admin."""
     team, message = team_creation.approve_request(session, actor, request_id)
     if message is not None:
-        background.add_task(get_mailer().send, *message)
+        background.add_task(send_quietly, get_mailer(), *message)
     return team
 
 
@@ -63,5 +63,5 @@ def decline_team_request(
         session, actor, request_id, payload
     )
     if message is not None:
-        background.add_task(get_mailer().send, *message)
+        background.add_task(send_quietly, get_mailer(), *message)
     return request

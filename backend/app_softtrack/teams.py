@@ -26,7 +26,7 @@ from lib_softtrack.models.teams import (
     TeamUpdate,
 )
 from lib_softtrack.tables import User
-from lib_utils.mailer import get_mailer
+from lib_utils.mailer import get_mailer, send_quietly
 from web import get_session
 
 router = APIRouter(prefix="/teams", tags=["teams"])
@@ -96,7 +96,7 @@ def request_team(
     request, messages = team_creation.request_team(session, current_user, payload)
     mailer = get_mailer()
     for message in messages:
-        background.add_task(mailer.send, *message)
+        background.add_task(send_quietly, mailer, *message)
     return request
 
 
@@ -203,7 +203,7 @@ def ask_to_join(
     request, messages = joining.ask_to_join(session, current_user, team_id, payload)
     mailer = get_mailer()
     for message in messages:
-        background.add_task(mailer.send, *message)
+        background.add_task(send_quietly, mailer, *message)
     return request
 
 
@@ -235,7 +235,7 @@ def approve_join_request(
         session, current_user, team_id, join_request_id, payload
     )
     if message is not None:
-        background.add_task(get_mailer().send, *message)
+        background.add_task(send_quietly, get_mailer(), *message)
     return member
 
 
@@ -253,5 +253,5 @@ def decline_join_request(
 ):
     message = joining.decline(session, current_user, team_id, join_request_id)
     if message is not None:
-        background.add_task(get_mailer().send, *message)
+        background.add_task(send_quietly, get_mailer(), *message)
     return Response(status_code=204)

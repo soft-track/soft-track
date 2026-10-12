@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => ({
   listCalls: [] as unknown[],
   update: { mutateAsync: vi.fn(), isPending: false },
   reset: { mutateAsync: vi.fn(), isPending: false },
+  endSessions: { mutateAsync: vi.fn(), isPending: false },
   departments: {
     data: [
       { id: 1, name: 'Engineering', description: null, member_count: 3 },
@@ -50,6 +51,7 @@ vi.mock('@/api/generated/endpoints/admin/admin', async (importOriginal) => ({
   },
   useUpdateUserAdminUsersUserIdPatch: () => mocks.update,
   useResetPasswordAdminUsersUserIdResetPasswordPost: () => mocks.reset,
+  useEndSessionsAdminUsersUserIdEndSessionsPost: () => mocks.endSessions,
 }))
 
 vi.mock('@/api/generated/endpoints/departments/departments', async (importOriginal) => ({
@@ -376,5 +378,47 @@ describe('Finance access (#130)', () => {
   it('is not offered to a deactivated account', () => {
     renderPage([{ ...DANIEL, is_active: false }])
     expect(screen.queryByRole('button', { name: 'Grant finance access' })).toBeNull()
+  })
+})
+
+describe('Sessions, as a site admin sees them (#308)', () => {
+  const SIGNED_IN = { ...AMINA, session_count: 3, last_login_at: new Date().toISOString() }
+
+  beforeEach(() => {
+    mocks.endSessions.mutateAsync.mockReset().mockResolvedValue(AMINA)
+  })
+
+  it('shows how many sessions an account has and when it last signed in', () => {
+    renderPage([SIGNED_IN])
+    expect(screen.getByText(/^3 sessions · last signed in/)).toBeTruthy()
+  })
+
+  it('ends them all after asking, and says so', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const user = renderPage([SIGNED_IN])
+    await user.click(screen.getByRole('button', { name: 'End all sessions' }))
+    expect(confirm.mock.calls[0][0]).toMatch(/API tokens keep working/)
+    expect(mocks.endSessions.mutateAsync).toHaveBeenCalledWith({ userId: 3 })
+    await waitFor(() =>
+      expect(screen.getByText('Every session Amina Khan had has ended.')).toBeTruthy(),
+    )
+    confirm.mockRestore()
+  })
+
+  it('does nothing when the question is declined', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const user = renderPage([SIGNED_IN])
+    await user.click(screen.getByRole('button', { name: 'End all sessions' }))
+    expect(mocks.endSessions.mutateAsync).not.toHaveBeenCalled()
+    confirm.mockRestore()
+  })
+
+  it('offers no button with nothing to end, or for your own account', () => {
+    renderPage([
+      { ...AMINA, session_count: 0 },
+      { ...SIGNED_IN, id: 1, email: 'me@northwind.dev', full_name: 'Me' },
+    ])
+    expect(screen.getByText(/^no sessions · never signed in/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'End all sessions' })).toBeNull()
   })
 })

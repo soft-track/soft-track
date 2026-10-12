@@ -1,6 +1,8 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 
 import {
+  getListMySessionsAuthMeSessionsGetQueryKey,
   useChangeMyPasswordAuthMePasswordPost,
   useSignOutEverywhereRouteAuthMeSignOutEverywherePost,
 } from '@/api/generated/endpoints/auth/auth'
@@ -9,11 +11,13 @@ import { useAuth } from '@/auth/useAuth'
 import { useTranslation } from '@/i18n'
 import { ApiTokens } from '@/settings/ApiTokens'
 import { ConnectedAccounts } from '@/settings/ConnectedAccounts'
+import { Sessions } from '@/settings/Sessions'
 import { Icon } from '@/ui/Icon'
 
 export default function SecuritySettings() {
   const { user, setSession } = useAuth()
   const { t } = useTranslation(['settings', 'common'])
+  const queryClient = useQueryClient()
   const changePassword = useChangeMyPasswordAuthMePasswordPost()
   const signOutEverywhere = useSignOutEverywhereRouteAuthMeSignOutEverywherePost()
 
@@ -49,6 +53,8 @@ export default function SecuritySettings() {
       // The change invalidated every token including this tab's, so adopt the
       // fresh one the API returned rather than being bounced to /login.
       setSession(token.access_token, token.user)
+      // Every other session ended with it.
+      void queryClient.invalidateQueries({ queryKey: getListMySessionsAuthMeSessionsGetQueryKey() })
       setCurrent('')
       setNext('')
       setConfirm('')
@@ -71,6 +77,7 @@ export default function SecuritySettings() {
     try {
       const token = await signOutEverywhere.mutateAsync()
       setSession(token.access_token, token.user)
+      void queryClient.invalidateQueries({ queryKey: getListMySessionsAuthMeSessionsGetQueryKey() })
       setNotice(t('security.notices.signedOutEverywhere'))
     } catch (err: unknown) {
       setError(errorDetail(err, t('security.errors.signOutEverywhere')))
@@ -169,6 +176,8 @@ export default function SecuritySettings() {
       <ConnectedAccounts />
 
       <ApiTokens />
+
+      <Sessions />
 
       <section className="glass-strong rounded-panel p-6">
         <h2 className="text-base font-semibold tracking-tight text-neutral-900">

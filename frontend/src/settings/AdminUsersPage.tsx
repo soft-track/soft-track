@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useId, useState } from 'react'
 
 import {
+  useEndSessionsAdminUsersUserIdEndSessionsPost,
   useListUsersAdminUsersGet,
   useNewWelcomeLinkAdminUsersUserIdWelcomeLinkPost,
   useResetPasswordAdminUsersUserIdResetPasswordPost,
@@ -90,6 +91,7 @@ export default function AdminUsersPage() {
 
   const updateUser = useUpdateUserAdminUsersUserIdPatch()
   const newLink = useNewWelcomeLinkAdminUsersUserIdWelcomeLinkPost()
+  const endSessions = useEndSessionsAdminUsersUserIdEndSessionsPost()
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['/admin/users'] })
@@ -123,6 +125,23 @@ export default function AdminUsersPage() {
       } else {
         setError(t('adminUsers.clipboardFailed', { link: created.link }))
       }
+    } catch (err: unknown) {
+      setError(errorDetail(err, t('adminUsers.errors.update')))
+    }
+  }
+
+  /** Every session the account has ends (#308): the better way to what
+   *  deactivating and reactivating used to be for. */
+  const onEndSessions = async (target: AdminUserRead) => {
+    if (!window.confirm(t('adminUsers.confirmEndSessions', { name: target.full_name }))) {
+      return
+    }
+    setError(null)
+    setNotice(null)
+    try {
+      await endSessions.mutateAsync({ userId: target.id })
+      refresh()
+      setNotice(t('adminUsers.sessionsEnded', { name: target.full_name }))
     } catch (err: unknown) {
       setError(errorDetail(err, t('adminUsers.errors.update')))
     }
@@ -379,18 +398,40 @@ export default function AdminUsersPage() {
                           : t('adminUsers.linkExpired')}
                       </p>
                     ) : (
-                      <p className="text-xs text-neutral-400">
-                        {row.email} · {t('adminUsers.teams', { count: row.team_count })} ·{' '}
-                        {row.last_login_at
-                          ? t('adminUsers.lastSeen', {
-                              when: formatRelative(parseServerDate(row.last_login_at)),
-                            })
-                          : t('adminUsers.neverSignedIn')}{' '}
-                        ·{' '}
-                        {t('adminUsers.joined', {
-                          date: formatDate(parseServerDate(row.created_at), 'd MMM yyyy'),
-                        })}
-                      </p>
+                      <>
+                        <p className="text-xs text-neutral-400">
+                          {row.email} · {t('adminUsers.teams', { count: row.team_count })} ·{' '}
+                          {t('adminUsers.joined', {
+                            date: formatDate(parseServerDate(row.created_at), 'd MMM yyyy'),
+                          })}
+                        </p>
+                        {/* Where the account is signed in (#308): how many
+                            browsers, and a way to end them all. */}
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <p className="text-xs text-neutral-500">
+                            {(row.session_count ?? 0) > 0
+                              ? t('adminUsers.sessions', { count: row.session_count })
+                              : t('adminUsers.noSessions')}{' '}
+                            ·{' '}
+                            {row.last_login_at
+                              ? t('adminUsers.lastSignedIn', {
+                                  when: formatRelative(parseServerDate(row.last_login_at)),
+                                })
+                              : t('adminUsers.neverSignedIn')}
+                          </p>
+                          {(row.session_count ?? 0) > 0 && !isSelf && (
+                            <button
+                              type="button"
+                              onClick={() => onEndSessions(row)}
+                              disabled={endSessions.isPending}
+                              className="btn btn-secondary btn-sm"
+                            >
+                              <Icon name="logout" size={14} />
+                              {t('adminUsers.endSessions')}
+                            </button>
+                          )}
+                        </div>
+                      </>
                     )}
                     {row.is_finance_admin && row.finance_admin_since && (
                       <p className="text-xs text-neutral-400">

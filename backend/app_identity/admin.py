@@ -23,7 +23,7 @@ from lib_identity.models.admin import (
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
 from lib_softtrack.models.teams import TeamMemberRead
 from lib_softtrack.tables import User
-from lib_utils.mailer import get_mailer
+from lib_utils.mailer import get_mailer, send_quietly
 from web import get_session
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -72,7 +72,7 @@ def create_user(
     """
     created, message = accounts.create_account(session, actor, payload)
     if message is not None:
-        background.add_task(get_mailer().send, *message)
+        background.add_task(send_quietly, get_mailer(), *message)
     return created
 
 
@@ -88,7 +88,7 @@ def new_welcome_link(
     The link before it stops working."""
     created, message = accounts.new_link(session, actor, user_id, payload.send_email)
     if message is not None:
-        background.add_task(get_mailer().send, *message)
+        background.add_task(send_quietly, get_mailer(), *message)
     return created
 
 
@@ -111,6 +111,17 @@ def reset_password(
 ):
     admin_service.reset_password(session, actor, user_id, payload.new_password)
     return Response(status_code=204)
+
+
+@router.post("/users/{user_id}/end-sessions", response_model=AdminUserRead)
+def end_sessions(
+    user_id: int,
+    session: Session = Depends(get_session),
+    _actor: User = Depends(require_site_admin),
+):
+    """End every session the account has (#308), as its own "Sign out
+    everywhere" would. Its API tokens are not sessions and keep working."""
+    return admin_service.end_sessions(session, user_id)
 
 
 # --- Every team on the instance (#307) ---------------------------------------

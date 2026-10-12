@@ -317,6 +317,8 @@ class ErrorCode(str, enum.Enum):
     # --- links and sign-in flows -----------------------------------------------
     invite_invalid = "invite_invalid"
     api_token_not_found = "api_token_not_found"
+    #: Not one of your live sessions (#308): revoked, expired, or somebody else's.
+    session_not_found = "session_not_found"
     webhook_not_found = "webhook_not_found"
     #: Not an http(s) URL, or no events chosen.
     webhook_invalid = "webhook_invalid"
