@@ -19,6 +19,7 @@ import { MarkdownHelp } from '@/markdown/MarkdownHelp'
 import { type Mentionable, matchMentions, mentionHandles } from '@/markdown/mentions'
 import { mentionQueryAt } from '@/markdown/mentionQuery'
 import { ExternalChip } from '@/ui/ExternalChip'
+import { NotActivatedChip } from '@/ui/NotActivatedChip'
 import { Icon } from '@/ui/Icon'
 
 type Mode = 'write' | 'preview'
@@ -445,6 +446,7 @@ export function MarkdownEditor({
                   >
                     <span className="font-medium text-neutral-900">{person.full_name}</span>
                     {person.is_external && <ExternalChip />}
+                    {person.is_activated === false && <NotActivatedChip />}
                     <span className="identifier truncate text-xs text-neutral-400">
                       @{mentionHandles(people).get(person.id)}
                     </span>

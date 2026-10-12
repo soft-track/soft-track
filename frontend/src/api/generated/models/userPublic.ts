@@ -14,4 +14,5 @@ export interface UserPublic {
   avatar_color: string;
   is_active: boolean;
   is_external?: boolean;
+  is_activated?: boolean;
 }

@@ -17,4 +17,5 @@ export const AdminRole = {
   site_admin: 'site_admin',
   finance_admin: 'finance_admin',
   external: 'external',
+  not_activated: 'not_activated',
 } as const;

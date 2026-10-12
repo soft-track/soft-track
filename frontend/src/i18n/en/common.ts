@@ -17,4 +17,7 @@ export const common = {
   /** Beside the name of somebody from outside the organisation (#243). */
   external: 'External',
   externalHint: 'From outside the organisation',
+  /** Beside the name of an account nobody has signed into yet (#303). */
+  notActivated: 'not yet activated',
+  notActivatedHint: 'A site admin made this account. Its owner has not signed in yet.',
 } as const

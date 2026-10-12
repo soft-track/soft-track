@@ -56,24 +56,9 @@ def request_reset(session: Session, email: str) -> Optional[tuple[str, str, str]
         return None
 
     # One live link per account: asking again replaces the last one, so an
-    # inbox holding several never has more than one that works. Links nobody
-    # used are swept on the way, so the table only ever holds live ones.
-    session.execute(
-        delete(PasswordReset).where(
-            (PasswordReset.user_id == user.id) | (PasswordReset.expires_at < utcnow())
-        )
-    )
-
-    token = secrets.token_urlsafe(32)
+    # inbox holding several never has more than one that works.
     minutes = settings.password_reset_expire_minutes
-    session.add(
-        PasswordReset(
-            user_id=user.id,
-            token_hash=_hash(token),
-            token_version=user.token_version,
-            expires_at=utcnow() + timedelta(minutes=minutes),
-        )
-    )
+    token, _ = issue_link(session, user, timedelta(minutes=minutes), emailed=True)
     session.commit()
 
     link = f"{settings.app_base_url.rstrip('/')}/reset-password?token={token}"
@@ -87,6 +72,36 @@ def request_reset(session: Session, email: str) -> Optional[tuple[str, str, str]
         "If this was not you, ignore this email: your password stays as it is.\n"
     )
     return user.email, f"Reset your {settings.app_name} password", body
+
+
+def issue_link(
+    session: Session, user: User, lifetime: timedelta, emailed: bool
+) -> tuple[str, PasswordReset]:
+    """A new single-use link for `user`, retiring any they had: one live link
+    per account, and only its hash stored. Returns the token and its row.
+
+    Shared by "Forgot password" and by a site admin preparing an account
+    (#303), whose link lives as long as an invitation does.
+    """
+    # Links nobody used are swept on the way, so the table only ever holds
+    # live ones.
+    session.execute(
+        delete(PasswordReset).where(
+            (PasswordReset.user_id == user.id) | (PasswordReset.expires_at < utcnow())
+        )
+    )
+    token = secrets.token_urlsafe(32)
+    now = utcnow()
+    row = PasswordReset(
+        user_id=user.id,
+        token_hash=_hash(token),
+        token_version=user.token_version,
+        created_at=now,
+        expires_at=now + lifetime,
+        emailed_at=now if emailed else None,
+    )
+    session.add(row)
+    return token, row
 
 
 def reset_password(session: Session, token: str, new_password: str) -> None:
@@ -118,6 +133,9 @@ def reset_password(session: Session, token: str, new_password: str) -> None:
         )
 
     user.hashed_password = hash_password(new_password)
+    # An account a site admin prepared (#303) is its owner's from the moment
+    # they choose a password, whichever link they chose it from.
+    user.is_activated = True
     # Every session ends. Somebody who could not remember the password may
     # well be resetting it because somebody else knows it.
     user.token_version += 1

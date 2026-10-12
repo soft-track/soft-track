@@ -2,9 +2,10 @@ import enum
 from datetime import date, datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 from lib_identity.models.identity import PersonRef, UserMe
+from lib_softtrack.tables import TeamRole
 
 
 class AdminRole(str, enum.Enum):
@@ -14,6 +15,9 @@ class AdminRole(str, enum.Enum):
     site_admin = "site_admin"
     finance_admin = "finance_admin"
     external = "external"
+    #: Accounts a site admin created whose owner has not chosen a password
+    #: yet (#303).
+    not_activated = "not_activated"
 
 
 class GuestOf(BaseModel):
@@ -43,6 +47,10 @@ class AdminUserRead(UserMe):
     #: For an account from outside (#243): where it is a guest and what it
     #: sees there. Empty for everybody else.
     guest_of: list[GuestOf] = []
+    #: For an account not yet activated (#303): its link to choose a
+    #: password, while one is live. Never the link itself -- only its hash is
+    #: kept -- just when it was made and when it stops working.
+    welcome_link: Optional["WelcomeLinkRead"] = None
 
 
 class AdminUserUpdate(BaseModel):
@@ -120,3 +128,60 @@ class AdminTeamAppoint(BaseModel):
     promoted; anybody else joins it as an admin."""
 
     user_id: int
+
+
+# --- Accounts a site admin creates (#303) ------------------------------------
+
+
+class WelcomeLinkRead(BaseModel):
+    """When an account's link to choose a password was made, whether it was
+    emailed, and when it stops working."""
+
+    created_at: datetime
+    expires_at: datetime
+    #: Null when it was only handed to the admin to copy.
+    emailed_at: Optional[datetime] = None
+
+
+class AdminUserTeam(BaseModel):
+    """A team the new account joins, and as what."""
+
+    team_id: int
+    role: TeamRole = TeamRole.member
+
+
+class AdminUserCreate(BaseModel):
+    """An account for somebody, prepared before they arrive (#303). It has no
+    password: its owner chooses one from the link."""
+
+    full_name: str
+    email: EmailStr
+    #: Blank means "derive one from the address", as registering does.
+    username: Optional[str] = None
+    job_title: Optional[str] = None
+    started_on: Optional[date] = None
+    department_id: Optional[int] = None
+    manager_id: Optional[int] = None
+    teams: list[AdminUserTeam] = []
+    #: Email the link as well as returning it. Only where SMTP is configured;
+    #: asking elsewhere is a 400, as it is for an invitation.
+    send_email: bool = False
+
+
+class WelcomeLinkCreate(BaseModel):
+    send_email: bool = False
+
+
+class WelcomeLinkCreated(BaseModel):
+    """A new link to choose a password. The only time it is ever shown:
+    afterwards just its hash is kept."""
+
+    link: str
+    welcome_link: WelcomeLinkRead
+
+
+class AdminUserCreated(WelcomeLinkCreated):
+    user: AdminUserRead
+
+
+AdminUserRead.model_rebuild()

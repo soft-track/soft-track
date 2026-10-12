@@ -131,6 +131,12 @@ class ErrorCode(str, enum.Enum):
     link_contradicts = "link_contradicts"
     repository_already_connected = "repository_already_connected"
     oauth_account_taken = "oauth_account_taken"
+    #: A new link to choose a password, for an account whose owner has
+    #: already chosen one (#303).
+    account_already_activated = "account_already_activated"
+    #: Setting a password for an account whose owner has not chosen one yet
+    #: (#303): they choose it, from their link.
+    account_not_activated = "account_not_activated"
 
     # --- a rule of the model says no ------------------------------------------
     #: The last admin of a team cannot leave, be removed or be demoted.

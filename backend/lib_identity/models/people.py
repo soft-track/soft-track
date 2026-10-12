@@ -22,6 +22,8 @@ class PersonRead(BaseModel):
     full_name: str
     avatar_color: str
     is_active: bool
+    #: Prepared by a site admin and not yet signed into (#303).
+    is_activated: bool = True
     job_title: Optional[str] = None
     location: Optional[str] = None
     started_on: Optional[date] = None

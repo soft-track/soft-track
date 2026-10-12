@@ -640,6 +640,15 @@ class User(SQLModel, table=True):
     #: outside.py`). Never a site or finance admin.
     is_external: bool = Field(default=False)
 
+    # --- Prepared by a site admin (#303) -----------------------------------
+
+    #: False for an account a site admin created whose owner has not yet
+    #: chosen a password from the link they were sent. It can be assigned work
+    #: and mentioned all the same; the directory and the pickers say it has
+    #: not been activated. True for every account that registered or signed
+    #: in with a provider, which was there to activate it itself.
+    is_activated: bool = Field(default=True)
+
     @property
     def has_password(self) -> bool:
         """Whether this account can be signed into with a password.
@@ -813,6 +822,11 @@ class PasswordReset(SQLModel, table=True):
     token_version: int
     created_at: datetime = Field(default_factory=utcnow)
     expires_at: datetime
+    #: When the link was emailed (#303), or null if it was only handed to a
+    #: site admin to copy. A link for an account a site admin created lives as
+    #: long as an invitation does; one asked for from "Forgot password" is
+    #: always emailed and lives an hour.
+    emailed_at: Optional[datetime] = None
 
 
 class TeamInvite(SQLModel, table=True):

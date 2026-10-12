@@ -76,6 +76,8 @@ export const ErrorCode = {
   link_contradicts: 'link_contradicts',
   repository_already_connected: 'repository_already_connected',
   oauth_account_taken: 'oauth_account_taken',
+  account_already_activated: 'account_already_activated',
+  account_not_activated: 'account_not_activated',
   last_team_admin: 'last_team_admin',
   last_site_admin: 'last_site_admin',
   last_status: 'last_status',

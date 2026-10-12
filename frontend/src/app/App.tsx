@@ -27,6 +27,7 @@ import PeopleLayout from '@/people/PeopleLayout'
 import ProfilePage from '@/people/ProfilePage'
 import RegisterPage from '@/auth/RegisterPage'
 import ResetPasswordPage from '@/auth/ResetPasswordPage'
+import WelcomePage from '@/auth/WelcomePage'
 import AdminDepartmentsPage from '@/settings/AdminDepartmentsPage'
 import AdminTeamsPage from '@/settings/AdminTeamsPage'
 import AdminSettingsPage from '@/settings/AdminSettingsPage'
@@ -62,6 +63,10 @@ export default function App() {
             cannot wait for a session (#83). */}
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        {/* A first password for an account a site admin made (#303). The
+            token is taken out of the path as soon as it is read. */}
+        <Route path="/welcome/:token" element={<WelcomePage />} />
+        <Route path="/welcome" element={<WelcomePage />} />
         {/* Where a sign-in with Google or GitHub comes back to. Outside
             RequireAuth by necessity: the ticket it is carrying is what the
             person is about to become authenticated with, and it has not been

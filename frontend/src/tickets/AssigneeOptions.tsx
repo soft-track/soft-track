@@ -29,7 +29,9 @@ export function AssigneeOptions({
         .filter((user) => user.id !== exceptId)
         .map((user) => (
           <option key={user.id} value={user.id}>
-            {user.full_name}
+            {user.is_activated === false
+              ? t('assignee.notActivated', { name: user.full_name })
+              : user.full_name}
           </option>
         ))}
       {guests.length > 0 && (
