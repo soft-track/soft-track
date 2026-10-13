@@ -39,6 +39,7 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy import delete, or_, update
 from sqlmodel import Session, select
 
+from lib_softtrack.metrics import WEBHOOK_DELIVERIES
 from lib_softtrack.tables import (
     OutboundWebhook,
     Team,
@@ -440,6 +441,9 @@ def _attempt(session, hook, delivery, sender, now, resolve) -> None:
     session.add(delivery)
     session.add(hook)
     session.commit()
+    WEBHOOK_DELIVERIES.labels(
+        direction="out", result="success" if ok else "failure"
+    ).inc()
     _prune(session, hook.id)
 
 

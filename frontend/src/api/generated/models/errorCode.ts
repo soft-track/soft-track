@@ -17,6 +17,7 @@ export const ErrorCode = {
   bad_credentials: 'bad_credentials',
   account_deactivated: 'account_deactivated',
   rate_limited: 'rate_limited',
+  metrics_disabled: 'metrics_disabled',
   not_team_member: 'not_team_member',
   not_team_admin: 'not_team_admin',
   team_read_only: 'team_read_only',

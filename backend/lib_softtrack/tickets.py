@@ -31,7 +31,7 @@ from lib_softtrack.history import record_changes, record_creation, snapshot
 from lib_softtrack import notifications as notifications_service
 from lib_softtrack import automations as automations_service
 from lib_softtrack import integrations as integrations_service
-from lib_softtrack.metrics import ISSUES_CREATED
+from lib_softtrack.metrics import TICKETS_CREATED
 from lib_softtrack import reactions as reactions_service
 from lib_softtrack import rules as rules_service
 from lib_softtrack.filters import filter_clauses
@@ -396,7 +396,7 @@ def _announce_creation(
     session.commit()
     session.refresh(ticket)
 
-    ISSUES_CREATED.inc()
+    TICKETS_CREATED.inc()
     return ticket_to_read(ticket, session)
 
 

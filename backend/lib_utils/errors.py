@@ -39,6 +39,8 @@ class ErrorCode(str, enum.Enum):
     account_deactivated = "account_deactivated"
     #: Too many attempts; `Retry-After` says when to try again.
     rate_limited = "rate_limited"
+    #: /metrics while no METRICS_TOKEN is set (#100): the route does not exist.
+    metrics_disabled = "metrics_disabled"
 
     # --- what you may do -------------------------------------------------------
     not_team_member = "not_team_member"

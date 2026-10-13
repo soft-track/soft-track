@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlmodel import Session
 
 from lib_softtrack import integrations as integrations_service
-from lib_softtrack.metrics import WEBHOOK_DELIVERIES_IN, WEBHOOK_DELIVERIES_OUT
+from lib_softtrack.metrics import WEBHOOK_DELIVERIES
 from lib_softtrack.models.integrations import WebhookReceipt
 from lib_softtrack.tables import GitProvider
 from lib_softtrack.webhooks import WebhookError
@@ -25,15 +25,6 @@ from lib_utils.rate_limit import address_of, webhook_by_address
 from web import get_session
 
 router = APIRouter(tags=["webhooks"])
-
-_KNOWN_EVENTS = {
-    GitProvider.github: {"push", "pull_request"},
-    GitProvider.gitlab: {"Push Hook", "push", "Merge Request Hook", "merge_request"},
-}
-
-
-def _event_label(provider: GitProvider, event_name: str) -> str:
-    return event_name if event_name in _KNOWN_EVENTS[provider] else "other"
 
 
 async def _receive(
@@ -45,13 +36,16 @@ async def _receive(
     session: Session,
 ) -> WebhookReceipt:
     """Shared body for both providers. Only the header names differ."""
-    provider_name = provider.value
-    event_label = _event_label(provider, event_name)
     address = address_of(request)
-    WEBHOOK_DELIVERIES_IN.labels(provider=provider_name, event=event_label).inc()
-    # A delivery rejected by the throttle is still a delivery received. A good
-    # one forgives the address -- the same arrangement as the sign-in throttle.
-    webhook_by_address.raise_if_locked(address)
+    # Only *failed* verifications are counted, and a good one forgives the
+    # address -- the same arrangement as the sign-in throttle. Charging every
+    # delivery would throttle a busy repository for being busy, which is the
+    # opposite of what this is for.
+    try:
+        webhook_by_address.raise_if_locked(address)
+    except Exception:
+        WEBHOOK_DELIVERIES.labels(direction="in", result="throttled").inc()
+        raise
 
     body = await request.body()
     headers = {name.lower(): value for name, value in request.headers.items()}
@@ -61,11 +55,7 @@ async def _receive(
             session, provider, hook_token, event_name, body, headers
         )
     except WebhookError as error:
-        WEBHOOK_DELIVERIES_OUT.labels(
-            provider=provider_name,
-            event=event_label,
-            result=str(error.status),
-        ).inc()
+        WEBHOOK_DELIVERIES.labels(direction="in", result="rejected").inc()
         webhook_by_address.record_attempt(address)
         # Returned rather than raised as an HTTPException so the provider gets
         # the reason in a shape it will render, and so a bad delivery is never
@@ -75,11 +65,7 @@ async def _receive(
         return WebhookReceipt(events=0, links=0, tickets=[error.detail])
 
     webhook_by_address.forgive(address)
-    WEBHOOK_DELIVERIES_OUT.labels(
-        provider=provider_name,
-        event=event_label,
-        result="success",
-    ).inc()
+    WEBHOOK_DELIVERIES.labels(direction="in", result="accepted").inc()
     return receipt
 
 

@@ -28985,6 +28985,7 @@
           "bad_credentials",
           "account_deactivated",
           "rate_limited",
+          "metrics_disabled",
           "not_team_member",
           "not_team_admin",
           "team_read_only",

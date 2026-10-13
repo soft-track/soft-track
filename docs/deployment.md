@@ -80,9 +80,31 @@ The generated API client under `src/api/generated/` is checked in and up to date
   targets, for example your own Slack proxy. Only do this on an instance where
   every team admin is trusted to choose where this server sends requests. See
   [outbound webhooks](features/outbound-webhooks.md).
-- `METRICS_TOKEN` enables the authenticated `/metrics` endpoint; leave it blank to keep the endpoint hidden.
-- Metrics are per process. With multiple workers or replicas, each scrape reaches one process and counters are not automatically combined.
+- `METRICS_TOKEN` enables the authenticated `/metrics` endpoint; leave it blank to keep the endpoint hidden. See [Metrics](#metrics).
 - Signing in with Google or GitHub is optional and off until both halves of a provider's credentials are set. `API_BASE_URL` has to be right for it, because the redirect URI is built from it.
+
+## Metrics
+
+Set `METRICS_TOKEN` to enable `/metrics`, then point Prometheus at it:
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: softtrack
+    metrics_path: /metrics
+    scheme: https
+    static_configs:
+      - targets: ["track.example.com"]
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/softtrack-token
+```
+
+The token stays in its own file rather than in `prometheus.yml`, which is often
+kept in a repository. With `METRICS_TOKEN` unset the endpoint answers `404`; a
+missing or wrong token answers `401`. Metrics are per process: with several
+workers or replicas, each scrape reaches one of them and the counters are not
+combined. What is exported is listed in [metrics](features/metrics.md).
 
 ## User management and security
 

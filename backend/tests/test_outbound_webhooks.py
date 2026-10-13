@@ -13,6 +13,7 @@ import socket
 from datetime import timedelta
 
 import pytest
+from prometheus_client import REGISTRY
 from sqlmodel import select
 
 from lib_softtrack import outbound
@@ -507,3 +508,23 @@ def test_a_redirect_is_not_followed(client, team, session, local_receiver):
     assert received["internal"] == 0
     [row] = session.exec(select(WebhookDelivery)).all()
     assert (row.status, row.response_status) == ("pending", 302)
+
+
+def _sent(result: str) -> float:
+    labels = {"direction": "out", "result": result}
+    return REGISTRY.get_sample_value("softtrack_webhook_deliveries_total", labels)
+
+
+def test_each_attempt_is_counted_by_its_result(client, team, session):
+    # Outgoing deliveries (#100): one count per attempt, not per event.
+    make_hook(client, team)
+    make_ticket(client, team)
+    success, failure = _sent("success"), _sent("failure")
+    start = utcnow()
+
+    deliver(session, FakeReceiver(status=500, text="boom"), now=start)
+    assert (_sent("success"), _sent("failure")) == (success, failure + 1)
+
+    retry = start + outbound.BACKOFF[0] + timedelta(seconds=1)
+    deliver(session, FakeReceiver(), now=retry)
+    assert (_sent("success"), _sent("failure")) == (success + 1, failure + 1)

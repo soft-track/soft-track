@@ -2,7 +2,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -243,7 +243,5 @@ def health():
 
 @app.get("/metrics", include_in_schema=False)
 async def metrics(authorization: str | None = Header(default=None)):
-    if not settings.metrics_token:
-        raise HTTPException(status_code=404, detail="Not found")
     check_metrics_token(authorization, settings.metrics_token)
     return metrics_response()

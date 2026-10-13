@@ -15,7 +15,7 @@ from lib_softtrack.history import record_creation
 from lib_softtrack.ranks import top_rank
 from lib_softtrack.jira import JiraParseError, parse
 from lib_softtrack import statuses as statuses_service
-from lib_softtrack.metrics import COMMENTS_CREATED, ISSUES_CREATED
+from lib_softtrack.metrics import COMMENTS_CREATED, TICKETS_CREATED
 from lib_softtrack.models.imports import ImportReport, ParsedTicket, UserMatch
 from lib_softtrack.tables import (
     Comment,
@@ -257,7 +257,7 @@ def import_export(
         session.rollback()
     else:
         session.commit()
-        ISSUES_CREATED.inc(report.tickets_created)
+        TICKETS_CREATED.inc(report.tickets_created)
         COMMENTS_CREATED.inc(report.comments_created)
 
     return report

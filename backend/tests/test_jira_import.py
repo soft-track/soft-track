@@ -69,15 +69,15 @@ def test_a_real_run_creates_the_tickets(client, team):
 
 
 def test_import_metrics_count_only_committed_rows(client, team):
-    issues_before = metric_value("softtrack_issues_created_total")
+    tickets_before = metric_value("softtrack_tickets_created_total")
     comments_before = metric_value("softtrack_comments_created_total")
 
     upload(client, team)
-    assert metric_value("softtrack_issues_created_total") == issues_before
+    assert metric_value("softtrack_tickets_created_total") == tickets_before
     assert metric_value("softtrack_comments_created_total") == comments_before
 
     upload(client, team, dry_run=False)
-    assert metric_value("softtrack_issues_created_total") == issues_before + 2
+    assert metric_value("softtrack_tickets_created_total") == tickets_before + 2
     assert metric_value("softtrack_comments_created_total") == comments_before + 1
 
 

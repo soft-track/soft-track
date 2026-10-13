@@ -1,6 +1,8 @@
 import asyncio
+import time
 
-from fastapi import FastAPI
+from fastapi import BackgroundTasks, FastAPI
+from fastapi.responses import StreamingResponse
 from prometheus_client import REGISTRY
 
 from lib_softtrack import comments as comments_service
@@ -143,7 +145,7 @@ def test_ticket_and_comment_creation_counters(session):
     team = teams_service.create_team(
         session, actor, TeamCreate(name="Engineering", key="ENG")
     )
-    issues_before = sample("softtrack_issues_created_total")
+    tickets_before = sample("softtrack_tickets_created_total")
     comments_before = sample("softtrack_comments_created_total")
 
     ticket = tickets_service.create_ticket(
@@ -153,5 +155,88 @@ def test_ticket_and_comment_creation_counters(session):
         session, actor, ticket.id, CommentCreate(body="Measured.")
     )
 
-    assert sample("softtrack_issues_created_total") == issues_before + 1
+    assert sample("softtrack_tickets_created_total") == tickets_before + 1
     assert sample("softtrack_comments_created_total") == comments_before + 1
+
+
+def test_a_refused_scrape_says_how_to_authenticate(client, monkeypatch):
+    monkeypatch.setattr(settings, "metrics_token", "metrics-secret")
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+
+
+def test_no_token_is_a_404_with_a_code(client, monkeypatch):
+    monkeypatch.setattr(settings, "metrics_token", "")
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 404
+    assert response.json()["code"] == "metrics_disabled"
+
+
+def test_the_scrape_is_left_out_of_the_request_metrics(client, monkeypatch):
+    monkeypatch.setattr(settings, "metrics_token", "metrics-secret")
+    headers = {"Authorization": "Bearer metrics-secret"}
+    client.get("/metrics", headers=headers)
+
+    body = client.get("/metrics", headers=headers).text
+
+    assert 'route="/metrics"' not in body
+
+
+def test_background_work_is_not_the_request_s_latency():
+    routed = FastAPI()
+    routed.add_middleware(PrometheusMiddleware)
+
+    @routed.post("/mail-later")
+    def mail_later(background: BackgroundTasks):
+        background.add_task(time.sleep, 0.5)
+        return {"ok": True}
+
+    labels = {"route": "/mail-later"}
+    before = sample("softtrack_http_request_duration_seconds_sum", labels)
+
+    status, _body = asgi_get(routed, "/mail-later", method="POST")
+
+    assert status == 200
+    assert sample("softtrack_http_request_duration_seconds_sum", labels) - before < 0.4
+
+
+def test_an_event_stream_is_counted_but_not_timed():
+    routed = FastAPI()
+    routed.add_middleware(PrometheusMiddleware)
+
+    @routed.get("/stream")
+    def stream():
+        return StreamingResponse(
+            iter([b"data: hi\n\n"]), media_type="text/event-stream"
+        )
+
+    requests = {"method": "GET", "route": "/stream", "status": "200"}
+    before = sample("softtrack_http_requests_total", requests)
+
+    assert asgi_get(routed, "/stream")[0] == 200
+
+    assert sample("softtrack_http_requests_total", requests) == before + 1
+    assert (
+        sample("softtrack_http_request_duration_seconds_count", {"route": "/stream"})
+        == 0
+    )
+
+
+def test_a_client_that_leaves_before_the_answer_is_disconnected_not_500():
+    async def hangs(scope, receive, send):
+        raise asyncio.CancelledError
+
+    labels = {"method": "GET", "route": "unmatched", "status": "disconnected"}
+    before = sample("softtrack_http_requests_total", labels)
+
+    try:
+        asgi_get(PrometheusMiddleware(hangs), "/anything")
+    except asyncio.CancelledError:
+        pass
+
+    assert sample("softtrack_http_requests_total", labels) == before + 1
