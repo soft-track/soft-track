@@ -13,4 +13,8 @@ export interface BurndownPoint {
   points_completed: number;
   points_total: number;
   ideal_remaining: number;
+  minutes_remaining: number;
+  minutes_total: number;
+  minutes_logged: number;
+  ideal_minutes_remaining: number;
 }

@@ -1,12 +1,15 @@
 import { parseServerDate } from '@/api/dates'
 import type {
   CommentRead,
+  CustomFieldRef,
   TicketEventRead,
   TicketPriority,
   StatusCategory,
 } from '@/api/generated/models'
 import { i18n } from '@/i18n'
+import { formatNumber } from '@/i18n/format'
 import { shortDue } from '@/tickets/dueDate'
+import { formatDuration } from '@/tickets/duration'
 import { CATEGORY_META, PRIORITY_META } from '@/tickets/ticketMeta'
 
 /** A history sentence: its catalog key and what fills it, bar the actor. */
@@ -19,11 +22,16 @@ type HistoryKey =
   | 'status'
   | `priority.${'set' | 'changed' | 'removed'}`
   | `estimate.${'set' | 'changed' | 'cleared'}`
+  | `timeEstimate.${'set' | 'changed' | 'cleared'}`
+  | `remaining.${'set' | 'cleared'}`
   | `assignee.${'assigned' | 'reassigned' | 'unassigned'}`
   | `sprint.${'added' | 'moved' | 'removed'}`
   | `due.${'set' | 'moved' | 'removed'}`
   | `project.${'added' | 'moved' | 'removed'}`
   | 'team'
+  | `field.${'set' | 'changed' | 'cleared' | 'ticked' | 'unticked'}`
+  | `trash.${'deleted' | 'restored'}`
+  | 'schedule'
   | 'other'
 
 /**
@@ -61,6 +69,15 @@ export function describeEvent(event: TicketEventRead): EventSentence {
       if (!from) return say('estimate.set', { to: points(to) })
       return say('estimate.changed', { from: points(from), to: points(to) })
 
+    case 'time_estimate':
+      if (!to) return say('timeEstimate.cleared', { from: minutes(from) })
+      if (!from) return say('timeEstimate.set', { to: minutes(to) })
+      return say('timeEstimate.changed', { from: minutes(from), to: minutes(to) })
+
+    case 'remaining':
+      if (to == null) return say('remaining.cleared', { from: minutes(from) })
+      return say('remaining.set', { to: minutes(to) })
+
     case 'assignee': {
       const before = named(event.old_label, 'formerMember')
       const after = named(event.new_label, 'formerMember')
@@ -97,6 +114,29 @@ export function describeEvent(event: TicketEventRead): EventSentence {
       return say('team', { from: from ?? elsewhere, to: to ?? elsewhere })
     }
 
+    case 'custom_field': {
+      // One of the team's own fields (#117), named as it is now. Deleting a
+      // field takes its history with it, so the field is always here.
+      const field = event.custom_field
+      if (!field) return say('other')
+      const values = { field: field.name }
+      if (field.kind === 'checkbox') return say(to ? 'field.ticked' : 'field.unticked', values)
+      const before = fieldValue(field, from, event.old_label)
+      const after = fieldValue(field, to, event.new_label)
+      if (!to) return say('field.cleared', { ...values, from: before })
+      if (!from) return say('field.set', { ...values, to: after })
+      return say('field.changed', { ...values, from: before, to: after })
+    }
+
+    case 'trash':
+      // Into the trash and back out of it (#323). Only a ticket that came
+      // back has an Activity feed to show either in.
+      return say(to ? 'trash.deleted' : 'trash.restored')
+
+    case 'schedule':
+      // Created by a schedule (#264), named as it was then.
+      return say('schedule', { name: to ?? '' })
+
     default:
       return say('other')
   }
@@ -128,6 +168,36 @@ function priority(value: string | null | undefined): string {
 
 function points(value: string | null | undefined): string {
   return i18n.t('tickets:history.points', { count: Number(value) })
+}
+
+function minutes(value: string | null | undefined): string {
+  return formatDuration(Number(value ?? 0))
+}
+
+/**
+ * One side of a field's change. A person or an option reads as its name now
+ * -- the label -- and one that has gone reads as such rather than as an id.
+ */
+function fieldValue(
+  field: CustomFieldRef,
+  value: string | null | undefined,
+  label: string | null | undefined,
+): string {
+  // The side that had no value: the sentence chosen does not show it.
+  if (value === null || value === undefined) return ''
+  switch (field.kind) {
+    case 'user':
+      return named(label, 'formerMember')
+    case 'select':
+    case 'multi_select':
+      return label ?? i18n.t('tickets:history.removedOption')
+    case 'date':
+      return shortDue(value)
+    case 'number':
+      return formatNumber(Number(value))
+    default:
+      return value
+  }
 }
 
 function named(

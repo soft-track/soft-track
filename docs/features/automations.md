@@ -29,6 +29,12 @@ negation and no branching. Two rules say "or" perfectly well, and each of the
 others is a step towards the workflow engine SoftTrack is trying not to become.
 It is the same line the five status categories draw.
 
+The person a rule names, as a condition or as the assignee to set, has to be
+able to hold the team's tickets: an admin or a member, not a guest (#316). That
+is checked when the rule is saved, and the assignment is checked again when it
+fires. A rule naming somebody who has left since, or become a guest, leaves the
+ticket as it was and says so in the run log: "Did not assign …".
+
 **A rule's own changes never fire another rule.** The engine writes to the ticket
 row directly rather than going back through the update endpoint, so there is no
 path from an action to a trigger — not one broken by a depth counter, one that

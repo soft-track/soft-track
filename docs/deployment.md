@@ -80,7 +80,31 @@ The generated API client under `src/api/generated/` is checked in and up to date
   targets, for example your own Slack proxy. Only do this on an instance where
   every team admin is trusted to choose where this server sends requests. See
   [outbound webhooks](features/outbound-webhooks.md).
+- `METRICS_TOKEN` enables the authenticated `/metrics` endpoint; leave it blank to keep the endpoint hidden. See [Metrics](#metrics).
 - Signing in with Google or GitHub is optional and off until both halves of a provider's credentials are set. `API_BASE_URL` has to be right for it, because the redirect URI is built from it.
+
+## Metrics
+
+Set `METRICS_TOKEN` to enable `/metrics`, then point Prometheus at it:
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: softtrack
+    metrics_path: /metrics
+    scheme: https
+    static_configs:
+      - targets: ["track.example.com"]
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/softtrack-token
+```
+
+The token stays in its own file rather than in `prometheus.yml`, which is often
+kept in a repository. With `METRICS_TOKEN` unset the endpoint answers `404`; a
+missing or wrong token answers `401`. Metrics are per process: with several
+workers or replicas, each scrape reaches one of them and the counters are not
+combined. What is exported is listed in [metrics](features/metrics.md).
 
 ## User management and security
 
@@ -90,7 +114,7 @@ The first user to register on a fresh instance gets `is_site_admin`.
 
 ### Team roles
 
-Every membership is `admin`, `member` or `guest` (read-only — see [user management](features/users.md#guests)). The team key is fixed once set, and the default rules protect against removing the last active admin.
+Every membership is `admin`, `member` or `guest` (read-only — see [user management](features/users.md#guests)). A team key is fixed, and never given back: an archived team keeps it, and so does a deleted team that ever gave out an identifier (see [archiving a team](features/users.md#archiving-a-team-and-deleting-one-that-was-a-mistake)). The default rules protect against removing the last active admin.
 
 ### Invitations without a mail server
 
@@ -99,6 +123,10 @@ Invitations are rows and links rather than email sends. One live invitation per 
 ### Invite-only instances
 
 Set `OPEN_REGISTRATION=false` to require an invitation before registration is allowed.
+
+### Who may create teams
+
+A team takes a key, and a key is never given back. A site admin chooses who may create a team under Administration → Settings: anyone signed in (the default), site admins only, or named people. `TEAM_CREATION=anyone|site_admins|named_people` sets it from the environment instead, and wins; the named people are still chosen in the app. Anybody else can ask for a team with a name, a key and a reason; the site admins are emailed (when the instance sends mail) and approving creates the team with the person who asked as its admin. An account from outside the organisation never creates a team.
 
 ### Deactivate, not delete
 

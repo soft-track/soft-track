@@ -10,4 +10,5 @@ export interface SprintCreate {
   name?: string | null;
   starts_at: string;
   ends_at: string;
+  goal?: string | null;
 }

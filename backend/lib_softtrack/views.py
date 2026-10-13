@@ -15,7 +15,7 @@ expressed; the client is told the answer rather than the rule.
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlmodel import Session, or_, select
+from sqlmodel import Session, func, or_, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.views import (
@@ -29,6 +29,7 @@ from lib_softtrack.models.views import (
 from lib_softtrack.tables import (
     Sprint,
     Label,
+    LabelMatch,
     Project,
     SavedView,
     Team,
@@ -45,6 +46,39 @@ from lib_softtrack.teams import (
 from lib_utils.errors import ErrorCode, api_error
 
 
+def view_filters(view: SavedView) -> ViewFilters:
+    """A stored view's filters, in the shape the ticket list reads."""
+    return ViewFilters(
+        status_id=view.status_ids,
+        status_exclude=view.status_exclude,
+        priority=view.priorities,
+        priority_exclude=view.priority_exclude,
+        assignee_id=view.assignee_ids,
+        unassigned=view.unassigned,
+        assignee_exclude=view.assignee_exclude,
+        label_id=view.label_ids,
+        label_match=LabelMatch.all if view.label_all else LabelMatch.any,
+        label_exclude=view.label_exclude,
+        type=view.types,
+        type_exclude=view.type_exclude,
+        project_id=view.project_id,
+        sprint_id=view.sprint_id,
+        due=view.due,
+        assignee_me=view.assignee_me,
+        creator_id=view.creator_ids,
+        creator_me=view.creator_me,
+        creator_exclude=view.creator_exclude,
+        watching=view.watching,
+        updated=view.updated,
+        updated_from=view.updated_from,
+        updated_to=view.updated_to,
+        created=view.created,
+        created_from=view.created_from,
+        created_to=view.created_to,
+        has_no=view.has_no,
+    )
+
+
 def _to_read(view: SavedView, owner: User) -> SavedViewRead:
     return SavedViewRead(
         id=view.id,
@@ -52,17 +86,7 @@ def _to_read(view: SavedView, owner: User) -> SavedViewRead:
         name=view.name,
         owner=UserPublic.model_validate(owner),
         is_shared=view.is_shared,
-        filters=ViewFilters(
-            status_id=view.status_id,
-            priority=view.priority,
-            assignee_id=view.assignee_id,
-            unassigned=view.unassigned,
-            label_id=view.label_id,
-            project_id=view.project_id,
-            sprint_id=view.sprint_id,
-            due=view.due,
-            type=view.type,
-        ),
+        filters=view_filters(view),
         group_by=view.group_by,
         sort=view.sort,
         sort_direction=view.sort_direction,
@@ -72,15 +96,35 @@ def _to_read(view: SavedView, owner: User) -> SavedViewRead:
 
 
 def _apply_filters(view: SavedView, filters: ViewFilters) -> None:
-    view.status_id = filters.status_id
-    view.priority = filters.priority
-    view.assignee_id = filters.assignee_id
+    # New lists rather than edits in place, so the JSON columns are seen to
+    # change. Enums are stored as their values.
+    view.status_ids = list(filters.status_id)
+    view.status_exclude = filters.status_exclude
+    view.priorities = [priority.value for priority in filters.priority]
+    view.priority_exclude = filters.priority_exclude
+    view.assignee_ids = list(filters.assignee_id)
     view.unassigned = filters.unassigned
-    view.label_id = filters.label_id
+    view.assignee_exclude = filters.assignee_exclude
+    view.label_ids = list(filters.label_id)
+    view.label_all = filters.label_match == LabelMatch.all
+    view.label_exclude = filters.label_exclude
+    view.types = [ticket_type.value for ticket_type in filters.type]
+    view.type_exclude = filters.type_exclude
     view.project_id = filters.project_id
     view.sprint_id = filters.sprint_id
     view.due = filters.due
-    view.type = filters.type
+    view.assignee_me = filters.assignee_me
+    view.creator_ids = list(filters.creator_id)
+    view.creator_me = filters.creator_me
+    view.creator_exclude = filters.creator_exclude
+    view.watching = filters.watching
+    view.updated = filters.updated
+    view.updated_from = filters.updated_from
+    view.updated_to = filters.updated_to
+    view.created = filters.created
+    view.created_from = filters.created_from
+    view.created_to = filters.created_to
+    view.has_no = [missing.value for missing in filters.has_no]
 
 
 def _validate_filters(session: Session, team_id: int, filters: ViewFilters) -> None:
@@ -90,17 +134,26 @@ def _validate_filters(session: Session, team_id: int, filters: ViewFilters) -> N
     then match nothing for ever, looking like a bug in filtering rather than a
     bad reference. Checked on write, once, rather than on every read.
     """
-    if filters.status_id is not None:
-        status = session.get(WorkflowStatus, filters.status_id)
-        if status is None or status.team_id != team_id:
+    if filters.status_id:
+        found = session.exec(
+            select(func.count()).where(
+                WorkflowStatus.id.in_(filters.status_id),
+                WorkflowStatus.team_id == team_id,
+            )
+        ).one()
+        if found != len(filters.status_id):
             raise api_error(
                 status_code=400,
                 code=ErrorCode.not_on_this_team,
                 detail="No such status on this team",
             )
-    if filters.label_id is not None:
-        label = session.get(Label, filters.label_id)
-        if label is None or label.team_id != team_id:
+    if filters.label_id:
+        found = session.exec(
+            select(func.count()).where(
+                Label.id.in_(filters.label_id), Label.team_id == team_id
+            )
+        ).one()
+        if found != len(filters.label_id):
             raise api_error(
                 status_code=400,
                 code=ErrorCode.not_on_this_team,
@@ -122,14 +175,17 @@ def _validate_filters(session: Session, team_id: int, filters: ViewFilters) -> N
                 code=ErrorCode.not_on_this_team,
                 detail="No such sprint on this team",
             )
-    if filters.assignee_id is not None:
-        member = session.exec(
-            select(TeamMember).where(
+    # The people chosen as assignee or creator are the team's. Not "me",
+    # which is whoever looks, and always somebody on the team.
+    people = set(filters.assignee_id) | set(filters.creator_id)
+    if people:
+        found = session.exec(
+            select(func.count()).where(
                 TeamMember.team_id == team_id,
-                TeamMember.user_id == filters.assignee_id,
+                TeamMember.user_id.in_(people),
             )
-        ).first()
-        if member is None:
+        ).one()
+        if found != len(people):
             raise api_error(
                 status_code=400,
                 code=ErrorCode.user_not_on_team,
@@ -305,8 +361,14 @@ def delete_view(session: Session, current_user: User, view_id: int) -> None:
     view = get_view_or_404(session, current_user, view_id)
     _require_can_edit(session, current_user, view)
 
-    # Before the row goes: both of these hold a foreign key to it.
+    # Before the row goes: both of these hold a foreign key to it, and so
+    # does a share link to it (#245), which is revoked with it.
     _withdraw_from_defaults(session, view)
+    # Imported here: sharing reads tickets, which import this module.
+    from lib_softtrack import sharing
+
+    sharing.forget_view(session, view.id)
+    session.flush()
     session.delete(view)
     session.commit()
 

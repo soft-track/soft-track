@@ -14,8 +14,11 @@ export const sidebar = {
   noProjects: 'No epics yet.',
   openNamed: 'Open {{name}}',
   openProject: 'Open epic',
+  people: 'People',
   members: 'Members',
   importJira: 'Import from Jira',
+  // The team directory (#259).
+  findTeam: 'Find a team',
   newTeam: 'New team',
   settings: 'Settings',
   signOut: 'Sign out',

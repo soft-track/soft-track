@@ -5,8 +5,13 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { NotificationChannel } from './notificationChannel';
+import type { NotificationKindSetting } from './notificationKindSetting';
+import type { TeamNotificationSetting } from './teamNotificationSetting';
 
 export interface NotificationSettings {
-  email_notifications: boolean;
   email_delivery_configured: boolean;
+  channels: NotificationChannel[];
+  kinds: NotificationKindSetting[];
+  teams: TeamNotificationSetting[];
 }

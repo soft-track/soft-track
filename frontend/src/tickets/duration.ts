@@ -5,9 +5,11 @@ import { i18n } from '@/i18n'
  * "2:30", or a bare number of minutes. Minutes out, or null for anything
  * that is not a duration -- the form says so rather than guessing.
  */
-export function parseDuration(input: string): number | null {
+export function parseDuration(input: string, { allowZero = false } = {}): number | null {
   const text = input.trim().toLowerCase()
   if (!text) return null
+  // What is left (#268) may be nothing: "0", "0h", "0m".
+  if (allowZero && /^0+(?:\.0+)?\s*(?:h(?:ours?|rs?)?|m(?:in(?:ute)?s?)?)?$/.test(text)) return 0
 
   const clock = /^(\d+):([0-5]\d)$/.exec(text)
   if (clock) return positive(Number(clock[1]) * 60 + Number(clock[2]))
@@ -33,6 +35,8 @@ function positive(minutes: number): number | null {
 export function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60)
   const rest = minutes % 60
+  // Nothing left reads as "0h", the way a remaining of none is said.
+  if (minutes === 0) return i18n.t('tickets:meta.duration.hours', { hours: 0 })
   if (hours === 0) return i18n.t('tickets:meta.duration.minutes', { minutes: rest })
   return rest === 0
     ? i18n.t('tickets:meta.duration.hours', { hours })

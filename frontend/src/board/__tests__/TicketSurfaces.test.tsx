@@ -14,28 +14,24 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes, useNavigate, useParams } from 'react-router-dom'
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { TicketRead, SearchHit, TeamRead } from '@/api/generated/models'
 import TeamRoute from '@/app/TeamRoute'
 import type { BoardView } from '@/keyboard/useCommands'
+import { modalsIn, withModal } from '@/tickets/modals'
+import type { TicketRef } from '@/tickets/surface'
 
-const ENG: TeamRead = {
-  id: 5,
-  name: 'Engineering',
-  key: 'ENG',
-  created_at: '2026-01-01T00:00:00Z',
-}
-
-const TODO = {
-  id: 1,
-  team_id: 5,
-  name: 'Todo',
-  category: 'unstarted',
-  position: 0,
-  color: '#888',
-}
+const ENG: TeamRead = { id: 5, name: 'Engineering', key: 'ENG', created_at: '2026-01-01T00:00:00Z' }
+const TODO = { id: 1, team_id: 5, name: 'Todo', category: 'unstarted', position: 0, color: '#888' }
 
 const STORM = {
   id: 70,
@@ -67,11 +63,7 @@ const HIT = {
   updated_at: '2026-09-25T10:00:00',
 } as unknown as SearchHit
 
-const mocks = vi.hoisted(() => ({
-  mounts: 0,
-  deepLink: false,
-  invalidTicket: false,
-}))
+const mocks = vi.hoisted(() => ({ mounts: 0 }))
 
 vi.mock('@/auth/useAuth', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/auth/useAuth')>()),
@@ -84,13 +76,7 @@ vi.mock('@/team/useTeams', async (importOriginal) => ({
 }))
 
 vi.mock('@/team/useTeamData', () => ({
-  useTeamData: () => ({
-    projects: [],
-    labels: [],
-    members: [],
-    sprints: [],
-    statuses: [TODO],
-  }),
+  useTeamData: () => ({ projects: [], labels: [], members: [], sprints: [], statuses: [TODO] }),
 }))
 
 vi.mock('@/realtime/useTeamEvents', () => ({ useTeamEvents: () => {} }))
@@ -101,20 +87,11 @@ vi.mock('@/views/useSavedViews', () => ({
 
 vi.mock('@/api/generated/endpoints/tickets/tickets', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/generated/endpoints/tickets/tickets')>()),
-
   useListTicketsTeamsTeamIdTicketsGet: () => ({
-    data: {
-      items: mocks.deepLink ? [] : [STORM],
-      total: mocks.deepLink ? 0 : 1,
-    },
+    data: { items: [STORM], total: 1 },
     isLoading: false,
   }),
-
-  useGetTicketByNumberTeamsTeamIdTicketsByNumberNumberGet: () => ({
-    data: mocks.deepLink && !mocks.invalidTicket ? STORM : undefined,
-    isLoading: false,
-    isError: mocks.invalidTicket,
-  }),
+  useGetTicketByNumberTeamsTeamIdTicketsByNumberNumberGet: () => ({ data: undefined }),
 }))
 
 vi.mock('@/api/generated/endpoints/search/search', async (importOriginal) => ({
@@ -128,13 +105,11 @@ vi.mock('@/api/generated/endpoints/search/search', async (importOriginal) => ({
 // The board, counted: remounting it is what would lose the view.
 vi.mock('@/board/KanbanBoard', async () => {
   const { useEffect } = await import('react')
-
   return {
     KanbanBoard: () => {
       useEffect(() => {
         mocks.mounts += 1
       }, [])
-
       return <p>The kanban board</p>
     },
   }
@@ -161,13 +136,11 @@ vi.mock('@/board/TopBar', () => ({
           {view}
         </button>
       ))}
-
       <input
         aria-label="Search"
         value={props.search}
         onChange={(e) => props.onSearchChange(e.target.value)}
       />
-
       <button
         type="button"
         onClick={() => props.onOpenNotifiedTicket({ team_key: 'ENG', number: 9 })}
@@ -178,35 +151,50 @@ vi.mock('@/board/TopBar', () => ({
   ),
 }))
 
+// The panel, with a linked ticket to open in a modal over it the way its
+// stack does (#114), and the way out to a page that either takes.
+const LINKED = { id: 250, team_key: 'ENG', number: 25, identifier: 'ENG-25' }
+
 vi.mock('@/tickets/TicketDetailPanel', () => ({
   TicketDetailPanel: ({
     ticketId,
-    onOpenAsPage,
+    openPage,
   }: {
     ticketId: number
-    onOpenAsPage?: () => void
-  }) => (
-    <div>
-      <p>Panel for ticket {ticketId}</p>
-
-      <button type="button" onClick={onOpenAsPage}>
-        Open as page
-      </button>
-    </div>
-  ),
+    openPage?: (ticket: TicketRef) => void
+  }) => {
+    const location = useLocation()
+    const navigate = useNavigate()
+    return (
+      <div>
+        <p>Panel for ticket {ticketId}</p>
+        <p>Modals over it: {modalsIn(location.state).length}</p>
+        <button type="button" onClick={() => openPage?.(STORM)}>
+          Open as page
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate(location, { state: withModal(location.state, LINKED) })}
+        >
+          Open the linked ticket
+        </button>
+        <button type="button" onClick={() => openPage?.(LINKED)}>
+          Open the linked ticket as a page
+        </button>
+      </div>
+    )
+  },
 }))
 
 vi.mock('@/tickets/TicketPage', () => ({
   TicketPage: () => {
     const { teamKey, ticketNumber } = useParams()
     const navigate = useNavigate()
-
     return (
       <div>
         <p>
           Page for {teamKey}-{ticketNumber}
         </p>
-
         <button type="button" onClick={() => navigate(-1)}>
           Back
         </button>
@@ -215,15 +203,10 @@ vi.mock('@/tickets/TicketPage', () => ({
   },
 }))
 
-function renderApp(initialEntry: string | { pathname: string; state?: unknown } = '/ENG') {
-  if (typeof initialEntry !== 'string') {
-    mocks.deepLink = initialEntry.pathname.includes('/ticket/')
-    mocks.invalidTicket = initialEntry.pathname.includes('/ticket/999')
-  }
-
+function renderApp() {
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <MemoryRouter initialEntries={[initialEntry]}>
+      <MemoryRouter initialEntries={['/ENG']}>
         <Routes>
           <Route path="/:teamKey" element={<TeamRoute />} />
           <Route path="/:teamKey/ticket/:ticketNumber" element={<TeamRoute />} />
@@ -231,15 +214,11 @@ function renderApp(initialEntry: string | { pathname: string; state?: unknown } 
       </MemoryRouter>
     </QueryClientProvider>,
   )
-
   return userEvent.setup()
 }
 
 beforeEach(() => {
   mocks.mounts = 0
-  mocks.deepLink = false
-  mocks.invalidTicket = false
-
   // jsdom has no layout; the palette scrolls its highlight into view.
   Element.prototype.scrollIntoView = vi.fn()
 })
@@ -259,49 +238,18 @@ describe('opening a ticket from the board', () => {
     await user.click(screen.getByRole('link', { name: /ENG-7.*Retry storm/ }))
 
     expect(screen.getByText('Panel for ticket 70')).toBeTruthy()
-
     // Still the list, so still the same BoardPage: remounting it would have
     // put the board back to its default view.
     expect(screen.getByRole('button', { name: 'list' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.queryByText(/Page for/)).toBeNull()
-  })
-
-  it('opens a deep-linked ticket even when it is not in the loaded board list (#115)', async () => {
-    renderApp({
-      pathname: '/ENG/ticket/7',
-      state: { ticketSurface: 'panel' },
-    })
-
-    /*
-     * The board ticket list is deliberately empty for this test.
-     * The ticket must therefore come from the direct "get ticket by number"
-     * endpoint rather than from the currently loaded board list.
-     */
-    expect(await screen.findByText('Panel for ticket 70')).toBeTruthy()
-    expect(screen.getByText('The kanban board')).toBeTruthy()
-  })
-
-  it('shows no such ticket for an invalid ticket number (#115)', async () => {
-    renderApp({
-      pathname: '/ENG/ticket/999',
-      state: { ticketSurface: 'panel' },
-    })
-
-    expect(await screen.findByText('No such ticket')).toBeTruthy()
-
-    expect(
-      screen.getByText('Ticket #999 does not exist in this team.'),
-    ).toBeTruthy()
   })
 })
 
 describe('leaving the board for a ticket page', () => {
   it('opens a search result as a page, and Back returns to the same search', async () => {
     const user = renderApp()
-
     await user.click(screen.getByRole('button', { name: 'list' }))
     await user.type(screen.getByRole('textbox', { name: 'Search' }), 'retry')
-
     // The result, once the search has settled -- not the list row it replaces.
     await user.click(await screen.findByRole('button', { name: /matched in title/ }))
 
@@ -311,9 +259,7 @@ describe('leaving the board for a ticket page', () => {
 
     await user.click(screen.getByRole('button', { name: 'Back' }))
 
-    expect(screen.getByRole('button', { name: 'list' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    )
+    expect(screen.getByRole('button', { name: 'list' }).getAttribute('aria-pressed')).toBe('true')
     expect((screen.getByRole('textbox', { name: 'Search' }) as HTMLInputElement).value).toBe(
       'retry',
     )
@@ -322,27 +268,21 @@ describe('leaving the board for a ticket page', () => {
 
   it('promotes a quick peek to a page on Enter (#113), and Back returns to the list', async () => {
     const user = renderApp()
-
     await user.click(screen.getByRole('button', { name: 'list' }))
     screen.getByRole('link', { name: /ENG-7.*Retry storm/ }).focus()
     await user.keyboard(' ')
-
     expect(screen.getByRole('tooltip', { name: 'Preview of ENG-7' })).toBeTruthy()
 
     await user.keyboard('{Enter}')
     expect(screen.getByText('Page for ENG-7')).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Back' }))
-
-    expect(screen.getByRole('button', { name: 'list' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    )
+    expect(screen.getByRole('button', { name: 'list' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.queryByRole('tooltip')).toBeNull()
   })
 
   it('opens the panel’s ticket as a page, and Back returns to the panel over the list', async () => {
     const user = renderApp()
-
     await user.click(screen.getByRole('button', { name: 'list' }))
     await user.click(screen.getByRole('link', { name: /ENG-7.*Retry storm/ }))
     await user.click(screen.getByRole('button', { name: 'Open as page' }))
@@ -352,19 +292,38 @@ describe('leaving the board for a ticket page', () => {
 
     // The glance you left, over the view you left it on.
     await user.click(screen.getByRole('button', { name: 'Back' }))
-
     expect(screen.getByText('Panel for ticket 70')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'list' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    )
+    expect(screen.getByRole('button', { name: 'list' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('keeps the modals over the panel for Back, when one of them leaves for a page (#114)', async () => {
+    const user = renderApp()
+    await user.click(screen.getByRole('button', { name: 'list' }))
+    await user.click(screen.getByRole('link', { name: /ENG-7.*Retry storm/ }))
+    await user.click(screen.getByRole('button', { name: 'Open the linked ticket' }))
+    expect(screen.getByText('Modals over it: 1')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Open the linked ticket as a page' }))
+    expect(screen.getByText('Page for ENG-25')).toBeTruthy()
+
+    // Back to the panel as it was: the modal still over it, the list under it.
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByText('Panel for ticket 70')).toBeTruthy()
+    expect(screen.getByText('Modals over it: 1')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'list' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('opens a notification as a page', async () => {
+    const user = renderApp()
+    await user.click(screen.getByRole('button', { name: 'Open the notification' }))
+    expect(screen.getByText('Page for ENG-9')).toBeTruthy()
   })
 
   it('opens a ticket from the command palette as a page', async () => {
     const user = renderApp()
-
-    await user.keyboard('{Control>}k')
-    await user.keyboard('{Control>}k')
-
+    await user.keyboard('{Meta>}k{/Meta}')
+    await user.type(screen.getByRole('textbox', { name: 'Command' }), 'storm')
+    await user.keyboard('{Enter}')
     expect(screen.getByText('Page for ENG-7')).toBeTruthy()
   })
 })

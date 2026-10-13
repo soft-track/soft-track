@@ -12,29 +12,47 @@ Two rules the hooks all obey, so no caller has to remember them:
 * One notification per person per event. An update that assigns a ticket *and*
   moves it to In Progress is one thing that happened, and the assignment is
   the part worth saying.
+
+And one rule the reader sets (#263): which kinds reach them, in the app and by
+email, and which teams they have muted. `_channels` reads it for every row,
+so a hook never has to.
 """
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Iterable, Optional
 
 from sqlmodel import Session, func, select
 
 from lib_identity.models.identity import UserPublic
+from lib_softtrack import outside
 from lib_softtrack.mentions import mentioned_user_ids
 from lib_softtrack.models.notifications import (
+    ChannelSetting,
+    NotificationKindSetting,
     NotificationTicket,
     NotificationRead,
     NotificationSettings,
+    NotificationSettingsUpdate,
+    TeamNotificationSetting,
     UnreadCount,
     WatchState,
+)
+from lib_softtrack.notification_kinds import (
+    KINDS,
+    KindSpec,
+    NotificationChannel,
+    spec_for,
 )
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
 from lib_softtrack.tables import (
     Comment,
+    CustomField,
+    DueReminder,
     Ticket,
     TicketWatch,
     Notification,
     NotificationKind,
+    NotificationPreference,
     Team,
     TeamMember,
     User,
@@ -146,18 +164,144 @@ def _raise(
     ticket: Ticket,
     actor: Optional[User],
     comment: Optional[Comment] = None,
+    custom_field: Optional[CustomField] = None,
+    due_date: Optional[date] = None,
 ) -> None:
-    """Add a row per recipient. Flushed with whatever transaction is open."""
-    for user_id in _deliverable(session, ticket.team_id, recipients):
+    """Add a row per recipient. Flushed with whatever transaction is open.
+
+    Never to somebody from outside the organisation who cannot see the ticket
+    (#243): a mention or a watch reaches only as far as their epics do.
+    """
+    deliverable = reachable(session, ticket, recipients)
+    channels = _channels(session, spec_for(kind), ticket.team_id, deliverable)
+    for user_id, (in_app, by_email) in channels.items():
+        if not (in_app or by_email):
+            continue
         session.add(
             Notification(
                 user_id=user_id,
                 kind=kind,
+                in_app=in_app,
+                by_email=by_email,
                 ticket_id=ticket.id,
                 comment_id=comment.id if comment else None,
                 actor_id=actor.id if actor else None,
+                custom_field_id=custom_field.id if custom_field else None,
+                due_date=due_date,
             )
         )
+
+
+def reachable(session: Session, ticket: Ticket, user_ids: Iterable[int]) -> set[int]:
+    """Who of these may be told anything about this ticket at all: active
+    members of its team who can see it."""
+    deliverable = _deliverable(session, ticket.team_id, user_ids)
+    deliverable -= outside.unable_to_see(session, ticket, deliverable)
+    return deliverable
+
+
+def raise_reminder(
+    session: Session,
+    ticket: Ticket,
+    user_id: int,
+    kind: NotificationKind,
+    due_date: date,
+) -> None:
+    """A due-date reminder (#262), raised by `lib_softtrack.reminders`. Nobody
+    did it, so there is no actor; the person's switches still decide."""
+    _raise(
+        session,
+        recipients={user_id},
+        kind=kind,
+        ticket=ticket,
+        actor=None,
+        due_date=due_date,
+    )
+
+
+def _channels(
+    session: Session, spec: KindSpec, team_id: int, user_ids: set[int]
+) -> dict[int, tuple[bool, bool]]:
+    """Where a notification of this kind reaches each person: (app, email).
+
+    Their choice for the kind where they made one, and its default where they
+    did not -- by email, only if they had not turned email off before there
+    was a choice to make (`User.email_notifications`). A muted team reaches
+    nobody, except with a kind that gets through a mute.
+
+    Decided now and kept on the row, rather than when the digest runs: a
+    switch turned off stops what happens next, and leaves alone what has
+    already arrived.
+    """
+    if not user_ids:
+        return {}
+
+    muted: set[int] = set()
+    if not spec.through_mute:
+        muted = set(
+            session.exec(
+                select(TeamMember.user_id).where(
+                    TeamMember.team_id == team_id,
+                    TeamMember.user_id.in_(user_ids),
+                    TeamMember.notifications_muted == True,  # noqa: E712
+                )
+            ).all()
+        )
+    chosen = {
+        (row.user_id, row.channel): row.enabled
+        for row in session.exec(
+            select(NotificationPreference).where(
+                NotificationPreference.user_id.in_(user_ids),
+                NotificationPreference.kind == spec.key,
+            )
+        ).all()
+    }
+    email_on = dict(
+        session.exec(
+            select(User.id, User.email_notifications).where(User.id.in_(user_ids))
+        ).all()
+    )
+
+    app, email = NotificationChannel.app.value, NotificationChannel.email.value
+    result: dict[int, tuple[bool, bool]] = {}
+    for user_id in user_ids - muted:
+        in_app = spec.always_in_app or chosen.get((user_id, app), spec.default)
+        by_email = chosen.get(
+            (user_id, email), spec.default and email_on.get(user_id, True)
+        )
+        result[user_id] = (in_app, by_email)
+    return result
+
+
+def _named_in_fields(
+    session: Session,
+    ticket: Ticket,
+    named: dict[int, CustomField],
+    actor: Optional[User],
+    already: set[int],
+) -> set[int]:
+    """Tell the people newly set in a user field (#117), as assignment does.
+
+    Being made somebody's reviewer is assignment by another name: it
+    watches the ticket for them, and tells them unless they did it
+    themselves. Somebody the same update also assigned has been told once
+    already. Returns who was told, for the hooks to subtract from the rest.
+    """
+    told: set[int] = set()
+    for user_id, field in named.items():
+        auto_watch(session, ticket.id, user_id)
+        if user_id in already or user_id in _own(actor):
+            continue
+        told.add(user_id)
+        _raise(
+            session,
+            recipients={user_id},
+            kind=NotificationKind.field_assigned,
+            ticket=ticket,
+            actor=actor,
+            custom_field=field,
+        )
+    return told
 
 
 def _own(actor: Optional[User]) -> set[int]:
@@ -170,17 +314,27 @@ def _own(actor: Optional[User]) -> set[int]:
     return {actor.id} if actor is not None else set()
 
 
-def on_ticket_created(session: Session, ticket: Ticket, actor: User) -> None:
-    """Filing a ticket watches it; assigning it to someone tells them.
+def on_ticket_created(
+    session: Session,
+    ticket: Ticket,
+    actor: Optional[User],
+    named: Optional[dict[int, CustomField]] = None,
+) -> None:
+    """Filing a ticket watches it; assigning it to someone tells them, and so
+    does naming them in one of the team's user fields (`named`).
 
     A mention does not auto-watch. Being named in a description is somebody
     else's decision about you, and it is a weaker signal than the three things
     you did yourself.
+
+    No actor is a ticket a schedule created (#264): nobody filed it, so
+    nobody watches it for having filed it, and its assignee is told.
     """
-    auto_watch(session, ticket.id, actor.id)
+    if actor is not None:
+        auto_watch(session, ticket.id, actor.id)
 
     assigned: set[int] = set()
-    if ticket.assignee_id and ticket.assignee_id != actor.id:
+    if ticket.assignee_id and ticket.assignee_id not in _own(actor):
         assigned = {ticket.assignee_id}
         auto_watch(session, ticket.id, ticket.assignee_id)
         _raise(
@@ -190,11 +344,12 @@ def on_ticket_created(session: Session, ticket: Ticket, actor: User) -> None:
             ticket=ticket,
             actor=actor,
         )
+    assigned |= _named_in_fields(session, ticket, named or {}, actor, assigned)
 
     mentioned = mentioned_user_ids(session, ticket.team_id, ticket.description)
     _raise(
         session,
-        recipients=mentioned - assigned - {actor.id},
+        recipients=mentioned - assigned - _own(actor),
         kind=NotificationKind.mentioned,
         ticket=ticket,
         actor=actor,
@@ -213,9 +368,14 @@ def snapshot(ticket: Ticket) -> dict[str, object]:
 
 
 def on_ticket_updated(
-    session: Session, ticket: Ticket, before: dict[str, object], actor: Optional[User]
+    session: Session,
+    ticket: Ticket,
+    before: dict[str, object],
+    actor: Optional[User],
+    named: Optional[dict[int, CustomField]] = None,
 ) -> None:
-    """Tell the new assignee, anyone newly named, and then the watchers.
+    """Tell the new assignee, anyone newly set in a user field (`named`),
+    anyone newly mentioned, and then the watchers.
 
     In that order, and each set subtracted from the next, so one PATCH is at
     most one notification per person.
@@ -237,6 +397,7 @@ def on_ticket_updated(
                 ticket=ticket,
                 actor=actor,
             )
+    assigned |= _named_in_fields(session, ticket, named or {}, actor, assigned)
 
     mentioned: set[int] = set()
     if ticket.description != before.get("description"):
@@ -346,6 +507,11 @@ def delete_for_ticket(session: Session, ticket_id: int) -> None:
         select(TicketWatch).where(TicketWatch.ticket_id == ticket_id)
     ).all():
         session.delete(row)
+    # And the record of which reminders went out (#262).
+    for row in session.exec(
+        select(DueReminder).where(DueReminder.ticket_id == ticket_id)
+    ).all():
+        session.delete(row)
 
 
 # ---------------------------------------------------------------------------
@@ -407,6 +573,17 @@ def expand_notifications(
             )
         ).all()
     }
+    field_ids = {row.custom_field_id for row in notifications if row.custom_field_id}
+    field_names = (
+        {
+            field.id: field.name
+            for field in session.exec(
+                select(CustomField).where(CustomField.id.in_(field_ids))
+            ).all()
+        }
+        if field_ids
+        else {}
+    )
 
     expanded = []
     for row in notifications:
@@ -434,6 +611,9 @@ def expand_notifications(
                 ),
                 actor=UserPublic.model_validate(actor) if actor else None,
                 excerpt=excerpt(comment.body) if comment else None,
+                field_name=field_names.get(row.custom_field_id),
+                due_date=row.due_date,
+                assigned_to_you=ticket.assignee_id == row.user_id,
                 read=row.read_at is not None,
                 created_at=row.created_at,
             )
@@ -448,7 +628,10 @@ def list_notifications(
     limit: int = DEFAULT_LIMIT,
     offset: int = 0,
 ) -> Page[NotificationRead]:
-    filters = [Notification.user_id == current_user.id]
+    filters = [
+        Notification.user_id == current_user.id,
+        Notification.in_app == True,  # noqa: E712 -- SQL comparison
+    ]
     if unread_only:
         filters.append(Notification.read_at == None)  # noqa: E711 -- SQL IS NULL
 
@@ -478,6 +661,7 @@ def unread_count(session: Session, current_user: User) -> UnreadCount:
         .select_from(Notification)
         .where(
             Notification.user_id == current_user.id,
+            Notification.in_app == True,  # noqa: E712 -- SQL comparison
             Notification.read_at == None,  # noqa: E711 -- SQL IS NULL
         )
     ).one()
@@ -490,7 +674,7 @@ def set_read(
     row = session.get(Notification, notification_id)
     # 404 rather than 403 for someone else's notification: the caller has no
     # business learning that the id exists.
-    if row is None or row.user_id != current_user.id:
+    if row is None or row.user_id != current_user.id or not row.in_app:
         raise api_error(
             status_code=404,
             code=ErrorCode.notification_not_found,
@@ -509,6 +693,7 @@ def mark_all_read(session: Session, current_user: User) -> UnreadCount:
     for row in session.exec(
         select(Notification).where(
             Notification.user_id == current_user.id,
+            Notification.in_app == True,  # noqa: E712 -- SQL comparison
             Notification.read_at == None,  # noqa: E711 -- SQL IS NULL
         )
     ).all():
@@ -523,20 +708,144 @@ def mark_all_read(session: Session, current_user: User) -> UnreadCount:
 # ---------------------------------------------------------------------------
 
 
+def _offered_channels() -> list[NotificationChannel]:
+    from web import settings
+
+    # The email column follows the rule the email switch did: not offered
+    # while nothing could send the mail.
+    return [
+        channel
+        for channel in NotificationChannel
+        if channel != NotificationChannel.email or settings.email_delivery_configured
+    ]
+
+
 def get_settings(session: Session, current_user: User) -> NotificationSettings:
     from web import settings
 
+    channels = _offered_channels()
+    chosen = {
+        (row.kind, row.channel): row.enabled
+        for row in session.exec(
+            select(NotificationPreference).where(
+                NotificationPreference.user_id == current_user.id
+            )
+        ).all()
+    }
+
+    def enabled(spec: KindSpec, channel: NotificationChannel) -> bool:
+        if spec.locked(channel):
+            return True
+        default = spec.default
+        if channel == NotificationChannel.email:
+            default = default and current_user.email_notifications
+        return chosen.get((spec.key, channel.value), default)
+
+    kinds = [
+        NotificationKindSetting(
+            kind=spec.key,
+            name=spec.name,
+            description=spec.description,
+            through_mute=spec.through_mute,
+            channels=[
+                ChannelSetting(
+                    channel=channel,
+                    enabled=enabled(spec, channel),
+                    locked=spec.locked(channel),
+                )
+                for channel in channels
+            ],
+        )
+        for spec in KINDS.values()
+    ]
+
+    teams = [
+        TeamNotificationSetting(
+            team_id=team.id,
+            key=team.key,
+            name=team.name,
+            muted=member.notifications_muted,
+        )
+        for team, member in session.exec(
+            select(Team, TeamMember)
+            .join(TeamMember, TeamMember.team_id == Team.id)
+            .where(
+                TeamMember.user_id == current_user.id,
+                Team.archived_at == None,  # noqa: E711 -- SQL IS NULL
+            )
+            .order_by(func.lower(Team.name))
+        ).all()
+    ]
+
     return NotificationSettings(
-        email_notifications=current_user.email_notifications,
         email_delivery_configured=settings.email_delivery_configured,
+        channels=channels,
+        kinds=kinds,
+        teams=teams,
     )
 
 
 def update_settings(
-    session: Session, current_user: User, email_notifications: bool
+    session: Session, current_user: User, payload: NotificationSettingsUpdate
 ) -> NotificationSettings:
-    current_user.email_notifications = email_notifications
-    session.add(current_user)
+    """Apply the switches, all or none: one that is refused saves nothing."""
+    offered = _offered_channels()
+    for change in payload.preferences:
+        spec = KINDS.get(change.kind)
+        if spec is None:
+            raise api_error(
+                status_code=404,
+                code=ErrorCode.notification_kind_not_found,
+                detail="There is no notification of that kind",
+            )
+        if change.channel not in offered:
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.notification_channel_unavailable,
+                detail="This SoftTrack has no mail server configured",
+            )
+        if spec.locked(change.channel) and not change.enabled:
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.notification_always_on,
+                detail="Being assigned and being mentioned always reach you in the app",
+            )
+
+    memberships = {
+        member.team_id: member
+        for member in session.exec(
+            select(TeamMember).where(
+                TeamMember.user_id == current_user.id,
+                TeamMember.team_id.in_({change.team_id for change in payload.teams}),
+            )
+        ).all()
+    }
+    for change in payload.teams:
+        if change.team_id not in memberships:
+            raise api_error(
+                status_code=403,
+                code=ErrorCode.not_team_member,
+                detail="Not a member of this team",
+            )
+
+    for change in payload.preferences:
+        row = session.get(
+            NotificationPreference,
+            (current_user.id, change.kind, change.channel.value),
+        )
+        if row is None:
+            row = NotificationPreference(
+                user_id=current_user.id,
+                kind=change.kind,
+                channel=change.channel.value,
+                enabled=change.enabled,
+            )
+        row.enabled = change.enabled
+        session.add(row)
+    for change in payload.teams:
+        member = memberships[change.team_id]
+        member.notifications_muted = change.muted
+        session.add(member)
+
     session.commit()
-    session.refresh(current_user)
     return get_settings(session, current_user)

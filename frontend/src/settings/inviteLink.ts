@@ -18,11 +18,17 @@ export function inviteUrl(
 
 /** Copy an invite link, reporting whether the browser allowed it. */
 export async function copyInviteLink(token: string): Promise<boolean> {
+  return copyText(inviteUrl(token))
+}
+
+/** Copy any text -- a link to choose a password (#303), say -- reporting
+ *  whether the browser allowed it. */
+export async function copyText(text: string): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(inviteUrl(token))
+    await navigator.clipboard.writeText(text)
     return true
   } catch {
-    // Insecure origin, or permission refused. The caller shows the URL so it
+    // Insecure origin, or permission refused. The caller shows the text so it
     // can still be copied by hand.
     return false
   }

@@ -5,7 +5,10 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { DateWindow } from './dateWindow';
 import type { DueFilter } from './dueFilter';
+import type { LabelMatch } from './labelMatch';
+import type { MissingField } from './missingField';
 import type { TicketPriority } from './ticketPriority';
 import type { TicketType } from './ticketType';
 
@@ -14,18 +17,46 @@ import type { TicketType } from './ticketType';
  *
  * Nested rather than flattened into the view models so that the same shape
  * is what the board sends, what a view stores, and what the frontend keeps
- * in the URL -- one type to keep in step instead of three.
+ * in the URL -- one type to keep in step instead of three. The ticket list
+ * and its CSV export read their query string into this too (see
+ * app_softtrack/filter_params.py), and lib_softtrack/filters.py turns it
+ * into SQL, so a new filter is a field here, a parameter there and a clause
+ * there.
  *
- * Null everywhere means "all tickets", which is what an empty view is.
+ * Each of the first five filters takes a list (#260). Several values in one
+ * filter are alternatives -- Mei or Daniel -- and different filters narrow
+ * each other: Mei or Daniel, and bugs. Each has one switch, `*_exclude`, to
+ * turn it round: every status except Done. No grammar beyond that, and no
+ * nesting.
+ *
+ * Empty everywhere means "all tickets", which is what an empty view is.
  */
 export interface ViewFilters {
-  status_id?: number | null;
-  priority?: TicketPriority | null;
-  assignee_id?: number | null;
+  status_id?: number[];
+  status_exclude?: boolean;
+  priority?: TicketPriority[];
+  priority_exclude?: boolean;
+  assignee_id?: number[];
   unassigned?: boolean;
-  label_id?: number | null;
+  assignee_exclude?: boolean;
+  label_id?: number[];
+  label_match?: LabelMatch;
+  label_exclude?: boolean;
+  type?: TicketType[];
+  type_exclude?: boolean;
   project_id?: number | null;
   sprint_id?: number | null;
   due?: DueFilter | null;
-  type?: TicketType | null;
+  assignee_me?: boolean;
+  creator_id?: number[];
+  creator_me?: boolean;
+  creator_exclude?: boolean;
+  watching?: boolean;
+  updated?: DateWindow | null;
+  updated_from?: string | null;
+  updated_to?: string | null;
+  created?: DateWindow | null;
+  created_from?: string | null;
+  created_to?: string | null;
+  has_no?: MissingField[];
 }

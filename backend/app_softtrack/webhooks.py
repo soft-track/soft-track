@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlmodel import Session
 
 from lib_softtrack import integrations as integrations_service
+from lib_softtrack.metrics import WEBHOOK_DELIVERIES
 from lib_softtrack.models.integrations import WebhookReceipt
 from lib_softtrack.tables import GitProvider
 from lib_softtrack.webhooks import WebhookError
@@ -40,7 +41,11 @@ async def _receive(
     # address -- the same arrangement as the sign-in throttle. Charging every
     # delivery would throttle a busy repository for being busy, which is the
     # opposite of what this is for.
-    webhook_by_address.raise_if_locked(address)
+    try:
+        webhook_by_address.raise_if_locked(address)
+    except Exception:
+        WEBHOOK_DELIVERIES.labels(direction="in", result="throttled").inc()
+        raise
 
     body = await request.body()
     headers = {name.lower(): value for name, value in request.headers.items()}
@@ -50,6 +55,7 @@ async def _receive(
             session, provider, hook_token, event_name, body, headers
         )
     except WebhookError as error:
+        WEBHOOK_DELIVERIES.labels(direction="in", result="rejected").inc()
         webhook_by_address.record_attempt(address)
         # Returned rather than raised as an HTTPException so the provider gets
         # the reason in a shape it will render, and so a bad delivery is never
@@ -59,6 +65,7 @@ async def _receive(
         return WebhookReceipt(events=0, links=0, tickets=[error.detail])
 
     webhook_by_address.forgive(address)
+    WEBHOOK_DELIVERIES.labels(direction="in", result="accepted").inc()
     return receipt
 
 

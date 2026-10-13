@@ -7,9 +7,11 @@ import {
   useCreateTeamTeamsPost,
 } from '@/api/generated/endpoints/teams/teams'
 import type { TeamRead } from '@/api/generated/models'
-import { errorDetail } from '@/api/errors'
+import { errorCode, errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { Trans, userText, useTranslation } from '@/i18n'
+import { AskForTeamCard } from '@/team/AskForTeam'
+import { useTeamCreation } from '@/team/useTeams'
 import { Logo } from '@/ui/Logo'
 
 export default function NewTeamPage() {
@@ -18,14 +20,22 @@ export default function NewTeamPage() {
   const createTeam = useCreateTeamTeamsPost()
   const queryClient = useQueryClient()
   const { t } = useTranslation(['team', 'common'])
+  // Where creating a team is left to some (#306), the form gives way to who
+  // to ask and a way to ask -- for a link followed from before the change.
+  const creation = useTeamCreation()
+  const restricted = creation.isSuccess && !creation.mayCreate
 
   const [name, setName] = useState('')
   const [key, setKey] = useState('')
   const [error, setError] = useState<string | null>(null)
+  // A key that stays taken (#322): said under the Key field, not above the
+  // form, since the key is what to change.
+  const [keyError, setKeyError] = useState<string | null>(null)
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault()
     setError(null)
+    setKeyError(null)
     try {
       const team = await createTeam.mutateAsync({
         data: { name, key: key.toUpperCase() },
@@ -41,7 +51,11 @@ export default function NewTeamPage() {
       void queryClient.invalidateQueries({ queryKey: getListMyTeamsTeamsGetQueryKey() })
       navigate(`/${team.key}`, { replace: true })
     } catch (err: unknown) {
-      setError(errorDetail(err, t('newTeam.error')))
+      const code = errorCode(err)
+      const asked = key.toUpperCase()
+      if (code === 'team_key_archived') setKeyError(t('newTeam.keyArchived', { key: asked }))
+      else if (code === 'team_key_retired') setKeyError(t('newTeam.keyRetired', { key: asked }))
+      else setError(errorDetail(err, t('newTeam.error')))
     }
   }
 
@@ -65,63 +79,79 @@ export default function NewTeamPage() {
               t('newTeam.title')
             )}
           </h1>
-          <p className="mt-1.5 text-sm text-neutral-500">
-            {t('newTeam.intro')}
-          </p>
+          {!restricted && (
+            <p className="mt-1.5 text-sm text-neutral-500">{t('newTeam.intro')}</p>
+          )}
         </div>
 
-        <form onSubmit={onSubmit} className="glass-strong sheen space-y-4 rounded-panel p-6">
-          {error && (
-            <div
-              role="alert"
-              className="rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
-            >
-              {error}
-            </div>
-          )}
+        {restricted && creation.data ? (
+          <AskForTeamCard access={creation.data} />
+        ) : (
+          <form onSubmit={onSubmit} className="glass-strong sheen space-y-4 rounded-panel p-6">
+            {error && (
+              <div
+                role="alert"
+                className="rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+              >
+                {error}
+              </div>
+            )}
 
-          <div>
-            <label htmlFor="team-name" className="mb-1.5 block text-sm font-medium text-neutral-700">
-              {t('newTeam.nameLabel')}
-            </label>
-            <input
-              id="team-name"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="field"
-              placeholder={t('newTeam.namePlaceholder')}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="team-key" className="mb-1.5 block text-sm font-medium text-neutral-700">
-              <Trans
-                t={t}
-                i18nKey="newTeam.keyLabel"
-                components={{ hint: <span className="font-normal text-neutral-400" /> }}
+            <div>
+              <label htmlFor="team-name" className="mb-1.5 block text-sm font-medium text-neutral-700">
+                {t('newTeam.nameLabel')}
+              </label>
+              <input
+                id="team-name"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="field"
+                placeholder={t('newTeam.namePlaceholder')}
               />
-            </label>
-            <input
-              id="team-key"
-              required
-              minLength={2}
-              maxLength={6}
-              value={key}
-              onChange={(e) => setKey(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
-              className="field identifier uppercase tracking-wide"
-              placeholder={t('newTeam.keyPlaceholder')}
-            />
-          </div>
+            </div>
 
-          <button
-            type="submit"
-            disabled={createTeam.isPending}
-            className="btn btn-primary h-10 w-full text-sm"
-          >
-            {createTeam.isPending ? t('newTeam.creating') : t('newTeam.create')}
-          </button>
-        </form>
+            <div>
+              <label htmlFor="team-key" className="mb-1.5 block text-sm font-medium text-neutral-700">
+                <Trans
+                  t={t}
+                  i18nKey="newTeam.keyLabel"
+                  components={{ hint: <span className="font-normal text-neutral-400" /> }}
+                />
+              </label>
+              <input
+                id="team-key"
+                required
+                minLength={2}
+                maxLength={6}
+                value={key}
+                onChange={(e) => {
+                  setKey(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))
+                  setKeyError(null)
+                }}
+                aria-invalid={keyError ? true : undefined}
+                aria-describedby={keyError ? 'team-key-error' : undefined}
+                className={`field identifier uppercase tracking-wide ${
+                  keyError ? 'border-danger-500 ring-1 ring-danger-500/40' : ''
+                }`}
+                placeholder={t('newTeam.keyPlaceholder')}
+              />
+              {keyError && (
+                <p id="team-key-error" role="alert" className="mt-1.5 text-xs text-danger-600">
+                  {keyError}
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={createTeam.isPending}
+              className="btn btn-primary h-10 w-full text-sm"
+            >
+              {createTeam.isPending ? t('newTeam.creating') : t('newTeam.create')}
+            </button>
+          </form>
+        )}
 
         <button
           type="button"

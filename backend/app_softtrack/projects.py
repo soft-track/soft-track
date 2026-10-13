@@ -3,6 +3,7 @@ from sqlmodel import Session
 
 from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
+from lib_softtrack import deleting
 from lib_softtrack import projects as projects_service
 from lib_softtrack.models.projects import ProjectCreate, ProjectRead, ProjectUpdate
 from lib_softtrack.tables import User
@@ -64,9 +65,11 @@ def delete_project(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Delete a project. Its tickets are kept and left with no project.
+    """Move an epic to the trash (#323). Its tickets keep pointing at it, and
+    rejoin it if it is restored.
 
-    Saved views that filtered on it stop filtering on it, and automation rules
-    conditioned on it are switched off rather than widened to every ticket.
+    When it is purged, its tickets are left with no epic, saved views that
+    filtered on it stop filtering on it, and automation rules conditioned on
+    it are switched off rather than widened to every ticket.
     """
-    projects_service.delete_project(session, current_user, project_id)
+    deleting.trash_project(session, current_user, project_id)

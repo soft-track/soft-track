@@ -1,10 +1,11 @@
 import { parseServerDate } from '@/api/dates'
 import { AttachmentList } from '@/attachments/AttachmentList'
 import { useAuth } from '@/auth/useAuth'
-import { useTranslation } from '@/i18n'
+import { Trans, userText, useTranslation } from '@/i18n'
 import { formatRelative } from '@/i18n/format'
 import { CommentsSection } from '@/tickets/detail/CommentsSection'
 import { DescriptionEditor } from '@/tickets/detail/DescriptionEditor'
+import { CustomFieldsSection } from '@/tickets/detail/CustomFieldsSection'
 import { DevelopmentSection } from '@/tickets/detail/DevelopmentSection'
 import { TicketLinksSection } from '@/tickets/detail/TicketLinksSection'
 import { TicketProperties } from '@/tickets/detail/TicketProperties'
@@ -13,19 +14,22 @@ import { TimeSection } from '@/tickets/detail/TimeSection'
 import { useTicketAttachments } from '@/tickets/detail/useTicketAttachments'
 import { useTicketEditor } from '@/tickets/detail/useTicketEditor'
 import { PriorityIcon } from '@/tickets/PriorityIcon'
+import { ArchivedBanner } from '@/team/ArchivedBanner'
+import { isArchived } from '@/team/archived'
 import { useCanWrite } from '@/team/useCanWrite'
 import { useTeamContext } from '@/team/useTeamContext'
+import { PersonLink } from '@/people/PersonLink'
 import { Avatar } from '@/ui/Avatar'
 
 /**
  * Everything about one ticket below a surface's header (#112): the title and
  * description, its files, properties and sections, and the Activity feed.
  *
- * The panel over the board and the ticket's own page both render this, and
- * the linked-ticket modal (#114) will too; each brings its own chrome. Nothing
- * in here knows which surface it is in. The layout follows the width it is
- * given -- see `.ticket-body` in index.css -- and opening another ticket goes
- * through `useOpenRelatedTicket`, which asks the surface.
+ * The panel over the board, the ticket's own page and the linked-ticket modal
+ * (#114) all render this; each brings its own chrome. Nothing in here knows
+ * which surface it is in. The layout follows the width it is given -- see
+ * `.ticket-body` in index.css -- and opening another ticket goes through
+ * `useRelatedTickets`, which asks the stack the body is in.
  */
 export function TicketDetailBody({ ticketId }: { ticketId: number }) {
   const { t } = useTranslation(['tickets', 'common'])
@@ -34,25 +38,26 @@ export function TicketDetailBody({ ticketId }: { ticketId: number }) {
   const { ticket } = editor
   // A guest (#104) sees the whole ticket and can change none of it.
   const readOnly = !useCanWrite()
-  const { members } = useTeamContext()
+  const { members, team } = useTeamContext()
+  // A guest reads, and joins the conversation where the team allows (#244).
+  // Nobody does on an archived team (#322).
+  const archived = isArchived(team)
+  const canComment = !archived && (!readOnly || Boolean(team.guests_may_comment))
   const { user } = useAuth()
   // Team admins may delete anybody's comment (#93). The server decides; this
   // only decides whether to offer it.
   const isTeamAdmin = members.find((member) => member.user.id === user?.id)?.role === 'admin'
 
-  if (!ticket) {
-    return (
-      <div className="flex flex-1 flex-col gap-3 p-5" aria-busy="true">
-        <div className="skeleton h-7 w-3/4" />
-        <div className="skeleton h-4 w-full" />
-        <div className="skeleton h-4 w-5/6" />
-        <div className="skeleton mt-4 h-36 w-full" />
-      </div>
-    )
-  }
+  if (!ticket) return <TicketBodySkeleton />
 
   return (
     <div className="ticket-body">
+      {/* `ENG-42` still opens on an archived team (#322), marked as such. */}
+      {archived && (
+        <div className="px-4 pt-4 sm:px-5">
+          <ArchivedBanner team={team} mayUnarchive={false} compact />
+        </div>
+      )}
       <div className="ticket-body-grid">
         <div className="ticket-body-main">
           {ticket.parent && <SubTicketsSection ticket={ticket} readOnly={readOnly} />}
@@ -102,22 +107,41 @@ export function TicketDetailBody({ ticketId }: { ticketId: number }) {
             onToggleLabel={editor.toggleLabel}
             readOnly={readOnly}
           />
+          <CustomFieldsSection ticket={ticket} patch={editor.patch} readOnly={readOnly} />
           <DevelopmentSection ticketId={ticket.id} />
         </aside>
 
         <div className="ticket-body-rest">
           {!ticket.parent && <SubTicketsSection ticket={ticket} readOnly={readOnly} />}
           <TicketLinksSection ticketId={ticket.id} readOnly={readOnly} />
-          <TimeSection ticketId={ticket.id} readOnly={readOnly} />
+          <TimeSection
+            ticketId={ticket.id}
+            readOnly={readOnly}
+            // What the estimate's figures depend on (#268): read again when it changes.
+            estimateVersion={`${ticket.time_estimate_minutes}/${ticket.remaining_minutes}/${ticket.status.id}`}
+          />
 
           <div className="mt-5 flex items-center gap-2 text-xs text-neutral-400">
             <PriorityIcon priority={ticket.priority} size={12} />
             <Avatar user={ticket.creator} size={16} decorative />
             <span>
-              {t('panel.createdBy', {
-                name: ticket.creator.full_name,
-                when: formatRelative(parseServerDate(ticket.created_at)),
-              })}
+              <Trans
+                t={t}
+                i18nKey="panel.createdBy"
+                values={{
+                  name: ticket.creator.full_name,
+                  when: formatRelative(parseServerDate(ticket.created_at)),
+                }}
+                components={{
+                  person: (
+                    <PersonLink
+                      person={ticket.creator}
+                      className="hover:text-neutral-600 hover:underline"
+                    />
+                  ),
+                }}
+                {...userText}
+              />
             </span>
           </div>
         </div>
@@ -130,11 +154,25 @@ export function TicketDetailBody({ ticketId }: { ticketId: number }) {
             removeAttachment={files.remove}
             uploading={files.uploading}
             onFilesClaimed={files.invalidate}
-            canComment={!readOnly}
+            canComment={canComment}
             canModerate={isTeamAdmin}
+            guestOf={readOnly && !archived ? team.name : undefined}
+            archivedTeam={archived ? team.name : undefined}
           />
         </div>
       </div>
+    </div>
+  )
+}
+
+/** The body's shape while its ticket loads. */
+export function TicketBodySkeleton() {
+  return (
+    <div className="flex flex-1 flex-col gap-3 p-5" aria-busy="true">
+      <div className="skeleton h-7 w-3/4" />
+      <div className="skeleton h-4 w-full" />
+      <div className="skeleton h-4 w-5/6" />
+      <div className="skeleton mt-4 h-36 w-full" />
     </div>
   )
 }

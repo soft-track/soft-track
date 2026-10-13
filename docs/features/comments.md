@@ -21,7 +21,7 @@ saves an edit. Everyone else's stay read-only.
 | The comment's author | yes | yes |
 | A team admin | no | yes — anybody's |
 | Another member | no | no |
-| A guest | no | no |
+| A guest | their own, where the team lets guests comment | their own, likewise |
 
 An admin can take a comment down but never rewrite it: words under somebody's
 name should only ever be words they wrote. A comment an [automation

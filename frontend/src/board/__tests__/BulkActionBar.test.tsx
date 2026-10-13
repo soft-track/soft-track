@@ -78,6 +78,7 @@ function ticket(id: number, title: string): TicketRead {
     type: 'task',
     rank: 'a0',
     blocked_by_count: 0,
+    custom_fields: {},
     child_count: 0,
     completed_child_count: 0,
     creator: user,
@@ -238,7 +239,7 @@ describe('bulk delete', () => {
     await pick(user, 'First', 'Second')
     await user.click(within(bar()).getByRole('button', { name: /Delete/ }))
 
-    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Delete 2 tickets?'))
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Move 2 tickets to the trash?'))
     expect(remove.mutateAsync).not.toHaveBeenCalled()
     expect(bar()).toBeTruthy()
   })

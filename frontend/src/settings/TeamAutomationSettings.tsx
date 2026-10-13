@@ -35,6 +35,7 @@ import {
 } from '@/automations/ruleText'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { formatRelative } from '@/i18n/format'
+import { AssigneeOptions } from '@/tickets/AssigneeOptions'
 import { PRIORITY_META, PRIORITY_ORDER, TYPE_META, TYPE_ORDER } from '@/tickets/ticketMeta'
 import { pickableProjects } from '@/team/projects'
 import { useTeamByKey } from '@/team/useTeams'
@@ -43,6 +44,7 @@ import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 import { Select } from '@/ui/Select'
+import { TeamSchedules } from '@/settings/TeamSchedules'
 import { useFocusTrap } from '@/ui/useFocusTrap'
 
 /** How much of the log the page shows. Older runs are in the table, not here. */
@@ -237,6 +239,14 @@ function Automation({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
           <p className="mt-4 text-xs text-neutral-400">{t('automation.adminsOnly')}</p>
         )}
       </div>
+
+      <TeamSchedules
+        team={team}
+        isAdmin={isAdmin}
+        members={members}
+        labels={labels}
+        projects={projects}
+      />
 
       <RunLog
         runs={runs.data?.items ?? []}
@@ -657,11 +667,7 @@ function RuleEditor({
               >
                 <option value="">{t('automation.editor.anyone')}</option>
                 <option value="unassigned">{t('automation.editor.nobody')}</option>
-                {vocabulary.members.map((member) => (
-                  <option key={member.user.id} value={member.user.id}>
-                    {member.user.full_name}
-                  </option>
-                ))}
+                <AssigneeOptions members={vocabulary.members} keepId={conditions.if_assignee_id} />
               </Select>
             </Field>
           </div>
@@ -735,11 +741,7 @@ function RuleEditor({
                 }
               >
                 <option value="">{t('automation.editor.leaveIt')}</option>
-                {vocabulary.members.map((member) => (
-                  <option key={member.user.id} value={member.user.id}>
-                    {member.user.full_name}
-                  </option>
-                ))}
+                <AssigneeOptions members={vocabulary.members} keepId={actions.set_assignee_id} />
               </Select>
             </Field>
 

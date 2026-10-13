@@ -10,11 +10,11 @@ import { EstimateBadge } from '@/tickets/EstimateBadge'
 import { isResolved } from '@/tickets/ticketMeta'
 import { TicketTypeIcon } from '@/tickets/TicketTypeIcon'
 import { PriorityIcon } from '@/tickets/PriorityIcon'
+import { AssigneeAvatar } from '@/tickets/AssigneeAvatar'
 import { isPlainClick, ticketPath, useOpenTicket } from '@/tickets/surface'
 import { isPlainKey } from '@/keyboard/typing'
 import { useCanWrite } from '@/team/useCanWrite'
 import { useTeamContext } from '@/team/useTeamContext'
-import { Avatar } from '@/ui/Avatar'
 
 export function TicketCard({
   ticket,
@@ -191,15 +191,20 @@ export function TicketCard({
       </p>
 
       <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 flex-wrap gap-1">
-          {project && <ProjectBadge name={project.name} color={project.color} />}
+        {/* Takes the room the date and the avatar leave, and no more (#319).
+            Each chip is capped at that width and shortens inside it, so a
+            long epic or label ends in an ellipsis rather than running on
+            under the date. */}
+        <div className="flex min-w-0 flex-1 flex-wrap gap-1">
+          {project && <ProjectBadge name={project.name} color={project.color} fit />}
           {ticket.labels?.map((label) => (
             <span
               key={label.id}
-              className="chip"
+              className="chip min-w-0 max-w-full"
               style={{ ['--chip' as string]: label.color }}
+              title={label.name}
             >
-              {label.name}
+              <span className="truncate">{label.name}</span>
             </span>
           ))}
         </div>
@@ -208,7 +213,7 @@ export function TicketCard({
             <DueBadge dueDate={ticket.due_date} resolved={isResolved(ticket.status)} />
           )}
           {ticket.assignee ? (
-            <Avatar user={ticket.assignee} size={22} />
+            <AssigneeAvatar user={ticket.assignee} size={22} />
           ) : (
             <span
               className="h-[22px] w-[22px] shrink-0 rounded-full border border-dashed border-neutral-900/20"
@@ -226,12 +231,25 @@ export function TicketCard({
  *
  * A chip like a label's, with a filled dot in front, so the one grouping that
  * spans sprints is not mistaken for one more label.
+ *
+ * A long name ends in an ellipsis. It stops at a fixed width, except with
+ * `fit`, where it takes whatever width its row gives it: on a card, where the
+ * row is shared with the due date (#319). Either way it can shorten below
+ * that, so it never runs past the row it is in.
  */
-export function ProjectBadge({ name, color }: { name: string; color: string }) {
+export function ProjectBadge({
+  name,
+  color,
+  fit = false,
+}: {
+  name: string
+  color: string
+  fit?: boolean
+}) {
   const { t } = useTranslation('tickets')
   return (
     <span
-      className="chip max-w-40"
+      className={`chip min-w-0 ${fit ? 'max-w-full' : 'max-w-40'}`}
       style={{ ['--chip' as string]: color }}
       title={t('card.projectTitle', { name })}
     >

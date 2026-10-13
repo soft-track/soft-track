@@ -65,6 +65,8 @@ too, but still call an epic a *project* (`/teams/{team_id}/projects`,
 - [Deployment and operations](docs/deployment.md)
 - [Roadmap](docs/roadmap.md)
 - [Statuses and categories](docs/features/statuses.md)
+- [Labels](docs/features/labels.md)
+- [The trash](docs/features/trash.md)
 - [Sprints and estimates](docs/features/sprints.md)
 - [Reports](docs/features/reports.md)
 - [Time tracking](docs/features/time-tracking.md)
@@ -74,6 +76,7 @@ too, but still call an epic a *project* (`/teams/{team_id}/projects`,
 - [Epics](docs/features/projects.md)
 - [Ticket types](docs/features/ticket-types.md)
 - [Ticket templates](docs/features/ticket-templates.md)
+- [Custom fields](docs/features/custom-fields.md)
 - [Markdown, mentions and task lists](docs/features/markdown.md)
 - [Saved views and shareable filters](docs/features/saved-views.md)
 - [Calendar](docs/features/calendar.md)
@@ -87,11 +90,15 @@ too, but still call an epic a *project* (`/teams/{team_id}/projects`,
 - [Reactions](docs/features/reactions.md)
 - [Editing and deleting comments](docs/features/comments.md)
 - [Attachments](docs/features/attachments.md)
+- [Share links](docs/features/share-links.md)
 - [User management](docs/features/users.md)
+- [People: the directory, profiles and workload](docs/features/people.md)
+- [Payroll and finance](docs/features/finance.md)
 - [Signing in with Google and GitHub](docs/features/oauth.md)
 - [Personal API tokens](docs/features/api-tokens.md)
 - [Sign-in rate limiting](docs/features/rate-limiting.md)
 - [Jira import](docs/features/jira-import.md)
+- [Prometheus metrics](docs/features/metrics.md)
 
 ## Development and contributing
 

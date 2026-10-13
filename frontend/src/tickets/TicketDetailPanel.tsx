@@ -1,37 +1,44 @@
 import { useGetTicketTicketsTicketIdGet } from '@/api/generated/endpoints/tickets/tickets'
 import { useTranslation } from '@/i18n'
-import { useTicketShortcuts } from '@/tickets/detail/useTicketShortcuts'
 import { TicketDetailBody } from '@/tickets/TicketDetailBody'
 import { TicketHeaderActions } from '@/tickets/TicketHeaderActions'
-import { TicketSurfaceContext, isPlainClick, ticketPath, useOpenTicket } from '@/tickets/surface'
+import { TicketStack } from '@/tickets/TicketStack'
+import {
+  type TicketRef,
+  TicketSurfaceContext,
+  isPlainClick,
+  ticketPath,
+  useOpenTicket,
+} from '@/tickets/surface'
 import { Icon } from '@/ui/Icon'
 import { useFocusTrap } from '@/ui/useFocusTrap'
 
 /**
  * The slide-over for one ticket, over the board: a glance, not a place to
- * work (#112). Its own chrome -- the scrim, the close button, the keys, the
- * way out to the ticket's page -- and the shared body below it.
+ * work (#112). Its own chrome -- the scrim, the close button, the way out to
+ * the ticket's page -- and the shared body below it. A ticket the body links
+ * to opens in a modal beside the panel (#114); the keys are that stack's.
  */
 export function TicketDetailPanel({
   ticketId,
   onClose,
-  onOpenAsPage,
+  openPage,
 }: {
   ticketId: number
   onClose: () => void
   /**
-   * Trade the glance for the ticket's own page. Straight there unless given;
-   * the board gives its own, which first keeps its view and search for Back,
-   * as it does for the command palette.
+   * Trade the glance for a ticket's own page: this one's, or one opened in a
+   * modal over it. Straight there unless given; the board gives its own,
+   * which first keeps its view and search for Back, as it does for the
+   * command palette.
    */
-  onOpenAsPage?: () => void
+  openPage?: (ticket: TicketRef) => void
 }) {
   const { t } = useTranslation(['tickets', 'common'])
   const openTicket = useOpenTicket()
   const dialogRef = useFocusTrap<HTMLDivElement>()
   // The body reads the same query; React Query makes it one request.
   const { data: ticket } = useGetTicketTicketsTicketIdGet(ticketId)
-  useTicketShortcuts(onClose)
 
   return (
     <TicketSurfaceContext.Provider value="panel">
@@ -42,6 +49,8 @@ export function TicketDetailPanel({
           aria-modal="true"
           tabIndex={-1}
           aria-label={ticket ? `${ticket.identifier} ${ticket.title}` : t('panel.loading')}
+          // The bottom of its stack; see TicketStack.
+          data-ticket-layer={0}
           onClick={(e) => e.stopPropagation()}
           className="slide-in-right glass-strong m-2 flex w-full max-w-xl flex-col overflow-hidden rounded-panel sm:m-3"
         >
@@ -76,7 +85,7 @@ export function TicketDetailPanel({
                   onClick={(e) => {
                     if (!isPlainClick(e)) return
                     e.preventDefault()
-                    if (onOpenAsPage) onOpenAsPage()
+                    if (openPage) openPage(ticket)
                     else openTicket(ticket, 'page')
                   }}
                   className="btn btn-ghost btn-icon btn-sm text-neutral-500"
@@ -99,7 +108,9 @@ export function TicketDetailPanel({
           </div>
 
           <div className="scroll-thin flex flex-1 flex-col overflow-y-auto">
-            <TicketDetailBody ticketId={ticketId} />
+            <TicketStack ticket={ticket} onClose={onClose} openPage={openPage}>
+              <TicketDetailBody ticketId={ticketId} />
+            </TicketStack>
           </div>
         </div>
       </div>

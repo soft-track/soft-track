@@ -10,10 +10,24 @@ import enum
 from datetime import date, datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Index, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    CheckConstraint,
+    Column,
+    Enum,
+    Index,
+    UniqueConstraint,
+    event,
+)
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import SQLModel, Field, Relationship
 
 from lib_utils.password import is_usable_password
+
+#: JSON everywhere, stored as `jsonb` on Postgres: it has equality and
+#: containment operators, which is what filtering by a field will need, and
+#: plain `json` has neither.
+JSONValue = JSON().with_variant(JSONB(), "postgresql")
 
 
 def utcnow() -> datetime:
@@ -103,6 +117,29 @@ class TicketType(str, enum.Enum):
     story = "story"
 
 
+class CustomFieldKind(str, enum.Enum):
+    """What a team's own field holds (#117).
+
+    Deliberately few. `user` is the one that motivated the feature -- a QA
+    assignee or a reviewer, who is neither the assignee nor a string -- and
+    the rest are what a label cannot type-check. Formulas, rollups and
+    anything computed are out: a field is a value somebody sets.
+    """
+
+    text = "text"
+    number = "number"
+    select = "select"
+    multi_select = "multi_select"
+    user = "user"
+    date = "date"
+    checkbox = "checkbox"
+    url = "url"
+
+
+#: The kinds that choose from the field's own list of options.
+OPTION_KINDS = (CustomFieldKind.select, CustomFieldKind.multi_select)
+
+
 class TicketSort(str, enum.Enum):
     """What the ticket list can be ordered by (#88)."""
 
@@ -167,6 +204,14 @@ class SprintState(str, enum.Enum):
     completed = "completed"
 
 
+class SprintOutcome(str, enum.Enum):
+    """Whether a sprint's goal was met (#271), said when it is completed."""
+
+    met = "met"
+    partly = "partly"
+    missed = "missed"
+
+
 class TicketEventField(str, enum.Enum):
     """Which field a TicketEvent records a change to."""
 
@@ -188,6 +233,22 @@ class TicketEventField(str, enum.Enum):
     #: The key rather than the team id because the key is what changed from
     #: anybody's point of view, and what the Activity feed has to show.
     team = "team"
+    #: One of the team's own fields (#117). Which one is the event's
+    #: `custom_field_id`; one value for all of them, because the set of
+    #: fields is the team's and cannot be an enum.
+    custom_field = "custom_field"
+    #: Moved to the trash, or restored from it (#323). The new value is when
+    #: it went in, as ISO text; restoring writes an empty one.
+    trash = "trash"
+    #: Created by a schedule (#264). The new value is the schedule's name as
+    #: it was then, so the line survives the schedule being renamed or
+    #: removed. Never an opening value: it is the line the Activity feed
+    #: shows for how the ticket began.
+    schedule = "schedule"
+    #: The time estimate, and remaining set by hand (#268), in minutes. What
+    #: the burndown in hours replays.
+    time_estimate = "time_estimate"
+    remaining = "remaining"
 
 
 class DueFilter(str, enum.Enum):
@@ -205,6 +266,48 @@ class DueFilter(str, enum.Enum):
     this_week = "this_week"
     #: No due date at all.
     none = "none"
+
+
+class LabelMatch(str, enum.Enum):
+    """How a filter on several labels reads them (#260).
+
+    The one filter with a second question: a ticket carries many labels, so
+    "Bug and Design" can mean either pile or only the design bugs.
+    """
+
+    #: Tickets carrying at least one of the labels.
+    any = "any"
+    #: Tickets carrying every one of them.
+    all = "all"
+
+
+class DateWindow(str, enum.Enum):
+    """When a ticket was updated or created, as the common questions (#261).
+
+    Relative, so a saved view keeps asking the same question as time passes:
+    "more than 30 days ago" is measured from the viewer's today each time the
+    view is opened, not from the day it was saved. Dates for anything else
+    are a range beside it (`updated_from`, `updated_to`).
+    """
+
+    last_7_days = "last_7_days"
+    last_30_days = "last_30_days"
+    #: Nothing in the last 30 days: where a backlog review starts.
+    over_30_days = "over_30_days"
+
+
+class MissingField(str, enum.Enum):
+    """What a ticket can be filtered on having none of (#261).
+
+    No assignee and no due date were filters before this, and stay where
+    they are: nobody is one of the assignee choices, no due date one of the
+    due filter's.
+    """
+
+    estimate = "estimate"
+    #: No epic (the column is `project_id`).
+    epic = "epic"
+    sprint = "sprint"
 
 
 class TeamRole(str, enum.Enum):
@@ -254,6 +357,15 @@ class NotificationKind(str, enum.Enum):
     mentioned = "mentioned"
     commented = "commented"
     status_changed = "status_changed"
+    #: Named in one of the team's user fields (#117) -- set as a ticket's
+    #: reviewer or QA assignee. Assignment by another name, told the same
+    #: way; `Notification.custom_field_id` says which field.
+    field_assigned = "field_assigned"
+    #: The two that come from a date rather than a person (#262), raised by
+    #: the reminder sweep in `lib_softtrack/reminders.py`. No actor; the row's
+    #: `due_date` says which date it was about.
+    due_tomorrow = "due_tomorrow"
+    overdue = "overdue"
 
 
 class AutomationTrigger(str, enum.Enum):
@@ -341,6 +453,97 @@ class PullRequestState(str, enum.Enum):
     closed = "closed"
 
 
+class PaySchedule(str, enum.Enum):
+    """How often somebody is paid (#131). A compensation amount is per pay
+    period of its schedule -- a month, half a month, two weeks -- so a monthly
+    and a bi-weekly amount are never added together, and nothing is
+    annualised behind anybody's back."""
+
+    monthly = "monthly"
+    semi_monthly = "semi_monthly"
+    bi_weekly = "bi_weekly"
+
+
+class PayrollRunState(str, enum.Enum):
+    """Where a payroll run is (#132).
+
+    Set by a finance admin, never derived, for the reason a sprint's state is
+    set: the dates are the plan, the state is what happened. Forward only. A
+    mistake found after approval is put right on the next run, which is how
+    payroll corrections are made anyway, and an approved run stays what it
+    said it paid.
+    """
+
+    draft = "draft"
+    approved = "approved"
+    paid = "paid"
+
+
+class ExpenseState(str, enum.Enum):
+    """Where an expense claim is (#133).
+
+    One submitter, one decision, by a finance admin -- never by the manager
+    chain, which stays information (#124). A refusal carries its reason.
+    Whatever happens to an approved claim next -- a batch, a line on a
+    payroll run -- is reimbursement's (#137), and reads from these rows.
+    """
+
+    submitted = "submitted"
+    approved = "approved"
+    refused = "refused"
+
+
+class CompensationKind(str, enum.Enum):
+    """What decision a compensation record is (#131).
+
+    `raise_` because `raise` is a keyword; the value, which is what the API
+    and the database hold, is "raise". A correction names the record it
+    corrects, and nothing else does.
+    """
+
+    hire = "hire"
+    raise_ = "raise"
+    correction = "correction"
+    other = "other"
+
+
+class TeamCreationPolicy(str, enum.Enum):
+    """Who may create a team on this instance (#306).
+
+    A team takes a key, and a key is never given back, so on an instance
+    with open registration "anyone" lets a stranger take ENG. `anyone` is
+    the default and what creating a team always asked: that somebody is
+    signed in. An account from outside the organisation (#243) never may,
+    whatever this says.
+    """
+
+    anyone = "anyone"
+    site_admins = "site_admins"
+    #: The site admins, and the people named in `TeamCreator`.
+    named_people = "named_people"
+
+
+class EstimateUnit(str, enum.Enum):
+    """What a team estimates in (#268): story points, hours, or both.
+
+    Points is the default, and a team that leaves it sees no change. There is
+    no conversion between the two: points say how big a piece of work is,
+    hours what it was meant to cost, and a team may ask both.
+    """
+
+    points = "points"
+    hours = "hours"
+    both = "both"
+
+
+class TeamRequestState(str, enum.Enum):
+    """Where somebody's request for a team is (#306). Decided once."""
+
+    pending = "pending"
+    approved = "approved"
+    declined = "declined"
+
+
 # ---------------------------------------------------------------------------
 # Link tables
 # ---------------------------------------------------------------------------
@@ -351,6 +554,23 @@ class TeamMember(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", primary_key=True)
     role: TeamRole = Field(default=TeamRole.member)
     joined_at: datetime = Field(default_factory=utcnow)
+    #: This member has muted the team's notifications (#263): nothing from it
+    #: reaches them except the kinds that get through a mute -- being assigned
+    #: and being mentioned. On the membership, so leaving the team forgets it.
+    notifications_muted: bool = Field(default=False)
+
+
+class GuestEpic(SQLModel, table=True):
+    """An epic an account from outside the organisation may see (#243).
+
+    Its membership's reach on that team: the tickets in these epics, and
+    nothing else. No row means no tickets. The team is the epic's, so a row
+    needs no team of its own; leaving the team takes that team's rows with
+    it, and so does the epic being purged from the trash.
+    """
+
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    project_id: int = Field(foreign_key="project.id", primary_key=True, index=True)
 
 
 class TicketLabelLink(SQLModel, table=True):
@@ -390,6 +610,22 @@ class Department(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow)
 
 
+class EmploymentType(str, enum.Enum):
+    """What kind of account or engagement somebody has with the organisation
+    (#247, #320).
+
+    An account with no type, or an employee, is on payroll. The others are on
+    payroll only when finance switches their type on
+    (`InstanceSettings.payroll_types`) -- except external, which never is.
+    """
+
+    employee = "employee"
+    contractor = "contractor"
+    intern = "intern"
+    external = "external"
+    service_account = "service_account"
+
+
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(index=True, unique=True)
@@ -408,9 +644,11 @@ class User(SQLModel, table=True):
     #: resets. The first account registered gets it. Distinct from TeamRole,
     #: which only ever means something inside one team.
     is_site_admin: bool = Field(default=False)
-    #: The per-user off switch for the email digest. Only consulted when the
-    #: instance has SMTP configured at all -- with no mail server there is
-    #: nothing to switch off, and the setting is hidden rather than lying.
+    #: Whether email is on for the kinds this person has not set one by one
+    #: (#263). It was the single digest switch before the grid; somebody who
+    #: had turned it off keeps every kind off by email, including kinds added
+    #: after they made that choice. Only consulted when the instance has SMTP
+    #: configured at all.
     email_notifications: bool = Field(default=True)
     #: Copied into every JWT as `ver` and compared on each request. Bumping it
     #: invalidates every token already issued for this user, which is what
@@ -450,8 +688,70 @@ class User(SQLModel, table=True):
     #: directory lists it rather than letting it go quietly stale.
     manager_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
     manager: Optional["User"] = Relationship(
-        sa_relationship_kwargs={"remote_side": "User.id"}
+        sa_relationship_kwargs={
+            "remote_side": "User.id",
+            # Named, because the finance grant below is a second link from
+            # a user to a user and the join would otherwise be ambiguous.
+            "foreign_keys": "User.manager_id",
+        }
     )
+
+    # --- Finance access (#130) ---------------------------------------------
+
+    #: Whether they can see money at all: pay, payroll runs, everybody's
+    #: expense claims, budgets and the finance reports. Every endpoint under
+    #: /finance checks it (`lib_finance/access.py`). Granted by a site admin
+    #: and separate from being one: the site admin is the IT role, and
+    #: resetting somebody's password says nothing about reading their salary.
+    #: Neither flag includes the other.
+    is_finance_admin: bool = Field(default=False)
+    #: When the access they hold now was granted, and by whom. Both cleared
+    #: when it is revoked; the history is the log's (see lib_finance/access.py).
+    finance_admin_since: Optional[datetime] = None
+    finance_admin_granted_by_id: Optional[int] = Field(
+        default=None, foreign_key="user.id"
+    )
+    #: Read-only: the grant is written through the id. A site admin may
+    #: grant it to themselves, and a row pointing at itself through a
+    #: writable relationship is a cycle SQLAlchemy refuses to flush.
+    finance_admin_granted_by: Optional["User"] = Relationship(
+        sa_relationship_kwargs={
+            "remote_side": "User.id",
+            "foreign_keys": "User.finance_admin_granted_by_id",
+            "viewonly": True,
+        }
+    )
+
+    # --- Outside the organisation (#243) -----------------------------------
+
+    #: An account from outside: a client, a contractor's client, a partner.
+    #: Set on the invitation that created it or by a site admin, never by the
+    #: person. On a team it is only ever a guest, and it sees the tickets of
+    #: the epics it was given there and nothing else (`lib_softtrack/
+    #: outside.py`). Never a site or finance admin.
+    is_external: bool = Field(default=False)
+    #: What kind of account this is (#320). None behaves as an employee. Not
+    #: an access-control flag: `is_external` is, and the two are not synced.
+    employment_type: Optional[EmploymentType] = Field(
+        default=None,
+        nullable=True,
+    )
+
+    # --- Prepared by a site admin (#303) -----------------------------------
+
+    #: False for an account a site admin created whose owner has not yet
+    #: chosen a password from the link they were sent. It can be assigned work
+    #: and mentioned all the same; the directory and the pickers say it has
+    #: not been activated. True for every account that registered or signed
+    #: in with a provider, which was there to activate it itself.
+    is_activated: bool = Field(default=True)
+
+    # --- Two-factor authentication ----------------------------------------
+    totp_secret: Optional[str] = Field(default=None)
+    totp_pending_secret: Optional[str] = Field(default=None)
+    totp_enabled: bool = Field(default=False)
+    totp_recovery_codes: Optional[str] = Field(default=None)
+    totp_last_step: Optional[int] = Field(default=None)
 
     @property
     def has_password(self) -> bool:
@@ -518,6 +818,11 @@ class WebhookEvent(str, enum.Enum):
     #: `ticket.status_changed`, so a consumer can listen to only the latter.
     ticket_updated = "ticket.updated"
     ticket_status_changed = "ticket.status_changed"
+    #: Moved to the trash, and back out of it (#323). Purging sends nothing:
+    #: by then the ticket has been gone from every consumer's point of view
+    #: for as long as the trash keeps things.
+    ticket_deleted = "ticket.deleted"
+    ticket_restored = "ticket.restored"
     comment_created = "comment.created"
     sprint_started = "sprint.started"
     sprint_completed = "sprint.completed"
@@ -601,6 +906,42 @@ class ApiToken(SQLModel, table=True):
     expires_at: Optional[datetime] = None
 
 
+class AuthSession(SQLModel, table=True):
+    """One signed-in browser (#308): a row made at sign-in, whose id the
+    session's token carries as `sid`.
+
+    Live while it has not been ended, its token has not expired, the account's
+    `token_version` is still the one it was issued at -- so "sign out
+    everywhere", a password change and a deactivation end every row without
+    touching them -- and it has been used in the last thirty days. Ended and
+    stale rows are kept for a while, so a sign-in can tell a browser the
+    account has used before from a new one, and swept at the next sign-in.
+    API tokens are not sessions; see `ApiToken`.
+    """
+
+    #: Ids are never reused, even on SQLite, where a swept row would
+    #: otherwise hand its id -- and with it any old token that names it -- to
+    #: the account's next session.
+    __table_args__ = {"sqlite_autoincrement": True}
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    #: The browser's User-Agent header as sent, cut to 512 characters. Read
+    #: back as "Firefox on Linux"; nothing else is made of it.
+    user_agent: str = Field(default="")
+    #: The address it signed in from, as `address_of` sees it.
+    ip_address: str = Field(default="")
+    #: The account's `token_version` the session's token carries.
+    token_version: int = Field(default=0)
+    created_at: datetime = Field(default_factory=utcnow)
+    #: Updated at most once a minute, like an API token's.
+    last_used_at: datetime = Field(default_factory=utcnow)
+    #: When its token expires: a session cannot outlive the token it is.
+    expires_at: datetime
+    #: Revoked from the list, or signed out of. Null while it may be live.
+    ended_at: Optional[datetime] = None
+
+
 class PasswordReset(SQLModel, table=True):
     """A pending "forgot password" link (#83).
 
@@ -621,6 +962,11 @@ class PasswordReset(SQLModel, table=True):
     token_version: int
     created_at: datetime = Field(default_factory=utcnow)
     expires_at: datetime
+    #: When the link was emailed (#303), or null if it was only handed to a
+    #: site admin to copy. A link for an account a site admin created lives as
+    #: long as an invitation does; one asked for from "Forgot password" is
+    #: always emailed and lives an hour.
+    emailed_at: Optional[datetime] = None
 
 
 class TeamInvite(SQLModel, table=True):
@@ -653,6 +999,14 @@ class TeamInvite(SQLModel, table=True):
     invited_by_id: int = Field(foreign_key="user.id")
     created_at: datetime = Field(default_factory=utcnow)
     expires_at: datetime
+    #: For somebody outside the organisation (#243): the account it creates
+    #: is external, and its membership reaches only `epic_ids`, this team's
+    #: epics as they were chosen. Checked again on acceptance, so an epic
+    #: deleted in between is simply not given.
+    external: bool = Field(default=False)
+    epic_ids: list[int] = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
     #: When the current link was emailed to the address (#84), or null if it
     #: never was. "Attempted", not "delivered": SMTP accepting a message is
     #: all this instance can know. Cleared when a re-invite mints a new link
@@ -675,7 +1029,42 @@ class Team(SQLModel, table=True):
     #: default" is a fact about the schema instead of an invariant the service
     #: has to keep re-establishing.
     default_view_id: Optional[int] = Field(default=None, foreign_key="savedview.id")
+    #: Whether any member may delete any ticket or epic (#323), or only its
+    #: creator -- an epic's lead -- and the team's admins. False for a new
+    #: team; the teams there were before the trash keep True, which is what
+    #: deleting always was.
+    any_member_may_delete: bool = Field(default=False)
+    #: Whether the team's guests may join the conversation (#244): comment,
+    #: attach files to their comments, react, and edit or delete their own.
+    #: They still change nothing else. Off unless a team admin turns it on.
+    guests_may_comment: bool = Field(default=False)
+    #: What a status's WIP limit means (#270): False, the board warns when a
+    #: column goes over; True, a move that would take it over is refused.
+    wip_limits_hard: bool = Field(default=False)
+    #: Whether sub-tickets count against a column's limit, or only the work
+    #: they are part of.
+    wip_counts_subtickets: bool = Field(default=True)
+    #: Points, hours or both (#268). Which estimates the ticket panel offers,
+    #: and what the board's "Has no estimate" asks about.
+    estimate_unit: EstimateUnit = Field(default=EstimateUnit.points)
+    #: What one person can take in a sprint (#269), before anybody changes it
+    #: for a sprint: points for a whole sprint, and minutes for each working
+    #: day. Both shrink with the days somebody is away.
+    capacity_points: int = Field(default=10)
+    capacity_minutes_per_day: int = Field(default=6 * 60)
     created_at: datetime = Field(default_factory=utcnow)
+    #: Whether the team is in the team directory (#259), where people who are
+    #: not on it see its name, key, size and admins and can ask to join. On
+    #: unless a team admin takes it off.
+    listed: bool = Field(default=True)
+    #: Whether anybody signed in -- not an account from outside the
+    #: organisation -- joins it as a member without asking (#259). Off unless
+    #: a team admin turns it on.
+    open_to_join: bool = Field(default=False)
+    #: When it was archived, by a site admin from Administration -> Teams
+    #: (#307) or by a team admin from its settings (#322); null for a team in
+    #: use. An archived team is read-only (`require_team_not_archived`).
+    archived_at: Optional[datetime] = None
 
 
 class Project(SQLModel, table=True):
@@ -702,13 +1091,39 @@ class Project(SQLModel, table=True):
     #: team's list, so nothing that references it goes blank.
     archived: bool = Field(default=False)
     created_at: datetime = Field(default_factory=utcnow)
+    #: In the trash since (#323), and who put it there. Its tickets keep
+    #: pointing here, so they rejoin it when it is restored.
+    deleted_at: Optional[datetime] = Field(default=None, index=True)
+    deleted_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+
+
+def label_name_key(name: str) -> str:
+    """What makes two label names the same label: `Label.name_key`."""
+    return name.strip().casefold()
 
 
 class Label(SQLModel, table=True):
+    #: One label per name on a team, whatever the case (#321), so "feature"
+    #: cannot join "Feature" even when two people add it at once.
+    __table_args__ = (
+        UniqueConstraint("team_id", "name_key", name="uq_label_team_name_key"),
+    )
+
     id: Optional[int] = Field(default=None, primary_key=True)
     team_id: int = Field(foreign_key="team.id", index=True)
     name: str
     color: str = Field(default="#94a3b8")
+    #: `name` trimmed and case-folded. A column rather than an index on
+    #: `lower(name)`, as with `Department.name_key`. Kept in step with `name`
+    #: by `_keep_label_name_key` on every insert and update, so a caller that
+    #: only sets the name cannot leave it stale.
+    name_key: str = Field(default="")
+
+
+@event.listens_for(Label, "before_insert")
+@event.listens_for(Label, "before_update")
+def _keep_label_name_key(_mapper, _connection, label: Label) -> None:
+    label.name_key = label_name_key(label.name)
 
 
 class Ticket(SQLModel, table=True):
@@ -746,12 +1161,26 @@ class Ticket(SQLModel, table=True):
     # Story points. Null means "not sized yet", which is a different thing
     # from zero -- a burndown has to be able to tell them apart.
     estimate: Optional[int] = Field(default=None)
+    #: How long it was meant to take, in minutes (#268), beside the points
+    #: rather than in their place. Minutes, like `Worklog.minutes`, so the two
+    #: subtract exactly.
+    time_estimate_minutes: Optional[int] = Field(default=None)
+    #: What is left, in minutes, when somebody has said so by hand. Null means
+    #: worked out: the time estimate less what is logged, never below zero.
+    #: See lib_softtrack/time_estimates.py.
+    remaining_minutes: Optional[int] = Field(default=None)
     #: When it is due (#87). A date rather than a datetime, like a project's
     #: target: "due Friday" is a day, and a timestamp would move it across
     #: midnight for anybody in another timezone.
     due_date: Optional[date] = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
+    #: In the trash since (#323), and who put it there. A trashed ticket keeps
+    #: everything -- comments, links, attachments, history -- and is left out
+    #: of every query that does not ask for it (`lib_softtrack.trash`), until
+    #: it is restored or purged.
+    deleted_at: Optional[datetime] = Field(default=None, index=True)
+    deleted_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
 
 
 class TicketLink(SQLModel, table=True):
@@ -790,6 +1219,52 @@ class Sprint(SQLModel, table=True):
     completed_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=utcnow)
 
+    # --- What it was for, and what the team learned (#271) ------------------
+
+    #: A sentence or two, written when the sprint is planned.
+    goal: Optional[str] = None
+    #: Whether the goal was met, said when it is completed or after.
+    goal_outcome: Optional[SprintOutcome] = None
+    #: The retrospective: three markdown sections, any of them filled in when
+    #: the sprint is completed or later, by anybody on the team but a guest,
+    #: until a team admin closes it.
+    retro_went_well: Optional[str] = None
+    retro_did_not: Optional[str] = None
+    retro_to_change: Optional[str] = None
+    retro_closed_at: Optional[datetime] = None
+
+
+class SprintAction(SQLModel, table=True):
+    """Something to change, from a sprint's retrospective, made a ticket (#271).
+
+    The line it came from and the ticket it became, so the retrospective can
+    show which of its actions became work and the ticket can say where it
+    came from.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    sprint_id: int = Field(foreign_key="sprint.id", index=True)
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
+    text: str
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class SprintCapacity(SQLModel, table=True):
+    """One person's capacity in one sprint, where it is not the team's
+    default (#269).
+
+    No row means the default, in proportion to the sprint's working days.
+    `days_off` takes days away from that; a capacity set by hand replaces it,
+    in its own unit only -- null in either unit is still worked out. Leave
+    (#248) and public holidays (#250) will feed the days away when they exist.
+    """
+
+    sprint_id: int = Field(foreign_key="sprint.id", primary_key=True)
+    user_id: int = Field(foreign_key="user.id", primary_key=True, index=True)
+    days_off: int = Field(default=0)
+    points: Optional[int] = None
+    minutes: Optional[int] = None
+
 
 class TicketEvent(SQLModel, table=True):
     """One recorded change to a ticket field.
@@ -824,6 +1299,12 @@ class TicketEvent(SQLModel, table=True):
     #: soon after creation" also describes a real change made quickly, such
     #: as an automation assigning a new ticket.
     opening: bool = Field(default=False)
+    #: Which of the team's own fields changed, when `field` is `custom_field`
+    #: (#117); null for every built-in field. The values are the field's own
+    #: -- see lib_softtrack/custom_fields.py for how each kind is written.
+    custom_field_id: Optional[int] = Field(
+        default=None, foreign_key="customfield.id", index=True
+    )
 
 
 class Comment(SQLModel, table=True):
@@ -893,6 +1374,73 @@ class TicketTemplate(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=utcnow)
 
 
+class CustomField(SQLModel, table=True):
+    """A field a team adds to its own tickets (#117): a reviewer, an environment.
+
+    Team-scoped and never global -- two teams may both have "Reviewer" and
+    mean different people by it. Tickets carry values in CustomFieldValue;
+    this row is the definition the form, the panel and the export read.
+
+    `key` is what the API calls it (`"custom_fields": {"reviewer": 12}`) and
+    never changes once made, so a script written against it keeps working
+    after the name is reworded. `kind` never changes either: a value written
+    as a date means nothing read as a person.
+    """
+
+    __table_args__ = (
+        UniqueConstraint("team_id", "key", name="uq_custom_field_team_key"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    key: str
+    name: str
+    kind: CustomFieldKind
+    #: For `select` and `multi_select`: `[{"id": "production", "name":
+    #: "Production"}, ...]`, in the order offered. An option's id is made from
+    #: its first name and kept through renames, so values -- which store the
+    #: id -- survive the option being reworded. Empty for every other kind.
+    options: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: Enforced when a ticket is filed, with an error that names the field.
+    required: bool = Field(default=False)
+    #: The ticket types it shows on (#89); empty is all of them. The
+    #: difference between Environment on every task and Environment on bugs.
+    applies_to: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: Order in the ticket panel, the form and the export, low to high.
+    position: int = 0
+    #: Hidden from the form and the panel's editors; values stay readable.
+    #: Deleting is a separate step, and only from here -- it destroys history.
+    archived_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class CustomFieldValue(SQLModel, table=True):
+    """One ticket's value for one of its team's fields (#117).
+
+    One JSON `value` rather than a nullable column per kind: the kind on the
+    field says how to read it, the service validates it on the way in, and a
+    ninth kind is not a migration. The cost is that filtering has to reach
+    into JSON -- `jsonb` on Postgres, where that is cheap to index. A field
+    with no value has no row: clearing one deletes it.
+    """
+
+    __table_args__ = (
+        UniqueConstraint("ticket_id", "field_id", name="uq_custom_field_value"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
+    field_id: int = Field(foreign_key="customfield.id", index=True)
+    #: A string, number, bool, option id, list of option ids, ISO date or
+    #: user id, by the field's kind.
+    value: object = Field(sa_column=Column(JSONValue, nullable=False))
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
 class CommentReaction(SQLModel, table=True):
     """One person's one reaction to one comment (#96).
 
@@ -938,6 +1486,11 @@ class Attachment(SQLModel, table=True):
     #: Opaque key into whichever storage backend is configured.
     storage_key: str
     uploaded_by_id: int = Field(foreign_key="user.id")
+    #: Uploaded by a guest (#244), who attaches files to their comments and
+    #: to nothing else: until a comment claims it, the file is a draft and not
+    #: one of the ticket's. Recorded at upload, so a member later made a guest
+    #: keeps the files they put on tickets.
+    guest_draft: bool = Field(default=False)
     created_at: datetime = Field(default_factory=utcnow)
 
 
@@ -956,6 +1509,24 @@ class TicketWatch(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", primary_key=True)
     watching: bool = Field(default=True)
     created_at: datetime = Field(default_factory=utcnow)
+
+
+class NotificationPreference(SQLModel, table=True):
+    """One person's choice for one kind of notification on one channel (#263).
+
+    Only choices that were made: no row means the kind's registered default
+    (see `lib_softtrack.notification_kinds`). That is what lets a kind added
+    later arrive switched to its default for everybody, and what keeps the
+    defaults exactly today's behaviour for anybody who never opens the page.
+
+    `kind` and `channel` are plain strings rather than enum types, so a new
+    kind (#262) or a new channel (#265) needs no ALTER TYPE.
+    """
+
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    kind: str = Field(primary_key=True, max_length=40)
+    channel: str = Field(primary_key=True, max_length=20)
+    enabled: bool
 
 
 class Notification(SQLModel, table=True):
@@ -987,7 +1558,22 @@ class Notification(SQLModel, table=True):
     #: user behind it, and "Jira import assigned this to you" is still worth
     #: saying.
     actor_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    #: The field somebody was named in, for `field_assigned` (#117). Read
+    #: through, like the ticket's title, so a renamed field reads as it is now.
+    custom_field_id: Optional[int] = Field(
+        default=None, foreign_key="customfield.id", index=True
+    )
+    #: For a reminder (#262): the due date it was about. Kept on the row
+    #: rather than read through, unlike the ticket's title, because a moved
+    #: date is a new reminder and this one stays about the old one.
+    due_date: Optional[date] = None
     read_at: Optional[datetime] = Field(default=None, index=True)
+    #: Whether the inbox shows it (#263). False for a kind the person turned
+    #: off in the app but kept by email: the row exists only for the digest.
+    in_app: bool = Field(default=True)
+    #: Whether the digest may mail it (#263), decided when it was raised from
+    #: the person's preferences for its kind.
+    by_email: bool = Field(default=True)
     #: When this row went out in a digest. Set *before* the mail is sent and
     #: only on rows the update actually claimed, so two processes running the
     #: digest loop cannot both send the same notification.
@@ -995,20 +1581,40 @@ class Notification(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow, index=True)
 
 
+class DueReminder(SQLModel, table=True):
+    """A due-date reminder that has been claimed (#262): who, about which
+    ticket, for which date, and which of the three it was.
+
+    The primary key is the whole promise. A reminder goes out once per ticket
+    per date per person, so the sweep inserts this row *before* raising the
+    notification, and an insert that conflicts means another worker -- or an
+    earlier tick, before a restart -- already has it. A moved due date is a
+    different key, which is what "moving the date starts over" means.
+    """
+
+    ticket_id: int = Field(foreign_key="ticket.id", primary_key=True)
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    due_date: date = Field(primary_key=True)
+    #: `lib_softtrack.reminders.Stage`: due_tomorrow, overdue, still_overdue.
+    stage: str = Field(primary_key=True, max_length=20)
+    claimed_at: datetime = Field(default_factory=utcnow)
+
+
 class SavedView(SQLModel, table=True):
     """A named set of filters over one team's tickets.
 
-    The filters are columns rather than a JSON blob. The set is small, fixed
-    and already described by enums the API publishes, so columns get typed
-    request and response models -- and therefore a typed frontend client --
-    where a blob would reach the browser as `unknown`. Foreign keys also mean
-    a view cannot outlive the label or sprint it filters on without somebody
-    having to decide what happens, which is the conversation a blob quietly
-    skips.
+    Each filter is a list (#260): several values in one filter are
+    alternatives, and different filters narrow each other. The lists are JSON
+    columns rather than a link table per filter, because a view is read and
+    written whole and never searched by what it filters on. What the foreign
+    keys used to stand for is kept where it always really lived -- in the code
+    that deletes or merges a status or a label, which takes it out of every
+    view's list (lib_softtrack/statuses.py, lib_softtrack/labels.py). The API
+    still publishes each list with its enum or id type, so the frontend client
+    stays typed.
 
-    Every field is nullable and null means "no opinion", so a view with
-    nothing set is "all tickets" rather than a contradiction that matches
-    nothing.
+    Empty everywhere means "no opinion", so a view with nothing set is "all
+    tickets" rather than a contradiction that matches nothing.
     """
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -1020,21 +1626,70 @@ class SavedView(SQLModel, table=True):
     #: is a tracker where people paste URLs to each other instead.
     is_shared: bool = Field(default=False, index=True)
 
-    #: Cleared when the status is deleted -- see lib_softtrack/statuses.py.
-    status_id: Optional[int] = Field(default=None, foreign_key="workflowstatus.id")
-    priority: Optional[TicketPriority] = None
-    assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
-    #: Distinct from `assignee_id is None`, which means "any assignee". The two
-    #: are mutually exclusive and the request model rejects setting both.
+    #: Status ids. Cleared of a status when it is deleted -- see
+    #: lib_softtrack/statuses.py.
+    status_ids: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: Each `*_exclude` turns its filter round: every value except these.
+    status_exclude: bool = Field(default=False)
+    #: `TicketPriority` values.
+    priorities: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    priority_exclude: bool = Field(default=False)
+    #: User ids.
+    assignee_ids: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: Nobody assigned, as one more choice beside `assignee_ids`: alone it is
+    #: "unassigned", with them it is "Mei, or nobody".
     unassigned: bool = Field(default=False)
-    label_id: Optional[int] = Field(default=None, foreign_key="label.id")
+    assignee_exclude: bool = Field(default=False)
+    #: Label ids. Merged or cleared with the label -- see lib_softtrack/labels.py.
+    label_ids: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: Every one of the labels rather than any of them (`LabelMatch.all`).
+    label_all: bool = Field(default=False)
+    label_exclude: bool = Field(default=False)
+    #: `TicketType` values.
+    types: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    type_exclude: bool = Field(default=False)
+
     project_id: Optional[int] = Field(default=None, foreign_key="project.id")
     #: Cleared when the sprint is deleted -- see lib_softtrack/sprints.py. A view
     #: pointing at a sprint that no longer exists would match nothing and look
     #: broken rather than empty.
     sprint_id: Optional[int] = Field(default=None, foreign_key="sprint.id")
     due: Optional[DueFilter] = None
-    type: Optional[TicketType] = None
+
+    #: "Me" as an assignee or creator (#261): whoever is looking when the view
+    #: is opened, not whoever saved it, so a shared "assigned to me" shows
+    #: each person their own tickets.
+    assignee_me: bool = Field(default=False)
+    #: User ids of who created the ticket, with the same switch as the rest.
+    creator_ids: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    creator_me: bool = Field(default=False)
+    creator_exclude: bool = Field(default=False)
+    #: Only the tickets the viewer watches -- the viewer's, as with "me".
+    watching: bool = Field(default=False)
+    #: When the ticket last changed, or was created: a window relative to the
+    #: viewer's today, and/or a range of days, both ends included.
+    updated: Optional[DateWindow] = None
+    updated_from: Optional[date] = None
+    updated_to: Optional[date] = None
+    created: Optional[DateWindow] = None
+    created_from: Optional[date] = None
+    created_to: Optional[date] = None
+    #: `MissingField` values: tickets with none of each.
+    has_no: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
 
     #: Not a filter -- it narrows nothing -- but part of what a view *is*: the
     #: same tickets read very differently by column and by project.
@@ -1046,6 +1701,41 @@ class SavedView(SQLModel, table=True):
 
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
+
+
+class ShareLink(SQLModel, table=True):
+    """A read-only link to an epic or a saved view, for somebody with no
+    account (#245): a client opening it on Monday morning to see what moved.
+
+    The link is a token, and only its hash is kept, the way a password reset
+    token is: a copy of the database opens nothing. It can expire, can ask
+    for a password, and is revoked rather than deleted, so the list of a
+    team's links still says who made one and how often it was opened.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    #: What it shows: an epic, or a saved view. Exactly one, until what it
+    #: pointed at goes -- then neither, and the link is revoked with it.
+    project_id: Optional[int] = Field(default=None, foreign_key="project.id")
+    view_id: Optional[int] = Field(default=None, foreign_key="savedview.id")
+    #: sha256 of the token. The token itself is shown once, when made.
+    token_hash: str = Field(index=True, unique=True)
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    expires_at: Optional[datetime] = None
+    revoked_at: Optional[datetime] = None
+    #: A password whoever opens it has to give as well, hashed like an
+    #: account's. Null for none.
+    password_hash: Optional[str] = None
+    #: What the page shows beside key, title, status and type. All off unless
+    #: the link turns them on.
+    show_comments: bool = Field(default=False)
+    show_assignees: bool = Field(default=False)
+    show_estimates: bool = Field(default=False)
+    show_attachments: bool = Field(default=False)
+    open_count: int = Field(default=0)
+    last_opened_at: Optional[datetime] = None
 
 
 class UserDefaultView(SQLModel, table=True):
@@ -1087,6 +1777,10 @@ class WorkflowStatus(SQLModel, table=True):
     #: gaps are harmless and contiguity is not worth a transaction to maintain.
     position: int
     color: str = Field(default="#9b98b0")
+    #: How many tickets the column should hold at once (#270), or null for
+    #: no limit. Over it, the board says so; where the team makes limits hard
+    #: (`Team.wip_limits_hard`), a move that would go over is refused.
+    wip_limit: Optional[int] = None
     created_at: datetime = Field(default_factory=utcnow)
 
 
@@ -1211,6 +1905,95 @@ class AutomationRun(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow, index=True)
 
 
+class TicketSchedule(SQLModel, table=True):
+    """Work that comes back on a date (#264): what to create, and when.
+
+    The ninth thing that can start work, beside the eight triggers of an
+    automation rule, and the only one nobody has to remember. It creates an
+    ordinary ticket through the ordinary path (`tickets.create_scheduled`),
+    and from there the ticket is a ticket like any other; the schedule keeps
+    no hold on it beyond the `ScheduleRun` that says it made it.
+
+    **What it creates** is the ticket's own fields, as columns. Labels are a
+    JSON list of ids, read through the team's labels when a ticket is made,
+    so a deleted label drops out without anything having to clear it here.
+    The description is text: a template fills it in the dialog and nothing
+    remembers which (see TicketTemplate).
+
+    **When** is a frequency and what that frequency needs: weekdays and an
+    interval in weeks, or a day of the month -- a date, or its first or last
+    working day -- for a month, a quarter (January, April, July, October) or
+    a year (`month`). No cron syntax. `starts_on` is the week an interval of
+    weeks counts from; `active_since` is the first day an occurrence may be
+    for, moved to the day it is switched back on so a paused schedule does not
+    make up for the weeks it was off.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+
+    title: str = Field(max_length=200)
+    description: Optional[str] = None
+    type: TicketType = Field(default=TicketType.task)
+    priority: TicketPriority = Field(default=TicketPriority.no_priority)
+    #: Created unassigned once this person is no longer on the team, or no
+    #: longer active; the schedule keeps the name for when they are back.
+    assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    label_ids: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: The epic. Cleared when the epic is purged from the trash.
+    project_id: Optional[int] = Field(default=None, foreign_key="project.id")
+    estimate: Optional[int] = None
+    #: A due date this many days after the day the ticket is created; none
+    #: when null.
+    due_after_days: Optional[int] = None
+    #: Into the active sprint, or the backlog when there is none.
+    into_active_sprint: bool = Field(default=False)
+
+    #: `lib_softtrack.schedules.Frequency`.
+    frequency: str = Field(max_length=10)
+    #: Every this many weeks; 1 for every other frequency.
+    interval: int = Field(default=1)
+    #: Monday is 0, as Python counts them. For a weekly schedule.
+    weekdays: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: `lib_softtrack.schedules.MonthDay`, for a month, a quarter or a year.
+    month_day: Optional[str] = Field(default=None, max_length=20)
+    #: 1 to 31 when `month_day` is a date; the 31st of a short month is its
+    #: last day.
+    day_of_month: Optional[int] = None
+    #: 1 to 12, for a yearly schedule.
+    month: Optional[int] = None
+    #: Only once the ticket it made last is done or cancelled.
+    wait_for_previous: bool = Field(default=False)
+
+    starts_on: date
+    active_since: date
+    paused_at: Optional[datetime] = None
+    paused_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
+class ScheduleRun(SQLModel, table=True):
+    """One occurrence of a schedule, claimed (#264), and the ticket it made.
+
+    Keyed by schedule and day, and inserted *before* the ticket is created,
+    the way a `DueReminder` is: two workers waking at once both insert the
+    same key and only one insert takes, so each occurrence makes one ticket.
+    `ticket_id` is filled once the ticket exists, and cleared if the ticket
+    is purged -- the claim stays, so the occurrence is not made again.
+    """
+
+    schedule_id: int = Field(foreign_key="ticketschedule.id", primary_key=True)
+    occurs_on: date = Field(primary_key=True)
+    ticket_id: Optional[int] = Field(default=None, foreign_key="ticket.id", index=True)
+    claimed_at: datetime = Field(default_factory=utcnow)
+
+
 class Repository(SQLModel, table=True):
     """A GitHub or GitLab repository one team has connected.
 
@@ -1313,3 +2096,438 @@ class CodeLink(SQLModel, table=True):
     author_name: Optional[str] = None
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Finance (#130-#137). Readable by finance admins only; see lib_finance.
+# ---------------------------------------------------------------------------
+
+
+class Compensation(SQLModel, table=True):
+    """One decision about somebody's pay (#131): this much, from this day.
+
+    A salary is not a value but a series of decisions -- hired at X, raised
+    to Y in March -- and a column loses the series the first time it is
+    updated, and with it the answer to "what was this person paid in Q1",
+    which is the question payroll runs and finance reports ask. So pay is
+    rows, and the rows are append-only: a raise is a new row, and a
+    correction is a new row naming the one it corrects. Nothing here is ever
+    updated or deleted.
+
+    What somebody is paid on a given day is the latest row in effect by then
+    that no correction replaces -- see `lib_finance/compensation.py`.
+    """
+
+    __table_args__ = (
+        # Corrected at most once. A second correction corrects the first, so
+        # the chain only ever reads one way.
+        UniqueConstraint("corrects_id", name="uq_compensation_corrects_id"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    #: Gross agreed pay for one period of `pay_schedule`, in the currency's
+    #: minor unit (lib_finance/money.py). An integer, never a float: floating
+    #: point and money is a bug that pays somebody a tenth of a cent forever.
+    amount_minor: int
+    #: An ISO 4217 code. Per record, and never converted into another.
+    currency: str
+    pay_schedule: PaySchedule
+    #: The day it takes effect. A date rather than a timestamp, like a start
+    #: date. Still in the future, it is scheduled.
+    effective_on: date
+    #: Stored by value, so the database says "raise" too.
+    kind: CompensationKind = Field(
+        sa_column=Column(
+            Enum(
+                CompensationKind,
+                name="compensationkind",
+                values_callable=lambda kinds: [kind.value for kind in kinds],
+            ),
+            nullable=False,
+        )
+    )
+    note: Optional[str] = None
+    #: The record this one replaces, when it is a correction.
+    corrects_id: Optional[int] = Field(default=None, foreign_key="compensation.id")
+    recorded_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+
+    # Read-only, and named: two links to `user` make the join ambiguous, and
+    # the rows are written through the ids.
+    user: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "Compensation.user_id",
+            "viewonly": True,
+        }
+    )
+    recorded_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "Compensation.recorded_by_id",
+            "viewonly": True,
+        }
+    )
+
+
+class PayrollRun(SQLModel, table=True):
+    """One pay period on one pay schedule, made concrete (#132).
+
+    A monthly run and a semi-monthly run for September are two runs: a
+    period's lines only make sense for the people paid on that schedule. Runs
+    on one schedule never overlap, so nobody is paid twice for the same days
+    -- the service refuses an overlap, and the constraint catches two runs
+    for the same start at once.
+
+    SoftTrack keeps the record and the export. It computes no tax, models no
+    withholding, files nothing and pays nobody: the CSV feeds whatever does.
+    """
+
+    __table_args__ = (
+        UniqueConstraint(
+            "pay_schedule", "period_start", name="uq_payrollrun_schedule_start"
+        ),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    pay_schedule: PaySchedule
+    #: Both days included. Dates, like compensation's effective dates.
+    period_start: date
+    period_end: date
+    state: PayrollRunState = Field(default=PayrollRunState.draft, index=True)
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    approved_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    approved_at: Optional[datetime] = None
+    paid_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    paid_at: Optional[datetime] = None
+
+    # Read-only, and named: three links to `user`.
+    created_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "PayrollRun.created_by_id",
+            "viewonly": True,
+        }
+    )
+    approved_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "PayrollRun.approved_by_id",
+            "viewonly": True,
+        }
+    )
+    paid_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "PayrollRun.paid_by_id",
+            "viewonly": True,
+        }
+    )
+
+
+class PayrollLine(SQLModel, table=True):
+    """One person on one payroll run (#132).
+
+    While the run is a draft, a row exists only to hold an adjustment; the
+    rest of a draft line is read live -- who is active, and what they are
+    paid on the period's last day -- so a pay recorded or an account opened
+    after the run was generated is on it. Approval writes a row for every
+    line and copies onto it what it pays: the amount, the currency, the
+    record they came from, and the department the person was in. From then on
+    the row is the record, whatever later happens to the pay or the person --
+    a raise recorded next week cannot change what an approved run says was
+    paid, and a reorg in June cannot move January's cost (#134).
+    """
+
+    __table_args__ = (
+        UniqueConstraint("run_id", "user_id", name="uq_payrollline_run_user"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    run_id: int = Field(foreign_key="payrollrun.id", index=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    #: Copied at approval. All three null on a line whose person had no pay
+    #: in effect: missing, which the run lists rather than leaving out.
+    compensation_id: Optional[int] = Field(default=None, foreign_key="compensation.id")
+    amount_minor: Optional[int] = None
+    currency: Optional[str] = None
+    #: A one-off amount on top, positive or negative, in the line's currency,
+    #: and why. Only a draft takes one, and never without its note.
+    adjustment_minor: int = Field(default=0)
+    adjustment_note: Optional[str] = None
+    #: Where the cost belongs, copied at approval (#134). Null for somebody
+    #: in no department, who lands in Unattributed rather than nowhere.
+    department_id: Optional[int] = Field(default=None, foreign_key="department.id")
+
+    user: Optional[User] = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "PayrollLine.user_id", "viewonly": True}
+    )
+    department: Optional[Department] = Relationship(
+        sa_relationship_kwargs={"viewonly": True}
+    )
+
+
+class ReimbursementBatch(SQLModel, table=True):
+    """Approved expense claims paid back together (#137).
+
+    The expense counterpart of a payroll run: gathered by a finance admin,
+    moved draft -> approved -> paid, and exported as the same kind of CSV.
+    Its lines are the claims in it, summed per person per currency; their
+    amounts were frozen when each claim was approved, so there is nothing to
+    copy here.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    #: The payroll run's states, set the same way and for the same reason.
+    state: PayrollRunState = Field(default=PayrollRunState.draft, index=True)
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    approved_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    approved_at: Optional[datetime] = None
+    paid_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    paid_at: Optional[datetime] = None
+
+    created_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "ReimbursementBatch.created_by_id",
+            "viewonly": True,
+        }
+    )
+    approved_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "ReimbursementBatch.approved_by_id",
+            "viewonly": True,
+        }
+    )
+    paid_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "ReimbursementBatch.paid_by_id",
+            "viewonly": True,
+        }
+    )
+
+
+class Expense(SQLModel, table=True):
+    """One expense claim (#133): money somebody spent for work, wanting it back.
+
+    The submitter can change or withdraw it while it waits. The decision
+    freezes it: an approved or refused claim is a record, and a correction is
+    a new claim. Approval copies the submitter's department onto it, like a
+    payroll line, so a reorg cannot move what a department spent (#134).
+
+    The receipt goes through the attachment pipeline -- the same name
+    handling, derived types, byte checks and storage -- but lives on the claim
+    rather than as an Attachment row, which always belongs to a ticket and is
+    guarded by the ticket's team. A receipt is guarded by who may see money.
+
+    An approved claim is paid back exactly once (#137): in a reimbursement
+    batch, or on a payroll run, and never both. That rule is the row's own
+    -- two check constraints -- so paying a claim twice cannot be recorded
+    at all, rather than being something the service remembers to prevent.
+    """
+
+    __table_args__ = (
+        CheckConstraint(
+            "reimbursement_batch_id IS NULL OR payroll_run_id IS NULL",
+            name="ck_expense_settled_once",
+        ),
+        CheckConstraint(
+            "state = 'approved' OR "
+            "(reimbursement_batch_id IS NULL AND payroll_run_id IS NULL)",
+            name="ck_expense_settles_approved",
+        ),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    submitter_id: int = Field(foreign_key="user.id", index=True)
+    #: In the currency's minor unit, like compensation, and never converted.
+    amount_minor: int
+    currency: str
+    #: The day the money was spent.
+    incurred_on: date
+    description: str
+    state: ExpenseState = Field(default=ExpenseState.submitted, index=True)
+    receipt_filename: Optional[str] = None
+    receipt_content_type: Optional[str] = None
+    receipt_size_bytes: Optional[int] = None
+    receipt_storage_key: Optional[str] = None
+    decided_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    decided_at: Optional[datetime] = None
+    #: Required on a refusal, and shown to the submitter.
+    refusal_reason: Optional[str] = None
+    #: Copied at approval (#134); null for somebody in no department.
+    department_id: Optional[int] = Field(default=None, foreign_key="department.id")
+    #: How it goes out (#137): one of these, or neither while it waits.
+    reimbursement_batch_id: Optional[int] = Field(
+        default=None, foreign_key="reimbursementbatch.id", index=True
+    )
+    payroll_run_id: Optional[int] = Field(
+        default=None, foreign_key="payrollrun.id", index=True
+    )
+    #: When the batch or run it went out in was marked paid: the moment the
+    #: submitter's view says "Reimbursed".
+    reimbursed_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+    reimbursement_batch: Optional[ReimbursementBatch] = Relationship(
+        sa_relationship_kwargs={"viewonly": True}
+    )
+    payroll_run: Optional[PayrollRun] = Relationship(
+        sa_relationship_kwargs={"viewonly": True}
+    )
+    submitter: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "Expense.submitter_id",
+            "viewonly": True,
+        }
+    )
+    decided_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "Expense.decided_by_id",
+            "viewonly": True,
+        }
+    )
+    department: Optional[Department] = Relationship(
+        sa_relationship_kwargs={"viewonly": True}
+    )
+
+
+class Budget(SQLModel, table=True):
+    """What a department meant to spend in a period, in one currency (#134).
+
+    A period is a start and an end, so months, quarters and a fiscal year
+    from April are all just rows. One per department, period and currency: a
+    department paying in three currencies has three. The actuals it is
+    compared with are never entered -- they are summed from approved payroll
+    lines and reimbursed expenses, which is what makes the comparison honest.
+    No forecasting, encumbrances or ledger: a budget is a number to compare
+    against.
+    """
+
+    __table_args__ = (
+        UniqueConstraint(
+            "department_id",
+            "currency",
+            "period_start",
+            "period_end",
+            name="uq_budget_department_currency_period",
+        ),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    department_id: int = Field(foreign_key="department.id", index=True)
+    period_start: date
+    period_end: date
+    amount_minor: int
+    currency: str
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+    department: Optional[Department] = Relationship(
+        sa_relationship_kwargs={"viewonly": True}
+    )
+    created_by: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "Budget.created_by_id",
+            "viewonly": True,
+        }
+    )
+
+
+class InstanceSettings(SQLModel, table=True):
+    """Settings for the whole instance, kept in the database (#306).
+
+    One row, id 1, read through `lib_softtrack.team_creation`; no row means
+    every default. A setting here may also be set in the environment, which
+    wins -- see `web.Settings`.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_creation: TeamCreationPolicy = Field(default=TeamCreationPolicy.anyone)
+    #: Employment types finance has put on payroll besides employees (#320),
+    #: read through `lib_finance.on_payroll`. Never `external`.
+    payroll_types: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
+class RetiredTeamKey(SQLModel, table=True):
+    """The key of a deleted team that had given out identifiers (#322).
+
+    A team is deleted only when it has no tickets, but it may have had them:
+    moved to another team, or purged from the trash. `ENG-42` is then still
+    in commit messages, chat logs and a "Moved from ENG-42" comment, and a
+    new team keyed ENG would make it point at somebody else's work -- the
+    reason a key cannot be changed, and an archived team's cannot be reused.
+    A team deleted before its first ticket left no identifier anywhere, and
+    its key is free again.
+    """
+
+    key: str = Field(primary_key=True)
+    retired_at: datetime = Field(default_factory=utcnow)
+
+
+class TeamCreator(SQLModel, table=True):
+    """Somebody named as allowed to create teams (#306), when the instance
+    leaves it to named people. Kept whatever the policy, so switching to
+    "site admins only" and back does not lose the list."""
+
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    added_by_id: int = Field(foreign_key="user.id")
+    added_at: datetime = Field(default_factory=utcnow)
+
+
+class TeamRequest(SQLModel, table=True):
+    """Somebody who may not create a team asking for one (#306).
+
+    The site admins are told, and approving creates the team with the person
+    who asked as its admin. A decided request stays, as the record of who
+    asked and who decided.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    requester_id: int = Field(foreign_key="user.id", index=True)
+    name: str
+    key: str
+    reason: str
+    state: TeamRequestState = Field(default=TeamRequestState.pending, index=True)
+    created_at: datetime = Field(default_factory=utcnow)
+    decided_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    decided_at: Optional[datetime] = None
+    #: Why it was declined, told to the person who asked. Optional.
+    decline_reason: Optional[str] = None
+    #: The team approving it created.
+    team_id: Optional[int] = Field(default=None, foreign_key="team.id")
+
+    requester: Optional[User] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "TeamRequest.requester_id",
+            "viewonly": True,
+        }
+    )
+
+
+class TeamJoinRequest(SQLModel, table=True):
+    """Somebody asking to join a team (#259), with an optional note.
+
+    The team's admins are told, and approve with a role or decline. Like an
+    invitation, a row that disappears: approving makes the TeamMember row,
+    which is the record that matters, and declining or withdrawing leaves
+    nothing to keep. One open request per person per team, enforced in the
+    database, and it runs out when an invitation sent at the same moment
+    would (INVITE_EXPIRE_DAYS).
+    """
+
+    __table_args__ = (
+        UniqueConstraint(
+            "team_id", "requester_id", name="uq_team_join_request_team_requester"
+        ),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    requester_id: int = Field(foreign_key="user.id", index=True)
+    #: In their own words, for the admins. Optional.
+    note: Optional[str] = None
+    created_at: datetime = Field(default_factory=utcnow)
+    expires_at: datetime

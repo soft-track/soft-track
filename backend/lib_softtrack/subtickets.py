@@ -124,6 +124,18 @@ def progress_by(session: Session, column, ids: list[int]) -> dict[int, tuple[int
     return {key: (int(done), int(total)) for key, total, done in rows}
 
 
+def progress_where(session: Session, clauses: list) -> tuple[int, int]:
+    """`(done, total)` over the tickets matching `clauses`, by the same one
+    definition as `progress_by`: a saved view's, for a share link (#245)."""
+    done_when = case((in_category(_DONE), 1), else_=0)
+    total, done = session.exec(
+        select(func.count(), func.coalesce(func.sum(done_when), 0)).where(
+            *clauses, ~in_category(_EXCLUDED_FROM_PROGRESS)
+        )
+    ).one()
+    return int(done), int(total)
+
+
 def _has_children(session: Session, ticket_id: int) -> bool:
     return (
         session.exec(select(Ticket).where(Ticket.parent_id == ticket_id)).first()

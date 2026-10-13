@@ -6,6 +6,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { UserMe } from '@/api/generated/models'
@@ -34,7 +35,9 @@ const DANIEL: UserMe = {
   avatar_color: '#14b8a6',
   is_active: true,
   is_site_admin: false,
+  is_finance_admin: false,
   has_password: true,
+  totp_enabled: false,
   created_at: '2026-01-01T00:00:00',
   job_title: null,
   location: null,
@@ -44,9 +47,12 @@ const DANIEL: UserMe = {
 function renderProfile(user: UserMe) {
   mocks.user = user
   render(
-    <QueryClientProvider client={new QueryClient()}>
-      <ProfileSettings />
-    </QueryClientProvider>,
+    // A router, since the manager's name is a link to their profile (#126).
+    <MemoryRouter>
+      <QueryClientProvider client={new QueryClient()}>
+        <ProfileSettings />
+      </QueryClientProvider>
+    </MemoryRouter>,
   )
   return userEvent.setup()
 }
@@ -135,7 +141,9 @@ describe('Profile settings', () => {
     })
     const card = screen.getByRole('region', { name: 'Your place in the organisation' })
     const manager = within(card).getByText('Manager').parentElement!
-    expect(within(manager).getByText('Amina Khan')).toBeTruthy()
+    expect(within(manager).getByRole('link', { name: 'Amina Khan' }).getAttribute('href')).toBe(
+      '/people/amina',
+    )
     expect(within(manager).getByText('Deactivated')).toBeTruthy()
   })
 })

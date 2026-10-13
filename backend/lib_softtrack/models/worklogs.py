@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from lib_identity.models.identity import UserPublic
+from lib_softtrack.models.time_estimates import Remaining
 
 #: One entry is one day's work (#102), so it cannot be more than a day.
 MAX_MINUTES = 24 * 60
@@ -15,6 +16,10 @@ class WorklogCreate(BaseModel):
     #: so somebody logging at 11pm in Sydney logs it on the right day.
     worked_on: Optional[date] = None
     note: Optional[str] = Field(default=None, max_length=500)
+    #: How much is left once this is logged (#268), when somebody said.
+    #: Omitted, remaining set by hand goes down by this entry; null hands
+    #: it back to the sum.
+    remaining_minutes: Remaining = None
 
 
 class WorklogUpdate(BaseModel):

@@ -8,5 +8,6 @@
 
 export interface LabelCreate {
   name: string;
+  /** @pattern ^#[0-9a-fA-F]{6}$ */
   color?: string;
 }

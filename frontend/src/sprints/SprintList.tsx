@@ -96,6 +96,13 @@ function SprintRow({
         )}
       </span>
 
+      {/* What it is for (#271), under its name while it is still to do. */}
+      {sprint.goal && sprint.state !== 'completed' && (
+        <span className="line-clamp-2 block text-[11px] font-normal text-neutral-500">
+          {sprint.goal}
+        </span>
+      )}
+
       {sprint.state !== 'completed' && (
         <>
           <span className="block h-1 overflow-hidden rounded-full bg-neutral-900/8">

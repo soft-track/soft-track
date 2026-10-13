@@ -27,7 +27,9 @@ import { TicketActionsMenu } from '@/tickets/detail/TicketActionsMenu'
 import { ReactionBar } from '@/tickets/detail/ReactionBar'
 import type { Mentionable } from '@/markdown/mentions'
 import { toggleTaskAtOffset } from '@/markdown/tasks'
+import { PersonLink } from '@/people/PersonLink'
 import { Avatar } from '@/ui/Avatar'
+import { ExternalChip } from '@/ui/ExternalChip'
 import { Icon } from '@/ui/Icon'
 
 /**
@@ -44,6 +46,8 @@ export function CommentsSection({
   onFilesClaimed,
   canComment = true,
   canModerate = false,
+  guestOf,
+  archivedTeam,
 }: {
   ticketId: number
   people: Mentionable[]
@@ -57,6 +61,14 @@ export function CommentsSection({
   canComment?: boolean
   /** A team admin, who may delete anybody's comment -- never edit it (#93). */
   canModerate?: boolean
+  /**
+   * The team's name, for a guest (#244): they comment if the team lets its
+   * guests, and are told so, or are told why there is no box.
+   */
+  guestOf?: string
+  /** The team's name when it is archived (#322): nobody comments, and the
+   *  box says why. */
+  archivedTeam?: string
 }) {
   const { t } = useTranslation('tickets')
   const queryClient = useQueryClient()
@@ -131,15 +143,33 @@ export function CommentsSection({
 
 
       {!canComment ? (
-        <p className="text-xs text-neutral-400">{t('comments.guest')}</p>
+        <p className="well flex items-start gap-2 rounded-control px-3 py-2 text-xs text-neutral-500">
+          <Icon name="lock" size={13} className="mt-px shrink-0" />
+          {archivedTeam !== undefined
+            ? t('comments.archived', { team: archivedTeam })
+            : t('comments.guest', { team: guestOf ?? '' })}
+        </p>
       ) : (
         <form onSubmit={submit}>
+          {guestOf !== undefined && (
+            <p className="mb-2 flex items-center gap-2 rounded-control border border-brand-500/25 bg-brand-500/8 px-3 py-2 text-xs text-neutral-700">
+              <Icon name="mail" size={13} className="shrink-0 text-brand-600" />
+              <span>
+                <Trans
+                  t={t}
+                  i18nKey="comments.guestMayComment"
+                  components={{ strong: <strong className="font-semibold" /> }}
+                />
+              </span>
+            </p>
+          )}
           <MarkdownEditor
             value={body}
             onChange={setBody}
             people={people}
             placeholder={t('comments.placeholder')}
             rows={3}
+            compact
             onSubmit={() => void submit()}
             onUploadFiles={uploadForComment}
           />
@@ -297,9 +327,17 @@ function CommentItem({
       )}
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
-          <span className="text-sm font-medium text-neutral-900">
-            {comment.author?.full_name ?? t('comments.automation')}
-          </span>
+          {comment.author ? (
+            // Who wrote it, one click from their profile (#126).
+            <PersonLink
+              person={comment.author}
+              className="text-sm font-medium text-neutral-900 hover:underline"
+            />
+          ) : (
+            <span className="text-sm font-medium text-neutral-900">{t('comments.automation')}</span>
+          )}
+          {/* Somebody from outside the organisation (#243). */}
+          {comment.author?.is_external && <ExternalChip />}
           <span className="text-[11px] text-neutral-400">
             {formatRelative(parseServerDate(comment.created_at))}
           </span>
@@ -347,6 +385,7 @@ function CommentItem({
               placeholder={t('comments.placeholder')}
               rows={3}
               autoFocus
+              compact
               onSubmit={() => void submitEdit()}
             />
             <div className="mt-2 flex items-center justify-end gap-3">
@@ -430,7 +469,7 @@ function EventLine({ event }: { event: TicketEventRead }) {
         <Avatar user={event.actor} size={18} decorative />
       ) : (
         <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-neutral-900/6 text-neutral-400">
-          <Icon name="sparkle" size={11} />
+          <Icon name={event.field === 'schedule' ? 'history' : 'sparkle'} size={11} />
         </span>
       )}
       <p className="min-w-0">

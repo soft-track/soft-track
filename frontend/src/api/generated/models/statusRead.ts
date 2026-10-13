@@ -21,4 +21,5 @@ export interface StatusRead {
   category: StatusCategory;
   position: number;
   color: string;
+  wip_limit?: number | null;
 }

@@ -10,6 +10,7 @@ import type { DepartmentRef, PersonRef } from '@/api/generated/models'
 import { useAuth } from '@/auth/useAuth'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { DepartmentChip } from '@/people/DepartmentChip'
+import { PersonLink } from '@/people/PersonLink'
 import { DeactivatedChip } from '@/settings/RoleChip'
 import { formatStartedOn } from '@/settings/startedOn'
 import { Avatar } from '@/ui/Avatar'
@@ -307,7 +308,7 @@ function OrganisationFacts({
             {manager ? (
               <>
                 <Avatar user={manager} size={18} inactive={!manager.is_active} decorative />
-                {manager.full_name}
+                <PersonLink person={manager} />
                 {!manager.is_active && <DeactivatedChip />}
               </>
             ) : (

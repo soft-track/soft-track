@@ -6,16 +6,46 @@ import { formatDate } from '@/i18n/format'
 import { Figure, Key, Tooltip, XAxis, YAxis } from '@/reports/Chart'
 import { PAD, useCrosshair } from '@/reports/chartGeometry'
 import { INK } from '@/reports/chartTokens'
+import { formatDuration } from '@/tickets/duration'
 
 const W = 640
 const H = 220
 
-export function BurndownChart({ data }: { data: Burndown }) {
+type Point = Burndown['points'][number]
+
+/** What the chart draws, in points or -- for a team estimating in hours (#268) -- in hours. */
+const MEASURES = {
+  points: {
+    remaining: (p: Point) => p.points_remaining,
+    ideal: (p: Point) => p.ideal_remaining,
+    total: (p: Point) => p.points_total,
+  },
+  hours: {
+    remaining: (p: Point) => p.minutes_remaining / 60,
+    ideal: (p: Point) => p.ideal_minutes_remaining / 60,
+    total: (p: Point) => p.minutes_total / 60,
+  },
+} as const
+
+export function BurndownChart({
+  data,
+  unit = 'points',
+}: {
+  data: Burndown
+  /** Points, or remaining hours for a team that estimates in them (#268). */
+  unit?: 'points' | 'hours'
+}) {
   const { t } = useTranslation(['reports', 'common'])
   const points = data.points
   const { index, onMove, onLeave } = useCrosshair(points.length)
+  const measure = MEASURES[unit]
+  // A value as the chart says it: "8 pts", or "3h 30m".
+  const say = (value: number) =>
+    unit === 'hours'
+      ? formatDuration(Math.round(value * 60))
+      : t('burndown.points', { points: Math.round(value) })
 
-  const max = Math.max(1, ...points.map((p) => Math.max(p.points_total, p.ideal_remaining)))
+  const max = Math.max(1, ...points.map((p) => Math.max(measure.total(p), measure.ideal(p))))
   const inner = W - PAD.left - PAD.right
   const plot = H - PAD.top - PAD.bottom
 
@@ -32,7 +62,7 @@ export function BurndownChart({ data }: { data: Burndown }) {
   return (
     <Figure
       title={t('burndown.title', { sprint: data.sprint_name })}
-      note={t('burndown.note')}
+      note={unit === 'hours' ? t('burndown.noteHours') : t('burndown.note')}
       empty={points.length === 0 ? t('burndown.notStarted') : undefined}
       legend={
         <>
@@ -73,14 +103,14 @@ export function BurndownChart({ data }: { data: Burndown }) {
           )}
 
           <path
-            d={path((p) => p.ideal_remaining)}
+            d={path(measure.ideal)}
             fill="none"
             stroke={INK.axis}
             strokeWidth={2}
             strokeDasharray="4 4"
           />
           <path
-            d={path((p) => p.points_remaining)}
+            d={path(measure.remaining)}
             fill="none"
             stroke={INK.measure}
             strokeWidth={2}
@@ -92,7 +122,7 @@ export function BurndownChart({ data }: { data: Burndown }) {
             <>
               <circle
                 cx={x(points.length - 1)}
-                cy={y(points[points.length - 1].points_remaining)}
+                cy={y(measure.remaining(points[points.length - 1]))}
                 r={4}
                 fill={INK.measure}
                 stroke="white"
@@ -100,12 +130,17 @@ export function BurndownChart({ data }: { data: Burndown }) {
               />
               <text
                 x={x(points.length - 1) - 8}
-                y={y(points[points.length - 1].points_remaining) - 8}
+                y={y(measure.remaining(points[points.length - 1])) - 8}
                 textAnchor="end"
                 className="fill-neutral-700"
                 style={{ fontSize: 11, fontVariantNumeric: 'tabular-nums' }}
               >
-                {t('burndown.left', { points: points[points.length - 1].points_remaining })}
+                {t('burndown.left', {
+                  points:
+                    unit === 'hours'
+                      ? formatDuration(points[points.length - 1].minutes_remaining)
+                      : points[points.length - 1].points_remaining,
+                })}
               </text>
             </>
           )}
@@ -137,16 +172,16 @@ export function BurndownChart({ data }: { data: Burndown }) {
               {
                 colour: INK.measure,
                 label: t('burndown.remaining'),
-                value: t('burndown.points', { points: hovered.points_remaining }),
+                value: say(measure.remaining(hovered)),
               },
               {
                 colour: INK.axis,
                 label: t('burndown.ideal'),
-                value: t('burndown.points', { points: Math.round(hovered.ideal_remaining) }),
+                value: say(measure.ideal(hovered)),
               },
               {
                 label: t('burndown.scope'),
-                value: t('burndown.points', { points: hovered.points_total }),
+                value: say(measure.total(hovered)),
               },
               { label: t('burndown.ticketsLeft'), value: `${hovered.tickets_remaining}` },
             ]}

@@ -26,6 +26,8 @@ const mocks = vi.hoisted(() => ({
   listCalls: [] as unknown[],
   update: { mutateAsync: vi.fn(), isPending: false },
   reset: { mutateAsync: vi.fn(), isPending: false },
+  clearTotp: { mutateAsync: vi.fn(), isPending: false },
+  endSessions: { mutateAsync: vi.fn(), isPending: false },
   departments: {
     data: [
       { id: 1, name: 'Engineering', description: null, member_count: 3 },
@@ -50,6 +52,8 @@ vi.mock('@/api/generated/endpoints/admin/admin', async (importOriginal) => ({
   },
   useUpdateUserAdminUsersUserIdPatch: () => mocks.update,
   useResetPasswordAdminUsersUserIdResetPasswordPost: () => mocks.reset,
+  useClearTotpAdminUsersUserIdClearTotpPost: () => mocks.clearTotp,
+  useEndSessionsAdminUsersUserIdEndSessionsPost: () => mocks.endSessions,
 }))
 
 vi.mock('@/api/generated/endpoints/departments/departments', async (importOriginal) => ({
@@ -65,7 +69,9 @@ const BASE: AdminUserRead = {
   avatar_color: '#6366f1',
   is_active: true,
   is_site_admin: false,
+  is_finance_admin: false,
   has_password: true,
+  totp_enabled: false,
   created_at: '2026-01-01T00:00:00',
   last_login_at: null,
   team_count: 1,
@@ -217,6 +223,58 @@ describe('The admin user directory', () => {
     })
   })
 
+  it('says what an account is: the five employment types, and who is on payroll', async () => {
+    const user = renderPage([DANIEL])
+    await user.click(screen.getByRole('button', { name: 'Edit Daniel Okafor' }))
+    const editor = screen.getByRole('form', { name: /Organisation details/ })
+    const select = within(editor).getByLabelText('Employment type') as HTMLSelectElement
+
+    // No type yet: nothing chosen, and no "default" to choose.
+    expect(select.value).toBe('')
+    expect(
+      Array.from(select.options)
+        .filter((option) => !option.disabled)
+        .map((option) => option.textContent),
+    ).toEqual(['Employee', 'Contractor', 'Intern', 'External', 'Service account'])
+    expect(select.getAttribute('aria-describedby')).toBeTruthy()
+    expect(
+      document.getElementById(select.getAttribute('aria-describedby') ?? '')?.textContent,
+    ).toBe(
+      'Employee, contractor, intern, external or service account. Only employees are on payroll unless finance adds a type.',
+    )
+
+    await user.selectOptions(select, 'External')
+    await user.click(within(editor).getByRole('button', { name: 'Save' }))
+    expect(mocks.update.mutateAsync).toHaveBeenCalledWith({
+      userId: 2,
+      data: expect.objectContaining({ employment_type: 'external' }),
+    })
+  })
+
+  it('shows the type an account has, and sends it only when changed', async () => {
+    const user = renderPage([{ ...DANIEL, employment_type: 'service_account' }])
+    await user.click(screen.getByRole('button', { name: 'Edit Daniel Okafor' }))
+    const editor = screen.getByRole('form', { name: /Organisation details/ })
+    expect((within(editor).getByLabelText('Employment type') as HTMLSelectElement).value).toBe(
+      'service_account',
+    )
+    await user.click(within(editor).getByRole('button', { name: 'Save' }))
+    expect(mocks.update.mutateAsync).toHaveBeenCalledWith({
+      userId: 2,
+      data: { department_id: 1, manager_id: null, started_on: '2023-08-14' },
+    })
+  })
+
+  it('leaves the employment type off the row', () => {
+    renderPage([{ ...DANIEL, employment_type: 'contractor' }])
+    expect(
+      screen.getByText(
+        'Senior Backend Engineer · Engineering · Lagos, Nigeria · started 14 Aug 2023',
+      ),
+    ).toBeTruthy()
+    expect(screen.queryByText(/Contractor/)).toBeNull()
+  })
+
   it('picks from the keyboard, and "No manager" clears it', async () => {
     const user = renderPage([{ ...DANIEL, manager: AS_MANAGER(AMINA) }])
     await user.click(screen.getByRole('button', { name: 'Edit Daniel Okafor' }))
@@ -299,5 +357,149 @@ describe('The admin user directory', () => {
   it('shows no banner when nobody is stranded', () => {
     renderPage([DANIEL])
     expect(screen.queryByText(/deactivated manager/)).toBeNull()
+  })
+})
+
+describe('Resetting someone’s two-factor', () => {
+  it('is offered only for an account that has it on', () => {
+    renderPage([DANIEL])
+    expect(screen.queryByRole('button', { name: 'Reset two-factor' })).toBeNull()
+    cleanup()
+
+    renderPage([{ ...DANIEL, totp_enabled: true }])
+    expect(screen.getByRole('button', { name: 'Reset two-factor' })).toBeTruthy()
+  })
+
+  it('asks first, then clears it', async () => {
+    mocks.clearTotp.mutateAsync.mockReset().mockResolvedValue(undefined)
+    const confirm = vi.spyOn(window, 'confirm')
+    const user = renderPage([{ ...DANIEL, totp_enabled: true }])
+
+    confirm.mockReturnValueOnce(false)
+    await user.click(screen.getByRole('button', { name: 'Reset two-factor' }))
+    expect(mocks.clearTotp.mutateAsync).not.toHaveBeenCalled()
+
+    confirm.mockReturnValueOnce(true)
+    await user.click(screen.getByRole('button', { name: 'Reset two-factor' }))
+    expect(mocks.clearTotp.mutateAsync).toHaveBeenCalledWith({ userId: 2 })
+    confirm.mockRestore()
+  })
+})
+
+describe('Finance access (#130)', () => {
+  const GRACE: AdminUserRead = {
+    ...BASE,
+    id: 4,
+    email: 'grace@northwind.dev',
+    username: 'grace',
+    full_name: 'Grace Mensah',
+    is_finance_admin: true,
+    finance_admin_since: '2026-01-02T09:00:00',
+    finance_admin_granted_by: AS_MANAGER({ ...AMINA, full_name: 'Sofia Marquez' }),
+  }
+
+  it('is its own chip, with when it was granted and by whom', () => {
+    renderPage([GRACE, DANIEL])
+    expect(screen.getAllByText('Finance')).toHaveLength(1)
+    expect(
+      screen.getByText('finance access since 2 Jan 2026, granted by Sofia Marquez'),
+    ).toBeTruthy()
+  })
+
+  it('is its own filter', async () => {
+    const user = renderPage([GRACE])
+    await user.click(screen.getByRole('button', { name: 'Finance admins' }))
+    expect(mocks.listCalls).toContainEqual({
+      q: undefined,
+      limit: 25,
+      offset: 0,
+      role: 'finance_admin',
+    })
+    expect(
+      screen.getByRole('button', { name: 'Finance admins' }).getAttribute('aria-pressed'),
+    ).toBe('true')
+  })
+
+  it('asks before granting it, and says what it gives', async () => {
+    const user = renderPage([DANIEL])
+    await user.click(screen.getByRole('button', { name: 'Grant finance access' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Give Daniel Okafor finance access?' })
+    expect(dialog.textContent).toMatch(
+      'Daniel Okafor will see every salary, payroll run, expense claim and budget',
+    )
+    expect(dialog.textContent).toMatch('Neither one includes the other.')
+    expect(mocks.update.mutateAsync).not.toHaveBeenCalled()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Grant finance access' }))
+    expect(mocks.update.mutateAsync).toHaveBeenCalledWith({
+      userId: 2,
+      data: { is_finance_admin: true },
+    })
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('cancels a grant with Escape', async () => {
+    const user = renderPage([DANIEL])
+    await user.click(screen.getByRole('button', { name: 'Grant finance access' }))
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(mocks.update.mutateAsync).not.toHaveBeenCalled()
+  })
+
+  it('revokes it without asking', async () => {
+    const user = renderPage([GRACE])
+    await user.click(screen.getByRole('button', { name: 'Revoke finance access' }))
+    expect(mocks.update.mutateAsync).toHaveBeenCalledWith({
+      userId: 4,
+      data: { is_finance_admin: false },
+    })
+  })
+
+  it('is not offered to a deactivated account', () => {
+    renderPage([{ ...DANIEL, is_active: false }])
+    expect(screen.queryByRole('button', { name: 'Grant finance access' })).toBeNull()
+  })
+})
+
+describe('Sessions, as a site admin sees them (#308)', () => {
+  const SIGNED_IN = { ...AMINA, session_count: 3, last_login_at: new Date().toISOString() }
+
+  beforeEach(() => {
+    mocks.endSessions.mutateAsync.mockReset().mockResolvedValue(AMINA)
+  })
+
+  it('shows how many sessions an account has and when it last signed in', () => {
+    renderPage([SIGNED_IN])
+    expect(screen.getByText(/^3 sessions · last signed in/)).toBeTruthy()
+  })
+
+  it('ends them all after asking, and says so', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const user = renderPage([SIGNED_IN])
+    await user.click(screen.getByRole('button', { name: 'End all sessions' }))
+    expect(confirm.mock.calls[0][0]).toMatch(/API tokens keep working/)
+    expect(mocks.endSessions.mutateAsync).toHaveBeenCalledWith({ userId: 3 })
+    await waitFor(() =>
+      expect(screen.getByText('Every session Amina Khan had has ended.')).toBeTruthy(),
+    )
+    confirm.mockRestore()
+  })
+
+  it('does nothing when the question is declined', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const user = renderPage([SIGNED_IN])
+    await user.click(screen.getByRole('button', { name: 'End all sessions' }))
+    expect(mocks.endSessions.mutateAsync).not.toHaveBeenCalled()
+    confirm.mockRestore()
+  })
+
+  it('offers no button with nothing to end, or for your own account', () => {
+    renderPage([
+      { ...AMINA, session_count: 0 },
+      { ...SIGNED_IN, id: 1, email: 'me@northwind.dev', full_name: 'Me' },
+    ])
+    expect(screen.getByText(/^no sessions · never signed in/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'End all sessions' })).toBeNull()
   })
 })

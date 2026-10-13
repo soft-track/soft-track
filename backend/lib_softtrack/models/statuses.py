@@ -19,6 +19,9 @@ class StatusRead(BaseModel):
     category: StatusCategory
     position: int
     color: str
+    #: How many tickets the column should hold at once, or null for no limit
+    #: (#270).
+    wip_limit: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -35,6 +38,8 @@ class StatusUpdate(BaseModel):
     #: to done changes what every report says about the work sitting in it.
     category: Optional[StatusCategory] = None
     color: Optional[str] = None
+    #: A WIP limit (#270); an explicit null removes it, leaving it out keeps it.
+    wip_limit: Optional[int] = Field(default=None, ge=1, le=999)
 
 
 class StatusOrder(BaseModel):

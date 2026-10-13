@@ -6,6 +6,7 @@ all what deleting one does to everything that pointed at it.
 """
 
 import pytest
+from tests.conftest import delete_project_for_good
 
 
 @pytest.fixture
@@ -190,7 +191,7 @@ def test_deleting_a_project_keeps_its_tickets_with_no_project(client, team):
     inside = make_ticket(client, team, "Inside", project_id=project["id"])
     elsewhere = make_ticket(client, team, "Elsewhere")
 
-    response = client.delete(f"/projects/{project['id']}", headers=team["headers"])
+    response = delete_project_for_good(client, team["headers"], project["id"])
     assert response.status_code == 204
 
     assert (
@@ -208,7 +209,7 @@ def test_deleting_a_project_leaves_other_projects_tickets_alone(client, team):
     kept = make_project(client, team, "Kept")
     ticket = make_ticket(client, team, project_id=kept["id"])
 
-    client.delete(f"/projects/{doomed['id']}", headers=team["headers"])
+    delete_project_for_good(client, team["headers"], doomed["id"])
     survivor = client.get(f"/tickets/{ticket['id']}", headers=team["headers"]).json()
     assert survivor["project_id"] == kept["id"]
 
@@ -225,7 +226,7 @@ def test_deleting_a_project_clears_the_views_that_filtered_on_it(client, team):
     assert response.status_code == 200, response.text
     view = response.json()
 
-    client.delete(f"/projects/{project['id']}", headers=team["headers"])
+    delete_project_for_good(client, team["headers"], project["id"])
 
     listed = client.get(
         f"/teams/{team['team']['id']}/views", headers=team["headers"]
@@ -250,7 +251,7 @@ def test_deleting_a_project_switches_off_rules_conditioned_on_it(client, team):
     )
     assert response.status_code == 200, response.text
 
-    client.delete(f"/projects/{project['id']}", headers=team["headers"])
+    delete_project_for_good(client, team["headers"], project["id"])
 
     rules = client.get(
         f"/teams/{team['team']['id']}/automation-rules", headers=team["headers"]

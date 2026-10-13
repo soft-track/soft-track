@@ -17,6 +17,7 @@ from lib_softtrack.tables import (
     Project,
     Team,
     TeamMember,
+    EmploymentType,
     TeamRole,
     User,
 )
@@ -42,6 +43,9 @@ def run():
             # The seeded instance has to have somebody who can reach the admin
             # console, and this is its only account.
             is_site_admin=True,
+            # Classified as a service account (#320) so it does not appear as
+            # missing pay on payroll runs.
+            employment_type=EmploymentType.service_account,
         )
         session.add(user)
         session.commit()

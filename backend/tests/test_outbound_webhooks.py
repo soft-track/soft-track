@@ -13,6 +13,7 @@ import socket
 from datetime import timedelta
 
 import pytest
+from prometheus_client import REGISTRY
 from sqlmodel import select
 
 from lib_softtrack import outbound
@@ -234,6 +235,33 @@ def test_comments_and_sprints(client, team, session):
         "sprint.completed",
     ]
     assert receiver.payloads()[0]["data"]["comment"]["body"] == "Looks good"
+
+
+def test_a_sprint_says_its_goal_and_how_it_went(client, team, session):
+    """The sprint webhooks carry the goal and the outcome (#271)."""
+    make_hook(client, team, events=("sprint.started", "sprint.completed"))
+    sprint = client.post(
+        f"/teams/{team['team']['id']}/sprints",
+        json={
+            "starts_at": "2026-09-01",
+            "ends_at": "2026-09-14",
+            "goal": "Sign in and see invoices",
+        },
+        headers=team["headers"],
+    ).json()
+    client.post(f"/sprints/{sprint['id']}/start", headers=team["headers"])
+    client.post(
+        f"/sprints/{sprint['id']}/complete",
+        json={"outcome": "partly"},
+        headers=team["headers"],
+    )
+
+    receiver = FakeReceiver()
+    deliver(session, receiver)
+    started, completed = (p["data"]["sprint"] for p in receiver.payloads())
+    assert started["goal"] == "Sign in and see invoices"
+    assert started["goal_outcome"] is None
+    assert completed["goal_outcome"] == "partly"
 
 
 def test_a_rules_change_arrives_separately_with_no_actor(client, team, session):
@@ -480,3 +508,23 @@ def test_a_redirect_is_not_followed(client, team, session, local_receiver):
     assert received["internal"] == 0
     [row] = session.exec(select(WebhookDelivery)).all()
     assert (row.status, row.response_status) == ("pending", 302)
+
+
+def _sent(result: str) -> float:
+    labels = {"direction": "out", "result": result}
+    return REGISTRY.get_sample_value("softtrack_webhook_deliveries_total", labels)
+
+
+def test_each_attempt_is_counted_by_its_result(client, team, session):
+    # Outgoing deliveries (#100): one count per attempt, not per event.
+    make_hook(client, team)
+    make_ticket(client, team)
+    success, failure = _sent("success"), _sent("failure")
+    start = utcnow()
+
+    deliver(session, FakeReceiver(status=500, text="boom"), now=start)
+    assert (_sent("success"), _sent("failure")) == (success, failure + 1)
+
+    retry = start + outbound.BACKOFF[0] + timedelta(seconds=1)
+    deliver(session, FakeReceiver(), now=retry)
+    assert (_sent("success"), _sent("failure")) == (success + 1, failure + 1)

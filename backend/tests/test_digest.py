@@ -8,6 +8,7 @@ twice.
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from prometheus_client import REGISTRY
 from sqlmodel import select
 
 from lib_softtrack.digest import render_digest, send_pending_digests
@@ -44,6 +45,10 @@ def pair(client, team, auth):
 @pytest.fixture
 def notified(client, pair):
     """One unread `commented` notification waiting for the team's admin."""
+    return comment_on_a_new_ticket(client, pair)
+
+
+def comment_on_a_new_ticket(client, pair):
     ticket = client.post(
         f"/teams/{pair['team']['id']}/tickets",
         json={"title": "The bug"},
@@ -204,12 +209,13 @@ def test_a_fresh_notification_waits_for_the_next_run(session, notified):
     assert send(session, mailer, now=later()) == 1
 
 
-def test_switching_email_off_stops_the_mail(session, notified, client):
-    client.patch(
-        "/notifications/settings",
-        json={"email_notifications": False},
-        headers=notified["headers"],
-    )
+def test_switching_email_off_stops_the_mail(session, pair, client):
+    """The single switch from before #263: off means off for every kind."""
+    user = session.exec(select(User).where(User.email == "demo@softtrack.dev")).one()
+    user.email_notifications = False
+    session.add(user)
+    session.commit()
+    comment_on_a_new_ticket(client, pair)
 
     mailer = FakeMailer()
     assert send(session, mailer) == 0
@@ -246,6 +252,26 @@ def test_a_claimed_notification_stays_claimed_when_the_relay_fails(session, noti
     session.refresh(row)
     assert row.emailed_at is not None
     assert send(session, FakeMailer()) == 0
+
+
+def _digests(result: str) -> float:
+    return REGISTRY.get_sample_value("softtrack_digest_sends_total", {"result": result})
+
+
+def test_digest_sends_are_counted_by_result(session, notified, client):
+    success, failure = _digests("success"), _digests("failure")
+
+    assert send(session, FakeMailer(fail=True)) == 0
+    assert (_digests("success"), _digests("failure")) == (success, failure + 1)
+
+    ticket_id = session.exec(select(Notification)).first().ticket_id
+    client.post(
+        f"/tickets/{ticket_id}/comments",
+        json={"body": "again"},
+        headers=notified["member"]["headers"],
+    )
+    assert send(session, FakeMailer()) == 1
+    assert (_digests("success"), _digests("failure")) == (success + 1, failure + 1)
 
 
 def test_one_mail_per_person_however_many_notifications(session, notified, client):

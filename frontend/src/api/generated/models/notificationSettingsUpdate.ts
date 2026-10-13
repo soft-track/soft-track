@@ -5,7 +5,13 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { KindPreferenceUpdate } from './kindPreferenceUpdate';
+import type { TeamMuteUpdate } from './teamMuteUpdate';
 
+/**
+ * Any number of switches at once; the page sends one at a time.
+ */
 export interface NotificationSettingsUpdate {
-  email_notifications: boolean;
+  preferences?: KindPreferenceUpdate[];
+  teams?: TeamMuteUpdate[];
 }

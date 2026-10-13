@@ -171,6 +171,7 @@ const MESSAGES: Record<string, () => string> = {
   link_expired: () => i18n.t('auth:oauthErrors.link_expired'),
   exchange_failed: () => i18n.t('auth:oauthErrors.exchange_failed'),
   profile_failed: () => i18n.t('auth:oauthErrors.profile_failed'),
+  totp_expired: () => i18n.t('auth:oauthErrors.totp_expired'),
 }
 
 export function oauthErrorMessage(code: string | null | undefined): string | null {

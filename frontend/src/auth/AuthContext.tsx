@@ -1,15 +1,17 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import Axios from 'axios'
 
-import { AUTH_TOKEN_STORAGE_KEY } from '@/api/client'
+import { AUTH_TOKEN_STORAGE_KEY, AXIOS_INSTANCE } from '@/api/client'
 import {
   getMeAuthMeGetQueryKey,
   useLoginAuthLoginPost,
   useMeAuthMeGet,
   useRegisterAuthRegisterPost,
+  useTotpVerifyAuthTotpVerifyPost,
 } from '@/api/generated/endpoints/auth/auth'
 import type { UserMe } from '@/api/generated/models'
-import { AuthContext, type AuthContextValue } from '@/auth/useAuth'
+import { AuthContext, isTotpPending, type AuthContextValue } from '@/auth/useAuth'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() =>
@@ -23,6 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useLoginAuthLoginPost()
   const registerMutation = useRegisterAuthRegisterPost()
+  const totpVerifyMutation = useTotpVerifyAuthTotpVerifyPost()
 
   const setSession = (newToken: string, user: UserMe) => {
     localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, newToken)
@@ -39,7 +42,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await loginMutation.mutateAsync({
       data: { username: email, password },
     })
+    // A 202: the password was right, and the account wants its code too.
+    if (isTotpPending(result)) return result
     setSession(result.access_token, result.user)
+    return null
+  }
+
+  const totpVerify = async (pendingToken: string, code: string) => {
+    const result = await totpVerifyMutation.mutateAsync({
+      data: { pending_token: pendingToken, code },
+    })
+    // Adopted rather than set: the first factor may have been Google or
+    // GitHub, and whoever arrives is not necessarily who was here before.
+    adoptSession(result.access_token, result.user)
   }
 
   const register = async (
@@ -61,6 +76,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = () => {
+    // Ends this browser's session on the server too (#308), so it leaves the
+    // list of sessions. Best effort, and deliberately not through the shared
+    // client: an answer of 401 there would bounce the page to /login, and the
+    // browser forgets the token whatever the server says.
+    const current = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+    if (current) {
+      Axios.post(`${AXIOS_INSTANCE.defaults.baseURL}/auth/sign-out`, null, {
+        headers: { Authorization: `Bearer ${current}` },
+      }).catch(() => {})
+    }
     localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
     setToken(null)
     queryClient.clear()
@@ -72,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: Boolean(token) && meQuery.isPending,
       isAuthenticated: Boolean(token) && Boolean(meQuery.data),
       login,
+      totpVerify,
       register,
       setSession,
       adoptSession,

@@ -6,6 +6,7 @@ from sqlmodel import select
 
 from lib_softtrack.comments import list_comments
 from lib_softtrack.tables import CommentReaction, Notification, User
+from tests.conftest import delete_for_good
 
 
 def join(client, team, person, role="member"):
@@ -166,9 +167,7 @@ def test_a_ticket_with_reactions_can_still_be_deleted(client, team, thread, sess
     react(client, team, thread["comment"], "thumbs_up")
     react(client, thread["maya"], thread["comment"], "heart")
 
-    response = client.delete(
-        f"/tickets/{thread['ticket']['id']}", headers=team["headers"]
-    )
+    response = delete_for_good(client, team["headers"], thread["ticket"]["id"])
     assert response.status_code == 204, response.text
     assert session.exec(select(CommentReaction)).all() == []
 
@@ -181,6 +180,10 @@ def test_bulk_delete_clears_reactions_too(client, team, thread, session):
         headers=team["headers"],
     )
     assert response.status_code == 204, response.text
+    purged = client.delete(
+        f"/trash/tickets/{thread['ticket']['id']}", headers=team["headers"]
+    )
+    assert purged.status_code == 204, purged.text
     assert session.exec(select(CommentReaction)).all() == []
 
 

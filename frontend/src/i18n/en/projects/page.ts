@@ -5,6 +5,8 @@ export const page = {
   backToBoard: 'Back to the board',
   archived: 'Archived',
   onTheBoard: 'On the board',
+  // A read-only link for somebody with no account (#245).
+  share: 'Share',
   addTickets: 'Add tickets',
   nothingYet: 'Nothing in this epic yet',
   progress: 'Progress',

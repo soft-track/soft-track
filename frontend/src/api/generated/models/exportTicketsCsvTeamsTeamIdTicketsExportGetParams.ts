@@ -5,30 +5,128 @@
  * An open-source, self-hostable ticket tracker inspired by Linear.
  * OpenAPI spec version: 0.1.0
  */
+import type { DateWindow } from './dateWindow';
+import type { DueFilter } from './dueFilter';
+import type { LabelMatch } from './labelMatch';
+import type { MissingField } from './missingField';
 import type { TicketPriority } from './ticketPriority';
+import type { TicketType } from './ticketType';
 
 export type ExportTicketsCsvTeamsTeamIdTicketsExportGetParams = {
-project_id?: number | null;
-/**
- * Only tickets in this status.
- */
-status_id?: number | null;
-priority?: TicketPriority | null;
-assignee_id?: number | null;
-/**
- * Only tickets with nobody assigned. Overrides assignee_id.
- */
-unassigned?: boolean;
-/**
- * Only tickets with this label.
- */
-label_id?: number | null;
 /**
  * Only sub-tickets of this ticket.
  */
 parent_id?: number | null;
 /**
+ * The caller's own date, which `due` is measured from.
+ */
+today?: string | null;
+/**
+ * Only tickets in one of these statuses. Repeat for several.
+ */
+status_id?: number[];
+/**
+ * Every ticket except those the filter matches.
+ */
+status_exclude?: boolean;
+/**
+ * Only tickets with one of these priorities.
+ */
+priority?: TicketPriority[];
+/**
+ * Every ticket except those the filter matches.
+ */
+priority_exclude?: boolean;
+/**
+ * Only tickets assigned to one of these people.
+ */
+assignee_id?: number[];
+/**
+ * Nobody assigned, as one more assignee choice: alone, only unassigned tickets; with assignee_id, those people or nobody.
+ */
+unassigned?: boolean;
+/**
+ * Every ticket except those the filter matches.
+ */
+assignee_exclude?: boolean;
+/**
+ * Only tickets with these labels, any or all of them.
+ */
+label_id?: number[];
+/**
+ * any: tickets with at least one of the labels. all: with every one of them.
+ */
+label_match?: LabelMatch;
+/**
+ * Every ticket except those the filter matches.
+ */
+label_exclude?: boolean;
+/**
+ * Only tickets of these types.
+ */
+type?: TicketType[];
+/**
+ * Every ticket except those the filter matches.
+ */
+type_exclude?: boolean;
+/**
+ * Only tickets in this epic.
+ */
+project_id?: number | null;
+/**
  * Only tickets in this sprint.
  */
 sprint_id?: number | null;
+/**
+ * Overdue, due this week, or with no due date.
+ */
+due?: DueFilter | null;
+/**
+ * The caller, as one more assignee choice: whoever asks, not whoever saved the view (#261).
+ */
+assignee_me?: boolean;
+/**
+ * Only tickets created by one of these people.
+ */
+creator_id?: number[];
+/**
+ * The caller, as one more creator choice.
+ */
+creator_me?: boolean;
+/**
+ * Every ticket except those the filter matches.
+ */
+creator_exclude?: boolean;
+/**
+ * Only tickets the caller watches.
+ */
+watching?: boolean;
+/**
+ * Updated in the last 7 or 30 days, or more than 30 days ago, counted from `today`.
+ */
+updated?: DateWindow | null;
+/**
+ * Only tickets last updated on or after this day (UTC).
+ */
+updated_from?: string | null;
+/**
+ * Only tickets last updated on or before this day (UTC).
+ */
+updated_to?: string | null;
+/**
+ * Created in the last 7 or 30 days, or before that.
+ */
+created?: DateWindow | null;
+/**
+ * Only tickets created on or after this day (UTC).
+ */
+created_from?: string | null;
+/**
+ * Only tickets created on or before this day (UTC).
+ */
+created_to?: string | null;
+/**
+ * Only tickets with no estimate, no epic or no sprint.
+ */
+has_no?: MissingField[];
 };

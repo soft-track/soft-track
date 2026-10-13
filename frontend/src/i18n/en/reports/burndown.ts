@@ -13,4 +13,10 @@ export const burndown = {
   /** The label on the last point. */
   left: '{{points}} left',
   points: '{{points}} pts',
+  // The same in hours (#268), for a team that estimates in them.
+  noteHours:
+    "Hours still left each day: the time estimate less what is logged, or what somebody said is left. The dashed line runs from the first day's figure to zero.",
+  unit: 'Burndown in',
+  unitPoints: 'Points',
+  unitHours: 'Hours',
 } as const

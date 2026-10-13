@@ -21,5 +21,6 @@ export const oauthErrors = {
   link_expired: 'That request expired. Try connecting again.',
   exchange_failed: 'The provider refused the sign-in. Please try again.',
   profile_failed: 'The provider did not say who you are. Please try again.',
+  totp_expired: 'That sign-in took too long to finish with a two-factor code. Start again.',
   fallback: 'Could not finish signing in. Please try again.',
 } as const

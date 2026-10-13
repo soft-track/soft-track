@@ -1,9 +1,11 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_serializer
 
 from lib_identity.models.departments import DepartmentRef
+from lib_softtrack.tables import EmploymentType
+from lib_utils.viewer import outside_viewer
 
 
 class UserCreate(BaseModel):
@@ -31,8 +33,22 @@ class UserPublic(BaseModel):
     #: Shown as a "Deactivated" badge on rosters, and used to keep deactivated
     #: people out of assignee pickers without hiding work already assigned.
     is_active: bool
+    #: From outside the organisation (#243): marked "External" wherever the
+    #: name appears, so nobody writes in front of a client without knowing.
+    is_external: bool = False
+    #: False for an account a site admin created whose owner has not chosen a
+    #: password yet (#303): marked "not yet activated" in the pickers, and
+    #: still assignable and mentionable.
+    is_activated: bool = True
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_serializer("email")
+    def _address(self, email: str) -> str:
+        # Somebody from outside the organisation sees a person by name and
+        # never by address, but for their own (#317). See lib_utils/viewer.py.
+        asking = outside_viewer()
+        return email if asking is None or asking == self.id else ""
 
 
 class PersonRef(BaseModel):
@@ -62,12 +78,20 @@ class UserMe(UserPublic):
     """
 
     is_site_admin: bool
+    #: Whether they can see money (#130): pay, payroll runs, budgets and
+    #: everybody's expense claims. Granted by a site admin, and separate from
+    #: being one. What the settings nav reads to offer a Finance section.
+    is_finance_admin: bool
     #: False for an account created by signing in with Google or GitHub and
     #: never given one. What the Security page reads to offer "Set a password"
     #: instead of "Change password", and what stops the app asking for a
     #: password that does not exist.
     has_password: bool
     created_at: datetime
+    #: Whether signing in also asks for a code from an authenticator app.
+    totp_enabled: bool
+    #: What kind of account or engagement this is (#320).
+    employment_type: Optional[EmploymentType] = None
     #: What the organisation knows about them (#122). Null until somebody
     #: fills it in. Title and location are theirs to edit; the start date is
     #: set by a site admin.
@@ -144,3 +168,38 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserMe
+
+
+class TotpLoginPending(BaseModel):
+    """A first factor that passed, for an account with two-factor on."""
+
+    #: Redeem with a code at /auth/totp/verify. Lives five minutes, and is no
+    #: use as a bearer token.
+    pending_token: str
+    totp_required: Literal[True] = True
+
+
+class TotpVerifyRequest(BaseModel):
+    pending_token: str
+    #: Six digits from the authenticator, or one of the recovery codes.
+    code: str = Field(max_length=64)
+
+
+class TotpEnrolmentStart(BaseModel):
+    #: The `otpauth://` URI, for a QR code.
+    provisioning_uri: str
+    #: The same secret in Base32, for typing in by hand.
+    manual_key: str
+
+
+class TotpCode(BaseModel):
+    """A code from the authenticator -- or, to turn it off, a recovery code."""
+
+    code: str = Field(max_length=64)
+
+
+class TotpEnrolmentResult(BaseModel):
+    #: Shown once and never again; only their hashes are stored.
+    recovery_codes: list[str]
+    #: Every session was signed out, this one included. This keeps it going.
+    token: Token

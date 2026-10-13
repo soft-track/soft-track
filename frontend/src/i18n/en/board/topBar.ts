@@ -8,6 +8,7 @@ export const topBar = {
     calendar: 'Calendar',
     roadmap: 'Roadmap',
     reports: 'Reports',
+    plan: 'Plan',
   },
   groupBy: 'Group by',
   sortBy: 'Sort by',
@@ -21,6 +22,7 @@ export const topBar = {
   newTicket: 'New ticket',
   viewOnly: 'View only',
   viewOnlyHint: 'You are a guest on this team: you can see everything and change nothing.',
+  viewOnlyArchivedHint: 'This team is archived: everything is here to read, and nothing changes until it is unarchived.',
   /** The CSV export (#165): the button, and its tooltip for each state. */
   export: {
     label: 'Export CSV',

@@ -19,13 +19,20 @@ def is_access_token(payload: dict) -> bool:
 
 
 def create_access_token(
-    subject: str, version: int = 0, expires_minutes: int | None = None
+    subject: str,
+    version: int = 0,
+    expires_minutes: int | None = None,
+    session_id: int | None = None,
 ) -> str:
     """Sign a bearer token for `subject`, stamped with their token version.
 
     The version is what makes a token revocable. Tokens live for a week, so
     without it a password change, a "sign out everywhere" or a deactivation
     would be advisory for up to seven days.
+
+    `session_id` is the `AuthSession` row the token belongs to (#308), which
+    is what lets one session be revoked without the rest. Tokens signed before
+    sessions existed carry none, and keep working until they expire.
     """
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=expires_minutes or settings.access_token_expire_minutes
@@ -36,6 +43,8 @@ def create_access_token(
         "ver": version,
         "typ": ACCESS_TOKEN_TYPE,
     }
+    if session_id is not None:
+        to_encode["sid"] = session_id
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
 
@@ -49,4 +58,37 @@ def decode_access_token(token: str) -> dict | None:
     try:
         return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
     except JWTError:
+        return None
+
+
+#: The `typ` of the half-finished sign-in a TOTP account gets for its password.
+#: Anything but "access", so `is_access_token` refuses it as a session.
+TOTP_PENDING_TYPE = "totp_pending"
+_TOTP_PENDING_MINUTES = 5
+
+
+def create_totp_pending_token(user_id: int, version: int = 0) -> str:
+    """Proof that the first factor passed, redeemable only at /auth/totp/verify.
+
+    Stamped with the token version, so a password change or an admin reset
+    part-way through a sign-in voids it.
+    """
+    expire = datetime.now(timezone.utc) + timedelta(minutes=_TOTP_PENDING_MINUTES)
+    payload = {
+        "sub": str(user_id),
+        "ver": version,
+        "typ": TOTP_PENDING_TYPE,
+        "exp": expire,
+    }
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+
+
+def decode_totp_pending_token(token: str) -> tuple[int, int] | None:
+    """`(user_id, token_version)` from a pending token, or None."""
+    payload = decode_access_token(token)
+    if payload is None or payload.get("typ") != TOTP_PENDING_TYPE:
+        return None
+    try:
+        return int(payload["sub"]), int(payload.get("ver", 0))
+    except (KeyError, ValueError, TypeError):
         return None

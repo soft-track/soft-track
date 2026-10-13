@@ -11,26 +11,74 @@
  * the top layer from the window. The harness mirrors that wiring.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { ProjectRead, StatusRead, TeamMemberRead } from '@/api/generated/models'
+import type {
+  CustomFieldRead,
+  ProjectRead,
+  SearchHit,
+  StatusRead,
+  TeamMemberRead,
+} from '@/api/generated/models'
 import { NewTicketModal } from '@/tickets/NewTicketModal'
 import { useGlobalShortcuts } from '@/keyboard/useGlobalShortcuts'
 import { TeamProvider } from '@/team/TeamContext'
 import type { TeamContextValue } from '@/team/useTeamContext'
 
-// One object the hook hands back on every render, so a test can set
-// `mutation.isPending` before rendering and see what the form does with it.
-const { mutateAsync, mutation } = vi.hoisted(() => {
+// Shared mock state for the mutation and search hooks, so tests can control
+// their responses without a network layer.
+const { mutateAsync, mutation, searchHook, searchState } = vi.hoisted(() => {
   const mutateAsync = vi.fn()
-  return { mutateAsync, mutation: { mutateAsync, isPending: false } }
+  const searchHook = vi.fn()
+  const searchState = {
+    data: { items: [] as unknown[] },
+    isFetching: false,
+    isError: false,
+  }
+
+  return {
+    mutateAsync,
+    mutation: { mutateAsync, isPending: false },
+    searchHook,
+    searchState,
+  }
 })
 
 vi.mock('@/api/generated/endpoints/tickets/tickets', () => ({
   useCreateTicketTeamsTeamIdTicketsPost: () => mutation,
+}))
+
+vi.mock('@/api/generated/endpoints/search/search', () => ({
+  useSearchSearchGet: (
+    params: unknown,
+    options: { query: { enabled: boolean } },
+  ) => {
+    searchHook(params, options)
+
+    if (!options.query.enabled) {
+      return {
+        data: undefined,
+        isLoading: false,
+        isFetching: false,
+        isError: false,
+      }
+    }
+
+    return {
+      data: searchState.isError ? undefined : searchState.data,
+      isLoading: false,
+      isFetching: searchState.isFetching,
+      isError: searchState.isError,
+    }
+  },
+}))
+
+vi.mock('@/tickets/surface', () => ({
+  ticketPath: (ticket: { team_key: string; number: number }) =>
+    `/${ticket.team_key}/ticket/${ticket.number}`,
 }))
 
 // The team's description templates (#97). Most tests have none, which is
@@ -39,6 +87,13 @@ const templates = vi.hoisted(() => ({ data: [] as unknown[] }))
 vi.mock('@/api/generated/endpoints/templates/templates', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/generated/endpoints/templates/templates')>()),
   useListTemplatesTeamsTeamIdTicketTemplatesGet: () => templates,
+}))
+
+// The team's own fields (#117). None unless a test gives it some.
+const customFields = vi.hoisted(() => ({ data: [] as unknown[] }))
+vi.mock('@/api/generated/endpoints/custom-fields/custom-fields', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/generated/endpoints/custom-fields/custom-fields')>()),
+  useListCustomFieldsTeamsTeamIdCustomFieldsGet: () => customFields,
 }))
 
 // Spread the real module: it also exports `Markdown`, and replacing the whole
@@ -108,6 +163,21 @@ const TEAM: TeamContextValue = {
   statuses: [status(1, 'Todo'), status(2, 'In Progress')],
 }
 
+const SUGGESTION: SearchHit = {
+  id: 101,
+  team_id: 7,
+  team_key: 'ENG',
+  number: 101,
+  identifier: 'ENG-101',
+  title: 'Fix the login button',
+  status: status(1, 'Todo'),
+  priority: 'medium',
+  type: 'task',
+  matched_in: 'title',
+  snippet: '',
+  updated_at: '2026-09-25T10:00:00',
+}
+
 function Harness({ onClose, onShortcut }: { onClose: () => void; onShortcut: () => void }) {
   const [open, setOpen] = useState(true)
   const close = () => {
@@ -123,7 +193,13 @@ function Harness({ onClose, onShortcut }: { onClose: () => void; onShortcut: () 
     openShortcuts: onShortcut,
     suppressed: false,
   })
-  return open ? <NewTicketModal onClose={close} /> : null
+  return open ? (
+    <NewTicketModal onClose={close} />
+  ) : (
+    <button type="button" onClick={() => setOpen(true)}>
+      Reopen
+    </button>
+  )
 }
 
 function renderModal() {
@@ -144,8 +220,13 @@ const optionsOf = (name: string) =>
 
 beforeEach(() => {
   mutateAsync.mockReset()
+  searchHook.mockReset()
+  searchState.data = { items: [] }
+  searchState.isFetching = false
+  searchState.isError = false
   mutation.isPending = false
   templates.data = []
+  customFields.data = []
 })
 
 // The suite runs without globals, so Testing Library cannot register this itself.
@@ -259,6 +340,200 @@ describe('NewTicketModal', () => {
     expect(onShortcut).not.toHaveBeenCalled()
     expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Ticket title' }).value).toBe(
       'Cannot log in? see /docs',
+    )
+  })
+
+  it('keeps CJK search text intact', async () => {
+    const { user } = renderModal()
+    const title = screen.getByRole<HTMLInputElement>('textbox', { name: 'Ticket title' })
+
+    await user.type(title, '登录按钮问题')
+
+    await waitFor(() => {
+      expect(searchHook).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          q: '登录按钮问题',
+          limit: 3,
+        }),
+        expect.anything(),
+      )
+    })
+  })
+
+  it('dismisses similar tickets and shows them again after reopening', async () => {
+    searchState.data = { items: [SUGGESTION] }
+
+    const { user } = renderModal()
+    const title = screen.getByRole<HTMLInputElement>('textbox', { name: 'Ticket title' })
+
+    await user.type(title, 'fix login button')
+
+    expect(await screen.findByText('Fix the login button')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Dismiss similar tickets' }))
+
+    expect(screen.queryByText('Fix the login button')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Close' }))
+    await user.click(screen.getByRole('button', { name: 'Reopen' }))
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'fix login button')
+    expect(await screen.findByText('Fix the login button')).toBeTruthy()
+  })
+
+  it('opens a similar ticket in a new tab without leaving the draft modal', async () => {
+    searchState.data = { items: [SUGGESTION] }
+
+    const { user } = renderModal()
+    const title = screen.getByRole<HTMLInputElement>('textbox', { name: 'Ticket title' })
+
+    await user.type(title, 'fix login button')
+
+    await waitFor(() => {
+      expect(searchHook).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          q: 'fix login button',
+          team_id: 7,
+          limit: 3,
+        }),
+        expect.objectContaining({
+          query: expect.objectContaining({
+            enabled: true,
+          }),
+        }),
+      )
+    })
+
+    const suggestion = await screen.findByRole('link', {
+      name: /ENG-101.*Fix the login button.*Todo/,
+    })
+
+    await user.click(suggestion)
+
+    expect(suggestion.getAttribute('href')).toBe('/ENG/ticket/101')
+    expect(suggestion.getAttribute('target')).toBe('_blank')
+    expect(screen.getByRole('dialog', { name: 'New ticket' })).toBeTruthy()
+  })
+
+  it('does not open a suggestion while composing with IME', async () => {
+    searchState.data = { items: [SUGGESTION] }
+
+    const { user } = renderModal()
+    const title = screen.getByRole<HTMLInputElement>('textbox', { name: 'Ticket title' })
+
+    await user.type(title, 'fix login button')
+    await screen.findByText('Fix the login button')
+
+    await user.keyboard('{ArrowDown}')
+    const openWindow = vi.spyOn(window, 'open').mockImplementation(() => null)
+
+    fireEvent.keyDown(title, {
+      key: 'Enter',
+      isComposing: true,
+    })
+
+    expect(openWindow).not.toHaveBeenCalled()
+  })
+
+  it('does not enable search for two words, but does for three', async () => {
+    const { user } = renderModal()
+    const title = screen.getByRole<HTMLInputElement>('textbox', { name: 'Ticket title' })
+
+    await user.type(title, 'fix login')
+    await waitFor(() => {
+      expect(searchHook).toHaveBeenLastCalledWith(
+        expect.objectContaining({ q: 'x' }),
+        expect.objectContaining({ query: expect.objectContaining({ enabled: false }) }),
+      )
+    })
+
+    await user.type(title, ' button')
+    await waitFor(() => {
+      expect(searchHook).toHaveBeenLastCalledWith(
+        expect.objectContaining({ q: 'fix login button' }),
+        expect.objectContaining({ query: expect.objectContaining({ enabled: true }) }),
+      )
+    })
+  })
+
+  it('keeps suggestions visible while a new search is fetching', async () => {
+    searchState.data = { items: [SUGGESTION] }
+
+    const { user } = renderModal()
+    const title = screen.getByRole<HTMLInputElement>('textbox', { name: 'Ticket title' })
+
+    await user.type(title, 'fix login button')
+    expect(await screen.findByText('Fix the login button')).toBeTruthy()
+
+    searchState.isFetching = true
+    await user.type(title, ' now')
+
+    expect(screen.queryByText('Fix the login button')).not.toBeNull()
+  })
+
+  it('hides the suggestions as soon as the title drops under three words', async () => {
+    searchState.data = { items: [SUGGESTION] }
+
+    const { user } = renderModal()
+    const title = screen.getByRole<HTMLInputElement>('textbox', { name: 'Ticket title' })
+
+    await user.type(title, 'fix login button')
+    expect(await screen.findByText('Fix the login button')).toBeTruthy()
+
+    // No wait for the debounce: the list goes with the keystroke.
+    await user.type(title, '{Backspace>7}')
+    expect(title.value).toBe('fix login')
+    expect(screen.queryByText('Fix the login button')).toBeNull()
+  })
+
+  it('shows nothing when the search fails', async () => {
+    searchState.data = { items: [SUGGESTION] }
+    searchState.isError = true
+
+    const { user } = renderModal()
+    const title = screen.getByRole<HTMLInputElement>('textbox', { name: 'Ticket title' })
+
+    await user.type(title, 'fix login button')
+    await waitFor(() => {
+      expect(searchHook).toHaveBeenLastCalledWith(
+        expect.objectContaining({ q: 'fix login button' }),
+        expect.anything(),
+      )
+    })
+
+    expect(screen.queryByText('Similar tickets')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Create ticket' })).toBeTruthy()
+  })
+
+  it('says a match opens in a new tab', async () => {
+    searchState.data = { items: [SUGGESTION] }
+
+    const { user } = renderModal()
+    await user.type(
+      screen.getByRole('textbox', { name: 'Ticket title' }),
+      'fix login button',
+    )
+
+    expect(
+      await screen.findByRole('link', { name: /Fix the login button.*opens in a new tab/ }),
+    ).toBeTruthy()
+  })
+
+  it('opens the selected suggestion with Enter', async () => {
+    searchState.data = { items: [SUGGESTION] }
+
+    const { user } = renderModal()
+    const title = screen.getByRole<HTMLInputElement>('textbox', { name: 'Ticket title' })
+
+    await user.type(title, 'fix login button')
+    await screen.findByText('Fix the login button')
+
+    await user.keyboard('{ArrowDown}')
+    const openWindow = vi.spyOn(window, 'open').mockImplementation(() => null)
+    await user.keyboard('{Enter}')
+
+    expect(openWindow).toHaveBeenCalledWith(
+      '/ENG/ticket/101',
+      '_blank',
+      'noopener,noreferrer',
     )
   })
 
@@ -414,5 +689,106 @@ describe('description templates (#97)', () => {
     await user.selectOptions(picker, 'Feature request')
     expect(window.confirm).toHaveBeenCalledTimes(1)
     expect(description.value).toBe('## Problem')
+  })
+})
+
+function field(id: number, name: string, key: string, extra: Partial<CustomFieldRead> = {}): CustomFieldRead {
+  return {
+    id,
+    team_id: 7,
+    key,
+    name,
+    kind: 'user',
+    options: [],
+    required: false,
+    applies_to: [],
+    position: id,
+    archived_at: null,
+    created_at: '2026-01-01T00:00:00Z',
+    ...extra,
+  }
+}
+
+describe('NewTicketModal with the team’s own fields (#117)', () => {
+  const QA = field(1, 'QA assignee', 'qa_assignee', { required: true })
+  const ENVIRONMENT = field(2, 'Environment', 'environment', {
+    kind: 'select',
+    options: [
+      { id: 'production', name: 'production' },
+      { id: 'staging', name: 'staging' },
+    ],
+    applies_to: ['bug'],
+  })
+  const RETIRED = field(3, 'Root cause', 'root_cause', {
+    kind: 'text',
+    archived_at: '2026-08-02T10:00:00Z',
+  })
+
+  beforeEach(() => {
+    customFields.data = [QA, ENVIRONMENT, RETIRED]
+  })
+
+  it('offers the fields this type of ticket has, never an archived one', async () => {
+    const { user } = renderModal()
+    expect(screen.getByText('Engineering fields')).toBeTruthy()
+    expect(optionsOf('QA assignee')).toEqual(['QA assignee *', 'Ada Lovelace', 'Grace Hopper'])
+    expect(screen.queryByRole('combobox', { name: 'Environment' })).toBeNull()
+    expect(screen.queryByRole('textbox', { name: 'Root cause' })).toBeNull()
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Type' }), 'bug')
+    expect(optionsOf('Environment')).toEqual(['Environment', 'production', 'staging'])
+  })
+
+  it('names a required field left empty, and does not send the ticket', async () => {
+    const { user } = renderModal()
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'Export drops a row')
+    await user.click(screen.getByRole('button', { name: 'Create ticket' }))
+
+    expect(mutateAsync).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert').textContent).toBe(
+      'QA assignee is required on Engineering tickets.',
+    )
+    const qa = screen.getByRole('combobox', { name: 'QA assignee' })
+    expect(qa.getAttribute('aria-invalid')).toBe('true')
+
+    // Filling it in takes the warning away.
+    await user.selectOptions(qa, 'Grace Hopper')
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(qa.getAttribute('aria-invalid')).toBeNull()
+  })
+
+  it('sends the values the ticket’s type has, by key', async () => {
+    const { user } = renderModal()
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'Export drops a row')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Type' }), 'bug')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Environment' }), 'staging')
+    // Back to a task: Environment is not a task field, so it is not sent.
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Type' }), 'task')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'QA assignee' }), 'Ada Lovelace')
+    await user.click(screen.getByRole('button', { name: 'Create ticket' }))
+
+    expect(mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ type: 'task', custom_fields: { qa_assignee: 10 } }),
+      }),
+    )
+  })
+
+  it('shows the API’s sentence when it refuses the ticket', async () => {
+    customFields.data = [field(2, 'Reviewer', 'reviewer')]
+    mutateAsync.mockRejectedValue({
+      response: {
+        data: {
+          detail: 'Reviewer is required on Engineering tickets.',
+          code: 'custom_field_required',
+        },
+      },
+    })
+    const { user } = renderModal()
+    await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'Export drops a row')
+    await user.click(screen.getByRole('button', { name: 'Create ticket' }))
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Reviewer is required on Engineering tickets.',
+    )
   })
 })

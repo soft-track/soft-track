@@ -40,6 +40,7 @@ const PLAN: TransferPlan = {
   sprint_cleared: 'Sprint 4',
   project_cleared: null,
   assignee_cleared: 'Maya Chen',
+  fields_cleared: ['Reviewer'],
   parent_detached: null,
   sub_tickets: ['ENG-43'],
 }
@@ -116,7 +117,7 @@ describe('MoveTicketModal', () => {
       error: { response: { data: { code: 'team_read_only', detail: 'x' } } },
     }
     renderModal()
-    expect(screen.getByRole('alert').textContent).toMatch(/guest on this team/)
+    expect(screen.getByRole('alert').textContent).toMatch(/a guest sees its work/)
     expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Move to OPS' }).disabled).toBe(true)
   })
 
@@ -137,7 +138,8 @@ describe('PlanSummary', () => {
       'Keeps bug.',
       'Loses frontend and design — no label by that name there.',
       'Leaves Sprint 4; sprints belong to one team.',
-      'Is unassigned from Maya Chen, who is not on that team.',
+      'Is unassigned from Maya Chen, who cannot hold tickets on that team.',
+      'Clears Reviewer; fields belong to one team.',
       'Takes its sub-ticket ENG-43 with it.',
     ])
   })

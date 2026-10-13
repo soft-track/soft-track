@@ -31,6 +31,8 @@ const EVENT_OPTIONS = [
   { event: 'ticket.created', label: 'webhooks.events.ticketCreated' },
   { event: 'ticket.updated', label: 'webhooks.events.ticketUpdated' },
   { event: 'ticket.status_changed', label: 'webhooks.events.ticketStatusChanged' },
+  { event: 'ticket.deleted', label: 'webhooks.events.ticketDeleted' },
+  { event: 'ticket.restored', label: 'webhooks.events.ticketRestored' },
   { event: 'comment.created', label: 'webhooks.events.commentCreated' },
   { event: 'sprint.started', label: 'webhooks.events.sprintStarted' },
   { event: 'sprint.completed', label: 'webhooks.events.sprintCompleted' },

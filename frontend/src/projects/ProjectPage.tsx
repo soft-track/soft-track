@@ -3,6 +3,7 @@ import { type ReactNode, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { errorDetail } from '@/api/errors'
+import { useAuth } from '@/auth/useAuth'
 import {
   useListTicketsTeamsTeamIdTicketsGet,
   useUpdateTicketTicketsTicketIdPatch,
@@ -12,6 +13,7 @@ import {
   useUpdateProjectProjectsProjectIdPatch,
 } from '@/api/generated/endpoints/projects/projects'
 import { useProjectBurnupProjectsProjectIdBurnupGet } from '@/api/generated/endpoints/reports/reports'
+import { useProjectTimeProjectsProjectIdTimeGet } from '@/api/generated/endpoints/time-estimates/time-estimates'
 import type { TicketRead, ProjectRead, ProjectUpdate } from '@/api/generated/models'
 import { useTranslation } from '@/i18n'
 import { formatNumber } from '@/i18n/format'
@@ -19,7 +21,9 @@ import { EstimateBadge } from '@/tickets/EstimateBadge'
 import { TicketDetailPanel } from '@/tickets/TicketDetailPanel'
 import { PriorityIcon } from '@/tickets/PriorityIcon'
 import { AddTicketsModal } from '@/projects/AddTicketsModal'
+import { ShareLinkDialog } from '@/sharing/ShareLinkDialog'
 import { ProjectBurnupChart } from '@/reports/ProjectBurnupChart'
+import { TimeRollupBlock } from '@/sprints/TimeRollup'
 import { activeMembers } from '@/team/members'
 import {
   PROJECT_STATES,
@@ -90,14 +94,21 @@ function ProjectDetail({
   total: number
   isLoadingTickets: boolean
 }) {
-  const { t } = useTranslation(['projects', 'common'])
+  const { t } = useTranslation(['projects', 'common', 'tickets'])
   const { team, members, statuses } = useTeamContext()
   const queryClient = useQueryClient()
   const updateProject = useUpdateProjectProjectsProjectIdPatch()
   const updateTicket = useUpdateTicketTicketsTicketIdPatch()
   const burnup = useProjectBurnupProjectsProjectIdBurnupGet(project.id)
+  const time = useProjectTimeProjectsProjectIdTimeGet(project.id, {
+    query: { enabled: (team.estimate_unit ?? 'points') !== 'points' },
+  })
 
   const [adding, setAdding] = useState(false)
+  // Sharing it read-only with somebody with no account (#245): a team admin's.
+  const [sharing, setSharing] = useState(false)
+  const { user } = useAuth()
+  const isTeamAdmin = members.find((member) => member.user.id === user?.id)?.role === 'admin'
   const [openTicketId, setOpenTicketId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -151,6 +162,16 @@ function ProjectDetail({
             </span>
           )}
           <div className="ml-auto flex gap-2">
+            {isTeamAdmin && (
+              <button
+                type="button"
+                onClick={() => setSharing(true)}
+                className="btn btn-secondary btn-sm"
+              >
+                <Icon name="link" size={13} />
+                {t('page.share')}
+              </button>
+            )}
             <Link to={`/${team.key}?project=${project.id}`} className="btn btn-secondary btn-sm">
               <Icon name="board" size={13} />
               {t('page.onTheBoard')}
@@ -195,6 +216,16 @@ function ProjectDetail({
             {t('page.progressNote')}
           </p>
         </div>
+
+        {/* Estimated, logged and remaining (#268), for a team estimating in hours. */}
+        {time.data && (
+          <div className="well mt-4 rounded-card p-3">
+            <TimeRollupBlock
+              title={t('tickets:timeEstimate.rollup.epic', { name: project.name })}
+              rollup={time.data}
+            />
+          </div>
+        )}
 
         {error && (
           <div
@@ -310,6 +341,13 @@ function ProjectDetail({
           project={project}
           alreadyIn={new Set(tickets.map((ticket) => ticket.id))}
           onClose={() => setAdding(false)}
+        />
+      )}
+      {sharing && (
+        <ShareLinkDialog
+          teamId={team.id}
+          target={{ kind: 'epic', id: project.id, name: project.name }}
+          onClose={() => setSharing(false)}
         />
       )}
       {openTicketId !== null && (

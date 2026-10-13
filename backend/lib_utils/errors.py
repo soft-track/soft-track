@@ -39,15 +39,28 @@ class ErrorCode(str, enum.Enum):
     account_deactivated = "account_deactivated"
     #: Too many attempts; `Retry-After` says when to try again.
     rate_limited = "rate_limited"
+    #: /metrics while no METRICS_TOKEN is set (#100): the route does not exist.
+    metrics_disabled = "metrics_disabled"
 
     # --- what you may do -------------------------------------------------------
     not_team_member = "not_team_member"
     not_team_admin = "not_team_admin"
     #: A guest of the team (#104): may look, may not change anything.
     team_read_only = "team_read_only"
+    #: Deleting a ticket or an epic the team's policy leaves to its creator
+    #: -- an epic's lead -- and the team's admins (#323).
+    not_allowed_to_delete = "not_allowed_to_delete"
+    #: Reading a ticket that is in the trash, answered 410 (#323).
+    ticket_in_trash = "ticket_in_trash"
     not_site_admin = "not_site_admin"
+    #: Money is for finance admins only (#130), whatever else the account may
+    #: do -- a site admin included.
+    not_finance_admin = "not_finance_admin"
     #: Registration is invite-only on this instance.
     invite_only = "invite_only"
+    #: Creating a team, on an instance that leaves it to site admins or to
+    #: named people (#306). Asking for one is open to the rest.
+    team_creation_restricted = "team_creation_restricted"
 
     # --- something you named does not exist ------------------------------------
     team_not_found = "team_not_found"
@@ -58,18 +71,44 @@ class ErrorCode(str, enum.Enum):
     project_not_found = "project_not_found"
     sprint_not_found = "sprint_not_found"
     status_not_found = "status_not_found"
+    label_not_found = "label_not_found"
+    #: Restoring or purging something that is not in the trash (#323).
+    not_in_trash = "not_in_trash"
     view_not_found = "view_not_found"
     rule_not_found = "rule_not_found"
     link_not_found = "link_not_found"
     attachment_not_found = "attachment_not_found"
     comment_not_found = "comment_not_found"
     template_not_found = "template_not_found"
+    #: A recurring-ticket schedule (#264) that does not exist.
+    schedule_not_found = "schedule_not_found"
+    #: A team's own field (#117) that does not exist -- by id in a path, or
+    #: by key in a ticket's `custom_fields`.
+    custom_field_not_found = "custom_field_not_found"
     worklog_not_found = "worklog_not_found"
     notification_not_found = "notification_not_found"
+    #: A kind of notification nobody registered (#263).
+    notification_kind_not_found = "notification_kind_not_found"
     repository_not_found = "repository_not_found"
     invite_not_found = "invite_not_found"
     user_not_found = "user_not_found"
     department_not_found = "department_not_found"
+    #: A compensation record that does not exist, or is somebody else's (#131).
+    compensation_not_found = "compensation_not_found"
+    payroll_run_not_found = "payroll_run_not_found"
+    #: Adjusting somebody who is not on the run (#132).
+    payroll_line_not_found = "payroll_line_not_found"
+    #: A claim that does not exist, or -- to its submitter's API -- is
+    #: somebody else's (#133).
+    expense_not_found = "expense_not_found"
+    receipt_not_found = "receipt_not_found"
+    reimbursement_batch_not_found = "reimbursement_batch_not_found"
+    budget_not_found = "budget_not_found"
+    #: A request for a team that does not exist (#306).
+    team_request_not_found = "team_request_not_found"
+    #: A request to join a team (#259) that does not exist, has run out, or
+    #: is somebody else's or another team's.
+    join_request_not_found = "join_request_not_found"
     #: The person is not a member of the team the request is about.
     member_not_found = "member_not_found"
     #: A status, label, project or sprint id that belongs to another team.
@@ -81,18 +120,41 @@ class ErrorCode(str, enum.Enum):
     email_taken = "email_taken"
     username_taken = "username_taken"
     team_key_taken = "team_key_taken"
+    #: A key an archived team holds (#322): `ENG-42` is in commit messages
+    #: and chat logs, so the key is never given back.
+    team_key_archived = "team_key_archived"
+    #: A key a deleted team had given tickets under (#322), kept for the same
+    #: reason. A team deleted before its first ticket gives its key back.
+    team_key_retired = "team_key_retired"
     status_name_taken = "status_name_taken"
     template_name_taken = "template_name_taken"
+    #: Field keys and names are unique on a team, whatever the case (#117).
+    custom_field_key_taken = "custom_field_key_taken"
+    custom_field_name_taken = "custom_field_name_taken"
     rule_name_taken = "rule_name_taken"
     #: Department names are unique whatever the case (#123).
     department_name_taken = "department_name_taken"
+    #: So are a team's label names (#321).
+    label_name_taken = "label_name_taken"
     already_member = "already_member"
+    #: Appointing an admin of a team who is one already (#307).
+    already_team_admin = "already_team_admin"
     link_exists = "link_exists"
     link_contradicts = "link_contradicts"
     repository_already_connected = "repository_already_connected"
     oauth_account_taken = "oauth_account_taken"
+    #: A new link to choose a password, for an account whose owner has
+    #: already chosen one (#303).
+    account_already_activated = "account_already_activated"
+    #: Setting a password for an account whose owner has not chosen one yet
+    #: (#303): they choose it, from their link.
+    account_not_activated = "account_not_activated"
 
     # --- a rule of the model says no ------------------------------------------
+    #: Being assigned and being mentioned cannot be turned off in the app (#263).
+    notification_always_on = "notification_always_on"
+    #: A channel this SoftTrack does not offer: email with no mail server (#263).
+    notification_channel_unavailable = "notification_channel_unavailable"
     #: The last admin of a team cannot leave, be removed or be demoted.
     last_team_admin = "last_team_admin"
     last_site_admin = "last_site_admin"
@@ -104,6 +166,13 @@ class ErrorCode(str, enum.Enum):
     #: A completed sprint's numbers are history and cannot change.
     sprint_completed = "sprint_completed"
     sprint_already_active = "sprint_already_active"
+    #: A sprint's retrospective a team admin has closed (#271).
+    retrospective_closed = "retrospective_closed"
+    #: A retrospective is written about a sprint that has ended (#271).
+    sprint_not_completed = "sprint_not_completed"
+    #: A move into a column at its WIP limit, where the team makes limits
+    #: hard (#270).
+    wip_limit_reached = "wip_limit_reached"
     sprint_dates_invalid = "sprint_dates_invalid"
     link_to_self = "link_to_self"
     parent_is_self = "parent_is_self"
@@ -112,16 +181,62 @@ class ErrorCode(str, enum.Enum):
     parent_is_subticket = "parent_is_subticket"
     ticket_has_subtickets = "ticket_has_subtickets"
     labels_conflict = "labels_conflict"
+    #: A label deleted by merging it into itself (#321).
+    label_merge_into_same = "label_merge_into_same"
     status_order_incomplete = "status_order_incomplete"
     template_order_incomplete = "template_order_incomplete"
+    custom_field_order_incomplete = "custom_field_order_incomplete"
+    #: A required field left empty on a new ticket, or cleared on one (#117).
+    #: The detail names the field.
+    custom_field_required = "custom_field_required"
+    #: An archived field's values are read-only.
+    custom_field_archived = "custom_field_archived"
+    #: A field bound to other ticket types than this ticket's.
+    custom_field_not_applicable = "custom_field_not_applicable"
+    #: Deleting destroys history, so a field is archived first.
+    custom_field_not_archived = "custom_field_not_archived"
     status_move_to_same = "status_move_to_same"
     #: Only the person who logged time can change or delete the entry (#102).
     not_your_worklog = "not_your_worklog"
     #: Only a comment's author can edit it; its author or a team admin can
     #: delete it (#93).
     not_your_comment = "not_your_comment"
+    #: A guest who may comment removing a file somebody else attached (#244).
+    not_your_attachment = "not_your_attachment"
+    #: An account from outside the organisation joins a team as a guest and
+    #: only as one (#243): invited, added or changed to anything else.
+    external_account_is_guest = "external_account_is_guest"
+    #: An invitation for somebody outside, addressed to an account that is
+    #: inside the organisation; a site admin is who changes that (#243).
+    account_inside_organisation = "account_inside_organisation"
+    #: An invitation from inside, addressed to an account from outside, which
+    #: has to be told which epics it may see (#243).
+    account_outside_organisation = "account_outside_organisation"
+    #: Epics chosen for somebody inside the organisation, who sees every
+    #: ticket on the team anyway (#243).
+    epics_only_for_external = "epics_only_for_external"
+    #: An account from outside made a site or finance admin, or such an admin
+    #: marked as outside (#243).
+    external_cannot_administer = "external_cannot_administer"
+    #: Something only somebody inside the organisation reaches (#317): the
+    #: directory, departments, workloads, creating a team, expense claims.
+    external_account = "external_account"
+    #: A share link that does not exist on this team (#245).
+    share_link_not_found = "share_link_not_found"
+    #: A share link's page that cannot be opened: revoked, expired, or never
+    #: a link at all -- one answer for all three, so it says nothing (#245).
+    share_link_inactive = "share_link_inactive"
+    #: A share link with a password, opened without one, or with the wrong
+    #: one (#245).
+    share_password_required = "share_password_required"
+    share_password_wrong = "share_password_wrong"
+    #: A share link names an epic or a saved view, and exactly one (#245).
+    share_target_required = "share_target_required"
     #: A date worked that has not happened yet.
     worklog_in_future = "worklog_in_future"
+    #: A timesheet's range that ends before it starts, or covers more than a
+    #: year (#267).
+    timesheet_range_invalid = "timesheet_range_invalid"
     #: Moving a ticket to the team it is already on (#98).
     transfer_same_team = "transfer_same_team"
     view_other_team = "view_other_team"
@@ -139,11 +254,66 @@ class ErrorCode(str, enum.Enum):
     manager_cycle = "manager_cycle"
     #: A deactivated account cannot take on new reports.
     manager_deactivated = "manager_deactivated"
+    #: A compensation record is corrected once; a second correction corrects
+    #: the first (#131).
+    compensation_already_corrected = "compensation_already_corrected"
+    #: Payroll runs on one schedule never cover the same day twice (#132).
+    payroll_run_overlaps = "payroll_run_overlaps"
+    #: Only a draft run changes; approval freezes it.
+    payroll_run_not_draft = "payroll_run_not_draft"
+    #: Paid, or exported, only once approved.
+    payroll_run_not_approved = "payroll_run_not_approved"
+    #: A line with no pay recorded has no currency to adjust in.
+    payroll_line_missing_pay = "payroll_line_missing_pay"
+    #: An adjustment that would take a line below zero.
+    payroll_adjustment_too_large = "payroll_adjustment_too_large"
+    #: A decided claim is a record; a correction is a new claim (#133).
+    expense_decided = "expense_decided"
+    #: Nobody decides their own claim.
+    expense_own_claim = "expense_own_claim"
+    #: A claim is for money already spent.
+    expense_in_future = "expense_in_future"
+    #: Only an approved claim is paid back (#137).
+    expense_not_approved = "expense_not_approved"
+    #: A claim is paid back exactly once: it is already in a batch or on a run.
+    expense_already_settled = "expense_already_settled"
+    #: A claim whose batch or run has been approved stays in it.
+    expense_settlement_locked = "expense_settlement_locked"
+    #: A payroll run carries reimbursements only for the people it pays.
+    reimbursement_not_on_run = "reimbursement_not_on_run"
+    reimbursement_batch_not_draft = "reimbursement_batch_not_draft"
+    reimbursement_batch_not_approved = "reimbursement_batch_not_approved"
+    #: One budget per department, period and currency (#134).
+    budget_exists = "budget_exists"
+    #: A budget's period ends before it starts.
+    budget_period_invalid = "budget_period_invalid"
+    #: A department that approved payroll (and, later, expenses and budgets)
+    #: is attributed to is renamed, not deleted: the record keeps pointing at it.
+    department_has_finance_history = "department_has_finance_history"
+    #: A request for a team is approved or declined once (#306).
+    team_request_decided = "team_request_decided"
+    #: Only a team with no tickets, in the trash or not, is deleted (#307);
+    #: one with work in it is archived.
+    team_not_empty = "team_not_empty"
+    #: Asking to join a team (#259) you have already asked to join: one open
+    #: request per person per team.
+    join_request_pending = "join_request_pending"
+    #: Joining a team without asking (#259) that has to be asked.
+    team_not_open = "team_not_open"
+    #: Who may create teams is set in the environment (TEAM_CREATION), which
+    #: wins over the app (#306).
+    team_creation_from_environment = "team_creation_from_environment"
 
     # --- what you sent is not usable ------------------------------------------
     name_required = "name_required"
     #: A template (#97) whose text is only whitespace.
     body_required = "body_required"
+    #: A value of the wrong kind for its field, or an option it does not
+    #: offer (#117). The detail says what the field takes.
+    custom_field_invalid_value = "custom_field_invalid_value"
+    #: Options on a kind that has none, none on one that needs them, or two
+    #: with the same name.
+    custom_field_options_invalid = "custom_field_options_invalid"
     invalid_colour = "invalid_colour"
     username_invalid = "username_invalid"
     current_password_incorrect = "current_password_incorrect"
@@ -166,6 +336,8 @@ class ErrorCode(str, enum.Enum):
     # --- links and sign-in flows -----------------------------------------------
     invite_invalid = "invite_invalid"
     api_token_not_found = "api_token_not_found"
+    #: Not one of your live sessions (#308): revoked, expired, or somebody else's.
+    session_not_found = "session_not_found"
     webhook_not_found = "webhook_not_found"
     #: Not an http(s) URL, or no events chosen.
     webhook_invalid = "webhook_invalid"
@@ -177,6 +349,10 @@ class ErrorCode(str, enum.Enum):
     invite_wrong_recipient = "invite_wrong_recipient"
     #: A password reset link that is wrong, used, expired or superseded.
     reset_link_invalid = "reset_link_invalid"
+    #: More addresses in one bulk invitation than this instance takes (#304),
+    #: or none at all.
+    too_many_addresses = "too_many_addresses"
+    no_addresses = "no_addresses"
     #: This instance has no SMTP server configured.
     email_not_configured = "email_not_configured"
     oauth_provider_unknown = "oauth_provider_unknown"
@@ -184,6 +360,20 @@ class ErrorCode(str, enum.Enum):
     oauth_expired = "oauth_expired"
     oauth_connect_failed = "oauth_connect_failed"
     oauth_not_connected = "oauth_not_connected"
+    #: The two-factor code (or recovery code) is wrong, or was already used.
+    totp_code_invalid = "totp_code_invalid"
+    #: The five minutes between the password and the code ran out, or the
+    #: account's sessions were revoked in between. Start signing in again.
+    totp_session_expired = "totp_session_expired"
+    #: Confirming a two-factor setup that was never started.
+    totp_not_enrolling = "totp_not_enrolling"
+    #: Setting up two-factor again while it is on. Turn it off first.
+    totp_already_enabled = "totp_already_enabled"
+    #: Turning off two-factor on an account that does not have it.
+    totp_not_enabled = "totp_not_enabled"
+    #: The stored secret cannot be read with this instance's key -- usually a
+    #: rotated SECRET_KEY. A site admin has to clear two-factor for the account.
+    totp_unavailable = "totp_unavailable"
 
 
 class ApiErrorBody(BaseModel):

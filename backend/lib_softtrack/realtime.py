@@ -37,8 +37,10 @@ from sqlmodel import Session
 
 from lib_softtrack.tables import (
     Attachment,
+    AuthSession,
     Comment,
     CommentReaction,
+    CustomFieldValue,
     Ticket,
     TicketLabelLink,
     TicketLink,
@@ -78,7 +80,8 @@ class Event:
 #: Sent to a stream that fell behind: throw away what you have and refetch.
 RESYNC = Event("resync")
 #: Sent on the user channel when a stream must end -- signed out everywhere,
-#: deactivated, or removed from the team the stream is about.
+#: deactivated, or removed from the team the stream is about -- and on the
+#: session channel when the one session it was opened with is revoked (#308).
 CLOSE = Event("close")
 
 
@@ -170,6 +173,12 @@ def user_channel(user_id: int) -> str:
     return f"user:{user_id}"
 
 
+def session_channel(session_id: int) -> str:
+    """One signed-in browser's streams (#308): revoking it ends them, and
+    leaves the account's other sessions streaming."""
+    return f"session:{session_id}"
+
+
 # --- turning writes into events ---------------------------------------------
 
 _PENDING = "realtime_pending"
@@ -229,9 +238,9 @@ def _collect_from(session: Session, pending: set[tuple[str, Event]]) -> None:
                             Event.of("comment_added", ticket_id=comment.ticket_id),
                         )
                     )
-        elif isinstance(obj, (Worklog, Attachment, TicketLabelLink)):
+        elif isinstance(obj, (Worklog, Attachment, TicketLabelLink, CustomFieldValue)):
             # Rows that change what a ticket shows without touching the
-            # ticket row: its time, its files, its labels.
+            # ticket row: its time, its files, its labels, its field values.
             ticket_changed(_ticket_team(session, obj.ticket_id), obj.ticket_id)
         elif isinstance(obj, TicketLink):
             for ticket_id in (obj.source_id, obj.target_id):
@@ -249,6 +258,10 @@ def _collect_from(session: Session, pending: set[tuple[str, Event]]) -> None:
             deactivated = state.is_active.history.has_changes() and not obj.is_active
             if signed_out or deactivated:
                 pending.add((user_channel(obj.id), CLOSE))
+        elif isinstance(obj, AuthSession) and obj in session.dirty:
+            ended = inspect(obj).attrs.ended_at.history.has_changes()
+            if ended and obj.ended_at is not None:
+                pending.add((session_channel(obj.id), CLOSE))
 
 
 def _publish(session: Session) -> None:

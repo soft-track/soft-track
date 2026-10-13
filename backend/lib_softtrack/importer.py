@@ -15,6 +15,7 @@ from lib_softtrack.history import record_creation
 from lib_softtrack.ranks import top_rank
 from lib_softtrack.jira import JiraParseError, parse
 from lib_softtrack import statuses as statuses_service
+from lib_softtrack.metrics import COMMENTS_CREATED, TICKETS_CREATED
 from lib_softtrack.models.imports import ImportReport, ParsedTicket, UserMatch
 from lib_softtrack.tables import (
     Comment,
@@ -24,6 +25,7 @@ from lib_softtrack.tables import (
     Project,
     Team,
     TeamMember,
+    TeamRole,
     User,
 )
 from lib_softtrack.teams import get_team_or_404, require_team_member
@@ -173,6 +175,15 @@ def import_export(
         if comment.author
     }
     matched_users, user_report = _match_users(session, team_id, people)
+    # Matched like anybody else, since a guest may have filed a ticket or
+    # written a comment, but never made its assignee (#316).
+    guest_ids = set(
+        session.exec(
+            select(TeamMember.user_id).where(
+                TeamMember.team_id == team_id, TeamMember.role == TeamRole.guest
+            )
+        ).all()
+    )
 
     existing_keys = {
         ticket.external_key
@@ -225,6 +236,7 @@ def import_export(
             team,
             parsed_ticket,
             matched_users,
+            guest_ids,
             current_user,
             label_cache,
             project_cache,
@@ -237,7 +249,7 @@ def import_export(
 
     report.unmapped_statuses = sorted(unmapped_statuses)
     report.unmapped_priorities = sorted(unmapped_priorities)
-    report.warnings = _warnings(report, parsed)
+    report.warnings = _warnings(report, parsed, matched_users, guest_ids)
 
     if dry_run:
         # Everything above ran for real against the session; rolling back is
@@ -245,6 +257,8 @@ def import_export(
         session.rollback()
     else:
         session.commit()
+        TICKETS_CREATED.inc(report.tickets_created)
+        COMMENTS_CREATED.inc(report.comments_created)
 
     return report
 
@@ -254,6 +268,7 @@ def _create_ticket(
     team: Team,
     parsed_ticket: ParsedTicket,
     matched_users: dict[str, User],
+    guest_ids: set[int],
     actor: User,
     label_cache: dict[str, Label],
     project_cache: dict[str, Project],
@@ -270,6 +285,8 @@ def _create_ticket(
         )
 
     assignee = matched_users.get(parsed_ticket.assignee or "")
+    if assignee is not None and assignee.id in guest_ids:
+        assignee = None
     # An unmatched reporter falls back to whoever ran the import, because
     # creator_id is not nullable and the alternative is refusing the whole
     # file over one departed colleague.
@@ -333,7 +350,12 @@ def _aware(value: Optional[datetime]) -> datetime:
     return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
-def _warnings(report: ImportReport, parsed: list[ParsedTicket]) -> list[str]:
+def _warnings(
+    report: ImportReport,
+    parsed: list[ParsedTicket],
+    matched_users: dict[str, User],
+    guest_ids: set[int],
+) -> list[str]:
     warnings: list[str] = []
 
     unmatched = [
@@ -346,6 +368,21 @@ def _warnings(report: ImportReport, parsed: list[ParsedTicket]) -> list[str]:
             "attributed to you with their name kept in the text: "
             + ", ".join(unmatched[:5])
             + ("…" if len(unmatched) > 5 else "")
+        )
+
+    guests = sorted(
+        {
+            ticket.assignee
+            for ticket in parsed
+            if ticket.assignee in matched_users
+            and matched_users[ticket.assignee].id in guest_ids
+        }
+    )
+    if guests:
+        warnings.append(
+            f"{len(guests)} person(s) in this export are guests on this team, "
+            "who can read its tickets but not hold them, so their tickets will "
+            "be unassigned: " + ", ".join(guests[:5]) + ("…" if len(guests) > 5 else "")
         )
 
     if report.unmapped_statuses:

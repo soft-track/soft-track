@@ -6,7 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { DepartmentRef } from './departmentRef';
+import type { EmploymentType } from './employmentType';
+import type { GuestOf } from './guestOf';
 import type { PersonRef } from './personRef';
+import type { WelcomeLinkRead } from './welcomeLinkRead';
 
 /**
  * A row in the site admin's user directory.
@@ -18,9 +21,14 @@ export interface AdminUserRead {
   full_name: string;
   avatar_color: string;
   is_active: boolean;
+  is_external?: boolean;
+  is_activated?: boolean;
   is_site_admin: boolean;
+  is_finance_admin: boolean;
   has_password: boolean;
   created_at: string;
+  totp_enabled: boolean;
+  employment_type?: EmploymentType | null;
   job_title?: string | null;
   location?: string | null;
   started_on?: string | null;
@@ -29,4 +37,9 @@ export interface AdminUserRead {
   last_login_at?: string | null;
   team_count: number;
   report_count: number;
+  finance_admin_since?: string | null;
+  finance_admin_granted_by?: PersonRef | null;
+  guest_of?: GuestOf[];
+  welcome_link?: WelcomeLinkRead | null;
+  session_count?: number;
 }

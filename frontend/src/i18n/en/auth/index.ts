@@ -3,10 +3,11 @@ import { fields } from '@/i18n/en/auth/fields'
 import { login } from '@/i18n/en/auth/login'
 import { register } from '@/i18n/en/auth/register'
 import { forgotPassword } from '@/i18n/en/auth/forgotPassword'
-import { resetPassword } from '@/i18n/en/auth/resetPassword'
+import { resetPassword, welcome } from '@/i18n/en/auth/resetPassword'
 import { invite } from '@/i18n/en/auth/invite'
 import { providers } from '@/i18n/en/auth/providers'
 import { oauthErrors } from '@/i18n/en/auth/oauthErrors'
+import { totp } from '@/i18n/en/auth/totp'
 
 export const auth = {
   fields,
@@ -14,7 +15,9 @@ export const auth = {
   register,
   forgotPassword,
   resetPassword,
+  welcome,
   invite,
   providers,
   oauthErrors,
+  totp,
 } as const

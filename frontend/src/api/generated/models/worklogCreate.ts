@@ -14,4 +14,6 @@ export interface WorklogCreate {
   minutes: number;
   worked_on?: string | null;
   note?: string | null;
+  /** Minutes left, set by hand. Null means worked out: the time estimate less what is logged. */
+  remaining_minutes?: number | null;
 }

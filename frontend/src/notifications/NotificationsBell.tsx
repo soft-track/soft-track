@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type ComponentProps } from 'react'
 
 import { useTranslation } from '@/i18n'
-import { badgeLabel } from '@/notifications/notificationMeta'
+import { badgeLabel, unreadAnnouncement } from '@/notifications/notificationMeta'
 import { NotificationsInbox } from '@/notifications/NotificationsInbox'
 import { useUnreadCount } from '@/notifications/useNotifications'
 import { Icon } from '@/ui/Icon'
@@ -72,6 +72,17 @@ export function NotificationsBell({
           </span>
         )}
       </button>
+
+      {/* A changing aria-label is never announced, so the poll's result also
+          lands here. Outside the button, or it would double up in the name;
+          always mounted, since a live region only announces changes made
+          after it exists. Browse mode does read the count twice, once in the
+          button's name and once here; hiding either would defeat its point.
+          aria-atomic so the whole sentence is read, not just the digits that
+          changed. */}
+      <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {unreadAnnouncement(unread)}
+      </span>
 
       {open && anchor && (
         <NotificationsInbox anchor={anchor} onClose={onClose} onOpenTicket={onOpenTicket} />

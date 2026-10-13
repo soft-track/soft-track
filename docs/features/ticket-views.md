@@ -1,9 +1,11 @@
-# Opening a ticket: the peek, the panel and the page
+# Opening a ticket: the peek, the panel, the modal and the page
 
 A ticket has one address, `/ENG/ticket/42`, and it's the one people paste.
 What you see at that address depends on how you got there, not on the
 address. Before any of that there's the quick peek, which has no address
-at all.
+at all. And a ticket you reach from inside another one (its blocker, a
+sub-ticket, the parent) opens in a modal over the one you were reading,
+which also keeps its address; see [below](#a-linked-ticket-in-a-modal).
 
 - **The panel** slides over the board. Opening a card on the board, a row in
   the list or a ticket in the calendar gives you the panel, with the board
@@ -71,12 +73,14 @@ CSS container query), not the kind of surface, so a narrow page and the
 panel look alike.
 
 `S`, `P`, `A` and `L` jump to status, priority, assignee and labels on the
-page as they do on the panel. `Esc` has nothing to close on the page.
+page as they do on the panel. `Esc` has nothing to close on the page, except
+a modal over it.
 
-Following a link from inside a ticket keeps you on the surface you're on. A
-sub-ticket, a parent, a linked ticket, or the ticket's new address after it
-moves teams opens in the panel if you're in the panel, and as a page if
-you're on a page.
+A sub-ticket, the parent or a linked ticket opens in a modal over the ticket
+you're on, the page or the panel alike (next section). A ticket that moves to
+another team is different: that's the ticket in front of you changing its
+address, so its new address opens on the surface you're on, in the panel if
+you're in the panel and as a page if you're on a page.
 
 **Back returns to the board as you left it.** Leaving the board for a page
 unmounts it. The view you were on (board, list, calendar and so on) and your
@@ -85,16 +89,67 @@ brings back the same view and the same search results. Filters were already
 in the board's URL. Leaving by the panel's **Open as page** saves them the
 same way, and Back brings the panel back, over the view you left.
 
+## A linked ticket, in a modal
+
+Looking at a blocker is almost never a decision to stop reading this ticket.
+It's a question about this one: is that done yet? So clicking a row under
+**Blocked by** or any other link, a sub-ticket, or the parent chip opens that
+ticket in a modal over the one you're reading, from the panel or from a page.
+Nothing underneath is left: its scroll position, a comment you're halfway
+through, and the row you clicked are all still there when the modal closes.
+
+- **It's the whole ticket, and you can change it.** The modal shows the same
+  body as the panel and the page. Ticking a blocker to Done from here is the
+  point. When the modal closes, the ticket underneath refreshes, so its link
+  row and its sub-ticket progress catch up.
+- **It stands beside the panel,** not over it, when the screen is wide enough
+  for both, so the row it came from stays in view, marked. Over a page on a
+  wide screen it stands to the right, over the properties rather than the
+  reading. On a phone it fills the screen, as the panel does.
+- **It says where it came from.** A chip at the top left reads "from ENG-20",
+  and pressing it goes back there. A second modal names the whole trail,
+  "ENG-20 › ENG-25".
+- **Two deep at most.** From the second modal, a link opens the ticket's own
+  page instead of stacking a third, and its row says so ("Opens the page") on
+  hover. Back from that page returns you to the panel or page you left, with
+  both modals still open.
+- **A ticket that's already open underneath isn't opened twice.** Every link
+  shows on both of its tickets, so a blocker's modal lists the ticket it
+  blocks: the one you were reading. Following it goes back down to it,
+  closing the modals above.
+- **`Esc` closes the top modal only,** and puts focus back on the row that
+  opened it. `S`, `P`, `A` and `L` reach the fields of the ticket on top.
+  A dialog opened over the modals, such as the cheatsheet, takes the first
+  `Esc` for itself.
+- **The address doesn't change,** so the link in the address bar is still the
+  ticket you were reading. Each modal is its own history entry, so **Back
+  closes the top modal** instead of leaving the ticket, and Forward opens it
+  again. A reload keeps them open, as it keeps the panel.
+- **Open as page** in the modal's header trades it for that ticket's page.
+- A link can cross teams. The modal then offers that team's statuses, labels
+  and people. If you're not on that team, it says so rather than showing the
+  ticket.
+
 ## For developers
 
 - `frontend/src/tickets/TicketDetailBody.tsx` is everything below the header.
-  The panel (`TicketDetailPanel.tsx`) and the page (`TicketPage.tsx`) each
-  render it under their own chrome. Its layout is `.ticket-body` in
-  `frontend/src/index.css`.
+  The panel (`TicketDetailPanel.tsx`), the page (`TicketPage.tsx`) and the
+  linked-ticket modal (`TicketModal.tsx`) each render it under their own
+  chrome. Its layout is `.ticket-body` in `frontend/src/index.css`.
 - `frontend/src/tickets/surface.ts` holds the rule. `useOpenTicket(ticket,
   surface)` navigates with or without the panel's state, and
-  `useOpenRelatedTicket()` asks the surface the body is on. Sections call the
-  second one, so none of them needs to know where it's rendered.
+  `useOpenTicketHere()` stays on the surface you're on.
+- The panel and the page each render their ticket inside `TicketStack.tsx`:
+  the ticket at the bottom and the modals over it. The open modals live in the
+  history entry's state (`ticketModals`, read and written by
+  `tickets/modals.ts`), which is how Back closes one and a reload keeps them.
+  Closing a modal any other way goes back one entry, so the history never
+  holds a modal nobody can see. The stack owns the keys: one listener, so one
+  `Esc` closes one layer. It defers to any other dialog that is on top
+  (`topDialog()` in `ui/useFocusTrap.ts`). Sections open tickets through
+  `useRelatedTickets()` (`tickets/stackContext.ts`), which says whether a
+  ticket opens a modal, goes back down to one, or opens the page, so none of
+  them needs to know where it's rendered.
 - `frontend/src/app/TeamRoute.tsx` picks the board or the page for every
   `/:teamKey` route. It's one element for all of them, which is what keeps
   the same board mounted when the panel opens over it.

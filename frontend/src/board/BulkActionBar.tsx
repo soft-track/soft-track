@@ -3,8 +3,8 @@ import type { ChangeEvent } from 'react'
 import type { TicketBulkChanges } from '@/api/generated/models'
 import type { BulkEdit } from '@/board/useBulkEdit'
 import { useTranslation } from '@/i18n'
+import { AssigneeOptions } from '@/tickets/AssigneeOptions'
 import { PRIORITY_META, PRIORITY_ORDER } from '@/tickets/ticketMeta'
-import { activeMembers } from '@/team/members'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
@@ -113,11 +113,7 @@ export function BulkActionBar({
         >
           <option value="">{t('bulk.assigneePlaceholder')}</option>
           <option value={NONE}>{t('bulk.unassigned')}</option>
-          {activeMembers(members).map((user) => (
-            <option key={user.id} value={user.id}>
-              {user.full_name}
-            </option>
-          ))}
+          <AssigneeOptions members={members} />
         </Select>
 
         <Select

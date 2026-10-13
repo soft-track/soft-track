@@ -15,6 +15,7 @@ import pytest
 from sqlmodel import select
 
 from lib_softtrack.tables import TicketEvent
+from tests.conftest import delete_for_good
 
 
 @pytest.fixture
@@ -236,7 +237,7 @@ def test_rewriting_a_rule_is_checked_against_its_team(client, pair, auth):
         headers=pair["headers"],
     )
     assert response.status_code == 400
-    assert "not on this team" in response.json()["detail"]
+    assert response.json()["code"] == "user_not_on_team"
 
 
 def test_a_rule_on_a_team_you_are_not_in_is_not_found(client, pair, auth):
@@ -841,7 +842,7 @@ def test_deleting_a_ticket_takes_its_log_rows_with_it(client, pair):
     ticket = create_ticket(client, pair, pair["team"]["id"])
     assert runs(client, pair, pair["team"]["id"])["total"] == 1
 
-    response = client.delete(f"/tickets/{ticket['id']}", headers=pair["headers"])
+    response = delete_for_good(client, pair["headers"], ticket["id"])
     assert response.status_code == 204
     assert runs(client, pair, pair["team"]["id"])["total"] == 0
 

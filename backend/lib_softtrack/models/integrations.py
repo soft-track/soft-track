@@ -113,3 +113,6 @@ class WebhookReceipt(BaseModel):
     #: The tickets the delivery named, e.g. `["ENG-42"]`. Empty means nothing
     #: in the text resolved to a ticket on this team.
     tickets: list[str] = []
+    #: True when the repository's team is archived (#322): the delivery was
+    #: genuine and nothing was applied. It links again once it is unarchived.
+    team_archived: bool = False

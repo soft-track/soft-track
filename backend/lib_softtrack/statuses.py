@@ -33,6 +33,7 @@ from lib_softtrack.teams import (
     require_team_admin,
     require_team_member,
 )
+from lib_softtrack.trash import INCLUDE_TRASHED
 from lib_utils.errors import ErrorCode, api_error
 
 #: Work that is finished, one way or the other. Off the burndown, and unable
@@ -201,6 +202,9 @@ def update_status(
         status.category = payload.category
     if payload.color is not None:
         status.color = payload.color
+    # Set, changed, or -- with an explicit null -- removed (#270).
+    if "wip_limit" in payload.model_fields_set:
+        status.wip_limit = payload.wip_limit
 
     session.add(status)
     session.commit()
@@ -276,8 +280,11 @@ def delete_status(
     # the column they were sitting in was renamed out from under them -- and a
     # status event per ticket would put a step in every cumulative flow diagram
     # on the day an admin tidied up the board.
+    # The trash's tickets too (#323): they hold the foreign key all the same.
     for ticket in session.exec(
-        select(Ticket).where(Ticket.status_id == status.id)
+        select(Ticket)
+        .where(Ticket.status_id == status.id)
+        .execution_options(**INCLUDE_TRASHED)
     ).all():
         ticket.status_id = target.id
         session.add(ticket)
@@ -285,11 +292,16 @@ def delete_status(
     # Saved views filtering on it lose the filter rather than the view: a view
     # pointing at a status that no longer exists would match nothing, which
     # reads as broken filtering rather than as a widened filter.
+    # With several statuses in a view (#260), only this one leaves the list;
+    # a list left empty is no filter, so its exclude switch goes with it.
     for view in session.exec(
-        select(SavedView).where(SavedView.status_id == status.id)
+        select(SavedView).where(SavedView.team_id == status.team_id)
     ).all():
-        view.status_id = None
-        session.add(view)
+        if status.id in view.status_ids:
+            view.status_ids = [kept for kept in view.status_ids if kept != status.id]
+            if not view.status_ids:
+                view.status_exclude = False
+            session.add(view)
 
     # Automation rules follow the tickets instead of losing the reference. A
     # rule's condition read as "no opinion" when cleared, which would widen it

@@ -1,10 +1,23 @@
-import { useQueryClient } from '@tanstack/react-query'
-import { type FormEvent, useId, useState } from 'react'
+import { keepPreviousData, useQueryClient } from '@tanstack/react-query'
+import { type FormEvent, useId, useState, useRef } from 'react'
 
+import { errorDetail } from '@/api/errors'
 import { useCreateTicketTeamsTeamIdTicketsPost } from '@/api/generated/endpoints/tickets/tickets'
 import { useListTemplatesTeamsTeamIdTicketTemplatesGet } from '@/api/generated/endpoints/templates/templates'
+import { useSearchSearchGet } from '@/api/generated/endpoints/search/search'
+import { ticketPath } from '@/tickets/surface'
 import { TicketPriority, type TicketType } from '@/api/generated/models'
-import { useTranslation } from '@/i18n'
+import { Trans, userText, useTranslation } from '@/i18n'
+import { formatList } from '@/i18n/format'
+import { AssigneeOptions } from '@/tickets/AssigneeOptions'
+import { CustomFieldControl } from '@/tickets/CustomFieldControl'
+import {
+  type FieldInput,
+  editableFields,
+  isFilled,
+  missingRequired,
+  useCustomFields,
+} from '@/tickets/customFields'
 import {
   ESTIMATE_SCALE,
   PRIORITY_META,
@@ -20,18 +33,75 @@ import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
 import { useFocusTrap } from '@/ui/useFocusTrap'
+import { useDebounced } from '@/search/useDebounced'
+
+const CJK_RE =
+  /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uac00-\ud7af]/
+
+function getSearchPhrase(value: string) {
+  const trimmed = value.trim()
+
+  if (!trimmed) return ''
+
+  if (CJK_RE.test(trimmed)) {
+    const compact = trimmed.replace(/\s+/g, '')
+    return Array.from(compact).length >= 3 ? trimmed : ''
+  }
+
+  return trimmed.split(/\s+/).filter(Boolean).length >= 3 ? trimmed : ''
+}
 
 export function NewTicketModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation(['tickets', 'common'])
   const dialogRef = useFocusTrap<HTMLDivElement>()
+  const titleInputRef = useRef<HTMLInputElement>(null)
   const titleId = useId()
   const { team, projects, labels, members, sprints, statuses } = useTeamContext()
   const queryClient = useQueryClient()
   const createTicket = useCreateTicketTeamsTeamIdTicketsPost()
   const templates = useListTemplatesTeamsTeamIdTicketTemplatesGet(team.id).data ?? []
+  const customFields = useCustomFields(team.id)
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [suggestionsDismissed, setSuggestionsDismissed] = useState(false)
+  const [selectedSuggestion, setSelectedSuggestion] = useState(-1)
+
+  const typedPhrase = getSearchPhrase(title)
+  const searchPhrase = useDebounced(typedPhrase, 400)
+
+  const searchResults = useSearchSearchGet(
+    {
+      q: searchPhrase || 'x',
+      team_id: team.id,
+      limit: 3,
+    },
+    {
+      query: {
+        enabled: searchPhrase.length > 0 && !suggestionsDismissed,
+        staleTime: 30_000,
+        // The last matches stay up while the next phrase is asked about,
+        // rather than the list blinking out on every pause in typing.
+        placeholderData: keepPreviousData,
+        // A nudge is not worth a second request: a failure shows nothing.
+        retry: false,
+      },
+    },
+  )
+
+  // Quiet means quiet (#95): a title cut back under three words hides the
+  // list at once, not when the debounce catches up, and a failed request
+  // shows nothing at all.
+  const suggestions =
+    suggestionsDismissed || !typedPhrase || searchResults.isError
+      ? []
+      : (searchResults.data?.items ?? [])
+
+  const highlightedSuggestion =
+    suggestions.length > 0
+      ? Math.min(selectedSuggestion, suggestions.length - 1)
+      : -1
+
   // The template in use, and the text it put there -- which is how choosing
   // another one knows whether anything typed since would be lost (#97).
   const [templateId, setTemplateId] = useState('')
@@ -48,7 +118,16 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
   const [dueDate, setDueDate] = useState('')
   const [assigneeId, setAssigneeId] = useState<string>('')
   const [labelIds, setLabelIds] = useState<number[]>([])
+  // The team's own fields (#117), by key. Only the ones a ticket of the
+  // chosen type has are offered, and only those are sent.
+  const [fieldValues, setFieldValues] = useState<Record<string, FieldInput>>({})
+  // Set by a submit that left a required field empty, and from then on
+  // recomputed as the form changes, so filling one in clears its warning.
+  const [checkRequired, setCheckRequired] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const formFields = editableFields(customFields, type)
+  const missing = checkRequired ? missingRequired(customFields, type, fieldValues) : []
 
   const applyTemplate = (id: string) => {
     const template = templates.find((candidate) => String(candidate.id) === id)
@@ -77,6 +156,16 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
     event.preventDefault()
     if (!title.trim()) return
     setError(null)
+    // The check the API makes, made first: the form can point at the field.
+    if (missingRequired(customFields, type, fieldValues).length > 0) {
+      setCheckRequired(true)
+      return
+    }
+    // Only the fields this type of ticket has: a value chosen before the type
+    // was changed is not sent for a field the ticket no longer takes.
+    const filled = formFields
+      .filter((field) => isFilled(fieldValues[field.key]))
+      .map((field) => [field.key, fieldValues[field.key]] as const)
     try {
       await createTicket.mutateAsync({
         teamId: team.id,
@@ -92,13 +181,16 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
           due_date: dueDate || undefined,
           assignee_id: assigneeId ? Number(assigneeId) : undefined,
           label_ids: labelIds,
+          custom_fields: filled.length > 0 ? Object.fromEntries(filled) : undefined,
         },
       })
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/tickets`] })
       invalidateProjects(queryClient, team.id)
       onClose()
-    } catch {
-      setError(t('newTicket.errors.create'))
+    } catch (err: unknown) {
+      // The API's sentence when it has one -- a field made required since
+      // the form loaded is named in it.
+      setError(errorDetail(err, t('newTicket.errors.create')))
     }
   }
 
@@ -157,11 +249,132 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
               autoFocus
               required
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              ref={titleInputRef}
+              onChange={(e) => {
+                setTitle(e.target.value)
+                setSelectedSuggestion(-1)
+              }}
+              onKeyDown={(event) => {
+                if (event.nativeEvent.isComposing) return
+
+                if (event.key === 'Escape') {
+                  if (suggestions.length > 0) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    setSuggestionsDismissed(true)
+                    return
+                  }
+                  return
+                }
+
+                if (suggestions.length === 0) return
+
+                if (event.key === 'ArrowDown') {
+                  event.preventDefault()
+                  setSelectedSuggestion((current) =>
+                    current < suggestions.length - 1 ? current + 1 : 0,
+                  )
+                  return
+                }
+
+                if (event.key === 'ArrowUp') {
+                  event.preventDefault()
+                  setSelectedSuggestion((current) =>
+                    current > 0 ? current - 1 : suggestions.length - 1,
+                  )
+                  return
+                }
+
+                if (event.key === 'Enter' && highlightedSuggestion >= 0) {
+                  event.preventDefault()
+                  window.open(
+                    ticketPath(suggestions[highlightedSuggestion]),
+                    '_blank',
+                    'noopener,noreferrer',
+                  )
+                }
+              }}
               placeholder={t('newTicket.ticketTitle')}
               aria-label={t('newTicket.ticketTitle')}
               className="w-full border-none bg-transparent p-0 text-lg font-semibold tracking-tight text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-0"
             />
+            {suggestions.length > 0 && (
+              <div className="well mt-2 overflow-hidden rounded-card">
+                <div className="flex items-center justify-between px-3 py-1.5">
+                  <span className="eyebrow">
+                    {t('newTicket.similarTickets')}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setSuggestionsDismissed(true)}
+                    className="btn btn-ghost btn-icon btn-xs text-neutral-400"
+                    aria-label={t('newTicket.dismissSimilarTickets')}
+                  >
+                    <Icon name="close" size={11} />
+                  </button>
+                </div>
+
+                <ul
+                  id="similar-tickets-list"
+                  className="divide-y divide-neutral-900/6"
+                >
+                  {suggestions.map((ticket, index) => (
+                    <li
+                      key={ticket.id}
+                      className={
+                        index === highlightedSuggestion
+                          ? 'bg-neutral-900/6'
+                          : 'hover:bg-neutral-900/4'
+                      }
+                    >
+                      <a
+                        id={`similar-ticket-${ticket.id}`}
+                        href={ticketPath(ticket)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => {
+                          titleInputRef.current?.focus()
+                        }}
+                        className="group block min-w-0 px-3 py-2 text-left transition-colors focus:outline-none"
+                      >
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="identifier shrink-0 text-[11px] font-medium text-neutral-400">
+                            {ticket.identifier}
+                          </span>
+
+                          <span className="min-w-0 flex-1 truncate text-xs font-medium text-neutral-800">
+                            {ticket.title}
+                          </span>
+
+                          <span className="flex shrink-0 items-center gap-1.5 text-[11px] text-neutral-500">
+                            <span
+                              className="dot"
+                              style={{ ['--dot' as string]: ticket.status.color }}
+                            />
+                            {ticket.status.name}
+                          </span>
+
+                          <Icon
+                            name="external"
+                            size={12}
+                            className={`shrink-0 text-brand-600 ${
+                              index === highlightedSuggestion
+                                ? 'opacity-100'
+                                : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'
+                            }`}
+                          />
+                          <span className="sr-only">
+                            {t('newTicket.opensInNewTab')}
+                          </span>
+                        </div>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <MarkdownEditor
               value={description}
               onChange={setDescription}
@@ -280,11 +493,7 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
               aria-label={t('newTicket.assignee')}
             >
               <option value="">{t('newTicket.unassigned')}</option>
-              {activeMembers(members).map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.full_name}
-                </option>
-              ))}
+              <AssigneeOptions members={members} />
             </Select>
           </div>
 
@@ -306,6 +515,50 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
                   </button>
                 )
               })}
+            </div>
+          )}
+
+          {formFields.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 px-5 pb-4">
+              <span className="eyebrow mr-1">
+                {t('customFields.heading', { team: team.name })}
+              </span>
+              {formFields.map((field) => (
+                <CustomFieldControl
+                  key={field.id}
+                  field={field}
+                  value={fieldValues[field.key] ?? undefined}
+                  live
+                  label={field.name}
+                  placeholder={field.required ? `${field.name} *` : field.name}
+                  invalid={missing.some((gap) => gap.id === field.id)}
+                  onChange={(value) =>
+                    setFieldValues((prev) => ({ ...prev, [field.key]: value }))
+                  }
+                />
+              ))}
+            </div>
+          )}
+
+          {missing.length > 0 && (
+            <div
+              role="alert"
+              className="mx-5 mb-4 flex items-start gap-2.5 rounded-control border border-danger-500/30 bg-danger-50 px-3.5 py-3 text-sm text-neutral-700"
+            >
+              <Icon name="alert" size={15} className="mt-0.5 shrink-0 text-danger-600" />
+              <span>
+                <Trans
+                  t={t}
+                  i18nKey="customFields.required"
+                  count={missing.length}
+                  values={{
+                    fields: formatList(missing.map((field) => field.name)),
+                    team: team.name,
+                  }}
+                  components={{ strong: <strong className="font-semibold text-neutral-900" /> }}
+                  {...userText}
+                />
+              </span>
             </div>
           )}
 

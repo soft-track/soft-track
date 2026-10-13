@@ -25,6 +25,7 @@ import {
   KEYBOARD_CODES,
 } from '@/board/keyboardDrag'
 import type { Placement } from '@/board/useMoveTicket'
+import { arrival, standing, type WipStanding } from '@/board/wip'
 import { useTranslation } from '@/i18n'
 import { TicketCard } from '@/tickets/TicketCard'
 import { useTeamContext } from '@/team/useTeamContext'
@@ -55,6 +56,8 @@ type BoardColumn = {
   tickets: TicketRead[]
   /** Points in the column, rolled up on the server. Status columns only. */
   load?: Load
+  /** Where it stands against its status's WIP limit (#270), if it has one. */
+  wip?: WipStanding | null
 }
 
 const statusColumnId = (status: StatusRead) => `status:${status.id}`
@@ -87,8 +90,27 @@ function Column({
   onSelect?: (ticketId: number, gesture: 'range' | 'toggle') => void
 }) {
   const { t } = useTranslation(['board', 'common'])
-  const { id, name, color, tickets, load } = column
+  const { id, name, color, tickets, load, wip } = column
   const { setNodeRef, isOver } = useDroppable({ id })
+
+  const points = load && load.points > 0 && (
+    <span
+      className="identifier ml-auto shrink-0 whitespace-nowrap text-[11px] text-neutral-400"
+      title={
+        load.unestimated_count > 0
+          ? t('kanban.pointsTitleUnsized', {
+              points: load.points,
+              count: load.unestimated_count,
+            })
+          : t('kanban.pointsTitle', { points: load.points })
+      }
+    >
+      {t('kanban.pointsShort', { points: load.points })}
+      {/* An unsized ticket is not worth zero, so say so rather than let
+          the total read as complete. */}
+      {load.unestimated_count > 0 && <span className="text-neutral-300"> +?</span>}
+    </span>
+  )
 
   return (
     <section
@@ -102,39 +124,59 @@ function Column({
       <header className="flex items-center gap-2 px-3 pb-2 pt-3">
         <span className="dot" style={{ ['--dot' as string]: color }} aria-hidden="true" />
         <h2 className="truncate text-[13px] font-semibold text-neutral-800">{name}</h2>
-        <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
-          {tickets.length}
-        </span>
-        {load && load.points > 0 && (
+        {wip ? (
+          // Against the limit, the whole stage counts: what the board is
+          // filtered to does not change how much work is in it (#270).
           <span
-            className="identifier ml-auto text-[11px] text-neutral-400"
-            title={
-              load.unestimated_count > 0
-                ? t('kanban.pointsTitleUnsized', {
-                    points: load.points,
-                    count: load.unestimated_count,
-                  })
-                : t('kanban.pointsTitle', { points: load.points })
-            }
+            className={`identifier shrink-0 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[11px] font-medium ${
+              wip.state === 'over'
+                ? 'bg-danger-500/12 text-danger-700'
+                : wip.state === 'full'
+                  ? 'bg-accent-amber/20 text-neutral-700'
+                  : 'bg-neutral-900/6 text-neutral-500'
+            }`}
+            title={t('kanban.wip.countTitle', { count: wip.count, limit: wip.limit })}
           >
-            {t('kanban.pointsShort', { points: load.points })}
-            {/* An unsized ticket is not worth zero, so say so rather than let
-                the total read as complete. */}
-            {load.unestimated_count > 0 && <span className="text-neutral-300"> +?</span>}
+            {t('kanban.wip.count', { count: wip.count, limit: wip.limit })}
+          </span>
+        ) : (
+          <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
+            {tickets.length}
           </span>
         )}
+        {!wip && points}
         <button
           type="button"
           onClick={onCollapse}
           aria-label={t('kanban.collapseNamed', { name })}
           title={t('kanban.collapseColumn')}
           className={`btn btn-ghost btn-icon btn-xs text-neutral-400 opacity-0 transition group-hover/column:opacity-100 focus-visible:opacity-100 ${
-            load && load.points > 0 ? '' : 'ml-auto'
+            !wip && load && load.points > 0 ? '' : 'ml-auto'
           }`}
         >
           <Icon name="chevron-left" size={13} />
         </button>
       </header>
+      {/* A column with a limit has a second line (#270), so its name keeps
+          the room it needs: full or over, in words and with an icon since
+          colour alone would not reach everyone, and its points. */}
+      {wip && (wip.state !== 'room' || points) && (
+        <p className="-mt-1 flex items-center gap-1 px-3 pb-2 text-[11px] font-medium">
+          {wip.state !== 'room' && (
+            <span
+              className={`flex items-center gap-1 ${
+                wip.state === 'over' ? 'text-danger-600' : 'text-neutral-500'
+              }`}
+            >
+              <Icon name="alert" size={12} />
+              {wip.state === 'over'
+                ? t('kanban.wip.overBy', { count: wip.overBy })
+                : t('kanban.wip.full')}
+            </span>
+          )}
+          {points}
+        </p>
+      )}
 
       <div className="scroll-thin flex-1 space-y-2 overflow-y-auto px-2 pb-2">
         <SortableContext
@@ -248,7 +290,7 @@ export function KanbanBoard({
   // handed to them while rendering.
   const [drag] = useState(() => ({ moved: false }))
   const { t } = useTranslation(['board', 'common'])
-  const { statuses, projects } = useTeamContext()
+  const { team, statuses, projects } = useTeamContext()
   const [collapsed, setCollapsed] = useState<Set<string> | null>(null)
   // Seeded from the team's own columns on first render rather than in state's
   // initialiser: the statuses arrive with a query, so on the first pass there
@@ -283,6 +325,7 @@ export function KanbanBoard({
           color: status.color,
           tickets: tickets.filter((ticket) => ticket.status.id === status.id),
           load: estimates?.by_status?.[String(status.id)],
+          wip: standing(status.wip_limit, estimates?.by_status?.[String(status.id)]?.wip_count),
         }))
 
   /**
@@ -418,6 +461,18 @@ export function KanbanBoard({
             columns.find((column) => column.tickets.some((ticket) => ticket.id === Number(id)))
               ?.name ?? null,
           drag,
+          arriving: (activeId, overId) => {
+            const target = columns.find(
+              (column) =>
+                column.id === overId || column.tickets.some((ticket) => ticket.id === overId),
+            )
+            const ticket = tickets.find((candidate) => candidate.id === Number(activeId))
+            if (!target || !ticket || target.tickets.some((t2) => t2.id === ticket.id)) return null
+            return arrival(target.wip ?? null, {
+              counts: team.wip_counts_subtickets !== false || ticket.parent == null,
+              hard: team.wip_limits_hard === true,
+            })
+          },
         }),
       }}
     >

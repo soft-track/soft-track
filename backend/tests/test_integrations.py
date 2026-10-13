@@ -16,6 +16,7 @@ import hmac
 import json
 
 import pytest
+from prometheus_client import REGISTRY
 
 from lib_softtrack.tables import Repository
 
@@ -194,6 +195,50 @@ def test_an_unsigned_delivery_is_refused(client, connected):
     assert response.status_code == 401
 
 
+def _deliveries(result: str) -> float:
+    labels = {"direction": "in", "result": result}
+    return REGISTRY.get_sample_value("softtrack_webhook_deliveries_total", labels)
+
+
+def test_an_accepted_delivery_is_counted_as_accepted(client, connected):
+    before = _deliveries("accepted")
+
+    response = deliver(client, connected["repo"], "push", push())
+
+    assert response.status_code == 200
+    assert _deliveries("accepted") == before + 1
+
+
+def test_a_refused_delivery_is_counted_as_rejected(client, connected):
+    accepted, rejected = _deliveries("accepted"), _deliveries("rejected")
+
+    response = client.post(
+        hook_path(connected["repo"]),
+        content=b"{}",
+        headers={"X-GitHub-Event": "push"},
+    )
+
+    assert response.status_code == 401
+    assert _deliveries("rejected") == rejected + 1
+    assert _deliveries("accepted") == accepted
+
+
+def test_a_throttled_delivery_is_counted_as_throttled(client, connected, monkeypatch):
+    from app_softtrack import webhooks as webhook_routes
+    from lib_utils.errors import ErrorCode, api_error
+
+    def locked(address):
+        raise api_error(status_code=429, code=ErrorCode.rate_limited, detail="Slow")
+
+    monkeypatch.setattr(webhook_routes.webhook_by_address, "raise_if_locked", locked)
+    before = _deliveries("throttled")
+
+    response = deliver(client, connected["repo"], "push", push())
+
+    assert response.status_code == 429
+    assert _deliveries("throttled") == before + 1
+
+
 def test_an_unknown_webhook_token_is_a_404(client, connected):
     """Not a 401: there is nothing here to be unauthorised for, and "wrong
     secret" would confirm the token is a real one."""
@@ -276,7 +321,12 @@ def test_a_delivery_naming_nothing_is_accepted_and_says_so(client, connected):
         client, connected["repo"], "push", push(ref="refs/heads/no-identifier-here")
     )
     assert response.status_code == 200
-    assert response.json() == {"events": 1, "links": 0, "tickets": []}
+    assert response.json() == {
+        "events": 1,
+        "links": 0,
+        "tickets": [],
+        "team_archived": False,
+    }
 
 
 def test_a_ping_is_accepted(client, connected):

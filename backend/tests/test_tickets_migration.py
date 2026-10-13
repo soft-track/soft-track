@@ -223,6 +223,9 @@ def test_everything_that_named_an_issue_names_a_ticket(tmp_path):
 
     # Read back through the models, so a name the migration spelled
     # differently from the table classes fails here rather than in production.
+    # At head: the models are the latest schema, and the revisions after this
+    # one add columns it does not have (the trash's, #323).
+    command.upgrade(config, "head")
     engine = create_engine(f"sqlite:///{db_path}")
     with Session(engine) as session:
         assert session.get(Ticket, 2).parent_id == 1

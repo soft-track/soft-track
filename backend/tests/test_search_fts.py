@@ -18,6 +18,7 @@ from sqlmodel import SQLModel, create_engine
 from lib_softtrack.search import _fts_ready
 from lib_softtrack.search_fts import OBJECTS
 from lib_softtrack.tables import Ticket
+from tests.conftest import delete_for_good
 
 
 def make_ticket(client, team, title, description=None):
@@ -164,7 +165,7 @@ def test_editing_a_ticket_moves_it_in_the_index(client, team):
 def test_a_deleted_ticket_and_its_comments_leave_the_index(client, team, session):
     ticket = make_ticket(client, team, "Doomed ticket")
     comment(client, team, ticket, "Mentions zeppelins")
-    client.delete(f"/tickets/{ticket['id']}", headers=team["headers"])
+    delete_for_good(client, team["headers"], ticket["id"])
 
     assert search(client, team, "doomed")["items"] == []
     assert search(client, team, "zeppelins")["items"] == []

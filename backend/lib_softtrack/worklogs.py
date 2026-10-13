@@ -17,6 +17,7 @@ from typing import Iterable, Optional
 from sqlmodel import Session, delete, select
 
 from lib_identity.models.identity import UserPublic
+from lib_softtrack import time_estimates
 from lib_softtrack.tickets import get_ticket_or_404
 from lib_softtrack.models.worklogs import (
     TicketTime,
@@ -109,6 +110,7 @@ def log_time(
         note=_clean_note(payload.note),
     )
     session.add(worklog)
+    time_estimates.after_logging(session, ticket, payload, current_user)
     session.commit()
     session.refresh(worklog)
     return _read(worklog, current_user)

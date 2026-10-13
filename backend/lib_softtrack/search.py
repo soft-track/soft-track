@@ -16,10 +16,12 @@ the cost is a fixed number of queries per page -- count, page, comments --
 rather than one per result.
 """
 
+from datetime import date, datetime, timezone
 from typing import Optional
 
 from sqlalchemy import (
     Float,
+    and_,
     Integer,
     String,
     cast,
@@ -32,7 +34,9 @@ from sqlalchemy import (
 from sqlmodel import Session, select
 
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
+from lib_softtrack.filters import filter_clauses
 from lib_softtrack.models.search import SearchHit
+from lib_softtrack.models.views import ViewFilters
 from lib_softtrack.models.statuses import StatusRead
 from lib_softtrack.search_fts import fts_query
 from lib_softtrack.tables import (
@@ -53,6 +57,8 @@ def search_tickets(
     current_user: User,
     query: str,
     team_id: Optional[int] = None,
+    filters: Optional[ViewFilters] = None,
+    today: Optional[date] = None,
     limit: int = DEFAULT_LIMIT,
     offset: int = 0,
 ) -> Page[SearchHit]:
@@ -60,15 +66,19 @@ def search_tickets(
     if not query:
         return Page(items=[], total=0, limit=limit, offset=offset)
 
-    team_ids = list(
-        session.exec(
-            select(TeamMember.team_id).where(TeamMember.user_id == current_user.id)
-        ).all()
-    )
+    mine = session.exec(
+        select(TeamMember.team_id, Team.archived_at)
+        .join(Team, Team.id == TeamMember.team_id)
+        .where(TeamMember.user_id == current_user.id)
+    ).all()
     if team_id is not None:
         # Narrowing to one team can only remove teams from the visible set,
-        # never add one.
-        team_ids = [tid for tid in team_ids if tid == team_id]
+        # never add one. Narrowed to an archived team (#322), its tickets are
+        # found: they are still history somebody may be looking for.
+        team_ids = [tid for tid, _ in mine if tid == team_id]
+    else:
+        # Across every team, an archived one is left out by default.
+        team_ids = [tid for tid, archived_at in mine if archived_at is None]
     if not team_ids:
         return Page(items=[], total=0, limit=limit, offset=offset)
 
@@ -85,6 +95,11 @@ def search_tickets(
         condition, order_by = _fts_query(match, team_ids)
     else:
         condition, order_by = _like_query(query, team_ids)
+    # The list's filters, read by the list's own code (#261), ANDed with the
+    # match and the caller's teams -- never instead of them.
+    if filters is not None:
+        today = today or datetime.now(timezone.utc).date()
+        condition = and_(condition, *filter_clauses(filters, today, current_user.id))
 
     total = session.exec(
         select(func.count()).select_from(Ticket).where(condition)
@@ -150,6 +165,7 @@ def search_tickets(
                 title=ticket.title,
                 status=StatusRead.model_validate(statuses[ticket.status_id]),
                 priority=ticket.priority,
+                type=ticket.type,
                 team_id=ticket.team_id,
                 team_key=teams[ticket.team_id].key,
                 number=ticket.number,
