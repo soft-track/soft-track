@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, type KeyboardEvent, useId, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { QRCodeSVG } from 'qrcode.react'
 
 import { errorDetail } from '@/api/errors'
@@ -195,7 +196,7 @@ function SetupDialog({
     }
   }
 
-  return (
+  return createPortal(
     <div
       className="scrim fixed inset-0 z-30 flex items-start justify-center overflow-y-auto px-4 pb-8 pt-[8vh]"
       onClick={onClose}
@@ -292,7 +293,8 @@ function SetupDialog({
           </button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -316,7 +318,7 @@ function RecoveryCodesDialog({ codes, onDone }: { codes: string[]; onDone: () =>
     }
   }
 
-  return (
+  return createPortal(
     <div className="scrim fixed inset-0 z-30 flex items-start justify-center px-4 pt-[10vh]">
       <div
         role="dialog"
@@ -355,7 +357,8 @@ function RecoveryCodesDialog({ codes, onDone }: { codes: string[]; onDone: () =>
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -383,7 +386,7 @@ function DisableDialog({
     }
   }
 
-  return (
+  return createPortal(
     <div
       className="scrim fixed inset-0 z-30 flex items-start justify-center px-4 pt-[15vh]"
       onClick={onClose}
@@ -439,6 +442,7 @@ function DisableDialog({
           </button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body,
   )
 }
