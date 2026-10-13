@@ -63,7 +63,7 @@ const HIT = {
   updated_at: '2026-09-25T10:00:00',
 } as unknown as SearchHit
 
-const mocks = vi.hoisted(() => ({ mounts: 0 }))
+const mocks = vi.hoisted(() => ({ mounts: 0, deepLink: false, invalidTicket: false }))
 
 vi.mock('@/auth/useAuth', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/auth/useAuth')>()),
@@ -88,10 +88,14 @@ vi.mock('@/views/useSavedViews', () => ({
 vi.mock('@/api/generated/endpoints/tickets/tickets', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/generated/endpoints/tickets/tickets')>()),
   useListTicketsTeamsTeamIdTicketsGet: () => ({
-    data: { items: [STORM], total: 1 },
+    data: { items: mocks.deepLink ? [] : [STORM], total: mocks.deepLink ? 0 : 1 },
     isLoading: false,
   }),
-  useGetTicketByNumberTeamsTeamIdTicketsByNumberNumberGet: () => ({ data: undefined }),
+  useGetTicketByNumberTeamsTeamIdTicketsByNumberNumberGet: () => ({
+    data: mocks.deepLink && !mocks.invalidTicket ? STORM : undefined,
+    isLoading: false,
+    isError: mocks.invalidTicket,
+  }),
 }))
 
 vi.mock('@/api/generated/endpoints/search/search', async (importOriginal) => ({
@@ -203,10 +207,14 @@ vi.mock('@/tickets/TicketPage', () => ({
   },
 }))
 
-function renderApp() {
+function renderApp(initialEntry: string | { pathname: string; state?: unknown } = '/ENG') {
+  if (typeof initialEntry !== 'string') {
+    mocks.deepLink = initialEntry.pathname.includes('/ticket/')
+    mocks.invalidTicket = initialEntry.pathname.includes('/ticket/999')
+  }
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <MemoryRouter initialEntries={['/ENG']}>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <Routes>
           <Route path="/:teamKey" element={<TeamRoute />} />
           <Route path="/:teamKey/ticket/:ticketNumber" element={<TeamRoute />} />
@@ -219,6 +227,8 @@ function renderApp() {
 
 beforeEach(() => {
   mocks.mounts = 0
+  mocks.deepLink = false
+  mocks.invalidTicket = false
   // jsdom has no layout; the palette scrolls its highlight into view.
   Element.prototype.scrollIntoView = vi.fn()
 })
@@ -229,6 +239,24 @@ afterEach(() => {
 })
 
 describe('opening a ticket from the board', () => {
+  it('opens a deep-linked ticket even when it is not in the loaded board list (#115)', async () => {
+    renderApp({ pathname: '/ENG/ticket/7', state: { ticketSurface: 'panel' } })
+
+    // The board's list is empty here, so the ticket can only have come from
+    // the fetch by number -- which filters and paging cannot hide.
+    expect(await screen.findByText('Panel for ticket 70')).toBeTruthy()
+    expect(screen.getByText('The kanban board')).toBeTruthy()
+  })
+
+  it('shows no such ticket for a number with nothing behind it (#115)', async () => {
+    renderApp({ pathname: '/ENG/ticket/999', state: { ticketSurface: 'panel' } })
+
+    expect(await screen.findByText('No such ticket')).toBeTruthy()
+    expect(
+      screen.getByText('ENG-999 does not exist, or it was moved to another team.'),
+    ).toBeTruthy()
+  })
+
   it('opens a card in the panel, with the same board still under it', async () => {
     const user = renderApp()
     expect(mocks.mounts).toBe(1)

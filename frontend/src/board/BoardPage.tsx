@@ -107,7 +107,7 @@ export default function BoardPage() {
   const goToTicket = useOpenTicket()
   const { team, isLoading, teams } = useTeamByKey(teamKey)
   const { user } = useAuth()
-  const { t } = useTranslation(['board', 'common'])
+  const { t } = useTranslation(['board', 'tickets', 'common'])
 
   // Read once, on mount: Back from a ticket's page lands here.
   const [returning] = useState(() => boardReturnFrom(location.state))
@@ -377,6 +377,10 @@ export default function BoardPage() {
   }
 
   const openTicket = loadedTicket ?? (ticketNumber ? fetchedTicket.data : undefined)
+  // A number with nothing behind it (#115) says so, rather than leaving a bare
+  // board that looks exactly like a link that worked.
+  const ticketNotFound =
+    Boolean(ticketNumber) && !loadedTicket && !fetchedTicket.isLoading && fetchedTicket.isError
   const selectedSprint = teamData.sprints.find((sprint) => sprint.id === filters.sprintId) ?? null
   const isTeamAdmin =
     teamData.members.find((member) => member.user.id === user?.id)?.role === 'admin'
@@ -592,6 +596,16 @@ export default function BoardPage() {
           // with the modals that were open over it (#114).
           openPage={leaveForTicket}
         />
+      )}
+      {ticketNumber && ticketNotFound && (
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-lg font-semibold">{t('tickets:page.notFound')}</h2>
+            <p className="mt-1 text-sm text-neutral-500">
+              {t('tickets:page.notFoundBody', { identifier: `${team.key}-${ticketNumber}` })}
+            </p>
+          </div>
+        </div>
       )}
     </TeamProvider>
   )
