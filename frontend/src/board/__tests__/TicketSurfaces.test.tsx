@@ -12,7 +12,7 @@
  * the heavy views are stubbed down to the controls these journeys use.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
   MemoryRouter,
@@ -28,7 +28,6 @@ import type { TicketRead, SearchHit, TeamRead } from '@/api/generated/models'
 import TeamRoute from '@/app/TeamRoute'
 import type { BoardView } from '@/keyboard/useCommands'
 import { modalsIn, withModal } from '@/tickets/modals'
-import type { TicketRef } from '@/tickets/surface'
 
 const ENG: TeamRead = { id: 5, name: 'Engineering', key: 'ENG', created_at: '2026-01-01T00:00:00Z' }
 const TODO = { id: 1, team_id: 5, name: 'Todo', category: 'unstarted', position: 0, color: '#888' }
@@ -63,7 +62,14 @@ const HIT = {
   updated_at: '2026-09-25T10:00:00',
 } as unknown as SearchHit
 
-const mocks = vi.hoisted(() => ({ mounts: 0, deepLink: false, invalidTicket: false }))
+const mocks = vi.hoisted(() => ({
+  mounts: 0,
+  // Whether the board's page has the ticket on it, and how many it has in all.
+  loaded: true,
+  total: 1,
+  // What the fetch by number (#111) brings back.
+  byNumber: { data: undefined, error: null } as { data?: unknown; error: unknown },
+}))
 
 vi.mock('@/auth/useAuth', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/auth/useAuth')>()),
@@ -88,14 +94,21 @@ vi.mock('@/views/useSavedViews', () => ({
 vi.mock('@/api/generated/endpoints/tickets/tickets', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/generated/endpoints/tickets/tickets')>()),
   useListTicketsTeamsTeamIdTicketsGet: () => ({
-    data: { items: mocks.deepLink ? [] : [STORM], total: mocks.deepLink ? 0 : 1 },
+    data: { items: mocks.loaded ? [STORM] : [], total: mocks.total },
     isLoading: false,
   }),
   useGetTicketByNumberTeamsTeamIdTicketsByNumberNumberGet: () => ({
-    data: mocks.deepLink && !mocks.invalidTicket ? STORM : undefined,
+    ...mocks.byNumber,
     isLoading: false,
-    isError: mocks.invalidTicket,
   }),
+  // The real panel's header, where the stub below hands over to it.
+  useGetTicketTicketsTicketIdGet: () => ({ data: STORM }),
+}))
+
+vi.mock('@/tickets/TicketHeaderActions', () => ({ TicketHeaderActions: () => null }))
+
+vi.mock('@/tickets/TicketDetailBody', () => ({
+  TicketDetailBody: ({ ticketId }: { ticketId: number }) => <p>Body for ticket {ticketId}</p>,
 }))
 
 vi.mock('@/api/generated/endpoints/search/search', async (importOriginal) => ({
@@ -156,39 +169,40 @@ vi.mock('@/board/TopBar', () => ({
 }))
 
 // The panel, with a linked ticket to open in a modal over it the way its
-// stack does (#114), and the way out to a page that either takes.
+// stack does (#114), and the way out to a page that either takes. What the
+// board has to explain (#115) -- a ticket its filters hide, a number with
+// nothing behind it -- is the real panel's to say.
 const LINKED = { id: 250, team_key: 'ENG', number: 25, identifier: 'ENG-25' }
 
-vi.mock('@/tickets/TicketDetailPanel', () => ({
-  TicketDetailPanel: ({
-    ticketId,
-    openPage,
-  }: {
-    ticketId: number
-    openPage?: (ticket: TicketRef) => void
-  }) => {
-    const location = useLocation()
-    const navigate = useNavigate()
-    return (
-      <div>
-        <p>Panel for ticket {ticketId}</p>
-        <p>Modals over it: {modalsIn(location.state).length}</p>
-        <button type="button" onClick={() => openPage?.(STORM)}>
-          Open as page
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate(location, { state: withModal(location.state, LINKED) })}
-        >
-          Open the linked ticket
-        </button>
-        <button type="button" onClick={() => openPage?.(LINKED)}>
-          Open the linked ticket as a page
-        </button>
-      </div>
-    )
-  },
-}))
+vi.mock('@/tickets/TicketDetailPanel', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@/tickets/TicketDetailPanel')>()
+  return {
+    TicketDetailPanel: (props: Parameters<typeof real.TicketDetailPanel>[0]) => {
+      const location = useLocation()
+      const navigate = useNavigate()
+      if (props.missing || props.onClearFilters) return <real.TicketDetailPanel {...props} />
+      const { ticketId, openPage } = props
+      return (
+        <div>
+          <p>Panel for ticket {ticketId}</p>
+          <p>Modals over it: {modalsIn(location.state).length}</p>
+          <button type="button" onClick={() => openPage?.(STORM)}>
+            Open as page
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate(location, { state: withModal(location.state, LINKED) })}
+          >
+            Open the linked ticket
+          </button>
+          <button type="button" onClick={() => openPage?.(LINKED)}>
+            Open the linked ticket as a page
+          </button>
+        </div>
+      )
+    },
+  }
+})
 
 vi.mock('@/tickets/TicketPage', () => ({
   TicketPage: () => {
@@ -207,11 +221,20 @@ vi.mock('@/tickets/TicketPage', () => ({
   },
 }))
 
-function renderApp(initialEntry: string | { pathname: string; state?: unknown } = '/ENG') {
-  if (typeof initialEntry !== 'string') {
-    mocks.deepLink = initialEntry.pathname.includes('/ticket/')
-    mocks.invalidTicket = initialEntry.pathname.includes('/ticket/999')
-  }
+/** Where the app is, filters and all. */
+function Address() {
+  const location = useLocation()
+  return (
+    <p>
+      Address: {location.pathname}
+      {location.search}
+    </p>
+  )
+}
+
+function renderApp(
+  initialEntry: string | { pathname: string; search?: string; state?: unknown } = '/ENG',
+) {
   render(
     <QueryClientProvider client={new QueryClient()}>
       <MemoryRouter initialEntries={[initialEntry]}>
@@ -219,6 +242,7 @@ function renderApp(initialEntry: string | { pathname: string; state?: unknown } 
           <Route path="/:teamKey" element={<TeamRoute />} />
           <Route path="/:teamKey/ticket/:ticketNumber" element={<TeamRoute />} />
         </Routes>
+        <Address />
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -227,8 +251,9 @@ function renderApp(initialEntry: string | { pathname: string; state?: unknown } 
 
 beforeEach(() => {
   mocks.mounts = 0
-  mocks.deepLink = false
-  mocks.invalidTicket = false
+  mocks.loaded = true
+  mocks.total = 1
+  mocks.byNumber = { data: undefined, error: null }
   // jsdom has no layout; the palette scrolls its highlight into view.
   Element.prototype.scrollIntoView = vi.fn()
 })
@@ -239,24 +264,6 @@ afterEach(() => {
 })
 
 describe('opening a ticket from the board', () => {
-  it('opens a deep-linked ticket even when it is not in the loaded board list (#115)', async () => {
-    renderApp({ pathname: '/ENG/ticket/7', state: { ticketSurface: 'panel' } })
-
-    // The board's list is empty here, so the ticket can only have come from
-    // the fetch by number -- which filters and paging cannot hide.
-    expect(await screen.findByText('Panel for ticket 70')).toBeTruthy()
-    expect(screen.getByText('The kanban board')).toBeTruthy()
-  })
-
-  it('shows no such ticket for a number with nothing behind it (#115)', async () => {
-    renderApp({ pathname: '/ENG/ticket/999', state: { ticketSurface: 'panel' } })
-
-    expect(await screen.findByText('No such ticket')).toBeTruthy()
-    expect(
-      screen.getByText('ENG-999 does not exist, or it was moved to another team.'),
-    ).toBeTruthy()
-  })
-
   it('opens a card in the panel, with the same board still under it', async () => {
     const user = renderApp()
     expect(mocks.mounts).toBe(1)
@@ -270,6 +277,84 @@ describe('opening a ticket from the board', () => {
     // put the board back to its default view.
     expect(screen.getByRole('button', { name: 'list' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.queryByText(/Page for/)).toBeNull()
+  })
+})
+
+describe('a ticket the board is not showing (#115)', () => {
+  const panel = { ticketSurface: 'panel' }
+
+  it('opens a ticket its filters exclude, by number, and says the filters hide it', async () => {
+    // Filtered to somebody else, so the board's list does not have ENG-7.
+    mocks.loaded = false
+    mocks.total = 0
+    mocks.byNumber = { data: STORM, error: null }
+    renderApp({ pathname: '/ENG/ticket/7', search: '?assignee=2', state: panel })
+
+    // It can only have come from the fetch by number, which filters cannot hide.
+    expect(await screen.findByRole('dialog', { name: 'ENG-7 Retry storm' })).toBeTruthy()
+    expect(screen.getByText('Not on the board right now: your filters hide it.')).toBeTruthy()
+    expect(screen.getByText('The kanban board')).toBeTruthy()
+  })
+
+  it('opens a ticket past the first loaded page, with nothing said about filters', async () => {
+    mocks.loaded = false
+    mocks.total = 60
+    mocks.byNumber = { data: STORM, error: null }
+    renderApp({ pathname: '/ENG/ticket/7', state: panel })
+
+    expect(await screen.findByText('Panel for ticket 70')).toBeTruthy()
+    expect(screen.queryByText(/your filters hide it/)).toBeNull()
+  })
+
+  it('says “No such ticket” in the panel for a number with nothing behind it', async () => {
+    mocks.byNumber = { data: undefined, error: { response: { status: 404 } } }
+    const user = renderApp({ pathname: '/ENG/ticket/999', search: '?assignee=2', state: panel })
+
+    const dialog = await screen.findByRole('dialog', { name: 'ENG-999' })
+    expect(within(dialog).getByText('No such ticket')).toBeTruthy()
+    expect(
+      within(dialog).getByText('ENG-999 does not exist, or it was moved to another team.'),
+    ).toBeTruthy()
+
+    // Back to the board as it was, filters and all.
+    await user.click(within(dialog).getByRole('button', { name: 'Back to the board' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.getByText('Address: /ENG?assignee=2')).toBeTruthy()
+    expect(screen.getByText('The kanban board')).toBeTruthy()
+  })
+
+  it('closes the not-found panel on Escape', async () => {
+    mocks.byNumber = { data: undefined, error: { response: { status: 404 } } }
+    const user = renderApp({ pathname: '/ENG/ticket/999', state: panel })
+
+    await screen.findByRole('dialog', { name: 'ENG-999' })
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.getByText('Address: /ENG')).toBeTruthy()
+  })
+
+  it('does not say “No such ticket” when the ticket could not be loaded', async () => {
+    mocks.loaded = false
+    mocks.byNumber = { data: undefined, error: { response: { status: 500 } } }
+    renderApp({ pathname: '/ENG/ticket/7', state: panel })
+
+    const dialog = await screen.findByRole('dialog', { name: 'ENG-7' })
+    expect(within(dialog).getByText('Could not load this ticket.')).toBeTruthy()
+    expect(screen.queryByText('No such ticket')).toBeNull()
+  })
+
+  it('keeps the panel open when Clear filters is pressed in it', async () => {
+    mocks.loaded = false
+    mocks.total = 0
+    mocks.byNumber = { data: STORM, error: null }
+    const user = renderApp({ pathname: '/ENG/ticket/7', search: '?assignee=2', state: panel })
+
+    await user.click(await screen.findByRole('button', { name: 'Clear filters' }))
+
+    // Still the panel, not the ticket's page, and nothing left to explain.
+    expect(screen.getByText('Panel for ticket 70')).toBeTruthy()
+    expect(screen.queryByText(/Page for/)).toBeNull()
+    expect(screen.getByText('Address: /ENG/ticket/7')).toBeTruthy()
   })
 })
 

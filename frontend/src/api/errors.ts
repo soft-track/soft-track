@@ -37,3 +37,9 @@ export function errorDetail(err: unknown, fallback: string): string {
   const detail = (err as ApiErrorResponse)?.response?.data?.detail
   return typeof detail === 'string' && detail.length > 0 ? detail : fallback
 }
+
+/** The HTTP status of a failed request; undefined when none came back (a network failure). */
+export function errorStatus(err: unknown): number | undefined {
+  const status = (err as { response?: { status?: unknown } } | null)?.response?.status
+  return typeof status === 'number' ? status : undefined
+}

@@ -18,13 +18,30 @@ import { useFocusTrap } from '@/ui/useFocusTrap'
  * work (#112). Its own chrome -- the scrim, the close button, the way out to
  * the ticket's page -- and the shared body below it. A ticket the body links
  * to opens in a modal beside the panel (#114); the keys are that stack's.
+ *
+ * When the board has nothing to show for the number, the same chrome says so
+ * in place of the body (#115), so the link still opens something and Escape
+ * and the scrim still close it.
  */
 export function TicketDetailPanel({
   ticketId,
+  missing,
+  onClearFilters,
   onClose,
   openPage,
-}: {
-  ticketId: number
+}: (
+  | { ticketId: number; missing?: undefined }
+  | {
+      ticketId?: undefined
+      /** No ticket to show: its identifier for the header, and why not. */
+      missing: { identifier: string; title?: string; body: string }
+    }
+) & {
+  /**
+   * Given when the board's filters hide this ticket (#115): the panel says
+   * so, and offers to clear them.
+   */
+  onClearFilters?: () => void
   onClose: () => void
   /**
    * Trade the glance for a ticket's own page: this one's, or one opened in a
@@ -38,7 +55,10 @@ export function TicketDetailPanel({
   const openTicket = useOpenTicket()
   const dialogRef = useFocusTrap<HTMLDivElement>()
   // The body reads the same query; React Query makes it one request.
-  const { data: ticket } = useGetTicketTicketsTicketIdGet(ticketId)
+  const { data } = useGetTicketTicketsTicketIdGet(ticketId ?? 0, {
+    query: { enabled: ticketId !== undefined },
+  })
+  const ticket = ticketId === undefined ? undefined : data
 
   return (
     <TicketSurfaceContext.Provider value="panel">
@@ -48,7 +68,11 @@ export function TicketDetailPanel({
           ref={dialogRef}
           aria-modal="true"
           tabIndex={-1}
-          aria-label={ticket ? `${ticket.identifier} ${ticket.title}` : t('panel.loading')}
+          aria-label={
+            ticket
+              ? `${ticket.identifier} ${ticket.title}`
+              : (missing?.identifier ?? t('panel.loading'))
+          }
           // The bottom of its stack; see TicketStack.
           data-ticket-layer={0}
           onClick={(e) => e.stopPropagation()}
@@ -64,7 +88,7 @@ export function TicketDetailPanel({
                 />
               )}
               <span className="identifier text-xs font-semibold text-neutral-500">
-                {ticket ? ticket.identifier : '…'}
+                {ticket ? ticket.identifier : (missing?.identifier ?? '…')}
               </span>
               {ticket?.external_key && (
                 <span
@@ -107,9 +131,43 @@ export function TicketDetailPanel({
             </span>
           </div>
 
+          {onClearFilters && !missing && (
+            <p className="hairline flex items-center gap-2 border-b bg-brand-500/8 px-4 py-2 text-xs text-neutral-600">
+              <Icon name="filter" size={13} className="shrink-0 text-brand-600" />
+              <span className="flex-1">{t('panel.hiddenByFilters')}</span>
+              <button
+                type="button"
+                onClick={onClearFilters}
+                className="shrink-0 font-medium text-brand-600 hover:underline"
+              >
+                {t('panel.clearFilters')}
+              </button>
+            </p>
+          )}
+
           <div className="scroll-thin flex flex-1 flex-col overflow-y-auto">
             <TicketStack ticket={ticket} onClose={onClose} openPage={openPage}>
-              <TicketDetailBody ticketId={ticketId} />
+              {missing ? (
+                // The ticket page's own words (`page.notFound`), so both
+                // surfaces say the same thing.
+                <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 py-16 text-center">
+                  <Icon
+                    name={missing.title ? 'search' : 'alert'}
+                    size={22}
+                    className="text-neutral-400"
+                  />
+                  {missing.title && (
+                    <h2 className="text-base font-semibold text-neutral-900">{missing.title}</h2>
+                  )}
+                  <p className="max-w-sm text-sm text-neutral-500">{missing.body}</p>
+                  <button type="button" onClick={onClose} className="btn btn-secondary btn-sm mt-3">
+                    <Icon name="arrow-left" size={14} />
+                    {t('panel.backToBoard')}
+                  </button>
+                </div>
+              ) : (
+                <TicketDetailBody ticketId={ticketId} />
+              )}
             </TicketStack>
           </div>
         </div>
