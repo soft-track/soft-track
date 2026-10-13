@@ -72,9 +72,24 @@ def test_me_returns_the_current_user(client, auth):
         "full_name",
         "avatar_color",
         "is_active",
+        # From outside the organisation (#243), shown beside the name.
+        "is_external",
+        # Employment classification (#320).
+        "employment_type",
+        # Prepared by a site admin and not signed into yet (#303).
+        "is_activated",
         "is_site_admin",
+        # Whether they can see money (#130). Separate from site admin.
+        "is_finance_admin",
         "has_password",
         "created_at",
+        # What the organisation knows about them (#122), null until filled in.
+        "job_title",
+        "location",
+        "started_on",
+        "totp_enabled",
+        "department",
+        "manager",
     }
     # Registered with one, so it has one. False is reserved for an account
     # created by signing in with Google or GitHub -- see test_oauth.py.
@@ -134,6 +149,10 @@ def test_auth_config_is_exactly_what_the_signed_out_pages_need(client):
         # Names only, and only for providers with credentials configured. The
         # default install has none, so the sign-in page shows no buttons.
         "oauth_providers": [],
+        # Whether "Forgot password?" is offered (#83): true exactly when SMTP
+        # is configured, which the sign-in page would show anyway by having
+        # the link or not.
+        "password_reset": False,
     }
 
 

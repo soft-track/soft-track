@@ -5,8 +5,10 @@ neither routing (`app_*`) nor business logic (`lib_*`) lives here.
 """
 
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from typing import Literal, Optional
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import inspect
 from sqlmodel import Session, create_engine
@@ -37,6 +39,19 @@ class Settings(BaseSettings):
     #: How long an invitation link stays usable. Long enough to survive a
     #: holiday, short enough that a link found in an old inbox is dead.
     invite_expire_days: int = 7
+    #: How many addresses one bulk invitation takes (#304). Enough for a
+    #: department; a whole company is better done in a few goes, each with a
+    #: preview a person can actually read.
+    bulk_invite_limit: int = 100
+    #: How long a "forgot password" link stays usable (#83). Short, because
+    #: unlike an invitation it grants the account itself.
+    password_reset_expire_minutes: int = 60
+    #: Who may create a team (#306): "anyone", "site_admins" or
+    #: "named_people". Unset, a site admin chooses in the app (Administration
+    #: -> Settings), and the default there is "anyone". Set, it wins, and the
+    #: app shows the choice as made here. The people named for
+    #: "named_people" are always chosen in the app.
+    team_creation: Optional[Literal["anyone", "site_admins", "named_people"]] = None
 
     # --- Signing in with Google or GitHub -------------------------------
     #: Both halves or neither: a provider is offered only when it has an id
@@ -97,7 +112,7 @@ class Settings(BaseSettings):
     api_base_url: str = "http://localhost:8000"
 
     # --- Notifications --------------------------------------------------
-    #: Where this instance is reachable, used to build the issue links in a
+    #: Where this instance is reachable, used to build the ticket links in a
     #: digest email. A mail whose links point at localhost is worse than no
     #: mail, so leaving this wrong is worth noticing.
     app_base_url: str = "http://localhost:5173"
@@ -113,10 +128,38 @@ class Settings(BaseSettings):
     email_from: str = "softtrack@localhost"
     #: How often the digest loop wakes up.
     digest_interval_minutes: int = 15
+    #: Run the loop that sends outbound webhooks (#91). Off only for the test
+    #: suite, which drives deliveries directly.
+    webhook_delivery: bool = True
+    #: Allow outbound webhooks to private, loopback and link-local addresses.
+    #: Off by default: a webhook URL is server-side request forgery surface,
+    #: and a team admin should not be able to point this server at
+    #: 169.254.169.254 or the database next door. Turn it on for a genuinely
+    #: internal target, such as your own Slack proxy.
+    webhook_allow_private_targets: bool = False
     #: How long a notification waits before it can be emailed. This is what
     #: makes it a digest rather than a mail per event: someone triaging a
-    #: dozen issues generates one mail, not twelve.
+    #: dozen tickets generates one mail, not twelve.
     digest_delay_minutes: int = 10
+    #: How long a deleted ticket or epic stays in the trash before it is
+    #: purged, attachments and all (#323).
+    trash_retention_days: int = 30
+    #: Run the loop that purges it. Off only for the test suite, which purges
+    #: directly.
+    trash_purging: bool = True
+    #: Run the loop that sends due-date reminders (#262). Off only for the
+    #: test suite, which sweeps directly.
+    due_reminders: bool = True
+    #: Run the loop that creates recurring tickets (#264). Off only for the
+    #: test suite, which sweeps directly.
+    recurring_tickets: bool = True
+    #: The instance's timezone, as an IANA name ("Europe/Berlin"). A due date
+    #: is a day, and a reminder goes out in the morning of it -- this one's
+    #: morning, until a person sets a timezone of their own (#252).
+    default_timezone: str = "UTC"
+    #: A day on the timesheet with more than this many hours logged is
+    #: marked (#267), as one with nothing logged is.
+    timesheet_long_day_hours: int = Field(default=10, ge=1, le=24)
     #: Blank hides /metrics entirely. Set a high-entropy token and scrape with
     #: `Authorization: Bearer <token>` to expose Prometheus metrics.
     metrics_token: str = ""
@@ -156,6 +199,18 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"ATTACHMENT_STORAGE={self.attachment_storage!r} is not one of "
                 "'local' or 's3'."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _refuse_an_unknown_timezone(self) -> "Settings":
+        """Fail at startup rather than in the reminder loop, every tick."""
+        try:
+            ZoneInfo(self.default_timezone)
+        except (ZoneInfoNotFoundError, ValueError):
+            raise ValueError(
+                f"DEFAULT_TIMEZONE={self.default_timezone!r} is not a timezone "
+                "this server knows. Use an IANA name, such as 'Europe/Berlin'."
             )
         return self
 

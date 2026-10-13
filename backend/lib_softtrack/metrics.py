@@ -4,7 +4,7 @@ import asyncio
 import secrets
 import time
 
-from fastapi import HTTPException, Response
+from fastapi import Response
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     Counter,
@@ -13,6 +13,8 @@ from prometheus_client import (
     generate_latest,
 )
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+from lib_utils.errors import ErrorCode, api_error
 
 HTTP_REQUESTS = Counter(
     "softtrack_http_requests_total",
@@ -71,7 +73,11 @@ def check_metrics_token(authorization: str | None, configured_token: str) -> Non
     if authorization is None or not secrets.compare_digest(
         authorization.encode("utf-8"), expected.encode("utf-8")
     ):
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        raise api_error(
+            status_code=401,
+            code=ErrorCode.not_authenticated,
+            detail="Not authenticated",
+        )
 
 
 def metrics_response() -> Response:

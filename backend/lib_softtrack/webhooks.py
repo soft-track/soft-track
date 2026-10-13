@@ -17,7 +17,7 @@ number in `object_attributes.iid`. Adding a third provider is a third
 
 Deliberately pure: no session, no settings, no clock. A payload goes in and a
 list of events comes out, which is what makes the awkward cases -- a force
-push, a draft PR, a merge commit that names three issues -- testable as
+push, a draft PR, a merge commit that names three tickets -- testable as
 dictionaries rather than as HTTP.
 """
 
@@ -36,8 +36,8 @@ from lib_softtrack.tables import CodeLinkKind, GitProvider, PullRequestState
 MAX_BODY_BYTES = 1024 * 1024
 
 #: The refs a push event is allowed to be about. A tag push carries the same
-#: shape and none of the meaning -- nobody names an issue in a tag, and
-#: treating `refs/tags/v1.2.0` as a branch would put "v1.2.0" on an issue page
+#: shape and none of the meaning -- nobody names a ticket in a tag, and
+#: treating `refs/tags/v1.2.0` as a branch would put "v1.2.0" on a ticket page
 #: as a branch that cannot be checked out.
 _BRANCH_PREFIX = "refs/heads/"
 
@@ -49,7 +49,7 @@ class CodeEvent:
     `text` is what the identifier scan reads. It is assembled per event rather
     than taken from one field, because which text carries the identifier
     differs by kind: a branch has only its name, a commit has its message, and
-    a pull request might name the issue in its title, its body, or the branch
+    a pull request might name the ticket in its title, its body, or the branch
     it came from -- and in practice people use all three.
     """
 
@@ -88,7 +88,7 @@ def verify(
 
     Header lookups are lower-cased by the caller. Both branches use
     `compare_digest`: a `==` on a signature is a timing oracle, and the thing
-    it leaks is the ability to move somebody's issues.
+    it leaks is the ability to move somebody's tickets.
     """
     if provider is GitProvider.github:
         sent = headers.get("x-hub-signature-256", "")
@@ -118,7 +118,7 @@ def repository_name(provider: GitProvider, payload: dict[str, Any]) -> Optional[
 
     Checked against the connection so that a webhook pasted onto the wrong
     repository is refused rather than silently linking another project's
-    commits to this team's issues. Both providers send it; a payload without
+    commits to this team's tickets. Both providers send it; a payload without
     it is one this module does not handle anyway.
     """
     if provider is GitProvider.github:
@@ -158,8 +158,8 @@ def _branch_from_ref(ref: str | None) -> Optional[str]:
 
 
 def _subject(message: str | None) -> Optional[str]:
-    """A commit's first line. The rest is the body, and an issue page showing
-    a forty-line commit message is an issue page nobody scrolls past."""
+    """A commit's first line. The rest is the body, and a ticket page showing
+    a forty-line commit message is a ticket page nobody scrolls past."""
     if not message:
         return None
     return message.strip().splitlines()[0] if message.strip() else None
@@ -273,7 +273,7 @@ def _gitlab_push(payload: dict[str, Any]) -> list[CodeEvent]:
 def _gitlab_merge_request(payload: dict[str, Any]) -> list[CodeEvent]:
     attributes = payload.get("object_attributes") or {}
     # `iid` is the number people see and the one in the URL; `id` is a global
-    # database key that means nothing to anybody reading the issue page.
+    # database key that means nothing to anybody reading the ticket page.
     number = attributes.get("iid")
     if number is None:
         return []

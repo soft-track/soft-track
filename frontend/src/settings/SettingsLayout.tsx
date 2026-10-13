@@ -1,6 +1,8 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
+import { useTranslation } from '@/i18n'
+import { activeTeams, isArchived } from '@/team/archived'
 import { useMyTeams } from '@/team/useTeams'
 import { Icon, type IconName } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
@@ -22,6 +24,7 @@ export default function SettingsLayout() {
   const { data: teams, isLoading } = useMyTeams()
   const location = useLocation()
   const navigate = useNavigate()
+  const { t } = useTranslation(['settings', 'common', 'team'])
 
   if (isLoading || !user) {
     return (
@@ -33,39 +36,91 @@ export default function SettingsLayout() {
 
   const groups: Group[] = [
     {
-      title: 'Account',
+      title: t('layout.groups.account'),
       entries: [
-        { to: '/settings/profile', label: 'Profile', icon: 'users' },
-        { to: '/settings/notifications', label: 'Notifications', icon: 'bell' },
-        { to: '/settings/security', label: 'Security', icon: 'shield' },
+        { to: '/settings/profile', label: t('layout.nav.profile'), icon: 'users' },
+        {
+          to: '/settings/notifications',
+          label: t('layout.nav.notifications'),
+          icon: 'bell',
+        },
+        { to: '/settings/security', label: t('layout.nav.security'), icon: 'shield' },
+        // Your own expense claims (#133): everybody's, and only their own --
+        // everybody inside the organisation's (#317).
+        ...(user?.is_external
+          ? []
+          : [{ to: '/settings/expenses', label: t('layout.nav.expenses'), icon: 'receipt' as const }]),
       ],
     },
-    ...(teams ?? []).map((team) => ({
-      title: `${team.name} · ${team.key}`,
+    ...activeTeams(teams ?? []).map((team) => ({
+      title: t('layout.teamGroup', { team: team.name, teamKey: team.key }),
       entries: [
         {
           to: `/settings/teams/${team.key}/members`,
-          label: 'Members',
+          label: t('layout.nav.members'),
           icon: 'users' as IconName,
         },
         {
           to: `/settings/teams/${team.key}/statuses`,
-          label: 'Statuses',
+          label: t('layout.nav.statuses'),
           icon: 'board' as IconName,
         },
         {
+          to: `/settings/teams/${team.key}/labels`,
+          label: t('layout.nav.labels'),
+          icon: 'flag' as IconName,
+        },
+        {
+          to: `/settings/teams/${team.key}/fields`,
+          label: t('layout.nav.fields'),
+          icon: 'sliders' as IconName,
+        },
+        {
+          to: `/settings/teams/${team.key}/templates`,
+          label: t('layout.nav.templates'),
+          icon: 'task' as IconName,
+        },
+        {
           to: `/settings/teams/${team.key}/automation`,
-          label: 'Automation',
+          label: t('layout.nav.automation'),
           icon: 'sparkle' as IconName,
         },
         {
           to: `/settings/teams/${team.key}/repositories`,
-          label: 'Repositories',
+          label: t('layout.nav.repositories'),
           icon: 'branch' as IconName,
         },
         {
+          to: `/settings/teams/${team.key}/webhooks`,
+          label: t('layout.nav.webhooks'),
+          icon: 'link' as IconName,
+        },
+        {
+          to: `/settings/teams/${team.key}/trash`,
+          label: t('layout.nav.trash'),
+          icon: 'trash' as IconName,
+        },
+        // Read-only links for people with no account (#245).
+        {
+          to: `/settings/teams/${team.key}/share-links`,
+          label: t('layout.nav.shareLinks'),
+          icon: 'link' as IconName,
+        },
+        {
           to: `/settings/teams/${team.key}/general`,
-          label: 'General',
+          label: t('layout.nav.general'),
+          icon: 'settings' as IconName,
+        },
+      ],
+    })),
+    // An archived team (#322) takes no changes, so of its settings only
+    // General is offered: where it is unarchived, or deleted when empty.
+    ...(teams ?? []).filter(isArchived).map((team) => ({
+      title: t('team:archived.navTitle', { team: team.name, teamKey: team.key }),
+      entries: [
+        {
+          to: `/settings/teams/${team.key}/general`,
+          label: t('layout.nav.general'),
           icon: 'settings' as IconName,
         },
       ],
@@ -73,9 +128,71 @@ export default function SettingsLayout() {
     ...(user.is_site_admin
       ? [
           {
-            title: 'Administration',
+            title: t('layout.groups.administration'),
             entries: [
-              { to: '/settings/admin/users', label: 'Users', icon: 'shield' as IconName },
+              {
+                to: '/settings/admin/users',
+                label: t('layout.nav.users'),
+                icon: 'shield' as IconName,
+              },
+              {
+                to: '/settings/admin/departments',
+                label: t('layout.nav.departments'),
+                icon: 'building' as IconName,
+              },
+              // Every team on the instance (#307).
+              {
+                to: '/settings/admin/teams',
+                label: t('layout.nav.teams'),
+                icon: 'users' as IconName,
+              },
+              // The instance's own settings: who may create teams (#306).
+              {
+                to: '/settings/admin/settings',
+                label: t('layout.nav.instanceSettings'),
+                icon: 'settings' as IconName,
+              },
+            ],
+          },
+        ]
+      : []),
+    // Money (#130): a section of its own, for finance admins only -- a site
+    // admin without the flag sees no Finance here at all.
+    ...(user.is_finance_admin
+      ? [
+          {
+            title: t('layout.groups.finance'),
+            entries: [
+              {
+                to: '/settings/finance/compensation',
+                label: t('layout.nav.compensation'),
+                icon: 'banknote' as IconName,
+              },
+              {
+                to: '/settings/finance/payroll',
+                label: t('layout.nav.payroll'),
+                icon: 'calendar' as IconName,
+              },
+              {
+                to: '/settings/finance/expenses',
+                label: t('layout.nav.expenseClaims'),
+                icon: 'receipt' as IconName,
+              },
+              {
+                to: '/settings/finance/reimbursements',
+                label: t('layout.nav.reimbursements'),
+                icon: 'undo' as IconName,
+              },
+              {
+                to: '/settings/finance/budgets',
+                label: t('layout.nav.budgets'),
+                icon: 'building' as IconName,
+              },
+              {
+                to: '/settings/finance/reports',
+                label: t('layout.nav.financeReports'),
+                icon: 'chart' as IconName,
+              },
             ],
           },
         ]
@@ -83,7 +200,8 @@ export default function SettingsLayout() {
   ]
 
   const allEntries = groups.flatMap((group) => group.entries)
-  const backTo = teams && teams.length > 0 ? `/${teams[0].key}` : '/'
+  const firstInUse = activeTeams(teams ?? [])[0]
+  const backTo = firstInUse ? `/${firstInUse.key}` : '/'
 
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-4 px-4 py-6">
@@ -95,7 +213,7 @@ export default function SettingsLayout() {
           className="btn btn-ghost btn-sm text-neutral-500"
         >
           <Icon name="chevron-left" size={14} />
-          Back to board
+          {t('layout.backToBoard')}
         </button>
       </div>
 
@@ -105,7 +223,7 @@ export default function SettingsLayout() {
         <div className="lg:hidden">
           <Select
             block
-            aria-label="Settings section"
+            aria-label={t('layout.sectionLabel')}
             value={
               allEntries.find((entry) => location.pathname.startsWith(entry.to))?.to ??
               '/settings/profile'

@@ -1,3 +1,5 @@
+import { i18n } from '@/i18n'
+
 /**
  * Parse a timestamp the API returned.
  *
@@ -16,21 +18,27 @@ export function parseServerDate(value: string): Date {
 }
 
 
-/** Format cycle boundaries as calendar days in the server's timezone.
+/** Format sprint boundaries as calendar days in the server's timezone.
  *
- * Cycle boundaries represent whole UTC days, even though the API serialises
+ * Sprint boundaries represent whole UTC days, even though the API serialises
  * them as instants. Formatting with an explicit timezone prevents a viewer's
  * local offset from moving the displayed day across midnight.
  */
-export function formatCycleRange(
+export function formatSprintRange(
   startsAt: string,
   endsAt: string,
   timeZone = 'UTC',
 ): string {
-  const formatter = new Intl.DateTimeFormat('en-GB', {
+  // The language's own day and month order (#106); English keeps the
+  // interface's day-first "8 Sept", which is `en-GB`.
+  const language = i18n.language || 'en'
+  const formatter = new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : language, {
     day: 'numeric',
     month: 'short',
     timeZone,
   })
-  return `${formatter.format(parseServerDate(startsAt))} – ${formatter.format(parseServerDate(endsAt))}`
+  return i18n.t('common:dateRange', {
+    start: formatter.format(parseServerDate(startsAt)),
+    end: formatter.format(parseServerDate(endsAt)),
+  })
 }

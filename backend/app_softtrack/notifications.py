@@ -56,9 +56,7 @@ def update_notification_settings(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    return notifications_service.update_settings(
-        session, current_user, payload.email_notifications
-    )
+    return notifications_service.update_settings(session, current_user, payload)
 
 
 @router.post("/notifications/read-all", response_model=UnreadCount)
@@ -83,22 +81,22 @@ def update_notification(
     )
 
 
-@router.get("/issues/{issue_id}/watch", response_model=WatchState)
+@router.get("/tickets/{ticket_id}/watch", response_model=WatchState)
 def get_watch_state(
-    issue_id: int,
+    ticket_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    return notifications_service.get_watch_state(session, current_user, issue_id)
+    return notifications_service.get_watch_state(session, current_user, ticket_id)
 
 
-@router.put("/issues/{issue_id}/watch", response_model=WatchState)
+@router.put("/tickets/{ticket_id}/watch", response_model=WatchState)
 def set_watch_state(
-    issue_id: int,
+    ticket_id: int,
     payload: WatchState,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
     return notifications_service.set_watching(
-        session, current_user, issue_id, payload.watching
+        session, current_user, ticket_id, payload.watching
     )

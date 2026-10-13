@@ -1,28 +1,49 @@
 # Reports
 
 Four charts, each answering a question about the past: how many points were
-outstanding on the ninth, how much did the last six cycles deliver, is work
+outstanding on the ninth, how much did the last six sprints deliver, is work
 piling up in review, is the backlog growing.
 
-No query over the current rows can answer any of those. The `issueevent` table
-is the only source — every change to an issue's status, cycle or estimate
-writes a row — and each report replays those events up to the end of each day
+No query over the current rows can answer any of those. The `ticketevent` table
+is the only source — every change to a ticket's status, sprint, estimate,
+epic, assignee or priority writes a row — and each report replays those events up to the end of each day
 and counts what the board looked like then. One replay serves all of them.
 
 Three details that follow from that:
 
-- **The burndown's ideal line runs from the cycle's *opening* scope to zero**,
-  not from its current scope. Otherwise adding work mid-cycle would quietly
+- **The burndown's ideal line runs from the sprint's *opening* scope to zero**,
+  not from its current scope. Otherwise adding work mid-sprint would quietly
   move the goalposts and the line would always look on track. Scope changes are
   reported separately, as the events they are.
-- **Velocity's "committed" is the scope at the moment the cycle started.** A
+- **Velocity's "committed" is the scope at the moment the sprint started.** A
   team that finished everything it added late did not commit to it.
 - **Charts never run into the future.** A burndown flat to the end of the
   sprint reads as "nothing is happening" rather than "this has not happened
-  yet", so an active cycle's line stops today.
+  yet", so an active sprint's line stops today.
 
-Reports begin from the day history started being kept. An issue with no event
+Reports begin from the day history started being kept. A ticket with no event
 at or before a given day is left out of that day entirely rather than counted
 in `backlog` — that would draw work which had not been created — and the
 reports page carries a line saying earlier activity cannot be reconstructed,
 because a chart that quietly starts late looks like a chart of a quiet week.
+
+Finance has reports of its own, built the same way from approved runs and
+reimbursed claims: see [Payroll and finance](finance.md#reports).
+
+## The same history, on the ticket
+
+The ticket panel's **Activity** section shows the ticket's history among its
+comments, oldest first. Each change is one quiet line: who made it, what it
+was, and when, for example "Maya moved this from Started to Done · 2 hours
+ago". Changes made by an automation rule are credited to "Automation".
+
+- The values a ticket was created with are its starting point, not changes.
+  They're recorded (the charts need to know where a ticket began) and marked
+  `opening`, and the feed leaves them out.
+- Statuses read as their category ("Started", "Done"), because that is what
+  history records. Moving a ticket between two columns in the same category
+  doesn't write a row, so it doesn't appear.
+- Assignee and priority changes are recorded too. No chart uses them; they're
+  there because they're what people ask a ticket's history about. Label
+  changes aren't recorded.
+- The panel shows the latest 100 changes, via `GET /tickets/{id}/events`.

@@ -1,24 +1,36 @@
 """Invitations: asking someone to join a team, whether or not they have an account.
 
-There is no mail server in SoftTrack, so an invitation is a link the inviter
-copies and sends by whatever the team already uses. That shapes the design more
-than anything else here: the link is the credential, so its token is
-unguessable, it expires, and accepting it checks the signed-in user's address
-against the one it was sent to -- a forwarded link admits nobody it was not
-meant for.
+An invitation is a link. The inviter copies it and sends it by whatever the
+team already uses, and where SMTP is configured SoftTrack can also email it
+(#84) -- as an addition, never instead: copying the link works everywhere.
+That shapes the design more than anything else here: the link is the
+credential, so its token is unguessable, it expires, and accepting it checks
+the signed-in user's address against the one it was sent to -- a forwarded
+link admits nobody it was not meant for.
 """
 
 import secrets
 from datetime import timedelta
+from typing import Optional
 
-from fastapi import HTTPException
 from sqlmodel import Session, delete, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.invites import InviteCreate, InvitePreview, InviteRead
-from lib_softtrack.tables import Team, TeamInvite, TeamMember, User, utcnow
+from lib_softtrack import joining, outside
+from lib_softtrack.models.teams import EpicRef
+from lib_softtrack.tables import (
+    Project,
+    Team,
+    TeamInvite,
+    TeamMember,
+    TeamRole,
+    User,
+    utcnow,
+)
 from lib_softtrack.teams import get_team_or_404, require_team_admin
 from web import settings
+from lib_utils.errors import ErrorCode, api_error
 
 
 def _new_token() -> str:
@@ -50,8 +62,32 @@ def find_live_invite(session: Session, email: str) -> TeamInvite | None:
     ).first()
 
 
+def invited_from_outside(session: Session, email: str) -> bool:
+    """Whether a live invitation says `email` is from outside (#243): the
+    account created for it is external from its first sign-in."""
+    return (
+        session.exec(
+            select(TeamInvite).where(
+                TeamInvite.email == email.strip().lower(),
+                TeamInvite.expires_at > utcnow(),
+                TeamInvite.external == True,  # noqa: E712 -- SQL comparison
+            )
+        ).first()
+        is not None
+    )
+
+
 def _to_read(session: Session, invite: TeamInvite, team: Team) -> InviteRead:
     inviter = session.get(User, invite.invited_by_id)
+    epics = (
+        session.exec(
+            select(Project)
+            .where(Project.id.in_(invite.epic_ids), Project.team_id == team.id)
+            .order_by(Project.name, Project.id)
+        ).all()
+        if invite.epic_ids
+        else []
+    )
     return InviteRead(
         id=invite.id,
         team_id=invite.team_id,
@@ -63,20 +99,90 @@ def _to_read(session: Session, invite: TeamInvite, team: Team) -> InviteRead:
         invited_by=UserPublic.model_validate(inviter),
         created_at=invite.created_at,
         expires_at=invite.expires_at,
+        emailed_at=invite.emailed_at,
+        external=invite.external,
+        epics=[EpicRef.model_validate(epic) for epic in epics],
     )
+
+
+def _invite_email(
+    invite: TeamInvite, team: Team, inviter: User
+) -> tuple[str, str, str]:
+    """The message: who, which team, the link, and when it stops working.
+
+    Plain text, like the digest, and written to be understood by somebody
+    who has never heard of SoftTrack -- which, for most invitees, is true.
+    """
+    link = f"{settings.app_base_url.rstrip('/')}/invite/{invite.token}"
+    role = "an admin" if invite.role == TeamRole.admin else "a member"
+    expires = f"{invite.expires_at.day} {invite.expires_at:%B %Y}"
+    body = (
+        f"{inviter.full_name} ({inviter.email}) has invited you to join the "
+        f"{team.name} team on {settings.app_name}, as {role}.\n\n"
+        f"To accept, open this link:\n\n{link}\n\n"
+        f"You can sign in or create an account with {invite.email} from there. "
+        f"The link works until {expires}.\n\n"
+        "If you were not expecting this, you can ignore this email.\n"
+    )
+    subject = f"{inviter.full_name} invited you to {team.name} on {settings.app_name}"
+    return invite.email, subject, body
 
 
 def create_invite(
     session: Session, current_user: User, team_id: int, payload: InviteCreate
-) -> InviteRead:
+) -> tuple[InviteRead, Optional[tuple[str, str, str]]]:
+    """Create an invitation -- or refresh one, which is the resend.
+
+    Returns the invitation and, when `send_email` was asked for, the message
+    to send. The caller sends it after responding: nothing about the
+    invitation depends on an SMTP server answering quickly.
+    """
     team = get_team_or_404(team_id, session)
     require_team_admin(team_id, current_user, session)
+    if payload.send_email and not settings.email_delivery_configured:
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.email_not_configured,
+            detail="This instance cannot send email. Copy the link instead.",
+        )
 
     email = payload.email.strip().lower()
 
     from lib_identity.identity import find_user_by_email
 
+    # Somebody from outside is a guest who sees the epics chosen (#243). The
+    # flag is the invitation's to set only for an account that does not exist
+    # yet; an existing one is what it is, and a site admin changes that.
+    if payload.external and payload.role != TeamRole.guest:
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.external_account_is_guest,
+            detail="Somebody from outside the organisation can only be a guest",
+        )
+    if payload.epic_ids and not payload.external:
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.epics_only_for_external,
+            detail="Only somebody from outside the organisation is given "
+            "epics; everybody else sees them all",
+        )
+    epic_ids = outside.check_epics(session, team_id, payload.epic_ids)
+
     existing_user = find_user_by_email(session, email)
+    if existing_user and existing_user.is_external and not payload.external:
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.account_outside_organisation,
+            detail=f"{existing_user.full_name} is from outside the organisation. "
+            "Invite them as a guest from outside, with the epics they can see.",
+        )
+    if existing_user and payload.external and not existing_user.is_external:
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.account_inside_organisation,
+            detail=f"{existing_user.full_name} already has an account inside the "
+            "organisation. A site admin can mark it as outside.",
+        )
     if existing_user:
         already = session.exec(
             select(TeamMember).where(
@@ -85,7 +191,11 @@ def create_invite(
             )
         ).first()
         if already:
-            raise HTTPException(status_code=400, detail="User is already a member")
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.already_member,
+                detail="User is already a member",
+            )
 
     invite = session.exec(
         select(TeamInvite).where(
@@ -101,6 +211,8 @@ def create_invite(
         invite.role = payload.role
         invite.invited_by_id = current_user.id
         invite.created_at = utcnow()
+        invite.external = payload.external
+        invite.epic_ids = epic_ids
     else:
         invite = TeamInvite(
             team_id=team_id,
@@ -109,12 +221,18 @@ def create_invite(
             token=_new_token(),
             invited_by_id=current_user.id,
             expires_at=_expiry(),
+            external=payload.external,
+            epic_ids=epic_ids,
         )
+    # Set on every create and resend, so an email sent with an older link is
+    # never reported as if it carried this one.
+    invite.emailed_at = utcnow() if payload.send_email else None
     session.add(invite)
     session.commit()
     session.refresh(invite)
 
-    return _to_read(session, invite, team)
+    message = _invite_email(invite, team, current_user) if payload.send_email else None
+    return _to_read(session, invite, team), message
 
 
 def list_invites(
@@ -142,7 +260,11 @@ def revoke_invite(
     # The team is part of the lookup, not just the id: an admin of one team
     # must not be able to revoke another team's invitation by guessing a number.
     if not invite or invite.team_id != team_id:
-        raise HTTPException(status_code=404, detail="Invitation not found")
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.invite_not_found,
+            detail="Invitation not found",
+        )
 
     session.delete(invite)
     session.commit()
@@ -153,16 +275,24 @@ def _live_invite_or_404(session: Session, token: str) -> TeamInvite:
     # comparison then happens in SQL, where both sides are UTC. SQLite hands
     # rows back with naive datetimes, and comparing one of those to an aware
     # `utcnow()` in Python raises.
+    # An archived team's (#322) is not live either: the team takes nobody
+    # new until it is unarchived, when the invitation works again.
     invite = session.exec(
-        select(TeamInvite).where(
-            TeamInvite.token == token, TeamInvite.expires_at > utcnow()
+        select(TeamInvite)
+        .join(Team, Team.id == TeamInvite.team_id)
+        .where(
+            TeamInvite.token == token,
+            TeamInvite.expires_at > utcnow(),
+            Team.archived_at == None,  # noqa: E711 -- SQL IS NULL
         )
     ).first()
     # Unknown and expired answer identically. Distinguishing them would turn
     # this public endpoint into a way to test whether a token was ever real.
     if not invite:
-        raise HTTPException(
-            status_code=404, detail="This invitation is no longer valid"
+        raise api_error(
+            status_code=404,
+            code=ErrorCode.invite_invalid,
+            detail="This invitation is no longer valid",
         )
     return invite
 
@@ -183,8 +313,9 @@ def get_invite_preview(session: Session, token: str) -> InvitePreview:
 
 def _assert_addressed_to(invite: TeamInvite, user: User) -> None:
     if invite.email != user.email.strip().lower():
-        raise HTTPException(
+        raise api_error(
             status_code=403,
+            code=ErrorCode.invite_wrong_recipient,
             detail="This invitation was sent to a different email address",
         )
 
@@ -192,6 +323,24 @@ def _assert_addressed_to(invite: TeamInvite, user: User) -> None:
 def accept_invite(session: Session, current_user: User, token: str) -> Team:
     invite = _live_invite_or_404(session, token)
     _assert_addressed_to(invite, current_user)
+
+    # The account has to be what the invitation was for (#243): one inside
+    # the organisation does not become a client's by accepting, and a
+    # client's does not join as anything but the guest it was invited as.
+    if invite.external != current_user.is_external:
+        raise api_error(
+            status_code=403,
+            code=(
+                ErrorCode.account_inside_organisation
+                if invite.external
+                else ErrorCode.account_outside_organisation
+            ),
+            detail=(
+                "This invitation is for somebody from outside the organisation"
+                if invite.external
+                else "This invitation is for somebody inside the organisation"
+            ),
+        )
 
     team = session.get(Team, invite.team_id)
     existing = session.exec(
@@ -206,10 +355,19 @@ def accept_invite(session: Session, current_user: User, token: str) -> Team:
                 team_id=invite.team_id, user_id=current_user.id, role=invite.role
             )
         )
+        if invite.external:
+            outside.set_epics(
+                session,
+                invite.team_id,
+                current_user.id,
+                outside.live_epics(session, invite.team_id, invite.epic_ids),
+            )
 
     # Either way the invitation is spent. The membership row and its joined_at
-    # are the record of what happened; a consumed invite is only clutter.
+    # are the record of what happened; a consumed invite is only clutter. So
+    # is a request of theirs to join (#259).
     session.delete(invite)
+    joining.forget(session, invite.team_id, current_user.id)
     session.commit()
     return team
 
@@ -222,11 +380,17 @@ def decline_invite(session: Session, current_user: User, token: str) -> None:
 
 
 def list_invites_for_user(session: Session, user: User) -> list[InviteRead]:
-    """Every live invitation addressed to this person, across all teams."""
+    """Every live invitation addressed to this person, across all teams but
+    archived ones."""
     _prune_expired(session)
     invites = session.exec(
         select(TeamInvite)
-        .where(TeamInvite.email == user.email.strip().lower())
+        .join(Team, Team.id == TeamInvite.team_id)
+        .where(
+            TeamInvite.email == user.email.strip().lower(),
+            # Not an archived team's (#322), which takes nobody new.
+            Team.archived_at == None,  # noqa: E711 -- SQL IS NULL
+        )
         .order_by(TeamInvite.created_at)
     ).all()
     return [

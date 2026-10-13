@@ -1,27 +1,33 @@
 import type { TeamRole } from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
 
 /** A team role, shown where it is a fact rather than a choice. */
 export function RoleChip({ role }: { role: TeamRole }) {
-  const admin = role === 'admin'
+  const { t } = useTranslation(['settings', 'common'])
   return (
     <span
       className="chip"
+      title={t(`roles.hints.${role}`)}
       style={{
-        ['--chip' as string]: admin
-          ? 'var(--color-brand-500)'
-          : 'var(--color-neutral-500)',
+        ['--chip' as string]:
+          role === 'admin'
+            ? 'var(--color-brand-500)'
+            : role === 'guest'
+              ? 'var(--color-accent-amber)'
+              : 'var(--color-neutral-500)',
       }}
     >
-      {admin ? 'Admin' : 'Member'}
+      {t(`roles.labels.${role}`)}
     </span>
   )
 }
 
 /** The badge on a deactivated account, wherever one is still listed. */
 export function DeactivatedChip() {
+  const { t } = useTranslation(['settings', 'common'])
   return (
     <span className="chip" style={{ ['--chip' as string]: 'var(--color-danger-600)' }}>
-      Deactivated
+      {t('roles.deactivated')}
     </span>
   )
 }

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
+from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import integrations as integrations_service
 from lib_softtrack.models.integrations import (
@@ -29,7 +30,11 @@ def list_repositories(
     return integrations_service.list_repositories(session, current_user, team_id)
 
 
-@router.post("/teams/{team_id}/repositories", response_model=RepositoryRead)
+@router.post(
+    "/teams/{team_id}/repositories",
+    response_model=RepositoryRead,
+    dependencies=[team_writer],
+)
 def create_repository(
     team_id: int,
     payload: RepositoryCreate,
@@ -43,7 +48,11 @@ def create_repository(
     )
 
 
-@router.post("/repositories/{repository_id}/rotate", response_model=RepositoryRead)
+@router.post(
+    "/repositories/{repository_id}/rotate",
+    response_model=RepositoryRead,
+    dependencies=[team_writer],
+)
 def rotate_secret(
     repository_id: int,
     session: Session = Depends(get_session),
@@ -54,26 +63,28 @@ def rotate_secret(
     return integrations_service.rotate_secret(session, current_user, repository_id)
 
 
-@router.delete("/repositories/{repository_id}", status_code=204)
+@router.delete(
+    "/repositories/{repository_id}", status_code=204, dependencies=[team_writer]
+)
 def delete_repository(
     repository_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Disconnect a repository. Its links come off the issues with it."""
+    """Disconnect a repository. Its links come off the tickets with it."""
     integrations_service.delete_repository(session, current_user, repository_id)
 
 
-@router.get("/issues/{issue_id}/code-links", response_model=CodeLinks)
+@router.get("/tickets/{ticket_id}/code-links", response_model=CodeLinks)
 def list_code_links(
-    issue_id: int,
+    ticket_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """The branches, commits and pull requests that name this issue.
+    """The branches, commits and pull requests that name this ticket.
 
     Any member, unlike the repository list above: this carries no secrets, and
     "where is the code for this" is the question the whole feature exists to
     answer.
     """
-    return integrations_service.list_code_links(session, current_user, issue_id)
+    return integrations_service.list_code_links(session, current_user, ticket_id)

@@ -8,8 +8,10 @@ export type IconName =
   | 'sun'
   | 'moon'
   | 'chevron-down'
+  | 'chevron-up'
   | 'chevron-right'
   | 'chevron-left'
+  | 'arrow-left'
   | 'board'
   | 'list'
   | 'chart'
@@ -17,6 +19,7 @@ export type IconName =
   | 'check'
   | 'link'
   | 'upload'
+  | 'download'
   | 'logout'
   | 'sparkle'
   | 'command'
@@ -37,6 +40,48 @@ export type IconName =
   | 'branch'
   | 'pull-request'
   | 'commit'
+  | 'bug'
+  | 'task'
+  | 'story'
+  | 'smile'
+  | 'download'
+  | 'calendar-grid'
+  | 'expand'
+  | 'lock'
+  | 'building'
+  | 'pin'
+  | 'briefcase'
+  | 'banknote'
+  | 'history'
+  | 'receipt'
+  | 'undo'
+  | 'user'
+  | 'type'
+  | 'hash'
+  | 'select-box'
+  | 'list-check'
+  | 'globe'
+  | 'external'
+  | 'archive'
+  | 'grip'
+  | 'alert'
+  | 'sliders'
+  | 'pencil'
+  | 'bold'
+  | 'italic'
+  | 'strikethrough'
+  | 'list-ordered'
+  | 'checklist'
+  | 'quote'
+  | 'code'
+  | 'code-block'
+  | 'indent'
+  | 'outdent'
+  | 'heading'
+  | 'eraser'
+  | 'help'
+  | 'monitor'
+  | 'phone'
 
 const PATHS: Record<IconName, JSX.Element> = {
   search: (
@@ -56,8 +101,11 @@ const PATHS: Record<IconName, JSX.Element> = {
   ),
   moon: <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />,
   'chevron-down': <path d="m6 9 6 6 6-6" />,
+  'chevron-up': <path d="m6 15 6-6 6 6" />,
   'chevron-right': <path d="m9 6 6 6-6 6" />,
   'chevron-left': <path d="m15 6-6 6 6 6" />,
+  // Back to where something came from: a linked ticket's modal (#114).
+  'arrow-left': <path d="M19 12H5M11 6l-6 6 6 6" />,
   board: (
     <>
       <rect x="3" y="4" width="5" height="16" rx="1.5" />
@@ -78,6 +126,9 @@ const PATHS: Record<IconName, JSX.Element> = {
     </>
   ),
   upload: <path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />,
+  download: <path d="M12 4v12m0 0-4-4m4 4 4-4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />,
+  // Out to the corners: the panel opened out into a page of its own (#112).
+  expand: <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />,
   logout: <path d="M10 17l5-5-5-5M15 12H3M13 4h6a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-6" />,
   sparkle: <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.3 6.3l2.8 2.8M14.9 14.9l2.8 2.8M6.3 17.7l2.8-2.8M14.9 9.1l2.8-2.8" />,
   command: (
@@ -104,6 +155,55 @@ const PATHS: Record<IconName, JSX.Element> = {
     </>
   ),
   shield: <path d="M12 3l7.5 3v5.5c0 4.4-3 8.4-7.5 9.5-4.5-1.1-7.5-5.1-7.5-9.5V6L12 3Z" />,
+  lock: (
+    <>
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  pin: (
+    <>
+      <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </>
+  ),
+  briefcase: (
+    <>
+      <rect x="3" y="7" width="18" height="13" rx="2" />
+      <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18" />
+    </>
+  ),
+  banknote: (
+    <>
+      <rect x="2.5" y="6" width="19" height="12" rx="2" />
+      <circle cx="12" cy="12" r="2.5" />
+      <path d="M6 9.5v.01M18 14.5v.01" />
+    </>
+  ),
+  undo: (
+    <>
+      <path d="M9 14 4 9l5-5" />
+      <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+    </>
+  ),
+  receipt: (
+    <>
+      <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" />
+      <path d="M9 8h6M9 12h6M9 16h3" />
+    </>
+  ),
+  history: (
+    <>
+      <path d="M3.5 12a8.5 8.5 0 1 0 2.5-6L3.5 8.5" />
+      <path d="M3.5 4v4.5H8M12 7.5V12l3 2" />
+    </>
+  ),
+  building: (
+    <>
+      <rect x="5" y="3" width="14" height="18" rx="1.5" />
+      <path d="M9 7h.01M12 7h.01M15 7h.01M9 11h.01M12 11h.01M15 11h.01M10 21v-4h4v4" />
+    </>
+  ),
   mail: (
     <>
       <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -174,6 +274,131 @@ const PATHS: Record<IconName, JSX.Element> = {
     <>
       <circle cx="12" cy="12" r="3" />
       <path d="M3 12h6M15 12h6" />
+    </>
+  ),
+  // Ticket types (#89). Three different outlines -- a rounded body with legs, a
+  // square with a tick, a bookmark -- so they are told apart by shape, not by
+  // the colour they are drawn in.
+  bug: (
+    <>
+      <rect x="8" y="7" width="8" height="12" rx="4" />
+      <path d="M12 11v8M8 11H4M8 15H4M16 11h4M16 15h4M10 7 8.5 4.5M14 7l1.5-2.5" />
+    </>
+  ),
+  task: (
+    <>
+      <rect x="4.5" y="4.5" width="15" height="15" rx="3" />
+      <path d="m8.5 12 2.5 2.5 4.5-5" />
+    </>
+  ),
+  story: <path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1Z" />,
+  'calendar-grid': (
+    <>
+      <rect x="4" y="5" width="16" height="15" rx="2" />
+      <path d="M4 10h16M8 3v4M16 3v4M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01" />
+    </>
+  ),
+  smile: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 14.5s1.3 1.8 3.5 1.8 3.5-1.8 3.5-1.8M9 9.5h.01M15 9.5h.01" />
+    </>
+  ),
+  // The kinds of a team's own field (#117): one person, a letter, a number
+  // sign, a box that drops down, a list of ticks, and the globe of a link.
+  user: (
+    <>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20a7 7 0 0 1 14 0" />
+    </>
+  ),
+  type: <path d="M5 7V5h14v2M12 5v14M9 19h6" />,
+  hash: <path d="M5 9h15M4 15h15M10 4 8 20M16 4l-2 16" />,
+  'select-box': (
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="3" />
+      <path d="m9 11 3 3 3-3" />
+    </>
+  ),
+  'list-check': (
+    <path d="M11 6h9M11 12h9M11 18h9M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5 2.5-2.5M3.5 18l1.5 1.5 2.5-2.5" />
+  ),
+  // Where an account is signed in (#308): a computer, or a phone or tablet.
+  monitor: (
+    <>
+      <rect x="3" y="4" width="18" height="12" rx="1.5" />
+      <path d="M8 20h8M12 16v4" />
+    </>
+  ),
+  phone: (
+    <>
+      <rect x="7" y="3" width="10" height="18" rx="2" />
+      <path d="M11 18h2" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+    </>
+  ),
+  external: <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />,
+  archive: (
+    <>
+      <rect x="3" y="4" width="18" height="4" rx="1" />
+      <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4" />
+    </>
+  ),
+  // Six dots: something that is picked up and dragged.
+  grip: <path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" />,
+  pencil: <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4ZM13.5 6.5l4 4" />,
+  sliders: (
+    <>
+      <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+      <circle cx="15" cy="7" r="2" />
+      <circle cx="9" cy="17" r="2" />
+    </>
+  ),
+  alert: (
+    <>
+      <path d="M12 4 2.5 20h19L12 4Z" />
+      <path d="M12 10v4M12 17h.01" />
+    </>
+  ),
+  // The markdown toolbar (#118). A bulleted list is `list`, above.
+  bold: <path d="M7 5h6a3.5 3.5 0 0 1 0 7H7V5ZM7 12h7a3.5 3.5 0 0 1 0 7H7v-7Z" />,
+  italic: <path d="M10 5h8M6 19h8M14.5 5l-5 14" />,
+  strikethrough: (
+    <path d="M4.5 12h15M16 7.5C15.4 5.9 13.9 5 12 5c-2.5 0-4 1.3-4 3 0 1.2.7 2.1 2 2.6M8.5 16.2C9 18 10.4 19 12.4 19c2.6 0 4.1-1.4 4.1-3.2 0-.6-.1-1.1-.4-1.5" />
+  ),
+  'list-ordered': (
+    <path d="M10 6h11M10 12h11M10 18h11M4 5h1.5v4M4 9h3M4 14.5a1.5 1.5 0 0 1 3 .3c0 .9-3 2.2-3 3.2h3" />
+  ),
+  checklist: (
+    <>
+      <path d="M11 6h10M11 12h10M11 18h10" />
+      <rect x="3" y="4" width="4.5" height="4.5" rx="1" />
+      <path d="m3.5 16.5 1.5 1.5 2.5-3" />
+    </>
+  ),
+  quote: <path d="M5 18v-5a5 5 0 0 1 4-5M5 13h4v5H5M14 18v-5a5 5 0 0 1 4-5M14 13h4v5h-4" />,
+  code: <path d="m8.5 8-4 4 4 4M15.5 8l4 4-4 4" />,
+  'code-block': (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <path d="m9.5 10-2 2 2 2M14.5 10l2 2-2 2" />
+    </>
+  ),
+  indent: <path d="M3 5h18M11 10h10M11 14h10M3 19h18M3 9.5l3.5 2.5L3 14.5" />,
+  outdent: <path d="M3 5h18M11 10h10M11 14h10M3 19h18M6.5 9.5 3 12l3.5 2.5" />,
+  heading: <path d="M6 5v14M18 5v14M6 12h12" />,
+  eraser: (
+    <path d="m7 20-3.5-3.5a1.8 1.8 0 0 1 0-2.5L13 4.5a1.8 1.8 0 0 1 2.5 0L20 9a1.8 1.8 0 0 1 0 2.5L11.5 20H7ZM8.5 9l7 7M11.5 20H21" />
+  ),
+  help: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.3M12 16.5h.01" />
     </>
   ),
 }

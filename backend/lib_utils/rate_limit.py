@@ -14,7 +14,9 @@ from dataclasses import dataclass, field
 from math import ceil
 from typing import Callable
 
-from fastapi import HTTPException, Request, status
+from fastapi import Request, status
+
+from lib_utils.errors import ErrorCode, api_error
 
 # Sweeping every write would be O(n) on a dict that is usually tiny, so only
 # bother once it has grown enough to be worth the walk. This is the bound on
@@ -69,8 +71,9 @@ class Throttle:
                 return
         retry_after = max(1, ceil(remaining))
         unit = "second" if retry_after == 1 else "seconds"
-        raise HTTPException(
+        raise api_error(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            code=ErrorCode.rate_limited,
             detail=f"Too many {self.name}. Try again in {retry_after} {unit}.",
             headers={"Retry-After": str(retry_after)},
         )
@@ -155,6 +158,39 @@ registration_by_address = Throttle(
     forget_after=60 * 60.0,
 )
 
+# Requests with an API token that does not check out (#90), per address.
+# Only failures count and a good token never forgives: a script using a valid
+# token is never slowed, while somebody trying tokens gets the same growing
+# wait as somebody trying passwords.
+api_token_by_address = Throttle(
+    name="requests with an invalid API token from this address",
+    free_attempts=10,
+    base_delay=1.0,
+    max_delay=15 * 60.0,
+    forget_after=15 * 60.0,
+)
+
+# Password reset requests (#83), per address and per target account. Every
+# request counts and none is forgiven: a request always "succeeds" -- the
+# response is the same 204 whether or not the account exists -- so there is
+# no failure to charge for. Per address stops enumeration by volume; per
+# account stops anyone using the form to flood somebody's inbox, which the
+# address limit cannot see when the requests come from many addresses.
+reset_by_address = Throttle(
+    name="password reset requests from this address",
+    free_attempts=10,
+    base_delay=15.0,
+    max_delay=60 * 60.0,
+    forget_after=60 * 60.0,
+)
+reset_by_account = Throttle(
+    name="password reset requests for this address",
+    free_attempts=3,
+    base_delay=60.0,
+    max_delay=60 * 60.0,
+    forget_after=60 * 60.0,
+)
+
 # Per address, starting a sign-in with a provider. Every attempt counts,
 # because the thing being limited is somebody using the redirect as a way to
 # make this instance talk to a third party -- which succeeds and fails alike.
@@ -203,14 +239,55 @@ webhook_by_address = Throttle(
     max_delay=5 * 60.0,
     forget_after=15 * 60.0,
 )
+totp_by_user = Throttle(
+    name="failed two-factor attempts for this account",
+    free_attempts=5,
+    base_delay=1.0,
+    max_delay=60.0,
+    forget_after=5 * 60.0,
+)
+totp_by_address = Throttle(
+    name="failed two-factor attempts from this address",
+    free_attempts=20,
+    base_delay=1.0,
+    max_delay=5 * 60.0,
+    forget_after=15 * 60.0,
+)
+
+# Share links (#245), per address. The page needs no sign-in, so the token is
+# the credential: links that do not work and wrong passwords are what
+# somebody guessing at tokens produces, and are limited like failed sign-ins.
+share_failures_by_address = Throttle(
+    name="attempts to open share links from this address",
+    free_attempts=10,
+    base_delay=1.0,
+    max_delay=15 * 60.0,
+    forget_after=15 * 60.0,
+)
+# And opening at all, loosely: a client reading the page, reloading it and
+# downloading its files never comes near this, a scraper does.
+share_opens_by_address = Throttle(
+    name="share link pages from this address",
+    free_attempts=120,
+    base_delay=1.0,
+    max_delay=60.0,
+    forget_after=60.0,
+)
 
 _ALL = (
     login_by_address,
     login_by_account,
     registration_by_address,
+    reset_by_address,
+    reset_by_account,
+    api_token_by_address,
     oauth_by_address,
     oauth_callback_by_address,
     webhook_by_address,
+    share_failures_by_address,
+    share_opens_by_address,
+    totp_by_user,
+    totp_by_address,
 )
 
 

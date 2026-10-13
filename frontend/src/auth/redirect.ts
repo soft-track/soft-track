@@ -5,7 +5,7 @@
  * sends people here with the location they asked for in router state; an
  * invitation link, and anything pasted into a fresh tab, arrives with
  * `?next=` and no navigation state at all. A signed-out visitor opening
- * /ENG/issue/42 has to end up on /ENG/issue/42, not on the front page.
+ * /ENG/ticket/42 has to end up on /ENG/ticket/42, not on the front page.
  *
  * Only a same-site absolute path is honoured. `next` is whatever was in the
  * address bar, and pointing a sign-in redirect at another origin is a

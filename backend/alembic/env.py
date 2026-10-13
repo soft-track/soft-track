@@ -23,7 +23,12 @@ from web import settings
 config = context.config
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # Without disable_existing_loggers=False, fileConfig switches off every
+    # logger that already exists -- and the app runs this on startup, from its
+    # lifespan, after uvicorn has configured its own. Every uvicorn line after
+    # the migration went missing: "Application startup complete", the access
+    # log, and the lines main.py and lib_finance/access.py write on purpose.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # Only when the caller has not already chosen one. alembic.ini carries no
 # URL, so the application path is unchanged -- but a test (or an operator
@@ -60,8 +65,8 @@ def run_migrations_online() -> None:
             """Batch mode rewrites a table by copying it, dropping the original
             and renaming -- and dropping a table other rows point at is a
             foreign key violation while enforcement is on. Any SQLite install
-            with issues in it would fail every migration that touches the
-            `issue` table, which is most of them.
+            with tickets in it would fail every migration that touches the
+            `ticket` table, which is most of them.
 
             On the connect event rather than as a statement, because SQLite
             ignores `PRAGMA foreign_keys` inside a transaction and SQLAlchemy

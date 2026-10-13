@@ -1,5 +1,6 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState, type ComponentProps } from 'react'
 
+import { useTranslation } from '@/i18n'
 import { badgeLabel } from '@/notifications/notificationMeta'
 import { NotificationsInbox } from '@/notifications/NotificationsInbox'
 import { useUnreadCount } from '@/notifications/useNotifications'
@@ -20,11 +21,15 @@ export function NotificationsBell({
   open,
   onToggle,
   onClose,
+  onOpenTicket,
 }: {
   open: boolean
   onToggle: () => void
   onClose: () => void
+  /** See NotificationsInbox. */
+  onOpenTicket: ComponentProps<typeof NotificationsInbox>['onOpenTicket']
 }) {
+  const { t } = useTranslation('notifications')
   const unread = useUnreadCount()
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [anchor, setAnchor] = useState<DOMRect | null>(null)
@@ -47,9 +52,11 @@ export function NotificationsBell({
         ref={buttonRef}
         type="button"
         onClick={onToggle}
-        aria-label={unread > 0 ? `Notifications (${unread} unread)` : 'Notifications'}
+        aria-label={
+          unread > 0 ? t('bell.labelUnread', { count: unread }) : t('bell.label')
+        }
         aria-expanded={open}
-        title="Notifications"
+        title={t('bell.label')}
         data-active={open}
         className="btn btn-ghost btn-icon btn-sm relative text-neutral-500 data-[active=true]:text-neutral-900"
       >
@@ -66,7 +73,9 @@ export function NotificationsBell({
         )}
       </button>
 
-      {open && anchor && <NotificationsInbox anchor={anchor} onClose={onClose} />}
+      {open && anchor && (
+        <NotificationsInbox anchor={anchor} onClose={onClose} onOpenTicket={onOpenTicket} />
+      )}
     </>
   )
 }

@@ -2,6 +2,8 @@
 
 SoftTrack is a small full-stack application built around a FastAPI backend and a React/Vite/TypeScript frontend. The backend exposes a typed OpenAPI schema, and the frontend consumes it through an Orval-generated client with React Query hooks.
 
+The interface says *tickets*, *sprints* and *epics*. Tickets and sprints were renamed all the way down (#215, #214): the code, the API, the database and the URLs use those words too. Epics were renamed in the interface only (#211), so everywhere else an epic is still a *project*.
+
 ## Stack
 
 - Backend: FastAPI, SQLModel (SQLAlchemy + Pydantic), SQLite by default, JWT auth
@@ -17,13 +19,16 @@ soft_track/
 │   ├── web.py                # settings, database engine, request session
 │   ├── app_identity/         # auth routes (register, login, me, profile, admin)
 │   ├── lib_identity/         # auth, usernames, site admin + models/ (schemas)
-│   ├── app_softtrack/        # routes: teams, projects, labels, issues, comments,
+│   ├── app_softtrack/        # routes: teams, projects, labels, tickets, comments,
 │   │                         #   invites, notifications, views, statuses
 │   ├── lib_softtrack/        # services per domain, tables.py (SQLModel),
 │   │                         #   and models/ (pydantic request/response schemas)
+│   ├── app_finance/          # finance routes, every one behind the finance flag
+│   ├── lib_finance/          # who can see money (access.py), and the finance
+│   │                         #   services + models/ (their own schemas)
 │   ├── lib_utils/            # shared helpers: password hashing, JWT tokens
 │   ├── tests/                # pytest suite (in-memory SQLite, FKs enforced)
-│   ├── seed.py               # populates demo user/team/project/issues
+│   ├── seed.py               # populates demo user/team/project/tickets
 │   ├── export_openapi.py     # writes openapi.json (no server needed)
 │   ├── smoke_test.sh         # curl-based end-to-end API test
 │   └── requirements.txt
@@ -39,13 +44,14 @@ soft_track/
     │   │                     #   invitations, the site admin user directory
     │   ├── team/             # TeamContext, useTeams, useTeamData, team pages
     │   ├── board/            # BoardPage + its hooks (filters, overlays, status change)
-    │   ├── issues/           # IssueCard, NewIssueModal, issueMeta, and detail/
-    │   ├── cycles/           # CycleList, CycleBanner, NewCycleModal
+    │   ├── tickets/           # TicketCard, NewTicketModal, ticketMeta, and detail/
+    │   ├── sprints/           # SprintList, SprintBanner, NewSprintModal
     │   ├── search/           # SearchResults, useDebounced
     │   ├── imports/          # ImportJiraModal
     │   ├── reports/          # charts
     │   ├── markdown/         # renderer, editor, mentions, task lists
     │   ├── notifications/    # the bell and its inbox, the watch toggle
+    │   ├── finance/          # the finance pages, and the page without access
     │   ├── views/            # saved views: the sidebar list and the save dialog
     │   ├── keyboard/         # command palette, shortcuts, global key handling
     │   └── ui/               # Avatar, Logo -- the genuinely shared primitives
@@ -68,6 +74,31 @@ cd ../frontend && npm run generate:api
 ```
 
 The `npm run export:openapi` shortcut performs the first step when the backend virtualenv is in the default location.
+
+## Errors
+
+An error the API raises on purpose carries a stable code as well as a sentence:
+
+```json
+{"detail": "Only team admins can do that", "code": "not_team_admin"}
+```
+
+- **`detail`** is the English sentence. It's the same text the API returned
+  before codes existed, so nothing that shows it changes.
+- **`code`** is what a client should branch on, or translate. The sentence can
+  be reworded; a code can't be renamed or removed without breaking clients.
+
+The codes are listed in one place, the `ErrorCode` enum in
+`backend/lib_utils/errors.py`, grouped by what went wrong. The OpenAPI schema
+publishes that enum, so the generated frontend client has it as a type. The
+frontend's `errorDetail()` shows its own wording for codes it knows (sign-in
+and team-permission errors so far) and falls back to `detail` for the rest.
+
+Request validation errors (FastAPI's 422s) keep their own shape, a list of
+field errors, and have no code. New errors are raised as
+`raise api_error(403, ErrorCode.not_team_admin, "Only team admins can do that")`.
+A test fails if a bare `HTTPException` is raised anywhere, and another fails
+if a listed code is never used.
 
 ## Database and migration workflow
 

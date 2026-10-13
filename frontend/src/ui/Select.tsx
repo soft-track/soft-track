@@ -16,7 +16,7 @@ export function Select({
   children,
   ...props
 }: SelectHTMLAttributes<HTMLSelectElement> & {
-  /** The compact size used in dense rows such as the issue properties. */
+  /** The compact size used in dense rows such as the ticket properties. */
   dense?: boolean
   /** Stretch to the container's width. */
   block?: boolean

@@ -53,31 +53,140 @@ def test_a_view_round_trips_its_filters(client, pair):
         status_id=pair["status_ids"]["In Review"],
         priority="urgent",
     )
-    assert view["filters"]["status_id"] == pair["status_ids"]["In Review"]
-    assert view["filters"]["priority"] == "urgent"
+    # One value, as a client from before #260 sends it, is a list of one.
+    assert view["filters"]["status_id"] == [pair["status_ids"]["In Review"]]
+    assert view["filters"]["priority"] == ["urgent"]
     assert view["owner"]["id"] == pair["user"]["id"]
     # Everything unset stays unset rather than becoming a filter that matches
     # nothing.
-    assert view["filters"]["label_id"] is None
+    assert view["filters"]["label_id"] == []
     assert view["filters"]["unassigned"] is False
 
 
-def test_a_view_with_no_filters_is_all_issues(client, pair):
-    view = create_view(client, pair, pair["team"]["id"], name="Everything")
-    assert all(value in (None, False) for value in view["filters"].values())
+def test_a_view_is_grouped_by_status_unless_it_says_otherwise(client, pair):
+    """Status is what the board always was, so an existing client that has
+    never heard of grouping keeps getting exactly that (#63)."""
+    view = create_view(client, pair, pair["team"]["id"], name="Plain")
+    assert view["group_by"] == "status"
 
 
-def test_filtering_on_an_assignee_and_on_unassigned_is_rejected(client, pair):
-    """They are contradictory, and the pair would silently match nothing."""
+def test_a_view_carries_its_grouping_as_well_as_its_filters(client, pair):
+    team_id = pair["team"]["id"]
+    response = client.post(
+        f"/teams/{team_id}/views",
+        json={"name": "Planning", "group_by": "project", "filters": {}},
+        headers=pair["headers"],
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["group_by"] == "project"
+    listed = views(client, pair, team_id)["items"]
+    assert [v["group_by"] for v in listed] == ["project"]
+
+
+def test_regrouping_a_view_leaves_its_filters_alone(client, pair):
+    view = create_view(client, pair, pair["team"]["id"], priority="urgent")
+    response = client.patch(
+        f"/views/{view['id']}", json={"group_by": "project"}, headers=pair["headers"]
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["group_by"] == "project"
+    assert response.json()["filters"]["priority"] == ["urgent"]
+
+    # And the other way: changing the filters does not reset the grouping.
+    response = client.patch(
+        f"/views/{view['id']}",
+        json={"filters": {"priority": "high"}},
+        headers=pair["headers"],
+    )
+    assert response.json()["group_by"] == "project"
+
+
+def test_an_unknown_grouping_is_refused(client, pair):
     response = client.post(
         f"/teams/{pair['team']['id']}/views",
-        json={
-            "name": "Impossible",
-            "filters": {"assignee_id": pair["user"]["id"], "unassigned": True},
-        },
+        json={"name": "Odd", "group_by": "assignee", "filters": {}},
         headers=pair["headers"],
     )
     assert response.status_code == 422
+
+
+def test_a_view_with_no_filters_is_all_tickets(client, pair):
+    view = create_view(client, pair, pair["team"]["id"], name="Everything")
+    filters = view["filters"]
+    assert filters.pop("label_match") == "any"
+    assert all(value in (None, False, []) for value in filters.values())
+
+
+def test_a_view_stores_lists_and_their_switches(client, pair):
+    """Several values in a filter, each filter's exclude switch, and labels
+    matched all rather than any (#260) all come back as they were saved."""
+    team_id = pair["team"]["id"]
+    labels = [
+        client.post(
+            f"/teams/{team_id}/labels", json={"name": name}, headers=pair["headers"]
+        ).json()["id"]
+        for name in ("Bug", "Design")
+    ]
+    view = create_view(
+        client,
+        pair,
+        team_id,
+        status_id=[pair["status_ids"]["Done"], pair["status_ids"]["Cancelled"]],
+        status_exclude=True,
+        priority=["urgent", "high"],
+        assignee_id=[pair["user"]["id"], pair["member"]["user"]["id"]],
+        unassigned=True,
+        label_id=labels,
+        label_match="all",
+        type=["bug", "story"],
+        type_exclude=True,
+    )
+    filters = view["filters"]
+    assert filters["status_id"] == [
+        pair["status_ids"]["Done"],
+        pair["status_ids"]["Cancelled"],
+    ]
+    assert filters["status_exclude"] is True
+    assert filters["priority"] == ["urgent", "high"]
+    assert filters["assignee_id"] == [pair["user"]["id"], pair["member"]["user"]["id"]]
+    assert filters["unassigned"] is True
+    assert (filters["label_id"], filters["label_match"]) == (labels, "all")
+    assert (filters["type"], filters["type_exclude"]) == (["bug", "story"], True)
+    assert views(client, pair, team_id)["items"][0]["filters"] == filters
+
+
+def test_an_assignee_and_unassigned_together_mean_either(client, pair):
+    """Unassigned is one of the assignee choices now (#260): "Mei, or
+    nobody". It used to be refused as a contradiction."""
+    view = create_view(
+        client,
+        pair,
+        pair["team"]["id"],
+        assignee_id=pair["user"]["id"],
+        unassigned=True,
+    )
+    assert view["filters"]["assignee_id"] == [pair["user"]["id"]]
+    assert view["filters"]["unassigned"] is True
+
+
+def test_one_status_from_another_team_in_a_list_is_rejected(client, pair, auth):
+    other = auth(email="other@softtrack.dev")
+    other_team = client.post(
+        "/teams", json={"name": "Design", "key": "DSG"}, headers=other["headers"]
+    ).json()
+    theirs = client.get(
+        f"/teams/{other_team['id']}/statuses", headers=other["headers"]
+    ).json()[0]["id"]
+    response = client.post(
+        f"/teams/{pair['team']['id']}/views",
+        json={
+            "name": "Mixed",
+            "filters": {"status_id": [pair["status_ids"]["Done"], theirs]},
+        },
+        headers=pair["headers"],
+    )
+    assert response.status_code == 400
+    assert response.json()["code"] == "not_on_this_team"
 
 
 def test_a_filter_pointing_at_another_teams_label_is_rejected(client, pair, auth):
@@ -175,7 +284,7 @@ def test_the_owner_edits_and_deletes_their_own(client, pair):
     )
     assert renamed.status_code == 200, renamed.text
     assert renamed.json()["name"] == "Mine, renamed"
-    assert renamed.json()["filters"]["priority"] == "high"
+    assert renamed.json()["filters"]["priority"] == ["high"]
 
     assert (
         client.delete(
@@ -322,7 +431,7 @@ def test_unsharing_a_view_withdraws_it_from_everyone_but_its_owner(client, pair)
     assert member_sees["effective_default_id"] is None
 
 
-def test_clearing_the_team_default_leaves_everyone_on_all_issues(client, pair):
+def test_clearing_the_team_default_leaves_everyone_on_all_tickets(client, pair):
     view = create_view(client, pair, pair["team"]["id"], name="Ours", shared=True)
     set_team_default(client, pair, pair["team"]["id"], view["id"])
 
@@ -381,7 +490,7 @@ def test_a_view_that_does_not_exist_is_a_404(client, pair):
     "field,detail",
     [
         ("project_id", "No such project on this team"),
-        ("cycle_id", "No such cycle on this team"),
+        ("sprint_id", "No such sprint on this team"),
     ],
 )
 def test_a_filter_pointing_at_something_that_does_not_exist_is_rejected(
@@ -399,23 +508,23 @@ def test_a_filter_pointing_at_something_that_does_not_exist_is_rejected(
 # --- referential tidiness ------------------------------------------------
 
 
-def test_deleting_a_cycle_clears_the_views_that_filtered_on_it(client, pair):
-    cycle = client.post(
-        f"/teams/{pair['team']['id']}/cycles",
+def test_deleting_a_sprint_clears_the_views_that_filtered_on_it(client, pair):
+    sprint = client.post(
+        f"/teams/{pair['team']['id']}/sprints",
         json={"starts_at": "2026-01-01T00:00:00Z", "ends_at": "2026-01-15T00:00:00Z"},
         headers=pair["headers"],
     ).json()
     view = create_view(
-        client, pair, pair["team"]["id"], name="This cycle", cycle_id=cycle["id"]
+        client, pair, pair["team"]["id"], name="This sprint", sprint_id=sprint["id"]
     )
 
     assert (
-        client.delete(f"/cycles/{cycle['id']}", headers=pair["headers"]).status_code
+        client.delete(f"/sprints/{sprint['id']}", headers=pair["headers"]).status_code
         == 204
     )
 
     (still_there,) = views(client, pair, pair["team"]["id"])["items"]
     assert still_there["id"] == view["id"]
-    # Left pointing at a deleted cycle it would match nothing, which reads as
+    # Left pointing at a deleted sprint it would match nothing, which reads as
     # broken rather than empty.
-    assert still_there["filters"]["cycle_id"] is None
+    assert still_there["filters"]["sprint_id"] is None

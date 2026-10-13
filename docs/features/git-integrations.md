@@ -1,39 +1,39 @@
 # GitHub and GitLab
 
-Nothing connected an issue to the code that implements it, so the status had to
-be moved by hand — twice per issue, once when the branch went up and once when
+Nothing connected a ticket to the code that implements it, so the status had to
+be moved by hand — twice per ticket, once when the branch went up and once when
 it merged.
 
 A team admin connects a repository under *Settings → your team →
 Repositories*. SoftTrack hands back a **payload URL** and a **secret** to paste
 into the provider's webhook form, and that is the entire setup. After that, put
 `ENG-42` in a branch name, a commit message, or a pull request's title, branch
-or description, and the branch, commit or pull request appears on issue ENG-42
+or description, and the branch, commit or pull request appears on ticket ENG-42
 under **Development**.
 
 **Reading the link out of text people already write** is the whole trick.
-Nobody fills in a "related issue" field on a pull request; everybody types the
-identifier into the branch name, because that is how they find the issue again.
+Nobody fills in a "related ticket" field on a pull request; everybody types the
+identifier into the branch name, because that is how they find the ticket again.
 `backend/lib_softtrack/identifiers.py` is where that scan lives, kept pure so it
 can be tested on strings — it is the piece most likely to be wrong in a way
 nothing notices, since a scanner that is slightly too eager links a pull request
-to an issue nobody meant and a rule then moves it to Done.
+to a ticket nobody meant and a rule then moves it to Done.
 
 It is deliberately eager, and `utf-8` is genuinely shaped like an identifier —
 `UTF` is a perfectly good team key, and no pattern can tell the two apart. What
 makes that harmless is that a candidate becomes a link only if a team on this
-instance is actually keyed that way *and* has an issue with that number.
+instance is actually keyed that way *and* has a ticket with that number.
 
-**Moving the issue is an automation rule, not a second settings page.** Three
+**Moving the ticket is an automation rule, not a second settings page.** Three
 triggers arrive from a connected repository — a branch appears, a pull request
 opens, a pull request merges — and they go through the same engine as
 everything else, so they get conditions, the same actions, and the run log for
 free. A pair of settings ("which status means in review, which means shipped")
-would have been a second engine for "when X happens, change the issue", and one
+would have been a second engine for "when X happens, change the ticket", and one
 of them would have grown conditions eventually.
 
 Closed-without-merging is not the merge trigger. `closed` covers both shipping
-the work and giving up on it, and a rule moving the issue to Done on the second
+the work and giving up on it, and a rule moving the ticket to Done on the second
 would be wrong about the one thing it is for.
 
 ### What it does not do
@@ -61,17 +61,17 @@ payload edited in flight no longer matches. GitLab sends the secret back
 verbatim (`X-Gitlab-Token`), which is weaker — a bearer secret on the wire,
 depending entirely on TLS — and is what GitLab offers. Both are compared with
 `hmac.compare_digest`; a `==` on a signature is a timing oracle, and what it
-leaks is the ability to move somebody's issues.
+leaks is the ability to move somebody's tickets.
 
 **A repository is connected by one team, and text arriving from it resolves
-only to that team's issues.** A commit message in one team's repository cannot
+only to that team's tickets.** A commit message in one team's repository cannot
 touch another team's board, however deliberately it names it. A repository two
 teams both work in is connected twice, with a webhook each; the alternative is
-one team's CI able to reach another team's issues.
+one team's CI able to reach another team's tickets.
 
 The webhook secret is stored readable, and that is a real cost worth naming:
 anyone who can read the `repository` table can forge deliveries, which means
-moving issues on that team's board. It cannot be hashed — an HMAC needs the key
+moving tickets on that team's board. It cannot be hashed — an HMAC needs the key
 itself, not a digest of it — so the honest options were this or a key
 management service SoftTrack does not have and would not be self-hostable
 without. It is scoped to one repository on one team, and rotating it is one
@@ -80,7 +80,7 @@ state to reason about.
 
 A delivery about a different repository than the connection is for is refused
 even with a valid signature, because a webhook pasted onto the wrong repository
-would otherwise link that project's commits to this team's issues. Failed
+would otherwise link that repository's commits to this team's tickets. Failed
 verifications are rate-limited per address; successful ones are not, so a busy
 repository is never throttled for being busy.
 
@@ -88,7 +88,7 @@ repository is never throttled for being busy.
 
 Webhooks are at-least-once, and both providers put a "redeliver" button in
 their UI that people press while debugging exactly this. So links are upserted
-on `(repository, kind, external id, issue)` and the automation triggers fire on
+on `(repository, kind, external id, ticket)` and the automation triggers fire on
 **transitions** — a branch row appearing, a pull request becoming merged —
 rather than on a payload arriving. Press redeliver ten times and the second
 through tenth change nothing, so no rule runs and no comment is posted ten
@@ -96,7 +96,7 @@ times.
 
 A pull request SoftTrack sees for the first time *already merged* — a webhook
 added after the fact — counts as the merge, not the opening. Reporting it as
-"opened" would move the issue to In Review and leave it there.
+"opened" would move the ticket to In Review and leave it there.
 
 ### Setting it up
 

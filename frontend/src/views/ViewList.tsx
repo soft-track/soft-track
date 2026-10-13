@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import type { SavedViewRead } from '@/api/generated/models'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import {
   type BoardFilters,
   fromViewFilters,
@@ -10,7 +10,10 @@ import {
   NO_FILTERS,
   sameFilters,
 } from '@/board/filters'
-import { useTeamContext } from '@/team/TeamContext'
+import { type Arrangement, fromViewSort, sameSort } from '@/board/sorting'
+import { useTranslation } from '@/i18n'
+import { isArchived } from '@/team/archived'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 import { useSavedViews } from '@/views/useSavedViews'
 
@@ -20,19 +23,25 @@ import { useSavedViews } from '@/views/useSavedViews'
  * A row is marked as showing when the board's filters *equal* its filters,
  * rather than by tracking which view was clicked. That is what lets a pasted
  * URL light up the matching row for the person who receives it, and what
- * keeps the highlight honest when someone edits a filter afterwards.
+ * keeps the highlight honest when someone edits a filter afterwards. Beside
+ * a page that is not the board (`filters` null), no row is showing.
  */
 export function ViewList({
   filters,
+  arrangement,
   onApply,
   onEdit,
   isAdmin,
 }: {
-  filters: BoardFilters
-  onApply: (filters: BoardFilters) => void
-  onEdit: (view: SavedViewRead) => void
+  filters: BoardFilters | null
+  arrangement: Arrangement
+  /** A view applies its grouping and sort too; "All tickets" only clears filters. */
+  onApply: (filters: BoardFilters, arrangement?: Arrangement) => void
+  /** Absent where there is no dialog to rename a view in. */
+  onEdit?: (view: SavedViewRead) => void
   isAdmin: boolean
 }) {
+  const { t } = useTranslation(['views', 'common'])
   const { team } = useTeamContext()
   const views = useSavedViews(team.id)
 
@@ -45,18 +54,19 @@ export function ViewList({
         type="button"
         onClick={() => onApply(NO_FILTERS)}
         className="nav-item"
-        data-active={isEmpty(filters)}
+        data-active={filters !== null && isEmpty(filters)}
       >
         <Icon name="board" size={15} className="opacity-70" />
-        All issues
+        {t('list.allTickets')}
       </button>
 
-      {shared.length > 0 && <Group label="Shared" />}
+      {shared.length > 0 && <Group label={t('list.shared')} />}
       {shared.map((view) => (
         <ViewRow
           key={view.id}
           view={view}
           filters={filters}
+          arrangement={arrangement}
           views={views}
           onApply={onApply}
           onEdit={onEdit}
@@ -64,12 +74,13 @@ export function ViewList({
         />
       ))}
 
-      {mine.length > 0 && <Group label="Private" />}
+      {mine.length > 0 && <Group label={t('list.private')} />}
       {mine.map((view) => (
         <ViewRow
           key={view.id}
           view={view}
           filters={filters}
+          arrangement={arrangement}
           views={views}
           onApply={onApply}
           onEdit={onEdit}
@@ -87,18 +98,21 @@ function Group({ label }: { label: string }) {
 function ViewRow({
   view,
   filters,
+  arrangement,
   views,
   onApply,
   onEdit,
   isAdmin,
 }: {
   view: SavedViewRead
-  filters: BoardFilters
+  filters: BoardFilters | null
+  arrangement: Arrangement
   views: ReturnType<typeof useSavedViews>
-  onApply: (filters: BoardFilters) => void
-  onEdit: (view: SavedViewRead) => void
+  onApply: (filters: BoardFilters, arrangement?: Arrangement) => void
+  onEdit?: (view: SavedViewRead) => void
   isAdmin: boolean
 }) {
+  const { t } = useTranslation(['views', 'common'])
   const { user } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -112,11 +126,18 @@ function ViewRow({
     return () => window.removeEventListener('resize', measure)
   }, [menuOpen])
 
-  const showing = sameFilters(filters, fromViewFilters(view.filters))
+  const viewSort = fromViewSort(view.sort, view.sort_direction)
+  const showing =
+    filters !== null &&
+    view.group_by === arrangement.grouping &&
+    sameSort(viewSort, arrangement.sort) &&
+    sameFilters(filters, fromViewFilters(view.filters))
   const isMine = views.myDefaultId === view.id
   const isTeams = views.teamDefaultId === view.id
-  // Its owner, or an admin tidying up after somebody who left.
-  const canEdit = view.owner.id === user?.id || isAdmin
+  // Its owner, or an admin tidying up after somebody who left -- not on an
+  // archived team (#322). Opening it by default is yours, and stays.
+  const writable = !isArchived(useTeamContext().team)
+  const canEdit = writable && (view.owner.id === user?.id || isAdmin)
 
   const act = async (run: () => Promise<unknown>) => {
     setMenuOpen(false)
@@ -127,10 +148,14 @@ function ViewRow({
     <div className="group relative">
       <button
         type="button"
-        onClick={() => onApply(fromViewFilters(view.filters))}
+        onClick={() =>
+          onApply(fromViewFilters(view.filters), { grouping: view.group_by, sort: viewSort })
+        }
         className="nav-item w-full pr-7"
         data-active={showing}
-        title={view.is_shared ? `Shared by ${view.owner.full_name}` : 'Only you can see this'}
+        title={
+          view.is_shared ? t('list.sharedBy', { name: view.owner.full_name }) : t('list.onlyYou')
+        }
       >
         <Icon name={view.is_shared ? 'users' : 'filter'} size={14} className="opacity-70" />
         <span className="truncate">{view.name}</span>
@@ -139,7 +164,7 @@ function ViewRow({
             name="check"
             size={12}
             className={isMine ? 'ml-auto text-brand-500' : 'ml-auto text-neutral-400'}
-            aria-label={isMine ? 'Your default' : "The team's default"}
+            aria-label={isMine ? t('list.myDefault') : t('list.teamDefault')}
           />
         )}
       </button>
@@ -148,7 +173,7 @@ function ViewRow({
         ref={buttonRef}
         type="button"
         onClick={() => setMenuOpen((it) => !it)}
-        aria-label={`Actions for ${view.name}`}
+        aria-label={t('list.actionsFor', { name: view.name })}
         className="btn btn-ghost btn-icon btn-xs absolute right-1 top-1/2 -translate-y-1/2 text-neutral-400 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
       >
         <Icon name="more" size={13} />
@@ -165,37 +190,39 @@ function ViewRow({
             />
             <div
               role="menu"
-              aria-label={`${view.name} actions`}
+              aria-label={t('list.menu', { name: view.name })}
               style={{ top: anchor.bottom + 6, left: Math.min(anchor.left, window.innerWidth - 200) }}
               className="glass-menu fixed z-50 w-48 rounded-panel p-1"
             >
               <MenuItem
                 onClick={() => act(() => views.makeMyDefault(isMine ? null : view.id))}
               >
-                {isMine ? 'Stop opening on this' : 'Open on this by default'}
+                {isMine ? t('list.stopOpening') : t('list.openByDefault')}
               </MenuItem>
-              {isAdmin && view.is_shared && (
+              {writable && isAdmin && view.is_shared && (
                 <MenuItem
                   onClick={() => act(() => views.makeTeamDefault(isTeams ? null : view.id))}
                 >
-                  {isTeams ? "Clear the team's default" : "Make the team's default"}
+                  {isTeams ? t('list.clearTeamDefault') : t('list.makeTeamDefault')}
                 </MenuItem>
               )}
               {canEdit && (
                 <>
-                  <MenuItem
-                    onClick={() => {
-                      setMenuOpen(false)
-                      onEdit(view)
-                    }}
-                  >
-                    Rename or reshare…
-                  </MenuItem>
+                  {onEdit && (
+                    <MenuItem
+                      onClick={() => {
+                        setMenuOpen(false)
+                        onEdit(view)
+                      }}
+                    >
+                      {t('list.rename')}
+                    </MenuItem>
+                  )}
                   <MenuItem
                     danger
                     onClick={() => act(() => views.destroy(view))}
                   >
-                    Delete view
+                    {t('list.delete')}
                   </MenuItem>
                 </>
               )}

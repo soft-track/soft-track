@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
+from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
 from lib_softtrack import automations as automations_service
 from lib_softtrack.models.automations import (
@@ -29,13 +30,17 @@ def list_rules(
     """Every rule on the team, enabled or not, in the order they run.
 
     Readable by any member even though only admins may write one: a rule acts
-    on your issues, so being unable to find out what the rules are is not a
+    on your tickets, so being unable to find out what the rules are is not a
     reasonable place to be.
     """
     return automations_service.list_rules(session, current_user, team_id)
 
 
-@router.post("/teams/{team_id}/automation-rules", response_model=AutomationRuleRead)
+@router.post(
+    "/teams/{team_id}/automation-rules",
+    response_model=AutomationRuleRead,
+    dependencies=[team_writer],
+)
 def create_rule(
     team_id: int,
     payload: AutomationRuleCreate,
@@ -52,7 +57,7 @@ def create_rule(
 def list_runs(
     team_id: int,
     rule_id: Optional[int] = Query(None),
-    issue_id: Optional[int] = Query(None),
+    ticket_id: Optional[int] = Query(None),
     limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(0, ge=0),
     session: Session = Depends(get_session),
@@ -60,15 +65,15 @@ def list_runs(
 ):
     """What the team's rules have actually done, newest first.
 
-    Filterable by rule and by issue, which are the two forms the question
-    takes: "what has this rule been doing" and "why did this issue move".
+    Filterable by rule and by ticket, which are the two forms the question
+    takes: "what has this rule been doing" and "why did this ticket move".
     """
     return automations_service.list_runs(
         session,
         current_user,
         team_id,
         rule_id=rule_id,
-        issue_id=issue_id,
+        ticket_id=ticket_id,
         limit=limit,
         offset=offset,
     )
@@ -76,7 +81,11 @@ def list_runs(
 
 # Per-rule routes hang off /automation-rules rather than nesting under the
 # team, the way views do: a rule id is unique without its team.
-@router.patch("/automation-rules/{rule_id}", response_model=AutomationRuleRead)
+@router.patch(
+    "/automation-rules/{rule_id}",
+    response_model=AutomationRuleRead,
+    dependencies=[team_writer],
+)
 def update_rule(
     rule_id: int,
     payload: AutomationRuleUpdate,
@@ -86,7 +95,9 @@ def update_rule(
     return automations_service.update_rule(session, current_user, rule_id, payload)
 
 
-@router.delete("/automation-rules/{rule_id}", status_code=204)
+@router.delete(
+    "/automation-rules/{rule_id}", status_code=204, dependencies=[team_writer]
+)
 def delete_rule(
     rule_id: int,
     session: Session = Depends(get_session),

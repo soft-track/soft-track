@@ -6,10 +6,10 @@ from lib_softtrack.tables import StatusCategory
 
 
 class StatusRead(BaseModel):
-    """A team's status, as everything that renders an issue receives it.
+    """A team's status, as everything that renders a ticket receives it.
 
-    Embedded in IssueRead rather than referenced by id: a search hit and a
-    linked issue are both drawn outside any team's board, where there is no
+    Embedded in TicketRead rather than referenced by id: a search hit and a
+    linked ticket are both drawn outside any team's board, where there is no
     status list on hand to look the id up in.
     """
 
@@ -19,6 +19,9 @@ class StatusRead(BaseModel):
     category: StatusCategory
     position: int
     color: str
+    #: How many tickets the column should hold at once, or null for no limit
+    #: (#270).
+    wip_limit: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -35,6 +38,8 @@ class StatusUpdate(BaseModel):
     #: to done changes what every report says about the work sitting in it.
     category: Optional[StatusCategory] = None
     color: Optional[str] = None
+    #: A WIP limit (#270); an explicit null removes it, leaving it out keeps it.
+    wip_limit: Optional[int] = Field(default=None, ge=1, le=999)
 
 
 class StatusOrder(BaseModel):
@@ -48,9 +53,9 @@ class StatusOrder(BaseModel):
 
 
 class StatusDelete(BaseModel):
-    """Where the issues in the status being deleted should go.
+    """Where the tickets in the status being deleted should go.
 
-    Required rather than defaulted. Issues are the point of the tracker, and
+    Required rather than defaulted. Tickets are the point of the tracker, and
     guessing which column somebody's work should land in is not a decision to
     make on their behalf.
     """

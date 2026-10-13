@@ -36,3 +36,7 @@ dist-ssr/
 coverage.xml
 htmlcov/
 commit.message
+
+# Playwright end-to-end runs (e2e/, #92): results and traces are CI artifacts.
+e2e/test-results/
+e2e/playwright-report/

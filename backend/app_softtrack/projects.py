@@ -1,16 +1,20 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
+from app_softtrack.guards import team_writer
 from lib_identity.identity import get_current_user
+from lib_softtrack import deleting
 from lib_softtrack import projects as projects_service
-from lib_softtrack.models.projects import ProjectCreate, ProjectRead
+from lib_softtrack.models.projects import ProjectCreate, ProjectRead, ProjectUpdate
 from lib_softtrack.tables import User
 from web import get_session
 
 router = APIRouter(tags=["projects"])
 
 
-@router.post("/teams/{team_id}/projects", response_model=ProjectRead)
+@router.post(
+    "/teams/{team_id}/projects", response_model=ProjectRead, dependencies=[team_writer]
+)
 def create_project(
     team_id: int,
     payload: ProjectCreate,
@@ -36,3 +40,36 @@ def get_project(
     current_user: User = Depends(get_current_user),
 ):
     return projects_service.get_project(session, current_user, project_id)
+
+
+@router.patch(
+    "/projects/{project_id}", response_model=ProjectRead, dependencies=[team_writer]
+)
+def update_project(
+    project_id: int,
+    payload: ProjectUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Rename, re-date, re-lead or move a project through its states.
+
+    Setting `archived` retires it from pickers without touching the tickets
+    already in it.
+    """
+    return projects_service.update_project(session, current_user, project_id, payload)
+
+
+@router.delete("/projects/{project_id}", status_code=204, dependencies=[team_writer])
+def delete_project(
+    project_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Move an epic to the trash (#323). Its tickets keep pointing at it, and
+    rejoin it if it is restored.
+
+    When it is purged, its tickets are left with no epic, saved views that
+    filtered on it stop filtering on it, and automation rules conditioned on
+    it are switched off rather than widened to every ticket.
+    """
+    deleting.trash_project(session, current_user, project_id)

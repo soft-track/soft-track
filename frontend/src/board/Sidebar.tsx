@@ -1,12 +1,19 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import type { SavedViewRead } from '@/api/generated/models'
-import { useAuth } from '@/auth/AuthContext'
-import type { BoardFilters } from '@/board/filters'
-import { CycleList } from '@/cycles/CycleList'
+import { useAuth } from '@/auth/useAuth'
+import { type BoardFilters, NO_FILTERS } from '@/board/filters'
+import type { Arrangement } from '@/board/sorting'
+import { MyWorkNavItem } from '@/mywork/MyWorkNavItem'
+import { SprintList } from '@/sprints/SprintList'
+import { useTranslation } from '@/i18n'
+import { isArchived, switchableTeams } from '@/team/archived'
 import { InvitesBanner } from '@/team/InvitesBanner'
-import { useTeamContext } from '@/team/TeamContext'
+import { pickableProjects } from '@/team/projects'
+import { useTeamContext } from '@/team/useTeamContext'
+import { useTeamCreation } from '@/team/useTeams'
 import { Avatar } from '@/ui/Avatar'
+import { ExternalChip } from '@/ui/ExternalChip'
 import { Icon } from '@/ui/Icon'
 import { Logo } from '@/ui/Logo'
 import { Select } from '@/ui/Select'
@@ -15,24 +22,43 @@ import { ViewList } from '@/views/ViewList'
 
 export function Sidebar({
   filters,
+  arrangement,
   onFiltersChange,
   onEditView,
   isAdmin,
-  onNewCycle,
+  onNewSprint,
+  onNewProject,
   onImport,
 }: {
-  filters: BoardFilters
-  onFiltersChange: (filters: BoardFilters) => void
-  onEditView: (view: SavedViewRead) => void
+  /** Null beside a page that is not the board -- the people pages (#125):
+   *  nothing in the lists is showing, and picking one opens the board. */
+  filters: BoardFilters | null
+  arrangement: Arrangement
+  /** A saved view brings its grouping and sort; everything else leaves them. */
+  onFiltersChange: (filters: BoardFilters, arrangement?: Arrangement) => void
+  /** Absent where there is no dialog to rename a view in. */
+  onEditView?: (view: SavedViewRead) => void
   /** Team admins can set the team default and tidy up others' shared views. */
   isAdmin: boolean
-  onNewCycle: () => void
-  onImport: () => void
+  /** Absent for a guest (#104), and so are the buttons. */
+  onNewSprint?: () => void
+  onNewProject?: () => void
+  onImport?: () => void
 }) {
   const { user, logout } = useAuth()
-  const { team, teams, projects, cycles } = useTeamContext()
+  // Somebody from outside the organisation (#243, #317).
+  const outside = user?.is_external ?? false
+  const mayCreateTeam = useTeamCreation().mayCreate && !outside
+  const { team, teams, projects: allProjects, sprints } = useTeamContext()
+  // Archived projects leave the sidebar, unless one is the filter in force --
+  // the board is showing its tickets, so the row that toggles it off stays.
+  const projects = pickableProjects(allProjects, filters?.projectId ?? null)
   const navigate = useNavigate()
+  const { projectId: openProjectId } = useParams<{ projectId?: string }>()
+  const { pathname } = useLocation()
+  const onPeople = pathname.startsWith('/people')
   const { theme, toggle: toggleTheme } = useTheme()
+  const { t } = useTranslation(['board', 'common', 'team'])
 
   return (
     <aside className="glass-strong flex h-full w-60 flex-col rounded-panel">
@@ -42,8 +68,8 @@ export function Sidebar({
           type="button"
           onClick={toggleTheme}
           className="btn btn-ghost btn-icon btn-sm"
-          aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-          title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
+          aria-label={theme === 'dark' ? t('sidebar.switchToLight') : t('sidebar.switchToDark')}
+          title={theme === 'dark' ? t('sidebar.lightTheme') : t('sidebar.darkTheme')}
         >
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={15} />
         </button>
@@ -54,101 +80,168 @@ export function Sidebar({
           block
           value={team.key}
           onChange={(e) => navigate(`/${e.target.value}`)}
-          aria-label="Team"
+          aria-label={t('sidebar.team')}
         >
-          {teams.map((t) => (
-            <option key={t.id} value={t.key}>
-              {t.name} · {t.key}
+          {/* Not an archived team (#322), unless it is the one open. */}
+          {switchableTeams(teams, team.id).map((other) => (
+            <option key={other.id} value={other.key}>
+              {isArchived(other)
+                ? t('team:archived.option', { name: other.name, key: other.key })
+                : t('sidebar.teamOption', { name: other.name, key: other.key })}
             </option>
           ))}
         </Select>
       </div>
 
       <nav className="scroll-thin flex-1 space-y-5 overflow-y-auto px-3 pb-3">
+        {/* Everything that is mine, across every team (#258): above this
+            team's views, being nobody's team. */}
+        <MyWorkNavItem />
+
         <div>
-          <p className="eyebrow mb-1.5 px-2">Views</p>
+          <p className="eyebrow mb-1.5 px-2">{t('sidebar.views')}</p>
           {/* Members deliberately does not live here any more. It is a link
               to a settings page, not a filter, and sitting under the
               "Private" heading it read as somebody's saved view. */}
           <ViewList
             filters={filters}
+            arrangement={arrangement}
             onApply={onFiltersChange}
             onEdit={onEditView}
             isAdmin={isAdmin}
           />
         </div>
 
-        <div>
-          <div className="mb-1.5 flex items-center justify-between px-2">
-            <p className="eyebrow">Cycles</p>
-            <button
-              type="button"
-              onClick={onNewCycle}
-              aria-label="New cycle"
-              title="New cycle"
-              className="btn btn-ghost btn-icon btn-xs"
-            >
-              <Icon name="plus" size={13} />
-            </button>
+        {/* The team's sprints are its whole backlog, which somebody from
+            outside the organisation does not see (#243). */}
+        {!user?.is_external && (
+          <div>
+            <div className="mb-1.5 flex items-center justify-between px-2">
+              <p className="eyebrow">{t('sidebar.sprints')}</p>
+              {onNewSprint && (
+                <button
+                  type="button"
+                  onClick={onNewSprint}
+                  aria-label={t('sidebar.newSprint')}
+                  title={t('sidebar.newSprint')}
+                  className="btn btn-ghost btn-icon btn-xs"
+                >
+                  <Icon name="plus" size={13} />
+                </button>
+              )}
+            </div>
+            <SprintList
+              sprints={sprints}
+              activeSprintId={filters?.sprintId ?? null}
+              onSelect={(sprintId) => onFiltersChange({ ...(filters ?? NO_FILTERS), sprintId })}
+            />
           </div>
-          <CycleList
-            cycles={cycles}
-            activeCycleId={filters.cycleId}
-            onSelect={(cycleId) => onFiltersChange({ ...filters, cycleId })}
-          />
-        </div>
+        )}
 
         <div>
-          <p className="eyebrow mb-1.5 px-2">Projects</p>
+          <div className="mb-1.5 flex items-center justify-between px-2">
+            <p className="eyebrow">{t('sidebar.projects')}</p>
+            {onNewProject && (
+              <button
+                type="button"
+                onClick={onNewProject}
+                aria-label={t('sidebar.newProject')}
+                title={t('sidebar.newProject')}
+                className="btn btn-ghost btn-icon btn-xs"
+              >
+                <Icon name="plus" size={13} />
+              </button>
+            )}
+          </div>
           {projects.length === 0 && (
-            <p className="px-2 text-xs text-neutral-400">No projects yet.</p>
+            <p className="px-2 text-xs text-neutral-400">{t('sidebar.noProjects')}</p>
           )}
           {projects.map((project) => (
-            <button
-              key={project.id}
-              type="button"
-              // A project is a filter like any other now, so picking one
-              // composes with whatever else is set rather than replacing it.
-              onClick={() =>
-                onFiltersChange({
-                  ...filters,
-                  projectId: filters.projectId === project.id ? null : project.id,
-                })
-              }
-              className="nav-item"
-              data-active={filters.projectId === project.id}
-            >
-              <span
-                className="dot"
-                style={{ ['--dot' as string]: project.color }}
-                aria-hidden="true"
-              />
-              <span className="truncate">{project.name}</span>
-            </button>
+            <div key={project.id} className="group/project relative">
+              <button
+                type="button"
+                // A project is a filter like any other now, so picking one
+                // composes with whatever else is set rather than replacing it.
+                onClick={() =>
+                  onFiltersChange({
+                    ...(filters ?? NO_FILTERS),
+                    projectId: filters?.projectId === project.id ? null : project.id,
+                  })
+                }
+                className="nav-item pr-8"
+                data-active={
+                  filters?.projectId === project.id || openProjectId === String(project.id)
+                }
+              >
+                <span
+                  className="dot"
+                  style={{ ['--dot' as string]: project.color }}
+                  aria-hidden="true"
+                />
+                <span className="truncate">{project.name}</span>
+              </button>
+              {/* The row filters the board, as it always has; its own page --
+                  progress, lead, target date -- is one step further in. */}
+              <Link
+                to={`/${team.key}/projects/${project.id}`}
+                aria-label={t('sidebar.openNamed', { name: project.name })}
+                title={t('sidebar.openProject')}
+                className="btn btn-ghost btn-icon btn-xs absolute right-1 top-1/2 -translate-y-1/2 text-neutral-400 opacity-0 transition group-hover/project:opacity-100 focus-visible:opacity-100"
+              >
+                <Icon name="chevron-right" size={13} />
+              </Link>
+            </div>
           ))}
         </div>
       </nav>
 
-      <div className="px-3 pb-2 empty:hidden">
-        <InvitesBanner compact />
-      </div>
+      {/* My work lists invitations under "Waiting on me" already. */}
+      {pathname !== '/my-work' && (
+        <div className="px-3 pb-2 empty:hidden">
+          <InvitesBanner compact />
+        </div>
+      )}
 
       <div className="space-y-0.5 px-3 pb-2">
+        {/* Everyone on the instance (#125), beside the members of this team.
+            Not for somebody from outside the organisation (#317), and nor
+            are importing or starting a team: the sidebar offers what the
+            account can reach. Members stays, the team they were invited to. */}
+        {!outside && (
+          <Link to="/people" className="nav-item text-neutral-500" data-active={onPeople}>
+            <Icon name="users" size={15} className="opacity-70" />
+            {t('sidebar.people')}
+          </Link>
+        )}
         <Link
           to={`/settings/teams/${team.key}/members`}
           className="nav-item text-neutral-500"
         >
           <Icon name="users" size={15} className="opacity-70" />
-          Members
+          {t('sidebar.members')}
         </Link>
-        <button type="button" onClick={onImport} className="nav-item text-neutral-500">
-          <Icon name="upload" size={15} className="opacity-70" />
-          Import from Jira
-        </button>
-        <Link to="/new-team" className="nav-item text-neutral-500">
-          <Icon name="plus" size={15} className="opacity-70" />
-          New team
-        </Link>
+        {onImport && !outside && (
+          <button type="button" onClick={onImport} className="nav-item text-neutral-500">
+            <Icon name="upload" size={15} className="opacity-70" />
+            {t('sidebar.importJira')}
+          </button>
+        )}
+        {/* The teams there are, and asking to join one (#259). */}
+        {!outside && (
+          <Link to="/teams" className="nav-item text-neutral-500">
+            <Icon name="search" size={15} className="opacity-70" />
+            {t('sidebar.findTeam')}
+          </Link>
+        )}
+        {/* Only for whoever may create one (#306): never somebody from
+            outside, and on a restricted instance only site admins or the
+            people named. */}
+        {mayCreateTeam && (
+          <Link to="/new-team" className="nav-item text-neutral-500">
+            <Icon name="plus" size={15} className="opacity-70" />
+            {t('sidebar.newTeam')}
+          </Link>
+        )}
       </div>
 
       {user && (
@@ -156,13 +249,17 @@ export function Sidebar({
           <Avatar user={user} size={30} decorative />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-neutral-900">{user.full_name}</p>
-            <p className="truncate text-[11px] text-neutral-400">{user.email}</p>
+            {/* Under the name, where it does not squeeze it (#317). */}
+            <p className="flex items-center gap-1.5 text-[11px] text-neutral-400">
+              {outside && <ExternalChip />}
+              <span className="truncate">{user.email}</span>
+            </p>
           </div>
           <Link
             to="/settings/profile"
             className="btn btn-ghost btn-icon btn-sm text-neutral-400"
-            title="Settings"
-            aria-label="Settings"
+            title={t('sidebar.settings')}
+            aria-label={t('sidebar.settings')}
           >
             <Icon name="settings" size={15} />
           </Link>
@@ -170,8 +267,8 @@ export function Sidebar({
             type="button"
             onClick={logout}
             className="btn btn-ghost btn-icon btn-sm text-neutral-400"
-            title="Sign out"
-            aria-label="Sign out"
+            title={t('sidebar.signOut')}
+            aria-label={t('sidebar.signOut')}
           >
             <Icon name="logout" size={15} />
           </button>

@@ -3,15 +3,18 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 
 import { useAuthConfigAuthConfigGet } from '@/api/generated/endpoints/auth/auth'
 import { errorDetail } from '@/api/errors'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import { DEMO_EMAIL, DEMO_PASSWORD } from '@/auth/demo'
 import { oauthErrorMessage } from '@/auth/oauth'
 import { ProviderButtons } from '@/auth/ProviderButtons'
 import { signInDestination } from '@/auth/redirect'
+import { TotpChallenge } from '@/auth/TotpChallenge'
+import { Trans, useTranslation } from '@/i18n'
 import { Logo } from '@/ui/Logo'
 
 export default function LoginPage() {
   const { login } = useAuth()
+  const { t } = useTranslation(['auth', 'common'])
   const navigate = useNavigate()
   const location = useLocation()
   const [params] = useSearchParams()
@@ -34,6 +37,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  // Set once the password has passed for an account with two-factor on.
+  const [pendingToken, setPendingToken] = useState<string | null>(null)
 
   // `?next=` as well as the router's own state -- see signInDestination for
   // why there are two sources and why only one shape of value is honoured.
@@ -52,15 +57,20 @@ export default function LoginPage() {
     setError(null)
     setSubmitting(true)
     try {
-      await login(email, password)
-      navigate(from, { replace: true })
+      const pending = await login(email, password)
+      if (pending) {
+        setPendingToken(pending.pending_token)
+        setPassword('')
+      } else {
+        navigate(from, { replace: true })
+      }
     } catch (err: unknown) {
       // Surface what the API said rather than always blaming the password.
       // Sign-in is rate limited, and a throttled person told "incorrect
       // password" just retries -- straight into a longer backoff. The 401 text
       // is identical for a wrong password and an unknown address, so showing
       // it leaks nothing.
-      setError(errorDetail(err, 'Incorrect email or password.'))
+      setError(errorDetail(err, t('login.errors.failed')))
     } finally {
       setSubmitting(false)
     }
@@ -74,74 +84,109 @@ export default function LoginPage() {
             <Logo size={52} />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
-            Sign in to <span className="text-gradient">SoftTrack</span>
+            <Trans
+              t={t}
+              i18nKey="login.title"
+              components={{ brand: <span className="text-gradient" /> }}
+            />
           </h1>
           <p className="mt-1.5 text-sm text-neutral-500">
-            An open-source issue tracker for small teams.
+            {t('login.tagline')}
           </p>
         </div>
 
-        <form onSubmit={onSubmit} className="glass-strong sheen space-y-4 rounded-panel p-6">
-          {message && (
-            <div
-              role="alert"
-              className="rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
-            >
-              {message}
+        {pendingToken ? (
+          <TotpChallenge
+            pendingToken={pendingToken}
+            onSignedIn={() => navigate(from, { replace: true })}
+            onRestart={(reason) => {
+              setPendingToken(null)
+              setError(reason ?? null)
+            }}
+          />
+        ) : (
+          <form onSubmit={onSubmit} className="glass-strong sheen space-y-4 rounded-panel p-6">
+            {message && (
+              <div
+                role="alert"
+                className="rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+              >
+                {message}
+              </div>
+            )}
+
+            <ProviderButtons next={from} />
+
+            <div>
+              <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-neutral-700">
+                {t('fields.email')}
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setTypedEmail(e.target.value)}
+                className="field"
+                placeholder={t('fields.emailPlaceholder')}
+              />
             </div>
-          )}
 
-          <ProviderButtons next={from} />
+            <div>
+              <div className="mb-1.5 flex items-baseline justify-between">
+                <label htmlFor="login-password" className="block text-sm font-medium text-neutral-700">
+                  {t('fields.password')}
+                </label>
+                {/* Only where the email can actually be sent: a link to a form
+                    whose mail never arrives is worse than no link. */}
+                {config.data?.password_reset && (
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs font-medium text-brand-600 hover:text-brand-700"
+                  >
+                    {t('login.forgotPassword')}
+                  </Link>
+                )}
+              </div>
+              <input
+                id="login-password"
+                type="password"
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="field"
+                placeholder="••••••••"
+              />
+            </div>
 
-          <div>
-            <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-neutral-700">
-              Email
-            </label>
-            <input
-              id="login-email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setTypedEmail(e.target.value)}
-              className="field"
-              placeholder="you@example.com"
-            />
-          </div>
+            <button type="submit" disabled={submitting} className="btn btn-primary h-10 w-full text-sm">
+              {submitting ? t('login.submitting') : t('login.submit')}
+            </button>
 
-          <div>
-            <label htmlFor="login-password" className="mb-1.5 block text-sm font-medium text-neutral-700">
-              Password
-            </label>
-            <input
-              id="login-password"
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="field"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button type="submit" disabled={submitting} className="btn btn-primary h-10 w-full text-sm">
-            {submitting ? 'Signing in…' : 'Sign in'}
-          </button>
-
-          {demoCredentials && (
-            <p className="text-center text-xs text-neutral-400">
-              Demo login: {DEMO_EMAIL} / {DEMO_PASSWORD}
-            </p>
-          )}
-        </form>
+            {demoCredentials && (
+              <p className="text-center text-xs text-neutral-400">
+                {t('login.demo', { email: DEMO_EMAIL, password: DEMO_PASSWORD })}
+              </p>
+            )}
+          </form>
+        )}
 
         {config.data?.open_registration !== false && (
           <p className="mt-5 text-center text-sm text-neutral-500">
-            Don't have an account?{' '}
-            <Link to="/register" className="font-medium text-brand-600 hover:text-brand-700">
-              Create one
-            </Link>
+            <Trans
+              t={t}
+              i18nKey="login.noAccount"
+              components={{
+                signup: (
+                  <Link
+                    to="/register"
+                    className="font-medium text-brand-600 hover:text-brand-700"
+                  />
+                ),
+              }}
+            />
           </p>
         )}
       </div>

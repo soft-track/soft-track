@@ -3,28 +3,48 @@
 Instance-wide, and deliberately narrow. It can list accounts, turn them off
 and back on, hand out its own privilege, and set a password for someone locked
 out -- the four things a self-hosted install needs from somebody when there is
-no support desk to call. It cannot delete a user: issues, comments and history
+no support desk to call. It cannot delete a user: tickets, comments and history
 all point at the row, so removing it would either take that work with it or
 leave the tracker unable to say who did what. Deactivation is the delete.
 """
 
 from typing import Optional
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends
+from sqlalchemy.orm import aliased, selectinload
 from sqlmodel import Session, col, func, or_, select
 
-from lib_identity.identity import get_current_user
-from lib_identity.models.admin import AdminUserRead, AdminUserUpdate
-from lib_identity.models.identity import UserMe
+from lib_finance import access as finance_access
+from lib_identity import accounts, api_tokens, managers, sessions
+from lib_identity.departments import require_department
+from lib_identity.identity import clear_totp, get_current_user
+from lib_identity.models.admin import (
+    AdminRole,
+    AdminUserRead,
+    AdminUserUpdate,
+    GuestOf,
+    WelcomeLinkRead,
+)
+from lib_identity.models.identity import PersonRef, UserMe
 from lib_softtrack.models.page import DEFAULT_LIMIT, Page
-from lib_softtrack.tables import TeamMember, User
+from lib_softtrack.tables import (
+    GuestEpic,
+    Project,
+    Team,
+    TeamMember,
+    TeamRole,
+    User,
+)
 from lib_utils.password import hash_password
+from lib_utils.errors import ErrorCode, api_error
 
 
 def require_site_admin(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_site_admin:
-        raise HTTPException(
-            status_code=403, detail="Only site administrators can do that"
+        raise api_error(
+            status_code=403,
+            code=ErrorCode.not_site_admin,
+            detail="Only site administrators can do that",
         )
     return current_user
 
@@ -45,8 +65,29 @@ def list_users(
     q: Optional[str] = None,
     limit: int = DEFAULT_LIMIT,
     offset: int = 0,
+    reports_to_deactivated: bool = False,
+    role: Optional[AdminRole] = None,
 ) -> Page[AdminUserRead]:
     filters = []
+    if role is AdminRole.site_admin:
+        filters.append(User.is_site_admin == True)  # noqa: E712 -- SQL comparison
+    elif role is AdminRole.finance_admin:
+        filters.append(User.is_finance_admin == True)  # noqa: E712
+    elif role is AdminRole.external:
+        filters.append(User.is_external == True)  # noqa: E712
+    elif role is AdminRole.not_activated:
+        filters.append(User.is_activated == False)  # noqa: E712
+    if reports_to_deactivated:
+        # Active people whose manager has been deactivated (#124): the links
+        # stay when a manager leaves, and this is where they are found again
+        # rather than one profile at a time.
+        manager = aliased(User)
+        filters.append(User.is_active == True)  # noqa: E712 -- SQL comparison
+        filters.append(
+            col(User.manager_id).in_(
+                select(manager.id).where(manager.is_active == False)  # noqa: E712
+            )
+        )
     if q:
         needle = f"%{q.strip()}%"
         filters.append(
@@ -62,6 +103,13 @@ def list_users(
     users = session.exec(
         select(User)
         .where(*filters)
+        # The page's departments, managers and finance grantors in a query
+        # each, not per row.
+        .options(
+            selectinload(User.department),
+            selectinload(User.manager),
+            selectinload(User.finance_admin_granted_by),
+        )
         .order_by(User.created_at, User.id)
         .limit(limit)
         .offset(offset)
@@ -78,41 +126,160 @@ def list_users(
         ).all()
     )
 
-    items = [_to_read(user, counts.get(user.id, 0)) for user in users]
+    reports = _report_counts(session, [u.id for u in users])
+    reach = _guest_of(session, [u.id for u in users if u.is_external])
+    links = accounts.live_links(session, [u.id for u in users if not u.is_activated])
+    live = sessions.live_counts(session, [u.id for u in users])
+    items = [
+        _to_read(
+            user,
+            counts.get(user.id, 0),
+            reports.get(user.id, 0),
+            reach.get(user.id, []),
+            links.get(user.id),
+            live.get(user.id, 0),
+        )
+        for user in users
+    ]
     return Page(items=items, total=total, limit=limit, offset=offset)
 
 
-def _to_read(user: User, team_count: int) -> AdminUserRead:
+def _guest_of(session: Session, user_ids: list[int]) -> dict[int, list[GuestOf]]:
+    """Where each account from outside is a guest, and the epics it sees
+    there (#243), for a page of people in two queries."""
+    if not user_ids:
+        return {}
+    memberships = session.exec(
+        select(TeamMember.user_id, Team)
+        .join(Team, Team.id == TeamMember.team_id)
+        .where(col(TeamMember.user_id).in_(user_ids))
+        .order_by(Team.name, Team.id)
+    ).all()
+    epics: dict[tuple[int, int], list[str]] = {}
+    for user_id, project in session.exec(
+        select(GuestEpic.user_id, Project)
+        .join(Project, Project.id == GuestEpic.project_id)
+        .where(col(GuestEpic.user_id).in_(user_ids))
+        .order_by(Project.name, Project.id)
+    ).all():
+        epics.setdefault((user_id, project.team_id), []).append(project.name)
+    reach: dict[int, list[GuestOf]] = {}
+    for user_id, team in memberships:
+        reach.setdefault(user_id, []).append(
+            GuestOf(
+                team_id=team.id,
+                team_name=team.name,
+                team_key=team.key,
+                epics=epics.get((user_id, team.id), []),
+            )
+        )
+    return reach
+
+
+def _report_counts(session: Session, user_ids: list[int]) -> dict[int, int]:
+    """Active direct reports per manager, for a page of people at once."""
+    return dict(
+        session.exec(
+            select(User.manager_id, func.count())
+            .where(
+                col(User.manager_id).in_(user_ids or [0]),
+                User.is_active == True,  # noqa: E712 -- SQL comparison
+            )
+            .group_by(User.manager_id)
+        ).all()
+    )
+
+
+def _to_read(
+    user: User,
+    team_count: int,
+    report_count: int,
+    guest_of: Optional[list[GuestOf]] = None,
+    welcome_link: Optional[WelcomeLinkRead] = None,
+    session_count: int = 0,
+) -> AdminUserRead:
     # Built from UserMe rather than field by field, so a column added to the
     # user's own view of themselves shows up here without a second edit.
+    granted_by = user.finance_admin_granted_by
     return AdminUserRead(
         **UserMe.model_validate(user).model_dump(),
         last_login_at=user.last_login_at,
         team_count=team_count,
+        report_count=report_count,
+        finance_admin_since=user.finance_admin_since,
+        finance_admin_granted_by=(
+            PersonRef.model_validate(granted_by) if granted_by else None
+        ),
+        guest_of=guest_of or [],
+        welcome_link=welcome_link,
+        session_count=session_count,
     )
 
 
-def _get_user_or_404(session: Session, user_id: int) -> User:
+def user_read(session: Session, user: User) -> AdminUserRead:
+    """One account as a row of the directory."""
+    team_count = session.exec(
+        select(func.count())
+        .select_from(TeamMember)
+        .where(TeamMember.user_id == user.id)
+    ).one()
+    return _to_read(
+        user,
+        team_count,
+        _report_counts(session, [user.id]).get(user.id, 0),
+        _guest_of(session, [user.id]).get(user.id, []) if user.is_external else [],
+        (
+            accounts.live_links(session, [user.id]).get(user.id)
+            if not user.is_activated
+            else None
+        ),
+        sessions.live_counts(session, [user.id]).get(user.id, 0),
+    )
+
+
+def end_sessions(session: Session, user_id: int) -> AdminUserRead:
+    """Every session of one account ends (#308), the way its own "Sign out
+    everywhere" ends them: the version every token carries moves on. Better
+    than the old way to the same end, deactivating and reactivating, which
+    also took its API tokens and finance access."""
+    user = get_user_or_404(session, user_id)
+    # An account its owner has not activated (#303) has no sessions, and
+    # moving the version on would spend the welcome link waiting for them.
+    if user.is_activated:
+        user.token_version += 1
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+    return user_read(session, user)
+
+
+def get_user_or_404(session: Session, user_id: int) -> User:
     user = session.get(User, user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise api_error(
+            status_code=404, code=ErrorCode.user_not_found, detail="User not found"
+        )
     return user
 
 
 def update_user(
     session: Session, actor: User, user_id: int, payload: AdminUserUpdate
 ) -> AdminUserRead:
-    user = _get_user_or_404(session, user_id)
+    user = get_user_or_404(session, user_id)
 
     # Locking yourself out is never what was meant, and on a single-admin
     # instance it is unrecoverable without database access.
     if user.id == actor.id and payload.is_active is False:
-        raise HTTPException(
-            status_code=400, detail="You cannot deactivate your own account"
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.cannot_deactivate_self,
+            detail="You cannot deactivate your own account",
         )
     if user.id == actor.id and payload.is_site_admin is False:
-        raise HTTPException(
-            status_code=400, detail="You cannot remove your own site admin access"
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.cannot_demote_self,
+            detail="You cannot remove your own site admin access",
         )
 
     # Unreachable as the rules stand, and kept anyway: the actor is
@@ -126,35 +293,102 @@ def update_user(
         and (payload.is_site_admin is False or payload.is_active is False)
     )
     if losing_the_last_admin and _active_site_admin_count(session) <= 1:
-        raise HTTPException(
+        raise api_error(
             status_code=409,
+            code=ErrorCode.last_site_admin,
             detail="This instance needs at least one active site administrator",
         )
+
+    _check_outside(session, actor, user, payload)
 
     if payload.full_name is not None:
         name = payload.full_name.strip()
         if not name:
-            raise HTTPException(status_code=400, detail="A name cannot be empty")
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.name_required,
+                detail="A name cannot be empty",
+            )
         user.full_name = name
+    if "started_on" in payload.model_fields_set:
+        user.started_on = payload.started_on
+    if "department_id" in payload.model_fields_set:
+        if payload.department_id is not None:
+            require_department(session, payload.department_id)
+        user.department_id = payload.department_id
+    if "manager_id" in payload.model_fields_set:
+        managers.set_manager(session, user, payload.manager_id)
     if payload.is_site_admin is not None:
         user.is_site_admin = payload.is_site_admin
+    if payload.is_finance_admin is not None:
+        finance_access.set_finance_admin(actor, user, payload.is_finance_admin)
+    if "employment_type" in payload.model_fields_set:
+        user.employment_type = payload.employment_type
+    if payload.is_external is not None:
+        user.is_external = payload.is_external
     if payload.is_active is not None:
         if payload.is_active is False and user.is_active:
             # Deactivating has to end the sessions too, or the account keeps
             # working for up to a week on the token it already holds.
             user.token_version += 1
+            # And its API tokens, which no session version governs (#90).
+            # Deleted rather than suspended: reactivating an account should
+            # not quietly bring back credentials a script somewhere still has.
+            api_tokens.revoke_all(session, user.id)
+            # Finance access goes the same way (#130), logged like any other
+            # revoke. Somebody coming back is granted it again on purpose.
+            finance_access.set_finance_admin(actor, user, False)
         user.is_active = payload.is_active
 
     session.add(user)
     session.commit()
     session.refresh(user)
+    return user_read(session, user)
 
-    team_count = session.exec(
-        select(func.count())
-        .select_from(TeamMember)
-        .where(TeamMember.user_id == user.id)
-    ).one()
-    return _to_read(user, team_count)
+
+def _check_outside(
+    session: Session, actor: User, user: User, payload: AdminUserUpdate
+) -> None:
+    """The rules for an account from outside the organisation (#243): never an
+    admin of any kind, and only ever a guest on a team."""
+    external = (
+        payload.is_external if payload.is_external is not None else user.is_external
+    )
+    if not external:
+        return
+    site_admin = (
+        payload.is_site_admin
+        if payload.is_site_admin is not None
+        else user.is_site_admin
+    )
+    finance_admin = (
+        payload.is_finance_admin
+        if payload.is_finance_admin is not None
+        else user.is_finance_admin
+    )
+    if user.id == actor.id or site_admin or finance_admin:
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.external_cannot_administer,
+            detail="An account from outside the organisation cannot be a site "
+            "or finance admin",
+        )
+    if user.is_external:
+        return
+    above_guest = session.exec(
+        select(Team.name)
+        .join(TeamMember, TeamMember.team_id == Team.id)
+        .where(TeamMember.user_id == user.id, TeamMember.role != TeamRole.guest)
+        .order_by(Team.name)
+    ).all()
+    if above_guest:
+        raise api_error(
+            status_code=409,
+            code=ErrorCode.external_account_is_guest,
+            detail=f"{user.full_name} is more than a guest on "
+            f"{', '.join(above_guest)}. Make them a guest there first: somebody "
+            "from outside the organisation is only ever a guest.",
+        )
 
 
 def reset_password(
@@ -168,8 +402,31 @@ def reset_password(
     the right outcome whether the reset is routine or a response to a
     compromise.
     """
-    user = _get_user_or_404(session, user_id)
+    user = get_user_or_404(session, user_id)
+    # An account prepared for somebody (#303) gets its first password from its
+    # owner, through their link, and from nobody else.
+    if not user.is_activated:
+        raise api_error(
+            status_code=409,
+            code=ErrorCode.account_not_activated,
+            detail=f"{user.full_name} has not chosen a password yet. Send them "
+            "their link again instead.",
+        )
     user.hashed_password = hash_password(new_password)
+    user.token_version += 1
+    session.add(user)
+    session.commit()
+
+
+def admin_clear_totp(session: Session, actor: User, user_id: int) -> None:
+    """Turn two-factor off for someone who has lost their authenticator.
+
+    Unconditional, and clears a half-finished setup as well: an escape hatch
+    that only opens in the expected state is not one. Their sessions end
+    either way, as with a password reset.
+    """
+    user = get_user_or_404(session, user_id)
+    clear_totp(user)
     user.token_version += 1
     session.add(user)
     session.commit()

@@ -7,10 +7,10 @@ keeps its own frozen copy, so this is the only place the live rules live.
 
 import re
 
-from fastapi import HTTPException
 from sqlmodel import Session, func, select
 
 from lib_softtrack.tables import User
+from lib_utils.errors import ErrorCode, api_error
 
 #: Lowercase, starts alphanumeric, 2-39 characters. The character class is the
 #: same one MENTION_PATTERN accepts in frontend/src/markdown/mentions.ts: a
@@ -25,8 +25,9 @@ def normalise_username(raw: str) -> str:
     """Lowercase and validate a username the user typed."""
     username = raw.strip().lower()
     if not USERNAME_PATTERN.match(username):
-        raise HTTPException(
+        raise api_error(
             status_code=400,
+            code=ErrorCode.username_invalid,
             detail=(
                 "A username is 2 to 39 characters, starts with a letter or "
                 "digit, and uses only letters, digits, dots, dashes and "
@@ -64,7 +65,11 @@ def assert_username_free(
     if except_user_id is not None:
         statement = statement.where(User.id != except_user_id)
     if session.exec(statement).first():
-        raise HTTPException(status_code=400, detail="That username is taken")
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.username_taken,
+            detail="That username is taken",
+        )
 
 
 def _username_exists(session: Session, username: str) -> bool:

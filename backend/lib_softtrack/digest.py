@@ -1,13 +1,14 @@
 """The batched email digest, and the loop that drives it.
 
-Email is the optional half of notifications: everything lands in the in-app
-inbox whether or not an instance has SMTP configured, and this module only
-adds a nudge for the ones nobody has read yet.
+Email is the optional half of notifications: this module adds a nudge for the
+ones nobody has read yet, of the kinds each person chose to have by email
+(#263). A kind turned off in the app but kept by email is a row the inbox
+does not show, and so is never read: it goes out here like any other.
 
 Batched rather than one mail per event, which is the difference between a
 useful notification and a filter rule. A notification has to sit unread for
 `digest_delay_minutes` before it is eligible, so somebody triaging a dozen
-issues in one sitting produces one email rather than twelve, and anybody
+tickets in one sitting produces one email rather than twelve, and anybody
 already reading the inbox gets no email at all.
 """
 
@@ -35,15 +36,64 @@ logger = logging.getLogger(__name__)
 MAX_LINES = 20
 
 
+#: The two that come from a date (#262), listed under their own heading.
+REMINDERS = (NotificationKind.due_tomorrow, NotificationKind.overdue)
+#: What happens on a ticket somebody watches, for the heading over the rest
+#: when that is all the rest is.
+WATCHED = (NotificationKind.commented, NotificationKind.status_changed)
+#: The rest, counted in a subject beside the reminders: "and 1 comment".
+_NOUNS = {
+    NotificationKind.assigned: ("assignment", "assignments"),
+    NotificationKind.field_assigned: ("assignment", "assignments"),
+    NotificationKind.mentioned: ("mention", "mentions"),
+    NotificationKind.commented: ("comment", "comments"),
+    NotificationKind.status_changed: ("status change", "status changes"),
+}
+
+
+def _day(value) -> str:
+    """A due date the way the inbox writes it, without the year: "29 Sep"."""
+    return f"{value.day} {value.strftime('%b')}"
+
+
+def _reminder(item: NotificationRead) -> str:
+    """What follows the ticket's title: "due tomorrow", "overdue since 29 Sep"."""
+    if item.kind == NotificationKind.due_tomorrow:
+        return "due tomorrow"
+    return f"overdue since {_day(item.due_date)}" if item.due_date else "overdue"
+
+
+def _counted(count: int, noun: tuple[str, str]) -> str:
+    return f"{count} {noun[0] if count == 1 else noun[1]}"
+
+
+def _subject_with_reminders(reminders: int, others: list[NotificationRead]) -> str:
+    """The reminders, and the rest by what they are when they are all one
+    thing: "2 reminders and 1 comment"."""
+    subject = _counted(reminders, ("reminder", "reminders"))
+    if not others:
+        return subject
+    nouns = {_NOUNS[item.kind] for item in others}
+    if len(nouns) == 1:
+        return f"{subject} and {_counted(len(others), nouns.pop())}"
+    other = ("other notification", "other notifications")
+    return f"{subject} and {_counted(len(others), other)}"
+
+
 def _sentence(item: NotificationRead) -> str:
+    if item.kind in REMINDERS:
+        return f"{item.ticket.identifier} is {_reminder(item)}"
     who = item.actor.full_name if item.actor else "Someone"
     if item.kind == NotificationKind.assigned:
-        return f"{who} assigned {item.issue.identifier} to you"
+        return f"{who} assigned {item.ticket.identifier} to you"
     if item.kind == NotificationKind.mentioned:
-        return f"{who} mentioned you on {item.issue.identifier}"
+        return f"{who} mentioned you on {item.ticket.identifier}"
     if item.kind == NotificationKind.commented:
-        return f"{who} commented on {item.issue.identifier}"
-    return f"{who} changed the status of {item.issue.identifier}"
+        return f"{who} commented on {item.ticket.identifier}"
+    if item.kind == NotificationKind.field_assigned:
+        field = item.field_name or "a field"
+        return f"{who} set you as {field} on {item.ticket.identifier}"
+    return f"{who} changed the status of {item.ticket.identifier}"
 
 
 def render_digest(items: list[NotificationRead], base_url: str) -> tuple[str, str]:
@@ -54,19 +104,48 @@ def render_digest(items: list[NotificationRead], base_url: str) -> tuple[str, st
     reader who is better served by it.
     """
     count = len(items)
+    reminders = [item for item in items if item.kind in REMINDERS]
+    others = [item for item in items if item.kind not in REMINDERS]
     if count == 1:
         subject = f"SoftTrack: {_sentence(items[0])}"
+    elif reminders:
+        subject = f"SoftTrack: {_subject_with_reminders(len(reminders), others)}"
     else:
         subject = f"SoftTrack: {count} new notifications"
 
     base = base_url.rstrip("/")
+
+    def link(item: NotificationRead) -> str:
+        return f"  {base}/{item.ticket.team_key}/ticket/{item.ticket.number}"
+
     lines: list[str] = []
-    for item in items[:MAX_LINES]:
+    shown = 0
+    # Reminders first, under their own heading (#262), and only with one
+    # when there are any: a digest of comments reads as it always did.
+    if reminders:
+        lines.append("REMINDERS")
+        lines.append("")
+        for item in reminders[:MAX_LINES]:
+            lines.append(
+                f"* {item.ticket.identifier} {item.ticket.title} · {_reminder(item)}"
+            )
+            lines.append(link(item))
+            lines.append("")
+            shown += 1
+        if others and shown < MAX_LINES:
+            heading = (
+                "ON TICKETS YOU WATCH"
+                if all(item.kind in WATCHED for item in others)
+                else "EVERYTHING ELSE"
+            )
+            lines.append(heading)
+            lines.append("")
+    for item in others[: MAX_LINES - shown]:
         lines.append(f"* {_sentence(item)}")
-        lines.append(f"  {item.issue.title}")
+        lines.append(f"  {item.ticket.title}")
         if item.excerpt:
             lines.append(f"  “{item.excerpt}”")
-        lines.append(f"  {base}/{item.issue.team_key}/issue/{item.issue.number}")
+        lines.append(link(item))
         lines.append("")
 
     if count > MAX_LINES:
@@ -76,7 +155,9 @@ def render_digest(items: list[NotificationRead], base_url: str) -> tuple[str, st
     lines.append("Read them in SoftTrack:")
     lines.append(base)
     lines.append("")
-    lines.append("Turn these emails off in Settings → Notifications.")
+    lines.append(
+        "Choose which of these reach you by email in Settings → Notifications."
+    )
     return subject, "\n".join(lines)
 
 
@@ -123,7 +204,9 @@ def send_pending_digests(
             # somebody about something they have dealt with.
             Notification.read_at == None,  # noqa: E711 -- SQL IS NULL
             Notification.created_at <= cutoff,
-            User.email_notifications == True,  # noqa: E712 -- SQL comparison
+            # Whether this kind reaches this person by email, decided when
+            # it was raised (#263) -- see notifications._channels.
+            Notification.by_email == True,  # noqa: E712 -- SQL comparison
             User.is_active == True,  # noqa: E712 -- SQL comparison
         )
         .order_by(Notification.created_at)

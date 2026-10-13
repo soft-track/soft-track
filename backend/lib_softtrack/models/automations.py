@@ -4,22 +4,23 @@ from typing import Optional
 from pydantic import BaseModel, Field, model_validator
 
 from lib_identity.models.identity import UserPublic
-from lib_softtrack.tables import AutomationTrigger, IssuePriority
+from lib_softtrack.tables import AutomationTrigger, TicketPriority, TicketType
 
 
 class RuleConditions(BaseModel):
-    """Which issues a rule acts on, out of the ones its trigger reaches.
+    """Which tickets a rule acts on, out of the ones its trigger reaches.
 
     Nested rather than flattened into the rule models so that "what a rule
     matches" is one shape wherever it appears -- the same reason ViewFilters
     is nested, and near enough the same vocabulary. Null everywhere means
-    "every issue this trigger sees", which is what an unconditioned rule
+    "every ticket this trigger sees", which is what an unconditioned rule
     should do rather than one that matches nothing.
     """
 
-    #: For a `status_changed` trigger this is the status the issue moved *to*.
+    #: For a `status_changed` trigger this is the status the ticket moved *to*.
     if_status_id: Optional[int] = None
-    if_priority: Optional[IssuePriority] = None
+    if_priority: Optional[TicketPriority] = None
+    if_type: Optional[TicketType] = None
     if_label_id: Optional[int] = None
     if_project_id: Optional[int] = None
     if_assignee_id: Optional[int] = None
@@ -36,30 +37,31 @@ class RuleConditions(BaseModel):
 
 
 class RuleActions(BaseModel):
-    """What a rule does to an issue it matched.
+    """What a rule does to a ticket it matched.
 
     Every field is optional and this model asserts nothing about the
     combination, because it is also the shape a *stored* rule is read back in
-    -- and a stored rule can be left with no actions at all. Deleting a cycle
-    strips `set_cycle_id` out of the rules that filled it and switches them
+    -- and a stored rule can be left with no actions at all. Deleting a sprint
+    strips `set_sprint_id` out of the rules that filled it and switches them
     off, and a rule in that state has to survive being listed so that somebody
     can see it and decide what it should say instead.
 
     The two things a rule being *written* may not do -- nothing at all, and
-    naming both a cycle and the active one -- are checked on
+    naming both a sprint and the active one -- are checked on
     AutomationRuleCreate and AutomationRuleUpdate, which is where writing
     happens.
     """
 
     set_status_id: Optional[int] = None
-    set_priority: Optional[IssuePriority] = None
+    set_priority: Optional[TicketPriority] = None
+    set_type: Optional[TicketType] = None
     set_assignee_id: Optional[int] = None
-    #: Added to whatever the issue already has, never replacing it.
+    #: Added to whatever the ticket already has, never replacing it.
     add_label_id: Optional[int] = None
-    set_cycle_id: Optional[int] = None
-    #: "Whichever cycle is running when this fires." Keeps meaning the same
-    #: thing a fortnight later, which a fixed cycle id does not.
-    move_to_active_cycle: bool = False
+    set_sprint_id: Optional[int] = None
+    #: "Whichever sprint is running when this fires." Keeps meaning the same
+    #: thing a fortnight later, which a fixed sprint id does not.
+    move_to_active_sprint: bool = False
     comment_body: Optional[str] = Field(default=None, max_length=2000)
 
     @property
@@ -68,10 +70,11 @@ class RuleActions(BaseModel):
             (
                 self.set_status_id is not None,
                 self.set_priority is not None,
+                self.set_type is not None,
                 self.set_assignee_id is not None,
                 self.add_label_id is not None,
-                self.set_cycle_id is not None,
-                self.move_to_active_cycle,
+                self.set_sprint_id is not None,
+                self.move_to_active_sprint,
                 (self.comment_body or "").strip(),
             )
         )
@@ -87,9 +90,9 @@ def _check_writable(actions: RuleActions) -> None:
     """
     if actions.is_empty:
         raise ValueError("A rule has to do something; give it at least one action.")
-    if actions.move_to_active_cycle and actions.set_cycle_id is not None:
+    if actions.move_to_active_sprint and actions.set_sprint_id is not None:
         raise ValueError(
-            "A rule moves an issue to a named cycle or to the active one, not both."
+            "A rule moves a ticket to a named sprint or to the active one, not both."
         )
 
 
@@ -153,13 +156,13 @@ class AutomationRunRead(BaseModel):
     rule_id: Optional[int]
     rule_name: str
     trigger: AutomationTrigger
-    issue_id: int
+    ticket_id: int
     #: e.g. "ENG-42". Denormalised into the response, not the row: it is the
-    #: team key and the issue number, both of which are still there to read.
-    issue_identifier: str
-    issue_title: str
+    #: team key and the ticket number, both of which are still there to read.
+    ticket_identifier: str
+    ticket_title: str
     #: Who did the thing that set the rule off. Null when nobody did -- a
-    #: cycle completing, or an event an earlier rule caused.
+    #: sprint completing, or an event an earlier rule caused.
     actor: Optional[UserPublic]
     #: What it did, one action per line.
     summary: str

@@ -1,15 +1,15 @@
-"""Finding issue identifiers in text somebody wrote for another purpose.
+"""Finding ticket identifiers in text somebody wrote for another purpose.
 
 This is the whole trick behind the repository integration. Nobody is going to
-fill in a "related issue" field on a pull request; they are, however, already
-typing `ENG-42` into the branch name, because that is how they find the issue
+fill in a "related ticket" field on a pull request; they are, however, already
+typing `ENG-42` into the branch name, because that is how they find the ticket
 again. So the link is read out of text that already exists rather than
 collected from a form that would go unfilled.
 
 Kept pure and in its own module because it is the piece most likely to be
 wrong in a way nothing else notices: a scanner that is slightly too eager
-links a pull request to an issue nobody meant, and a rule then moves that
-issue to Done. It is worth being able to test on strings alone.
+links a pull request to a ticket nobody meant, and a rule then moves that
+ticket to Done. It is worth being able to test on strings alone.
 """
 
 import re
@@ -17,7 +17,7 @@ from typing import Iterable
 
 from sqlmodel import Session, select
 
-from lib_softtrack.tables import Issue, Team
+from lib_softtrack.tables import Ticket, Team
 
 #: `ENG-42`, in whatever case somebody typed it.
 #:
@@ -29,8 +29,8 @@ from lib_softtrack.tables import Issue, Team
 #: `covid-19` are all shaped exactly like identifiers, and no pattern can tell
 #: them apart from one -- `UTF` is a perfectly good team key. The defence is
 #: `resolve` below: a candidate becomes a link only if a team on this instance
-#: is actually keyed that way *and* has an issue with that number. A team that
-#: keys itself UTF and writes "utf-8" in a commit message will link issue 8,
+#: is actually keyed that way *and* has a ticket with that number. A team that
+#: keys itself UTF and writes "utf-8" in a commit message will link ticket 8,
 #: and that is inherent to reading identifiers out of prose rather than a bug
 #: to pattern-match around.
 #:
@@ -40,7 +40,7 @@ from lib_softtrack.tables import Issue, Team
 #:
 #: The trailing boundary is `(?!\d)` rather than `\b` so that `ENG-4295` is one
 #: identifier and not `ENG-42` followed by junk -- `\b` would happily stop
-#: mid-number and link the wrong issue.
+#: mid-number and link the wrong ticket.
 _IDENTIFIER = re.compile(r"(?<![A-Za-z0-9])([A-Za-z][A-Za-z0-9]{1,5})-(\d{1,9})(?!\d)")
 
 #: Ignore anything past this. A webhook body is attacker-influenced even after
@@ -74,12 +74,12 @@ def find_identifiers(*texts: str | None) -> list[tuple[str, int]]:
     return found
 
 
-def resolve(session: Session, team_id: int, *texts: str | None) -> list[Issue]:
-    """The issues on this team that these texts name.
+def resolve(session: Session, team_id: int, *texts: str | None) -> list[Ticket]:
+    """The tickets on this team that these texts name.
 
     **Scoped to one team, and that is the security boundary.** A repository is
     connected by a team, so text arriving from it can only ever reach that
-    team's issues -- a webhook set up by one team cannot move another team's
+    team's tickets -- a webhook set up by one team cannot move another team's
     board even if somebody writes the other team's identifier in a commit
     message. Resolving globally would be more convenient and would make every
     connected repository a way into every board on the instance.
@@ -100,13 +100,13 @@ def resolve(session: Session, team_id: int, *texts: str | None) -> list[Issue]:
     if not numbers:
         return []
 
-    issues = session.exec(
-        select(Issue).where(Issue.team_id == team_id, Issue.number.in_(numbers))
+    tickets = session.exec(
+        select(Ticket).where(Ticket.team_id == team_id, Ticket.number.in_(numbers))
     ).all()
 
     # Back into the order the text mentioned them, so a pull request naming
-    # two issues links them the way it reads.
-    by_number = {issue.number: issue for issue in issues}
+    # two tickets links them the way it reads.
+    by_number = {ticket.number: ticket for ticket in tickets}
     return [by_number[number] for number in _ordered(numbers) if number in by_number]
 
 

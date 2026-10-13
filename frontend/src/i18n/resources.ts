@@ -1,0 +1,56 @@
+import { attachments } from '@/i18n/en/attachments'
+import { auth } from '@/i18n/en/auth'
+import { automations } from '@/i18n/en/automations'
+import { board } from '@/i18n/en/board'
+import { calendar } from '@/i18n/en/calendar'
+import { common } from '@/i18n/en/common'
+import { sprints } from '@/i18n/en/sprints'
+import { errors } from '@/i18n/en/errors'
+import { finance } from '@/i18n/en/finance'
+import { imports } from '@/i18n/en/imports'
+import { tickets } from '@/i18n/en/tickets'
+import { keyboard } from '@/i18n/en/keyboard'
+import { landing } from '@/i18n/en/landing'
+import { markdown } from '@/i18n/en/markdown'
+import { mywork } from '@/i18n/en/mywork'
+import { notifications } from '@/i18n/en/notifications'
+import { people } from '@/i18n/en/people'
+import { projects } from '@/i18n/en/projects'
+import { reports } from '@/i18n/en/reports'
+import { search } from '@/i18n/en/search'
+import { settings } from '@/i18n/en/settings'
+import { sharing } from '@/i18n/en/sharing'
+import { team } from '@/i18n/en/team'
+import { ui } from '@/i18n/en/ui'
+import { views } from '@/i18n/en/views'
+
+/** Every catalog, by language and namespace. English is the only language. */
+export const resources = {
+  en: {
+    common,
+    settings,
+    tickets,
+    board,
+    auth,
+    team,
+    landing,
+    projects,
+    views,
+    reports,
+    sprints,
+    automations,
+    imports,
+    search,
+    keyboard,
+    notifications,
+    people,
+    finance,
+    calendar,
+    attachments,
+    markdown,
+    ui,
+    errors,
+    sharing,
+    mywork,
+  },
+} as const

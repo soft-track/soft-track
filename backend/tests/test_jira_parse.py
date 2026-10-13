@@ -15,7 +15,7 @@ from lib_softtrack.jira import (
     parse,
     parse_csv,
 )
-from lib_softtrack.tables import IssuePriority, StatusCategory
+from lib_softtrack.tables import TicketPriority, StatusCategory
 
 # --- the repeated-column trap -------------------------------------------
 
@@ -71,7 +71,7 @@ def test_core_fields_are_read():
     assert issue.title == "Fix login"
     assert issue.description == "It breaks"
     assert issue.status is StatusCategory.started
-    assert issue.priority is IssuePriority.high
+    assert issue.priority is TicketPriority.high
     assert issue.assignee == "ada@x.com"
     assert issue.reporter == "grace@x.com"
     assert issue.created_at is not None and issue.created_at.year == 2024
@@ -122,10 +122,10 @@ def test_an_unknown_status_falls_back_and_is_reported():
 @pytest.mark.parametrize(
     "raw,expected",
     [
-        ("Highest", IssuePriority.urgent),
-        ("Blocker", IssuePriority.urgent),
-        ("Medium", IssuePriority.medium),
-        ("Lowest", IssuePriority.low),
+        ("Highest", TicketPriority.urgent),
+        ("Blocker", TicketPriority.urgent),
+        ("Medium", TicketPriority.medium),
+        ("Lowest", TicketPriority.low),
     ],
 )
 def test_known_priorities_map(raw, expected):
@@ -136,7 +136,7 @@ def test_a_missing_priority_is_not_reported_as_unmapped():
     """An absent value is not a mapping failure, and reporting it as one
     would bury the ones that matter."""
     priority, unmapped = map_priority("")
-    assert priority is IssuePriority.no_priority
+    assert priority is TicketPriority.no_priority
     assert unmapped is None
 
 

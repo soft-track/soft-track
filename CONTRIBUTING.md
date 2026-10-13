@@ -44,6 +44,7 @@ pytest --cov --cov-fail-under=85           # tests and the coverage floor
 ```bash
 cd frontend
 npx oxlint src/                            # lint
+npm run lint:i18n                          # no literal UI text in converted folders
 npx tsc -b --noEmit                        # typecheck
 npm test                                   # vitest
 npm run build                              # the build must succeed
@@ -51,6 +52,10 @@ npm run build                              # the build must succeed
 
 The fourth job regenerates `backend/openapi.json` and fails if it differs from
 what is committed. See below.
+
+The E2E job drives the running stack from a browser: sign-up, the board,
+mentions and search. Running it locally needs Docker and Playwright;
+[e2e/README.md](e2e/README.md) has the commands.
 
 ## Three things worth knowing before you open a PR
 
@@ -72,9 +77,12 @@ disagree about a payload fail confusingly at runtime rather than loudly at
 build time.
 
 **Business logic goes in the service layer.** The backend is thin routers over
-services: `app_softtrack/issues.py` parses the request and calls
-`lib_softtrack/issues.py`, which does the work. A route handler should be
-short enough to read in one go. Logic in a handler is hard to test without
+services: `app_softtrack/tickets.py` parses the request and calls
+`lib_softtrack/tickets.py`, which does the work. A route handler should be
+short enough to read in one go. Errors are raised with
+`api_error(status, ErrorCode.…, "sentence")` rather than a bare
+`HTTPException`, so clients get a code to branch on (see
+[docs/architecture.md](docs/architecture.md#errors)). Logic in a handler is hard to test without
 HTTP and tends to get copied the next time a second route needs it.
 
 **Schema changes need a migration.** The schema is managed by Alembic and
@@ -91,6 +99,46 @@ Then *read the generated file*. Autogenerate is reliable for added tables,
 columns and indexes, and unreliable for server defaults, constraint renames,
 and anything that has to move data. It also does not import `sqlmodel` on its
 own for `AutoString` columns -- check the imports at the top.
+
+## Text in the interface
+
+User-facing text lives in the translation catalog, `frontend/src/i18n/en/`,
+not in JSX — one namespace per feature folder, typed so a mistyped key fails
+the typecheck. English is the only language until the catalog is complete;
+the point for now is that new text goes into a catalog, so adding a language
+later is a new folder rather than a pass over every component.
+
+Every folder is converted, and `frontend/scripts/check-i18n.mjs` fails CI on
+literal text in JSX anywhere under `src/`, so new text goes into the catalog
+from the start:
+
+```tsx
+import { Trans, useTranslation } from '@/i18n'
+
+const { t } = useTranslation(['settings', 'common'])
+t('members.title')                              // a plain string
+t('members.invited', { email })                 // "Invited {{email}}"
+<Trans t={t} i18nKey="members.emailed" values={{ email }}
+       components={{ strong: <strong /> }}
+       {...userText} />                         // markup inside a sentence
+```
+
+Two things about `<Trans>` that bite. A `<Trans>` given `values` needs
+`{...userText}`: Trans parses the finished string as markup, so a team called
+"R&D <code>ops</code>" would otherwise lose half its name to a tag — the
+guardrail enforces this one. And don't name a tag after an empty HTML element
+(`link`, `br`, `img`): i18next renders `<link>` as the real, empty element and
+drops the text inside it. Call a link to a rule `<rule>`.
+
+Never build a sentence out of translated pieces — word order is the first
+thing a second language changes. That includes a name set in bold beside a
+translated phrase: the name goes inside the sentence, as a `<Trans>` tag.
+A label map read from many places — `PRIORITY_META[p].label` — keeps its
+shape and makes `label` a getter over `i18n.t(...)`, so callers need not
+change. Lists ("Bug, Task and Story") go through `formatList`. Dates and numbers go through
+`@/i18n/format` (`formatDate`, `formatRelative`, `formatNumber`), which is the
+one place a locale is chosen. Backend error messages are translated by their
+code (#86) in `frontend/src/api/errors.ts`, not here.
 
 ## Tests
 
@@ -115,7 +163,7 @@ replaces, so anything else it claims to be can drift without the build
 noticing. Where a key is handled by more than one layer, wire the harness to
 the board's real overlay stack: with a single boolean, "closed the dialog" and
 "closed the dialog and the panel behind it" look identical.
-`frontend/src/issues/__tests__/NewIssueModal.test.tsx` and
+`frontend/src/tickets/__tests__/NewTicketModal.test.tsx` and
 `frontend/src/keyboard/__tests__/CommandPalette.test.tsx` are the pattern to
 copy.
 

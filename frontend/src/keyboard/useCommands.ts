@@ -2,79 +2,130 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import type { TeamRead, UserMe } from '@/api/generated/models'
+import { useTranslation } from '@/i18n'
 import type { Command } from '@/keyboard/CommandPalette'
+import { activeTeams } from '@/team/archived'
 
-export type BoardView = 'board' | 'list' | 'reports'
+export const BOARD_VIEWS = ['board', 'list', 'calendar', 'roadmap', 'reports', 'plan'] as const
+export type BoardView = (typeof BOARD_VIEWS)[number]
 
-/** What the command palette can do from the board, beyond jumping to issues. */
+/** What the command palette can do from the board, beyond jumping to tickets --
+ *  and from My work (#258), which has no board views to switch between. */
 export function useCommands({
   view,
   setView,
   team,
   teams,
   user,
-  openNewIssue,
+  openNewTicket,
+  openNewProject,
   openShortcuts,
 }: {
-  view: BoardView
-  setView: (view: BoardView) => void
+  /** Absent off the board, and so is switching between board and list. */
+  view?: BoardView
+  setView?: (view: BoardView) => void
   team: TeamRead | undefined
   teams: TeamRead[]
   user: UserMe | null
-  openNewIssue: () => void
+  /** Absent for a guest (#104), who has nothing to create. */
+  openNewTicket?: () => void
+  /** Absent for a guest, the same way. */
+  openNewProject?: () => void
   openShortcuts: () => void
 }): Command[] {
   const navigate = useNavigate()
+  const { t } = useTranslation('keyboard')
 
   return useMemo(() => {
+    const actions = t('commands.groups.actions')
+    const account = t('commands.groups.account')
     const list: Command[] = [
-      { id: 'new-issue', label: 'Create an issue', hint: 'C', group: 'Actions', run: openNewIssue },
-      {
-        id: 'toggle-view',
-        label: view === 'board' ? 'Switch to list view' : 'Switch to board view',
-        group: 'Actions',
-        run: () => setView(view === 'board' ? 'list' : 'board'),
-      },
+      ...(openNewTicket
+        ? [
+            {
+              id: 'new-ticket',
+              label: t('commands.newTicket'),
+              hint: 'C',
+              group: actions,
+              run: openNewTicket,
+            },
+          ]
+        : []),
+      ...(openNewProject
+        ? [
+            {
+              id: 'new-project',
+              label: t('commands.newProject'),
+              group: actions,
+              run: openNewProject,
+            },
+          ]
+        : []),
+      ...(view && setView
+        ? [
+            {
+              id: 'toggle-view',
+              label: view === 'board' ? t('commands.switchToList') : t('commands.switchToBoard'),
+              group: actions,
+              run: () => setView(view === 'board' ? 'list' : 'board'),
+            },
+          ]
+        : []),
+      // Everything that is mine, across every team (#258). Not offered on
+      // the page itself.
+      ...(view
+        ? [
+            {
+              id: 'my-work',
+              label: t('commands.myWork'),
+              hint: 'M',
+              group: actions,
+              run: () => navigate('/my-work'),
+            },
+          ]
+        : []),
       {
         id: 'shortcuts',
-        label: 'Show keyboard shortcuts',
+        label: t('commands.showShortcuts'),
         hint: '?',
-        group: 'Actions',
+        group: actions,
         run: openShortcuts,
       },
     ]
 
-    for (const candidate of teams) {
+    // Switching team is the team switcher's, which leaves an archived team
+    // out (#322).
+    for (const candidate of activeTeams(teams)) {
       if (candidate.id === team?.id) continue
       list.push({
         id: `team-${candidate.id}`,
-        label: `Switch to ${candidate.name}`,
+        label: t('commands.switchTeam', { team: candidate.name }),
         hint: candidate.key,
-        group: 'Teams',
+        group: t('commands.groups.teams'),
         run: () => navigate(`/${candidate.key}`),
       })
     }
 
     list.push({
       id: 'settings',
-      label: 'Open settings',
-      group: 'Account',
+      label: t('commands.openSettings'),
+      group: account,
       run: () => navigate('/settings/profile'),
     })
     if (team) {
       list.push({
         id: 'team-members',
-        label: 'Manage team members',
+        label: t('commands.manageMembers'),
         hint: team.key,
-        group: 'Account',
+        group: account,
         run: () => navigate(`/settings/teams/${team.key}/members`),
       })
     }
     if (user?.is_site_admin) {
       list.push({
         id: 'site-admin',
-        label: 'Site administration',
-        group: 'Account',
+        label: t('commands.siteAdmin'),
+        group: account,
         run: () => navigate('/settings/admin/users'),
       })
     }
@@ -87,7 +138,9 @@ export function useCommands({
     team,
     user?.is_site_admin,
     navigate,
-    openNewIssue,
+    openNewTicket,
+    openNewProject,
     openShortcuts,
+    t,
   ])
 }

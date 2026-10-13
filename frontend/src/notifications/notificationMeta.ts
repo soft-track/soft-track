@@ -1,4 +1,6 @@
 import type { NotificationKind, NotificationRead } from '@/api/generated/models'
+import { i18n } from '@/i18n'
+import { formatDate, formatNumber } from '@/i18n/format'
 import type { IconName } from '@/ui/Icon'
 
 /**
@@ -9,39 +11,77 @@ import type { IconName } from '@/ui/Icon'
  * the rest of the interface's copy. The digest email has its own phrasing in
  * `lib_softtrack/digest.py` for the same reason: it is a different medium and
  * a different sentence ("assigned ENG-4 to you", not "assigned this to you").
+ *
+ * The sentences themselves are in the catalog (#106), `notifications:kinds`,
+ * each whole -- with the person in it, and without -- rather than a verb
+ * glued after a name.
  */
-export const KIND_META: Record<
-  NotificationKind,
-  { icon: IconName; verb: string; color: string }
-> = {
-  assigned: { icon: 'users', verb: 'assigned this to you', color: 'var(--color-accent-sky)' },
-  mentioned: { icon: 'sparkle', verb: 'mentioned you', color: 'var(--color-accent-pink)' },
-  commented: { icon: 'mail', verb: 'commented', color: 'var(--color-neutral-400)' },
-  status_changed: {
-    icon: 'board',
-    verb: 'changed the status',
-    color: 'var(--color-accent-amber)',
-  },
+export const KIND_META: Record<NotificationKind, { icon: IconName; color: string }> = {
+  assigned: { icon: 'users', color: 'var(--color-accent-sky)' },
+  mentioned: { icon: 'sparkle', color: 'var(--color-accent-pink)' },
+  commented: { icon: 'mail', color: 'var(--color-neutral-400)' },
+  status_changed: { icon: 'board', color: 'var(--color-accent-amber)' },
+  // Assignment by another name (#117): set as a ticket's reviewer, say.
+  field_assigned: { icon: 'user', color: 'var(--color-accent-sky)' },
+  // The two that come from a date rather than a person (#262).
+  due_tomorrow: { icon: 'calendar', color: 'var(--color-brand-500)' },
+  overdue: { icon: 'flag', color: 'var(--color-brand-500)' },
 }
 
-/** "Sam mentioned you" — the line above the issue title. */
+/** The kinds nobody did: a due date reminding (#262). */
+export function isReminder(notification: NotificationRead): boolean {
+  return notification.kind === 'due_tomorrow' || notification.kind === 'overdue'
+}
+
+/** The second overdue reminder, a week after the first: "Still overdue". */
+function stillOverdue(notification: NotificationRead): boolean {
+  if (notification.kind !== 'overdue' || !notification.due_date) return false
+  const due = Date.parse(`${notification.due_date}T00:00:00Z`)
+  const sent = Date.parse(notification.created_at.slice(0, 10) + 'T00:00:00Z')
+  return sent - due >= 8 * 24 * 60 * 60 * 1000
+}
+
+/** A due date as the inbox writes it: "4 Oct". A date, so no timezone moves it. */
+function dueDay(value: string): string {
+  const [year, month, day] = value.split('-').map(Number)
+  return formatDate(new Date(year, month - 1, day), 'd MMM')
+}
+
+/**
+ * The line under a reminder's ticket: "Due 4 Oct, and assigned to you." or
+ * "Was due 29 Sep." Null for everything else.
+ */
+export function reminderDetail(notification: NotificationRead): string | null {
+  if (!isReminder(notification) || !notification.due_date) return null
+  const date = dueDay(notification.due_date)
+  if (notification.kind === 'overdue') {
+    return i18n.t('notifications:kinds.overdue.detail', { date })
+  }
+  return notification.assigned_to_you
+    ? i18n.t('notifications:kinds.due_tomorrow.detailAssigned', { date })
+    : i18n.t('notifications:kinds.due_tomorrow.detail', { date })
+}
+
+/** "Sam mentioned you" — the line above the ticket title. */
 export function describe(notification: NotificationRead): string {
   // Null actor is reserved for things no person did: a Jira import, and
   // whatever automation lands later. "Someone" is wrong for those, and the
   // bare verb reads correctly for all of them.
   const who = notification.actor?.full_name
-  const { verb } = KIND_META[notification.kind]
-  return who ? `${who} ${verb}` : verb.charAt(0).toUpperCase() + verb.slice(1)
-}
-
-/** The board route this notification points at. */
-export function issueHref(notification: NotificationRead): string {
-  return `/${notification.issue.team_key}/issue/${notification.issue.number}`
+  const kind = notification.kind
+  // The field someone was named in, for `field_assigned`; the others ignore it.
+  const field = notification.field_name ?? ''
+  if (stillOverdue(notification)) return i18n.t('notifications:kinds.overdue.again')
+  return who
+    ? i18n.t(`notifications:kinds.${kind}.byActor`, { actor: who, field })
+    : i18n.t(`notifications:kinds.${kind}.noActor`, { field })
 }
 
 /** What the badge shows. Past 9 the exact number stops being actionable. */
 export function badgeLabel(unread: number): string {
-  return unread > 9 ? '9+' : String(unread)
+  return unread > 9
+    ? i18n.t('notifications:bell.badgeOverflow', { max: formatNumber(9) })
+    : formatNumber(unread)
 }
 
 /** Between a floating panel and the control it hangs from, and the viewport. */

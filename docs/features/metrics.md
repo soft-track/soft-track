@@ -26,5 +26,5 @@ scrape_configs:
 ```
 
 The HTTP metrics use the FastAPI route template as the `route` label, such as
-`/issues/{issue_id}`, rather than the raw request path. This keeps per-issue
+`/tickets/{ticket_id}`, rather than the raw request path. This keeps per-ticket
 IDs out of the label set.

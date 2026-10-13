@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from lib_softtrack.models.statuses import StatusRead
-from lib_softtrack.tables import IssuePriority
+from lib_softtrack.tables import TicketPriority, TicketType
 
 
 class SearchHit(BaseModel):
@@ -11,7 +11,8 @@ class SearchHit(BaseModel):
     identifier: str
     title: str
     status: StatusRead
-    priority: IssuePriority
+    priority: TicketPriority
+    type: TicketType
     team_id: int
     team_key: str
     number: int

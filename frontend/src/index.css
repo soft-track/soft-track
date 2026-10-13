@@ -385,6 +385,17 @@
   .btn-danger-ghost { color: var(--color-danger-600); background: transparent; }
   .btn-danger-ghost:hover:not(:disabled) { background: var(--color-danger-50); }
 
+  /* The one red button on a dialog that says no (#133). Filled, and the same
+     in both themes: 600 is not remapped for dark, and carries white text. */
+  .btn-danger {
+    color: #fff;
+    background: var(--color-danger-600);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 1px 2px rgba(20, 18, 40, 0.2);
+  }
+  .btn-danger:hover:not(:disabled) { filter: brightness(1.08); }
+
   .btn-icon {
     width: 2.125rem;
     padding: 0;
@@ -413,7 +424,151 @@
       inset 0 1px 0 var(--glass-highlight),
       0 0 0 3px color-mix(in oklab, var(--color-brand-500) 18%, transparent);
   }
+  .field:disabled { opacity: 0.55; cursor: not-allowed; }
+  /* A value the server refused, e.g. a name that is taken: the field says
+     so as well as the sentence under it. */
+  .field[aria-invalid="true"],
+  .field[aria-invalid="true"]:focus {
+    border-color: color-mix(in oklab, var(--color-danger-500) 70%, transparent);
+  }
+  .field[aria-invalid="true"]:focus {
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 0 0 3px color-mix(in oklab, var(--color-danger-500) 16%, transparent);
+  }
   .field-sm { padding: 0.375rem 0.625rem; font-size: 0.8125rem; }
+  /* A value edited where it is shown (#117): it reads as text until it is
+     pointed at or focused, then becomes the box it is. */
+  .field-quiet:not(:hover):not(:focus):not([aria-invalid="true"]) {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  /* -- The markdown editor (#118) ----------------------------------------
+     The toolbar and the textarea share one box that looks like a `.field`
+     and takes its focus ring while anything inside has focus: they are one
+     control, and a ring around the textarea alone left the toolbar looking
+     like part of the page above. */
+  .md-field {
+    min-width: 0;
+    border-radius: var(--radius-card);
+    border: 1px solid color-mix(in oklab, var(--color-neutral-900) 12%, transparent);
+    background: color-mix(in oklab, var(--glass-fill-card) 85%, transparent);
+    box-shadow: inset 0 1px 0 var(--glass-highlight), 0 1px 2px var(--ink-shadow);
+    transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+  }
+  .md-field:focus-within {
+    border-color: color-mix(in oklab, var(--color-brand-500) 60%, transparent);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 0 0 3px color-mix(in oklab, var(--color-brand-500) 18%, transparent);
+  }
+  /* A file held over it, about to be uploaded. */
+  .md-field[data-dropping="true"] {
+    border-color: var(--color-brand-400);
+    background: color-mix(in oklab, var(--color-brand-500) 8%, transparent);
+  }
+
+  .md-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+    padding: 0.375rem 0.5rem;
+    border-radius: calc(var(--radius-card) - 1px) calc(var(--radius-card) - 1px) 0 0;
+    border-bottom: 1px solid color-mix(in oklab, var(--color-neutral-900) 8%, transparent);
+    background: color-mix(in oklab, var(--color-neutral-900) 2.5%, transparent);
+  }
+  .md-toolbar-sep {
+    flex-shrink: 0;
+    width: 1px;
+    height: 1rem;
+    margin: 0 0.3125rem;
+    background: color-mix(in oklab, var(--color-neutral-900) 12%, transparent);
+  }
+
+  .md-tool {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    color: var(--color-neutral-500);
+    transition: background-color 120ms ease, color 120ms ease;
+  }
+  .md-tool:hover:not([aria-disabled="true"]) {
+    color: var(--color-neutral-900);
+    background: color-mix(in oklab, var(--color-neutral-900) 6%, transparent);
+  }
+  /* Pressed: the selection already has it. Expanded: its menu is open. */
+  .md-tool[aria-pressed="true"],
+  .md-tool[aria-expanded="true"],
+  .md-tool[aria-pressed="true"]:hover,
+  .md-tool[aria-expanded="true"]:hover {
+    color: var(--color-brand-700);
+    background: color-mix(in oklab, var(--color-brand-500) 14%, transparent);
+  }
+  :root[data-theme="dark"] .md-tool[aria-pressed="true"],
+  :root[data-theme="dark"] .md-tool[aria-expanded="true"] {
+    color: var(--color-brand-300);
+  }
+  .md-tool[aria-disabled="true"] { opacity: 0.4; cursor: not-allowed; }
+  /* The text-style picker: a word and a chevron rather than an icon, wide
+     enough for its longest word so the buttons after it never shift. */
+  .md-tool-text {
+    width: auto;
+    min-width: 5.75rem;
+    justify-content: space-between;
+    padding: 0 0.5rem 0 0.625rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--color-neutral-600);
+  }
+
+  /* A button's name and shortcut, under it on hover or keyboard focus.
+     Inverted in either theme. aria-hidden: the button's label says it. */
+  .md-tip {
+    position: absolute;
+    top: calc(100% + 0.375rem);
+    left: 50%;
+    z-index: 40;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    background: var(--color-neutral-900);
+    color: var(--color-neutral-50);
+    font-size: 0.71875rem;
+    font-weight: 500;
+    line-height: 1.25;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(-50%);
+    transition: opacity 100ms ease;
+  }
+  .md-tip kbd {
+    margin-right: -0.125rem;
+    padding: 0.0625rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.65625rem;
+    background: color-mix(in oklab, var(--color-neutral-50) 16%, transparent);
+  }
+  /* At the ends of the toolbar, kept inside it rather than centred. */
+  .md-tool[data-edge="start"] > .md-tip { left: 0; transform: none; }
+  .md-tool[data-edge="end"] > .md-tip { left: auto; right: 0; transform: none; }
+  .md-tool:focus-visible > .md-tip { opacity: 1; }
+  @media (hover: hover) {
+    .md-tool:hover > .md-tip { opacity: 1; transition-delay: 300ms; }
+  }
+  .md-tool[aria-expanded="true"] > .md-tip { display: none; }
 
   /* A native select dressed as a glass pill. The chevron is drawn by
      `Select`, so the native arrow is hidden here. */
@@ -446,6 +601,14 @@
       0 0 0 3px color-mix(in oklab, var(--color-brand-500) 22%, transparent);
   }
   .select-sm { height: 1.75rem; font-size: 0.75rem; padding-left: 0.625rem; padding-right: 1.5rem; }
+  /* A required field left empty (#117): the same red edge as a refused field. */
+  .select[aria-invalid="true"] {
+    color: var(--color-danger-600);
+    border-color: color-mix(in oklab, var(--color-danger-500) 70%, transparent);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 0 0 3px color-mix(in oklab, var(--color-danger-500) 14%, transparent);
+  }
   .select-block { width: 100%; }
   .select-wrap { position: relative; display: inline-flex; max-width: 100%; }
   .select-wrap > .select-chevron {
@@ -455,6 +618,42 @@
     transform: translateY(-50%);
     pointer-events: none;
     color: var(--color-neutral-400);
+  }
+
+  /* -- Switch ------------------------------------------------------------ */
+  /* An on/off setting that takes effect at once (#117): a checkbox with
+     role="switch", drawn as a track and a knob. */
+  .switch {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    flex-shrink: 0;
+    width: 1.875rem;
+    height: 1.125rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--color-neutral-900) 14%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-neutral-900) 10%, transparent);
+    cursor: pointer;
+    transition: background-color 140ms ease;
+  }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: 0.875rem;
+    height: 0.875rem;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 1px 2px var(--ink-shadow);
+    transition: transform 140ms ease;
+  }
+  .switch:checked { background: var(--color-brand-600); border-color: transparent; }
+  .switch:checked::after { transform: translateX(0.75rem); }
+  .switch:disabled { opacity: 0.55; cursor: not-allowed; }
+  .switch:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-brand-500) 22%, transparent);
   }
 
   /* -- Segmented control ------------------------------------------------- */
@@ -544,6 +743,36 @@
     background: color-mix(in oklab, var(--color-neutral-900) 6%, transparent);
     border: 1px solid color-mix(in oklab, var(--color-neutral-900) 10%, transparent);
     box-shadow: inset 0 -1px 0 color-mix(in oklab, var(--color-neutral-900) 8%, transparent);
+  }
+
+  /* An emoji reaction on a comment (#96): glyph and count. Yours are tinted
+     with the brand colour, the way the label toggles mark what is on. */
+  .reaction-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    height: 1.5rem;
+    min-width: 1.75rem;
+    justify-content: center;
+    padding: 0 0.45rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    color: var(--color-neutral-600);
+    background: color-mix(in oklab, var(--color-neutral-900) 4%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-neutral-900) 10%, transparent);
+    transition: background-color 120ms ease, border-color 120ms ease;
+  }
+  button.reaction-chip { cursor: pointer; }
+  button.reaction-chip:hover {
+    background: color-mix(in oklab, var(--color-neutral-900) 8%, transparent);
+  }
+  .reaction-chip[data-reacted] {
+    color: var(--color-brand-700);
+    background: color-mix(in oklab, var(--color-brand-500) 14%, transparent);
+    border-color: color-mix(in oklab, var(--color-brand-500) 40%, transparent);
+  }
+  :root[data-theme="dark"] .reaction-chip[data-reacted] {
+    color: color-mix(in oklab, var(--color-brand-500) 60%, #fff);
   }
 
   /* A coloured label chip. `--chip` is the label's own colour. */
@@ -657,6 +886,12 @@
     background: color-mix(in oklab, var(--color-brand-500) 14%, transparent);
   }
   :root[data-theme="dark"] .mention { color: var(--color-brand-300); }
+  a.mention:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+  /* A person's name that opens their profile (#126). */
+  .person-link { color: var(--color-brand-600); }
+  .person-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+  :root[data-theme="dark"] .person-link { color: var(--color-brand-300); }
 
   /* -- Text with a brand gradient ---------------------------------------- */
   .text-gradient {
@@ -687,4 +922,112 @@
     from { background-position: 200% 0; }
     to   { background-position: -200% 0; }
   }
+
+  /* -- One ticket, on whichever surface shows it (#112) --------------------
+     The panel, the ticket's page and the linked-ticket modal render the same
+     body, and it follows the width it is given rather than asking where it
+     is. Narrow -- the panel, a phone -- the properties sit between the
+     description and the rest, as the panel always had them. Wide -- the page
+     on a desktop -- they move to a column beside the reading instead of
+     interrupting it. A container query, not a media query, because it is the
+     body's own width that decides: a 576px panel on a 27-inch screen is
+     still narrow. */
+  .ticket-body { container-type: inline-size; }
+  .ticket-body-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "main" "aside" "rest" "activity";
+  }
+  .ticket-body-main { grid-area: main; padding: 1rem 1.25rem 0; }
+  /* A container too, so the properties inside it lay out by the column's
+     width rather than the whole body's. */
+  .ticket-body-aside { grid-area: aside; padding: 1.25rem 1.25rem 0; container-type: inline-size; }
+  .ticket-body-rest { grid-area: rest; padding: 0 1.25rem 1.25rem; }
+  .ticket-body-activity { grid-area: activity; }
+  .ticket-body-title { font-size: 1.125rem; }
+
+  @container (min-width: 52rem) {
+    .ticket-body-grid {
+      grid-template-columns: minmax(0, 1fr) 18rem;
+      /* A spanning item is sized against the flexible track it crosses, so
+         a column taller than the reading pads the bottom row rather than
+         opening gaps between the sections. */
+      grid-template-rows: auto auto 1fr;
+      grid-template-areas: "main aside" "rest aside" "activity aside";
+    }
+    /* Level with the Activity feed, whose sides are its own. */
+    .ticket-body-main { padding-top: 1.5rem; }
+    .ticket-body-aside {
+      align-self: start;
+      position: sticky;
+      top: 0.75rem;
+      padding: 1.5rem 1.25rem 1.25rem 0;
+    }
+    .ticket-body-title { font-size: 1.5rem; }
+  }
+
+  /* -- A linked ticket, in a modal over the one you are reading (#114) ------
+     The first one's scrim dims without blurring, so the ticket underneath
+     -- the row it was opened from -- stays readable. Where the screen has
+     room for both, it stands beside the panel rather than over it; short of
+     that, as far from the panel as it can. Over a page on a wide screen it
+     stands to the right, over the properties rather than the reading, and
+     is centred on a narrower one. On a phone it fills the width, as the
+     panel does. The second steps down, so the first one's header -- which
+     says what that was opened from -- shows above it, and its scrim blurs
+     as any other does: its own header names the whole trail. The sheet is
+     opaque, as a menu is (.glass-menu): over sharp text that nothing
+     blurred, a translucent one lets the text show through. */
+  .ticket-modal-scrim {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 0.5rem;
+  }
+  .ticket-modal-scrim[data-ticket-modal="1"] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .ticket-modal {
+    position: relative;
+    width: 100%;
+    max-width: 36rem;
+    max-height: 100%;
+  }
+  .ticket-modal-scrim[data-ticket-modal="2"] > .ticket-modal {
+    margin-top: 3.5rem;
+    max-height: calc(100% - 3.5rem);
+  }
+  @media (min-width: 40rem) {
+    .ticket-modal-scrim { padding: 4rem 0.75rem 0.75rem; }
+    .ticket-modal-scrim[data-over="panel"] { justify-content: flex-start; }
+    .ticket-modal-scrim[data-ticket-modal="2"] > .ticket-modal { left: 1.5rem; }
+  }
+  @media (min-width: 80rem) {
+    .ticket-modal-scrim { justify-content: flex-end; padding-right: 1.5rem; }
+    /* Clear of the panel: its width, its margin, and a gap. */
+    .ticket-modal-scrim[data-over="panel"] {
+      justify-content: flex-end;
+      padding-right: calc(36rem + 0.75rem + 1.25rem);
+    }
+    /* At the right edge already, so the second steps in instead. */
+    .ticket-modal-scrim[data-over="page"][data-ticket-modal="2"] > .ticket-modal { left: -1.5rem; }
+  }
+
+  /* Where a modal was opened from, and the way back there. */
+  .ticket-modal-from {
+    color: var(--color-brand-700);
+    background: color-mix(in oklab, var(--color-brand-500) 14%, transparent);
+  }
+  .ticket-modal-from:hover {
+    background: color-mix(in oklab, var(--color-brand-500) 22%, transparent);
+  }
+  :root[data-theme="dark"] .ticket-modal-from { color: var(--color-brand-300); }
+
+  /* The row a modal was opened from, while the modal stands beside it. */
+  .opened-above { background: color-mix(in oklab, var(--color-brand-500) 12%, transparent); }
+
+  /* "Opens the page", on a row in the deepest modal. */
+  .opens-page { color: var(--color-brand-600); }
+  :root[data-theme="dark"] .opens-page { color: var(--color-brand-300); }
 }

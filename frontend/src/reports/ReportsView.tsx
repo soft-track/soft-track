@@ -1,34 +1,46 @@
 import { useState } from 'react'
 
 import {
-  useCycleBurndownCyclesCycleIdBurndownGet,
+  useSprintBurndownSprintsSprintIdBurndownGet,
+  useSprintTimeSpentSprintsSprintIdTimeSpentGet,
   useTeamCreatedVsResolvedTeamsTeamIdCreatedVsResolvedGet,
   useTeamCumulativeFlowTeamsTeamIdCumulativeFlowGet,
+  useTeamTimeSpentTeamsTeamIdTimeSpentGet,
   useTeamVelocityTeamsTeamIdVelocityGet,
 } from '@/api/generated/endpoints/reports/reports'
+import { useTranslation } from '@/i18n'
 import { BurndownChart } from '@/reports/BurndownChart'
 import { CreatedResolvedChart } from '@/reports/CreatedResolvedChart'
 import { FlowChart } from '@/reports/FlowChart'
+import { stageLimits } from '@/reports/stageLimits'
+import { TimeSpentChart } from '@/reports/TimeSpentChart'
 import { VelocityChart } from '@/reports/VelocityChart'
-import { useTeamContext } from '@/team/TeamContext'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Select } from '@/ui/Select'
 
 const WINDOWS = [14, 30, 90] as const
 
 export function ReportsView() {
-  const { team, cycles } = useTeamContext()
+  const { t } = useTranslation(['reports', 'common'])
+  const { team, sprints, statuses } = useTeamContext()
 
-  // Default to the cycle a team would actually want to look at.
+  // Default to the sprint a team would actually want to look at.
   const preferred =
-    cycles.find((cycle) => cycle.state === 'active') ??
-    [...cycles].reverse().find((cycle) => cycle.state === 'completed') ??
-    cycles[0]
-  const [cycleId, setCycleId] = useState<number | null>(preferred?.id ?? null)
+    sprints.find((sprint) => sprint.state === 'active') ??
+    [...sprints].reverse().find((sprint) => sprint.state === 'completed') ??
+    sprints[0]
+  const [sprintId, setSprintId] = useState<number | null>(preferred?.id ?? null)
   const [days, setDays] = useState<(typeof WINDOWS)[number]>(30)
+  // The burndown in points or in remaining hours (#268): whichever the team
+  // estimates in, and a choice for a team that estimates in both.
+  const estimateUnit = team.estimate_unit ?? 'points'
+  const [chosenUnit, setChosenUnit] = useState<'points' | 'hours'>('points')
+  const burndownUnit =
+    estimateUnit === 'both' ? chosenUnit : estimateUnit === 'hours' ? 'hours' : 'points'
 
-  const selected = cycles.find((cycle) => cycle.id === cycleId) ?? preferred ?? null
+  const selected = sprints.find((sprint) => sprint.id === sprintId) ?? preferred ?? null
 
-  const burndown = useCycleBurndownCyclesCycleIdBurndownGet(selected?.id ?? 0, {
+  const burndown = useSprintBurndownSprintsSprintIdBurndownGet(selected?.id ?? 0, {
     query: { enabled: Boolean(selected) },
   })
   const velocity = useTeamVelocityTeamsTeamIdVelocityGet(team.id, { limit: 8 })
@@ -37,6 +49,11 @@ export function ReportsView() {
     team.id,
     { days },
   )
+  // Time spent (#102): in the chosen sprint, and over the chosen window.
+  const sprintTime = useSprintTimeSpentSprintsSprintIdTimeSpentGet(selected?.id ?? 0, {
+    query: { enabled: Boolean(selected) },
+  })
+  const windowTime = useTeamTimeSpentTeamsTeamIdTimeSpentGet(team.id, { days })
 
   return (
     <div className="scroll-thin h-full overflow-y-auto">
@@ -45,19 +62,19 @@ export function ReportsView() {
         <Select
           dense
           value={selected?.id ?? ''}
-          onChange={(e) => setCycleId(e.target.value ? Number(e.target.value) : null)}
-          disabled={cycles.length === 0}
-          aria-label="Cycle"
+          onChange={(e) => setSprintId(e.target.value ? Number(e.target.value) : null)}
+          disabled={sprints.length === 0}
+          aria-label={t('view.sprint')}
         >
-          {cycles.length === 0 && <option value="">No cycles</option>}
-          {cycles.map((cycle) => (
-            <option key={cycle.id} value={cycle.id}>
-              {cycle.display_name}
+          {sprints.length === 0 && <option value="">{t('view.noSprints')}</option>}
+          {sprints.map((sprint) => (
+            <option key={sprint.id} value={sprint.id}>
+              {sprint.display_name}
             </option>
           ))}
         </Select>
 
-        <div className="segmented" role="tablist" aria-label="Window">
+        <div className="segmented" role="tablist" aria-label={t('view.window')}>
           {WINDOWS.map((window) => (
             <button
               key={window}
@@ -68,35 +85,64 @@ export function ReportsView() {
               onClick={() => setDays(window)}
               className="segmented-item"
             >
-              {window}d
+              {t('view.windowDays', { days: window })}
             </button>
           ))}
         </div>
+
+        {estimateUnit === 'both' && (
+          <div className="segmented" role="tablist" aria-label={t('burndown.unit')}>
+            {(['points', 'hours'] as const).map((unit) => (
+              <button
+                key={unit}
+                type="button"
+                role="tab"
+                aria-selected={burndownUnit === unit}
+                data-active={burndownUnit === unit}
+                onClick={() => setChosenUnit(unit)}
+                className="segmented-item"
+              >
+                {unit === 'points' ? t('burndown.unitPoints') : t('burndown.unitHours')}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-3 xl:grid-cols-2">
         {selected && burndown.data ? (
-          <BurndownChart data={burndown.data} />
+          <BurndownChart data={burndown.data} unit={burndownUnit} />
         ) : (
           <figure className="glass rounded-panel p-4">
-            <h3 className="text-sm font-semibold text-neutral-900">Burndown</h3>
+            <h3 className="text-sm font-semibold text-neutral-900">{t('view.burndown')}</h3>
             <p className="py-10 text-center text-sm text-neutral-400">
-              {cycles.length === 0
-                ? 'Create a cycle to see a burndown.'
-                : 'Loading…'}
+              {sprints.length === 0 ? t('view.burndownNoSprints') : t('common:loading')}
             </p>
           </figure>
         )}
 
         {velocity.data && <VelocityChart data={velocity.data} />}
-        {flow.data && <FlowChart data={flow.data} />}
+        {flow.data && <FlowChart data={flow.data} limits={stageLimits(statuses)} />}
         {createdResolved.data && <CreatedResolvedChart data={createdResolved.data} />}
+        {selected && sprintTime.data && (
+          <TimeSpentChart
+            title={t('view.sprintTime.title', { sprint: selected.display_name })}
+            note={t('view.sprintTime.note')}
+            data={sprintTime.data}
+          />
+        )}
+        {windowTime.data && (
+          <TimeSpentChart
+            title={t('view.windowTime.title', { count: days })}
+            note={t('view.windowTime.note')}
+            data={windowTime.data}
+          />
+        )}
       </div>
 
       <p className="mt-3 px-1 text-xs text-neutral-400">
         {/* Say why an empty chart is empty, rather than letting it look broken. */}
-        Charts are built from recorded issue history, so they begin from the day
-        history started being kept — earlier activity cannot be reconstructed.
+        {t('view.history')}
       </p>
     </div>
   )

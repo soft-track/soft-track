@@ -1,0 +1,45 @@
+/** Settings → Account → Security → Two-factor authentication. */
+export const twoFactor = {
+  title: 'Two-factor authentication',
+  body: 'Ask for a code from an authenticator app — 1Password, Google Authenticator, Authy — as well as your password, or your Google or GitHub sign-in.',
+  on: 'On',
+  off: 'Off',
+  setUp: 'Set up two-factor',
+  settingUp: 'Setting up…',
+  turnOff: 'Turn off two-factor',
+  notices: {
+    enabled: 'Two-factor is on. Every other session has been signed out.',
+    disabled: 'Two-factor is off. Every other session has been signed out.',
+  },
+  errors: {
+    start: 'Could not start setting up two-factor.',
+    confirm: 'That code did not work. Check your authenticator and try again.',
+    disable: 'That code did not work. Enter a code from your authenticator, or a recovery code.',
+  },
+  setup: {
+    title: 'Set up two-factor authentication',
+    scan: '1. Scan this QR code with your authenticator app.',
+    qrLabel: 'QR code for your authenticator app',
+    manual: 'Or enter this key by hand:',
+    copy: 'Copy',
+    copied: 'Copied',
+    code: '2. Enter the 6-digit code your app shows.',
+    submit: 'Turn on',
+    submitting: 'Checking…',
+  },
+  recovery: {
+    title: 'Save your recovery codes',
+    body: 'Each one signs you in once if you lose your authenticator. They will not be shown again — keep them somewhere safe, like a password manager.',
+    copy: 'Copy codes',
+    copied: 'Copied',
+    done: 'I have saved them',
+  },
+  disable: {
+    title: 'Turn off two-factor',
+    body: 'Enter a code from your authenticator app, or one of your recovery codes.',
+    label: 'Code',
+    placeholder: '6-digit code or recovery code',
+    submit: 'Turn off',
+    submitting: 'Turning off…',
+  },
+} as const

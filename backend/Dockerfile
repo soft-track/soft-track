@@ -26,4 +26,4 @@ EXPOSE 8000
 # seed.py is idempotent -- it returns early if the demo user already exists --
 # so running it on every start is safe and gives a first-run database with
 # demo data instead of an empty one.
-CMD ["sh", "-c", "python seed.py && uvicorn main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "python seed.py && exec uvicorn main:app --host 0.0.0.0 --port 8000 --timeout-graceful-shutdown 5"]

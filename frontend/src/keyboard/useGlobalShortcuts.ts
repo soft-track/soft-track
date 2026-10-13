@@ -3,23 +3,27 @@ import { useEffect } from 'react'
 import { isPlainKey, isTypingTarget } from '@/keyboard/typing'
 
 /**
- * The app-wide keys: ⌘K, C, ?, / and Escape.
+ * The app-wide keys: ⌘K, C, M, ?, / and Escape.
  *
  * Every single-key binding is gated on `isTypingTarget` first. Without that
- * guard, typing an issue title containing "c" fires "create issue" -- which
+ * guard, typing a ticket title containing "c" fires "create ticket" -- which
  * is how keyboard shortcuts get added and then quietly turned off again.
  */
 export function useGlobalShortcuts({
   togglePalette,
   closeTop,
-  openNewIssue,
+  openNewTicket,
+  openMyWork,
   openShortcuts,
   suppressed,
 }: {
   togglePalette: () => void
   /** Escape: close the shallowest open layer, never two at once. */
   closeTop: () => void
-  openNewIssue: () => void
+  /** Absent for a guest (#104), who has nothing to create. */
+  openNewTicket?: () => void
+  /** M: My work (#258). Absent on My work itself. */
+  openMyWork?: () => void
   openShortcuts: () => void
   /** True while the palette or the cheatsheet is up, so C and ? stay quiet. */
   suppressed: boolean
@@ -40,21 +44,25 @@ export function useGlobalShortcuts({
       if (!isPlainKey(event) || isTypingTarget(event.target)) return
       if (suppressed) return
 
-      if (event.key === 'c') {
+      if (event.key === 'c' && openNewTicket) {
         event.preventDefault()
-        openNewIssue()
+        openNewTicket()
+      } else if (event.key === 'm' && openMyWork) {
+        event.preventDefault()
+        openMyWork()
       } else if (event.key === '?') {
         event.preventDefault()
         openShortcuts()
       } else if (event.key === '/') {
         event.preventDefault()
         document
-          .querySelector<HTMLInputElement>('input[type="search"], input[placeholder*="Search"]')
+          // By attribute rather than by its placeholder, which is translated (#106).
+          .querySelector<HTMLInputElement>('[data-global-search]')
           ?.focus()
       }
     }
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [togglePalette, closeTop, openNewIssue, openShortcuts, suppressed])
+  }, [togglePalette, closeTop, openNewTicket, openMyWork, openShortcuts, suppressed])
 }

@@ -1,0 +1,25 @@
+/** The board's sidebar: teams, views, sprints, projects, and the account. */
+export const sidebar = {
+  switchToLight: 'Switch to light theme',
+  switchToDark: 'Switch to dark theme',
+  lightTheme: 'Light theme',
+  darkTheme: 'Dark theme',
+  team: 'Team',
+  teamOption: '{{name}} · {{key}}',
+  views: 'Views',
+  sprints: 'Sprints',
+  newSprint: 'New sprint',
+  projects: 'Epics',
+  newProject: 'New epic',
+  noProjects: 'No epics yet.',
+  openNamed: 'Open {{name}}',
+  openProject: 'Open epic',
+  people: 'People',
+  members: 'Members',
+  importJira: 'Import from Jira',
+  // The team directory (#259).
+  findTeam: 'Find a team',
+  newTeam: 'New team',
+  settings: 'Settings',
+  signOut: 'Sign out',
+} as const

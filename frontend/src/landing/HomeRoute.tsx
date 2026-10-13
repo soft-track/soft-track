@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom'
 
 import { useAuthConfigAuthConfigGet } from '@/api/generated/endpoints/auth/auth'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
 import { homeView } from '@/landing/homeView'
 import LandingPage from '@/landing/LandingPage'
 import TeamsHome from '@/team/TeamsHome'
@@ -16,7 +16,7 @@ import { Loading } from '@/ui/Loading'
  * already knows what SoftTrack is.
  *
  * Only `/` moved out of `RequireAuth`. Every other route is still behind it,
- * so a signed-out visitor opening /ENG/issue/42 is still sent to /login with
+ * so a signed-out visitor opening /ENG/ticket/42 is still sent to /login with
  * that location in hand, and still arrives there afterwards.
  *
  * The choice itself is in `homeView`; this renders it.

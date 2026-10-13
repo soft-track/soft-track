@@ -80,7 +80,7 @@ class S3Storage:
 
     boto3 is imported here rather than at module scope because it is an
     optional dependency: a self-hoster using the local backend should not have
-    to install an AWS SDK to run an issue tracker.
+    to install an AWS SDK to run a ticket tracker.
 
     Credentials are deliberately not settings of this application. boto3's
     default chain (environment, shared config, instance role) already solves
@@ -173,6 +173,33 @@ def copy_stream(source: BinaryIO, chunk_size: int = 64 * 1024):
     """Yield an object's bytes, closing it afterwards."""
     try:
         while chunk := source.read(chunk_size):
+            yield chunk
+    finally:
+        close = getattr(source, "close", None)
+        if close is not None:
+            close()
+
+
+def copy_range(source: BinaryIO, start: int, length: int, chunk_size: int = 64 * 1024):
+    """Yield `length` bytes of an object from `start`, closing it afterwards.
+
+    Seeks where the stream allows it -- a local file does -- and reads past
+    the skipped bytes where it does not. Previews only ever ask for the start
+    of a file (#101), so the fallback costs nothing in practice.
+    """
+    try:
+        if start:
+            try:
+                source.seek(start)
+            except (AttributeError, OSError, ValueError):
+                remaining = start
+                while remaining and (
+                    skipped := source.read(min(chunk_size, remaining))
+                ):
+                    remaining -= len(skipped)
+        remaining = length
+        while remaining and (chunk := source.read(min(chunk_size, remaining))):
+            remaining -= len(chunk)
             yield chunk
     finally:
         close = getattr(source, "close", None)

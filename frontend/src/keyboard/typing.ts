@@ -1,8 +1,8 @@
 /**
  * Whether a keystroke is going into something the user is typing in.
  *
- * Every single-key shortcut has to check this first. Without it, typing an
- * issue title containing "c" fires "create issue", and the feature makes the
+ * Every single-key shortcut has to check this first. Without it, typing a
+ * ticket title containing "c" fires "create ticket", and the feature makes the
  * app unusable rather than faster -- which is the classic way keyboard
  * shortcuts get added and then quietly disabled again.
  */

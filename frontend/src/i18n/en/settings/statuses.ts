@@ -1,0 +1,45 @@
+/** Settings → Team → Statuses. */
+export const statuses = {
+  title: 'Statuses',
+  intro: 'The columns on {{team}}’s board, in order.',
+  categories:
+    'Every status belongs to one of five fixed <strong>categories</strong>. The category is what the tracker reads — whether a sprint is finished, whether a blocker still blocks, what counts as delivered on a burndown — so you can call a column anything and none of that has to learn its name. The five cannot be added to; that is the line between a workflow and a workflow engine.',
+  nameOf: 'Name of {{name}}',
+  categoryOf: 'Category of {{name}}',
+  moveEarlier: 'Move {{name}} earlier',
+  moveLater: 'Move {{name}} later',
+  deleteNamed: 'Delete {{name}}',
+  lastColumn: 'A team needs at least one column',
+  nameLabel: 'Name',
+  namePlaceholder: 'Blocked',
+  meansLabel: 'Means',
+  categoryOption: '{{label}} — {{hint}}',
+  addStatus: 'Add a status',
+  adminsOnly: 'Only team admins can change the board’s columns.',
+  errors: {
+    reorder: 'Could not reorder the columns.',
+    add: 'Could not add that column.',
+    rename: 'Could not rename that column.',
+    recategorise: 'Could not change that category.',
+    delete: 'Could not delete that column.',
+    wip: 'Could not change that limit.',
+    wipSettings: 'Could not change how limits work.',
+  },
+  /** WIP limits (#270): how many tickets a column should hold at once. */
+  wip: {
+    limitOf: 'WIP limit for {{name}}',
+    none: 'No limit',
+    shown: 'limit {{count}}',
+    heading: 'WIP limits',
+    hard: 'Refuse a card over the limit',
+    hardHint: 'Off: the board warns when a column goes over. On: a move that would take it over is refused, with a sentence.',
+    subtickets: 'Sub-tickets count against limits',
+    subticketsHint: 'Off: only the work they are part of counts.',
+  },
+  deleteDialog: {
+    title: 'Delete “{{name}}”',
+    body: 'Any tickets in it have to go somewhere. Nothing is deleted but the column.',
+    moveTo: 'Move its tickets to',
+    confirm: 'Delete the column',
+  },
+} as const

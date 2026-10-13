@@ -69,7 +69,10 @@ jobs:
         # the referential bugs Postgres would catch without needing a service.
         env:
           DATABASE_URL: "sqlite://"
-        run: pytest --cov --cov-report=term-missing --cov-report=xml --cov-fail-under=85
+        # --durations=10 names the slowest tests in the log, so the next time
+        # this step creeps back towards the ten minutes it took before #169 the
+        # culprit is a scroll away rather than a profiling session.
+        run: pytest --cov --cov-report=term-missing --cov-report=xml --cov-fail-under=85 --durations=10
 
       - name: Coverage summary
         if: always()
@@ -109,6 +112,11 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      # Folders whose text lives in the translation catalog stay that way
+      # (#106): literal UI text in them fails here.
+      - name: No literal UI text in converted folders
+        run: npm run lint:i18n
 
       - name: Typecheck
         run: npx tsc -b --noEmit
@@ -151,6 +159,29 @@ jobs:
           fi
           echo "openapi.json matches the running app."
 
+      # The other half of the contract: a current openapi.json does not help if
+      # the client generated from it was not regenerated too -- a typed hook
+      # that says a response has no body is worse than no hook at all.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Regenerate the client and fail on drift
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run generate:api
+          if [ -n "$(git status --porcelain -- src/api/generated)" ]; then
+            echo "::error file=frontend/src/api/generated::The generated API client is out of date."
+            echo "Run 'npm run generate:api' in frontend/ and commit the result."
+            git status --short -- src/api/generated
+            git diff -- src/api/generated
+            exit 1
+          fi
+          echo "The generated client matches openapi.json."
+
   docker:
     name: Docker · build and smoke test
     runs-on: ubuntu-latest
@@ -179,6 +210,67 @@ jobs:
 
       - name: Smoke test the running API
         run: BASE_URL=http://localhost:8000 ./backend/smoke_test.sh
+
+      - name: Backend logs on failure
+        if: failure()
+        run: docker compose logs backend
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
+  e2e:
+    name: E2E · Playwright journeys
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      # The same images the Docker job builds and smoke-tests: the real
+      # backend, the built frontend, and Postgres, driven from a browser.
+      - name: Start the stack
+        run: |
+          docker compose up -d --build
+          for i in $(seq 1 60); do
+            if curl -fs http://localhost:8000/health >/dev/null \
+              && curl -fs http://localhost:5173 >/dev/null; then
+              echo "stack up"; exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::the stack did not come up"
+          docker compose logs
+          exit 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install Playwright and Chromium
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run the journeys
+        working-directory: e2e
+        env:
+          CI: "true"
+        run: npx playwright test
+
+      # A failure nobody can see is a failure nobody fixes: the trace has
+      # every action, the DOM before and after each, and the network.
+      # Open one with `npx playwright show-trace <trace.zip>`.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 14
 
       - name: Backend logs on failure
         if: failure()

@@ -9,25 +9,27 @@ and the whole point of the dry run is to be able to trust what it says.
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import HTTPException
 from sqlmodel import Session, select
 
 from lib_softtrack.history import record_creation
+from lib_softtrack.ranks import top_rank
 from lib_softtrack.jira import JiraParseError, parse
 from lib_softtrack import statuses as statuses_service
 from lib_softtrack.metrics import COMMENTS_CREATED, ISSUES_CREATED
-from lib_softtrack.models.imports import ImportReport, ParsedIssue, UserMatch
+from lib_softtrack.models.imports import ImportReport, ParsedTicket, UserMatch
 from lib_softtrack.tables import (
     Comment,
-    Issue,
-    IssueLabelLink,
+    Ticket,
+    TicketLabelLink,
     Label,
     Project,
     Team,
     TeamMember,
+    TeamRole,
     User,
 )
 from lib_softtrack.teams import get_team_or_404, require_team_member
+from lib_utils.errors import ErrorCode, api_error
 
 #: Colours cycled through for labels created by an import, so an imported
 #: board does not arrive entirely grey.
@@ -153,35 +155,50 @@ def import_export(
     try:
         parsed = parse(filename, content)
     except JiraParseError as error:
-        raise HTTPException(status_code=422, detail=str(error))
+        raise api_error(
+            status_code=422, code=ErrorCode.import_invalid, detail=str(error)
+        )
 
     if not parsed:
-        raise HTTPException(status_code=422, detail="No issues found in that file.")
+        raise api_error(
+            status_code=422,
+            code=ErrorCode.import_empty,
+            detail="No issues found in that file.",
+        )
 
     people = {
-        name for issue in parsed for name in (issue.assignee, issue.reporter) if name
+        name for ticket in parsed for name in (ticket.assignee, ticket.reporter) if name
     } | {
         comment.author
-        for issue in parsed
-        for comment in issue.comments
+        for ticket in parsed
+        for comment in ticket.comments
         if comment.author
     }
     matched_users, user_report = _match_users(session, team_id, people)
+    # Matched like anybody else, since a guest may have filed a ticket or
+    # written a comment, but never made its assignee (#316).
+    guest_ids = set(
+        session.exec(
+            select(TeamMember.user_id).where(
+                TeamMember.team_id == team_id, TeamMember.role == TeamRole.guest
+            )
+        ).all()
+    )
 
     existing_keys = {
-        issue.external_key
-        for issue in session.exec(
-            select(Issue).where(
-                Issue.team_id == team_id, Issue.external_key.is_not(None)
+        ticket.external_key
+        for ticket in session.exec(
+            select(Ticket).where(
+                Ticket.team_id == team_id, Ticket.external_key.is_not(None)
             )
         ).all()
     }
 
     report = ImportReport(
         dry_run=dry_run,
-        issues_found=len(parsed),
-        issues_created=0,
-        issues_skipped_existing=0,
+        tickets_found=len(parsed),
+        tickets_created=0,
+        tickets_skipped_existing=0,
         comments_created=0,
         labels_created=[],
         projects_created=[],
@@ -198,40 +215,41 @@ def import_export(
     project_cache: dict[str, Project] = {}
     seen_keys: set[str] = set()
 
-    for parsed_issue in parsed:
-        if parsed_issue.raw_status:
-            unmapped_statuses.add(parsed_issue.raw_status)
-        if parsed_issue.raw_priority:
-            unmapped_priorities.add(parsed_issue.raw_priority)
+    for parsed_ticket in parsed:
+        if parsed_ticket.raw_status:
+            unmapped_statuses.add(parsed_ticket.raw_status)
+        if parsed_ticket.raw_priority:
+            unmapped_priorities.add(parsed_ticket.raw_priority)
 
-        key = parsed_issue.external_key
+        key = parsed_ticket.external_key
         # Re-importing the same export must not duplicate the board. Skipping
         # on the key is what makes an import safe to retry after a partial
         # failure.
         if key and (key in existing_keys or key in seen_keys):
-            report.issues_skipped_existing += 1
+            report.tickets_skipped_existing += 1
             continue
         if key:
             seen_keys.add(key)
 
-        issue = _create_issue(
+        ticket = _create_ticket(
             session,
             team,
-            parsed_issue,
+            parsed_ticket,
             matched_users,
+            guest_ids,
             current_user,
             label_cache,
             project_cache,
             report,
         )
-        report.issues_created += 1
+        report.tickets_created += 1
         report.comments_created += _create_comments(
-            session, issue, parsed_issue, matched_users, current_user
+            session, ticket, parsed_ticket, matched_users, current_user
         )
 
     report.unmapped_statuses = sorted(unmapped_statuses)
     report.unmapped_priorities = sorted(unmapped_priorities)
-    report.warnings = _warnings(report, parsed)
+    report.warnings = _warnings(report, parsed, matched_users, guest_ids)
 
     if dry_run:
         # Everything above ran for real against the session; rolling back is
@@ -239,71 +257,76 @@ def import_export(
         session.rollback()
     else:
         session.commit()
-        ISSUES_CREATED.inc(report.issues_created)
+        ISSUES_CREATED.inc(report.tickets_created)
         COMMENTS_CREATED.inc(report.comments_created)
 
     return report
 
 
-def _create_issue(
+def _create_ticket(
     session: Session,
     team: Team,
-    parsed_issue: ParsedIssue,
+    parsed_ticket: ParsedTicket,
     matched_users: dict[str, User],
+    guest_ids: set[int],
     actor: User,
     label_cache: dict[str, Label],
     project_cache: dict[str, Project],
     report: ImportReport,
-) -> Issue:
-    number = team.next_issue_number
-    team.next_issue_number = number + 1
+) -> Ticket:
+    number = team.next_ticket_number
+    team.next_ticket_number = number + 1
     session.add(team)
 
     project = None
-    if parsed_issue.epic:
+    if parsed_ticket.epic:
         project = _project_for(
-            session, team.id, parsed_issue.epic, project_cache, report.projects_created
+            session, team.id, parsed_ticket.epic, project_cache, report.projects_created
         )
 
-    assignee = matched_users.get(parsed_issue.assignee or "")
+    assignee = matched_users.get(parsed_ticket.assignee or "")
+    if assignee is not None and assignee.id in guest_ids:
+        assignee = None
     # An unmatched reporter falls back to whoever ran the import, because
     # creator_id is not nullable and the alternative is refusing the whole
     # file over one departed colleague.
-    creator = matched_users.get(parsed_issue.reporter or "") or actor
+    creator = matched_users.get(parsed_ticket.reporter or "") or actor
 
-    issue = Issue(
+    ticket = Ticket(
         team_id=team.id,
         number=number,
-        title=parsed_issue.title[:500],
-        description=parsed_issue.description,
-        status_id=_status_for(session, team.id, parsed_issue).id,
-        priority=parsed_issue.priority,
+        title=parsed_ticket.title[:500],
+        description=parsed_ticket.description,
+        status_id=_status_for(session, team.id, parsed_ticket).id,
+        priority=parsed_ticket.priority,
+        type=parsed_ticket.type,
+        rank=top_rank(session, team.id),
         assignee_id=assignee.id if assignee else None,
         creator_id=creator.id,
         project_id=project.id if project else None,
-        external_key=parsed_issue.external_key,
-        created_at=_aware(parsed_issue.created_at),
-        updated_at=_aware(parsed_issue.updated_at or parsed_issue.created_at),
+        external_key=parsed_ticket.external_key,
+        created_at=_aware(parsed_ticket.created_at),
+        updated_at=_aware(parsed_ticket.updated_at or parsed_ticket.created_at),
     )
-    session.add(issue)
+    session.add(ticket)
     session.flush()
 
-    for name in parsed_issue.labels:
+    for name in parsed_ticket.labels:
         label = _label_for(session, team.id, name, label_cache, report.labels_created)
-        session.add(IssueLabelLink(issue_id=issue.id, label_id=label.id))
+        session.add(TicketLabelLink(ticket_id=ticket.id, label_id=label.id))
 
-    record_creation(session, issue, actor)
-    return issue
+    record_creation(session, ticket, actor)
+    return ticket
 
 
 def _create_comments(
     session: Session,
-    issue: Issue,
-    parsed_issue: ParsedIssue,
+    ticket: Ticket,
+    parsed_ticket: ParsedTicket,
     matched_users: dict[str, User],
     actor: User,
 ) -> int:
-    for comment in parsed_issue.comments:
+    for comment in parsed_ticket.comments:
         author = matched_users.get(comment.author or "") or actor
         body = comment.body
         # Say who wrote it when we could not match them, rather than silently
@@ -312,13 +335,13 @@ def _create_comments(
             body = f"**{comment.author}** (imported):\n\n{body}"
         session.add(
             Comment(
-                issue_id=issue.id,
+                ticket_id=ticket.id,
                 author_id=author.id,
                 body=body,
                 created_at=_aware(comment.created_at),
             )
         )
-    return len(parsed_issue.comments)
+    return len(parsed_ticket.comments)
 
 
 def _aware(value: Optional[datetime]) -> datetime:
@@ -327,7 +350,12 @@ def _aware(value: Optional[datetime]) -> datetime:
     return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
-def _warnings(report: ImportReport, parsed: list[ParsedIssue]) -> list[str]:
+def _warnings(
+    report: ImportReport,
+    parsed: list[ParsedTicket],
+    matched_users: dict[str, User],
+    guest_ids: set[int],
+) -> list[str]:
     warnings: list[str] = []
 
     unmatched = [
@@ -336,10 +364,25 @@ def _warnings(report: ImportReport, parsed: list[ParsedIssue]) -> list[str]:
     if unmatched:
         warnings.append(
             f"{len(unmatched)} person(s) in this export are not members of this "
-            "team, so their issues will be unassigned and their comments "
+            "team, so their tickets will be unassigned and their comments "
             "attributed to you with their name kept in the text: "
             + ", ".join(unmatched[:5])
             + ("…" if len(unmatched) > 5 else "")
+        )
+
+    guests = sorted(
+        {
+            ticket.assignee
+            for ticket in parsed
+            if ticket.assignee in matched_users
+            and matched_users[ticket.assignee].id in guest_ids
+        }
+    )
+    if guests:
+        warnings.append(
+            f"{len(guests)} person(s) in this export are guests on this team, "
+            "who can read its tickets but not hold them, so their tickets will "
+            "be unassigned: " + ", ".join(guests[:5]) + ("…" if len(guests) > 5 else "")
         )
 
     if report.unmapped_statuses:
@@ -348,7 +391,7 @@ def _warnings(report: ImportReport, parsed: list[ParsedIssue]) -> list[str]:
             "column: " + ", ".join(report.unmapped_statuses)
         )
 
-    without_key = sum(1 for issue in parsed if not issue.external_key)
+    without_key = sum(1 for ticket in parsed if not ticket.external_key)
     if without_key:
         warnings.append(
             f"{without_key} issue(s) have no Jira key, so re-running this "
@@ -356,17 +399,17 @@ def _warnings(report: ImportReport, parsed: list[ParsedIssue]) -> list[str]:
             "column to make the import repeatable."
         )
 
-    if report.issues_skipped_existing:
+    if report.tickets_skipped_existing:
         warnings.append(
-            f"{report.issues_skipped_existing} issue(s) are already imported "
+            f"{report.tickets_skipped_existing} issue(s) are already imported "
             "and will be left alone."
         )
 
     return warnings
 
 
-def _status_for(session: Session, team_id: int, parsed_issue: ParsedIssue):
-    """Which of the team's columns an imported issue lands in.
+def _status_for(session: Session, team_id: int, parsed_ticket: ParsedTicket):
+    """Which of the team's columns an imported ticket lands in.
 
     Three tries, in order of how much they preserve:
 
@@ -376,20 +419,20 @@ def _status_for(session: Session, team_id: int, parsed_issue: ParsedIssue):
        importer worth teaching about custom statuses at all.
     2. **The first column meaning the same thing.** The parser mapped the Jira
        status to a category; any column in that category is a defensible home.
-    3. **The team's first column.** An unmapped status is still an issue, and
+    3. **The team's first column.** An unmapped status is still a ticket, and
        losing it would be far worse than putting it in the wrong place. The
        report names these so they can be fixed in bulk.
     """
     statuses = statuses_service.team_statuses(session, team_id)
 
-    if parsed_issue.raw_status:
-        wanted = parsed_issue.raw_status.strip().casefold()
+    if parsed_ticket.raw_status:
+        wanted = parsed_ticket.raw_status.strip().casefold()
         for status in statuses:
             if status.name.casefold() == wanted:
                 return status
 
     for status in statuses:
-        if status.category is parsed_issue.status:
+        if status.category is parsed_ticket.status:
             return status
 
     return statuses[0]

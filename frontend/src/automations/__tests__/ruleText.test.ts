@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type {
   AutomationRuleRead,
-  CycleRead,
+  SprintRead,
   LabelRead,
   ProjectRead,
   StatusRead,
@@ -25,7 +25,7 @@ const vocabulary = {
   members: [
     { user: { id: 7, full_name: 'Sam Rivera' }, role: 'member', joined_at: '' },
   ] as unknown as TeamMemberRead[],
-  cycles: [{ id: 5, display_name: 'Sprint 3' }] as unknown as CycleRead[],
+  sprints: [{ id: 5, display_name: 'Sprint 3' }] as unknown as SprintRead[],
 }
 
 function rule(overrides: Partial<AutomationRuleRead> = {}): AutomationRuleRead {
@@ -33,10 +33,10 @@ function rule(overrides: Partial<AutomationRuleRead> = {}): AutomationRuleRead {
     id: 1,
     team_id: 1,
     name: 'A rule',
-    trigger: 'issue_created',
+    trigger: 'ticket_created',
     is_enabled: true,
     conditions: { if_unassigned: false },
-    actions: { move_to_active_cycle: false },
+    actions: { move_to_active_sprint: false },
     created_by: { id: 7, full_name: 'Sam Rivera' },
     created_at: '',
     updated_at: '',
@@ -85,8 +85,8 @@ describe('describeActions', () => {
         set_priority: 'high',
         set_assignee_id: 7,
         add_label_id: 3,
-        move_to_active_cycle: false,
-        set_cycle_id: 5,
+        move_to_active_sprint: false,
+        set_sprint_id: 5,
         comment_body: 'Please size this.',
       },
       vocabulary,
@@ -101,21 +101,21 @@ describe('describeActions', () => {
     ])
   })
 
-  it('prefers the active cycle over a named one, the way the backend does', () => {
+  it('prefers the active sprint over a named one, the way the backend does', () => {
     expect(
-      describeActions({ move_to_active_cycle: true, set_cycle_id: 5 }, vocabulary),
-    ).toEqual(['move it to the active cycle'])
+      describeActions({ move_to_active_sprint: true, set_sprint_id: 5 }, vocabulary),
+    ).toEqual(['move it to the active sprint'])
   })
 
   it('ignores a comment body that is only whitespace', () => {
     expect(
-      describeActions({ move_to_active_cycle: false, comment_body: '   ' }, vocabulary),
+      describeActions({ move_to_active_sprint: false, comment_body: '   ' }, vocabulary),
     ).toEqual([])
   })
 
   it('names something deleted rather than rendering a bare id', () => {
     expect(
-      describeActions({ move_to_active_cycle: false, set_status_id: 999 }, vocabulary),
+      describeActions({ move_to_active_sprint: false, set_status_id: 999 }, vocabulary),
     ).toEqual(['set its status to a deleted status'])
   })
 })
@@ -135,26 +135,26 @@ describe('describeRule', () => {
         rule({
           trigger: 'status_changed',
           conditions: { if_status_id: 9, if_unassigned: false },
-          actions: { set_assignee_id: 7, move_to_active_cycle: false },
+          actions: { set_assignee_id: 7, move_to_active_sprint: false },
         }),
         vocabulary,
       ),
     ).toBe(
-      'When an issue changes status, if it is in In Review, assign it to Sam Rivera.',
+      'When a ticket changes status, if it is in In Review, assign it to Sam Rivera.',
     )
   })
 
   it('drops the "if" for a rule that fires on everything', () => {
     expect(
       describeRule(
-        rule({ actions: { set_priority: 'urgent', move_to_active_cycle: false } }),
+        rule({ actions: { set_priority: 'urgent', move_to_active_sprint: false } }),
         vocabulary,
       ),
-    ).toBe('When an issue is created, set its priority to urgent.')
+    ).toBe('When a ticket is created, set its priority to urgent.')
   })
 
   it('says a stripped rule is empty rather than trailing off', () => {
-    // Deleting a cycle takes `set_cycle_id` out of the rules that filled it.
+    // Deleting a sprint takes `set_sprint_id` out of the rules that filled it.
     expect(describeRule(rule(), vocabulary)).toContain('this rule is empty')
   })
 })

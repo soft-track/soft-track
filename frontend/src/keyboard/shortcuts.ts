@@ -1,3 +1,6 @@
+import { i18n } from '@/i18n'
+import type { shortcuts as catalog } from '@/i18n/en/keyboard/shortcuts'
+
 /**
  * The shortcut table.
  *
@@ -7,39 +10,73 @@
  * array makes both failures impossible.
  */
 export type ShortcutGroup = {
-  title: string
-  shortcuts: Array<{ keys: string[]; description: string }>
+  readonly title: string
+  shortcuts: Array<{ keys: string[]; readonly description: string }>
 }
 
+// Titles and descriptions are getters over the catalog (#106), so the
+// cheatsheet reads the current language; the key glyphs stay here.
 export const SHORTCUT_GROUPS: ShortcutGroup[] = [
-  {
-    title: 'Anywhere',
-    shortcuts: [
-      { keys: ['⌘', 'K'], description: 'Open the command palette' },
-      { keys: ['C'], description: 'Create an issue' },
-      { keys: ['/'], description: 'Focus search' },
-      { keys: ['?'], description: 'Show this list' },
-      { keys: ['Esc'], description: 'Close whatever is open' },
-    ],
-  },
-  {
-    title: 'On the board',
-    shortcuts: [
-      { keys: ['←', '→'], description: 'Move between columns' },
-      { keys: ['↑', '↓'], description: 'Move between cards' },
-      { keys: ['Enter'], description: 'Open the focused issue' },
-    ],
-  },
-  {
-    title: 'On an open issue',
-    shortcuts: [
-      { keys: ['S'], description: 'Change status' },
-      { keys: ['P'], description: 'Change priority' },
-      { keys: ['A'], description: 'Change assignee' },
-      { keys: ['L'], description: 'Jump to labels' },
-    ],
-  },
+  group('anywhere', [
+    shortcut(['⌘', 'K'], 'openPalette'),
+    shortcut(['C'], 'createTicket'),
+    shortcut(['M'], 'myWork'),
+    shortcut(['/'], 'focusSearch'),
+    shortcut(['?'], 'showList'),
+    shortcut(['Esc'], 'closeTop'),
+  ]),
+  group('board', [
+    shortcut(['←', '→'], 'moveColumns'),
+    shortcut(['↑', '↓'], 'moveCards'),
+    shortcut(['Enter'], 'openFocused'),
+    shortcut(['Space'], 'peek'),
+    shortcut(['Enter'], 'openPeeked'),
+    shortcut(['⇧', 'Space'], 'pickUp'),
+    shortcut(['←', '→'], 'carryAcross'),
+    shortcut(['↑', '↓'], 'carryWithin'),
+    shortcut(['Space'], 'drop'),
+    shortcut(['Esc'], 'putBack'),
+    shortcut(['⌘', 'Click'], 'toggleSelected'),
+    shortcut(['⇧', 'Click'], 'selectRange'),
+    shortcut(['Esc'], 'clearSelection'),
+  ]),
+  group('ticket', [
+    shortcut(['S'], 'changeStatus'),
+    shortcut(['P'], 'changePriority'),
+    shortcut(['A'], 'changeAssignee'),
+    shortcut(['L'], 'jumpToLabels'),
+  ]),
+  // In a description or comment (#118). The editor matches these itself, in
+  // `src/markdown/keys.ts`; they are listed here so they are findable.
+  group('writing', [
+    shortcut(['⌘', 'B'], 'bold'),
+    shortcut(['⌘', 'I'], 'italic'),
+    shortcut(['⌘', 'K'], 'link'),
+    shortcut(['Tab'], 'indentItem'),
+    shortcut(['⇧', 'Tab'], 'outdentItem'),
+  ]),
 ]
+
+function group(
+  key: keyof (typeof catalog)['groups'],
+  shortcuts: ShortcutGroup['shortcuts'],
+): ShortcutGroup {
+  return {
+    get title() {
+      return i18n.t(`keyboard:shortcuts.groups.${key}`)
+    },
+    shortcuts,
+  }
+}
+
+function shortcut(keys: string[], key: keyof (typeof catalog)['descriptions']) {
+  return {
+    keys,
+    get description() {
+      return i18n.t(`keyboard:shortcuts.descriptions.${key}`)
+    },
+  }
+}
 
 /** The modifier label for this platform, for display only. */
 export const MOD_KEY =

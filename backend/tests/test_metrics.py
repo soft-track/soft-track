@@ -4,11 +4,11 @@ from fastapi import FastAPI
 from prometheus_client import REGISTRY
 
 from lib_softtrack import comments as comments_service
-from lib_softtrack import issues as issues_service
+from lib_softtrack import tickets as tickets_service
 from lib_softtrack import teams as teams_service
 from lib_softtrack.metrics import PrometheusMiddleware, check_metrics_token
 from lib_softtrack.models.comments import CommentCreate
-from lib_softtrack.models.issues import IssueCreate
+from lib_softtrack.models.tickets import TicketCreate
 from lib_softtrack.models.teams import TeamCreate
 from lib_softtrack.tables import User
 from main import app
@@ -117,20 +117,20 @@ def test_http_metrics_use_route_templates():
     routed = FastAPI()
     routed.add_middleware(PrometheusMiddleware)
 
-    @routed.get("/issues/{issue_id}")
-    async def get_issue(issue_id: int):
-        return {"id": issue_id}
+    @routed.get("/tickets/{ticket_id}")
+    async def get_ticket(ticket_id: int):
+        return {"id": ticket_id}
 
-    labels = {"method": "GET", "route": "/issues/{issue_id}", "status": "200"}
+    labels = {"method": "GET", "route": "/tickets/{ticket_id}", "status": "200"}
     before = sample("softtrack_http_requests_total", labels)
 
-    status, _body = asgi_get(routed, "/issues/123")
+    status, _body = asgi_get(routed, "/tickets/123")
 
     assert status == 200
     assert sample("softtrack_http_requests_total", labels) == before + 1
 
 
-def test_issue_and_comment_creation_counters(session):
+def test_ticket_and_comment_creation_counters(session):
     actor = User(
         email="metrics@softtrack.dev",
         username="metrics",
@@ -146,11 +146,11 @@ def test_issue_and_comment_creation_counters(session):
     issues_before = sample("softtrack_issues_created_total")
     comments_before = sample("softtrack_comments_created_total")
 
-    issue = issues_service.create_issue(
-        session, actor, team.id, IssueCreate(title="Measure this")
+    ticket = tickets_service.create_ticket(
+        session, actor, team.id, TicketCreate(title="Measure this")
     )
     comments_service.create_comment(
-        session, actor, issue.id, CommentCreate(body="Measured.")
+        session, actor, ticket.id, CommentCreate(body="Measured.")
     )
 
     assert sample("softtrack_issues_created_total") == issues_before + 1

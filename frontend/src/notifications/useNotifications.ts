@@ -9,22 +9,27 @@ import {
   useUpdateNotificationNotificationsNotificationIdPatch,
 } from '@/api/generated/endpoints/notifications/notifications'
 import type { NotificationRead } from '@/api/generated/models'
+import { useRealtimeConnected } from '@/realtime/status'
 
 /**
- * How often the badge asks the server whether anything happened.
+ * How often the badge asks the server whether anything happened, when there
+ * is no live stream to say so (#103).
  *
- * Polling rather than a socket: SoftTrack has no realtime layer yet (it is on
- * the roadmap), and one cheap request a minute per open tab is a fair price
- * for the inbox not being stale until you reload. The endpoint returns a
- * single integer, which is why the count is polled and the list is not.
+ * With a board open, the team's event stream carries a `notification` nudge
+ * and the badge refetches on that instead; this is the fallback for when the
+ * stream is down or the page has none. One cheap request a minute per tab is
+ * a fair price for the inbox not being stale until you reload. The endpoint
+ * returns a single integer, which is why the count is polled and the list is
+ * not.
  */
 const POLL_MS = 60_000
 
 /** The unread badge. Cheap enough to keep on every board. */
 export function useUnreadCount() {
+  const live = useRealtimeConnected()
   const query = useUnreadCountNotificationsUnreadCountGet({
     query: {
-      refetchInterval: POLL_MS,
+      refetchInterval: live ? false : POLL_MS,
       // A tab left open in the background is not being read, so it does not
       // need fresh numbers -- and twenty of them would still be polling.
       refetchIntervalInBackground: false,

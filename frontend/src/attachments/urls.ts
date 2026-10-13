@@ -1,8 +1,10 @@
 import { AXIOS_INSTANCE } from '@/api/client'
+import { i18n } from '@/i18n'
+import { formatNumber } from '@/i18n/format'
 
 /**
  * The shape the API hands back in `AttachmentRead.url` and the shape that ends
- * up written into issue descriptions and comment bodies.
+ * up written into ticket descriptions and comment bodies.
  *
  * Matching on it is how the markdown renderer tells "this image is ours, fetch
  * it with the user's token" from "this image is somewhere on the internet".
@@ -22,7 +24,7 @@ export function isAttachmentUrl(url: string | undefined): url is string {
  *
  * The cache is keyed on the API path and never evicted. That is deliberate:
  * revoking a URL breaks every `<img>` still pointing at it, and the same
- * screenshot is rendered again every time its issue is reopened. The cost is
+ * screenshot is rendered again every time its ticket is reopened. The cost is
  * bounded by the number of distinct attachments viewed before a reload.
  */
 const objectUrls = new Map<string, Promise<string>>()
@@ -57,9 +59,20 @@ export async function downloadAttachment(url: string, filename: string): Promise
 
 /** "512 kB", "1.4 MB" -- one decimal only where it says something. */
 export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} kB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  // No grouping: sizes read "1023 kB", not "1,023 kB".
+  if (bytes < 1024) {
+    return i18n.t('attachments:sizes.bytes', { size: formatNumber(bytes, { useGrouping: false }) })
+  }
+  if (bytes < 1024 * 1024) {
+    const size = formatNumber(Math.round(bytes / 1024), { useGrouping: false })
+    return i18n.t('attachments:sizes.kilobytes', { size })
+  }
+  const size = formatNumber(bytes / (1024 * 1024), {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+    useGrouping: false,
+  })
+  return i18n.t('attachments:sizes.megabytes', { size })
 }
 
 /**

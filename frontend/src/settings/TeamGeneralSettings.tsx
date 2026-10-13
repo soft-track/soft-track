@@ -1,44 +1,472 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { type FormEvent, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { type FormEvent, useId, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import {
+  getArchivePreviewTeamsTeamIdArchivePreviewGetQueryKey,
+  useArchivePreviewTeamsTeamIdArchivePreviewGet,
+  useDeleteTeamTeamsTeamIdDelete,
   useListTeamMembersTeamsTeamIdMembersGet,
   useUpdateTeamTeamsTeamIdPatch,
 } from '@/api/generated/endpoints/teams/teams'
-import type { TeamRead } from '@/api/generated/models'
+import type { EstimateUnit, TeamArchivePreview, TeamRead } from '@/api/generated/models'
+import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
-import { useAuth } from '@/auth/AuthContext'
+import { useAuth } from '@/auth/useAuth'
+import { Trans, userText, useTranslation } from '@/i18n'
+import { formatDate, formatList } from '@/i18n/format'
+import { stoppingParts } from '@/settings/archivePreview'
+import { activeTeams, isArchived } from '@/team/archived'
 import { useTeamByKey } from '@/team/useTeams'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
+import { useFocusTrap } from '@/ui/useFocusTrap'
 
 export default function TeamGeneralSettings() {
   const { teamKey } = useParams()
   const { team, isLoading } = useTeamByKey(teamKey)
   const { user } = useAuth()
+  const { t } = useTranslation(['settings', 'common'])
 
   const members = useListTeamMembersTeamsTeamIdMembersGet(team?.id ?? 0, {
     query: { enabled: Boolean(team) },
   })
-  const isAdmin =
+  const isTeamAdmin =
     members.data?.some((m) => m.user.id === user?.id && m.role === 'admin') ?? false
+  // An archived team (#322) takes no changes but being unarchived: its
+  // settings read as they are, for its admins too.
+  const isAdmin = isTeamAdmin && !isArchived(team)
+  // Archiving, unarchiving and deleting: its admins, and site admins (#307).
+  const mayArchive = isTeamAdmin || Boolean(user?.is_site_admin)
 
   if (isLoading) return <Loading />
   if (!team) {
     return (
       <div className="glass-strong rounded-panel p-6 text-sm text-neutral-500">
-        That team does not exist, or you are not a member of it.
+        {t('common:teamNotFound')}
       </div>
     )
   }
 
   // Keyed on the team so switching teams in the nav remounts the form with
   // that team's values, rather than needing an effect to copy them into state.
-  return <TeamGeneralForm key={team.id} team={team} isAdmin={isAdmin} />
+  return (
+    <div className="space-y-4">
+      <TeamGeneralForm key={team.id} team={team} isAdmin={isAdmin} />
+      {/* Below what the team is called (#322), as the mockup has it. */}
+      {mayArchive && <ArchiveSection key={`archive-${team.id}`} team={team} />}
+      <Findable key={`findable-${team.id}`} team={team} isAdmin={isAdmin} />
+      <GuestsMayComment
+        key={`guests-${team.id}`}
+        team={team}
+        isAdmin={isAdmin}
+        guests={(members.data ?? [])
+          .filter((member) => member.role === 'guest')
+          .map((member) => member.user.full_name)}
+      />
+      <EstimateUnitSetting key={`estimates-${team.id}`} team={team} isAdmin={isAdmin} />
+      <CapacityDefaults key={`capacity-${team.id}`} team={team} isAdmin={isAdmin} />
+      <DeletePolicy key={`delete-${team.id}`} team={team} isAdmin={isAdmin} />
+    </div>
+  )
+}
+
+/**
+ * Who can find the team (#259): whether it is in the team directory, and
+ * whether anybody signed in joins it as a member without asking. Listed is
+ * the default and open is not. Each saved as soon as it is switched.
+ */
+function Findable({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
+  const queryClient = useQueryClient()
+  const updateTeam = useUpdateTeamTeamsTeamIdPatch()
+  const [listed, setListed] = useState(team.listed ?? true)
+  const [open, setOpen] = useState(team.open_to_join ?? false)
+  const [error, setError] = useState<string | null>(null)
+  const id = useId()
+
+  const save = async (data: { listed?: boolean; open_to_join?: boolean }, undo: () => void) => {
+    setError(null)
+    try {
+      await updateTeam.mutateAsync({ teamId: team.id, data })
+      queryClient.invalidateQueries({ queryKey: ['/teams'] })
+    } catch (err: unknown) {
+      undo()
+      setError(errorDetail(err, t('general.errors.findable')))
+    }
+  }
+
+  const row = (
+    switchId: string,
+    label: string,
+    hint: string,
+    checked: boolean,
+    onChange: (value: boolean) => void,
+  ) => (
+    <div className="flex items-start justify-between gap-4">
+      <label htmlFor={switchId} className="min-w-0">
+        <span className="block text-sm font-medium text-neutral-800">{label}</span>
+        <span className="block text-xs text-neutral-500">{hint}</span>
+      </label>
+      <input
+        id={switchId}
+        type="checkbox"
+        role="switch"
+        className="switch mt-0.5 shrink-0"
+        checked={checked}
+        disabled={!isAdmin || updateTeam.isPending}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+    </div>
+  )
+
+  return (
+    <section className="glass-strong rounded-panel p-6" aria-labelledby={`${id}-heading`}>
+      <p id={`${id}-heading`} className="eyebrow">
+        {t('general.findable.heading')}
+      </p>
+      <div className="mt-2">
+        {row(`${id}-listed`, t('general.findable.listed'), t('general.findable.listedHint'), listed, (value) => {
+          setListed(value)
+          void save({ listed: value }, () => setListed(!value))
+        })}
+      </div>
+      <div className="mt-4 border-t border-neutral-900/8 pt-4">
+        {row(`${id}-open`, t('general.findable.open'), t('general.findable.openHint'), open, (value) => {
+          setOpen(value)
+          void save({ open_to_join: value }, () => setOpen(!value))
+        })}
+      </div>
+      {error && (
+        <p role="alert" className="mt-3 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700">
+          {error}
+        </p>
+      )}
+    </section>
+  )
+}
+
+/**
+ * Whether the team's guests may join the conversation (#244): comment, attach
+ * files to their comments and react. Off unless an admin turns it on, and
+ * saved as soon as it is switched.
+ */
+function GuestsMayComment({
+  team,
+  isAdmin,
+  guests,
+}: {
+  team: TeamRead
+  isAdmin: boolean
+  guests: string[]
+}) {
+  const { t } = useTranslation(['settings', 'common'])
+  const queryClient = useQueryClient()
+  const updateTeam = useUpdateTeamTeamsTeamIdPatch()
+  const [on, setOn] = useState(team.guests_may_comment)
+  const [error, setError] = useState<string | null>(null)
+  const switchId = useId()
+
+  const toggle = async (value: boolean) => {
+    setOn(value)
+    setError(null)
+    try {
+      await updateTeam.mutateAsync({ teamId: team.id, data: { guests_may_comment: value } })
+      queryClient.invalidateQueries({ queryKey: ['/teams'] })
+    } catch (err: unknown) {
+      setOn(!value)
+      setError(errorDetail(err, t('general.errors.guests')))
+    }
+  }
+
+  return (
+    <section className="glass-strong rounded-panel p-6" aria-labelledby={`${switchId}-heading`}>
+      <p id={`${switchId}-heading`} className="eyebrow">
+        {t('general.guests.heading')}
+      </p>
+      <div className="mt-2 flex items-start justify-between gap-4">
+        <label htmlFor={switchId} className="min-w-0">
+          <span className="block text-sm font-medium text-neutral-800">
+            {t('general.guests.mayComment')}
+          </span>
+          <span className="block text-xs text-neutral-500">{t('general.guests.mayCommentHint')}</span>
+        </label>
+        <input
+          id={switchId}
+          type="checkbox"
+          role="switch"
+          className="switch mt-0.5 shrink-0"
+          checked={on}
+          disabled={!isAdmin || updateTeam.isPending}
+          onChange={(e) => toggle(e.target.checked)}
+        />
+      </div>
+      {error && (
+        <p role="alert" className="mt-3 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700">
+          {error}
+        </p>
+      )}
+      <p className="mt-4 border-t border-neutral-900/8 pt-3 text-xs text-neutral-500">
+        {guests.length === 0
+          ? t('general.guests.none', { team: team.name })
+          : t('general.guests.some', {
+              team: team.name,
+              count: guests.length,
+              names: formatList(guests),
+            })}
+      </p>
+    </section>
+  )
+}
+
+/**
+ * What the team estimates in (#268): points, hours or both. Points is the
+ * default, and a team that leaves it sees no change. Saved as soon as it is
+ * chosen, like who may delete.
+ */
+function EstimateUnitSetting({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
+  const queryClient = useQueryClient()
+  const updateTeam = useUpdateTeamTeamsTeamIdPatch()
+  const [unit, setUnit] = useState<EstimateUnit>(team.estimate_unit ?? 'points')
+  const [error, setError] = useState<string | null>(null)
+  const name = useId()
+
+  const choose = async (value: EstimateUnit) => {
+    const before = unit
+    setUnit(value)
+    setError(null)
+    try {
+      await updateTeam.mutateAsync({ teamId: team.id, data: { estimate_unit: value } })
+      queryClient.invalidateQueries({ queryKey: ['/teams'] })
+    } catch (err: unknown) {
+      setUnit(before)
+      setError(errorDetail(err, t('general.errors.estimates')))
+    }
+  }
+
+  const option = (value: EstimateUnit, label: string, hint?: string) => (
+    <label className="flex items-start gap-2.5">
+      <input
+        type="radio"
+        name={name}
+        checked={unit === value}
+        disabled={!isAdmin || updateTeam.isPending}
+        onChange={() => choose(value)}
+        className="mt-0.5 h-4 w-4 accent-[var(--color-brand-600)]"
+      />
+      <span>
+        <span className="block text-sm text-neutral-800">{label}</span>
+        {hint && <span className="block text-xs text-neutral-500">{hint}</span>}
+      </span>
+    </label>
+  )
+
+  return (
+    <section className="glass-strong rounded-panel p-6" aria-labelledby={`${name}-heading`}>
+      <p className="eyebrow">{t('general.estimates.heading')}</p>
+      <fieldset className="mt-2">
+        <legend id={`${name}-heading`} className="text-sm font-medium text-neutral-800">
+          {t('general.estimates.question')}
+        </legend>
+        <div className="mt-3 space-y-3">
+          {option('points', t('general.estimates.points'), t('general.estimates.pointsHint'))}
+          {option('hours', t('general.estimates.hours'))}
+          {option('both', t('general.estimates.both'), t('general.estimates.bothHint'))}
+        </div>
+      </fieldset>
+      {error && (
+        <p
+          role="alert"
+          className="mt-3 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+        >
+          {error}
+        </p>
+      )}
+    </section>
+  )
+}
+
+/**
+ * What each person can take in a sprint before anybody changes it (#269):
+ * points for a whole sprint, and hours for each working day. Both shrink
+ * with the days somebody is away, and either can be changed per person and
+ * per sprint on the Plan tab.
+ */
+function CapacityDefaults({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
+  const queryClient = useQueryClient()
+  const updateTeam = useUpdateTeamTeamsTeamIdPatch()
+  const [points, setPoints] = useState(String(team.capacity_points ?? 10))
+  const [hours, setHours] = useState(String((team.capacity_minutes_per_day ?? 360) / 60))
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+  const id = useId()
+
+  const onSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    setError(null)
+    setSaved(false)
+    try {
+      await updateTeam.mutateAsync({
+        teamId: team.id,
+        data: {
+          capacity_points: Math.max(Math.round(Number(points) || 0), 0),
+          capacity_minutes_per_day: Math.max(Math.round((Number(hours) || 0) * 60), 0),
+        },
+      })
+      queryClient.invalidateQueries({ queryKey: ['/teams'] })
+      // The plans worked out from the old defaults.
+      queryClient.invalidateQueries({
+        predicate: (query) => String(query.queryKey[0] ?? '').endsWith('/plan'),
+      })
+      setSaved(true)
+    } catch (err: unknown) {
+      setError(errorDetail(err, t('general.errors.capacity')))
+    }
+  }
+
+  return (
+    <form
+      onSubmit={onSubmit}
+      className="glass-strong rounded-panel p-6"
+      aria-labelledby={`${id}-heading`}
+    >
+      <p className="eyebrow" id={`${id}-heading`}>
+        {t('general.capacity.heading')}
+      </p>
+      <p className="mt-2 text-sm text-neutral-600">{t('general.capacity.intro')}</p>
+      <div className="mt-3 flex flex-wrap items-end gap-4">
+        <label className="text-sm text-neutral-800">
+          <span className="mb-1 block text-xs text-neutral-500">
+            {t('general.capacity.points')}
+          </span>
+          <input
+            type="number"
+            min={0}
+            max={1000}
+            step={1}
+            value={points}
+            disabled={!isAdmin}
+            onChange={(e) => setPoints(e.target.value)}
+            className="field w-24"
+          />
+        </label>
+        <label className="text-sm text-neutral-800">
+          <span className="mb-1 block text-xs text-neutral-500">
+            {t('general.capacity.hours')}
+          </span>
+          <input
+            type="number"
+            min={0}
+            max={24}
+            step={0.5}
+            value={hours}
+            disabled={!isAdmin}
+            onChange={(e) => setHours(e.target.value)}
+            className="field w-24"
+          />
+        </label>
+        {isAdmin && (
+          <button type="submit" className="btn btn-primary" disabled={updateTeam.isPending}>
+            {t('general.capacity.save')}
+          </button>
+        )}
+        {saved && <span className="text-xs text-neutral-500">{t('general.capacity.saved')}</span>}
+      </div>
+      {error && (
+        <p
+          role="alert"
+          className="mt-3 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+        >
+          {error}
+        </p>
+      )}
+    </form>
+  )
+}
+
+/**
+ * Who may delete tickets and epics (#323): their creator -- an epic's lead --
+ * and the team's admins, or every member. Saved as soon as it is chosen,
+ * apart from the form above, since it is a rule rather than a description.
+ */
+function DeletePolicy({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
+  const queryClient = useQueryClient()
+  const updateTeam = useUpdateTeamTeamsTeamIdPatch()
+  const [anyMember, setAnyMember] = useState(team.any_member_may_delete)
+  const [error, setError] = useState<string | null>(null)
+  const name = useId()
+
+  const choose = async (value: boolean) => {
+    const before = anyMember
+    setAnyMember(value)
+    setError(null)
+    try {
+      await updateTeam.mutateAsync({ teamId: team.id, data: { any_member_may_delete: value } })
+      queryClient.invalidateQueries({ queryKey: ['/teams'] })
+    } catch (err: unknown) {
+      setAnyMember(before)
+      setError(errorDetail(err, t('general.errors.deleting')))
+    }
+  }
+
+  const option = (value: boolean, label: string, hint: string) => (
+    <label className="flex items-start gap-2.5">
+      <input
+        type="radio"
+        name={name}
+        checked={anyMember === value}
+        disabled={!isAdmin || updateTeam.isPending}
+        onChange={() => choose(value)}
+        className="mt-0.5 h-4 w-4 accent-[var(--color-brand-600)]"
+      />
+      <span>
+        <span className="block text-sm text-neutral-800">{label}</span>
+        <span className="block text-xs text-neutral-500">{hint}</span>
+      </span>
+    </label>
+  )
+
+  return (
+    <section className="glass-strong rounded-panel p-6" aria-labelledby={`${name}-heading`}>
+      <p className="eyebrow">{t('general.deleting.heading')}</p>
+      <fieldset className="mt-2">
+        <legend id={`${name}-heading`} className="text-sm font-medium text-neutral-800">
+          {t('general.deleting.question')}
+        </legend>
+        <div className="mt-3 space-y-3">
+          {option(
+            false,
+            t('general.deleting.creatorAndAdmins'),
+            t('general.deleting.creatorAndAdminsHint'),
+          )}
+          {option(true, t('general.deleting.everyMember'), t('general.deleting.everyMemberHint'))}
+        </div>
+      </fieldset>
+      {error && (
+        <p
+          role="alert"
+          className="mt-3 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+        >
+          {error}
+        </p>
+      )}
+      <p className="mt-4 border-t border-neutral-900/8 pt-3 text-xs text-neutral-500">
+        <Trans
+          t={t}
+          i18nKey="general.deleting.note"
+          components={{ code: <code className="identifier" /> }}
+        />
+      </p>
+    </section>
+  )
 }
 
 function TeamGeneralForm({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
   const queryClient = useQueryClient()
   const updateTeam = useUpdateTeamTeamsTeamIdPatch()
 
@@ -60,17 +488,17 @@ function TeamGeneralForm({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}`] })
       setSaved(true)
     } catch (err: unknown) {
-      setError(errorDetail(err, 'Could not save this team.'))
+      setError(errorDetail(err, t('general.errors.save')))
     }
   }
 
   return (
     <form onSubmit={onSubmit} className="glass-strong sheen rounded-panel p-6">
-      <h1 className="text-lg font-semibold tracking-tight text-neutral-900">General</h1>
+      <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
+        {t('general.title')}
+      </h1>
       <p className="mt-1 text-sm text-neutral-500">
-        {isAdmin
-          ? 'What this team is called, and what it is for.'
-          : 'Only admins of this team can change these.'}
+        {isAdmin ? t('general.introAdmin') : t('general.introMember')}
       </p>
 
       {error && (
@@ -84,13 +512,15 @@ function TeamGeneralForm({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }
       {saved && !error && (
         <p className="mt-4 flex items-center gap-1.5 text-sm text-neutral-500">
           <Icon name="check" size={14} className="text-accent-mint" />
-          Saved.
+          {t('general.saved')}
         </p>
       )}
 
       <div className="mt-6 max-w-lg space-y-5">
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-neutral-700">Name</span>
+          <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+            {t('general.nameLabel')}
+          </span>
           <input
             required
             disabled={!isAdmin}
@@ -102,7 +532,7 @@ function TeamGeneralForm({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }
 
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium text-neutral-700">
-            Description
+            {t('general.descriptionLabel')}
           </span>
           <textarea
             rows={3}
@@ -110,20 +540,26 @@ function TeamGeneralForm({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="field resize-y"
-            placeholder="What this team works on"
+            placeholder={t('general.descriptionPlaceholder')}
           />
         </label>
 
         <div>
-          <span className="mb-1.5 block text-sm font-medium text-neutral-700">Key</span>
+          <span className="mb-1.5 block text-sm font-medium text-neutral-700">
+            {t('general.keyLabel')}
+          </span>
           <div className="flex flex-wrap items-center gap-2.5">
             <span className="identifier well rounded-control px-2.5 py-1.5 text-sm text-neutral-700">
               {team.key}
             </span>
             <span className="text-xs text-neutral-400">
-              Cannot be changed — identifiers like{' '}
-              <code className="identifier">{team.key}-42</code> are already in commit
-              messages and chat logs.
+              <Trans
+                t={t}
+                i18nKey="general.keyFixed"
+                values={{ key: team.key }}
+                {...userText}
+                components={{ code: <code className="identifier" /> }}
+              />
             </span>
           </div>
         </div>
@@ -132,10 +568,278 @@ function TeamGeneralForm({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }
       {isAdmin && (
         <div className="mt-6 flex justify-end">
           <button type="submit" disabled={updateTeam.isPending} className="btn btn-primary">
-            {updateTeam.isPending ? 'Saving…' : 'Save changes'}
+            {updateTeam.isPending ? t('common:saving') : t('general.saveChanges')}
           </button>
         </div>
       )}
     </form>
+  )
+}
+
+/**
+ * Archive the team, or unarchive it; and delete it, only when it has no
+ * tickets (#322). A team with work in it is archived: read-only, out of the
+ * switcher, pickers and search, and everything still there.
+ */
+function ArchiveSection({ team }: { team: TeamRead }) {
+  const { t } = useTranslation(['settings', 'common'])
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const id = useId()
+  const archived = isArchived(team)
+  const preview = useArchivePreviewTeamsTeamIdArchivePreviewGet(team.id)
+  const updateTeam = useUpdateTeamTeamsTeamIdPatch()
+  const remove = useDeleteTeamTeamsTeamIdDelete()
+  const [confirming, setConfirming] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const tickets = preview.data?.tickets
+  const empty = tickets === 0
+
+  const refresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['/teams'] }),
+      queryClient.invalidateQueries({
+        queryKey: getArchivePreviewTeamsTeamIdArchivePreviewGetQueryKey(team.id),
+      }),
+      queryClient.invalidateQueries({ queryKey: ['/admin/teams'] }),
+    ])
+  }
+
+  const setArchived = async (value: boolean) => {
+    setError(null)
+    try {
+      await updateTeam.mutateAsync({ teamId: team.id, data: { archived: value } })
+      await refresh()
+      setConfirming(false)
+    } catch (err: unknown) {
+      setError(errorDetail(err, t(value ? 'general.errors.archive' : 'general.errors.unarchive')))
+    }
+  }
+
+  const onDelete = async () => {
+    if (!window.confirm(t('general.archive.deleteConfirm', { team: team.name }))) return
+    setError(null)
+    try {
+      await remove.mutateAsync({ teamId: team.id })
+      // Where to go next: a team still in use, or the page for somebody on
+      // none. Read before the list is refreshed, which no longer has it.
+      const teams = queryClient.getQueryData<TeamRead[]>(['/teams']) ?? []
+      const next = activeTeams(teams).find((other) => other.id !== team.id)
+      queryClient.setQueryData<TeamRead[]>(['/teams'], (current) =>
+        (current ?? []).filter((other) => other.id !== team.id),
+      )
+      void queryClient.invalidateQueries({ queryKey: ['/teams'] })
+      void queryClient.invalidateQueries({ queryKey: ['/admin/teams'] })
+      navigate(next ? `/${next.key}` : '/', { replace: true })
+    } catch (err: unknown) {
+      setError(errorDetail(err, t('general.errors.delete')))
+    }
+  }
+
+  const archivedOn = team.archived_at
+    ? formatDate(parseServerDate(team.archived_at), t('general.archive.datePattern'))
+    : ''
+
+  return (
+    <section className="glass-strong rounded-panel p-6" aria-labelledby={`${id}-heading`}>
+      <p id={`${id}-heading`} className="eyebrow">
+        {t('general.archive.heading')}
+      </p>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0 max-w-prose">
+          <p className="text-sm font-medium text-neutral-800">
+            {t(archived ? 'general.archive.unarchiveTitle' : 'general.archive.archiveTitle', {
+              team: team.name,
+            })}
+          </p>
+          <p className="mt-1 text-sm text-neutral-500">
+            {archived ? (
+              t('general.archive.unarchiveHint', { date: archivedOn })
+            ) : (
+              <Trans
+                t={t}
+                i18nKey="general.archive.archiveHint"
+                values={{ key: team.key }}
+                {...userText}
+                components={{ code: <code className="identifier" /> }}
+              />
+            )}
+          </p>
+        </div>
+        {archived ? (
+          <button
+            type="button"
+            onClick={() => void setArchived(false)}
+            disabled={updateTeam.isPending}
+            className="btn btn-secondary btn-sm shrink-0"
+          >
+            {updateTeam.isPending
+              ? t('general.archive.unarchiving')
+              : t('general.archive.unarchiveButton')}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            className="btn btn-secondary btn-sm shrink-0 text-danger-600"
+          >
+            {t('general.archive.archiveButton')}
+          </button>
+        )}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-neutral-900/8 pt-4">
+        <div className="min-w-0 max-w-prose">
+          <p className="text-sm text-neutral-600">
+            {t('general.archive.deleteTitle', { team: team.name })}
+          </p>
+          <p className="mt-1 text-sm text-neutral-500">
+            {tickets === undefined
+              ? '\u00a0'
+              : empty
+                ? t('general.archive.deleteHintEmpty', { team: team.name })
+                : t('general.archive.deleteHint', {
+                    team: team.name,
+                    count: tickets,
+                  })}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void onDelete()}
+          disabled={!empty || remove.isPending}
+          className={`btn btn-sm shrink-0 ${empty ? 'btn-danger' : 'btn-secondary'}`}
+        >
+          {remove.isPending ? t('general.archive.deleting') : t('general.archive.deleteButton')}
+        </button>
+      </div>
+
+      {error && (
+        <p role="alert" className="mt-3 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700">
+          {error}
+        </p>
+      )}
+
+      {confirming && (
+        <ArchiveDialog
+          team={team}
+          preview={preview.data}
+          failed={preview.isError}
+          pending={updateTeam.isPending}
+          error={error}
+          onCancel={() => {
+            setConfirming(false)
+            setError(null)
+          }}
+          onConfirm={() => void setArchived(true)}
+        />
+      )}
+    </section>
+  )
+}
+
+/** Archiving says what stops, before it happens (#322). */
+function ArchiveDialog({
+  team,
+  preview,
+  failed,
+  pending,
+  error,
+  onCancel,
+  onConfirm,
+}: {
+  team: TeamRead
+  preview: TeamArchivePreview | undefined
+  failed: boolean
+  pending: boolean
+  error: string | null
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  const { t } = useTranslation(['settings', 'common'])
+  const dialogRef = useFocusTrap<HTMLDivElement>()
+  const titleId = useId()
+  const stopping = preview
+    ? stoppingParts(preview, (key, options) => t(key as 'general.archive.dialog.webhooks', options))
+    : []
+
+  // Into the body: the section it opens from is glass, whose backdrop
+  // filter would otherwise hold a fixed overlay inside it.
+  return createPortal(
+    <div
+      className="scrim fixed inset-0 z-30 flex items-start justify-center px-4 pt-[15vh]"
+      onClick={onCancel}
+    >
+      <div
+        role="dialog"
+        ref={dialogRef}
+        aria-modal="true"
+        tabIndex={-1}
+        aria-labelledby={titleId}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') onCancel()
+        }}
+        className="pop-in glass-strong w-full max-w-md rounded-panel p-5"
+      >
+        <h2 id={titleId} className="text-base font-semibold tracking-tight text-neutral-900">
+          {t('general.archive.dialog.title', { team: team.name })}
+        </h2>
+        {preview ? (
+          <>
+            <p className="mt-2 text-sm text-neutral-600">
+              {t('general.archive.dialog.body', { count: preview.members })}
+            </p>
+            <div className="mt-4 rounded-control border border-neutral-900/8 bg-neutral-900/[0.03] px-3 py-2.5 text-sm text-neutral-800">
+              <p>{t('general.archive.dialog.stops')}</p>
+              <p className="mt-1.5 text-neutral-700">
+                {stopping.length > 0
+                  ? stopping.join(t('general.archive.dialog.separator'))
+                  : t('general.archive.dialog.nothingStops')}
+              </p>
+            </div>
+            <p className="mt-3 text-xs text-neutral-500">
+              {preview.open_tickets > 0
+                ? t('general.archive.dialog.openTickets', { count: preview.open_tickets })
+                : t('general.archive.dialog.noOpenTickets')}
+            </p>
+          </>
+        ) : failed ? (
+          <p role="alert" className="mt-2 text-sm text-danger-700">
+            {t('general.errors.preview')}
+          </p>
+        ) : (
+          <div className="mt-3">
+            <Loading label={t('general.archive.dialog.loading')} />
+          </div>
+        )}
+
+        {error && (
+          <div
+            role="alert"
+            className="mt-3 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+          >
+            {error}
+          </div>
+        )}
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" onClick={onCancel} className="btn btn-ghost btn-sm">
+            {t('common:cancel')}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={!preview || pending}
+            className="btn btn-danger btn-sm"
+          >
+            {pending ? t('general.archive.dialog.archiving') : t('general.archive.dialog.confirm')}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   )
 }

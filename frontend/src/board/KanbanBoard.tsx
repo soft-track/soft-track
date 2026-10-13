@@ -1,17 +1,34 @@
 import { useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 
 import {
+  type CollisionDetection,
   DndContext,
+  KeyboardSensor,
   PointerSensor,
+  pointerWithin,
+  rectIntersection,
   useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
-import type { EstimateSummary, IssueRead, StatusRead } from '@/api/generated/models'
-import { IssueCard } from '@/issues/IssueCard'
-import { useTeamContext } from '@/team/TeamContext'
+import type { EstimateSummary, TicketRead, StatusRead } from '@/api/generated/models'
+import { DropIsNotAClick } from '@/board/DropIsNotAClick'
+import { resolveDrop } from '@/board/dropTarget'
+import { type BoardGrouping, groupByProject, projectForDropTarget } from '@/board/grouping'
+import {
+  announcements,
+  columnCoordinates,
+  instructions,
+  KEYBOARD_CODES,
+} from '@/board/keyboardDrag'
+import type { Placement } from '@/board/useMoveTicket'
+import { arrival, standing, type WipStanding } from '@/board/wip'
+import { useTranslation } from '@/i18n'
+import { TicketCard } from '@/tickets/TicketCard'
+import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 
 type Load = EstimateSummary['by_status'][string]
@@ -25,71 +42,162 @@ type Load = EstimateSummary['by_status'][string]
  */
 const COLLAPSED_CATEGORIES: string[] = ['cancelled']
 
-function Column({
-  status,
-  issues,
-  load,
-  onCollapse,
-}: {
-  status: StatusRead
-  issues: IssueRead[]
+/**
+ * One column, whatever the board is grouped by.
+ *
+ * `id` is the drop target -- `status:3`, `project:5` or `project:none` -- so a
+ * drop says what it means without the board having to remember which
+ * grouping produced the column.
+ */
+type BoardColumn = {
+  id: string
+  name: string
+  color: string
+  tickets: TicketRead[]
+  /** Points in the column, rolled up on the server. Status columns only. */
   load?: Load
+  /** Where it stands against its status's WIP limit (#270), if it has one. */
+  wip?: WipStanding | null
+}
+
+const statusColumnId = (status: StatusRead) => `status:${status.id}`
+
+/**
+ * What a card is over, preferring cards to the column behind them.
+ *
+ * A card sits inside its column, so the pointer is over both; the card is the
+ * more precise answer -- it says where in the column, not only which one.
+ * The keyboard has no pointer and falls back to overlap.
+ */
+const cardsFirst: CollisionDetection = (args) => {
+  const pointer = pointerWithin(args)
+  const hits = pointer.length > 0 ? pointer : rectIntersection(args)
+  const cards = hits.filter((hit) => typeof hit.id === 'number')
+  return cards.length > 0 ? cards : hits
+}
+
+function Column({
+  column,
+  grouping,
+  onCollapse,
+  selectedIds,
+  onSelect,
+}: {
+  column: BoardColumn
+  grouping: BoardGrouping
   onCollapse: () => void
+  selectedIds: readonly number[]
+  onSelect?: (ticketId: number, gesture: 'range' | 'toggle') => void
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: status.id })
+  const { t } = useTranslation(['board', 'common'])
+  const { id, name, color, tickets, load, wip } = column
+  const { setNodeRef, isOver } = useDroppable({ id })
+
+  const points = load && load.points > 0 && (
+    <span
+      className="identifier ml-auto shrink-0 whitespace-nowrap text-[11px] text-neutral-400"
+      title={
+        load.unestimated_count > 0
+          ? t('kanban.pointsTitleUnsized', {
+              points: load.points,
+              count: load.unestimated_count,
+            })
+          : t('kanban.pointsTitle', { points: load.points })
+      }
+    >
+      {t('kanban.pointsShort', { points: load.points })}
+      {/* An unsized ticket is not worth zero, so say so rather than let
+          the total read as complete. */}
+      {load.unestimated_count > 0 && <span className="text-neutral-300"> +?</span>}
+    </span>
+  )
 
   return (
     <section
       ref={setNodeRef}
-      data-column={status.id}
-      aria-label={status.name}
+      data-column={id}
+      aria-label={name}
       className={`group/column glass-subtle flex w-[82vw] shrink-0 snap-center flex-col rounded-panel transition-[box-shadow,background-color] duration-150 sm:w-80 lg:w-auto lg:min-w-[208px] lg:max-w-[400px] lg:flex-1 lg:shrink lg:snap-none ${
         isOver ? 'bg-brand-500/10 ring-2 ring-brand-400/60' : ''
       }`}
     >
       <header className="flex items-center gap-2 px-3 pb-2 pt-3">
-        <span className="dot" style={{ ['--dot' as string]: status.color }} aria-hidden="true" />
-        <h2 className="text-[13px] font-semibold text-neutral-800">{status.name}</h2>
-        <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
-          {issues.length}
-        </span>
-        {load && load.points > 0 && (
+        <span className="dot" style={{ ['--dot' as string]: color }} aria-hidden="true" />
+        <h2 className="truncate text-[13px] font-semibold text-neutral-800">{name}</h2>
+        {wip ? (
+          // Against the limit, the whole stage counts: what the board is
+          // filtered to does not change how much work is in it (#270).
           <span
-            className="identifier ml-auto text-[11px] text-neutral-400"
-            title={
-              load.unestimated_count > 0
-                ? `${load.points} points, with ${load.unestimated_count} issue${
-                    load.unestimated_count === 1 ? '' : 's'
-                  } not yet sized`
-                : `${load.points} points`
-            }
+            className={`identifier shrink-0 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[11px] font-medium ${
+              wip.state === 'over'
+                ? 'bg-danger-500/12 text-danger-700'
+                : wip.state === 'full'
+                  ? 'bg-accent-amber/20 text-neutral-700'
+                  : 'bg-neutral-900/6 text-neutral-500'
+            }`}
+            title={t('kanban.wip.countTitle', { count: wip.count, limit: wip.limit })}
           >
-            {load.points} pts
-            {/* An unsized issue is not worth zero, so say so rather than let
-                the total read as complete. */}
-            {load.unestimated_count > 0 && <span className="text-neutral-300"> +?</span>}
+            {t('kanban.wip.count', { count: wip.count, limit: wip.limit })}
+          </span>
+        ) : (
+          <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
+            {tickets.length}
           </span>
         )}
+        {!wip && points}
         <button
           type="button"
           onClick={onCollapse}
-          aria-label={`Collapse ${status.name}`}
-          title="Collapse column"
+          aria-label={t('kanban.collapseNamed', { name })}
+          title={t('kanban.collapseColumn')}
           className={`btn btn-ghost btn-icon btn-xs text-neutral-400 opacity-0 transition group-hover/column:opacity-100 focus-visible:opacity-100 ${
-            load && load.points > 0 ? '' : 'ml-auto'
+            !wip && load && load.points > 0 ? '' : 'ml-auto'
           }`}
         >
           <Icon name="chevron-left" size={13} />
         </button>
       </header>
+      {/* A column with a limit has a second line (#270), so its name keeps
+          the room it needs: full or over, in words and with an icon since
+          colour alone would not reach everyone, and its points. */}
+      {wip && (wip.state !== 'room' || points) && (
+        <p className="-mt-1 flex items-center gap-1 px-3 pb-2 text-[11px] font-medium">
+          {wip.state !== 'room' && (
+            <span
+              className={`flex items-center gap-1 ${
+                wip.state === 'over' ? 'text-danger-600' : 'text-neutral-500'
+              }`}
+            >
+              <Icon name="alert" size={12} />
+              {wip.state === 'over'
+                ? t('kanban.wip.overBy', { count: wip.overBy })
+                : t('kanban.wip.full')}
+            </span>
+          )}
+          {points}
+        </p>
+      )}
 
       <div className="scroll-thin flex-1 space-y-2 overflow-y-auto px-2 pb-2">
-        {issues.map((issue) => (
-          <IssueCard key={issue.id} issue={issue} />
-        ))}
-        {issues.length === 0 && (
+        <SortableContext
+          items={tickets.map((ticket) => ticket.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {tickets.map((ticket) => (
+            <TicketCard
+              key={ticket.id}
+              ticket={ticket}
+              selected={selectedIds.includes(ticket.id)}
+              onSelect={onSelect}
+              // Whichever the columns already say is left off the card.
+              showStatus={grouping === 'project'}
+              showProject={grouping !== 'project'}
+            />
+          ))}
+        </SortableContext>
+        {tickets.length === 0 && (
           <div className="flex h-24 items-center justify-center rounded-card border border-dashed border-neutral-900/10 text-xs text-neutral-400">
-            {isOver ? 'Drop here' : 'No issues'}
+            {isOver ? t('kanban.dropHere') : t('kanban.noTickets')}
           </div>
         )}
       </div>
@@ -98,36 +206,31 @@ function Column({
 }
 
 /** A folded column: a thin rail that still accepts drops and shows its count. */
-function CollapsedColumn({
-  status,
-  count,
-  onExpand,
-}: {
-  status: StatusRead
-  count: number
-  onExpand: () => void
-}) {
-  const { setNodeRef, isOver } = useDroppable({ id: status.id })
+function CollapsedColumn({ column, onExpand }: { column: BoardColumn; onExpand: () => void }) {
+  const { id, name, color } = column
+  const { t } = useTranslation(['board', 'common'])
+  const count = column.tickets.length
+  const { setNodeRef, isOver } = useDroppable({ id })
 
   return (
     <button
       ref={setNodeRef}
       type="button"
       onClick={onExpand}
-      data-column={status.id}
+      data-column={id}
       data-collapsed="true"
-      aria-label={`Expand ${status.name}, ${count} issues`}
-      title={`${status.name} · ${count}`}
+      aria-label={t('kanban.expandNamed', { name, count })}
+      title={t('kanban.collapsedTitle', { name, count })}
       className={`glass-subtle flex w-11 shrink-0 flex-col items-center gap-3 rounded-panel py-3 transition-[box-shadow,background-color] hover:bg-neutral-900/5 ${
         isOver ? 'bg-brand-500/10 ring-2 ring-brand-400/60' : ''
       }`}
     >
-      <span className="dot" style={{ ['--dot' as string]: status.color }} aria-hidden="true" />
+      <span className="dot" style={{ ['--dot' as string]: color }} aria-hidden="true" />
       <span
         className="text-[12px] font-semibold text-neutral-700"
         style={{ writingMode: 'vertical-rl' }}
       >
-        {status.name}
+        {name}
       </span>
       <span className="identifier rounded-full bg-neutral-900/6 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500">
         {count}
@@ -137,20 +240,58 @@ function CollapsedColumn({
 }
 
 export function KanbanBoard({
-  issues,
+  tickets,
+  grouping = 'status',
   onStatusChange,
+  onMove,
+  onProjectChange,
   estimates,
+  selectedIds = [],
+  onSelect,
+  onBulkStatusChange,
 }: {
-  issues: IssueRead[]
-  onStatusChange: (issueId: number, status: StatusRead) => void
+  tickets: TicketRead[]
+  /** Status columns, as the board always had, or one column per project (#63). */
+  grouping?: BoardGrouping
+  onStatusChange: (ticketId: number, status: StatusRead) => void
+  /**
+   * A card dropped among other cards (#88): where it now sits in the board's
+   * order, and its new column when it changed one. Without it, cards can
+   * still change column but their order is not kept.
+   */
+  onMove?: (ticketId: number, placement: Placement) => void
+  /**
+   * A card dropped on another project's column, or a selection dragged there
+   * together. Null is the "No project" column.
+   */
+  onProjectChange?: (ticketIds: readonly number[], projectId: number | null) => void
   /** Server-side point rollups. Undefined while they load. */
   estimates?: EstimateSummary
+  selectedIds?: readonly number[]
+  /** `order` is the cards on screen, column by column, for a shift-click range. */
+  onSelect?: (ticketId: number, gesture: 'range' | 'toggle', order: readonly number[]) => void
+  /** Dropping one card of a selection moves all of it, in one request. */
+  onBulkStatusChange?: (ticketIds: readonly number[], status: StatusRead) => void
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    // The same move without a mouse (#80): Space to pick up, arrows to change
+    // column, Space or Enter to drop, Escape to cancel.
+    useSensor(KeyboardSensor, {
+      coordinateGetter: columnCoordinates,
+      keyboardCodes: KEYBOARD_CODES,
+    }),
   )
-  const { statuses } = useTeamContext()
-  const [collapsed, setCollapsed] = useState<Set<number> | null>(null)
+  // While a card is held, the arrow keys belong to the drag, not to moving
+  // focus between cards.
+  const [dragging, setDragging] = useState(false)
+  // Read and written by the announcements, which are rebuilt every render.
+  // One object for the board's lifetime; state, not a ref, because it is
+  // handed to them while rendering.
+  const [drag] = useState(() => ({ moved: false }))
+  const { t } = useTranslation(['board', 'common'])
+  const { team, statuses, projects } = useTeamContext()
+  const [collapsed, setCollapsed] = useState<Set<string> | null>(null)
   // Seeded from the team's own columns on first render rather than in state's
   // initialiser: the statuses arrive with a query, so on the first pass there
   // is nothing to fold yet.
@@ -159,16 +300,33 @@ export function KanbanBoard({
     new Set(
       statuses
         .filter((status) => COLLAPSED_CATEGORIES.includes(status.category))
-        .map((status) => status.id),
+        .map(statusColumnId),
     )
 
-  const setCollapsedFor = (status: StatusRead, value: boolean) =>
+  const setCollapsedFor = (column: BoardColumn, value: boolean) =>
     setCollapsed(() => {
       const next = new Set(folded)
-      if (value) next.add(status.id)
-      else next.delete(status.id)
+      if (value) next.add(column.id)
+      else next.delete(column.id)
       return next
     })
+
+  const columns: BoardColumn[] =
+    grouping === 'project'
+      ? groupByProject(tickets, projects, { includeEmpty: true }).map((group) => ({
+          id: group.key,
+          name: group.project?.name ?? t('kanban.noProject'),
+          color: group.project?.color ?? 'var(--color-neutral-300)',
+          tickets: group.tickets,
+        }))
+      : statuses.map((status) => ({
+          id: statusColumnId(status),
+          name: status.name,
+          color: status.color,
+          tickets: tickets.filter((ticket) => ticket.status.id === status.id),
+          load: estimates?.by_status?.[String(status.id)],
+          wip: standing(status.wip_limit, estimates?.by_status?.[String(status.id)]?.wip_count),
+        }))
 
   /**
    * Arrow keys move focus between cards.
@@ -180,7 +338,7 @@ export function KanbanBoard({
    */
   const moveFocus = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     const keys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']
-    if (!keys.includes(event.key)) return
+    if (dragging || !keys.includes(event.key)) return
 
     const board = event.currentTarget
     const active = document.activeElement
@@ -218,41 +376,129 @@ export function KanbanBoard({
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
+    setDragging(false)
     const { active, over } = event
     if (!over) return
-    const issueId = Number(active.id)
-    const target = statuses.find((status) => status.id === Number(over.id))
-    const issue = issues.find((i) => i.id === issueId)
-    if (issue && target && issue.status.id !== target.id) {
-      onStatusChange(issueId, target)
+    const ticketId = Number(active.id)
+
+    const drop = resolveDrop(columns, ticketId, over.id)
+    const carriesSelection = selectedIds.length > 1 && selectedIds.includes(ticketId)
+
+    // Reordering within a column. The same in either grouping: the order is
+    // one order for the whole team.
+    if (drop.kind === 'place' && !drop.changesColumn) {
+      onMove?.(ticketId, { aboveId: drop.aboveId, belowId: drop.belowId })
+      return
+    }
+
+    if (grouping === 'project') {
+      if (drop.kind === 'none') return
+      const projectId = projectForDropTarget(drop.columnId)
+      if (projectId === undefined || !onProjectChange) return
+      // The same rule as status: a selection moves together, a lone card
+      // moves alone, and nothing already there is sent again.
+      const carried =
+        selectedIds.length > 1 && selectedIds.includes(ticketId) ? selectedIds : [ticketId]
+      const moving = carried.filter(
+        (id) => (tickets.find((i) => i.id === id)?.project_id ?? null) !== projectId,
+      )
+      if (moving.length > 0) onProjectChange(moving, projectId)
+      return
+    }
+
+    if (drop.kind === 'none') return
+    const target = statuses.find((status) => statusColumnId(status) === drop.columnId)
+    if (!target) return
+    // Dragging a card that is part of a selection carries the selection with
+    // it -- the same thing a file manager does, and the reason to have
+    // selected them. A card outside the selection moves on its own.
+    if (onBulkStatusChange && carriesSelection) {
+      const moving = selectedIds.filter(
+        (id) => tickets.find((i) => i.id === id)?.status.id !== target.id,
+      )
+      if (moving.length > 0) onBulkStatusChange(moving, target)
+      return
+    }
+    // Dropped among the target column's cards: its place is kept as well.
+    if (drop.kind === 'place' && onMove) {
+      onMove(ticketId, { aboveId: drop.aboveId, belowId: drop.belowId, status: target })
+      return
+    }
+    const ticket = tickets.find((i) => i.id === ticketId)
+    if (ticket && ticket.status.id !== target.id) {
+      onStatusChange(ticketId, target)
     }
   }
 
+  // What a shift-click range runs over: the cards actually on screen, column
+  // by column. A folded column's cards are left out, so a range can never
+  // select something nobody could see.
+  const visibleOrder = columns
+    .filter((column) => !folded.has(column.id))
+    .flatMap((column) => column.tickets.map((ticket) => ticket.id))
+  const selectCard = onSelect
+    ? (ticketId: number, gesture: 'range' | 'toggle') => onSelect(ticketId, gesture, visibleOrder)
+    : undefined
+
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={() => setDragging(true)}
+      onDragEnd={handleDragEnd}
+      collisionDetection={cardsFirst}
+      onDragCancel={() => setDragging(false)}
+      accessibility={{
+        screenReaderInstructions: instructions(),
+        announcements: announcements({
+          ticketName: (id) =>
+            tickets.find((ticket) => ticket.id === Number(id))?.identifier ?? t('kanban.theTicket'),
+          columnName: (id) =>
+            columns.find(
+              (column) =>
+                column.id === id || column.tickets.some((ticket) => ticket.id === id),
+            )?.name ?? null,
+          startColumn: (id) =>
+            columns.find((column) => column.tickets.some((ticket) => ticket.id === Number(id)))
+              ?.name ?? null,
+          drag,
+          arriving: (activeId, overId) => {
+            const target = columns.find(
+              (column) =>
+                column.id === overId || column.tickets.some((ticket) => ticket.id === overId),
+            )
+            const ticket = tickets.find((candidate) => candidate.id === Number(activeId))
+            if (!target || !ticket || target.tickets.some((t2) => t2.id === ticket.id)) return null
+            return arrival(target.wip ?? null, {
+              counts: team.wip_counts_subtickets !== false || ticket.parent == null,
+              hard: team.wip_limits_hard === true,
+            })
+          },
+        }),
+      }}
+    >
+      <DropIsNotAClick />
       <div
         className="scroll-thin flex h-full snap-x snap-mandatory gap-3 overflow-x-auto pb-1 lg:snap-none"
         onKeyDown={moveFocus}
       >
-        {statuses.map((status) => {
-          const inColumn = issues.filter((issue) => issue.status.id === status.id)
-          return folded.has(status.id) ? (
+        {columns.map((column) =>
+          folded.has(column.id) ? (
             <CollapsedColumn
-              key={status.id}
-              status={status}
-              count={inColumn.length}
-              onExpand={() => setCollapsedFor(status, false)}
+              key={column.id}
+              column={column}
+              onExpand={() => setCollapsedFor(column, false)}
             />
           ) : (
             <Column
-              key={status.id}
-              status={status}
-              issues={inColumn}
-              load={estimates?.by_status?.[String(status.id)]}
-              onCollapse={() => setCollapsedFor(status, true)}
+              key={column.id}
+              column={column}
+              grouping={grouping}
+              onCollapse={() => setCollapsedFor(column, true)}
+              selectedIds={selectedIds}
+              onSelect={selectCard}
             />
-          )
-        })}
+          ),
+        )}
       </div>
     </DndContext>
   )

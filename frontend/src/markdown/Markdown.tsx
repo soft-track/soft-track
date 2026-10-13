@@ -1,13 +1,15 @@
-import { useMemo } from 'react'
+import { type ReactNode, useMemo } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
+import { Link, useInRouterContext } from 'react-router-dom'
 import type { PluggableList } from 'unified'
 import remarkGfm from 'remark-gfm'
 
 import { AttachmentImage } from '@/attachments/AttachmentImage'
 import { isAttachmentUrl } from '@/attachments/urls'
+import { useTranslation } from '@/i18n'
 import type { Mentionable } from '@/markdown/mentions'
 import { remarkMentions } from '@/markdown/remarkMentions'
-import { remarkIssueKeys } from '@/markdown/remarkIssueKeys'
+import { remarkTicketKeys } from '@/markdown/remarkTicketKeys'
 
 /**
  * Rendered markdown.
@@ -18,6 +20,27 @@ import { remarkIssueKeys } from '@/markdown/remarkIssueKeys'
  * through react-markdown's default transform, which drops `javascript:` and
  * other non-http protocols, so `[click](javascript:...)` renders inert.
  */
+/**
+ * An @mention: the person's profile (#126), in the app's own navigation --
+ * never a new tab, unlike the other links in a document. Markdown is also
+ * rendered outside the app's router, in tests and static markup, where a
+ * plain link does the same job.
+ */
+function MentionLink({ to, title, children }: { to: string; title?: string; children: ReactNode }) {
+  if (!useInRouterContext()) {
+    return (
+      <a href={to} className="mention" title={title}>
+        {children}
+      </a>
+    )
+  }
+  return (
+    <Link to={to} className="mention" title={title}>
+      {children}
+    </Link>
+  )
+}
+
 export function Markdown({
   children,
   people = [],
@@ -36,8 +59,9 @@ export function Markdown({
   className?: string
   teamKeys?: string[]
 }) {
+  const { t } = useTranslation('markdown')
   const plugins = useMemo(
-    () => [remarkGfm, [remarkMentions, { people }], [remarkIssueKeys, { teamKeys }]] as PluggableList,
+    () => [remarkGfm, [remarkMentions, { people }], [remarkTicketKeys, { teamKeys }]] as PluggableList,
     [people, teamKeys],
   )
 
@@ -46,9 +70,9 @@ export function Markdown({
       void node
       if (linkClass === 'mention') {
         return (
-          <span className="mention" title={props.title}>
+          <MentionLink to={props.href ?? ''} title={props.title}>
             {linkChildren}
-          </span>
+          </MentionLink>
         )
       }
       return (
@@ -83,7 +107,7 @@ export function Markdown({
             disabled={!onToggleTask}
             onChange={() => onToggleTask?.(offset)}
             className="mt-1 h-3.5 w-3.5 shrink-0 rounded border-neutral-300 accent-brand-600 disabled:opacity-60"
-            aria-label={checked ? 'Mark task as not done' : 'Mark task as done'}
+            aria-label={checked ? t('render.markNotDone') : t('render.markDone')}
           />
           <span className={checked ? 'text-neutral-400 line-through' : undefined}>{rest}</span>
         </li>
