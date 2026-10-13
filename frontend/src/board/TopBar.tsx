@@ -1,8 +1,9 @@
 import type { ComponentProps } from 'react'
 
 import { AXIOS_INSTANCE } from '@/api/client'
+import { useAuth } from '@/auth/useAuth'
 import { FilterBar } from '@/board/FilterBar'
-import { toQueryParams } from '@/board/filters'
+import { toQueryString } from '@/board/filters'
 import type { BoardFilters } from '@/board/filters'
 import type { BoardGrouping } from '@/board/grouping'
 import { type BoardSort, SORT_OPTIONS } from '@/board/sorting'
@@ -21,6 +22,8 @@ const VIEWS: Array<{ id: BoardView; icon: IconName }> = [
   { id: 'calendar', icon: 'calendar-grid' },
   { id: 'roadmap', icon: 'calendar' },
   { id: 'reports', icon: 'chart' },
+  // Sprint capacity (#269): beside Reports.
+  { id: 'plan', icon: 'users' },
 ]
 
 export function TopBar({
@@ -42,6 +45,7 @@ export function TopBar({
   onToggleNotifications,
   onCloseNotifications,
   onOpenNotifiedTicket,
+  archived = false,
 }: {
   view: BoardView
   onViewChange: (view: BoardView) => void
@@ -49,8 +53,11 @@ export function TopBar({
   onGroupingChange: (grouping: BoardGrouping) => void
   sort: BoardSort
   onSortChange: (sort: BoardSort) => void
-  /** Absent for a guest (#104): the button is not shown. */
+  /** Absent for a guest (#104), and on an archived team (#322): the button
+   *  is not shown. */
   onNewTicket?: () => void
+  /** The team is archived (#322): "View only" says why. */
+  archived?: boolean
   onOpenSidebar: () => void
   search: string
   onSearchChange: (value: string) => void
@@ -66,7 +73,13 @@ export function TopBar({
   onOpenNotifiedTicket: ComponentProps<typeof NotificationsBell>['onOpenTicket']
 }) {
   const { team } = useTeamContext()
+  const { user } = useAuth()
   const { t } = useTranslation(['board', 'common'])
+  // Somebody from outside sees their epics, not the team's reports (#243)
+  // or who can take what (#269).
+  const views = VIEWS.filter(
+    (item) => !(user?.is_external && (item.id === 'reports' || item.id === 'plan')),
+  )
 
   return (
     <header className="glass flex flex-wrap items-center gap-2 rounded-panel px-3 py-2">
@@ -84,7 +97,7 @@ export function TopBar({
       </h1>
 
       <div className="segmented" role="tablist" aria-label={t('topBar.viewLabel')}>
-        {VIEWS.map((item) => (
+        {views.map((item) => (
           <button
             key={item.id}
             type="button"
@@ -207,7 +220,7 @@ export function TopBar({
           <span
             className="chip"
             style={{ ['--chip' as string]: 'var(--color-neutral-500)' }}
-            title={t('topBar.viewOnlyHint')}
+            title={archived ? t('topBar.viewOnlyArchivedHint') : t('topBar.viewOnlyHint')}
           >
             {t('topBar.viewOnly')}
           </span>
@@ -243,10 +256,9 @@ function ExportCsvButton({
     setLoading(true)
     setFailed(false)
     try {
-      const params = new URLSearchParams()
-      for (const [key, value] of Object.entries(toQueryParams(filters))) {
-        if (value !== undefined && value !== null) params.set(key, String(value))
-      }
+      // The board's own filters, lists repeated, so the file holds what the
+      // board shows (#260).
+      const params = toQueryString(filters)
 
       // The generated client rather than a hand-written URL would be nicer,
       // but its mutator resolves every response as JSON: a download needs

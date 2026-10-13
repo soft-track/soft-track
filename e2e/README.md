@@ -20,11 +20,17 @@ trace with `npx playwright show-trace path/to/trace.zip`.
 
 ## The journeys
 
-1. Sign up, create a team, land on its empty board.
+1. Sign up, create a team from the first page, land on its empty board.
 2. Create a ticket, see it on the board, open it, edit its title.
 3. Drag a card to another column; the status survives a reload.
 4. Comment with an @mention; the mentioned person's inbox shows it.
 5. Search finds a ticket by a word only its description holds.
+6. Format a description with a shortcut and a toolbar button; the browser's
+   own undo takes each step back, a mention from the menu included.
+7. Open a linked ticket in a modal over the one you are reading, and close
+   back to it with Escape and Back.
+8. A card's epic and labels shorten beside its due date, at every width a
+   card is drawn at, rather than running under it.
 
 ## Conventions
 

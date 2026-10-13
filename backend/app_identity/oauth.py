@@ -12,7 +12,15 @@ exchange ticket, applying a finished connect, listing and removing connected
 accounts -- is an ordinary JSON endpoint and is generated as usual.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+)
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session
 
@@ -192,6 +200,8 @@ def oauth_callback(
 )
 def exchange_ticket(
     payload: OAuthExchange,
+    request: Request,
+    background: BackgroundTasks,
     session: Session = Depends(get_session),
 ):
     """Redeem a finished sign-in for a session.
@@ -202,7 +212,9 @@ def exchange_ticket(
     code, exactly as `/auth/login` gives.
     """
     return sign_in_response(
-        oauth_service.exchange(session, payload.ticket, payload.handshake)
+        oauth_service.exchange(
+            session, payload.ticket, payload.handshake, request, background
+        )
     )
 
 

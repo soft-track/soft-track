@@ -1,5 +1,5 @@
 [run]
-source = app_identity,app_softtrack,lib_identity,lib_softtrack,lib_utils,web,main
+source = app_finance,app_identity,app_softtrack,lib_finance,lib_identity,lib_softtrack,lib_utils,web,main
 omit =
     venv/*
     tests/*

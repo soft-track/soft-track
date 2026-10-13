@@ -51,7 +51,8 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
  *
  * Always scoped to the teams the caller belongs to. Postgres uses full-text
  * search with stemming and relevance ranking; SQLite falls back to a
- * substring match.
+ * substring match. Takes the same filters as the ticket list (#261), so a
+ * search can be narrowed without leaving it.
  * @summary Search
  */
 export const searchSearchGet = (

@@ -40,8 +40,8 @@ async def team_events(
     when the stream fell behind -- and never data: the client refetches
     through the ordinary endpoints. `close` means the stream is over and must
     not be reopened as it was: the caller was signed out, deactivated or
-    removed from the team. A `: ping` comment every 25 seconds keeps proxies
-    from dropping it.
+    removed from the team, or the session it was opened with was revoked. A
+    `: ping` comment every 25 seconds keeps proxies from dropping it.
 
     Authenticated with the usual bearer header, which is why the browser
     reads this with `fetch` rather than `EventSource`: EventSource cannot send
@@ -50,14 +50,18 @@ async def team_events(
     await run_in_threadpool(get_team_or_404, team_id, session)
     await run_in_threadpool(require_team_member, team_id, current_user, session)
     user_id = current_user.id
+    # The session the stream was opened with (#308), when its token names one:
+    # revoking it ends this stream without ending the account's others.
+    session_id = getattr(request.state, "session_id", None)
     # The stream can stay open for hours; the check above is the last thing it
     # needs the database for, so the connection goes back to the pool now
     # rather than being held until the tab closes.
     await run_in_threadpool(session.close)
 
-    subscription = realtime.bus.subscribe(
-        [realtime.team_channel(team_id), realtime.user_channel(user_id)]
-    )
+    channels = [realtime.team_channel(team_id), realtime.user_channel(user_id)]
+    if session_id is not None:
+        channels.append(realtime.session_channel(session_id))
+    subscription = realtime.bus.subscribe(channels)
 
     async def stream():
         try:

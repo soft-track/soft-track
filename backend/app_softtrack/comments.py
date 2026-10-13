@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
-from app_softtrack.guards import team_writer
+from app_softtrack.guards import team_commenter
 from lib_identity.identity import get_current_user
 from lib_softtrack import comments as comments_service
 from lib_softtrack import reactions as reactions_service
@@ -22,7 +22,7 @@ router = APIRouter(tags=["comments"])
 @router.post(
     "/tickets/{ticket_id}/comments",
     response_model=CommentRead,
-    dependencies=[team_writer],
+    dependencies=[team_commenter],
 )
 def create_comment(
     ticket_id: int,
@@ -49,7 +49,7 @@ def list_comments(
 @router.patch(
     "/comments/{comment_id}",
     response_model=CommentRead,
-    dependencies=[team_writer],
+    dependencies=[team_commenter],
 )
 def update_comment(
     comment_id: int,
@@ -64,7 +64,7 @@ def update_comment(
 @router.delete(
     "/comments/{comment_id}",
     status_code=204,
-    dependencies=[team_writer],
+    dependencies=[team_commenter],
 )
 def delete_comment(
     comment_id: int,
@@ -82,7 +82,7 @@ def delete_comment(
 @router.put(
     "/comments/{comment_id}/reactions/{emoji}",
     response_model=list[ReactionSummary],
-    dependencies=[team_writer],
+    dependencies=[team_commenter],
 )
 def add_reaction(
     comment_id: int,
@@ -101,7 +101,7 @@ def add_reaction(
 @router.delete(
     "/comments/{comment_id}/reactions/{emoji}",
     response_model=list[ReactionSummary],
-    dependencies=[team_writer],
+    dependencies=[team_commenter],
 )
 def remove_reaction(
     comment_id: int,

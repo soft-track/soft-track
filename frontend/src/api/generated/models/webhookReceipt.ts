@@ -19,4 +19,5 @@ export interface WebhookReceipt {
   events: number;
   links: number;
   tickets?: string[];
+  team_archived?: boolean;
 }

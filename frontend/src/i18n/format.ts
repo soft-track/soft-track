@@ -45,6 +45,31 @@ export function formatList(items: string[]): string {
   }).format(items)
 }
 
+/** "Carlos Rivera, Demo User": names one after another, with no "and". */
+export function formatNames(items: string[]): string {
+  return new Intl.ListFormat(currentLanguage(), { style: 'short', type: 'unit' }).format(items)
+}
+
+/**
+ * "Carlos Rivera, external, and Demo User, a service account": a list whose
+ * items have commas of their own. In English the last "and" takes a comma
+ * too, or the last two items read as one. Other languages as `formatList`.
+ */
+export function formatClauseList(items: string[]): string {
+  const language = currentLanguage()
+  if (language !== 'en') return formatList(items)
+  const parts = new Intl.ListFormat('en-GB', {
+    style: 'long',
+    type: 'conjunction',
+  }).formatToParts(items)
+  const last = parts.map((part) => part.type).lastIndexOf('literal')
+  return parts
+    .map((part, index) =>
+      index === last && part.value === ' and ' ? ', and ' : part.value,
+    )
+    .join('')
+}
+
 /** A number with the current language's grouping: 12,345. */
 export function formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
   return new Intl.NumberFormat(currentLanguage(), options).format(value)

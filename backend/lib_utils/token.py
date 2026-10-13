@@ -19,13 +19,20 @@ def is_access_token(payload: dict) -> bool:
 
 
 def create_access_token(
-    subject: str, version: int = 0, expires_minutes: int | None = None
+    subject: str,
+    version: int = 0,
+    expires_minutes: int | None = None,
+    session_id: int | None = None,
 ) -> str:
     """Sign a bearer token for `subject`, stamped with their token version.
 
     The version is what makes a token revocable. Tokens live for a week, so
     without it a password change, a "sign out everywhere" or a deactivation
     would be advisory for up to seven days.
+
+    `session_id` is the `AuthSession` row the token belongs to (#308), which
+    is what lets one session be revoked without the rest. Tokens signed before
+    sessions existed carry none, and keep working until they expire.
     """
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=expires_minutes or settings.access_token_expire_minutes
@@ -36,6 +43,8 @@ def create_access_token(
         "ver": version,
         "typ": ACCESS_TOKEN_TYPE,
     }
+    if session_id is not None:
+        to_encode["sid"] = session_id
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
 

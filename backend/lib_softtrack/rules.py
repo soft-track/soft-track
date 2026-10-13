@@ -43,7 +43,7 @@ from typing import Iterable, Optional
 from sqlmodel import Session, select
 
 from lib_softtrack import automations as automations_service
-from lib_softtrack import history, notifications as notifications_service, outbound
+from lib_softtrack import history, notifications as notifications_service, outbound, wip
 from lib_softtrack.automations import MAX_RUNS_PER_TEAM
 from lib_softtrack.models.automations import RuleActions
 from lib_softtrack.tables import (
@@ -52,12 +52,14 @@ from lib_softtrack.tables import (
     AutomationTrigger,
     Comment,
     Sprint,
+    Team,
     Ticket,
     TicketLabelLink,
     Label,
     User,
     WorkflowStatus,
 )
+from lib_softtrack.teams import can_be_assigned
 
 #: The ticket fields whose movement can set a rule off. Snapshotted before an
 #: update the way `history.snapshot` and `notifications.snapshot` are -- three
@@ -186,7 +188,13 @@ def _dispatch(
     Rows are added to whatever transaction is open rather than committed here.
     The change a rule makes and the change that set it off belong to the same
     request, and half of them landing would be worse than neither.
+
+    Nothing runs on an archived team (#322). Nothing on one changes either,
+    but a rule is the kind of thing that would act on its own if it did.
     """
+    team = session.get(Team, team_id)
+    if team is None or team.archived_at is not None:
+        return
     rules = session.exec(
         select(AutomationRule)
         .where(
@@ -315,9 +323,21 @@ def _apply(
 
     if actions.set_status_id is not None and ticket.status_id != actions.set_status_id:
         status = session.get(WorkflowStatus, actions.set_status_id)
-        ticket.status_id = actions.set_status_id
-        lines.append(f"Set status to {status.name}")
-        touched_ticket = True
+        # A rule follows the team's WIP limits like anybody (#270). It skips
+        # the move rather than failing whatever set it off, and says so in
+        # the run log, as it does for an assignee who cannot hold the ticket.
+        full = wip.room(
+            session,
+            ticket.team_id,
+            actions.set_status_id,
+            [(ticket.status_id, ticket.parent_id)],
+        )
+        if full is not None:
+            lines.append(f"Did not move it to {status.name}: {full}")
+        else:
+            ticket.status_id = actions.set_status_id
+            lines.append(f"Set status to {status.name}")
+            touched_ticket = True
 
     if actions.set_priority is not None and ticket.priority != actions.set_priority:
         ticket.priority = actions.set_priority
@@ -334,9 +354,17 @@ def _apply(
         and ticket.assignee_id != actions.set_assignee_id
     ):
         assignee = session.get(User, actions.set_assignee_id)
-        ticket.assignee_id = actions.set_assignee_id
-        lines.append(f"Assigned to {assignee.full_name}")
-        touched_ticket = True
+        # Checked again now, not only when the rule was saved: the person it
+        # names may have left the team since, or become a guest (#316).
+        if can_be_assigned(ticket.team_id, assignee.id, session):
+            ticket.assignee_id = actions.set_assignee_id
+            lines.append(f"Assigned to {assignee.full_name}")
+            touched_ticket = True
+        else:
+            lines.append(
+                f"Did not assign {assignee.full_name}, "
+                "who can no longer hold this team's tickets"
+            )
 
     if actions.add_label_id is not None and not _has_label(
         session, ticket.id, actions.add_label_id

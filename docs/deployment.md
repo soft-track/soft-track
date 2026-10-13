@@ -90,7 +90,7 @@ The first user to register on a fresh instance gets `is_site_admin`.
 
 ### Team roles
 
-Every membership is `admin`, `member` or `guest` (read-only — see [user management](features/users.md#guests)). The team key is fixed once set, and the default rules protect against removing the last active admin.
+Every membership is `admin`, `member` or `guest` (read-only — see [user management](features/users.md#guests)). A team key is fixed, and never given back: an archived team keeps it, and so does a deleted team that ever gave out an identifier (see [archiving a team](features/users.md#archiving-a-team-and-deleting-one-that-was-a-mistake)). The default rules protect against removing the last active admin.
 
 ### Invitations without a mail server
 
@@ -99,6 +99,10 @@ Invitations are rows and links rather than email sends. One live invitation per 
 ### Invite-only instances
 
 Set `OPEN_REGISTRATION=false` to require an invitation before registration is allowed.
+
+### Who may create teams
+
+A team takes a key, and a key is never given back. A site admin chooses who may create a team under Administration → Settings: anyone signed in (the default), site admins only, or named people. `TEAM_CREATION=anyone|site_admins|named_people` sets it from the environment instead, and wins; the named people are still chosen in the app. Anybody else can ask for a team with a name, a key and a reason; the site admins are emailed (when the instance sends mail) and approving creates the team with the person who asked as its admin. An account from outside the organisation never creates a team.
 
 ### Deactivate, not delete
 

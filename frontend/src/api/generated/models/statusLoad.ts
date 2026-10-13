@@ -13,4 +13,5 @@ export interface StatusLoad {
   points: number;
   ticket_count: number;
   unestimated_count: number;
+  wip_count?: number;
 }

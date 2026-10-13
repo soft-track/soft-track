@@ -1,7 +1,7 @@
 """add TOTP two-factor authentication columns to user
 
 Revision ID: c2a1b3d45e67
-Revises: 6ccd108e66f0
+Revises: e3f1a7c9b2d4
 Create Date: 2026-09-10
 
 Five columns on `user` for two-factor state. Four are nullable and
@@ -17,7 +17,7 @@ import sqlalchemy as sa
 import sqlmodel  # noqa: F401 -- autogenerate emits sqlmodel.sql.sqltypes.AutoString()
 
 revision: str = "c2a1b3d45e67"
-down_revision: Union[str, Sequence[str], None] = "6ccd108e66f0"
+down_revision: Union[str, Sequence[str], None] = "e3f1a7c9b2d4"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

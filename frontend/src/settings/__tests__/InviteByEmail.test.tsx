@@ -120,7 +120,13 @@ describe('without a mail server', () => {
 
     expect(mocks.create.mutateAsync).toHaveBeenCalledWith({
       teamId: 7,
-      data: { email: 'new@example.com', role: 'member', send_email: false },
+      data: {
+        email: 'new@example.com',
+        role: 'member',
+        send_email: false,
+        external: false,
+        epic_ids: [],
+      },
     })
     await waitFor(() => expect(screen.getByText(/does not send email/)).toBeTruthy())
   })

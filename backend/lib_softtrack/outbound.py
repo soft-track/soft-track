@@ -179,7 +179,13 @@ def emit(
     queries on every change. Nothing is committed here -- the rows join the
     caller's transaction, which is what makes this an outbox. Returns how many
     deliveries were queued.
+
+    An archived team's webhooks stop while it is archived (#322): nothing is
+    queued for them, a ping included.
     """
+    team = session.get(Team, team_id)
+    if team is None or team.archived_at is not None:
+        return 0
     query = select(OutboundWebhook).where(
         OutboundWebhook.team_id == team_id,
         OutboundWebhook.is_enabled == True,  # noqa: E712
@@ -194,7 +200,6 @@ def emit(
     if not listeners:
         return 0
 
-    team = session.get(Team, team_id)
     now = utcnow()
     body = json.dumps(
         {
@@ -249,14 +254,23 @@ def _plain(value):
 
 
 def ticket_changed(
-    session: Session, ticket, before: dict, actor: Optional[User]
+    session: Session,
+    ticket,
+    before: dict,
+    actor: Optional[User],
+    extra: Optional[dict] = None,
 ) -> None:
-    """Emit `ticket.updated` (and `ticket.status_changed`) for what moved."""
+    """Emit `ticket.updated` (and `ticket.status_changed`) for what moved.
+
+    `extra` is changes made off the ticket row, already in `{"from", "to"}`
+    form: the team's own fields (#117), as `custom_fields.<key>`.
+    """
     changes = {
         field: {"from": _plain(before[field]), "to": _plain(getattr(ticket, field))}
         for field in _TICKET_FIELDS
         if before[field] != getattr(ticket, field)
     }
+    changes.update(extra or {})
     if not changes:
         return
 
@@ -359,11 +373,16 @@ def deliver_due(
     for delivery_id in _claim(session, list(due), now):
         delivery = session.get(WebhookDelivery, delivery_id)
         hook = session.get(OutboundWebhook, delivery.webhook_id)
-        if hook is None or not hook.is_enabled:
+        team = session.get(Team, hook.team_id) if hook is not None else None
+        # Queued before its team was archived (#322): it stops with the rest.
+        archived = team is not None and team.archived_at is not None
+        if hook is None or not hook.is_enabled or archived:
             delivery.status = "failed"
             delivery.next_attempt_at = None
             delivery.response_excerpt = (
-                "The webhook was switched off before this was sent."
+                "The team was archived before this was sent."
+                if archived
+                else "The webhook was switched off before this was sent."
             )
             delivery.completed_at = now
             session.add(delivery)

@@ -3,10 +3,14 @@ import { schedule } from '@/i18n/en/sprints/schedule'
 import { banner } from '@/i18n/en/sprints/banner'
 import { list } from '@/i18n/en/sprints/list'
 import { newSprint } from '@/i18n/en/sprints/newSprint'
+import { retro } from '@/i18n/en/sprints/retro'
+import { plan } from '@/i18n/en/sprints/plan'
 
 export const sprints = {
   schedule,
   banner,
   list,
   newSprint,
+  retro,
+  plan,
 } as const

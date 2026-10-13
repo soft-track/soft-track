@@ -10,6 +10,7 @@ export const commands = {
   switchToList: 'Switch to list view',
   switchToBoard: 'Switch to board view',
   showShortcuts: 'Show keyboard shortcuts',
+  myWork: 'Go to My work',
   switchTeam: 'Switch to {{team}}',
   openSettings: 'Open settings',
   manageMembers: 'Manage team members',

@@ -7,6 +7,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CommentsSection } from '@/tickets/detail/CommentsSection'
@@ -60,20 +61,35 @@ const MAYA = {
 
 const OLIVIA = { ...MAYA, id: 1, email: 'olivia@example.com', username: 'olivia', full_name: 'Olivia Owner' }
 
-function renderFeed({ canComment = true, canModerate = false } = {}) {
+function renderFeed({
+  canComment = true,
+  canModerate = false,
+  guestOf,
+  archivedTeam,
+}: {
+  canComment?: boolean
+  canModerate?: boolean
+  guestOf?: string
+  archivedTeam?: string
+} = {}) {
   render(
-    <QueryClientProvider client={new QueryClient()}>
-      <CommentsSection
-        ticketId={1}
-        people={[]}
-        uploadFiles={vi.fn()}
-        removeAttachment={vi.fn()}
-        uploading={0}
-        onFilesClaimed={vi.fn()}
-        canComment={canComment}
-        canModerate={canModerate}
-      />
-    </QueryClientProvider>,
+    // A router, since an author's name is a link to their profile (#126).
+    <MemoryRouter>
+      <QueryClientProvider client={new QueryClient()}>
+        <CommentsSection
+          ticketId={1}
+          people={[]}
+          uploadFiles={vi.fn()}
+          removeAttachment={vi.fn()}
+          uploading={0}
+          onFilesClaimed={vi.fn()}
+          canComment={canComment}
+          canModerate={canModerate}
+          guestOf={guestOf}
+          archivedTeam={archivedTeam}
+        />
+      </QueryClientProvider>
+    </MemoryRouter>,
   )
 }
 
@@ -123,6 +139,26 @@ describe('the Activity feed', () => {
     expect(rows[2]).toContain('Shipped.')
   })
 
+  it('makes a comment’s author a way to their profile (#126)', () => {
+    mocks.comments.data = {
+      items: [
+        {
+          id: 1,
+          body: 'Picking this up.',
+          author: MAYA,
+          attachments: [],
+          created_at: '2026-09-25T09:00:00',
+        },
+      ],
+      total: 1,
+    }
+    mocks.events.data = []
+    renderFeed()
+    expect(screen.getByRole('link', { name: 'Maya Chen' }).getAttribute('href')).toBe(
+      `/people/${MAYA.username}`,
+    )
+  })
+
   it('credits a change nobody made by hand to Automation', () => {
     mocks.comments.data = { items: [], total: 0 }
     mocks.events.data = [
@@ -155,12 +191,38 @@ describe('the Activity feed', () => {
       total: 1,
     }
     mocks.events.data = []
-    renderFeed({ canComment: false })
+    renderFeed({ canComment: false, guestOf: 'Engineering' })
 
     expect(screen.getByText('Deployed to staging.')).toBeTruthy()
     expect(screen.queryByRole('textbox', { name: 'Comment' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull()
-    expect(screen.getByText(/guest on this team/)).toBeTruthy()
+    // No box that would be refused, and the reason in its place (#244).
+    expect(
+      screen.getByText('Guests of Engineering read and do not comment. A team admin can change that.'),
+    ).toBeTruthy()
+  })
+
+  it('takes no comment on an archived team, and says why (#322)', () => {
+    mocks.comments.data = { items: [], total: 0 }
+    mocks.events.data = []
+    renderFeed({ canComment: false, archivedTeam: 'Engineering' })
+
+    expect(screen.queryByRole('textbox', { name: 'Comment' })).toBeNull()
+    expect(
+      screen.getByText(
+        'Engineering is archived, so its conversation is read-only until it is unarchived.',
+      ),
+    ).toBeTruthy()
+  })
+
+  it('gives a guest the composer where the team lets guests comment, and says why (#244)', () => {
+    mocks.comments.data = { items: [], total: 0 }
+    mocks.events.data = []
+    renderFeed({ canComment: true, guestOf: 'Engineering' })
+    expect(screen.getByRole('textbox', { name: 'Comment' })).toBeTruthy()
+    expect(
+      screen.getByText(/Everything else here is read-only for guests/).textContent,
+    ).toContain('You can comment on this team’s tickets.')
   })
 
   it('offers members the composer', () => {
@@ -171,7 +233,12 @@ describe('the Activity feed', () => {
   })
 })
 
-function comment(id: number, author: typeof MAYA, body: string, extra = {}) {
+function comment(
+  id: number,
+  author: typeof MAYA & { is_external?: boolean },
+  body: string,
+  extra = {},
+) {
   return { id, body, author, attachments: [], created_at: '2026-09-25T09:00:00', ...extra }
 }
 
@@ -189,6 +256,18 @@ async function openMenu(text: string) {
   await userEvent.click(within(row(text)).getByRole('button', { name: 'More actions on this comment' }))
   return screen.getByRole('menu', { name: 'Comment actions' })
 }
+
+describe('somebody from outside the organisation (#243)', () => {
+  it('is marked External beside their name, and nobody else is', () => {
+    thread(
+      comment(1, { ...MAYA, id: 20, full_name: 'Carlos Rivera', is_external: true }, 'From the client.'),
+      comment(2, MAYA, 'From inside.'),
+    )
+    renderFeed()
+    expect(within(row('From the client.')).getByText('External')).toBeTruthy()
+    expect(within(row('From inside.')).queryByText('External')).toBeNull()
+  })
+})
 
 describe('editing and deleting a comment (#93)', () => {
   it('offers Edit and Delete on your own comment and nothing on anybody else\'s', async () => {

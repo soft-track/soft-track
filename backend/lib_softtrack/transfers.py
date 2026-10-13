@@ -14,6 +14,9 @@ so a move is not a field change. The rules, which `plan` computes and
   case, and dropped otherwise.
 - **Sprint** and **project** are cleared; both belong to one team.
 - **Assignee** is cleared if they are not on the target team.
+- **Custom fields** (#117) are cleared. They are the old team's own, and a
+  "Reviewer" on the target team is a different field that may mean somebody
+  else -- matching them by name would be a guess made on nobody's behalf.
 - **Parent.** A sub-ticket whose parent stays behind becomes top level --
   sub-tickets must share a team with their parent.
 - **Sub-tickets** move with their parent, by the same rules. The alternative,
@@ -31,6 +34,8 @@ from typing import Optional
 
 from sqlmodel import Session, select
 
+from lib_softtrack import wip
+from lib_softtrack import custom_fields as custom_fields_service
 from lib_softtrack.history import record_changes, snapshot
 from lib_softtrack.tickets import get_ticket_or_404, ticket_to_read, set_labels
 from lib_softtrack.models.transfers import (
@@ -54,8 +59,8 @@ from lib_softtrack.tables import (
     WorkflowStatus,
 )
 from lib_softtrack.teams import (
+    can_be_assigned,
     get_team_or_404,
-    is_team_member,
     require_team_member,
     require_team_writer,
 )
@@ -124,7 +129,8 @@ def _plan_one(
         labels_dropped=dropped,
         clear_assignee=(
             ticket.assignee_id is not None
-            and not is_team_member(target.id, ticket.assignee_id, session)
+            # A guest there cannot hold it either (#316).
+            and not can_be_assigned(target.id, ticket.assignee_id, session)
         ),
         detach_parent=ticket.parent_id is not None
         and ticket.parent_id not in moving_ids,
@@ -191,6 +197,7 @@ def preview_transfer(
         sprint_cleared=(sprint.name or f"Sprint {sprint.number}") if sprint else None,
         project_cleared=project.name if project else None,
         assignee_cleared=assignee.full_name if assignee else None,
+        fields_cleared=custom_fields_service.names_with_values(session, ticket.id),
         parent_detached=_identifier(session, parent) if parent else None,
         sub_tickets=[_identifier(session, child.ticket) for child in move.children],
     )
@@ -219,6 +226,7 @@ def _carry_out(session: Session, move: _Move, target: Team, actor: User) -> str:
     ticket.rank = top_rank(session, target.id)
     session.add(ticket)
     set_labels(ticket.id, move.label_ids, session)
+    custom_fields_service.delete_for_ticket(session, ticket.id)
     session.flush()
 
     # The fields the reports read -- a cleared sprint has to show up on that
@@ -252,6 +260,15 @@ def transfer_ticket(
     ticket = get_ticket_or_404(session, ticket_id)
     move = _plan(session, current_user, ticket, target_team_id)
     target = session.get(Team, target_team_id)
+
+    # Into the other team's columns as its limits allow (#270), all of them
+    # checked before anything moves: the family goes together or not at all.
+    arriving: dict[int, list] = {}
+    for part in [move, *move.children]:
+        parent_id = None if part.detach_parent or part is move else move.ticket.id
+        arriving.setdefault(part.status.id, []).append((None, parent_id))
+    for status_id, tickets in arriving.items():
+        wip.require_room(session, target.id, status_id, tickets)
 
     try:
         _carry_out(session, move, target, current_user)

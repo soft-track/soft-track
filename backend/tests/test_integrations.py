@@ -276,7 +276,12 @@ def test_a_delivery_naming_nothing_is_accepted_and_says_so(client, connected):
         client, connected["repo"], "push", push(ref="refs/heads/no-identifier-here")
     )
     assert response.status_code == 200
-    assert response.json() == {"events": 1, "links": 0, "tickets": []}
+    assert response.json() == {
+        "events": 1,
+        "links": 0,
+        "tickets": [],
+        "team_archived": False,
+    }
 
 
 def test_a_ping_is_accepted(client, connected):

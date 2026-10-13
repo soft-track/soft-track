@@ -11,4 +11,7 @@ export const newTeam = {
   creating: 'Creating…',
   signOut: 'Sign out',
   error: 'Could not create the team.',
+  // A key that stays taken (#322), said under the Key field.
+  keyArchived: '{{key}} belongs to an archived team, and a key is never given back.',
+  keyRetired: '{{key}} was used by a deleted team, and a key is never given back.',
 } as const

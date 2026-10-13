@@ -326,12 +326,13 @@ def test_the_batch_size_is_bounded(client, board, count):
 # --- bulk delete -------------------------------------------------------
 
 
-def test_bulk_delete_removes_every_ticket(client, board):
+def test_bulk_delete_moves_every_ticket_to_the_trash(client, board):
     response = bulk_delete(client, board, board["ids"][:2])
     assert response.status_code == 204, response.text
 
-    assert fetch(client, board, board["ids"][0]).status_code == 404
-    assert fetch(client, board, board["ids"][1]).status_code == 404
+    # 410, not 404: they are in the trash (#323).
+    assert fetch(client, board, board["ids"][0]).status_code == 410
+    assert fetch(client, board, board["ids"][1]).status_code == 410
     assert fetch(client, board, board["ids"][2]).status_code == 200
 
 
@@ -347,10 +348,12 @@ def test_a_parent_and_its_sub_ticket_can_go_together(client, board, parent_first
 
     response = bulk_delete(client, board, ids if parent_first else ids[::-1])
     assert response.status_code == 204, response.text
-    assert fetch(client, board, child["id"]).status_code == 404
+    assert fetch(client, board, child["id"]).status_code == 410
 
 
-def test_bulk_delete_purges_attachments(client, board, storage, session):
+def test_attachments_of_a_bulk_delete_go_when_it_is_purged(
+    client, board, storage, session
+):
     ticket = board["tickets"][0]
     uploaded = client.post(
         f"/tickets/{ticket['id']}/attachments",
@@ -360,6 +363,11 @@ def test_bulk_delete_purges_attachments(client, board, storage, session):
     key = session.get(Attachment, uploaded["id"]).storage_key
 
     assert bulk_delete(client, board, [ticket["id"]]).status_code == 204
+    # Kept while it is in the trash, so restoring it brings them back (#323).
+    with storage.open(key):
+        pass
+    purged = client.delete(f"/trash/tickets/{ticket['id']}", headers=board["headers"])
+    assert purged.status_code == 204, purged.text
     with pytest.raises(ObjectNotFound):
         storage.open(key)
 

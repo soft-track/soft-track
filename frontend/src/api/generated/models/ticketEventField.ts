@@ -21,4 +21,9 @@ export const TicketEventField = {
   priority: 'priority',
   due_date: 'due_date',
   team: 'team',
+  custom_field: 'custom_field',
+  trash: 'trash',
+  schedule: 'schedule',
+  time_estimate: 'time_estimate',
+  remaining: 'remaining',
 } as const;

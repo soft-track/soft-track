@@ -77,3 +77,20 @@ def get_mailer() -> Mailer:
         use_tls=settings.smtp_use_tls,
         sender=settings.email_from,
     )
+
+
+def send_quietly(mailer: Mailer, to: str, subject: str, body: str) -> None:
+    """Send from a background task, where a failure has nowhere to go.
+
+    A background task runs after the response, so an exception from it reaches
+    nobody who could act on it -- but it does reach the server, which drops the
+    connection. With a mail host that is down or misspelt, that turned every
+    sign-in from a new browser (#308) into a failed request. The mail is a
+    courtesy; the request it follows has already succeeded, so log the failure
+    and move on. A caller that can tell the user the mail failed calls
+    `mailer.send` itself and handles the exception.
+    """
+    try:
+        mailer.send(to, subject, body)
+    except Exception:
+        logger.exception("Could not send %r to %s", subject, to)

@@ -38,6 +38,12 @@ describe('invalidationFor (#103)', () => {
     ])
   })
 
+  it('refreshes a sprint’s plan when a ticket changes (#269)', () => {
+    expect(
+      hits('ticket_changed', '{"id": 42}', ['/sprints/15/plan', '/sprints/15/burndown']),
+    ).toEqual(['/sprints/15/plan'])
+  })
+
   it('refreshes only the thread for a comment', () => {
     expect(hits('comment_added', '{"ticket_id": 42}', KEYS)).toEqual([
       '/tickets/42/comments',

@@ -1,8 +1,10 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, type KeyboardEvent, useId, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 
 import { errorDetail } from '@/api/errors'
 import {
+  getListMySessionsAuthMeSessionsGetQueryKey,
   useTotpConfirmAuthTotpConfirmPost,
   useTotpDisableAuthTotpDisablePost,
   useTotpEnrolAuthTotpEnrolPost,
@@ -18,10 +20,15 @@ import { useFocusTrap } from '@/ui/useFocusTrap'
  *
  * Turning it on and turning it off both sign out every other session, and
  * both hand back a fresh token for this tab -- adopted here, or the person
- * who just secured their account would be the one thrown out of it.
+ * who just secured their account would be the one thrown out of it. This
+ * tab's session (#308) carries on; the list of sessions is refetched, since
+ * the others are gone from it.
  */
 export function TwoFactorAuth() {
   const { user, setSession } = useAuth()
+  const queryClient = useQueryClient()
+  const sessionsChanged = () =>
+    void queryClient.invalidateQueries({ queryKey: getListMySessionsAuthMeSessionsGetQueryKey() })
   const { t } = useTranslation(['settings', 'common'])
   const enrol = useTotpEnrolAuthTotpEnrolPost()
 
@@ -110,6 +117,7 @@ export function TwoFactorAuth() {
           onClose={() => setSetup(null)}
           onEnabled={(result) => {
             setSession(result.token.access_token, result.token.user)
+            sessionsChanged()
             setSetup(null)
             setRecoveryCodes(result.recovery_codes)
           }}
@@ -131,6 +139,7 @@ export function TwoFactorAuth() {
           onClose={() => setDisabling(false)}
           onDisabled={(token) => {
             setSession(token.access_token, token.user)
+            sessionsChanged()
             setDisabling(false)
             setNotice(t('twoFactor.notices.disabled'))
           }}

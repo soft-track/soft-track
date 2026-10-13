@@ -14,14 +14,15 @@ import {
   TYPE_META,
   TYPE_ORDER,
 } from '@/tickets/ticketMeta'
-import { activeMembers } from '@/team/members'
+import { AssigneeOptions } from '@/tickets/AssigneeOptions'
+import { TimeEstimateInput } from '@/tickets/detail/TimeEstimate'
 import { pickableProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Select } from '@/ui/Select'
 
 /**
- * The block of selects: status, priority, estimate, sprint, project, assignee,
- * labels.
+ * The block of selects: status, priority, estimate and time estimate, sprint,
+ * project, assignee, labels.
  *
  * Each carries a `data-field` so the panel's single-key shortcuts can focus
  * it -- see useTicketShortcuts.
@@ -41,7 +42,12 @@ export function TicketProperties({
   readOnly?: boolean
 }) {
   const { t } = useTranslation('tickets')
-  const { members, labels, sprints, statuses, projects } = useTeamContext()
+  const { team, members, labels, sprints, statuses, projects } = useTeamContext()
+  // What the team estimates in (#268). A ticket that already has the other
+  // kind keeps showing it, so it can be read and cleared.
+  const unit = team.estimate_unit ?? 'points'
+  const showPoints = unit !== 'hours' || ticket.estimate != null
+  const showHours = unit !== 'points' || ticket.time_estimate_minutes != null
 
   // A fieldset so one attribute disables every control in it -- including any
   // property added later -- while still showing each one's current value.
@@ -98,24 +104,33 @@ export function TicketProperties({
         </Select>
       </Row>
 
-      <Row label={t('properties.estimate')}>
-        <Select
-          dense
-          value={ticket.estimate ?? ''}
-          onChange={(e) =>
-            // Read the value back out of the scale rather than casting a
-            // string to it, so the value is provably one the API accepts.
-            patch({ estimate: ESTIMATE_SCALE.find((p) => String(p) === e.target.value) ?? null })
-          }
-        >
-          <option value="">{t('properties.notSized')}</option>
-          {ESTIMATE_SCALE.map((points) => (
-            <option key={points} value={points}>
-              {t('properties.points', { count: points })}
-            </option>
-          ))}
-        </Select>
-      </Row>
+      {showPoints && (
+        <Row label={t('properties.estimate')}>
+          <Select
+            dense
+            value={ticket.estimate ?? ''}
+            onChange={(e) =>
+              // Read the value back out of the scale rather than casting a
+              // string to it, so the value is provably one the API accepts.
+              patch({ estimate: ESTIMATE_SCALE.find((p) => String(p) === e.target.value) ?? null })
+            }
+          >
+            <option value="">{t('properties.notSized')}</option>
+            {ESTIMATE_SCALE.map((points) => (
+              <option key={points} value={points}>
+                {t('properties.points', { count: points })}
+              </option>
+            ))}
+          </Select>
+        </Row>
+      )}
+
+      {/* Hours beside the points, not in their place (#268). */}
+      {showHours && (
+        <Row label={t('timeEstimate.property')}>
+          <TimeEstimateInput minutes={ticket.time_estimate_minutes} patch={patch} />
+        </Row>
+      )}
 
       <Row label={t('properties.sprint')}>
         <Select
@@ -174,13 +189,9 @@ export function TicketProperties({
         >
           <option value="">{t('properties.unassigned')}</option>
           {/* The current assignee stays listed even if their account was
-              switched off, so opening the ticket does not quietly offer to
-              unassign it. */}
-          {activeMembers(members, ticket.assignee?.id).map((user) => (
-            <option key={user.id} value={user.id}>
-              {user.full_name}
-            </option>
-          ))}
+              switched off, or they are a guest now, so opening the ticket
+              does not quietly offer to unassign it. */}
+          <AssigneeOptions members={members} keepId={ticket.assignee?.id} />
         </Select>
       </Row>
 

@@ -16,7 +16,7 @@ an accounting event, not a reason to lose anything.
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import case, func
+from sqlalchemy import case, delete, func
 from sqlmodel import Session, select
 
 from lib_softtrack import outbound
@@ -25,6 +25,11 @@ from lib_softtrack import rules as rules_service
 from lib_softtrack import views as views_service
 from lib_softtrack.history import record_changes, snapshot
 from lib_softtrack.models.sprints import (
+    RetroActionCreate,
+    RetroActionRead,
+    Retrospective,
+    RetrospectiveUpdate,
+    SprintCompleteRequest,
     SprintCompletion,
     SprintCreate,
     SprintProgress,
@@ -34,13 +39,23 @@ from lib_softtrack.models.sprints import (
 from lib_softtrack.statuses import in_category
 from lib_softtrack.tables import (
     Sprint,
+    SprintAction,
+    SprintCapacity,
     SprintState,
+    Team,
     Ticket,
     StatusCategory,
     User,
     WebhookEvent,
+    utcnow,
 )
-from lib_softtrack.teams import get_team_or_404, require_team_member
+from lib_softtrack.teams import (
+    get_team_or_404,
+    require_team_admin,
+    require_team_member,
+    require_team_writer,
+)
+from lib_softtrack.trash import INCLUDE_TRASHED
 from lib_utils.errors import ErrorCode, api_error
 
 #: Statuses that count as finished for sprint progress and for deciding what
@@ -121,7 +136,11 @@ def display_name(sprint: Sprint) -> str:
     return sprint.name or f"Sprint {sprint.number}"
 
 
-def sprint_to_read(sprint: Sprint, progress: SprintProgress) -> SprintRead:
+def sprint_to_read(
+    sprint: Sprint,
+    progress: SprintProgress,
+    actions: Optional[list[RetroActionRead]] = None,
+) -> SprintRead:
     return SprintRead(
         id=sprint.id,
         team_id=sprint.team_id,
@@ -133,11 +152,60 @@ def sprint_to_read(sprint: Sprint, progress: SprintProgress) -> SprintRead:
         state=sprint.state,
         completed_at=sprint.completed_at,
         progress=progress,
+        goal=sprint.goal,
+        goal_outcome=sprint.goal_outcome,
+        retrospective=(
+            Retrospective(
+                went_well=sprint.retro_went_well,
+                did_not=sprint.retro_did_not,
+                to_change=sprint.retro_to_change,
+                closed_at=sprint.retro_closed_at,
+                actions=actions or [],
+            )
+            if sprint.state is SprintState.completed
+            else None
+        ),
     )
 
 
+def _actions(
+    session: Session, sprint_ids: list[int]
+) -> dict[int, list[RetroActionRead]]:
+    """Each sprint's retrospective actions with the tickets they became, for
+    a list of sprints in one query (#271)."""
+    if not sprint_ids:
+        return {}
+    found: dict[int, list[RetroActionRead]] = {}
+    for action, ticket, team in session.exec(
+        select(SprintAction, Ticket, Team)
+        .join(Ticket, Ticket.id == SprintAction.ticket_id)
+        .join(Team, Team.id == Ticket.team_id)
+        .where(SprintAction.sprint_id.in_(sprint_ids))
+        .order_by(SprintAction.created_at, SprintAction.id)
+    ).all():
+        found.setdefault(action.sprint_id, []).append(
+            RetroActionRead(
+                id=action.id,
+                text=action.text,
+                ticket_id=ticket.id,
+                identifier=f"{team.key}-{ticket.number}",
+                created_at=action.created_at,
+            )
+        )
+    return found
+
+
 def _read(session: Session, sprint: Sprint) -> SprintRead:
-    return sprint_to_read(sprint, sprint_progress(session, [sprint.id])[sprint.id])
+    return sprint_to_read(
+        sprint,
+        sprint_progress(session, [sprint.id])[sprint.id],
+        _actions(session, [sprint.id]).get(sprint.id),
+    )
+
+
+def _text(value: Optional[str]) -> Optional[str]:
+    """Blank is nothing: a goal or a section of whitespace reads as unset."""
+    return value.strip() or None if value is not None else None
 
 
 def create_sprint(
@@ -152,6 +220,7 @@ def create_sprint(
         name=payload.name,
         starts_at=payload.starts_at,
         ends_at=payload.ends_at,
+        goal=_text(payload.goal),
     )
     team.next_sprint_number += 1
     session.add(team)
@@ -171,7 +240,14 @@ def list_sprints(
         select(Sprint).where(Sprint.team_id == team_id).order_by(Sprint.number)
     ).all()
     progress = sprint_progress(session, [sprint.id for sprint in sprints])
-    return [sprint_to_read(sprint, progress[sprint.id]) for sprint in sprints]
+    actions = _actions(
+        session,
+        [sprint.id for sprint in sprints if sprint.state is SprintState.completed],
+    )
+    return [
+        sprint_to_read(sprint, progress[sprint.id], actions.get(sprint.id))
+        for sprint in sprints
+    ]
 
 
 def get_sprint(session: Session, current_user: User, sprint_id: int) -> SprintRead:
@@ -203,6 +279,8 @@ def update_sprint(
             detail="ends_at must be after starts_at",
         )
 
+    if "goal" in data:
+        data["goal"] = _text(data["goal"])
     for field, value in data.items():
         setattr(sprint, field, value)
     session.add(sprint)
@@ -256,7 +334,10 @@ def start_sprint(session: Session, current_user: User, sprint_id: int) -> Sprint
 
 
 def complete_sprint(
-    session: Session, current_user: User, sprint_id: int
+    session: Session,
+    current_user: User,
+    sprint_id: int,
+    payload: Optional[SprintCompleteRequest] = None,
 ) -> SprintCompletion:
     sprint = get_sprint_or_404(session, sprint_id)
     require_team_member(sprint.team_id, current_user, session)
@@ -306,6 +387,13 @@ def complete_sprint(
 
     sprint.state = SprintState.completed
     sprint.completed_at = datetime.now(timezone.utc)
+    # Whether the goal was met, and the retrospective so far (#271): asked
+    # when it is completed, before the webhook says so, and all optional.
+    if payload is not None:
+        sprint.goal_outcome = payload.outcome
+        sprint.retro_went_well = _text(payload.went_well)
+        sprint.retro_did_not = _text(payload.did_not)
+        sprint.retro_to_change = _text(payload.to_change)
     session.add(sprint)
 
     # After the carry-over, so a rule can act on the tickets that came out of
@@ -333,6 +421,99 @@ def complete_sprint(
     )
 
 
+def _retrospective_of(
+    session: Session, current_user: User, sprint_id: int, *, admin: bool = False
+) -> Sprint:
+    """A completed sprint whose retrospective the caller may write: anybody
+    on the team but a guest while it is open (#271), its admins to close it."""
+    sprint = get_sprint_or_404(session, sprint_id)
+    if admin:
+        require_team_admin(sprint.team_id, current_user, session)
+    else:
+        require_team_writer(sprint.team_id, current_user, session)
+    if sprint.state is not SprintState.completed:
+        raise api_error(
+            status_code=409,
+            code=ErrorCode.sprint_not_completed,
+            detail="A retrospective is written once the sprint is completed.",
+        )
+    return sprint
+
+
+def update_retrospective(
+    session: Session, current_user: User, sprint_id: int, payload: RetrospectiveUpdate
+) -> SprintRead:
+    """Write to a completed sprint's retrospective while it is open (#271)."""
+    sprint = _retrospective_of(session, current_user, sprint_id)
+    if sprint.retro_closed_at is not None:
+        raise api_error(
+            status_code=409,
+            code=ErrorCode.retrospective_closed,
+            detail="This retrospective has been closed.",
+        )
+    data = payload.model_dump(exclude_unset=True)
+    if "outcome" in data:
+        sprint.goal_outcome = data["outcome"]
+    for field, column in (
+        ("went_well", "retro_went_well"),
+        ("did_not", "retro_did_not"),
+        ("to_change", "retro_to_change"),
+    ):
+        if field in data:
+            setattr(sprint, column, _text(data[field]))
+    session.add(sprint)
+    session.commit()
+    session.refresh(sprint)
+    return _read(session, sprint)
+
+
+def close_retrospective(
+    session: Session, current_user: User, sprint_id: int
+) -> SprintRead:
+    """Stop the retrospective changing: a team admin's call (#271)."""
+    sprint = _retrospective_of(session, current_user, sprint_id, admin=True)
+    if sprint.retro_closed_at is None:
+        sprint.retro_closed_at = utcnow()
+        session.add(sprint)
+        session.commit()
+        session.refresh(sprint)
+    return _read(session, sprint)
+
+
+def create_action(
+    session: Session, current_user: User, sprint_id: int, payload: RetroActionCreate
+) -> RetroActionRead:
+    """Make a ticket of a line from "what to change" (#271), linked back to
+    the sprint it came from. The ticket goes on the team's backlog like any
+    other new one."""
+    # Imported here: tickets name sprints, so read this module first.
+    from lib_softtrack import tickets as tickets_service
+    from lib_softtrack.models.tickets import TicketCreate
+
+    sprint = _retrospective_of(session, current_user, sprint_id)
+    text = payload.text.strip()
+    created = tickets_service.create_ticket(
+        session,
+        current_user,
+        sprint.team_id,
+        TicketCreate(
+            title=text[:200],
+            description=f"From the retrospective of {display_name(sprint)}.",
+        ),
+    )
+    action = SprintAction(sprint_id=sprint.id, ticket_id=created.id, text=text)
+    session.add(action)
+    session.commit()
+    session.refresh(action)
+    return RetroActionRead(
+        id=action.id,
+        text=action.text,
+        ticket_id=created.id,
+        identifier=created.identifier,
+        created_at=action.created_at,
+    )
+
+
 def delete_sprint(session: Session, current_user: User, sprint_id: int) -> None:
     sprint = get_sprint_or_404(session, sprint_id)
     require_team_member(sprint.team_id, current_user, session)
@@ -345,9 +526,12 @@ def delete_sprint(session: Session, current_user: User, sprint_id: int) -> None:
         )
 
     # Its tickets go back to the backlog rather than being deleted with it, and
-    # they hold a foreign key here either way.
+    # they hold a foreign key here either way -- the ones in the trash too
+    # (#323), or the sprint could not go.
     for ticket in session.exec(
-        select(Ticket).where(Ticket.sprint_id == sprint_id)
+        select(Ticket)
+        .where(Ticket.sprint_id == sprint_id)
+        .execution_options(**INCLUDE_TRASHED)
     ).all():
         before = snapshot(ticket)
         ticket.sprint_id = None
@@ -357,6 +541,8 @@ def delete_sprint(session: Session, current_user: User, sprint_id: int) -> None:
     # Saved views hold one too. A view left filtering on a sprint that no
     # longer exists matches nothing, which reads as broken rather than empty.
     views_service.clear_sprint(session, sprint_id)
+    # And the capacities set for it (#269), which mean nothing without it.
+    session.exec(delete(SprintCapacity).where(SprintCapacity.sprint_id == sprint_id))
     # And any rule that moved work into it, which is switched off rather than
     # left enabled doing less than it says -- see automations.clear_sprint.
     automations_service.clear_sprint(session, sprint_id)

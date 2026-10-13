@@ -12,7 +12,8 @@ from sqlmodel import Session, select
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.estimates import AssigneeLoad, EstimateSummary, StatusLoad
 from lib_softtrack.statuses import team_statuses
-from lib_softtrack.tables import Ticket, User
+from lib_softtrack import wip
+from lib_softtrack.tables import Team, Ticket, User
 from lib_softtrack.teams import require_team_member
 
 # COUNT ignores nulls, so counting the column itself counts only the sized
@@ -46,6 +47,20 @@ def estimate_summary(
         by_status.setdefault(
             str(status.id), StatusLoad(points=0, ticket_count=0, unestimated_count=0)
         )
+
+    # What counts against each column's WIP limit (#270): the same tickets,
+    # or without the sub-tickets where the team does not count them.
+    team = session.get(Team, team_id)
+    if team.wip_counts_subtickets:
+        for load in by_status.values():
+            load.wip_count = load.ticket_count
+    else:
+        for status_id, total in session.exec(
+            select(Ticket.status_id, func.count())
+            .where(Ticket.team_id == team_id, *wip.counts(team))
+            .group_by(Ticket.status_id)
+        ).all():
+            by_status[str(status_id)].wip_count = int(total)
 
     rows = session.exec(
         select(Ticket.assignee_id, _POINTS, _TOTAL, _SIZED)

@@ -493,6 +493,48 @@ def test_signing_in_with_a_provider_still_asks_for_the_two_factor_code(
     assert verified.status_code == 200, verified.text
 
 
+def test_a_provider_sign_in_with_two_factor_starts_its_session_at_the_code(
+    client, configured, provider, session
+):
+    """The provider is the first factor (#308): the session row -- listed,
+    revocable -- starts when the code is accepted, not at the exchange."""
+    import pyotp
+    from sqlmodel import select
+
+    from lib_softtrack.tables import AuthSession
+
+    def rows():
+        session.expire_all()
+        return session.exec(select(AuthSession)).all()
+
+    headers = signed_in(client)
+    secret = client.post("/auth/totp/enrol", headers=headers).json()["manual_key"]
+    confirmed = client.post(
+        "/auth/totp/confirm",
+        json={"code": pyotp.TOTP(secret).now()},
+        headers=headers,
+    )
+    assert confirmed.status_code == 200, confirmed.text
+    headers = {"Authorization": f"Bearer {confirmed.json()['token']['access_token']}"}
+    before = len(rows())
+
+    exchanged = redeem(client, sign_in(client))
+    assert exchanged.status_code == 202, exchanged.text
+    assert len(rows()) == before
+    assert len(client.get("/auth/me/sessions", headers=headers).json()) == 1
+
+    verified = client.post(
+        "/auth/totp/verify",
+        json={
+            "pending_token": exchanged.json()["pending_token"],
+            "code": confirmed.json()["recovery_codes"][0],
+        },
+    )
+    assert verified.status_code == 200, verified.text
+    assert len(rows()) == before + 1
+    assert len(client.get("/auth/me/sessions", headers=headers).json()) == 2
+
+
 # ---------------------------------------------------------------------------
 # The gate on a closed instance
 # ---------------------------------------------------------------------------
@@ -1344,3 +1386,15 @@ def test_an_unexpected_service_refusal_is_still_a_page(
     assert path == "/login"
     assert params["error"] == "failed"
     assert "something the service refused" not in response.headers["location"]
+
+
+def test_signing_in_with_a_provider_makes_a_session_like_any_other(
+    client, configured, provider
+):
+    """#308: listed, marked as this device, and revocable."""
+    headers = signed_in(client)
+    rows = client.get("/auth/me/sessions", headers=headers).json()
+    assert [row["current"] for row in rows] == [True]
+    response = client.delete(f"/auth/me/sessions/{rows[0]['id']}", headers=headers)
+    assert response.status_code == 204
+    assert client.get("/auth/me", headers=headers).status_code == 401

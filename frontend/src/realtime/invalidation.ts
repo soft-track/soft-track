@@ -34,7 +34,9 @@ export function invalidationFor(
           p === `${team}/estimates` ||
           p === `${team}/sprints` ||
           p === `${team}/projects` ||
-          p.startsWith('/projects/')
+          p.startsWith('/projects/') ||
+          // A sprint's plan (#269) counts what is assigned in it.
+          (p.startsWith('/sprints/') && p.endsWith('/plan'))
         )
       }
     }

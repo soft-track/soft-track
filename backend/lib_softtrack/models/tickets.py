@@ -4,8 +4,10 @@ from typing import Annotated, Optional
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from lib_identity.models.identity import UserPublic
+from lib_softtrack.models.custom_fields import CustomFieldValueRead, CustomFieldValues
 from lib_softtrack.models.labels import LabelRead
 from lib_softtrack.models.statuses import StatusRead
+from lib_softtrack.models.time_estimates import Remaining, TimeEstimate
 from lib_softtrack.tables import TicketPriority, TicketType
 
 # A modified Fibonacci scale. The gaps are the point: they stop a team
@@ -65,6 +67,9 @@ class TicketCreate(BaseModel):
     sprint_id: Optional[int] = None
     due_date: Optional[date] = None
     label_ids: list[int] = []
+    #: The team's own fields (#117), by key. A required one left out is
+    #: refused with an error that names it.
+    custom_fields: CustomFieldValues = {}
 
 
 class TicketUpdate(BaseModel):
@@ -85,7 +90,15 @@ class TicketUpdate(BaseModel):
     sprint_id: Optional[int] = None
     #: An explicit null clears the due date.
     due_date: Optional[date] = None
+    #: In minutes (#268); an explicit null clears it.
+    time_estimate_minutes: TimeEstimate = None
+    #: What is left, in minutes, set by hand; an explicit null works it out
+    #: again from the time estimate and what is logged.
+    remaining_minutes: Remaining = None
     label_ids: Optional[list[int]] = None
+    #: Merged into what the ticket has: keys left out are left alone, and an
+    #: explicit null clears one.
+    custom_fields: Optional[CustomFieldValues] = None
 
 
 class TicketMove(BaseModel):
@@ -119,6 +132,11 @@ class TicketRead(BaseModel):
     rank: str
     assignee: Optional[UserPublic] = None
     estimate: Optional[int] = None
+    #: How long it was meant to take, in minutes (#268), and what is left
+    #: when somebody set it by hand -- null when it is worked out. What is
+    #: left either way is GET /tickets/{id}/time-estimate.
+    time_estimate_minutes: Optional[int] = None
+    remaining_minutes: Optional[int] = None
     #: Unresolved tickets that block this one. Zero for a ticket that is free
     #: to start; the board marks anything above zero.
     blocked_by_count: int
@@ -136,6 +154,12 @@ class TicketRead(BaseModel):
     #: the schema, pushing an `undefined` check into every client.
     creator: UserPublic
     labels: list[LabelRead] = []
+    #: Values for the team's own fields (#117), by key; a field with no value
+    #: is absent. A person is the whole user, like `assignee`. Every field
+    #: the ticket has a value in is here -- an archived one, or one bound to
+    #: another ticket type, included -- and `GET /teams/{id}/custom-fields`
+    #: says what each is. No default, like the counts above.
+    custom_fields: dict[str, CustomFieldValueRead]
     created_at: datetime
     updated_at: datetime
 

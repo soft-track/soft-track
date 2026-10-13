@@ -867,3 +867,242 @@ def test_recovery_code_decoding_corrupted_data_does_not_crash(
     # Trying a wrong recovery code must return 401, NOT crash with 500 TypeError
     r2 = login_totp(client, pending(client), "somecode")
     assert r2.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Sessions (#308): a two-factor sign-in is a session only once the code is in
+# ---------------------------------------------------------------------------
+
+_FIREFOX = "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0"
+_CHROME_WINDOWS = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+)
+
+
+def _session_rows(session, user_id):
+    from sqlmodel import select
+
+    from lib_softtrack.tables import AuthSession
+
+    session.expire_all()
+    return session.exec(select(AuthSession).where(AuthSession.user_id == user_id)).all()
+
+
+def _listed(client, headers):
+    r = client.get("/auth/me/sessions", headers=headers)
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def _bearer(token):
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def mailer(monkeypatch):
+    from lib_identity import sessions as sessions_service
+    from web import settings
+
+    class FakeMailer:
+        def __init__(self):
+            self.sent = []
+
+        def send(self, to, subject, body):
+            self.sent.append((to, subject, body))
+
+    fake = FakeMailer()
+    monkeypatch.setattr(settings, "smtp_host", "smtp.example.com")
+    monkeypatch.setattr(sessions_service, "get_mailer", lambda: fake)
+    return fake
+
+
+def test_the_password_alone_starts_no_session(client, clock, auth, session):
+    actor = auth()
+    enable(client, clock, actor)
+    before = len(_session_rows(session, actor["user"]["id"]))
+
+    r = client.post(
+        "/auth/login",
+        data={"username": _DEFAULT_EMAIL, "password": _DEFAULT_PASS},
+        headers={"User-Agent": _CHROME_WINDOWS},
+    )
+    assert r.status_code == 202, r.text
+    assert len(_session_rows(session, actor["user"]["id"])) == before
+    assert len(_listed(client, actor["headers"])) == 1
+
+
+def test_the_code_starts_exactly_one_session_with_its_browser(
+    client, clock, auth, session
+):
+    actor = auth()
+    secret, _ = enable(client, clock, actor)
+    token = pending(client)
+    before = len(_session_rows(session, actor["user"]["id"]))
+
+    r = client.post(
+        "/auth/totp/verify",
+        json={"pending_token": token, "code": clock.fresh_code(secret)},
+        headers={"User-Agent": _CHROME_WINDOWS},
+    )
+    assert r.status_code == 200, r.text
+    rows = _session_rows(session, actor["user"]["id"])
+    assert len(rows) == before + 1
+    assert rows[-1].user_agent == _CHROME_WINDOWS
+
+    headers = _bearer(r.json()["access_token"])
+    listed = _listed(client, headers)
+    current = [row for row in listed if row["current"]]
+    assert len(current) == 1
+    assert (current[0]["browser"], current[0]["system"]) == ("Chrome", "Windows")
+    # The setup tab, and this one: nothing for the password step in between.
+    assert len(listed) == 2
+
+
+def test_a_wrong_code_starts_no_session(client, clock, auth, session):
+    actor = auth()
+    enable(client, clock, actor)
+    before = len(_session_rows(session, actor["user"]["id"]))
+
+    assert login_totp(client, pending(client), "000000").status_code == 401
+    assert len(_session_rows(session, actor["user"]["id"])) == before
+
+
+def test_a_pending_token_is_no_session_anywhere(client, clock, auth):
+    actor = auth()
+    enable(client, clock, actor)
+    as_bearer = _bearer(pending(client))
+
+    assert client.get("/auth/me", headers=as_bearer).status_code == 401
+    assert client.get("/auth/me/sessions", headers=as_bearer).status_code == 401
+    assert client.post("/auth/sign-out", headers=as_bearer).status_code == 401
+    # ...and the account's own list does not show it.
+    assert len(_listed(client, actor["headers"])) == 1
+
+
+def test_a_recovery_code_starts_a_session_too(client, clock, auth, session):
+    actor = auth()
+    _, codes = enable(client, clock, actor)
+    before = len(_session_rows(session, actor["user"]["id"]))
+
+    r = login_totp(client, pending(client), codes[0])
+    assert r.status_code == 200, r.text
+    assert len(_session_rows(session, actor["user"]["id"])) == before + 1
+    me = client.get("/auth/me", headers=_bearer(r.json()["access_token"]))
+    assert me.status_code == 200
+
+
+def test_the_new_browser_email_waits_for_the_code(client, clock, auth, mailer):
+    actor = auth()
+    secret, _ = enable(client, clock, actor)
+
+    r = client.post(
+        "/auth/login",
+        data={"username": _DEFAULT_EMAIL, "password": _DEFAULT_PASS},
+        headers={"User-Agent": _CHROME_WINDOWS},
+    )
+    assert r.status_code == 202
+    # Somebody who has only the password has not signed in.
+    assert mailer.sent == []
+
+    verified = client.post(
+        "/auth/totp/verify",
+        json={
+            "pending_token": r.json()["pending_token"],
+            "code": clock.fresh_code(secret),
+        },
+        headers={"User-Agent": _CHROME_WINDOWS},
+    )
+    assert verified.status_code == 200, verified.text
+    [(to, subject, _)] = mailer.sent
+    assert to == _DEFAULT_EMAIL
+    assert subject == "A new sign-in to your SoftTrack account"
+
+
+def test_turning_it_on_ends_the_other_sessions_and_keeps_this_one(client, clock, auth):
+    actor = auth()
+    other = login_password(client)
+    assert other.status_code == 200
+    other_headers = _bearer(other.json()["access_token"])
+    [this_before] = [r for r in _listed(client, actor["headers"]) if r["current"]]
+
+    enable(client, clock, actor)
+
+    assert client.get("/auth/me", headers=other_headers).status_code == 401
+    listed = _listed(client, actor["headers"])
+    # The same row, carried on by the fresh token -- not a new one.
+    assert [r["id"] for r in listed] == [this_before["id"]]
+    assert listed[0]["current"] is True
+
+
+def test_turning_it_off_ends_the_other_sessions_and_keeps_this_one(client, clock, auth):
+    actor = auth()
+    secret, _ = enable(client, clock, actor)
+    other = login_full(client, clock, secret)
+    [this_before] = [r for r in _listed(client, actor["headers"]) if r["current"]]
+
+    r = disable_totp(client, actor, clock.fresh_code(secret))
+    assert r.status_code == 200, r.text
+    fresh = _bearer(r.json()["access_token"])
+
+    assert client.get("/auth/me", headers=other["headers"]).status_code == 401
+    assert [row["id"] for row in _listed(client, fresh)] == [this_before["id"]]
+
+
+def test_an_admin_clearing_it_ends_every_session(client, clock, auth):
+    admin = auth(email="admin@softtrack.dev")
+    victim = auth(email="victim@softtrack.dev")
+    secret, _ = enable(client, clock, victim)
+    login_full(client, clock, secret, email="victim@softtrack.dev")
+
+    r = client.post(
+        f"/admin/users/{victim['user']['id']}/clear-totp",
+        headers=admin["headers"],
+    )
+    assert r.status_code == 204
+    rows = client.get("/admin/users", headers=admin["headers"]).json()["items"]
+    [row] = [u for u in rows if u["id"] == victim["user"]["id"]]
+    assert row["session_count"] == 0
+    assert row["totp_enabled"] is False
+
+
+def test_a_password_reset_link_does_not_skip_the_code(client, clock, auth, session):
+    from datetime import timedelta
+
+    from lib_identity import password_reset
+    from lib_softtrack.tables import User
+
+    actor = auth()
+    enable(client, clock, actor)
+    session.expire_all()
+    link, _ = password_reset.issue_link(
+        session,
+        session.get(User, actor["user"]["id"]),
+        timedelta(minutes=30),
+        emailed=True,
+    )
+    r = client.post(
+        "/auth/reset-password", json={"token": link, "new_password": "brand-new-pass"}
+    )
+    assert r.status_code == 204, r.text
+
+    again = login_password(client, password="brand-new-pass")
+    assert again.status_code == 202, again.text
+    assert "access_token" not in again.json()
+
+
+def test_an_admin_password_reset_does_not_skip_the_code(client, clock, auth):
+    admin = auth(email="admin@softtrack.dev")
+    victim = auth(email="victim@softtrack.dev")
+    enable(client, clock, victim)
+    r = client.post(
+        f"/admin/users/{victim['user']['id']}/reset-password",
+        json={"new_password": "newpassword123"},
+        headers=admin["headers"],
+    )
+    assert r.status_code == 204, r.text
+
+    again = login_password(
+        client, email="victim@softtrack.dev", password="newpassword123"
+    )
+    assert again.status_code == 202, again.text

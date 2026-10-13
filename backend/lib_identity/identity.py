@@ -5,17 +5,16 @@ import re
 import secrets
 from functools import lru_cache
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, func, select
 
-from lib_identity import api_tokens
+from lib_identity import api_tokens, sessions
 from lib_identity.models.identity import (
     Token,
     TotpEnrolmentResult,
     TotpEnrolmentStart,
     TotpLoginPending,
-    UserMe,
     UserUpdate,
 )
 from lib_identity.totp import (
@@ -35,11 +34,11 @@ from lib_identity.usernames import (
     derive_username,
     normalise_username,
 )
+from lib_softtrack.outside import confine
 from lib_softtrack.tables import User, utcnow
 from lib_utils.password import hash_password, is_usable_password, verify_password
 from lib_utils.rate_limit import address_of, api_token_by_address
 from lib_utils.token import (
-    create_access_token,
     create_totp_pending_token,
     decode_access_token,
     decode_totp_pending_token,
@@ -114,6 +113,7 @@ def get_current_user(
             api_token_by_address.record_attempt(address)
             raise credentials_exception
         request.state.via_api_token = True
+        confine(session, user)
         return user
 
     payload = decode_access_token(token)
@@ -135,21 +135,51 @@ def get_current_user(
     # upgrade itself.
     if payload.get("ver", 0) != user.token_version:
         raise credentials_exception
+    # The session the token belongs to (#308) has to be live as well: one can
+    # be revoked without the others. A token from before sessions carries no
+    # `sid`, and the checks above are all it ever had.
+    if "sid" in payload:
+        if not sessions.authenticate(session, user, payload["sid"]):
+            raise credentials_exception
+        request.state.session_id = payload["sid"]
+    # Somebody from outside sees only the epics they were given (#243), on
+    # every query this request makes from here on.
+    confine(session, user)
     return user
 
 
-def ticket_token(user: User) -> Token:
+def get_current_insider(current_user: User = Depends(get_current_user)) -> User:
+    """`get_current_user`, for what only somebody inside the organisation
+    reaches (#317): the people directory and profiles, departments, anybody's
+    workload, the team directory, creating a team and claiming expenses.
+
+    Each of these asked only "is somebody signed in", which was the right
+    question while every account was a colleague's. An account from outside
+    (#243) gets its teams and its own account, and is refused the rest here,
+    before anything is read.
+    """
+    if current_user.is_external:
+        raise api_error(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code=ErrorCode.external_account,
+            detail="This is for people inside the organisation",
+        )
+    return current_user
+
+
+def ticket_token(
+    session: Session,
+    user: User,
+    request: Request,
+    background: BackgroundTasks | None = None,
+) -> Token:
     """A signed-in session for `user`: the bearer token plus their own record.
 
     Public because signing in with Google or GitHub ends the same way an
-    email and password sign-in does -- see `lib_identity/oauth.py`.
+    email and password sign-in does -- see `lib_identity/oauth.py`. Each one
+    is a row in the account's list of sessions (#308).
     """
-    return Token(
-        access_token=create_access_token(
-            subject=str(user.id), version=user.token_version
-        ),
-        user=UserMe.model_validate(user),
-    )
+    return sessions.start(session, user, request, background)
 
 
 def create_user(
@@ -159,6 +189,7 @@ def create_user(
     full_name: str,
     hashed_password: str,
     username: str | None = None,
+    activated: bool = True,
 ) -> User:
     """The row every new account starts as, however it was created.
 
@@ -172,10 +203,13 @@ def create_user(
     else:
         handle = derive_username(session, email)
 
+    from lib_softtrack.invites import invited_from_outside
+
     # The first account to exist owns the instance. Nobody else can grant it,
     # so it has to be automatic or a fresh install has no administrator.
     is_first = session.exec(select(func.count()).select_from(User)).one() == 0
 
+    external = not is_first and invited_from_outside(session, email)
     user = User(
         email=email,
         username=handle,
@@ -183,10 +217,15 @@ def create_user(
         full_name=full_name,
         avatar_color=avatar_color_for(email),
         is_site_admin=is_first,
+        # Invited from outside the organisation (#243): what the account is
+        # from the start, decided by the invitation and never by the person.
+        is_external=external,
         # Creating an account hands out a token, so it *is* a sign-in. Leaving
         # this null would show someone who signed up a minute ago as "never
-        # signed in" in the admin directory.
-        last_login_at=utcnow(),
+        # signed in" in the admin directory. Not so for one a site admin
+        # prepared (#303): its owner has not been near it yet.
+        last_login_at=utcnow() if activated else None,
+        is_activated=activated,
     )
     session.add(user)
     session.commit()
@@ -201,6 +240,8 @@ def register_user(
     full_name: str,
     username: str | None = None,
     invite_token: str | None = None,
+    *,
+    request: Request,
 ) -> Token:
     from lib_softtrack.invites import accept_invite, find_live_invite
 
@@ -238,7 +279,7 @@ def register_user(
         except HTTPException:
             pass
 
-    return ticket_token(user)
+    return ticket_token(session, user, request)
 
 
 @lru_cache(maxsize=1)
@@ -256,12 +297,21 @@ def warm_password_hasher() -> None:
     _unmatchable_hash()
 
 
-def login_user(session: Session, email: str, password: str) -> Token | TotpLoginPending:
+def login_user(
+    session: Session,
+    email: str,
+    password: str,
+    *,
+    request: Request,
+    background: BackgroundTasks | None = None,
+) -> Token | TotpLoginPending:
     """Phase 1 of login: verify the password.
 
     Returns a full `Token` for users without 2FA, or a `TotpLoginPending` for
     users who have TOTP enabled -- the client must complete the second step at
-    POST /auth/totp/verify.
+    POST /auth/totp/verify. Only a `Token` is a session (#308): the pending
+    answer makes no row, so nothing appears in the account's list of sessions
+    and no new-browser email goes out until the code is accepted.
 
     The timing-oracle mitigation is preserved: both branches always run one
     bcrypt verify, so an unknown address and a known one with the wrong
@@ -306,7 +356,7 @@ def login_user(session: Session, email: str, password: str) -> Token | TotpLogin
     session.add(user)
     session.commit()
     session.refresh(user)
-    return ticket_token(user)
+    return ticket_token(session, user, request, background)
 
 
 def totp_challenge(user: User) -> TotpLoginPending:
@@ -369,8 +419,20 @@ def _spend_second_factor(user: User, code: str) -> bool:
     return matched
 
 
-def verify_totp_login(session: Session, pending_token: str, code: str) -> Token:
-    """Phase 2 of login: trade a pending token and a code for a session."""
+def verify_totp_login(
+    session: Session,
+    pending_token: str,
+    code: str,
+    *,
+    request: Request,
+    background: BackgroundTasks | None = None,
+) -> Token:
+    """Phase 2 of login: trade a pending token and a code for a session.
+
+    This is where the session row starts (#308) -- with the browser and
+    address of the request that brought the code, and the new-browser email
+    if there is one -- because this is the moment the account is signed in.
+    """
     decoded = decode_totp_pending_token(pending_token)
     user = session.get(User, decoded[0]) if decoded else None
     if (
@@ -396,7 +458,7 @@ def verify_totp_login(session: Session, pending_token: str, code: str) -> Token:
     session.add(user)
     session.commit()
     session.refresh(user)
-    return ticket_token(user)
+    return ticket_token(session, user, request, background)
 
 
 def begin_totp_enrolment(session: Session, user: User) -> TotpEnrolmentStart:
@@ -424,12 +486,13 @@ def begin_totp_enrolment(session: Session, user: User) -> TotpEnrolmentStart:
 
 
 def confirm_totp_enrolment(
-    session: Session, user: User, code: str
+    session: Session, user: User, code: str, request: Request
 ) -> TotpEnrolmentResult:
     """Put the pending secret in force once the authenticator proves it has it.
 
     Every other session is signed out, because they were signed in without a
-    second factor; the fresh token in the result keeps this tab signed in.
+    second factor; this one is kept (#308), as a password change keeps it,
+    and the fresh token in the result is what carries it on.
     """
     if not user.totp_pending_secret:
         raise api_error(
@@ -459,11 +522,16 @@ def confirm_totp_enrolment(
     session.commit()
     session.refresh(user)
 
-    return TotpEnrolmentResult(recovery_codes=plain_codes, token=ticket_token(user))
+    return TotpEnrolmentResult(
+        recovery_codes=plain_codes, token=sessions.reissue(session, user, request)
+    )
 
 
-def disable_totp(session: Session, user: User, code: str) -> Token:
-    """Turn two-factor off, given a live code or a recovery code."""
+def disable_totp(session: Session, user: User, code: str, request: Request) -> Token:
+    """Turn two-factor off, given a live code or a recovery code.
+
+    Every other session ends, as when it was turned on; this one is kept.
+    """
     if not user.totp_enabled:
         raise api_error(
             status_code=400,
@@ -485,7 +553,7 @@ def disable_totp(session: Session, user: User, code: str) -> Token:
     session.add(user)
     session.commit()
     session.refresh(user)
-    return ticket_token(user)
+    return sessions.reissue(session, user, request)
 
 
 def clear_totp(user: User) -> None:
@@ -564,7 +632,7 @@ def update_profile(session: Session, user: User, payload: UserUpdate) -> User:
 
 
 def change_password(
-    session: Session, user: User, current: str | None, new: str
+    session: Session, user: User, current: str | None, new: str, request: Request
 ) -> Token:
     """Change the password -- or set the first one, for an account without.
 
@@ -592,15 +660,16 @@ def change_password(
     session.refresh(user)
     # A fresh token for the tab that made the change, so the person who just
     # secured their account is not the one thrown out of it.
-    return ticket_token(user)
+    return sessions.reissue(session, user, request)
 
 
-def sign_out_everywhere(session: Session, user: User) -> Token:
+def sign_out_everywhere(session: Session, user: User, request: Request) -> Token:
+    """End every session but this one (#308 keeps it as it was)."""
     user.token_version += 1
     session.add(user)
     session.commit()
     session.refresh(user)
-    return ticket_token(user)
+    return sessions.reissue(session, user, request)
 
 
 def list_my_invites(session: Session, user: User):

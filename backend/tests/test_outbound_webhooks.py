@@ -236,6 +236,33 @@ def test_comments_and_sprints(client, team, session):
     assert receiver.payloads()[0]["data"]["comment"]["body"] == "Looks good"
 
 
+def test_a_sprint_says_its_goal_and_how_it_went(client, team, session):
+    """The sprint webhooks carry the goal and the outcome (#271)."""
+    make_hook(client, team, events=("sprint.started", "sprint.completed"))
+    sprint = client.post(
+        f"/teams/{team['team']['id']}/sprints",
+        json={
+            "starts_at": "2026-09-01",
+            "ends_at": "2026-09-14",
+            "goal": "Sign in and see invoices",
+        },
+        headers=team["headers"],
+    ).json()
+    client.post(f"/sprints/{sprint['id']}/start", headers=team["headers"])
+    client.post(
+        f"/sprints/{sprint['id']}/complete",
+        json={"outcome": "partly"},
+        headers=team["headers"],
+    )
+
+    receiver = FakeReceiver()
+    deliver(session, receiver)
+    started, completed = (p["data"]["sprint"] for p in receiver.payloads())
+    assert started["goal"] == "Sign in and see invoices"
+    assert started["goal_outcome"] is None
+    assert completed["goal_outcome"] == "partly"
+
+
 def test_a_rules_change_arrives_separately_with_no_actor(client, team, session):
     make_hook(client, team, events=("ticket.updated",))
     client.post(

@@ -19,6 +19,15 @@ class BurndownPoint(BaseModel):
     #: The straight line from the sprint's opening scope to zero. Not a target
     #: so much as the thing the real line is read against.
     ideal_remaining: float
+    #: The same in time (#268), for a team that estimates in hours: minutes
+    #: left on the open tickets -- worked out, or as set by hand -- minutes
+    #: estimated, and minutes logged on the sprint's tickets by the end of
+    #: the day.
+    minutes_remaining: int
+    minutes_total: int
+    minutes_logged: int
+    #: From what was left on the first day down to zero.
+    ideal_minutes_remaining: float
 
 
 class ProjectBurnupPoint(BaseModel):

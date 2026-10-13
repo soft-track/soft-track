@@ -4,12 +4,12 @@
  *
  * A harness rather than one of the real dialogs, so each rule is tested on
  * its own: where focus goes on open, that Tab and Shift+Tab wrap, that it
- * goes back to the opener on close, and that a dialog opened from inside
- * another takes over and then hands back.
+ * goes back to the opener on close -- or where the caller says (#114) -- and
+ * that a dialog opened from inside another takes over and then hands back.
  */
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { useFocusTrap } from '@/ui/useFocusTrap'
@@ -18,14 +18,16 @@ function Dialog({
   name,
   onClose,
   autoFocusLast = false,
+  returnTo,
   children,
 }: {
   name: string
   onClose: () => void
   autoFocusLast?: boolean
+  returnTo?: () => HTMLElement | null
   children?: React.ReactNode
 }) {
-  const ref = useFocusTrap<HTMLDivElement>()
+  const ref = useFocusTrap<HTMLDivElement>(returnTo)
   return (
     <div role="dialog" aria-modal="true" aria-label={name} tabIndex={-1} ref={ref}>
       <input aria-label={`${name} first`} />
@@ -132,5 +134,57 @@ describe('useFocusTrap', () => {
     await user.tab()
     await user.tab()
     expect(focused()).toBe(screen.getByLabelText('outer first'))
+  })
+})
+
+/** A row that opens a dialog: named as the opener, whatever has focus when it opens. */
+function RowOpensDialog() {
+  const row = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button type="button" ref={row}>
+        The row
+      </button>
+      <button type="button" onClick={() => setOpen(true)}>
+        Open from elsewhere
+      </button>
+      {open && <Dialog name="modal" onClose={() => setOpen(false)} returnTo={() => row.current} />}
+    </>
+  )
+}
+
+/** An inner dialog whose opener goes away once it opens. */
+function OpenerGoesAway() {
+  const [inner, setInner] = useState(false)
+  return (
+    <Dialog name="outer" onClose={() => {}}>
+      {!inner && (
+        <button type="button" onClick={() => setInner(true)}>
+          Open inner, once
+        </button>
+      )}
+      {inner && <Dialog name="inner" onClose={() => setInner(false)} />}
+    </Dialog>
+  )
+}
+
+describe('useFocusTrap, told where to return', () => {
+  it('returns focus there on close, rather than to whatever had it', async () => {
+    render(<RowOpensDialog />)
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Open from elsewhere' }))
+    await user.click(screen.getByRole('button', { name: 'Close modal' }))
+
+    expect(focused()).toBe(screen.getByRole('button', { name: 'The row' }))
+  })
+
+  it('hands focus to the dialog beneath when there is nothing to return to', async () => {
+    render(<OpenerGoesAway />)
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Open inner, once' }))
+    await user.click(screen.getByRole('button', { name: 'Close inner' }))
+
+    expect(focused()).toBe(screen.getByRole('dialog', { name: 'outer' }))
   })
 })

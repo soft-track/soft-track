@@ -25,6 +25,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BulkInviteCreate,
+  BulkInviteResult,
   HTTPValidationError,
   InviteCreate,
   InvitePreview,
@@ -217,6 +219,81 @@ export function useListInvitesTeamsTeamIdInvitesGet<TData = Awaited<ReturnType<t
 
 
 /**
+ * Invite many addresses to one or more teams the caller administers (#304).
+ *
+ * With `preview`, says what would happen to each address and changes
+ * nothing. Otherwise makes one invitation per address per team, by the
+ * rules a single invitation follows, and returns a result per address.
+ * With `send_email` the links are emailed before responding, so the result
+ * can say which ones the mail server refused.
+ * @summary Bulk Invite
+ */
+export const bulkInviteTeamsTeamIdInvitesBulkPost = (
+    teamId: number,
+    bulkInviteCreate: BulkInviteCreate,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<BulkInviteResult>(
+      {url: `/teams/${teamId}/invites/bulk`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: bulkInviteCreate, signal
+    },
+      );
+    }
+
+
+
+
+export const getBulkInviteTeamsTeamIdInvitesBulkPostMutationKey = () => ['bulkInviteTeamsTeamIdInvitesBulkPost'] as const;
+
+export const getBulkInviteTeamsTeamIdInvitesBulkPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkInviteTeamsTeamIdInvitesBulkPost>>, TError,BulkInviteTeamsTeamIdInvitesBulkPostMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof bulkInviteTeamsTeamIdInvitesBulkPost>>, TError,BulkInviteTeamsTeamIdInvitesBulkPostMutationVariables, TContext> => {
+
+const mutationKey = getBulkInviteTeamsTeamIdInvitesBulkPostMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bulkInviteTeamsTeamIdInvitesBulkPost>>, BulkInviteTeamsTeamIdInvitesBulkPostMutationVariables> = (props) => {
+          const {teamId,data} = props ?? {};
+
+          return  bulkInviteTeamsTeamIdInvitesBulkPost(teamId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BulkInviteTeamsTeamIdInvitesBulkPostMutationResult = NonNullable<Awaited<ReturnType<typeof bulkInviteTeamsTeamIdInvitesBulkPost>>>
+    export type BulkInviteTeamsTeamIdInvitesBulkPostMutationBody = BulkInviteCreate
+    export type BulkInviteTeamsTeamIdInvitesBulkPostMutationError = HTTPValidationError
+    export type BulkInviteTeamsTeamIdInvitesBulkPostMutationVariables = {teamId: number;data: BulkInviteCreate}
+
+    /**
+ * @summary Bulk Invite
+ */
+export const useBulkInviteTeamsTeamIdInvitesBulkPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkInviteTeamsTeamIdInvitesBulkPost>>, TError,BulkInviteTeamsTeamIdInvitesBulkPostMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof bulkInviteTeamsTeamIdInvitesBulkPost>>,
+        TError,
+        BulkInviteTeamsTeamIdInvitesBulkPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getBulkInviteTeamsTeamIdInvitesBulkPostMutationOptions(options), queryClient);
+    }
+    /**
  * @summary Revoke Invite
  */
 export const revokeInviteTeamsTeamIdInvitesInviteIdDelete = (

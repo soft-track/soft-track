@@ -46,7 +46,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote, urlencode
 
-from fastapi import HTTPException
+from fastapi import BackgroundTasks, HTTPException, Request
 from jose import JWTError, jwt
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, select
@@ -641,7 +641,13 @@ def _linking_user(session: Session, claims: dict) -> User:
 # ---------------------------------------------------------------------------
 
 
-def exchange(session: Session, ticket: str, handshake: str) -> Token | TotpLoginPending:
+def exchange(
+    session: Session,
+    ticket: str,
+    handshake: str,
+    request: Request,
+    background: BackgroundTasks | None = None,
+) -> Token | TotpLoginPending:
     """Trade the callback's ticket for a session.
 
     The ticket travelled in a URL fragment and the handshake never left the
@@ -681,10 +687,13 @@ def exchange(session: Session, ticket: str, handshake: str) -> Token | TotpLogin
 
     # The provider stands in for the password, not for the second factor. An
     # account with two-factor on is asked for its code here as well, or
-    # "Continue with Google" would be the way around it.
+    # "Continue with Google" would be the way around it. No session starts
+    # yet: that happens at /auth/totp/verify, once the code is accepted.
     if user.totp_enabled:
         return totp_challenge(user)
-    return ticket_token(user)
+    # A session like any other (#308): listed, revocable, and announced by
+    # email when it is a browser the account has not used.
+    return ticket_token(session, user, request, background)
 
 
 # ---------------------------------------------------------------------------

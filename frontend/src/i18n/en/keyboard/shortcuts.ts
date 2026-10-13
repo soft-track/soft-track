@@ -5,10 +5,12 @@ export const shortcuts = {
     anywhere: 'Anywhere',
     board: 'On the board',
     ticket: 'On an open ticket',
+    writing: 'While writing',
   },
   descriptions: {
     openPalette: 'Open the command palette',
     createTicket: 'Create a ticket',
+    myWork: 'Go to My work',
     focusSearch: 'Focus search',
     showList: 'Show this list',
     closeTop: 'Close whatever is open',
@@ -29,5 +31,10 @@ export const shortcuts = {
     changePriority: 'Change priority',
     changeAssignee: 'Change assignee',
     jumpToLabels: 'Jump to labels',
+    bold: 'Bold',
+    italic: 'Italic',
+    link: 'Link the selection, in place of the palette',
+    indentItem: 'Indent a list item',
+    outdentItem: 'Outdent a list item',
   },
 } as const

@@ -107,7 +107,22 @@ function Where() {
   )
 }
 
-function renderView(view: 'board' | 'list', { guest = false } = {}) {
+const ASSIGNED = {
+  ...TICKET,
+  assignee: {
+    id: 3,
+    email: 'amina@example.com',
+    username: 'amina',
+    full_name: 'Amina Khan',
+    avatar_color: '#6366f1',
+    is_active: true,
+  },
+} as TicketRead
+
+function renderView(
+  view: 'board' | 'list',
+  { guest = false, ticket = TICKET }: { guest?: boolean; ticket?: TicketRead } = {},
+) {
   // As BoardPage does it: a guest has nothing to select.
   const onSelect = guest ? undefined : vi.fn()
   const onStatusChange = vi.fn()
@@ -119,13 +134,14 @@ function renderView(view: 'board' | 'list', { guest = false } = {}) {
             path="/ENG"
             element={
               view === 'board' ? (
-                <KanbanBoard tickets={[TICKET]} onStatusChange={onStatusChange} onSelect={onSelect} />
+                <KanbanBoard tickets={[ticket]} onStatusChange={onStatusChange} onSelect={onSelect} />
               ) : (
-                <TicketListView tickets={[TICKET]} onSelect={onSelect} />
+                <TicketListView tickets={[ticket]} onSelect={onSelect} />
               )
             }
           />
           <Route path="/ENG/ticket/:n" element={<Where />} />
+          <Route path="/people/:username" element={<Where />} />
         </Routes>
       </MemoryRouter>
     </TeamProvider>,
@@ -179,6 +195,23 @@ describe('a card on the board', () => {
   it('leaves ⌘-click to the browser for a guest, who has nothing to select', () => {
     const { follows } = renderView('board', { guest: true })
     expect(follows(screen.getByRole('link', { name: /ENG-42/ }), { metaKey: true })).toBe(true)
+    expect(where()).toBeNull()
+  })
+})
+
+describe('the assignee on a card or a row (#126)', () => {
+  const avatar = () => document.querySelector('[data-assignee]')!
+
+  it.each(['board', 'list'] as const)('opens their profile from the %s, not the ticket', (view) => {
+    const { follows } = renderView(view, { ticket: ASSIGNED })
+    expect(follows(avatar())).toBe(false)
+    expect(where()?.textContent).toBe('/people/amina')
+  })
+
+  it('leaves a ⌘-click to the card, which selects it', () => {
+    const { follows, onSelect } = renderView('board', { ticket: ASSIGNED })
+    expect(follows(avatar(), { metaKey: true })).toBe(false)
+    expect(onSelect).toHaveBeenCalledWith(42, 'toggle', [42])
     expect(where()).toBeNull()
   })
 })

@@ -20,6 +20,8 @@ export function NewSprintModal({ onClose }: { onClose: () => void }) {
   const createSprint = useCreateSprintTeamsTeamIdSprintsPost()
 
   const [name, setName] = useState('')
+  // What the sprint is for (#271), written as it is planned.
+  const [goal, setGoal] = useState('')
   // A fortnight from today: the common case, and still editable.
   const [startsAt, setStartsAt] = useState(asDateInput(new Date()))
   const [endsAt, setEndsAt] = useState(asDateInput(addDays(new Date(), 14)))
@@ -33,6 +35,7 @@ export function NewSprintModal({ onClose }: { onClose: () => void }) {
         teamId: team.id,
         data: {
           name: name.trim() || undefined,
+          goal: goal.trim() || undefined,
           starts_at: new Date(`${startsAt}T00:00:00Z`).toISOString(),
           ends_at: new Date(`${endsAt}T23:59:59Z`).toISOString(),
         },
@@ -73,6 +76,20 @@ export function NewSprintModal({ onClose }: { onClose: () => void }) {
             onChange={(e) => setName(e.target.value)}
             placeholder={t('newSprint.namePlaceholder')}
             className="field"
+          />
+        </label>
+
+        <label className="mb-3 block">
+          <span className="mb-1.5 block text-xs font-medium text-neutral-500">
+            {t('retro.goal')}
+          </span>
+          <textarea
+            rows={2}
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
+            placeholder={t('retro.goalPlaceholder')}
+            maxLength={500}
+            className="field resize-y"
           />
         </label>
 

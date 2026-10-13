@@ -8,5 +8,7 @@
 import type { TeamRole } from './teamRole';
 
 export interface TeamMemberUpdate {
-  role: TeamRole;
+  role?: TeamRole | null;
+  reassign_to?: number | null;
+  epic_ids?: number[] | null;
 }

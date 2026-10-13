@@ -15,6 +15,9 @@ export interface NotificationRead {
   ticket: NotificationTicket;
   actor?: UserPublic | null;
   excerpt?: string | null;
+  field_name?: string | null;
+  due_date?: string | null;
+  assigned_to_you?: boolean;
   read: boolean;
   created_at: string;
 }

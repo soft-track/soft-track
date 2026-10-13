@@ -6,9 +6,12 @@ import {
   useListTicketsTeamsTeamIdTicketsGet,
   useUpdateTicketTicketsTicketIdPatch,
 } from '@/api/generated/endpoints/tickets/tickets'
+import { errorDetail } from '@/api/errors'
 import type { TicketRead } from '@/api/generated/models'
 import { useTranslation } from '@/i18n'
-import { useOpenRelatedTicket } from '@/tickets/surface'
+import { isFilled, missingRequired, toInput, useCustomFields } from '@/tickets/customFields'
+import { OpensPageHint } from '@/tickets/detail/OpensPageHint'
+import { useRelatedTickets } from '@/tickets/stackContext'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon } from '@/ui/Icon'
 
@@ -28,12 +31,15 @@ export function SubTicketsSection({
 }) {
   const { t } = useTranslation(['tickets', 'common'])
   const { team, statuses } = useTeamContext()
-  // On whichever surface this ticket is on: see tickets/surface.ts.
-  const openTicket = useOpenRelatedTicket()
+  // Over this ticket in a modal, its page from the deepest modal, or back
+  // down to it when it is open beneath already (#114).
+  const related = useRelatedTickets()
   const queryClient = useQueryClient()
 
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const customFields = useCustomFields(team.id)
 
   const createTicket = useCreateTicketTeamsTeamIdTicketsPost()
   const updateTicket = useUpdateTicketTicketsTicketIdPatch()
@@ -54,10 +60,26 @@ export function SubTicketsSection({
   const addChild = async () => {
     const trimmed = title.trim()
     if (!trimmed) return
-    await createTicket.mutateAsync({
-      teamId: team.id,
-      data: { title: trimmed, parent_id: ticket.id },
-    })
+    // A title is all this box asks for, so a field the team requires (#117)
+    // starts as the parent has it: a sub-ticket's QA assignee is usually its
+    // parent's. One the parent has no value in is still refused, by name.
+    const inherited = missingRequired(customFields, 'task', {})
+      .filter((field) => isFilled(ticket.custom_fields[field.key]))
+      .map((field) => [field.key, toInput(ticket.custom_fields[field.key])])
+    setError(null)
+    try {
+      await createTicket.mutateAsync({
+        teamId: team.id,
+        data: {
+          title: trimmed,
+          parent_id: ticket.id,
+          custom_fields: Object.fromEntries(inherited),
+        },
+      })
+    } catch (err: unknown) {
+      setError(errorDetail(err, t('subTickets.errors.add')))
+      return
+    }
     setTitle('')
     setAdding(false)
     refresh()
@@ -86,15 +108,23 @@ export function SubTicketsSection({
   }
 
   if (isChild) {
+    const parent = ticket.parent!
+    const opens = related.opens(parent.id)
+    const openAbove = related.openAbove === parent.id
     return (
       <button
         type="button"
-        onClick={() => openTicket(ticket.parent!)}
-        className="mb-2 flex max-w-full items-center gap-1.5 rounded-full bg-neutral-900/5 py-1 pl-2.5 pr-2 text-xs text-neutral-500 transition hover:bg-neutral-900/8 hover:text-neutral-900"
+        onClick={(event) => related.open(parent, event.currentTarget)}
+        aria-haspopup={opens === 'modal' ? 'dialog' : undefined}
+        aria-expanded={opens === 'modal' ? openAbove : undefined}
+        title={opens === 'page' ? t('modal.opensPage') : undefined}
+        className={`mb-2 flex max-w-full items-center gap-1.5 rounded-full py-1 pl-2.5 pr-2 text-xs text-neutral-500 transition hover:bg-neutral-900/8 hover:text-neutral-900 ${
+          openAbove ? 'opened-above' : 'bg-neutral-900/5'
+        }`}
       >
-        <span className="identifier font-medium">{ticket.parent!.identifier}</span>
-        <span className="truncate">{ticket.parent!.title}</span>
-        <Icon name="chevron-right" size={12} />
+        <span className="identifier font-medium">{parent.identifier}</span>
+        <span className="truncate">{parent.title}</span>
+        <Icon name={opens === 'page' ? 'external' : 'chevron-right'} size={12} />
       </button>
     )
   }
@@ -158,15 +188,24 @@ export function SubTicketsSection({
           className="field field-sm mb-2"
         />
       )}
+      {error && (
+        <p role="alert" className="mb-2 text-xs text-danger-600">
+          {error}
+        </p>
+      )}
 
       {children.length > 0 && (
         <ul className="space-y-0.5">
           {children.map((child) => {
             const done = child.status.category === 'done'
+            const opens = related.opens(child.id)
+            const openAbove = related.openAbove === child.id
             return (
               <li
                 key={child.id}
-                className="flex items-center gap-2 rounded-control px-2 py-1 transition hover:bg-neutral-900/4"
+                className={`group flex items-center gap-2 rounded-control px-2 py-1 transition hover:bg-neutral-900/4 ${
+                  openAbove ? 'opened-above' : ''
+                }`}
               >
                 <input
                   type="checkbox"
@@ -182,7 +221,9 @@ export function SubTicketsSection({
                 />
                 <button
                   type="button"
-                  onClick={() => openTicket(child)}
+                  onClick={(event) => related.open(child, event.currentTarget)}
+                  aria-haspopup={opens === 'modal' ? 'dialog' : undefined}
+                  aria-expanded={opens === 'modal' ? openAbove : undefined}
                   className="flex min-w-0 flex-1 items-baseline gap-2 text-left"
                 >
                   <span className="identifier shrink-0 text-xs text-neutral-400">
@@ -195,6 +236,7 @@ export function SubTicketsSection({
                   >
                     {child.title}
                   </span>
+                  {opens === 'page' && <OpensPageHint />}
                 </button>
                 <span
                   className="dot"

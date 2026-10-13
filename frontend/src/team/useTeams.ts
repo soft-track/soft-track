@@ -1,4 +1,7 @@
-import { useListMyTeamsTeamsGet } from '@/api/generated/endpoints/teams/teams'
+import {
+  useListMyTeamsTeamsGet,
+  useTeamCreationAccessTeamsCreationGet,
+} from '@/api/generated/endpoints/teams/teams'
 import type { TeamRead } from '@/api/generated/models'
 
 /** All teams the current user belongs to. */
@@ -17,4 +20,14 @@ export function useTeamByKey(teamKey: string | undefined): {
   const teams = data ?? []
   const team = teams.find((t) => t.key.toLowerCase() === teamKey?.toLowerCase())
   return { team, isLoading, isError, teams }
+}
+
+/**
+ * Whether the signed-in person may create a team (#306), and if not, who to
+ * ask. `mayCreate` is false until the answer is in, so "New team" never
+ * flashes up for somebody it is about to leave.
+ */
+export function useTeamCreation() {
+  const query = useTeamCreationAccessTeamsCreationGet({ query: { staleTime: 30_000 } })
+  return { ...query, mayCreate: query.data?.may_create ?? false }
 }

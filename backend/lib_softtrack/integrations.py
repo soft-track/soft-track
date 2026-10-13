@@ -340,6 +340,13 @@ def receive(
 
     events = webhooks.parse(provider, event_name, payload)
 
+    # An archived team's repository links stop while it is archived (#322):
+    # verified, and answered, and nothing on the team touched -- not even
+    # when it last heard, so unarchiving puts it back as it was.
+    team = session.get(Team, repository.team_id)
+    if team is not None and team.archived_at is not None:
+        return WebhookReceipt(events=len(events), links=0, team_archived=True)
+
     # Recorded even for a delivery that matches nothing. The question this
     # field answers is "is the webhook working", and a `ping` proves it is.
     repository.last_delivery_at = datetime.now(timezone.utc)

@@ -17,6 +17,7 @@ export const errors = {
   current_password_incorrect: 'That is not your current password.',
   reset_link_invalid:
     'This reset link is invalid or has expired. Ask for a new one below.',
+  session_not_found: 'That session has already ended.',
 
   // Two-factor sign-in.
   totp_code_invalid: 'That code did not work. Codes change every 30 seconds, and each one works once.',
@@ -30,12 +31,35 @@ export const errors = {
   // What a team lets you do.
   not_team_member: 'You are not a member of this team.',
   not_team_admin: 'Only an admin of this team can do that.',
-  team_read_only: 'You are a guest on this team: you can see its work but not change it.',
+  team_read_only:
+    'This team is read-only for you: a guest sees its work and does not change it, and an archived team takes no changes until it is unarchived.',
   not_site_admin: 'Only a site administrator can do that.',
+  not_finance_admin:
+    'Only a finance admin can do that. A site admin can grant finance access from Administration → Users.',
   last_team_admin: 'A team needs at least one admin. Make someone else an admin first.',
   last_site_admin: 'This instance needs at least one active site administrator.',
   cannot_deactivate_self: 'You cannot deactivate your own account.',
   cannot_demote_self: 'You cannot remove your own site admin access.',
+
+  // Who may create teams (#306).
+  team_creation_restricted:
+    'Teams on this SoftTrack are created by site admins or named people. Ask for a team instead.',
+  team_creation_from_environment:
+    'Who may create teams is set as TEAM_CREATION in the environment, which wins over this page.',
+  team_request_decided: 'Somebody has already approved or declined this request.',
+
+  // Every team on the instance (#307).
+  already_team_admin: 'They are an admin of this team already.',
+  team_not_empty: 'This team has tickets, so it can be archived and not deleted.',
+
+  // Archiving a team (#322): a key is never given back.
+  team_key_archived: 'That key belongs to an archived team, and a key is never given back.',
+  team_key_retired: 'That key was used by a deleted team, and a key is never given back.',
+
+  // Finding a team and asking to join it (#259).
+  join_request_pending: 'You have asked to join this team already. Withdraw that request to send another.',
+  join_request_not_found: 'That request is no longer waiting: it was decided, withdrawn or ran out.',
+  team_not_open: 'This team takes requests to join. Ask to join it instead.',
 
   // Whose comment it is (#93).
   not_your_comment:
@@ -67,4 +91,8 @@ export const errors = {
   team_has_no_statuses: 'This team has no statuses to put a ticket in.',
   last_status: 'A team needs at least one status; there would be nowhere to put its tickets.',
   status_move_to_same: 'Move the tickets to a different status.',
+
+  // Time (#102, #267).
+  worklog_in_future: 'Time can only be logged for a day that has started.',
+  timesheet_range_invalid: 'Choose a range that ends after it starts and covers at most a year.',
 } as const satisfies Partial<Record<ErrorCode, string>>
