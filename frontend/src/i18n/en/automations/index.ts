@@ -39,6 +39,7 @@ export const automations = {
     addLabel: 'add the label {{label}}',
     moveToActiveSprint: 'move it to the active sprint',
     moveToSprint: 'move it to {{sprint}}',
+    setFixVersion: 'set its fix version to {{release}}',
     postComment: 'post a comment',
   },
   // Standing in for a name whose row has gone.
@@ -48,6 +49,7 @@ export const automations = {
     project: 'a deleted epic',
     person: 'someone who has left',
     sprint: 'a deleted sprint',
+    release: 'a deleted release',
   },
   // The whole rule as one sentence (describeRule).
   rule: {

@@ -13,6 +13,7 @@ from sqlmodel import Session, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack import attachments as attachments_service
+from lib_softtrack import bug_details
 from lib_softtrack import custom_fields as custom_fields_service
 from lib_softtrack import outbound, outside, wip
 from lib_softtrack.models.tickets import (
@@ -47,9 +48,12 @@ from lib_softtrack.tables import (
     TicketLabelLink,
     TicketLink,
     TicketPriority,
+    TicketSeverity,
     TicketSort,
+    TicketType,
     Label,
     Project,
+    Release,
     SortDirection,
     Team,
     User,
@@ -122,6 +126,10 @@ def ticket_to_read(ticket: Ticket, session: Session) -> TicketRead:
         remaining_minutes=ticket.remaining_minutes,
         blocked_by_count=open_blocker_counts(session, [ticket.id]).get(ticket.id, 0),
         sprint_id=ticket.sprint_id,
+        fix_version_id=ticket.fix_version_id,
+        severity=ticket.severity,
+        environment=ticket.environment,
+        found_in_id=ticket.found_in_id,
         due_date=ticket.due_date,
         external_key=ticket.external_key,
         parent=_parent_ref(ticket, session),
@@ -217,6 +225,10 @@ def _expand_tickets(tickets: list[Ticket], session: Session) -> list[TicketRead]
             remaining_minutes=ticket.remaining_minutes,
             blocked_by_count=blocker_counts.get(ticket.id, 0),
             sprint_id=ticket.sprint_id,
+            fix_version_id=ticket.fix_version_id,
+            severity=ticket.severity,
+            environment=ticket.environment,
+            found_in_id=ticket.found_in_id,
             due_date=ticket.due_date,
             external_key=ticket.external_key,
             creator=UserPublic.model_validate(users[ticket.creator_id]),
@@ -270,6 +282,16 @@ def create_ticket(
     team = get_team_or_404(team_id, session)
     require_team_member(team_id, current_user, session)
     _require_on_team(session, Project, payload.project_id, team_id, "project")
+    _require_on_team(session, Release, payload.fix_version_id, team_id, "release")
+    # A bug's details (#273), on a bug, and an environment the team has.
+    bug_details.require_a_bug(payload.type, payload.model_dump())
+    _require_on_team(session, Release, payload.found_in_id, team_id, "release")
+    if payload.environment is not None:
+        payload = payload.model_copy(
+            update={
+                "environment": bug_details.environment_for(team, payload.environment)
+            }
+        )
     require_assignable(team_id, payload.assignee_id, session)
     # Checked before anything is written, so a ticket refused for a missing
     # field does not use up a number -- or exist at all.
@@ -346,6 +368,10 @@ def _insert_ticket(
         assignee_id=payload.assignee_id,
         estimate=payload.estimate,
         sprint_id=payload.sprint_id,
+        fix_version_id=payload.fix_version_id,
+        severity=payload.severity,
+        environment=payload.environment,
+        found_in_id=payload.found_in_id,
         due_date=payload.due_date,
         # On top of its column, where a new card is looked for.
         rank=top_rank(session, team_id),
@@ -533,6 +559,10 @@ class TicketExportRow(NamedTuple):
     ticket: TicketRead
     project_name: str
     sprint_name: str
+    #: The release it ships in (#272), by name.
+    fix_version_name: str = ""
+    #: The release a bug was found in (#273), by name.
+    found_in_name: str = ""
     #: Time logged on it, and what is left (#268) -- worked out, or as set.
     logged_minutes: int = 0
     remaining_minutes: Optional[int] = None
@@ -635,6 +665,22 @@ def _export_rows(tickets: list[Ticket], session: Session) -> list[TicketExportRo
         ).all()
     }
 
+    release_names = {
+        release.id: release.name
+        for release in session.exec(
+            select(Release).where(
+                Release.id.in_(
+                    {
+                        ticket.fix_version_id
+                        for ticket in tickets
+                        if ticket.fix_version_id
+                    }
+                    | {ticket.found_in_id for ticket in tickets if ticket.found_in_id}
+                )
+            )
+        ).all()
+    }
+
     # Imported here: time_estimates reads tickets through this module.
     from lib_softtrack.time_estimates import logged_by, remaining_of
 
@@ -650,6 +696,8 @@ def _export_rows(tickets: list[Ticket], session: Session) -> list[TicketExportRo
                 # name to print".
                 project_name=project_names.get(read.project_id, ""),
                 sprint_name=sprint_names.get(read.sprint_id, ""),
+                fix_version_name=release_names.get(read.fix_version_id, ""),
+                found_in_name=release_names.get(read.found_in_id, ""),
                 logged_minutes=spent,
                 remaining_minutes=remaining_of(
                     read.time_estimate_minutes,
@@ -763,6 +811,20 @@ def _apply_update(
     _require_on_team(
         session, Project, data.get("project_id"), ticket.team_id, "project"
     )
+    # A release is the team's too (#272).
+    _require_on_team(
+        session, Release, data.get("fix_version_id"), ticket.team_id, "release"
+    )
+    # A bug's details (#273): only for a ticket that is -- or this change
+    # makes -- a bug, and an environment the team has, or the one it had.
+    bug_details.require_a_bug(data.get("type") or ticket.type, data)
+    _require_on_team(
+        session, Release, data.get("found_in_id"), ticket.team_id, "release"
+    )
+    if data.get("environment") is not None:
+        data["environment"] = bug_details.environment_for(
+            session.get(Team, ticket.team_id), data["environment"], ticket.environment
+        )
     # Only a change is checked, so an edit that sends the assignee back as it
     # was still saves on a ticket assigned before guests could not be (#316).
     if "assignee_id" in data and data["assignee_id"] != ticket.assignee_id:
@@ -840,6 +902,14 @@ def hand_over_open_tickets(
         _apply_update(session, current_user, ticket, {"assignee_id": reassign_to}, None)
 
 
+#: Worst highest (#273), so "descending" reads as "critical first".
+SEVERITY_RANK = {
+    TicketSeverity.critical: 4,
+    TicketSeverity.major: 3,
+    TicketSeverity.minor: 2,
+    TicketSeverity.trivial: 1,
+}
+
 #: Most urgent highest, so "descending" reads as "most urgent first" -- the
 #: way a person means "sort by priority".
 PRIORITY_RANK = {
@@ -862,6 +932,18 @@ def _ordering(sort: TicketSort, direction: SortDirection, rank) -> list:
     newest_first = Ticket.number.desc()
     if sort == TicketSort.created:
         return [newest_first if descending else Ticket.number.asc()]
+    if sort == TicketSort.severity:
+        # Unrated last whichever way round, as unsized is for the estimate --
+        # and a ticket that is not a bug has no severity to sort by (#273).
+        weight = case(
+            *[(Ticket.severity == s, w) for s, w in SEVERITY_RANK.items()],
+            else_=0,
+        )
+        return [
+            or_(Ticket.severity.is_(None), Ticket.type != TicketType.bug),
+            weight.desc() if descending else weight.asc(),
+            newest_first,
+        ]
     if sort == TicketSort.rank:
         key = rank
     elif sort == TicketSort.updated:
@@ -960,6 +1042,14 @@ def _delete_rows(session: Session, ticket: Ticket) -> list[str]:
     worklogs_service.delete_for_ticket(session, ticket_id)
     # And its values for the team's own fields (#117).
     custom_fields_service.delete_for_ticket(session, ticket_id)
+    # And the test cases that covered it (#274), which go on without it.
+    # Imported here: cases read tickets.
+    from lib_softtrack import runs as runs_service
+    from lib_softtrack.cases import forget_ticket
+
+    forget_ticket(session, ticket_id)
+    # And the test result that raised it (#275) no longer links to it.
+    runs_service.forget_ticket(session, ticket_id)
     # And the retrospective action it was made from (#271): the line stays in
     # the retrospective's text, without a ticket beside it.
     for action in session.exec(
@@ -1087,6 +1177,7 @@ def _validate_bulk_changes(
     resolve_for_team(session, team_id, changes.status_id)
     _require_on_team(session, Project, changes.project_id, team_id, "project")
     _require_on_team(session, Sprint, changes.sprint_id, team_id, "sprint")
+    _require_on_team(session, Release, changes.fix_version_id, team_id, "release")
     for label_id in {*changes.add_label_ids, *changes.remove_label_ids}:
         _require_on_team(session, Label, label_id, team_id, "label")
     if set(changes.add_label_ids) & set(changes.remove_label_ids):

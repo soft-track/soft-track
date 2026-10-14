@@ -579,6 +579,7 @@ TEAM_TABLES = {
     "label",
     "outboundwebhook",
     "project",
+    "release",
     "repository",
     "savedview",
     "sharelink",
@@ -587,6 +588,9 @@ TEAM_TABLES = {
     "teamjoinrequest",
     "teammember",
     "teamrequest",
+    "testcase",
+    "testfolder",
+    "testrun",
     "ticket",
     "ticketevent",
     "ticketschedule",
@@ -604,6 +608,10 @@ CHILD_TABLES = {
     "schedulerun",
     "sprintaction",
     "sprintcapacity",
+    "testcaselabel",
+    "testcaseticket",
+    "testcaseversion",
+    "testruncase",
     "ticketlabellink",
     "webhookdelivery",
 }
@@ -649,8 +657,17 @@ def test_deleting_a_team_leaves_nothing_pointing_at_it(client, instance, session
         Notification,
         NotificationKind,
         OutboundWebhook,
+        Release,
         Repository,
         ScheduleRun,
+        TestCase,
+        TestCaseLabel,
+        TestCaseTicket,
+        TestCaseVersion,
+        TestFolder,
+        TestResultFile,
+        TestRun,
+        TestRunCase,
         ShareLink,
         SprintAction,
         SprintCapacity,
@@ -688,6 +705,17 @@ def test_deleting_a_team_leaves_nothing_pointing_at_it(client, instance, session
         )
     )
     label = add(Label(team_id=team_id, name="ci"))
+    release = add(Release(team_id=team_id, name="1.0"))
+    folder = add(TestFolder(team_id=team_id, name="Demo"))
+    case = add(
+        TestCase(
+            team_id=team_id,
+            number=1,
+            title="Demo works",
+            folder_id=folder.id,
+            created_by_id=lena_id,
+        )
+    )
     status = add(
         WorkflowStatus(
             team_id=team_id,
@@ -703,6 +731,7 @@ def test_deleting_a_team_leaves_nothing_pointing_at_it(client, instance, session
             owner_id=lena_id,
             project_id=project.id,
             sprint_id=sprint.id,
+            fix_version_ids=[release.id],
         )
     )
     team = session.get(Team, team_id)
@@ -722,6 +751,7 @@ def test_deleting_a_team_leaves_nothing_pointing_at_it(client, instance, session
             if_label_id=label.id,
             if_project_id=project.id,
             set_sprint_id=sprint.id,
+            set_fix_version_id=release.id,
             created_by_id=lena_id,
         )
     )
@@ -758,6 +788,7 @@ def test_deleting_a_team_leaves_nothing_pointing_at_it(client, instance, session
     rows = [
         project,
         sprint,
+        release,
         label,
         status,
         view,
@@ -779,6 +810,33 @@ def test_deleting_a_team_leaves_nothing_pointing_at_it(client, instance, session
         add(GuestEpic(user_id=tomas_id, project_id=project.id)),
         add(SprintAction(sprint_id=sprint.id, ticket_id=elsewhere, text="Demo")),
         add(SprintCapacity(sprint_id=sprint.id, user_id=lena_id)),
+        folder,
+        case,
+        add(TestCaseVersion(case_id=case.id, version=1, title="Demo works")),
+        add(TestCaseLabel(case_id=case.id, label_id=label.id)),
+        # Covering a ticket elsewhere: the case's team owns the link.
+        add(TestCaseTicket(case_id=case.id, ticket_id=elsewhere)),
+        run := add(
+            TestRun(
+                team_id=team_id,
+                name="Demo run",
+                release_id=release.id,
+                sprint_id=sprint.id,
+                project_id=project.id,
+                created_by_id=lena_id,
+            )
+        ),
+        run_case := add(TestRunCase(run_id=run.id, case_id=case.id, version=1)),
+        add(
+            TestResultFile(
+                run_case_id=run_case.id,
+                filename="shot.png",
+                content_type="image/png",
+                size_bytes=1,
+                storage_key="ab/shot.png",
+                uploaded_by_id=lena_id,
+            )
+        ),
         add(CustomFieldValue(ticket_id=elsewhere, field_id=field.id, value="x")),
         add(
             Notification(

@@ -335,3 +335,51 @@ describe('the filters #261 added', () => {
     expect(activeCount(backlogReview)).toBe(6)
   })
 })
+
+describe('the release filter (#272)', () => {
+  const shipping: BoardFilters = { ...NO_FILTERS, release: { values: [4, 5], exclude: true } }
+
+  it('round-trips through the link and a saved view', () => {
+    expect(searchString(toSearchParams(shipping))).toBe('release!=4&release!=5')
+    expect(fromSearchParams(toSearchParams(shipping))).toEqual(shipping)
+    expect(fromViewFilters(toViewFilters(shipping))).toEqual(shipping)
+  })
+
+  it('asks the API for the fix version', () => {
+    const params = toQueryParams(shipping)
+    expect(params.fix_version_id).toEqual([4, 5])
+    expect(params.fix_version_exclude).toBe(true)
+    expect(toQueryParams({ ...NO_FILTERS, hasNo: ['fix_version'] }).has_no).toEqual(['fix_version'])
+  })
+
+  it('counts as one filter, and tells views apart', () => {
+    expect(activeCount(shipping)).toBe(1)
+    expect(sameFilters(shipping, NO_FILTERS)).toBe(false)
+  })
+})
+
+describe('the bug-detail filters (#273)', () => {
+  const critical: BoardFilters = {
+    ...NO_FILTERS,
+    severity: { values: ['critical', 'major'], exclude: false },
+    environment: { values: ['Production'], exclude: false },
+    foundIn: { values: [3], exclude: true },
+  }
+
+  it('round-trips through the link and a saved view', () => {
+    expect(searchString(toSearchParams(critical))).toBe(
+      'severity=critical&severity=major&environment=Production&found_in!=3',
+    )
+    expect(fromSearchParams(toSearchParams(critical))).toEqual(critical)
+    expect(fromViewFilters(toViewFilters(critical))).toEqual(critical)
+  })
+
+  it('asks the API in its names, and drops a severity it does not know', () => {
+    const params = toQueryParams(critical)
+    expect(params.severity).toEqual(['critical', 'major'])
+    expect(params.environment).toEqual(['Production'])
+    expect(params.found_in_id).toEqual([3])
+    expect(params.found_in_exclude).toBe(true)
+    expect(fromSearchParams(new URLSearchParams('severity=apocalyptic')).severity.values).toEqual([])
+  })
+})

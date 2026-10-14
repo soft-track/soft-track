@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import type { TicketRead, ProjectRead } from '@/api/generated/models'
+import type { TicketRead, ProjectRead, ReleaseRead } from '@/api/generated/models'
 import {
   groupByProject,
+  groupByRelease,
   groupingFromSearchParams,
+  groupTickets,
   NO_PROJECT_KEY,
+  NO_RELEASE_KEY,
   projectForDropTarget,
   withGrouping,
 } from '@/board/grouping'
@@ -84,5 +87,99 @@ describe('projectForDropTarget', () => {
     expect(projectForDropTarget('project:12')).toBe(12)
     expect(projectForDropTarget(NO_PROJECT_KEY)).toBeNull()
     expect(projectForDropTarget('status:4')).toBeUndefined()
+  })
+})
+
+describe('grouping by release (#272)', () => {
+  const release = (id: number, name: string, state: ReleaseRead['state'] = 'planned') =>
+    ({
+      id,
+      team_id: 1,
+      name,
+      state,
+      created_at: '2026-01-01T00:00:00Z',
+      progress: {
+        tickets_total: 0,
+        tickets_done: 0,
+        points_total: 0,
+        points_done: 0,
+        tickets_unestimated: 0,
+      },
+    }) as ReleaseRead
+  const releases = [release(4, '1.4.0'), release(3, '1.3.2', 'released'), release(1, '0.9', 'archived')]
+  const shipping = (id: number, fix_version_id: number | null) =>
+    ({ id, fix_version_id }) as TicketRead
+
+  it('reads and writes the grouping in the link', () => {
+    const params = withGrouping(new URLSearchParams(''), 'release')
+    expect(params.toString()).toBe('group=release')
+    expect(groupingFromSearchParams(params)).toBe('release')
+  })
+
+  it('keeps the team’s order of releases, and tickets in none last', () => {
+    const groups = groupByRelease(
+      [shipping(10, 3), shipping(11, null), shipping(12, 4)],
+      releases,
+      { includeEmpty: false },
+    )
+    expect(groups.map((group) => group.key)).toEqual(['release:4', 'release:3', NO_RELEASE_KEY])
+  })
+
+  it('offers an empty column to drop into on the board, but never an archived one', () => {
+    const groups = groupByRelease([], releases, { includeEmpty: true })
+    expect(groups.map((group) => group.key)).toEqual(['release:4', 'release:3', NO_RELEASE_KEY])
+    // Still holding a ticket, an archived release keeps its column.
+    expect(
+      groupByRelease([shipping(10, 1)], releases, { includeEmpty: true }).map((g) => g.key),
+    ).toContain('release:1')
+  })
+
+  it('says what a drop on each column changes', () => {
+    const groups = groupTickets('release', [shipping(10, 4)], { projects: [], releases }, {
+      includeEmpty: true,
+    })
+    expect(groups.map((group) => [group.name, group.change])).toEqual([
+      ['1.4.0', { fix_version_id: 4 }],
+      ['1.3.2', { fix_version_id: 3 }],
+      [null, { fix_version_id: null }],
+    ])
+  })
+})
+
+describe('grouping by a bug’s details (#273)', () => {
+  const bug = (id: number, fields: Partial<TicketRead>) =>
+    ({ id, type: 'bug', severity: null, environment: null, ...fields }) as TicketRead
+
+  it('is a column per severity, worst first, with every non-bug in none', () => {
+    const tickets = [
+      bug(1, { severity: 'minor' }),
+      bug(2, { severity: 'critical' }),
+      // A task keeps the severity it had as a bug, and it is not shown.
+      { ...bug(3, { severity: 'critical' }), type: 'task' } as TicketRead,
+    ]
+    const groups = groupTickets('severity', tickets, { projects: [] }, { includeEmpty: false })
+    expect(groups.map((group) => [group.name, group.tickets.map((t) => t.id)])).toEqual([
+      ['Critical', [2]],
+      ['Minor', [1]],
+      [null, [3]],
+    ])
+    expect(groups[0].change).toEqual({ severity: 'critical' })
+  })
+
+  it('is a column per environment in the team’s order, and one a bug kept', () => {
+    const groups = groupTickets(
+      'environment',
+      [bug(1, { environment: 'Staging' }), bug(2, { environment: 'Demo' }), bug(3, {})],
+      { projects: [], environments: ['Production', 'Staging'] },
+      { includeEmpty: true },
+    )
+    expect(groups.map((group) => group.name)).toEqual(['Production', 'Staging', 'Demo', null])
+    expect(groups[1].change).toEqual({ environment: 'Staging' })
+    expect(groups[3].change).toEqual({ environment: null })
+  })
+
+  it('reads the groupings from a link', () => {
+    expect(groupingFromSearchParams(new URLSearchParams('group=severity'))).toBe('severity')
+    expect(groupingFromSearchParams(new URLSearchParams('group=environment'))).toBe('environment')
   })
 })

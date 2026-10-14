@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { TicketPriority } from './ticketPriority';
+import type { TicketSeverity } from './ticketSeverity';
 
 /**
  * What to do to every ticket in the batch. Omitted fields are left alone.
@@ -19,6 +20,9 @@ export interface TicketBulkChanges {
   assignee_id?: number | null;
   project_id?: number | null;
   sprint_id?: number | null;
+  fix_version_id?: number | null;
+  severity?: TicketSeverity | null;
+  environment?: string | null;
   add_label_ids?: number[];
   remove_label_ids?: number[];
 }

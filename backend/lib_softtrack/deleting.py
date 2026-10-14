@@ -33,6 +33,7 @@ from lib_softtrack.projects import project_to_read
 from lib_softtrack.storage import Storage
 from lib_softtrack.tables import (
     Project,
+    TestRun,
     Team,
     TeamRole,
     Ticket,
@@ -310,6 +311,10 @@ def _purge_project(session: Session, project: Project, actor: Optional[User]) ->
         # links that shared it stop working (#245).
         outside.forget_epic(session, project.id)
         sharing.forget_epic(session, project.id)
+        # And the test runs for it (#275) stay, for no epic.
+        from lib_softtrack import runs as runs_service
+
+        runs_service.forget(session, TestRun.project_id, project.id)
         session.flush()
         session.delete(project)
 

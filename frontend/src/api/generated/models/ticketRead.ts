@@ -10,6 +10,7 @@ import type { ParentRef } from './parentRef';
 import type { StatusRead } from './statusRead';
 import type { TicketPriority } from './ticketPriority';
 import type { TicketReadCustomFields } from './ticketReadCustomFields';
+import type { TicketSeverity } from './ticketSeverity';
 import type { TicketType } from './ticketType';
 import type { UserPublic } from './userPublic';
 
@@ -32,6 +33,10 @@ export interface TicketRead {
   remaining_minutes?: number | null;
   blocked_by_count: number;
   sprint_id?: number | null;
+  fix_version_id?: number | null;
+  severity?: TicketSeverity | null;
+  environment?: string | null;
+  found_in_id?: number | null;
   due_date?: string | null;
   external_key?: string | null;
   parent?: ParentRef | null;

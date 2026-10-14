@@ -28,9 +28,16 @@ import {
 import { useTranslation } from '@/i18n'
 import { DUE_FILTER_LABEL } from '@/tickets/dueDate'
 import { PriorityIcon } from '@/tickets/PriorityIcon'
-import { PRIORITY_ORDER, TYPE_META, TYPE_ORDER } from '@/tickets/ticketMeta'
+import {
+  PRIORITY_ORDER,
+  SEVERITY_META,
+  SEVERITY_ORDER,
+  TYPE_META,
+  TYPE_ORDER,
+} from '@/tickets/ticketMeta'
 import { activeMembers } from '@/team/members'
 import { pickableProjects } from '@/team/projects'
+import { pickableReleases } from '@/releases/releases'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
@@ -58,6 +65,10 @@ const ANY_KEY = {
   created: 'created',
   hasNo: 'hasNo',
   watching: 'watching',
+  release: 'release',
+  severity: 'severity',
+  environment: 'environment',
+  foundIn: 'foundIn',
 } as const satisfies Record<FilterKey, string>
 
 /**
@@ -103,6 +114,12 @@ export function FilterBar({
 
   const count = activeCount(filters)
   const chips = describeFilters(filters, lookups)
+  // A team that has made no release is not asked about one (#272) -- unless
+  // a link has set it, so it can be taken off again.
+  const hasReleases = (lookups.releases ?? []).length > 0
+  const sections = FILTER_KEYS.filter(
+    (key) => !(key === 'release' || key === 'foundIn') || hasReleases || isSet(filters, key),
+  )
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -189,7 +206,7 @@ export function FilterBar({
               }}
               className="glass-menu fixed z-50 w-[20rem] max-w-[calc(100vw-1rem)] overflow-y-auto rounded-panel p-1.5"
             >
-              {FILTER_KEYS.map((key) => (
+              {sections.map((key) => (
                 <div key={key} className="border-b border-neutral-900/5 last:border-b-0">
                   <button
                     type="button"
@@ -245,7 +262,7 @@ function onlyFilter(filters: BoardFilters, key: Section): BoardFilters {
 
 /** The values a filter offers, in the order the menu lists them. */
 function useOptions<K extends ManyKey>(name: K): FilterValue<K>[] {
-  const { members, labels, statuses } = useTeamContext()
+  const { team, members, labels, statuses, releases } = useTeamContext()
   switch (name) {
     case 'status':
       return statuses.map((status) => status.id) as FilterValue<K>[]
@@ -263,6 +280,14 @@ function useOptions<K extends ManyKey>(name: K): FilterValue<K>[] {
       return ['me', ...activeMembers(members).map((user) => user.id)] as FilterValue<K>[]
     case 'label':
       return labels.map((label) => label.id) as FilterValue<K>[]
+    case 'release':
+    case 'foundIn':
+      // An archived release is not offered, like an archived epic.
+      return pickableReleases(releases ?? []).map((release) => release.id) as FilterValue<K>[]
+    case 'severity':
+      return SEVERITY_ORDER as FilterValue<K>[]
+    case 'environment':
+      return (team.environments ?? []) as FilterValue<K>[]
     default:
       return TYPE_ORDER as FilterValue<K>[]
   }
@@ -388,6 +413,16 @@ function OptionMark<K extends ManyKey>({ name, value }: { name: K; value: Filter
   if (name === 'type') {
     const meta = TYPE_META[value as FilterValue<'type'>]
     return <Icon name={meta.icon} size={13} style={{ color: meta.color }} />
+  }
+  if (name === 'severity') {
+    const color = SEVERITY_META[value as FilterValue<'severity'>].color
+    return (
+      <span
+        aria-hidden="true"
+        className="h-2.5 w-2.5 shrink-0 rounded-full"
+        style={{ background: color }}
+      />
+    )
   }
   return null
 }
@@ -580,9 +615,15 @@ function HasNoSection({
   onChange: (filters: BoardFilters) => void
 }) {
   const { t } = useTranslation('board')
+  const { releases } = useTeamContext()
+  // "No release" only for a team that has releases (#272), or a link that asks.
+  const offered = MISSING_ORDER.filter(
+    (field) =>
+      field !== 'fix_version' || (releases ?? []).length > 0 || filters.hasNo.includes(field),
+  )
   return (
     <ul>
-      {MISSING_ORDER.map((field) => (
+      {offered.map((field) => (
         <li key={field}>
           <label className="nav-item cursor-pointer gap-2.5">
             <input

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import type { ProjectRead } from '@/api/generated/models'
-import { isOverdue, roadmapSections } from '@/projects/roadmap'
+import type { ProjectRead, ReleaseRead } from '@/api/generated/models'
+import { isOverdue, releaseDay, roadmapSections } from '@/projects/roadmap'
 
 const TODAY = '2026-09-25'
 
@@ -84,5 +84,56 @@ describe('isOverdue', () => {
     expect(isOverdue(project(1, 'Done', '2026-01-01', { state: 'completed' }), TODAY)).toBe(false)
     expect(isOverdue(project(1, 'Stop', '2026-01-01', { state: 'cancelled' }), TODAY)).toBe(false)
     expect(isOverdue(project(1, 'None', null), TODAY)).toBe(false)
+  })
+})
+
+describe('releases on the roadmap (#272)', () => {
+  const release = (
+    id: number,
+    name: string,
+    fields: Partial<ReleaseRead> = {},
+  ): ReleaseRead => ({
+    id,
+    team_id: 1,
+    name,
+    state: 'planned',
+    created_at: '2026-01-01T00:00:00Z',
+    progress: {
+      tickets_total: 0,
+      tickets_done: 0,
+      points_total: 0,
+      points_done: 0,
+      tickets_unestimated: 0,
+    },
+    ...fields,
+  })
+
+  it('marks each release in the month of its day, the day it shipped first', () => {
+    const sections = roadmapSections(
+      [project(1, 'Portal', '2026-10-30')],
+      TODAY,
+      [
+        release(4, '1.4.0', { target_date: '2026-10-15' }),
+        release(3, '1.3.2', {
+          state: 'released',
+          target_date: '2026-08-30',
+          released_on: '2026-09-03',
+        }),
+        // No day yet, and put away: neither is on a calendar.
+        release(5, '1.5.0'),
+        release(1, '0.9', { state: 'archived', released_on: '2026-10-01' }),
+      ],
+    )
+    expect(sections.map((section) => [section.key, section.releases.map((r) => r.name)])).toEqual([
+      ['2026-09', ['1.3.2']],
+      ['2026-10', ['1.4.0']],
+    ])
+    // A month can hold a release and no epic.
+    expect(sections[0].projects).toEqual([])
+  })
+
+  it('says which day it is marked on', () => {
+    expect(releaseDay(release(4, '1.4.0', { target_date: '2026-10-15' }))).toBe('2026-10-15')
+    expect(releaseDay(release(4, '1.4.0'))).toBeNull()
   })
 })

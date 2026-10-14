@@ -8,4 +8,6 @@ This behavior matters because SoftTrack groups statuses into a fixed set of cate
 
 People named in the export are matched to the team's own people, by email first and then by name. A guest on the team is matched like anybody else, so the tickets they reported and the comments they wrote keep their name, but no ticket is assigned to a guest (#316). Those tickets come in unassigned, and the preview's warnings name the guests before anything is written.
 
+Versions come in as [releases](releases.md): Fix Version/s is a ticket's fix version and, on a bug, Affects Version/s is the release it was found in. A version the team has no release of yet is made one, and the report lists them. A bug's severity is read from a Severity field where the team added one, and its environment from Environment -- added to the team's list when it is a name, left out with a warning when it is a paragraph (#272, #273; see [ticket types](ticket-types.md#bug-details)).
+
 See [../architecture.md](../architecture.md) for the status/category system and [../deployment.md](../deployment.md) for operational setup.

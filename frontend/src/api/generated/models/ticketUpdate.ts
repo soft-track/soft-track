@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { TicketPriority } from './ticketPriority';
+import type { TicketSeverity } from './ticketSeverity';
 import type { TicketType } from './ticketType';
 import type { TicketUpdateCustomFields } from './ticketUpdateCustomFields';
 import type { TicketUpdateEstimate } from './ticketUpdateEstimate';
@@ -22,6 +23,10 @@ export interface TicketUpdate {
   estimate?: TicketUpdateEstimate;
   parent_id?: number | null;
   sprint_id?: number | null;
+  fix_version_id?: number | null;
+  severity?: TicketSeverity | null;
+  environment?: string | null;
+  found_in_id?: number | null;
   due_date?: string | null;
   /** Minutes. Null means no time estimate. */
   time_estimate_minutes?: number | null;

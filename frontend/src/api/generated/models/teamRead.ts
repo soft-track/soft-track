@@ -19,6 +19,7 @@ export interface TeamRead {
   estimate_unit?: EstimateUnit;
   capacity_points?: number;
   capacity_minutes_per_day?: number;
+  environments?: string[];
   listed?: boolean;
   open_to_join?: boolean;
   archived_at?: string | null;

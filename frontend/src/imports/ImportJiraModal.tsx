@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useId, useState } from 'react'
 
 import { AXIOS_INSTANCE } from '@/api/client'
+import { invalidateReleases } from '@/releases/releases'
 import { errorDetail } from '@/api/errors'
 import type { ImportReport } from '@/api/generated/models'
 import { Trans, useTranslation } from '@/i18n'
@@ -47,6 +48,9 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
         queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/tickets`] })
         queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/labels`] })
         queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/projects`] })
+        // The releases its versions made, and the environments it added (#272, #273).
+        invalidateReleases(queryClient, team.id)
+        queryClient.invalidateQueries({ queryKey: ['/teams'] })
       }
     } catch (err: unknown) {
       setError(errorDetail(err, t('jira.errors.read')))
@@ -149,6 +153,24 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
                       </span>
                     </li>
                   )}
+                  {report.releases_created.length > 0 && (
+                    <li>
+                      <Count i18nKey="jira.releases" n={report.releases_created.length} />
+                      <span className="text-neutral-400">
+                        {' '}
+                        {t('jira.names', { names: report.releases_created.join(', ') })}
+                      </span>
+                    </li>
+                  )}
+                  {report.environments_added.length > 0 && (
+                    <li>
+                      <Count i18nKey="jira.environments" n={report.environments_added.length} />
+                      <span className="text-neutral-400">
+                        {' '}
+                        {t('jira.names', { names: report.environments_added.join(', ') })}
+                      </span>
+                    </li>
+                  )}
                 </ul>
               </div>
 
@@ -242,7 +264,13 @@ function Count({
   i18nKey,
   n,
 }: {
-  i18nKey: 'jira.tickets' | 'jira.comments' | 'jira.labels' | 'jira.projects'
+  i18nKey:
+    | 'jira.tickets'
+    | 'jira.comments'
+    | 'jira.labels'
+    | 'jira.projects'
+    | 'jira.releases'
+    | 'jira.environments'
   n: number
 }) {
   const { t } = useTranslation('imports')

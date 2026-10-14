@@ -62,6 +62,8 @@ class RuleActions(BaseModel):
     #: "Whichever sprint is running when this fires." Keeps meaning the same
     #: thing a fortnight later, which a fixed sprint id does not.
     move_to_active_sprint: bool = False
+    #: The release the ticket ships in (#272).
+    set_fix_version_id: Optional[int] = None
     comment_body: Optional[str] = Field(default=None, max_length=2000)
 
     @property
@@ -75,6 +77,7 @@ class RuleActions(BaseModel):
                 self.add_label_id is not None,
                 self.set_sprint_id is not None,
                 self.move_to_active_sprint,
+                self.set_fix_version_id is not None,
                 (self.comment_body or "").strip(),
             )
         )

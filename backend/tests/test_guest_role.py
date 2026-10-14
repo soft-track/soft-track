@@ -238,6 +238,21 @@ def world(client, team, guest, auth):
         },
     )
     project = post(f"/teams/{team_id}/projects", json={"name": "Launch"})
+    release = post(f"/teams/{team_id}/releases", json={"name": "1.4.0"})
+    folder = post(f"/teams/{team_id}/test-folders", json={"name": "Invoices"})
+    case = post(
+        f"/teams/{team_id}/test-cases",
+        json={"title": "An invoice opens", "ticket_ids": [ticket["id"]]},
+    )
+    run = post(
+        f"/teams/{team_id}/test-runs",
+        json={"name": "1.4.0 regression", "case_ids": [case["id"]]},
+    )
+    run_case = run["cases"][0]
+    result_file = post(
+        f"/test-run-cases/{run_case['id']}/files",
+        files={"file": ("shot.png", io.BytesIO(PNG), "image/png")},
+    )
     view = post(
         f"/teams/{team_id}/views",
         json={"name": "Mine", "is_shared": True, "filters": {}},
@@ -293,6 +308,12 @@ def world(client, team, guest, auth):
         "attachment_id": attachment["id"],
         "sprint_id": sprint["id"],
         "project_id": project["id"],
+        "release_id": release["id"],
+        "folder_id": folder["id"],
+        "case_id": case["id"],
+        "run_id": run["run"]["id"],
+        "run_case_id": run_case["id"],
+        "result_file_id": result_file["id"],
         "view_id": view["id"],
         "status_id": team["status_ids"]["Todo"],
         "rule_id": rule["id"],
@@ -406,6 +427,18 @@ def test_a_guest_sees_what_a_member_sees(client, team, guest, world):
         f"/tickets/{ticket_id}/links",
         f"/sprints/{world['sprint_id']}/burndown",
         f"/sprints/{world['sprint_id']}/plan",
+        f"/teams/{team_id}/releases",
+        f"/releases/{world['release_id']}",
+        f"/releases/{world['release_id']}/notes",
+        f"/teams/{team_id}/test-folders",
+        f"/teams/{team_id}/test-cases",
+        f"/test-cases/{world['case_id']}",
+        f"/test-cases/{world['case_id']}/versions",
+        f"/tickets/{ticket_id}/test-cases",
+        f"/teams/{team_id}/test-runs",
+        f"/test-runs/{world['run_id']}",
+        f"/test-cases/{world['case_id']}/runs",
+        f"/test-result-files/{world['result_file_id']}/content",
         f"/attachments/{world['attachment_id']}/content",
     ):
         response = client.get(path, headers=guest["headers"])

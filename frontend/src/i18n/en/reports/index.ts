@@ -4,6 +4,7 @@ import { burndown } from '@/i18n/en/reports/burndown'
 import { velocity } from '@/i18n/en/reports/velocity'
 import { flow } from '@/i18n/en/reports/flow'
 import { createdResolved } from '@/i18n/en/reports/createdResolved'
+import { openBugs } from '@/i18n/en/reports/openBugs'
 import { burnup } from '@/i18n/en/reports/burnup'
 import { timeSpent } from '@/i18n/en/reports/timeSpent'
 
@@ -13,6 +14,7 @@ export const reports = {
   velocity,
   flow,
   createdResolved,
+  openBugs,
   burnup,
   timeSpent,
 } as const

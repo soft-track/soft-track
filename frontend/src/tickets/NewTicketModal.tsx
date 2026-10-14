@@ -1,12 +1,17 @@
 import { keepPreviousData, useQueryClient } from '@tanstack/react-query'
-import { type FormEvent, useId, useState, useRef } from 'react'
+import { type FormEvent, type ReactNode, useId, useState, useRef } from 'react'
 
 import { errorDetail } from '@/api/errors'
 import { useCreateTicketTeamsTeamIdTicketsPost } from '@/api/generated/endpoints/tickets/tickets'
 import { useListTemplatesTeamsTeamIdTicketTemplatesGet } from '@/api/generated/endpoints/templates/templates'
 import { useSearchSearchGet } from '@/api/generated/endpoints/search/search'
 import { ticketPath } from '@/tickets/surface'
-import { TicketPriority, type TicketType } from '@/api/generated/models'
+import {
+  type TicketCreate,
+  TicketPriority,
+  type TicketSeverity,
+  type TicketType,
+} from '@/api/generated/models'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { formatList } from '@/i18n/format'
 import { AssigneeOptions } from '@/tickets/AssigneeOptions'
@@ -22,9 +27,13 @@ import {
   ESTIMATE_SCALE,
   PRIORITY_META,
   PRIORITY_ORDER,
+  SEVERITY_META,
+  SEVERITY_ORDER,
   TYPE_META,
   TYPE_ORDER,
 } from '@/tickets/ticketMeta'
+import { descriptionForType } from '@/tickets/bugSections'
+import { invalidateReleases, pickableReleases } from '@/releases/releases'
 import { replacingLosesWork } from '@/tickets/templates'
 import { MarkdownEditor } from '@/markdown/lazy'
 import { activeMembers } from '@/team/members'
@@ -51,19 +60,44 @@ function getSearchPhrase(value: string) {
   return trimmed.split(/\s+/).filter(Boolean).length >= 3 ? trimmed : ''
 }
 
-export function NewTicketModal({ onClose }: { onClose: () => void }) {
+/** What the form starts with, rather than empty: a bug from a failure (#275). */
+export type NewTicketPrefill = {
+  title?: string
+  type?: TicketType
+  description?: string
+  severity?: TicketSeverity | null
+  environment?: string | null
+  foundInId?: number | null
+}
+
+export function NewTicketModal({
+  onClose,
+  prefill,
+  create,
+  context,
+}: {
+  onClose: () => void
+  prefill?: NewTicketPrefill
+  /**
+   * Make the ticket another way than the team's create: a bug raised from a
+   * test result goes through the run, which links the two (#275).
+   */
+  create?: (data: TicketCreate) => Promise<unknown>
+  /** A line above the buttons: what the new ticket will be linked to. */
+  context?: ReactNode
+}) {
   const { t } = useTranslation(['tickets', 'common'])
   const dialogRef = useFocusTrap<HTMLDivElement>()
   const titleInputRef = useRef<HTMLInputElement>(null)
   const titleId = useId()
-  const { team, projects, labels, members, sprints, statuses } = useTeamContext()
+  const { team, projects, labels, members, sprints, statuses, releases = [] } = useTeamContext()
   const queryClient = useQueryClient()
   const createTicket = useCreateTicketTeamsTeamIdTicketsPost()
   const templates = useListTemplatesTeamsTeamIdTicketTemplatesGet(team.id).data ?? []
   const customFields = useCustomFields(team.id)
 
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
+  const [title, setTitle] = useState(prefill?.title ?? '')
+  const [description, setDescription] = useState(prefill?.description ?? '')
   const [suggestionsDismissed, setSuggestionsDismissed] = useState(false)
   const [selectedSuggestion, setSelectedSuggestion] = useState(-1)
 
@@ -112,7 +146,20 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
   // loads them.
   const [statusId, setStatusId] = useState<string>('')
   const [priority, setPriority] = useState<TicketPriority>(TicketPriority.no_priority)
-  const [type, setType] = useState<TicketType>('task')
+  const [type, setType] = useState<TicketType>(prefill?.type ?? 'task')
+  // A bug's details (#273), asked once the type is Bug and sent only then.
+  const [severity, setSeverity] = useState<TicketSeverity | ''>(prefill?.severity ?? '')
+  const [environment, setEnvironment] = useState(prefill?.environment ?? '')
+  const [foundInId, setFoundInId] = useState(
+    prefill?.foundInId != null ? String(prefill.foundInId) : '',
+  )
+  const isBug = type === 'bug'
+  const chooseType = (next: TicketType) => {
+    setType(next)
+    // Choosing Bug offers the sections of a bug's description; choosing
+    // something else takes them away again if nobody has written in them.
+    setDescription((current) => descriptionForType(current, next === 'bug'))
+  }
   const [estimate, setEstimate] = useState<(typeof ESTIMATE_SCALE)[number] | null>(null)
   const [sprintId, setSprintId] = useState<string>('')
   const [dueDate, setDueDate] = useState('')
@@ -167,25 +214,32 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
       .filter((field) => isFilled(fieldValues[field.key]))
       .map((field) => [field.key, fieldValues[field.key]] as const)
     try {
-      await createTicket.mutateAsync({
-        teamId: team.id,
-        data: {
-          title: title.trim(),
-          description: description.trim() || undefined,
-          project_id: projectId ? Number(projectId) : undefined,
-          status_id: statusId ? Number(statusId) : undefined,
-          priority,
-          type,
-          estimate,
-          sprint_id: sprintId ? Number(sprintId) : undefined,
-          due_date: dueDate || undefined,
-          assignee_id: assigneeId ? Number(assigneeId) : undefined,
-          label_ids: labelIds,
-          custom_fields: filled.length > 0 ? Object.fromEntries(filled) : undefined,
-        },
-      })
+      const data: TicketCreate = {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        project_id: projectId ? Number(projectId) : undefined,
+        status_id: statusId ? Number(statusId) : undefined,
+        priority,
+        type,
+        ...(isBug
+          ? {
+              severity: severity || undefined,
+              environment: environment || undefined,
+              found_in_id: foundInId ? Number(foundInId) : undefined,
+            }
+          : {}),
+        estimate,
+        sprint_id: sprintId ? Number(sprintId) : undefined,
+        due_date: dueDate || undefined,
+        assignee_id: assigneeId ? Number(assigneeId) : undefined,
+        label_ids: labelIds,
+        custom_fields: filled.length > 0 ? Object.fromEntries(filled) : undefined,
+      }
+      if (create) await create(data)
+      else await createTicket.mutateAsync({ teamId: team.id, data })
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/tickets`] })
       invalidateProjects(queryClient, team.id)
+      invalidateReleases(queryClient, team.id)
       onClose()
     } catch (err: unknown) {
       // The API's sentence when it has one -- a field made required since
@@ -408,7 +462,7 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
             <Select
               dense
               value={type}
-              onChange={(e) => setType(e.target.value as TicketType)}
+              onChange={(e) => chooseType(e.target.value as TicketType)}
               aria-label={t('newTicket.type')}
             >
               {TYPE_ORDER.map((value) => (
@@ -417,6 +471,53 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
                 </option>
               ))}
             </Select>
+
+            {isBug && (
+              <>
+                <Select
+                  dense
+                  value={severity}
+                  onChange={(e) => setSeverity(e.target.value as TicketSeverity | '')}
+                  aria-label={t('newTicket.severity')}
+                >
+                  <option value="">{t('newTicket.noSeverity')}</option>
+                  {SEVERITY_ORDER.map((value) => (
+                    <option key={value} value={value}>
+                      {SEVERITY_META[value].label}
+                    </option>
+                  ))}
+                </Select>
+                <Select
+                  dense
+                  value={environment}
+                  onChange={(e) => setEnvironment(e.target.value)}
+                  aria-label={t('newTicket.environment')}
+                >
+                  <option value="">{t('newTicket.noEnvironment')}</option>
+                  {(team.environments ?? []).map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </Select>
+                {/* Only for a team that ships releases (#272). */}
+                {releases.length > 0 && (
+                  <Select
+                    dense
+                    value={foundInId}
+                    onChange={(e) => setFoundInId(e.target.value)}
+                    aria-label={t('newTicket.foundIn')}
+                  >
+                    <option value="">{t('newTicket.notFoundIn')}</option>
+                    {pickableReleases(releases).map((release) => (
+                      <option key={release.id} value={release.id}>
+                        {release.name}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </>
+            )}
 
             <Select
               dense
@@ -563,6 +664,7 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
           )}
 
           <div className="hairline flex items-center justify-end gap-2 border-t px-5 py-3">
+            {context && <p className="mr-auto text-xs text-neutral-500">{context}</p>}
             <button type="button" onClick={onClose} className="btn btn-ghost">
               {t('common:cancel')}
             </button>

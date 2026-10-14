@@ -11,6 +11,7 @@ from typing import Optional
 
 from sqlmodel import Session, select
 
+from lib_softtrack.bug_details import ENVIRONMENT_LENGTH, MAX_ENVIRONMENTS
 from lib_softtrack.history import record_creation
 from lib_softtrack.ranks import top_rank
 from lib_softtrack.jira import JiraParseError, parse
@@ -23,9 +24,11 @@ from lib_softtrack.tables import (
     TicketLabelLink,
     Label,
     Project,
+    Release,
     Team,
     TeamMember,
     TeamRole,
+    TicketType,
     User,
 )
 from lib_softtrack.teams import get_team_or_404, require_team_member
@@ -141,6 +144,56 @@ def _project_for(
     return project
 
 
+def _release_for(
+    session: Session,
+    team_id: int,
+    name: str,
+    cache: dict[str, Release],
+    created: list[str],
+) -> Release:
+    """The team's release of this name (#272), made if it has none -- as a
+    label or an epic is. Matched as typed, as release names are."""
+    key = name.strip()
+    if key in cache:
+        return cache[key]
+    release = session.exec(
+        select(Release).where(Release.team_id == team_id, Release.name == key)
+    ).first()
+    if release is None:
+        release = Release(team_id=team_id, name=key)
+        session.add(release)
+        session.flush()
+        created.append(release.name)
+    cache[key] = release
+    return release
+
+
+def _environment_for(team: Team, raw: Optional[str], added: list[str]) -> Optional[str]:
+    """One of the team's environments for what Jira said (#273), added to
+    the team's list when it is new and short enough to be a name. Jira's
+    environment is free text, and a paragraph about a browser and an
+    operating system is not one: that is left out, and the report says so."""
+    name = (raw or "").strip()
+    if not name:
+        return None
+    for environment in team.environments or []:
+        if environment.casefold() == name.casefold():
+            return environment
+    if _too_long(name) or len(team.environments or []) >= MAX_ENVIRONMENTS:
+        return None
+    # A new list rather than an append, so the JSON column is seen to change.
+    team.environments = [*(team.environments or []), name]
+    added.append(name)
+    return name
+
+
+def _too_long(environment: Optional[str]) -> bool:
+    """Jira's environment is free text: more than a line, or longer than a
+    name, is a description rather than one of the team's environments."""
+    name = (environment or "").strip()
+    return len(name) > ENVIRONMENT_LENGTH or "\n" in name
+
+
 def import_export(
     session: Session,
     current_user: User,
@@ -202,6 +255,8 @@ def import_export(
         comments_created=0,
         labels_created=[],
         projects_created=[],
+        releases_created=[],
+        environments_added=[],
         users=user_report,
         unmapped_statuses=[],
         unmapped_priorities=[],
@@ -213,6 +268,7 @@ def import_export(
     unmapped_priorities: set[str] = set()
     label_cache: dict[str, Label] = {}
     project_cache: dict[str, Project] = {}
+    release_cache: dict[str, Release] = {}
     seen_keys: set[str] = set()
 
     for parsed_ticket in parsed:
@@ -240,6 +296,7 @@ def import_export(
             current_user,
             label_cache,
             project_cache,
+            release_cache,
             report,
         )
         report.tickets_created += 1
@@ -272,6 +329,7 @@ def _create_ticket(
     actor: User,
     label_cache: dict[str, Label],
     project_cache: dict[str, Project],
+    release_cache: dict[str, Release],
     report: ImportReport,
 ) -> Ticket:
     number = team.next_ticket_number
@@ -287,6 +345,27 @@ def _create_ticket(
     assignee = matched_users.get(parsed_ticket.assignee or "")
     if assignee is not None and assignee.id in guest_ids:
         assignee = None
+
+    def release(names: list[str]) -> Optional[Release]:
+        # One release a ticket: the first Jira names (#272).
+        return (
+            _release_for(
+                session, team.id, names[0], release_cache, report.releases_created
+            )
+            if names
+            else None
+        )
+
+    fix_version = release(parsed_ticket.fix_versions)
+    # A bug's details (#273) on a bug alone, as a person filing one is held to.
+    is_bug = parsed_ticket.type is TicketType.bug
+    found_in = release(parsed_ticket.affects_versions) if is_bug else None
+    environment = (
+        _environment_for(team, parsed_ticket.environment, report.environments_added)
+        if is_bug
+        else None
+    )
+
     # An unmatched reporter falls back to whoever ran the import, because
     # creator_id is not nullable and the alternative is refusing the whole
     # file over one departed colleague.
@@ -304,6 +383,10 @@ def _create_ticket(
         assignee_id=assignee.id if assignee else None,
         creator_id=creator.id,
         project_id=project.id if project else None,
+        fix_version_id=fix_version.id if fix_version else None,
+        severity=parsed_ticket.severity if is_bug else None,
+        environment=environment,
+        found_in_id=found_in.id if found_in else None,
         external_key=parsed_ticket.external_key,
         created_at=_aware(parsed_ticket.created_at),
         updated_at=_aware(parsed_ticket.updated_at or parsed_ticket.created_at),
@@ -397,6 +480,28 @@ def _warnings(
             f"{without_key} issue(s) have no Jira key, so re-running this "
             "import would create them again. Export with the 'Issue key' "
             "column to make the import repeatable."
+        )
+
+    several = sum(
+        1
+        for ticket in parsed
+        if len(ticket.fix_versions) > 1 or len(ticket.affects_versions) > 1
+    )
+    if several:
+        warnings.append(
+            f"{several} issue(s) name more than one version. A ticket ships in "
+            "one release and a bug is found in one, so the first is kept."
+        )
+
+    left_out = sum(
+        1
+        for ticket in parsed
+        if ticket.type is TicketType.bug and _too_long(ticket.environment)
+    )
+    if left_out:
+        warnings.append(
+            f"{left_out} bug(s) describe their environment at more length than "
+            "an environment's name, so it was left out. It is still in Jira."
         )
 
     if report.tickets_skipped_existing:

@@ -90,6 +90,10 @@ RESERVED_KEYS = frozenset(
         "time_estimate_hours",
         "time_logged_hours",
         "time_remaining_hours",
+        "fix_version",
+        "bug_severity",
+        "bug_environment",
+        "found_in",
     }
 )
 

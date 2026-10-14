@@ -20,6 +20,7 @@ from sqlalchemy import and_, false, func, not_, or_
 from sqlalchemy.sql.elements import ColumnElement
 from sqlmodel import select
 
+from lib_softtrack.bug_details import on_bugs
 from lib_softtrack.models.views import ViewFilters
 from lib_softtrack.statuses import RESOLVED, in_category
 from lib_softtrack.tables import (
@@ -46,6 +47,7 @@ WINDOW_DAYS = {
 _MISSING = {
     MissingField.epic: Ticket.project_id,
     MissingField.sprint: Ticket.sprint_id,
+    MissingField.fix_version: Ticket.fix_version_id,
 }
 
 
@@ -204,6 +206,17 @@ def filter_clauses(
         labels_clause(filters.label_id, filters.label_match, filters.label_exclude),
         one_of(Ticket.type, filters.type, filters.type_exclude),
         one_of(Ticket.creator_id, creators, filters.creator_exclude),
+        one_of(
+            Ticket.fix_version_id, filters.fix_version_id, filters.fix_version_exclude
+        ),
+        # A bug's details (#273), asked of bugs alone.
+        on_bugs(one_of(Ticket.severity, filters.severity, filters.severity_exclude)),
+        on_bugs(
+            one_of(Ticket.environment, filters.environment, filters.environment_exclude)
+        ),
+        on_bugs(
+            one_of(Ticket.found_in_id, filters.found_in_id, filters.found_in_exclude)
+        ),
     ]
     # "Me" with nobody looking is nobody: chosen alone, it matches nothing
     # (and excluded, everything, which `one_of` already says).

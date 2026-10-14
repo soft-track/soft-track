@@ -3,6 +3,11 @@ export const properties = {
   status: 'Status',
   priority: 'Priority',
   type: 'Type',
+  /** A bug's details (#273). */
+  severity: 'Severity',
+  noSeverity: 'Not rated',
+  environment: 'Environment',
+  noEnvironment: 'None',
   estimate: 'Estimate',
   notSized: 'Not sized',
   points_one: '{{count}} point',

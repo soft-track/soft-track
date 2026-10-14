@@ -1,8 +1,9 @@
 import { parseServerDate } from '@/api/dates'
 
-import type { SearchHit } from '@/api/generated/models'
+import type { SearchHit, TestCaseHit } from '@/api/generated/models'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { formatRelative } from '@/i18n/format'
+import { CaseStateChip } from '@/testcases/CaseDetail'
 import { PriorityIcon } from '@/tickets/PriorityIcon'
 import { Loading } from '@/ui/Loading'
 
@@ -22,11 +23,16 @@ export function SearchResults({
   total,
   isLoading,
   onOpen,
+  cases = [],
+  onOpenCase,
 }: {
   query: string
   hits: SearchHit[]
   total: number
   isLoading: boolean
+  /** Test cases the words find (#274), listed after the tickets. */
+  cases?: TestCaseHit[]
+  onOpenCase?: (hit: TestCaseHit) => void
   /**
    * Go to a result. The board's to do: a result opens the ticket's page
    * (#112), and the board keeps this search for when you come back.
@@ -39,7 +45,7 @@ export function SearchResults({
     return <Loading label={t('searching')} />
   }
 
-  if (hits.length === 0) {
+  if (hits.length === 0 && cases.length === 0) {
     return (
       <div className="glass flex h-full flex-col items-center justify-center gap-1 rounded-panel text-sm text-neutral-500">
         <p>
@@ -112,6 +118,33 @@ export function SearchResults({
           )
         })}
       </ul>
+
+      {cases.length > 0 && (
+        <section aria-labelledby="search-cases" className="hairline border-t">
+          <h2 id="search-cases" className="eyebrow px-4 pb-1 pt-3">
+            {t('testCases')}
+          </h2>
+          <ul className="divide-y divide-neutral-900/8">
+            {cases.map((hit) => (
+              <li key={hit.id}>
+                <button
+                  type="button"
+                  onClick={() => onOpenCase?.(hit)}
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-neutral-900/4 focus:outline-none focus-visible:bg-brand-500/10"
+                >
+                  <span className="identifier shrink-0 text-xs font-medium text-neutral-400">
+                    {hit.identifier}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-900">
+                    {hit.title}
+                  </span>
+                  <CaseStateChip state={hit.state} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   )
 }

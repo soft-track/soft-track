@@ -24,6 +24,7 @@ export interface TeamUpdate {
   estimate_unit?: EstimateUnit | null;
   capacity_points?: number | null;
   capacity_minutes_per_day?: number | null;
+  environments?: string[] | null;
   listed?: boolean | null;
   open_to_join?: boolean | null;
   archived?: boolean | null;

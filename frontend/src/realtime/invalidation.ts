@@ -35,6 +35,9 @@ export function invalidationFor(
           p === `${team}/sprints` ||
           p === `${team}/projects` ||
           p.startsWith('/projects/') ||
+          // A release's progress (#272) counts its tickets.
+          p === `${team}/releases` ||
+          p.startsWith('/releases/') ||
           // A sprint's plan (#269) counts what is assigned in it.
           (p.startsWith('/sprints/') && p.endsWith('/plan'))
         )

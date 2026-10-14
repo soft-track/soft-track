@@ -183,3 +183,30 @@ describe('interleave', () => {
     )
   })
 })
+
+describe('a release and a bug’s details in the history (#272, #273)', () => {
+  it('names the release a ticket ships in, and one deleted since', () => {
+    expect(eventText(event('fix_version', null, '4', { new_label: '1.4.0' }))).toBe(
+      'Automation set the fix version to 1.4.0',
+    )
+    expect(
+      eventText(event('fix_version', '4', '5', { old_label: '1.4.0', new_label: '1.5.0' })),
+    ).toBe('Automation moved this from 1.4.0 to 1.5.0')
+    expect(eventText(event('fix_version', '4', null))).toBe(
+      'Automation took this out of a deleted release',
+    )
+  })
+
+  it('says how bad, where, and found in which release', () => {
+    expect(eventText(event('severity', null, 'major'))).toBe('Automation rated this Major')
+    expect(eventText(event('severity', 'major', 'critical'))).toBe(
+      'Automation changed the severity from Major to Critical',
+    )
+    expect(eventText(event('environment', null, 'Staging'))).toBe(
+      'Automation said this happens in Staging',
+    )
+    expect(eventText(event('found_in', null, '3', { new_label: '1.3.2' }))).toBe(
+      'Automation said this was found in 1.3.2',
+    )
+  })
+})

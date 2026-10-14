@@ -19,6 +19,10 @@ export const filters = {
     created: 'Created',
     hasNo: 'Has no',
     watching: 'Watching',
+    release: 'Release',
+    severity: 'Severity',
+    environment: 'Environment',
+    foundIn: 'Found in',
   },
   /** The × beside each value in a chip: "Remove Mei Tanaka from the assignee filter". */
   removeValue: 'Remove {{value}} from the {{field}} filter',
@@ -35,6 +39,11 @@ export const filters = {
     label: 'Every ticket without these',
     type: 'Every type except these',
     creator: 'Everyone except these',
+    release: 'Every release except these',
+    // A bug's details (#273) narrow to bugs either way round.
+    severity: 'Every bug except these',
+    environment: 'Every bug except these',
+    foundIn: 'Every bug except these',
   },
   /** The label filter's second question. */
   labelMatch: {
@@ -57,6 +66,10 @@ export const filters = {
     created: 'Any time',
     hasNo: 'Anything',
     watching: 'Watched or not',
+    release: 'Any release',
+    severity: 'Any severity',
+    environment: 'Any environment',
+    foundIn: 'Found in any release',
   },
   unassigned: 'Unassigned',
   /** "Me" as a value of the assignee and created-by filters (#261): whoever is looking. */
@@ -90,6 +103,7 @@ export const filters = {
     estimate: 'estimate',
     epic: 'epic',
     sprint: 'sprint',
+    fix_version: 'release',
   },
   /** The watching filter's one box, and its chip: "Watched by me". */
   watching: {
@@ -105,6 +119,7 @@ export const filters = {
     project: 'Deleted epic',
     sprint: 'Deleted sprint',
     creator: 'Someone else',
+    release: 'Deleted release',
   },
   /** A saved view with no filters, in the sidebar. */
   allTickets: 'All tickets',

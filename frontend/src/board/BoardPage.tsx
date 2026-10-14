@@ -62,6 +62,10 @@ import { RoadmapView } from '@/projects/RoadmapView'
 import { useTeamEvents } from '@/realtime/useTeamEvents'
 import { ReportsView } from '@/reports/ReportsView'
 import { PlanView } from '@/sprints/PlanView'
+import { ReleasesView } from '@/releases/ReleasesView'
+import { TestsTab } from '@/testcases/TestsTab'
+import { CaseDialog } from '@/testcases/TicketTestCases'
+import { useSearchCasesTestCasesSearchGet } from '@/api/generated/endpoints/test-cases/test-cases'
 import { SearchResults } from '@/search/SearchResults'
 import { useDebounced } from '@/search/useDebounced'
 import { rememberTeam } from '@/team/lastTeam'
@@ -99,6 +103,10 @@ function boardReturnFrom(state: unknown): BoardReturn | null {
 /** What the server says of a ticket that is not there (404), or is in the trash (410, #323). */
 const GONE = [404, 410]
 
+/** The views an account from outside the organisation (#243) does not have:
+ *  the team's reports and plans, its releases and how it tests (#272, #274). */
+const INSIDERS_ONLY: readonly BoardView[] = ['reports', 'plan', 'releases', 'tests']
+
 export default function BoardPage() {
   const { teamKey, ticketNumber, projectId } = useParams<{
     teamKey: string
@@ -120,7 +128,9 @@ export default function BoardPage() {
   // The team's reports are not for somebody from outside the organisation
   // (#243), who sees only the epics they were given.
   const setView = (next: BoardView) =>
-    setBoardView(user?.is_external && (next === 'reports' || next === 'plan') ? 'board' : next)
+    setBoardView(
+      user?.is_external && INSIDERS_ONLY.includes(next) ? 'board' : next,
+    )
   const [search, setSearch] = useState(returning?.search ?? '')
   // The sidebar is a drawer below the `lg` breakpoint.
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -277,6 +287,12 @@ export default function BoardPage() {
   const searchResults = useSearchSearchGet(searchRequest, {
     query: { enabled: Boolean(team) && searchQuery.length > 0 },
   })
+  // The test cases the same words find (#274), for somebody inside (#317).
+  const caseHits = useSearchCasesTestCasesSearchGet(
+    { q: searchQuery || 'x', team_id: team?.id },
+    { query: { enabled: Boolean(team) && searchQuery.length > 0 && !user?.is_external } },
+  )
+  const [openCaseId, setOpenCaseId] = useState<number | null>(null)
 
   // A guest (#104) is offered nothing that writes, and nobody is on an
   // archived team (#322). The server refuses them regardless; this only
@@ -543,13 +559,17 @@ export default function BoardPage() {
             )}
             <PeekContext.Provider value={peek}>
               <div className="min-h-0 flex-1">
-                {searchQuery ? (
+                {/* The releases and tests tabs have no search: they are not
+                    lists of tickets. */}
+                {searchQuery && view !== 'releases' && view !== 'tests' ? (
                   <SearchResults
                     query={searchQuery}
                     hits={searchResults.data?.items ?? []}
                     total={searchResults.data?.total ?? 0}
                     isLoading={searchResults.isLoading}
                     onOpen={leaveForTicket}
+                    cases={caseHits.data ?? []}
+                    onOpenCase={(hit) => setOpenCaseId(hit.id)}
                   />
                 ) : !filtersAreSettled || ticketsQuery.isLoading ? (
                   <Loading label={t('page.loadingTickets')} />
@@ -561,13 +581,17 @@ export default function BoardPage() {
                   <ReportsView />
                 ) : view === 'plan' ? (
                   <PlanView />
+                ) : view === 'releases' ? (
+                  <ReleasesView />
+                ) : view === 'tests' ? (
+                  <TestsTab />
                 ) : view === 'board' ? (
                   <KanbanBoard
                     tickets={tickets}
                     grouping={grouping}
                     onStatusChange={changeStatus}
                     onMove={moveTicket}
-                    onProjectChange={(ids, projectId) => bulk.update(ids, { project_id: projectId })}
+                    onGroupChange={(ids, changes) => bulk.update(ids, changes)}
                     estimates={teamData.estimates}
                     selectedIds={selection.ids}
                     onSelect={canWrite ? selectTicket : undefined}
@@ -593,6 +617,9 @@ export default function BoardPage() {
         (view === 'board' || view === 'list') &&
         projectPageId === null && (
         <BulkActionBar selectedIds={selection.ids} bulk={bulk} onClear={clearSelection} />
+      )}
+      {openCaseId !== null && (
+        <CaseDialog caseId={openCaseId} onClose={() => setOpenCaseId(null)} />
       )}
       {overlays.isOpen('palette') && (
         <CommandPalette

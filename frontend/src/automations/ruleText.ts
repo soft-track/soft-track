@@ -5,6 +5,7 @@ import type {
   TicketPriority,
   LabelRead,
   ProjectRead,
+  ReleaseRead,
   RuleActions,
   RuleConditions,
   StatusRead,
@@ -67,6 +68,8 @@ export type RuleVocabulary = {
   projects: ProjectRead[]
   members: TeamMemberRead[]
   sprints: SprintRead[]
+  /** The team's releases (#272); a team with none is offered none. */
+  releases?: ReleaseRead[]
 }
 
 function statusName(vocabulary: RuleVocabulary, id: number): string {
@@ -94,6 +97,13 @@ function personName(vocabulary: RuleVocabulary, id: number): string {
   return (
     vocabulary.members.find((m) => m.user.id === id)?.user.full_name ??
     i18n.t('automations:missing.person')
+  )
+}
+
+function releaseName(vocabulary: RuleVocabulary, id: number): string {
+  return (
+    (vocabulary.releases ?? []).find((release) => release.id === id)?.name ??
+    i18n.t('automations:missing.release')
   )
 }
 
@@ -197,6 +207,13 @@ export function describeActions(
     clauses.push(
       i18n.t('automations:action.moveToSprint', {
         sprint: sprintName(vocabulary, actions.set_sprint_id),
+      }),
+    )
+  }
+  if (actions.set_fix_version_id != null) {
+    clauses.push(
+      i18n.t('automations:action.setFixVersion', {
+        release: releaseName(vocabulary, actions.set_fix_version_id),
       }),
     )
   }

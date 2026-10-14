@@ -21,6 +21,12 @@ export const imports = {
     labels_other: '<n>{{count}}</n> new labels',
     projects_one: '<n>{{count}}</n> epic',
     projects_other: '<n>{{count}}</n> epics',
+    // Made of the versions the issues name (#272, #273).
+    releases_one: '<n>{{count}}</n> release',
+    releases_other: '<n>{{count}}</n> releases',
+    // Added to the team's list of where bugs are found (#273).
+    environments_one: '<n>{{count}}</n> new environment',
+    environments_other: '<n>{{count}}</n> new environments',
     // What was created, by name, after the count.
     names: '— {{names}}',
     unmatchedTitle: 'Not members of this team',

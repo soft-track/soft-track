@@ -711,11 +711,12 @@ function field(id: number, name: string, key: string, extra: Partial<CustomField
 
 describe('NewTicketModal with the team’s own fields (#117)', () => {
   const QA = field(1, 'QA assignee', 'qa_assignee', { required: true })
-  const ENVIRONMENT = field(2, 'Environment', 'environment', {
+  // A bug's own field: not its environment, which is built in now (#273).
+  const BROWSER = field(2, 'Browser', 'browser', {
     kind: 'select',
     options: [
-      { id: 'production', name: 'production' },
-      { id: 'staging', name: 'staging' },
+      { id: 'chrome', name: 'chrome' },
+      { id: 'safari', name: 'safari' },
     ],
     applies_to: ['bug'],
   })
@@ -725,18 +726,18 @@ describe('NewTicketModal with the team’s own fields (#117)', () => {
   })
 
   beforeEach(() => {
-    customFields.data = [QA, ENVIRONMENT, RETIRED]
+    customFields.data = [QA, BROWSER, RETIRED]
   })
 
   it('offers the fields this type of ticket has, never an archived one', async () => {
     const { user } = renderModal()
     expect(screen.getByText('Engineering fields')).toBeTruthy()
     expect(optionsOf('QA assignee')).toEqual(['QA assignee *', 'Ada Lovelace', 'Grace Hopper'])
-    expect(screen.queryByRole('combobox', { name: 'Environment' })).toBeNull()
+    expect(screen.queryByRole('combobox', { name: 'Browser' })).toBeNull()
     expect(screen.queryByRole('textbox', { name: 'Root cause' })).toBeNull()
 
     await user.selectOptions(screen.getByRole('combobox', { name: 'Type' }), 'bug')
-    expect(optionsOf('Environment')).toEqual(['Environment', 'production', 'staging'])
+    expect(optionsOf('Browser')).toEqual(['Browser', 'chrome', 'safari'])
   })
 
   it('names a required field left empty, and does not send the ticket', async () => {
@@ -761,8 +762,8 @@ describe('NewTicketModal with the team’s own fields (#117)', () => {
     const { user } = renderModal()
     await user.type(screen.getByRole('textbox', { name: 'Ticket title' }), 'Export drops a row')
     await user.selectOptions(screen.getByRole('combobox', { name: 'Type' }), 'bug')
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Environment' }), 'staging')
-    // Back to a task: Environment is not a task field, so it is not sent.
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Browser' }), 'safari')
+    // Back to a task: Browser is not a task field, so it is not sent.
     await user.selectOptions(screen.getByRole('combobox', { name: 'Type' }), 'task')
     await user.selectOptions(screen.getByRole('combobox', { name: 'QA assignee' }), 'Ada Lovelace')
     await user.click(screen.getByRole('button', { name: 'Create ticket' }))

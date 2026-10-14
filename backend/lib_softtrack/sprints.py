@@ -43,6 +43,7 @@ from lib_softtrack.tables import (
     SprintCapacity,
     SprintState,
     Team,
+    TestRun,
     Ticket,
     StatusCategory,
     User,
@@ -541,6 +542,10 @@ def delete_sprint(session: Session, current_user: User, sprint_id: int) -> None:
     # Saved views hold one too. A view left filtering on a sprint that no
     # longer exists matches nothing, which reads as broken rather than empty.
     views_service.clear_sprint(session, sprint_id)
+    # And the test runs for it (#275), which stay, for no sprint.
+    from lib_softtrack import runs as runs_service
+
+    runs_service.forget(session, TestRun.sprint_id, sprint_id)
     # And the capacities set for it (#269), which mean nothing without it.
     session.exec(delete(SprintCapacity).where(SprintCapacity.sprint_id == sprint_id))
     # And any rule that moved work into it, which is switched off rather than

@@ -1,13 +1,15 @@
 import { format, parseISO } from 'date-fns'
 import { Link } from 'react-router-dom'
 
-import type { ProjectRead } from '@/api/generated/models'
+import type { ProjectRead, ReleaseRead } from '@/api/generated/models'
 import { useTranslation } from '@/i18n'
 import { formatDate } from '@/i18n/format'
-import { isOverdue, roadmapSections } from '@/projects/roadmap'
+import { isOverdue, releaseDay, roadmapSections } from '@/projects/roadmap'
+import { releaseStateMeta } from '@/releases/releases'
 import { progressLabel, progressRatio, stateMeta } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Avatar } from '@/ui/Avatar'
+import { Icon } from '@/ui/Icon'
 
 /**
  * The team's projects against their target dates (issue #62).
@@ -18,8 +20,8 @@ import { Avatar } from '@/ui/Avatar'
  */
 export function RoadmapView({ today = format(new Date(), 'yyyy-MM-dd') }: { today?: string }) {
   const { t } = useTranslation(['projects', 'common'])
-  const { team, projects } = useTeamContext()
-  const sections = roadmapSections(projects, today)
+  const { team, projects, releases = [] } = useTeamContext()
+  const sections = roadmapSections(projects, today, releases)
   const undated = sections.find((section) => section.key === 'undated')
 
   if (sections.length === 0) {
@@ -53,6 +55,10 @@ export function RoadmapView({ today = format(new Date(), 'yyyy-MM-dd') }: { toda
               )}
             </h2>
             <ul className="divide-y divide-neutral-900/8 rounded-card border border-neutral-900/8">
+              {/* The month's releases first (#272): what ships, then what lands. */}
+              {section.releases.map((release) => (
+                <ReleaseMarker key={`release-${release.id}`} release={release} />
+              ))}
               {section.projects.map((project) => (
                 <RoadmapRow key={project.id} project={project} today={today} />
               ))}
@@ -61,6 +67,31 @@ export function RoadmapView({ today = format(new Date(), 'yyyy-MM-dd') }: { toda
         ))}
       </div>
     </div>
+  )
+}
+
+/** A release, marked on its day (#272): "1.4.0 · 15 Oct". */
+function ReleaseMarker({ release }: { release: ReleaseRead }) {
+  const { t } = useTranslation('releases')
+  const day = formatDate(parseISO(releaseDay(release)!), t('roadmap.datePattern'))
+  const state = releaseStateMeta(release.state)
+  return (
+    <li
+      aria-label={
+        release.released_on
+          ? t('roadmap.label_released', { name: release.name, date: day })
+          : t('roadmap.label_planned', { name: release.name, date: day })
+      }
+      className="flex items-center gap-2 bg-brand-500/[0.04] px-3 py-2 text-sm"
+    >
+      <Icon name="flag" size={13} style={{ color: state.colour }} />
+      <span className="identifier min-w-0 flex-1 truncate font-semibold text-brand-700">
+        {t('roadmap.marker', { name: release.name, date: day })}
+      </span>
+      <span className="chip hidden sm:inline-flex" style={{ ['--chip' as string]: state.colour }}>
+        {state.label}
+      </span>
+    </li>
   )
 }
 

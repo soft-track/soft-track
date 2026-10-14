@@ -1,5 +1,11 @@
 import { TicketPriority, StatusCategory } from '@/api/generated/models'
-import type { TicketType, TicketUpdateEstimate, StatusRead } from '@/api/generated/models'
+import type {
+  StatusRead,
+  TicketRead,
+  TicketSeverity,
+  TicketType,
+  TicketUpdateEstimate,
+} from '@/api/generated/models'
 import { i18n } from '@/i18n'
 import type { IconName } from '@/ui/Icon'
 
@@ -103,6 +109,38 @@ function priority(key: TicketPriority, color: string) {
       return i18n.t(`tickets:meta.priority.${key}`)
     },
   }
+}
+
+/**
+ * How bad a bug is (#273), worst first: separate from priority, which says
+ * how soon. The colours run the priority ramp, hot to cold; every place a
+ * severity shows also names it, so colour is never the only cue.
+ */
+export const SEVERITY_ORDER: TicketSeverity[] = ['critical', 'major', 'minor', 'trivial']
+
+export const SEVERITY_META: Record<TicketSeverity, { readonly label: string; color: string }> = {
+  critical: severity('critical', 'var(--color-priority-urgent)'),
+  major: severity('major', 'var(--color-priority-high)'),
+  minor: severity('minor', 'var(--color-priority-medium)'),
+  trivial: severity('trivial', 'var(--color-priority-none)'),
+}
+
+function severity(key: TicketSeverity, color: string) {
+  return {
+    color,
+    get label() {
+      return i18n.t(`tickets:meta.severity.${key}`)
+    },
+  }
+}
+
+/**
+ * A ticket's severity as anything shows it: a bug's, and nothing for a
+ * ticket of another type, which keeps the value it had as a bug unshown
+ * until it is a bug again (#273).
+ */
+export function severityOf(ticket: Pick<TicketRead, 'type' | 'severity'>): TicketSeverity | null {
+  return ticket.type === 'bug' ? (ticket.severity ?? null) : null
 }
 
 /**

@@ -8,6 +8,7 @@ import {
 import type { TicketRead, TicketUpdate } from '@/api/generated/models'
 import { toggleTaskAtOffset } from '@/markdown/tasks'
 import { activeMembers } from '@/team/members'
+import { invalidateReleases } from '@/releases/releases'
 import { invalidateProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
 
@@ -54,6 +55,8 @@ export function useTicketEditor(ticketId: number) {
     queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/sprints`] })
     // And project progress whenever its status or project does.
     invalidateProjects(queryClient, team.id)
+    // And a release's, whenever its status, fix version or points do (#272).
+    invalidateReleases(queryClient, team.id)
   }
 
   const saveTitle = () => {

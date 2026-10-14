@@ -3,7 +3,12 @@ export const save = {
   titleNew: 'Save this view',
   titleEdit: 'Edit view',
   // Facets of the summary line, each shown after the filters with a " · ".
-  grouped: 'grouped by epic',
+  grouped: {
+    project: 'grouped by epic',
+    release: 'grouped by release',
+    severity: 'grouped by severity',
+    environment: 'grouped by environment',
+  },
   sorted: {
     created: { asc: 'sorted by created, ascending', desc: 'sorted by created, descending' },
     updated: { asc: 'sorted by updated, ascending', desc: 'sorted by updated, descending' },
@@ -11,6 +16,7 @@ export const save = {
     estimate: { asc: 'sorted by estimate, ascending', desc: 'sorted by estimate, descending' },
     title: { asc: 'sorted by title, ascending', desc: 'sorted by title, descending' },
     rank: { asc: 'sorted by rank, ascending', desc: 'sorted by rank, descending' },
+    severity: { asc: 'sorted by severity, least first', desc: 'sorted by severity, worst first' },
   },
   name: 'Name',
   namePlaceholder: 'Urgent bugs',

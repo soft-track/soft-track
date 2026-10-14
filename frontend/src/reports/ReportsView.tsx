@@ -5,6 +5,7 @@ import {
   useSprintTimeSpentSprintsSprintIdTimeSpentGet,
   useTeamCreatedVsResolvedTeamsTeamIdCreatedVsResolvedGet,
   useTeamCumulativeFlowTeamsTeamIdCumulativeFlowGet,
+  useTeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet,
   useTeamTimeSpentTeamsTeamIdTimeSpentGet,
   useTeamVelocityTeamsTeamIdVelocityGet,
 } from '@/api/generated/endpoints/reports/reports'
@@ -12,6 +13,7 @@ import { useTranslation } from '@/i18n'
 import { BurndownChart } from '@/reports/BurndownChart'
 import { CreatedResolvedChart } from '@/reports/CreatedResolvedChart'
 import { FlowChart } from '@/reports/FlowChart'
+import { OpenBugsChart } from '@/reports/OpenBugsChart'
 import { stageLimits } from '@/reports/stageLimits'
 import { TimeSpentChart } from '@/reports/TimeSpentChart'
 import { VelocityChart } from '@/reports/VelocityChart'
@@ -49,6 +51,10 @@ export function ReportsView() {
     team.id,
     { days },
   )
+  // Open bugs by severity (#273), week by week over about the window.
+  const openBugs = useTeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet(team.id, {
+    weeks: Math.max(2, Math.ceil(days / 7)),
+  })
   // Time spent (#102): in the chosen sprint, and over the chosen window.
   const sprintTime = useSprintTimeSpentSprintsSprintIdTimeSpentGet(selected?.id ?? 0, {
     query: { enabled: Boolean(selected) },
@@ -124,6 +130,7 @@ export function ReportsView() {
         {velocity.data && <VelocityChart data={velocity.data} />}
         {flow.data && <FlowChart data={flow.data} limits={stageLimits(statuses)} />}
         {createdResolved.data && <CreatedResolvedChart data={createdResolved.data} />}
+        {openBugs.data && <OpenBugsChart data={openBugs.data} />}
         {selected && sprintTime.data && (
           <TimeSpentChart
             title={t('view.sprintTime.title', { sprint: selected.display_name })}

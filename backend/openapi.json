@@ -4624,11 +4624,119 @@
               "items": {
                 "$ref": "#/components/schemas/MissingField"
               },
-              "description": "Only tickets with no estimate, no epic or no sprint.",
+              "description": "Only tickets with no estimate, no epic, no sprint or no release.",
               "default": [],
               "title": "Has No"
             },
-            "description": "Only tickets with no estimate, no epic or no sprint."
+            "description": "Only tickets with no estimate, no epic, no sprint or no release."
+          },
+          {
+            "name": "fix_version_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets shipping in one of these releases (#272).",
+              "default": [],
+              "title": "Fix Version Id"
+            },
+            "description": "Only tickets shipping in one of these releases (#272)."
+          },
+          {
+            "name": "fix_version_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Fix Version Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TicketSeverity"
+              },
+              "description": "Only bugs of one of these severities (#273).",
+              "default": [],
+              "title": "Severity"
+            },
+            "description": "Only bugs of one of these severities (#273)."
+          },
+          {
+            "name": "severity_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every bug except those the filter matches.",
+              "default": false,
+              "title": "Severity Exclude"
+            },
+            "description": "Every bug except those the filter matches."
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Only bugs found in one of these environments.",
+              "default": [],
+              "title": "Environment"
+            },
+            "description": "Only bugs found in one of these environments."
+          },
+          {
+            "name": "environment_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every bug except those the filter matches.",
+              "default": false,
+              "title": "Environment Exclude"
+            },
+            "description": "Every bug except those the filter matches."
+          },
+          {
+            "name": "found_in_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only bugs found in one of these releases.",
+              "default": [],
+              "title": "Found In Id"
+            },
+            "description": "Only bugs found in one of these releases."
+          },
+          {
+            "name": "found_in_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every bug except those the filter matches.",
+              "default": false,
+              "title": "Found In Exclude"
+            },
+            "description": "Every bug except those the filter matches."
           }
         ],
         "responses": {
@@ -5224,11 +5332,119 @@
               "items": {
                 "$ref": "#/components/schemas/MissingField"
               },
-              "description": "Only tickets with no estimate, no epic or no sprint.",
+              "description": "Only tickets with no estimate, no epic, no sprint or no release.",
               "default": [],
               "title": "Has No"
             },
-            "description": "Only tickets with no estimate, no epic or no sprint."
+            "description": "Only tickets with no estimate, no epic, no sprint or no release."
+          },
+          {
+            "name": "fix_version_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets shipping in one of these releases (#272).",
+              "default": [],
+              "title": "Fix Version Id"
+            },
+            "description": "Only tickets shipping in one of these releases (#272)."
+          },
+          {
+            "name": "fix_version_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Fix Version Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TicketSeverity"
+              },
+              "description": "Only bugs of one of these severities (#273).",
+              "default": [],
+              "title": "Severity"
+            },
+            "description": "Only bugs of one of these severities (#273)."
+          },
+          {
+            "name": "severity_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every bug except those the filter matches.",
+              "default": false,
+              "title": "Severity Exclude"
+            },
+            "description": "Every bug except those the filter matches."
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Only bugs found in one of these environments.",
+              "default": [],
+              "title": "Environment"
+            },
+            "description": "Only bugs found in one of these environments."
+          },
+          {
+            "name": "environment_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every bug except those the filter matches.",
+              "default": false,
+              "title": "Environment Exclude"
+            },
+            "description": "Every bug except those the filter matches."
+          },
+          {
+            "name": "found_in_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only bugs found in one of these releases.",
+              "default": [],
+              "title": "Found In Id"
+            },
+            "description": "Only bugs found in one of these releases."
+          },
+          {
+            "name": "found_in_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every bug except those the filter matches.",
+              "default": false,
+              "title": "Found In Exclude"
+            },
+            "description": "Every bug except those the filter matches."
           }
         ],
         "responses": {
@@ -7056,6 +7272,1948 @@
         }
       }
     },
+    "/teams/{team_id}/releases": {
+      "get": {
+        "tags": [
+          "releases"
+        ],
+        "summary": "List Releases",
+        "description": "The versions a team ships (#272): planned, then released, then\narchived, newest first in each.",
+        "operationId": "list_releases_teams__team_id__releases_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReleaseRead"
+                  },
+                  "title": "Response List Releases Teams  Team Id  Releases Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "releases"
+        ],
+        "summary": "Create Release",
+        "operationId": "create_release_teams__team_id__releases_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/releases/{release_id}": {
+      "get": {
+        "tags": [
+          "releases"
+        ],
+        "summary": "Get Release",
+        "operationId": "get_release_releases__release_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "release_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Release Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "releases"
+        ],
+        "summary": "Update Release",
+        "operationId": "update_release_releases__release_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "release_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Release Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "releases"
+        ],
+        "summary": "Delete Release",
+        "operationId": "delete_release_releases__release_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "release_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Release Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/releases/{release_id}/release": {
+      "post": {
+        "tags": [
+          "releases"
+        ],
+        "summary": "Release Release",
+        "description": "Release it: set the day it shipped, and move the tickets that are not\ndone to another planned release or leave them without one.",
+        "operationId": "release_release_releases__release_id__release_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "release_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Release Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ReleaseRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/releases/{release_id}/notes": {
+      "get": {
+        "tags": [
+          "releases"
+        ],
+        "summary": "Release Notes",
+        "description": "A draft of the release notes in markdown, from the done tickets.",
+        "operationId": "release_notes_releases__release_id__notes_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "release_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Release Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseNotes"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/test-folders": {
+      "get": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "List Folders",
+        "description": "A team's folders of test cases (#274), by name, with how many cases\nthat are not retired each holds.",
+        "operationId": "list_folders_teams__team_id__test_folders_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TestFolderRead"
+                  },
+                  "title": "Response List Folders Teams  Team Id  Test Folders Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Create Folder",
+        "operationId": "create_folder_teams__team_id__test_folders_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestFolderCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestFolderRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-folders/{folder_id}": {
+      "patch": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Rename Folder",
+        "operationId": "rename_folder_test_folders__folder_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "folder_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Folder Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestFolderUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestFolderRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Delete Folder",
+        "description": "Delete a folder. Its cases are kept, in no folder.",
+        "operationId": "delete_folder_test_folders__folder_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "folder_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Folder Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/test-cases": {
+      "get": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "List Cases",
+        "description": "A team's test cases, by number: at most 500 of them.",
+        "operationId": "list_cases_teams__team_id__test_cases_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "folder_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only the cases in this folder.",
+              "title": "Folder Id"
+            },
+            "description": "Only the cases in this folder."
+          },
+          {
+            "name": "no_folder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only the cases in no folder.",
+              "default": false,
+              "title": "No Folder"
+            },
+            "description": "Only the cases in no folder."
+          },
+          {
+            "name": "label_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only cases with this label.",
+              "title": "Label Id"
+            },
+            "description": "Only cases with this label."
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/TestCaseState"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only cases in this state.",
+              "title": "State"
+            },
+            "description": "Only cases in this state."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Words in the key, title, preconditions or steps.",
+              "title": "Q"
+            },
+            "description": "Words in the key, title, preconditions or steps."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TestCaseRead"
+                  },
+                  "title": "Response List Cases Teams  Team Id  Test Cases Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Create Case",
+        "operationId": "create_case_teams__team_id__test_cases_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestCaseCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestCaseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/test-cases/export": {
+      "get": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Export Cases",
+        "description": "Every test case on the team, as CSV: the shape an import reads back.",
+        "operationId": "export_cases_teams__team_id__test_cases_export_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/test-cases/import": {
+      "post": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Import Cases",
+        "description": "Make test cases of a CSV, a case a row. A dry run by default.",
+        "operationId": "import_cases_teams__team_id__test_cases_import_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_cases_teams__team_id__test_cases_import_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestCaseImport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-cases/search": {
+      "get": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Search Cases",
+        "description": "Test cases on the caller's teams that the words find (#274).",
+        "operationId": "search_cases_test_cases_search_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The words to look for.",
+              "title": "Q"
+            },
+            "description": "The words to look for."
+          },
+          {
+            "name": "team_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only this team's cases.",
+              "title": "Team Id"
+            },
+            "description": "Only this team's cases."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TestCaseHit"
+                  },
+                  "title": "Response Search Cases Test Cases Search Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-cases/{case_id}": {
+      "get": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Get Case",
+        "operationId": "get_case_test_cases__case_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestCaseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Update Case",
+        "description": "Change a case. A change to its title, preconditions or steps is a new\nversion, kept with who made it.",
+        "operationId": "update_case_test_cases__case_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestCaseUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestCaseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Delete Case",
+        "operationId": "delete_case_test_cases__case_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-cases/{case_id}/versions": {
+      "get": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "List Versions",
+        "description": "Every version of a case's text, newest first.",
+        "operationId": "list_versions_test_cases__case_id__versions_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TestCaseVersionRead"
+                  },
+                  "title": "Response List Versions Test Cases  Case Id  Versions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-cases/{case_id}/tickets": {
+      "post": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Cover",
+        "description": "Say the case covers a ticket on its team: a story, usually.",
+        "operationId": "cover_test_cases__case_id__tickets_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestCaseCover"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestCaseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-cases/{case_id}/tickets/{ticket_id}": {
+      "delete": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Uncover",
+        "operationId": "uncover_test_cases__case_id__tickets__ticket_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tickets/{ticket_id}/test-cases": {
+      "get": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Ticket Cases",
+        "description": "The cases that cover a ticket, and whether its team keeps any.",
+        "operationId": "ticket_cases_tickets__ticket_id__test_cases_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketTestCases"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/test-runs": {
+      "get": {
+        "tags": [
+          "test runs"
+        ],
+        "summary": "List Runs",
+        "description": "A team's test runs (#275), newest first, each with its tally.",
+        "operationId": "list_runs_teams__team_id__test_runs_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "release_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only runs for this release.",
+              "title": "Release Id"
+            },
+            "description": "Only runs for this release."
+          },
+          {
+            "name": "sprint_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only runs for this sprint.",
+              "title": "Sprint Id"
+            },
+            "description": "Only runs for this sprint."
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only runs for this epic.",
+              "title": "Project Id"
+            },
+            "description": "Only runs for this epic."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TestRunRead"
+                  },
+                  "title": "Response List Runs Teams  Team Id  Test Runs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "test runs"
+        ],
+        "summary": "Create Run",
+        "description": "A run of a folder's cases, a label's, those picked, or all three.",
+        "operationId": "create_run_teams__team_id__test_runs_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestRunCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestRunDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-runs/{run_id}": {
+      "get": {
+        "tags": [
+          "test runs"
+        ],
+        "summary": "Get Run",
+        "operationId": "get_run_test_runs__run_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestRunDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "test runs"
+        ],
+        "summary": "Update Run",
+        "operationId": "update_run_test_runs__run_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestRunUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestRunDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "test runs"
+        ],
+        "summary": "Delete Run",
+        "description": "Delete an open run made by mistake. A closed one is history.",
+        "operationId": "delete_run_test_runs__run_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-runs/{run_id}/close": {
+      "post": {
+        "tags": [
+          "test runs"
+        ],
+        "summary": "Close Run",
+        "description": "Close the run: its results are fixed. Testing again is a new run.",
+        "operationId": "close_run_test_runs__run_id__close_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestRunDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-run-cases/{run_case_id}": {
+      "patch": {
+        "tags": [
+          "test runs"
+        ],
+        "summary": "Update Run Case",
+        "description": "A case's result in a run -- passed, failed, blocked or skipped, with a\nnote and the step that failed -- or who is to run it.",
+        "operationId": "update_run_case_test_run_cases__run_case_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestRunCaseUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestRunCaseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-run-cases/{run_case_id}/bug": {
+      "post": {
+        "tags": [
+          "test runs"
+        ],
+        "summary": "Raise Bug",
+        "description": "Raise a bug from a failure: the ticket, linked to the stories the case\ncovers, and the result linked to it.",
+        "operationId": "raise_bug_test_run_cases__run_case_id__bug_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-run-cases/{run_case_id}/files": {
+      "post": {
+        "tags": [
+          "test runs"
+        ],
+        "summary": "Add File",
+        "description": "A file with a result: the screenshot of what happened.",
+        "operationId": "add_file_test_run_cases__run_case_id__files_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_add_file_test_run_cases__run_case_id__files_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestResultFileRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-result-files/{result_file_id}/content": {
+      "get": {
+        "tags": [
+          "test runs"
+        ],
+        "summary": "Download File",
+        "description": "The bytes, served as a ticket's attachments are.",
+        "operationId": "download_file_test_result_files__result_file_id__content_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "result_file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Result File Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-result-files/{result_file_id}": {
+      "delete": {
+        "tags": [
+          "test runs"
+        ],
+        "summary": "Delete File",
+        "operationId": "delete_file_test_result_files__result_file_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "result_file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Result File Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-cases/{case_id}/runs": {
+      "get": {
+        "tags": [
+          "test runs"
+        ],
+        "summary": "Case Runs",
+        "description": "Every run a case has been in, newest first, with the version each ran.",
+        "operationId": "case_runs_test_cases__case_id__runs_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CaseRun"
+                  },
+                  "title": "Response Case Runs Test Cases  Case Id  Runs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sprints/{sprint_id}/burndown": {
       "get": {
         "tags": [
@@ -7317,6 +9475,66 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreatedVsResolved"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/open-bugs-by-severity": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Team Open Bugs By Severity",
+        "description": "The bugs open at the end of each week, by severity (#273).",
+        "operationId": "team_open_bugs_by_severity_teams__team_id__open_bugs_by_severity_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "weeks",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 52,
+              "minimum": 1,
+              "default": 8,
+              "title": "Weeks"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenBugsBySeverity"
                 }
               }
             }
@@ -7982,11 +10200,119 @@
               "items": {
                 "$ref": "#/components/schemas/MissingField"
               },
-              "description": "Only tickets with no estimate, no epic or no sprint.",
+              "description": "Only tickets with no estimate, no epic, no sprint or no release.",
               "default": [],
               "title": "Has No"
             },
-            "description": "Only tickets with no estimate, no epic or no sprint."
+            "description": "Only tickets with no estimate, no epic, no sprint or no release."
+          },
+          {
+            "name": "fix_version_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets shipping in one of these releases (#272).",
+              "default": [],
+              "title": "Fix Version Id"
+            },
+            "description": "Only tickets shipping in one of these releases (#272)."
+          },
+          {
+            "name": "fix_version_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Fix Version Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TicketSeverity"
+              },
+              "description": "Only bugs of one of these severities (#273).",
+              "default": [],
+              "title": "Severity"
+            },
+            "description": "Only bugs of one of these severities (#273)."
+          },
+          {
+            "name": "severity_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every bug except those the filter matches.",
+              "default": false,
+              "title": "Severity Exclude"
+            },
+            "description": "Every bug except those the filter matches."
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Only bugs found in one of these environments.",
+              "default": [],
+              "title": "Environment"
+            },
+            "description": "Only bugs found in one of these environments."
+          },
+          {
+            "name": "environment_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every bug except those the filter matches.",
+              "default": false,
+              "title": "Environment Exclude"
+            },
+            "description": "Every bug except those the filter matches."
+          },
+          {
+            "name": "found_in_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only bugs found in one of these releases.",
+              "default": [],
+              "title": "Found In Id"
+            },
+            "description": "Only bugs found in one of these releases."
+          },
+          {
+            "name": "found_in_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every bug except those the filter matches.",
+              "default": false,
+              "title": "Found In Exclude"
+            },
+            "description": "Every bug except those the filter matches."
           }
         ],
         "responses": {
@@ -15876,6 +18202,21 @@
         ],
         "title": "BatchTotal"
       },
+      "Body_add_file_test_run_cases__run_case_id__files_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "The file, with the result."
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_add_file_test_run_cases__run_case_id__files_post"
+      },
       "Body_attach_receipt_expenses__expense_id__receipt_put": {
         "properties": {
           "file": {
@@ -15890,6 +18231,27 @@
           "file"
         ],
         "title": "Body_attach_receipt_expenses__expense_id__receipt_put"
+      },
+      "Body_import_cases_teams__team_id__test_cases_import_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "A CSV in the export's shape."
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "Report what would happen without writing anything.",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_cases_teams__team_id__test_cases_import_post"
       },
       "Body_import_jira_teams__team_id__import_jira_post": {
         "properties": {
@@ -16185,6 +18547,34 @@
         "type": "object",
         "title": "BudgetUpdate",
         "description": "Leaving a field out leaves it alone."
+      },
+      "BugRef": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusRead"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "identifier",
+          "title",
+          "status"
+        ],
+        "title": "BugRef",
+        "description": "The bug a failure raised, as a run lists it."
       },
       "BulkInviteCreate": {
         "properties": {
@@ -16590,6 +18980,72 @@
           "people"
         ],
         "title": "CapacityUpdate"
+      },
+      "CaseRun": {
+        "properties": {
+          "run_id": {
+            "type": "integer",
+            "title": "Run Id"
+          },
+          "run_name": {
+            "type": "string",
+            "title": "Run Name"
+          },
+          "state": {
+            "$ref": "#/components/schemas/TestRunState"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TestResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ran_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ran_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ran At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "run_name",
+          "state",
+          "version",
+          "created_at"
+        ],
+        "title": "CaseRun",
+        "description": "A run a case has been in (#275): its history, newest first."
       },
       "ChannelSetting": {
         "properties": {
@@ -17374,6 +19830,38 @@
         ],
         "title": "ConnectedIdentity",
         "description": "One provider account that can sign in as the current user.\n\nOnly ever returned for yourself. Which third parties hold a key to an\naccount is the account holder's business, and listing somebody else's\nwould say which services they use."
+      },
+      "CoveredTicket": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TicketType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusRead"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "identifier",
+          "title",
+          "type",
+          "status"
+        ],
+        "title": "CoveredTicket",
+        "description": "A ticket a case covers, as the case lists it."
       },
       "CreatedResolvedPoint": {
         "properties": {
@@ -18572,6 +21060,20 @@
             "type": "array",
             "title": "Projects Created"
           },
+          "releases_created": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Releases Created"
+          },
+          "environments_added": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Environments Added"
+          },
           "users": {
             "items": {
               "$ref": "#/components/schemas/UserMatch"
@@ -18617,6 +21119,8 @@
           "comments_created",
           "labels_created",
           "projects_created",
+          "releases_created",
+          "environments_added",
           "users",
           "unmapped_statuses",
           "unmapped_priorities",
@@ -19136,7 +21640,8 @@
         "enum": [
           "estimate",
           "epic",
-          "sprint"
+          "sprint",
+          "fix_version"
         ],
         "title": "MissingField",
         "description": "What a ticket can be filtered on having none of (#261).\n\nNo assignee and no due date were filters before this, and stay where\nthey are: nobody is one of the assignee choices, no due date one of the\ndue filter's."
@@ -19887,6 +22392,63 @@
         "title": "OAuthProvider",
         "description": "An identity provider somebody can sign in with.\n\nTwo, and closed on purpose. Each one is a different set of quirks rather\nthan a row of configuration -- see `lib_identity/oauth_providers.py` -- and\na self-hosted instance that configures neither keeps email and password\nwith no external dependency at all. Unrelated to `GitProvider`: that is a\nrepository SoftTrack is told about, this is a way into an account."
       },
+      "OpenBugsBySeverity": {
+        "properties": {
+          "weeks": {
+            "items": {
+              "$ref": "#/components/schemas/OpenBugsWeek"
+            },
+            "type": "array",
+            "title": "Weeks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "weeks"
+        ],
+        "title": "OpenBugsBySeverity",
+        "description": "What is open at the end of each week, oldest week first. The week\nunder way is counted up to now."
+      },
+      "OpenBugsWeek": {
+        "properties": {
+          "week_of": {
+            "type": "string",
+            "format": "date",
+            "title": "Week Of"
+          },
+          "critical": {
+            "type": "integer",
+            "title": "Critical"
+          },
+          "major": {
+            "type": "integer",
+            "title": "Major"
+          },
+          "minor": {
+            "type": "integer",
+            "title": "Minor"
+          },
+          "trivial": {
+            "type": "integer",
+            "title": "Trivial"
+          },
+          "unrated": {
+            "type": "integer",
+            "title": "Unrated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_of",
+          "critical",
+          "major",
+          "minor",
+          "trivial",
+          "unrated"
+        ],
+        "title": "OpenBugsWeek",
+        "description": "The bugs open at the end of one week, by how bad (#273)."
+      },
       "OutboundWebhookCreate": {
         "properties": {
           "url": {
@@ -20598,6 +23160,43 @@
             "type": "array",
             "title": "Comments",
             "default": []
+          },
+          "fix_versions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Fix Versions",
+            "default": []
+          },
+          "affects_versions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Affects Versions",
+            "default": []
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketSeverity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "environment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment"
           }
         },
         "type": "object",
@@ -22347,6 +24946,299 @@
         "title": "ReimbursementCarry",
         "description": "Approved claims to pay back with a draft payroll run's pay."
       },
+      "ReleaseCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ReleaseCreate"
+      },
+      "ReleaseNotes": {
+        "properties": {
+          "markdown": {
+            "type": "string",
+            "title": "Markdown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "markdown"
+        ],
+        "title": "ReleaseNotes",
+        "description": "A draft of the release notes (#272): markdown for a person to edit.\n\nDrafted from the done tickets, grouped by type -- stories, then bugs,\nthen tasks -- with each ticket's title and key. Nothing keeps it: the\ndraft is written fresh each time it is asked for, from what is done now."
+      },
+      "ReleaseProgress": {
+        "properties": {
+          "tickets_total": {
+            "type": "integer",
+            "title": "Tickets Total"
+          },
+          "tickets_done": {
+            "type": "integer",
+            "title": "Tickets Done"
+          },
+          "points_total": {
+            "type": "integer",
+            "title": "Points Total"
+          },
+          "points_done": {
+            "type": "integer",
+            "title": "Points Done"
+          },
+          "tickets_unestimated": {
+            "type": "integer",
+            "title": "Tickets Unestimated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tickets_total",
+          "tickets_done",
+          "points_total",
+          "points_done",
+          "tickets_unestimated"
+        ],
+        "title": "ReleaseProgress",
+        "description": "How much of what is in a release is done.\n\nCancelled tickets are left out of every number, as they are from a\nparent's sub-ticket progress: they will not ship, and nothing is\nwaiting on them. Tickets and points are both given, because they\ndisagree -- three of five tickets done with eleven of sixteen points\nsays something neither does alone."
+      },
+      "ReleaseRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ReleaseState"
+          },
+          "released_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Released On"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/ReleaseProgress"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "name",
+          "state",
+          "progress",
+          "created_at"
+        ],
+        "title": "ReleaseRead"
+      },
+      "ReleaseRequest": {
+        "properties": {
+          "released_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Released On"
+          },
+          "move_to_release_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Move To Release Id"
+          }
+        },
+        "type": "object",
+        "title": "ReleaseRequest",
+        "description": "What releasing asks (#272), all of it optional."
+      },
+      "ReleaseResult": {
+        "properties": {
+          "release": {
+            "$ref": "#/components/schemas/ReleaseRead"
+          },
+          "moved": {
+            "type": "integer",
+            "title": "Moved"
+          },
+          "moved_to_release_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moved To Release Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "release",
+          "moved"
+        ],
+        "title": "ReleaseResult"
+      },
+      "ReleaseState": {
+        "type": "string",
+        "enum": [
+          "planned",
+          "released",
+          "archived"
+        ],
+        "title": "ReleaseState",
+        "description": "Where a release is in its life (#272).\n\nSet, like a sprint's state and a project's: \"every ticket in it is done\"\nis evidence a version is ready, not a decision to ship it. Releasing is\nthe one way to `released`, because it asks what happens to the tickets\nthat are not done."
+      },
+      "ReleaseUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReleaseState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "released_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Released On"
+          }
+        },
+        "type": "object",
+        "title": "ReleaseUpdate",
+        "description": "Every field optional; an explicit null clears the description or the\ntarget date.\n\n`state` takes a release out of the pickers (`archived`) and back, or\nreopens a released one (`planned`, which forgets the day it shipped).\nReleasing is `POST /releases/{id}/release`, which asks what to do with\nthe tickets that are not done: `released` here is accepted only for a\nrelease that was released before it was archived."
+      },
       "ReportLoad": {
         "properties": {
           "person": {
@@ -22729,6 +25621,17 @@
             "title": "Move To Active Sprint",
             "default": false
           },
+          "set_fix_version_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Set Fix Version Id"
+          },
           "comment_body": {
             "anyOf": [
               {
@@ -22855,7 +25758,15 @@
               "creator_me": false,
               "creator_exclude": false,
               "watching": false,
-              "has_no": []
+              "has_no": [],
+              "fix_version_id": [],
+              "fix_version_exclude": false,
+              "severity": [],
+              "severity_exclude": false,
+              "environment": [],
+              "environment_exclude": false,
+              "found_in_id": [],
+              "found_in_exclude": false
             }
           },
           "group_by": {
@@ -25528,6 +28439,18 @@
             "title": "Capacity Minutes Per Day",
             "default": 360
           },
+          "environments": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Environments",
+            "default": [
+              "Production",
+              "Staging",
+              "Development"
+            ]
+          },
           "listed": {
             "type": "boolean",
             "title": "Listed",
@@ -25807,6 +28730,20 @@
             ],
             "title": "Capacity Minutes Per Day"
           },
+          "environments": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environments"
+          },
           "listed": {
             "anyOf": [
               {
@@ -25844,6 +28781,1157 @@
         "type": "object",
         "title": "TeamUpdate",
         "description": "What an admin may change about a team.\n\nNo `key`: identifiers like ENG-42 are already in commit messages, chat\nlogs and browser history, and renaming the prefix would strand every one\nof them. See README."
+      },
+      "TestCaseCover": {
+        "properties": {
+          "ticket_id": {
+            "type": "integer",
+            "title": "Ticket Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket_id"
+        ],
+        "title": "TestCaseCover"
+      },
+      "TestCaseCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "preconditions": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preconditions"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/TestStep"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Steps",
+            "default": []
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "state": {
+            "$ref": "#/components/schemas/TestCaseState",
+            "default": "draft"
+          },
+          "label_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Label Ids",
+            "default": []
+          },
+          "ticket_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Ticket Ids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "TestCaseCreate"
+      },
+      "TestCaseHit": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "team_key": {
+            "type": "string",
+            "title": "Team Key"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "state": {
+            "$ref": "#/components/schemas/TestCaseState"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "team_key",
+          "identifier",
+          "title",
+          "state"
+        ],
+        "title": "TestCaseHit",
+        "description": "A case that search found (#274)."
+      },
+      "TestCaseImport": {
+        "properties": {
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run"
+          },
+          "cases_found": {
+            "type": "integer",
+            "title": "Cases Found"
+          },
+          "cases_created": {
+            "type": "integer",
+            "title": "Cases Created"
+          },
+          "cases_skipped_existing": {
+            "type": "integer",
+            "title": "Cases Skipped Existing"
+          },
+          "folders_created": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Folders Created"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dry_run",
+          "cases_found",
+          "cases_created",
+          "cases_skipped_existing",
+          "folders_created",
+          "warnings"
+        ],
+        "title": "TestCaseImport",
+        "description": "What importing a CSV of test cases did, or would do."
+      },
+      "TestCaseRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "preconditions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preconditions"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/TestStep"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "$ref": "#/components/schemas/TestCaseState"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "labels": {
+            "items": {
+              "$ref": "#/components/schemas/LabelRead"
+            },
+            "type": "array",
+            "title": "Labels"
+          },
+          "covers": {
+            "items": {
+              "$ref": "#/components/schemas/CoveredTicket"
+            },
+            "type": "array",
+            "title": "Covers"
+          },
+          "last_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TestResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "number",
+          "identifier",
+          "title",
+          "steps",
+          "state",
+          "version",
+          "labels",
+          "covers",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TestCaseRead"
+      },
+      "TestCaseState": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "ready",
+          "retired"
+        ],
+        "title": "TestCaseState",
+        "description": "Where a test case is in its life (#274).\n\nA draft is still being written, ready is what a run takes, and retired\nis out of new runs and stays in the old ones it was part of -- a result\nfrom March still says what was tested in March."
+      },
+      "TestCaseUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "preconditions": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preconditions"
+          },
+          "steps": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TestStep"
+                },
+                "type": "array",
+                "maxItems": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steps"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TestCaseState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "label_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label Ids"
+          },
+          "change_note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Note"
+          }
+        },
+        "type": "object",
+        "title": "TestCaseUpdate",
+        "description": "Every field optional. A change to the title, the preconditions or the\nsteps is a new version, which `change_note` can say something about;\nthe folder, owner, state and labels change no version."
+      },
+      "TestCaseVersionRead": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "preconditions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preconditions"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/TestStep"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "author": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "title",
+          "steps",
+          "created_at"
+        ],
+        "title": "TestCaseVersionRead"
+      },
+      "TestFolderCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "TestFolderCreate"
+      },
+      "TestFolderRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "case_count": {
+            "type": "integer",
+            "title": "Case Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "name",
+          "case_count"
+        ],
+        "title": "TestFolderRead"
+      },
+      "TestFolderUpdate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "TestFolderUpdate"
+      },
+      "TestResult": {
+        "type": "string",
+        "enum": [
+          "passed",
+          "failed",
+          "blocked",
+          "skipped"
+        ],
+        "title": "TestResult",
+        "description": "What happened when a case was run (#275). No result is \"not run yet\"."
+      },
+      "TestResultFileRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "content_type",
+          "size_bytes",
+          "created_at"
+        ],
+        "title": "TestResultFileRead"
+      },
+      "TestRunCaseRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "integer",
+            "title": "Run Id"
+          },
+          "case_id": {
+            "type": "integer",
+            "title": "Case Id"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/TestStep"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "covers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Covers"
+          },
+          "assignee": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TestResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "failed_step": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failed Step"
+          },
+          "ran_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ran_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ran At"
+          },
+          "bug": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BugRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/TestResultFileRead"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "case_id",
+          "identifier",
+          "version",
+          "title",
+          "steps",
+          "covers",
+          "files"
+        ],
+        "title": "TestRunCaseRead",
+        "description": "One case in a run: what was run, by whom, and what happened."
+      },
+      "TestRunCaseUpdate": {
+        "properties": {
+          "assignee_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Id"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TestResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "failed_step": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failed Step"
+          }
+        },
+        "type": "object",
+        "title": "TestRunCaseUpdate",
+        "description": "A result, or who is to run it. Fields left out are left alone; an\nexplicit null result is \"not run yet\" again."
+      },
+      "TestRunCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "release_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Id"
+          },
+          "sprint_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sprint Id"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "environment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "label_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label Id"
+          },
+          "case_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Case Ids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "TestRunCreate",
+        "description": "A run of the team's cases (#275): what it is for, where, and which\ncases -- a folder's, a label's and any picked by hand, together. Retired\ncases are left out."
+      },
+      "TestRunDetail": {
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/TestRunRead"
+          },
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/TestRunCaseRead"
+            },
+            "type": "array",
+            "title": "Cases"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run",
+          "cases"
+        ],
+        "title": "TestRunDetail"
+      },
+      "TestRunProgress": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "passed": {
+            "type": "integer",
+            "title": "Passed"
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed"
+          },
+          "blocked": {
+            "type": "integer",
+            "title": "Blocked"
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped"
+          },
+          "not_run": {
+            "type": "integer",
+            "title": "Not Run"
+          },
+          "bugs": {
+            "type": "integer",
+            "title": "Bugs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "passed",
+          "failed",
+          "blocked",
+          "skipped",
+          "not_run",
+          "bugs"
+        ],
+        "title": "TestRunProgress",
+        "description": "How far a run has got: how many passed, failed, were blocked or\nskipped and are not run yet, and how many bugs it raised."
+      },
+      "TestRunRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "release_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Id"
+          },
+          "sprint_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sprint Id"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "environment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "$ref": "#/components/schemas/TestRunState"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/TestRunProgress"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "name",
+          "state",
+          "progress",
+          "created_at"
+        ],
+        "title": "TestRunRead"
+      },
+      "TestRunState": {
+        "type": "string",
+        "enum": [
+          "open",
+          "closed"
+        ],
+        "title": "TestRunState",
+        "description": "A run is open while it is being run, and closed when it is finished\n(#275): then its results are fixed, and testing again is a new run."
+      },
+      "TestRunUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "release_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Id"
+          },
+          "sprint_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sprint Id"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "environment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          }
+        },
+        "type": "object",
+        "title": "TestRunUpdate",
+        "description": "Every field optional; an explicit null clears what it is for."
+      },
+      "TestStep": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Action"
+          },
+          "expected": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Expected",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "TestStep",
+        "description": "One numbered step: what to do, and what should happen."
       },
       "TicketBulkChanges": {
         "properties": {
@@ -25900,6 +29988,39 @@
               }
             ],
             "title": "Sprint Id"
+          },
+          "fix_version_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fix Version Id"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketSeverity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "environment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment"
           },
           "add_label_ids": {
             "items": {
@@ -26064,6 +30185,50 @@
             ],
             "title": "Sprint Id"
           },
+          "fix_version_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fix Version Id"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketSeverity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "environment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment"
+          },
+          "found_in_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Found In Id"
+          },
           "due_date": {
             "anyOf": [
               {
@@ -26137,7 +30302,12 @@
           "trash",
           "schedule",
           "time_estimate",
-          "remaining"
+          "remaining",
+          "fix_version",
+          "severity",
+          "environment",
+          "found_in",
+          "test_result"
         ],
         "title": "TicketEventField",
         "description": "Which field a TicketEvent records a change to."
@@ -26234,7 +30404,10 @@
         "type": "string",
         "enum": [
           "status",
-          "project"
+          "project",
+          "release",
+          "severity",
+          "environment"
         ],
         "title": "TicketGrouping",
         "description": "What the board's columns, and the list's sections, are made of.\n\nA saved view stores one (#63), so \"the planning view\" can open grouped by\nproject while \"my bugs\" opens by status. Status is the default because it\nis what the board always was."
@@ -26510,6 +30683,49 @@
             ],
             "title": "Sprint Id"
           },
+          "fix_version_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fix Version Id"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketSeverity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "environment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment"
+          },
+          "found_in_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Found In Id"
+          },
           "due_date": {
             "anyOf": [
               {
@@ -26624,6 +30840,17 @@
         ],
         "title": "TicketRead"
       },
+      "TicketSeverity": {
+        "type": "string",
+        "enum": [
+          "critical",
+          "major",
+          "minor",
+          "trivial"
+        ],
+        "title": "TicketSeverity",
+        "description": "How bad a bug is (#273), worst first.\n\nSeparate from priority, which says how soon: a typo on the pricing page\nis trivial and urgent. Optional, and only a bug has one -- a ticket made\na task keeps the value, unshown and unfiltered, until it is a bug again."
+      },
       "TicketSort": {
         "type": "string",
         "enum": [
@@ -26632,7 +30859,8 @@
           "priority",
           "estimate",
           "title",
-          "rank"
+          "rank",
+          "severity"
         ],
         "title": "TicketSort",
         "description": "What the ticket list can be ordered by (#88)."
@@ -26750,6 +30978,66 @@
         },
         "type": "object",
         "title": "TicketTemplateUpdate"
+      },
+      "TicketTestCase": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "state": {
+            "$ref": "#/components/schemas/TestCaseState"
+          },
+          "last_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TestResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "identifier",
+          "title",
+          "state"
+        ],
+        "title": "TicketTestCase",
+        "description": "A case that covers a ticket, as the ticket lists it."
+      },
+      "TicketTestCases": {
+        "properties": {
+          "uses_test_cases": {
+            "type": "boolean",
+            "title": "Uses Test Cases"
+          },
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/TicketTestCase"
+            },
+            "type": "array",
+            "title": "Cases"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uses_test_cases",
+          "cases"
+        ],
+        "title": "TicketTestCases",
+        "description": "The cases that cover a ticket (#274), and whether its team keeps test\ncases at all -- which is what decides whether a story with none says so."
       },
       "TicketTime": {
         "properties": {
@@ -26973,6 +31261,50 @@
               }
             ],
             "title": "Sprint Id"
+          },
+          "fix_version_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fix Version Id"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketSeverity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "environment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment"
+          },
+          "found_in_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Found In Id"
           },
           "due_date": {
             "anyOf": [
@@ -28416,6 +32748,58 @@
             "type": "array",
             "title": "Has No",
             "default": []
+          },
+          "fix_version_id": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Fix Version Id",
+            "default": []
+          },
+          "fix_version_exclude": {
+            "type": "boolean",
+            "title": "Fix Version Exclude",
+            "default": false
+          },
+          "severity": {
+            "items": {
+              "$ref": "#/components/schemas/TicketSeverity"
+            },
+            "type": "array",
+            "title": "Severity",
+            "default": []
+          },
+          "severity_exclude": {
+            "type": "boolean",
+            "title": "Severity Exclude",
+            "default": false
+          },
+          "environment": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Environment",
+            "default": []
+          },
+          "environment_exclude": {
+            "type": "boolean",
+            "title": "Environment Exclude",
+            "default": false
+          },
+          "found_in_id": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Found In Id",
+            "default": []
+          },
+          "found_in_exclude": {
+            "type": "boolean",
+            "title": "Found In Exclude",
+            "default": false
           }
         },
         "type": "object",
@@ -29001,6 +33385,12 @@
           "parent_not_found",
           "project_not_found",
           "sprint_not_found",
+          "release_not_found",
+          "test_case_not_found",
+          "test_folder_not_found",
+          "test_run_not_found",
+          "test_run_case_not_found",
+          "test_result_file_not_found",
           "status_not_found",
           "label_not_found",
           "not_in_trash",
@@ -29043,6 +33433,9 @@
           "rule_name_taken",
           "department_name_taken",
           "label_name_taken",
+          "release_name_taken",
+          "test_folder_name_taken",
+          "test_case_covers_already",
           "already_member",
           "already_team_admin",
           "link_exists",
@@ -29065,6 +33458,16 @@
           "sprint_not_completed",
           "wip_limit_reached",
           "sprint_dates_invalid",
+          "release_not_planned",
+          "release_not_released",
+          "bug_details_need_a_bug",
+          "environment_not_on_team",
+          "environments_invalid",
+          "test_cases_import_invalid",
+          "test_case_has_runs",
+          "test_run_closed",
+          "test_run_empty",
+          "test_result_not_failed",
           "link_to_self",
           "parent_is_self",
           "parent_other_team",

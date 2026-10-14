@@ -8,7 +8,7 @@ from lib_softtrack.models.custom_fields import CustomFieldValueRead, CustomField
 from lib_softtrack.models.labels import LabelRead
 from lib_softtrack.models.statuses import StatusRead
 from lib_softtrack.models.time_estimates import Remaining, TimeEstimate
-from lib_softtrack.tables import TicketPriority, TicketType
+from lib_softtrack.tables import TicketPriority, TicketSeverity, TicketType
 
 # A modified Fibonacci scale. The gaps are the point: they stop a team
 # arguing about whether something is a 6 or a 7, a distinction no estimate is
@@ -65,6 +65,13 @@ class TicketCreate(BaseModel):
     estimate: Estimate = None
     parent_id: Optional[int] = None
     sprint_id: Optional[int] = None
+    #: The release it ships in (#272).
+    fix_version_id: Optional[int] = None
+    #: A bug's details (#273): only on a ticket of type bug. The environment
+    #: is one of the team's.
+    severity: Optional[TicketSeverity] = None
+    environment: Optional[str] = Field(default=None, max_length=40)
+    found_in_id: Optional[int] = None
     due_date: Optional[date] = None
     label_ids: list[int] = []
     #: The team's own fields (#117), by key. A required one left out is
@@ -88,6 +95,13 @@ class TicketUpdate(BaseModel):
     parent_id: Optional[int] = None
     #: An explicit null moves the ticket out of its sprint, back to the backlog.
     sprint_id: Optional[int] = None
+    #: The release it ships in (#272); an explicit null leaves it in none.
+    fix_version_id: Optional[int] = None
+    #: A bug's details (#273). Given only to a bug -- or a ticket this same
+    #: change makes one -- and an explicit null clears one on any ticket.
+    severity: Optional[TicketSeverity] = None
+    environment: Optional[str] = Field(default=None, max_length=40)
+    found_in_id: Optional[int] = None
     #: An explicit null clears the due date.
     due_date: Optional[date] = None
     #: In minutes (#268); an explicit null clears it.
@@ -141,6 +155,13 @@ class TicketRead(BaseModel):
     #: to start; the board marks anything above zero.
     blocked_by_count: int
     sprint_id: Optional[int] = None
+    #: The release it ships in (#272), one per ticket.
+    fix_version_id: Optional[int] = None
+    #: A bug's details (#273). Kept when a bug is made another type, and
+    #: read as nothing until it is a bug again: a client shows them on bugs.
+    severity: Optional[TicketSeverity] = None
+    environment: Optional[str] = None
+    found_in_id: Optional[int] = None
     due_date: Optional[date] = None
     #: The key this ticket had before it was imported, e.g. "PROJ-142".
     external_key: Optional[str] = None
@@ -193,6 +214,10 @@ class TicketBulkChanges(BaseModel):
     assignee_id: Optional[int] = None
     project_id: Optional[int] = None
     sprint_id: Optional[int] = None
+    fix_version_id: Optional[int] = None
+    #: A bug's details (#273): the whole batch has to be bugs to be given one.
+    severity: Optional[TicketSeverity] = None
+    environment: Optional[str] = Field(default=None, max_length=40)
     #: Labels are added and removed rather than replaced. Twenty tickets rarely
     #: share a label set, and "set these labels" across them would silently
     #: strip whatever each one had that the others did not.

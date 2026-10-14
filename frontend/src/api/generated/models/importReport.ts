@@ -22,6 +22,8 @@ export interface ImportReport {
   comments_created: number;
   labels_created: string[];
   projects_created: string[];
+  releases_created: string[];
+  environments_added: string[];
   users: UserMatch[];
   unmapped_statuses: string[];
   unmapped_priorities: string[];

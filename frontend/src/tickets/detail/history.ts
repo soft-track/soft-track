@@ -4,13 +4,15 @@ import type {
   CustomFieldRef,
   TicketEventRead,
   TicketPriority,
+  TicketSeverity,
   StatusCategory,
 } from '@/api/generated/models'
 import { i18n } from '@/i18n'
 import { formatNumber } from '@/i18n/format'
 import { shortDue } from '@/tickets/dueDate'
 import { formatDuration } from '@/tickets/duration'
-import { CATEGORY_META, PRIORITY_META } from '@/tickets/ticketMeta'
+import { CATEGORY_META, PRIORITY_META, SEVERITY_META } from '@/tickets/ticketMeta'
+import { RESULT_META, type ResultOrNot } from '@/testcases/runs'
 
 /** A history sentence: its catalog key and what fills it, bar the actor. */
 export interface EventSentence {
@@ -28,10 +30,15 @@ type HistoryKey =
   | `sprint.${'added' | 'moved' | 'removed'}`
   | `due.${'set' | 'moved' | 'removed'}`
   | `project.${'added' | 'moved' | 'removed'}`
+  | `fixVersion.${'set' | 'moved' | 'cleared'}`
+  | `severity.${'set' | 'changed' | 'cleared'}`
+  | `environment.${'set' | 'changed' | 'cleared'}`
+  | `foundIn.${'set' | 'changed' | 'cleared'}`
   | 'team'
   | `field.${'set' | 'changed' | 'cleared' | 'ticked' | 'unticked'}`
   | `trash.${'deleted' | 'restored'}`
   | 'schedule'
+  | `testResult.${'raised' | 'result'}`
   | 'other'
 
 /**
@@ -107,6 +114,34 @@ export function describeEvent(event: TicketEventRead): EventSentence {
       return say('project.moved', { from: before, to: after })
     }
 
+    case 'fix_version': {
+      // The release it ships in (#272), named as it is now.
+      const before = named(event.old_label, 'deletedRelease')
+      const after = named(event.new_label, 'deletedRelease')
+      if (!to) return say('fixVersion.cleared', { from: before })
+      if (!from) return say('fixVersion.set', { to: after })
+      return say('fixVersion.moved', { from: before, to: after })
+    }
+
+    // A bug's details (#273).
+    case 'severity':
+      if (!to) return say('severity.cleared', { from: severity(from) })
+      if (!from) return say('severity.set', { to: severity(to) })
+      return say('severity.changed', { from: severity(from), to: severity(to) })
+
+    case 'environment':
+      if (!to) return say('environment.cleared', { from: from ?? '' })
+      if (!from) return say('environment.set', { to })
+      return say('environment.changed', { from, to })
+
+    case 'found_in': {
+      const before = named(event.old_label, 'deletedRelease')
+      const after = named(event.new_label, 'deletedRelease')
+      if (!to) return say('foundIn.cleared', { from: before })
+      if (!from) return say('foundIn.set', { to: after })
+      return say('foundIn.changed', { from: before, to: after })
+    }
+
     case 'team': {
       // Keys, not team names: ENG-42 becoming OPS-17 is the fact anybody
       // holding the old link needs (#98).
@@ -132,6 +167,22 @@ export function describeEvent(event: TicketEventRead): EventSentence {
       // Into the trash and back out of it (#323). Only a ticket that came
       // back has an Activity feed to show either in.
       return say(to ? 'trash.deleted' : 'trash.restored')
+
+    case 'test_result': {
+      // A result on the bug it raised (#275), written as it was:
+      // `failed|TC-05|1.4.0 regression`. The run's name is last, so a "|"
+      // in it stays in it.
+      const [value, identifier, ...run] = (to ?? '').split('|')
+      const values = { identifier: identifier ?? '', run: run.join('|') }
+      if (value === 'raised') return say('testResult.raised', values)
+      const known = value in RESULT_META
+      return say('testResult.result', {
+        ...values,
+        result: known
+          ? i18n.t(`tickets:history.testResult.results.${value as ResultOrNot}`)
+          : value,
+      })
+    }
 
     case 'schedule':
       // Created by a schedule (#264), named as it was then.
@@ -164,6 +215,10 @@ function category(value: string | null | undefined): string {
 
 function priority(value: string | null | undefined): string {
   return PRIORITY_META[value as TicketPriority]?.label ?? i18n.t('tickets:history.noPriority')
+}
+
+function severity(value: string | null | undefined): string {
+  return SEVERITY_META[value as TicketSeverity]?.label ?? i18n.t('tickets:history.noPriority')
 }
 
 function points(value: string | null | undefined): string {
@@ -202,7 +257,7 @@ function fieldValue(
 
 function named(
   label: string | null | undefined,
-  gone: 'formerMember' | 'deletedSprint' | 'deletedProject',
+  gone: 'formerMember' | 'deletedSprint' | 'deletedProject' | 'deletedRelease',
 ): string {
   return label ?? i18n.t(`tickets:history.${gone}`)
 }
