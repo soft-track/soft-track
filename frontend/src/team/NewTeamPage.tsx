@@ -12,6 +12,7 @@ import { useAuth } from '@/auth/useAuth'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { AskForTeamCard } from '@/team/AskForTeam'
 import { useTeamCreation } from '@/team/useTeams'
+import { TimerPill } from '@/tickets/timer/TimerPill'
 import { Logo } from '@/ui/Logo'
 
 export default function NewTeamPage() {
@@ -62,6 +63,9 @@ export default function NewTeamPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="pop-in w-full max-w-sm">
+        <div className="mb-4 flex justify-end">
+          <TimerPill />
+        </div>
         <div className="mb-8 text-center">
           <div className="mb-4 flex justify-center">
             <Logo size={52} />

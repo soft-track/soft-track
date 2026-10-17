@@ -86,6 +86,7 @@ class ErrorCode(str, enum.Enum):
     #: by key in a ticket's `custom_fields`.
     custom_field_not_found = "custom_field_not_found"
     worklog_not_found = "worklog_not_found"
+    timer_not_found = "timer_not_found"
     notification_not_found = "notification_not_found"
     #: A kind of notification nobody registered (#263).
     notification_kind_not_found = "notification_kind_not_found"

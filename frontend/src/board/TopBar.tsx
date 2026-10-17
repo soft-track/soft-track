@@ -11,6 +11,7 @@ import { useTranslation } from '@/i18n'
 import { useState } from 'react'
 import type { BoardView } from '@/keyboard/useCommands'
 import { NotificationsBell } from '@/notifications/NotificationsBell'
+import { TimerPill } from '@/tickets/timer/TimerPill'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Icon, type IconName } from '@/ui/Icon'
 import { Select } from '@/ui/Select'
@@ -199,6 +200,7 @@ export function TopBar({
           )}
         </label>
 
+        <TimerPill />
         <NotificationsBell
           open={notificationsOpen}
           onToggle={onToggleNotifications}

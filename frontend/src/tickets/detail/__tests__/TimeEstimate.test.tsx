@@ -88,7 +88,7 @@ afterEach(cleanup)
 
 describe('the Time section', () => {
   it('shows logged against estimated, what is left, and how far along', () => {
-    wrap(<TimeSection ticketId={9} readOnly={false} />)
+    wrap(<TimeSection ticketId={9} ticketIdentifier="ENG-9" readOnly={false} />)
     expect(screen.getByText('7h logged of 10h · 3h left')).toBeTruthy()
     const bar = screen.getByRole('progressbar', { name: 'Time logged against the estimate' })
     expect(bar.getAttribute('aria-valuenow')).toBe(String(7 * H))
@@ -103,7 +103,7 @@ describe('the Time section', () => {
       remaining_minutes: 0,
       total: { estimated_minutes: 6 * H, logged_minutes: 10 * H, remaining_minutes: 0 },
     })
-    wrap(<TimeSection ticketId={9} readOnly={false} />)
+    wrap(<TimeSection ticketId={9} ticketIdentifier="ENG-9" readOnly={false} />)
     expect(screen.getByText('over by 4h')).toBeTruthy()
     expect(screen.getByText('10h logged of 6h · 0h left')).toBeTruthy()
   })
@@ -113,7 +113,7 @@ describe('the Time section', () => {
       subticket_count: 2,
       total: { estimated_minutes: 20 * H, logged_minutes: 9 * H, remaining_minutes: 11 * H },
     })
-    wrap(<TimeSection ticketId={9} readOnly={false} />)
+    wrap(<TimeSection ticketId={9} ticketIdentifier="ENG-9" readOnly={false} />)
     expect(screen.getByText('9h logged of 20h · 11h left, with sub-tickets')).toBeTruthy()
   })
 
@@ -123,7 +123,7 @@ describe('the Time section', () => {
       remaining_minutes: null,
       total: { estimated_minutes: 0, logged_minutes: 7 * H, remaining_minutes: 0 },
     })
-    const user = wrap(<TimeSection ticketId={9} readOnly={false} />)
+    const user = wrap(<TimeSection ticketId={9} ticketIdentifier="ENG-9" readOnly={false} />)
     expect(screen.getByText('7h logged')).toBeTruthy()
     expect(screen.queryByRole('progressbar')).toBeNull()
     return user.click(screen.getByRole('button', { name: /Log time/ })).then(() => {
@@ -134,7 +134,7 @@ describe('the Time section', () => {
 
 describe('logging time asks what is left', () => {
   it('works the answer out as the time is typed, and leaves it to the server', async () => {
-    const user = wrap(<TimeSection ticketId={9} readOnly={false} />)
+    const user = wrap(<TimeSection ticketId={9} ticketIdentifier="ENG-9" readOnly={false} />)
     await user.click(screen.getByRole('button', { name: /Log time/ }))
     const left = screen.getByLabelText<HTMLInputElement>('How much is left?')
     expect(left.value).toBe('3h')
@@ -153,7 +153,7 @@ describe('logging time asks what is left', () => {
   })
 
   it('sends what somebody changed it to', async () => {
-    const user = wrap(<TimeSection ticketId={9} readOnly={false} />)
+    const user = wrap(<TimeSection ticketId={9} ticketIdentifier="ENG-9" readOnly={false} />)
     await user.click(screen.getByRole('button', { name: /Log time/ }))
     await user.type(screen.getByPlaceholderText('2h 30m'), '3h')
     const left = screen.getByLabelText('How much is left?')
@@ -167,7 +167,7 @@ describe('logging time asks what is left', () => {
   })
 
   it('takes nothing left as an answer', async () => {
-    const user = wrap(<TimeSection ticketId={9} readOnly={false} />)
+    const user = wrap(<TimeSection ticketId={9} ticketIdentifier="ENG-9" readOnly={false} />)
     await user.click(screen.getByRole('button', { name: /Log time/ }))
     await user.type(screen.getByPlaceholderText('2h 30m'), '1h')
     const left = screen.getByLabelText('How much is left?')
@@ -179,7 +179,7 @@ describe('logging time asks what is left', () => {
 
   it('works down from a remaining somebody set by hand', async () => {
     mocks.estimate.data = estimate({ remaining_minutes: 5 * H, remaining_set: true })
-    const user = wrap(<TimeSection ticketId={9} readOnly={false} />)
+    const user = wrap(<TimeSection ticketId={9} ticketIdentifier="ENG-9" readOnly={false} />)
     await user.click(screen.getByRole('button', { name: /Log time/ }))
     await user.type(screen.getByPlaceholderText('2h 30m'), '2h')
     expect(screen.getByLabelText<HTMLInputElement>('How much is left?').value).toBe('3h')
@@ -187,7 +187,7 @@ describe('logging time asks what is left', () => {
   })
 
   it('refuses something that is not a duration', async () => {
-    const user = wrap(<TimeSection ticketId={9} readOnly={false} />)
+    const user = wrap(<TimeSection ticketId={9} ticketIdentifier="ENG-9" readOnly={false} />)
     await user.click(screen.getByRole('button', { name: /Log time/ }))
     await user.type(screen.getByPlaceholderText('2h 30m'), '1h')
     const left = screen.getByLabelText('How much is left?')

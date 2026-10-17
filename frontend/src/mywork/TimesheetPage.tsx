@@ -27,6 +27,7 @@ import { formatDuration, parseDuration } from '@/tickets/duration'
 import { PriorityIcon } from '@/tickets/PriorityIcon'
 import { TicketTypeIcon } from '@/tickets/TicketTypeIcon'
 import { ticketPath } from '@/tickets/surface'
+import { TimerPill } from '@/tickets/timer/TimerPill'
 import { Avatar } from '@/ui/Avatar'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
@@ -140,6 +141,7 @@ export default function TimesheetPage() {
           onGo={goTo}
         />
         <div className="flex-1" />
+        <TimerPill />
         {choices && (
           <Select
             dense

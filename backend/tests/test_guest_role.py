@@ -145,6 +145,10 @@ NOT_TEAM_WRITES = {
     ("PATCH", "/notifications/settings"): "your own inbox",
     ("POST", "/notifications/read-all"): "your own inbox",
     ("PATCH", "/notifications/{notification_id}"): "your own inbox",
+    # Your one timer (#266), whichever ticket it is on. Starting one is a
+    # write to that ticket's team, and stays in the sweep.
+    ("PATCH", "/me/timer"): "your own timer",
+    ("DELETE", "/me/timer"): "your own timer",
     # Signed by a provider, not sent by a user.
     ("POST", "/webhooks/github/{hook_token}"): "authenticated by signature",
     ("POST", "/webhooks/gitlab/{hook_token}"): "authenticated by signature",

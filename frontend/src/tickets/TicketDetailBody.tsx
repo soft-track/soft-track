@@ -116,6 +116,7 @@ export function TicketDetailBody({ ticketId }: { ticketId: number }) {
           <TicketLinksSection ticketId={ticket.id} readOnly={readOnly} />
           <TimeSection
             ticketId={ticket.id}
+            ticketIdentifier={ticket.identifier}
             readOnly={readOnly}
             // What the estimate's figures depend on (#268): read again when it changes.
             estimateVersion={`${ticket.time_estimate_minutes}/${ticket.remaining_minutes}/${ticket.status.id}`}

@@ -45,6 +45,7 @@ export const ErrorCode = {
   schedule_not_found: 'schedule_not_found',
   custom_field_not_found: 'custom_field_not_found',
   worklog_not_found: 'worklog_not_found',
+  timer_not_found: 'timer_not_found',
   notification_not_found: 'notification_not_found',
   notification_kind_not_found: 'notification_kind_not_found',
   repository_not_found: 'repository_not_found',

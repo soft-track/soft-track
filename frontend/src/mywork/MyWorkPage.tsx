@@ -34,6 +34,7 @@ import { PriorityIcon } from '@/tickets/PriorityIcon'
 import { ProjectBadge } from '@/tickets/TicketCard'
 import { TicketTypeIcon } from '@/tickets/TicketTypeIcon'
 import { ticketPath } from '@/tickets/surface'
+import { TimerPill } from '@/tickets/timer/TimerPill'
 import { isArchived } from '@/team/archived'
 import { canWriteIn } from '@/team/members'
 import { useTeamContext } from '@/team/useTeamContext'
@@ -145,6 +146,7 @@ export default function MyWorkPage() {
           <option value="none">{t('grouping.none')}</option>
         </Select>
         <div className="flex-1" />
+        <TimerPill />
         {/* My time (#267): the same work, as the hours it took. */}
         <Link to="/my-work/time" className="btn btn-ghost btn-sm">
           <Icon name="history" size={14} />

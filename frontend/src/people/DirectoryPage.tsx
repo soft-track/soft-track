@@ -22,6 +22,7 @@ import { PersonLink } from '@/people/PersonLink'
 import { PersonPicker } from '@/people/PersonPicker'
 import { useDebounced } from '@/search/useDebounced'
 import { useOpenTicket } from '@/tickets/surface'
+import { TimerPill } from '@/tickets/timer/TimerPill'
 import { Avatar } from '@/ui/Avatar'
 import { NotActivatedChip } from '@/ui/NotActivatedChip'
 import { Icon } from '@/ui/Icon'
@@ -129,7 +130,8 @@ export default function DirectoryPage() {
           onChange={(username) => update({ ...filters, manager: username })}
         />
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <TimerPill />
           <NotificationsBell
             open={notificationsOpen}
             onToggle={() => setNotificationsOpen((open) => !open)}

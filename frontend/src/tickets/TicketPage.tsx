@@ -19,6 +19,7 @@ import { TicketDetailBody } from '@/tickets/TicketDetailBody'
 import { TicketHeaderActions } from '@/tickets/TicketHeaderActions'
 import { TicketStack } from '@/tickets/TicketStack'
 import { TicketSurfaceContext, ticketPath } from '@/tickets/surface'
+import { TimerPill } from '@/tickets/timer/TimerPill'
 import { useTeamEvents } from '@/realtime/useTeamEvents'
 import { isArchived } from '@/team/archived'
 import { canWriteIn } from '@/team/members'
@@ -185,7 +186,8 @@ function TicketPageView({ found, team }: { found: TicketRead; team: TeamRead }) 
             </li>
           </ol>
         </nav>
-        <span className="flex shrink-0 items-center gap-1">
+        <span className="flex min-w-0 shrink-0 items-center gap-1">
+          <TimerPill />
           <CopyLinkButton ticket={ticket} />
           <TicketHeaderActions ticket={ticket} onDeleted={() => navigate(`/${team.key}`, { replace: true })} />
         </span>

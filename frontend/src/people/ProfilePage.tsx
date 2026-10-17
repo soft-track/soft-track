@@ -16,6 +16,7 @@ import { PersonLink } from '@/people/PersonLink'
 import { personPath } from '@/people/personPath'
 import { tenure } from '@/people/tenure'
 import { PER_TEAM, WorkloadTab } from '@/people/WorkloadTab'
+import { TimerPill } from '@/tickets/timer/TimerPill'
 import { DeactivatedChip } from '@/settings/RoleChip'
 import { formatStartedOn } from '@/settings/startedOn'
 import { Avatar } from '@/ui/Avatar'
@@ -49,7 +50,7 @@ export default function ProfilePage({ tab = 'overview' }: { tab?: 'overview' | '
 
   return (
     <section className="glass-strong scroll-thin flex min-h-0 flex-1 flex-col overflow-y-auto rounded-panel px-6 py-5 sm:px-10">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {openSidebar && (
           <button
             type="button"
@@ -64,6 +65,9 @@ export default function ProfilePage({ tab = 'overview' }: { tab?: 'overview' | '
           <Icon name="chevron-left" size={14} />
           {t('profile.back')}
         </Link>
+        <div className="ml-auto">
+          <TimerPill />
+        </div>
       </div>
 
       {profile.isPending ? (

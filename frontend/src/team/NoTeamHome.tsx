@@ -8,6 +8,7 @@ import { AskForTeamCard } from '@/team/AskForTeam'
 import { InvitesBanner } from '@/team/InvitesBanner'
 import { TeamDirectoryList } from '@/team/TeamDirectory'
 import { useTeamCreation } from '@/team/useTeams'
+import { TimerPill } from '@/tickets/timer/TimerPill'
 import { Icon, type IconName } from '@/ui/Icon'
 import { Logo } from '@/ui/Logo'
 
@@ -82,6 +83,9 @@ export function NoTeamHome() {
   return (
     <div className="flex min-h-screen justify-center px-4 py-12">
       <div className="pop-in w-full max-w-3xl">
+        <div className="mb-4 flex justify-end">
+          <TimerPill />
+        </div>
         <div className="mb-8 text-center">
           <div className="mb-4 flex justify-center">
             <Logo size={52} />

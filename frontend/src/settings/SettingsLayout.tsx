@@ -4,6 +4,7 @@ import { useAuth } from '@/auth/useAuth'
 import { useTranslation } from '@/i18n'
 import { activeTeams, isArchived } from '@/team/archived'
 import { useMyTeams } from '@/team/useTeams'
+import { TimerPill } from '@/tickets/timer/TimerPill'
 import { Icon, type IconName } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 import { Logo } from '@/ui/Logo'
@@ -205,16 +206,19 @@ export default function SettingsLayout() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-4 px-4 py-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Logo size={26} withWordmark />
-        <button
-          type="button"
-          onClick={() => navigate(backTo)}
-          className="btn btn-ghost btn-sm text-neutral-500"
-        >
-          <Icon name="chevron-left" size={14} />
-          {t('layout.backToBoard')}
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <TimerPill />
+          <button
+            type="button"
+            onClick={() => navigate(backTo)}
+            className="btn btn-ghost btn-sm text-neutral-500"
+          >
+            <Icon name="chevron-left" size={14} />
+            {t('layout.backToBoard')}
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-4 lg:flex-row">

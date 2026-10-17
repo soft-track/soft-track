@@ -3,7 +3,6 @@ import { isToday, isYesterday, parseISO } from 'date-fns'
 import { type FormEvent, useState } from 'react'
 
 import {
-  getTicketTimeTicketsTicketIdWorklogsGetQueryKey,
   useDeleteWorklogWorklogsWorklogIdDelete,
   useTicketTimeTicketsTicketIdWorklogsGet,
   useLogTimeTicketsTicketIdWorklogsPost,
@@ -17,7 +16,10 @@ import type { TicketTimeEstimate, WorklogRead } from '@/api/generated/models'
 import { errorDetail } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { localToday } from '@/tickets/dueDate'
+import { formatTimerClock } from '@/tickets/timer/clock'
+import { useTimer } from '../timer/useTimer'
 import { formatDuration, parseDuration } from '@/tickets/duration'
+import { refreshTicketTime } from '@/tickets/detail/refreshTicketTime'
 import {
   RemainingField,
   TicketEstimateBar,
@@ -38,10 +40,12 @@ const RECENT = 5
  */
 export function TimeSection({
   ticketId,
+  ticketIdentifier,
   readOnly,
   estimateVersion = '',
 }: {
   ticketId: number
+  ticketIdentifier: string
   readOnly: boolean
   /** Changes when the ticket's estimate, remaining or status does (#268). */
   estimateVersion?: string
@@ -50,6 +54,7 @@ export function TimeSection({
   const { t } = useTranslation(['tickets', 'common'])
   const queryClient = useQueryClient()
   const query = useTicketTimeTicketsTicketIdWorklogsGet(ticketId)
+  const timer = useTimer()
   const [logging, setLogging] = useState(false)
   const [editing, setEditing] = useState<number | null>(null)
   const [showAll, setShowAll] = useState(false)
@@ -62,12 +67,7 @@ export function TimeSection({
   const estimated = (estimate?.total.estimated_minutes ?? 0) > 0
 
   const time = query.data
-  const refresh = () => {
-    queryClient.invalidateQueries({
-      queryKey: getTicketTimeTicketsTicketIdWorklogsGetQueryKey(ticketId),
-    })
-    queryClient.invalidateQueries({ queryKey: estimateKey })
-  }
+  const refresh = () => refreshTicketTime(queryClient, ticketId)
 
   // Nothing logged, nothing estimated and nothing to log with: no section.
   if (!time || (readOnly && time.total_minutes === 0 && !estimated)) return null
@@ -97,6 +97,68 @@ export function TimeSection({
       </div>
 
       {estimate && estimated && <TicketEstimateBar estimate={estimate} />}
+
+      {!readOnly && (
+        <div className={`mb-2 flex items-center flex-wrap justify-between gap-2 rounded-control px-2 py-1.5 ${timer.timer?.ticket_id === ticketId && !timer.timer.is_paused ? 'bg-brand-100' : 'bg-neutral-500/5'}`}>
+          {timer.timer?.ticket_id === ticketId ? (
+            <>
+              <p className="text-neutral-900 text-xs flex flex-wrap items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-brand-600" />
+                <span className="font-medium">{timer.timer.is_paused ? t('time.timer.paused') : t('time.timer.running')}</span>
+                <span className="font-mono">{formatTimerClock(timer.elapsedSeconds)}</span>
+                <span className="text-neutral-500">·</span>
+                <span className="text-neutral-500">
+                  {t('time.timer.startedAt', {
+                    time: new Intl.DateTimeFormat(undefined, {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    }).format(new Date(timer.timer.started_at)),
+                  })}
+                </span>
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void timer.setPaused(!timer.timer?.is_paused)}
+                  disabled={timer.busy}
+                  className="btn btn-ghost btn-xs"
+                >
+                  <Icon
+                    name={timer.timer.is_paused ? "play" : "pause"}
+                    size={12}
+                  />
+                  {t(
+                    timer.timer.is_paused
+                      ? 'time.timer.resume'
+                      : 'time.timer.pause',
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void timer.openWorklog('stopped')}
+                  disabled={timer.busy}
+                  className="btn btn-secondary btn-xs"
+                >
+                  <Icon name="stop" size={12} />
+                  {t('time.timer.stopAndLog')}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="text-xs text-neutral-500">{t('time.timer.ready')}</span>
+              <button
+                type="button"
+                onClick={() => timer.handleStartTimer(ticketId, ticketIdentifier)}
+                disabled={timer.busy}
+                className="btn btn-secondary btn-xs"
+              >
+                <Icon name="timer" size={12} /> {t('time.timer.start')}
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {time.by_person.length > 1 && (
         <ul className="mb-2 flex flex-wrap gap-1.5" aria-label={t('time.byPerson')}>
@@ -233,27 +295,45 @@ function dayLabel(day: string): string {
   return i18n.t('tickets:time.day.daysAgo', { count: Math.round((distance + shift) / DAY) })
 }
 
-function WorklogForm({
+export function WorklogForm({
   ticketId,
   entry,
   estimate,
+  initialMinutes,
+  initialDay,
   submitLabel,
+  discardLabel,
   onCancel,
+  onDiscard,
   onSaved,
+  busy = false,
+  isInDialog = false
 }: {
   ticketId: number
   entry?: WorklogRead
-  /** A new entry on a ticket with something to work out what is left from. */
   estimate?: TicketTimeEstimate
+  initialMinutes?: number
+  initialDay?: string
   submitLabel: string
+  discardLabel?: string
   onCancel: () => void
+  onDiscard?: () => void
   onSaved: () => void
+  busy?: boolean
+  isInDialog?: boolean
 }) {
   const { t } = useTranslation(['tickets', 'common'])
   const create = useLogTimeTicketsTicketIdWorklogsPost()
   const update = useUpdateWorklogWorklogsWorklogIdPatch()
-  const [duration, setDuration] = useState(entry ? formatDuration(entry.minutes) : '')
-  const [day, setDay] = useState(entry?.worked_on ?? localToday())
+  const [initialDuration] = useState(() =>
+    entry
+      ? formatDuration(entry.minutes)
+      : initialMinutes !== undefined
+        ? formatDuration(initialMinutes)
+        : '',
+  )
+  const [duration, setDuration] = useState(initialDuration)
+  const [day, setDay] = useState(entry?.worked_on ?? initialDay ?? localToday())
   const [note, setNote] = useState(entry?.note ?? '')
   // What is left, as typed; null while it follows the worked-out answer.
   const [left, setLeft] = useState<string | null>(null)
@@ -262,6 +342,7 @@ function WorklogForm({
   const minutes = parseDuration(duration)
   const leftMinutes = left === null || left.trim() === '' ? undefined : parseRemaining(left)
   const invalid = duration.trim() !== '' && minutes === null
+  const pending = busy || create.isPending || update.isPending
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
@@ -297,7 +378,10 @@ function WorklogForm({
   }
 
   return (
-    <form onSubmit={submit} className="well mb-2 space-y-2 rounded-card p-2.5">
+    <form
+      onSubmit={submit}
+      className={`${!isInDialog ? 'well mb-2 rounded-card p-2.5' : '' } space-y-2 `}
+    >
       <div className="flex flex-wrap items-end gap-2">
         <label className="w-28">
           <span className="eyebrow mb-1 block">{t('time.form.spent')}</span>
@@ -346,10 +430,26 @@ function WorklogForm({
           {error ?? t('time.form.invalid')}
         </p>
       )}
-      <div className="flex justify-end gap-2">
-        <button type="button" onClick={onCancel} className="btn btn-secondary btn-sm">
-          {t('common:cancel')}
-        </button>
+      <div className={`${isInDialog ? 'mt-5' : ''} flex justify-end gap-2`}>
+        {discardLabel ? (
+          <button
+            type="button"
+            onClick={onDiscard ?? onCancel}
+            disabled={pending}
+            className="btn btn-secondary btn-sm"
+          >
+             {discardLabel}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={pending}
+            className="btn btn-secondary btn-sm"
+          >
+            {t('common:cancel')}
+          a</button>
+        )}
         <button
           type="submit"
           disabled={create.isPending || update.isPending}

@@ -8,7 +8,31 @@ or delete your own. Board cards show none of it — cards stay clean.
 Reports gets two charts: time logged **in the chosen sprint**, and time logged
 on the team's tickets **over the chosen window**, one bar per person.
 
-Deliberately Jira-lite: no timers, no billing rates, no approvals.
+## Ticket timer
+
+Start a timer from a ticket's **Time** section when you want to track work as
+you do it. The timer keeps running while you work elsewhere in Soft Track,
+including after a page reload; the current ticket and elapsed time stay in the
+header.
+
+- **One timer per person.** Your timer is independent of other people's.
+  Starting another timer replaces the existing timer. Before switching,
+  choose to log the elapsed time on the old ticket or discard it, then start
+  the new timer. Starting the timer on the same ticket resumes it if it was
+  paused.
+- **Pause and resume** from the ticket's Time section. Paused time is not
+  counted.
+- **Stop and log** opens the regular time-entry form with the elapsed duration
+  rounded to the nearest 15 minutes. Adjust the duration, date or optional
+  note before saving; saving creates an ordinary time entry. Discarding drops
+  the timer without creating an entry.
+- If a running timer passes **10 hours**, Soft Track asks you to review it and
+  log or discard the time.
+- Starting and controlling a timer requires write access to the ticket's
+  team. Guests cannot start one.
+
+Until you save the time entry, the timer's duration is not logged time and
+does not appear in time totals or reports.
 
 ## My time: the week as a grid
 
@@ -101,6 +125,14 @@ exactly, and the sums group by any column on a ticket
 - `POST /tickets/{ticket_id}/worklogs` — `{minutes, worked_on?, note?, remaining_minutes?}`;
   `remaining_minutes` sets what is left, and `null` hands it back to the sum.
 - `PATCH /worklogs/{worklog_id}`, `DELETE /worklogs/{worklog_id}` — your own only.
+- `POST /tickets/{ticket_id}/timer` — start timing a ticket. Starting the
+  current ticket resumes it if paused; starting another replaces the existing
+  timer.
+- `GET /me/timer` — get your current timer, or `null` if you have none.
+- `PATCH /me/timer` — pause or resume with `{paused: true}` or
+  `{paused: false}`.
+- `DELETE /me/timer` — stop and return your timer without creating a time
+  entry.
 - `GET /sprints/{sprint_id}/time-spent`, `GET /teams/{team_id}/time-spent?days=30`.
 - `GET /me/worklogs?from=&to=&ticket_id=` — my time as a grid; neither date
   is this week, `ticket_id` adds tickets with nothing logged yet.

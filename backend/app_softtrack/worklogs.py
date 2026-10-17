@@ -6,6 +6,9 @@ from lib_identity.identity import get_current_user
 from lib_softtrack import worklogs as worklogs_service
 from lib_softtrack.models.worklogs import (
     TicketTime,
+    TimerRead,
+    TimerStartRead,
+    TimerUpdate,
     WorklogCreate,
     WorklogRead,
     WorklogUpdate,
@@ -39,6 +42,48 @@ def log_time(
 ):
     """Log time you spent on the ticket, on one day."""
     return worklogs_service.log_time(session, current_user, ticket_id, payload)
+
+
+@router.post(
+    "/tickets/{ticket_id}/timer",
+    response_model=TimerStartRead,
+    dependencies=[team_writer],
+)
+def start_timer(
+    ticket_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Start timing a ticket, replacing any other timer the caller had."""
+    return worklogs_service.start_timer(session, current_user, ticket_id)
+
+
+@router.get("/me/timer", response_model=TimerRead | None)
+def my_timer(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Return the caller's one active timer, if there is one."""
+    return worklogs_service.get_timer(session, current_user)
+
+
+@router.delete("/me/timer", response_model=TimerRead)
+def stop_timer(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Stop the caller's timer and return it."""
+    return worklogs_service.stop_timer(session, current_user)
+
+
+@router.patch("/me/timer", response_model=TimerRead)
+def update_timer(
+    payload: TimerUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Pause or resume the caller's timer."""
+    return worklogs_service.update_timer(session, current_user, payload)
 
 
 @router.patch(

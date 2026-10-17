@@ -5,6 +5,7 @@ import { useTeamDirectoryTeamsDirectoryGet } from '@/api/generated/endpoints/tea
 import type { TeamDirectoryEntry } from '@/api/generated/models'
 import { useTranslation } from '@/i18n'
 import { TeamDirectoryList } from '@/team/TeamDirectory'
+import { TimerPill } from '@/tickets/timer/TimerPill'
 import { Icon } from '@/ui/Icon'
 import { Loading } from '@/ui/Loading'
 import { Logo } from '@/ui/Logo'
@@ -34,14 +35,17 @@ export default function TeamsPage() {
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl px-4 py-6">
-      <header className="mb-4 flex items-center justify-between gap-3">
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Link to="/" className="rounded-control focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/70">
           <Logo size={30} withWordmark />
         </Link>
-        <Link to="/" className="btn btn-ghost btn-sm">
-          <Icon name="chevron-left" size={14} />
-          {t('directory.backToBoard')}
-        </Link>
+        <div className="ml-auto flex items-center gap-2">
+          <TimerPill />
+          <Link to="/" className="btn btn-ghost btn-sm">
+            <Icon name="chevron-left" size={14} />
+            {t('directory.backToBoard')}
+          </Link>
+        </div>
       </header>
 
       <section className="glass-strong sheen pop-in rounded-panel p-6" aria-labelledby="teams-title">
