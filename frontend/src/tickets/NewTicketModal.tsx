@@ -6,7 +6,7 @@ import { useCreateTicketTeamsTeamIdTicketsPost } from '@/api/generated/endpoints
 import { useListTemplatesTeamsTeamIdTicketTemplatesGet } from '@/api/generated/endpoints/templates/templates'
 import { useSearchSearchGet } from '@/api/generated/endpoints/search/search'
 import { ticketPath } from '@/tickets/surface'
-import { TicketPriority, type TicketType } from '@/api/generated/models'
+import { TicketPriority, type TicketSeverity, type TicketType } from '@/api/generated/models'
 import { Trans, userText, useTranslation } from '@/i18n'
 import { formatList } from '@/i18n/format'
 import { AssigneeOptions } from '@/tickets/AssigneeOptions'
@@ -22,9 +22,13 @@ import {
   ESTIMATE_SCALE,
   PRIORITY_META,
   PRIORITY_ORDER,
+  SEVERITY_META,
+  SEVERITY_ORDER,
   TYPE_META,
   TYPE_ORDER,
 } from '@/tickets/ticketMeta'
+import { descriptionForType } from '@/tickets/bugSections'
+import { invalidateReleases, pickableReleases } from '@/releases/releases'
 import { replacingLosesWork } from '@/tickets/templates'
 import { MarkdownEditor } from '@/markdown/lazy'
 import { activeMembers } from '@/team/members'
@@ -56,7 +60,7 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
   const dialogRef = useFocusTrap<HTMLDivElement>()
   const titleInputRef = useRef<HTMLInputElement>(null)
   const titleId = useId()
-  const { team, projects, labels, members, sprints, statuses } = useTeamContext()
+  const { team, projects, labels, members, sprints, statuses, releases = [] } = useTeamContext()
   const queryClient = useQueryClient()
   const createTicket = useCreateTicketTeamsTeamIdTicketsPost()
   const templates = useListTemplatesTeamsTeamIdTicketTemplatesGet(team.id).data ?? []
@@ -113,6 +117,17 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
   const [statusId, setStatusId] = useState<string>('')
   const [priority, setPriority] = useState<TicketPriority>(TicketPriority.no_priority)
   const [type, setType] = useState<TicketType>('task')
+  // A bug's details (#273), asked once the type is Bug and sent only then.
+  const [severity, setSeverity] = useState<TicketSeverity | ''>('')
+  const [environment, setEnvironment] = useState('')
+  const [foundInId, setFoundInId] = useState('')
+  const isBug = type === 'bug'
+  const chooseType = (next: TicketType) => {
+    setType(next)
+    // Choosing Bug offers the sections of a bug's description; choosing
+    // something else takes them away again if nobody has written in them.
+    setDescription((current) => descriptionForType(current, next === 'bug'))
+  }
   const [estimate, setEstimate] = useState<(typeof ESTIMATE_SCALE)[number] | null>(null)
   const [sprintId, setSprintId] = useState<string>('')
   const [dueDate, setDueDate] = useState('')
@@ -176,6 +191,13 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
           status_id: statusId ? Number(statusId) : undefined,
           priority,
           type,
+          ...(isBug
+            ? {
+                severity: severity || undefined,
+                environment: environment || undefined,
+                found_in_id: foundInId ? Number(foundInId) : undefined,
+              }
+            : {}),
           estimate,
           sprint_id: sprintId ? Number(sprintId) : undefined,
           due_date: dueDate || undefined,
@@ -186,6 +208,7 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
       })
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/tickets`] })
       invalidateProjects(queryClient, team.id)
+      invalidateReleases(queryClient, team.id)
       onClose()
     } catch (err: unknown) {
       // The API's sentence when it has one -- a field made required since
@@ -408,7 +431,7 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
             <Select
               dense
               value={type}
-              onChange={(e) => setType(e.target.value as TicketType)}
+              onChange={(e) => chooseType(e.target.value as TicketType)}
               aria-label={t('newTicket.type')}
             >
               {TYPE_ORDER.map((value) => (
@@ -417,6 +440,53 @@ export function NewTicketModal({ onClose }: { onClose: () => void }) {
                 </option>
               ))}
             </Select>
+
+            {isBug && (
+              <>
+                <Select
+                  dense
+                  value={severity}
+                  onChange={(e) => setSeverity(e.target.value as TicketSeverity | '')}
+                  aria-label={t('newTicket.severity')}
+                >
+                  <option value="">{t('newTicket.noSeverity')}</option>
+                  {SEVERITY_ORDER.map((value) => (
+                    <option key={value} value={value}>
+                      {SEVERITY_META[value].label}
+                    </option>
+                  ))}
+                </Select>
+                <Select
+                  dense
+                  value={environment}
+                  onChange={(e) => setEnvironment(e.target.value)}
+                  aria-label={t('newTicket.environment')}
+                >
+                  <option value="">{t('newTicket.noEnvironment')}</option>
+                  {(team.environments ?? []).map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </Select>
+                {/* Only for a team that ships releases (#272). */}
+                {releases.length > 0 && (
+                  <Select
+                    dense
+                    value={foundInId}
+                    onChange={(e) => setFoundInId(e.target.value)}
+                    aria-label={t('newTicket.foundIn')}
+                  >
+                    <option value="">{t('newTicket.notFoundIn')}</option>
+                    {pickableReleases(releases).map((release) => (
+                      <option key={release.id} value={release.id}>
+                        {release.name}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </>
+            )}
 
             <Select
               dense

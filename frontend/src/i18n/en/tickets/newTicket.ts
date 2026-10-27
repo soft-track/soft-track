@@ -12,6 +12,19 @@ export const newTicket = {
   opensInNewTab: '(opens in a new tab)',
   status: 'Status',
   type: 'Type',
+  /** What a bug is asked as well (#273). */
+  severity: 'Severity',
+  noSeverity: 'No severity',
+  environment: 'Environment',
+  noEnvironment: 'No environment',
+  foundIn: 'Found in',
+  notFoundIn: 'Found in no release',
+  /** The sections of a new bug's description: headings in its markdown. */
+  bug: {
+    steps: 'Steps to reproduce',
+    expected: 'Expected',
+    actual: 'Actual',
+  },
   priority: 'Priority',
   estimate: 'Estimate',
   noEstimate: 'No estimate',

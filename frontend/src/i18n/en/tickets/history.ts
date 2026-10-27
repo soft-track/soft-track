@@ -44,6 +44,28 @@ export const history = {
     moved: '<actor>{{actor}}</actor> moved this from {{from}} to {{to}}',
     removed: '<actor>{{actor}}</actor> removed this from {{from}}',
   },
+  // The release it ships in (#272).
+  fixVersion: {
+    set: '<actor>{{actor}}</actor> set the fix version to {{to}}',
+    moved: '<actor>{{actor}}</actor> moved this from {{from}} to {{to}}',
+    cleared: '<actor>{{actor}}</actor> took this out of {{from}}',
+  },
+  // A bug's details (#273).
+  severity: {
+    set: '<actor>{{actor}}</actor> rated this {{to}}',
+    changed: '<actor>{{actor}}</actor> changed the severity from {{from}} to {{to}}',
+    cleared: '<actor>{{actor}}</actor> removed the severity (was {{from}})',
+  },
+  environment: {
+    set: '<actor>{{actor}}</actor> said this happens in {{to}}',
+    changed: '<actor>{{actor}}</actor> changed the environment from {{from}} to {{to}}',
+    cleared: '<actor>{{actor}}</actor> removed the environment (was {{from}})',
+  },
+  foundIn: {
+    set: '<actor>{{actor}}</actor> said this was found in {{to}}',
+    changed: '<actor>{{actor}}</actor> changed where this was found from {{from}} to {{to}}',
+    cleared: '<actor>{{actor}}</actor> removed where this was found (was {{from}})',
+  },
   team: '<actor>{{actor}}</actor> moved this from {{from}} to {{to}}',
   // One of the team's own fields (#117), by the name it has now.
   field: {
@@ -64,6 +86,7 @@ export const history = {
   formerMember: 'a former member',
   deletedSprint: 'a deleted sprint',
   deletedProject: 'a deleted epic',
+  deletedRelease: 'a deleted release',
   removedOption: 'a removed option',
   anotherTeam: 'another team',
   unknownStatus: 'an unknown status',

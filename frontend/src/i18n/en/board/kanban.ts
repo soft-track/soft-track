@@ -1,6 +1,5 @@
 /** The kanban board: its columns, and what a screen reader hears while moving a card. */
 export const kanban = {
-  noProject: 'No epic',
   pointsShort: '{{points}} pts',
   pointsTitle: '{{points}} points',
   pointsTitleUnsized_one: '{{points}} points, with {{count}} ticket not yet sized',

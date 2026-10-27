@@ -8,6 +8,7 @@
 import type { ParsedComment } from './parsedComment';
 import type { StatusCategory } from './statusCategory';
 import type { TicketPriority } from './ticketPriority';
+import type { TicketSeverity } from './ticketSeverity';
 import type { TicketType } from './ticketType';
 
 /**
@@ -29,4 +30,8 @@ export interface ParsedTicket {
   created_at?: string | null;
   updated_at?: string | null;
   comments?: ParsedComment[];
+  fix_versions?: string[];
+  affects_versions?: string[];
+  severity?: TicketSeverity | null;
+  environment?: string | null;
 }

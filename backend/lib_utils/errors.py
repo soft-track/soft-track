@@ -70,6 +70,11 @@ class ErrorCode(str, enum.Enum):
     parent_not_found = "parent_not_found"
     project_not_found = "project_not_found"
     sprint_not_found = "sprint_not_found"
+    #: A version a team ships (#272).
+    release_not_found = "release_not_found"
+    #: A team's test cases, and the folders they are kept in (#274).
+    test_case_not_found = "test_case_not_found"
+    test_folder_not_found = "test_folder_not_found"
     status_not_found = "status_not_found"
     label_not_found = "label_not_found"
     #: Restoring or purging something that is not in the trash (#323).
@@ -136,6 +141,12 @@ class ErrorCode(str, enum.Enum):
     department_name_taken = "department_name_taken"
     #: So are a team's label names (#321).
     label_name_taken = "label_name_taken"
+    #: And its release names (#272).
+    release_name_taken = "release_name_taken"
+    #: And its test folders' names (#274).
+    test_folder_name_taken = "test_folder_name_taken"
+    #: A test case already covering that ticket (#274).
+    test_case_covers_already = "test_case_covers_already"
     already_member = "already_member"
     #: Appointing an admin of a team who is one already (#307).
     already_team_admin = "already_team_admin"
@@ -174,6 +185,20 @@ class ErrorCode(str, enum.Enum):
     #: hard (#270).
     wip_limit_reached = "wip_limit_reached"
     sprint_dates_invalid = "sprint_dates_invalid"
+    #: Releasing a release that has been released already or archived, or
+    #: moving its unfinished tickets into one that is not planned (#272).
+    release_not_planned = "release_not_planned"
+    #: Marking a release released by hand, which releasing does -- it asks
+    #: what to do with the tickets that are not done (#272).
+    release_not_released = "release_not_released"
+    #: Severity, environment or found in on a ticket that is not a bug (#273).
+    bug_details_need_a_bug = "bug_details_need_a_bug"
+    #: An environment the team does not have (#273).
+    environment_not_on_team = "environment_not_on_team"
+    #: A team's list of environments with a repeat, or a blank (#273).
+    environments_invalid = "environments_invalid"
+    #: A test-case CSV that cannot be read (#274).
+    test_cases_import_invalid = "test_cases_import_invalid"
     link_to_self = "link_to_self"
     parent_is_self = "parent_is_self"
     parent_other_team = "parent_other_team"

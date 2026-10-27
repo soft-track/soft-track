@@ -44,6 +44,7 @@ from lib_softtrack.tables import (
     WebhookDelivery,
     Worklog,
     Project,
+    Release,
     Repository,
     RetiredTeamKey,
     SavedView,
@@ -55,10 +56,16 @@ from lib_softtrack.tables import (
     TeamMember,
     TeamRequest,
     TeamRole,
+    TestCase,
+    TestCaseLabel,
+    TestCaseTicket,
+    TestCaseVersion,
+    TestFolder,
     User,
     WorkflowStatus,
     utcnow,
 )
+from lib_softtrack.bug_details import clean_environments
 from lib_softtrack.trash import INCLUDE_TRASHED
 from lib_utils.errors import ErrorCode, api_error
 
@@ -254,8 +261,13 @@ def require_team_commenter(team_id: int, user: User, session: Session) -> TeamMe
 #: not change what a bad id gets back. Ordered: the first one present in a
 #: path wins, so `/tickets/{ticket_id}/links/{link_id}` resolves by the ticket.
 _TEAM_OWNED_BY_PATH = (
+    # Ahead of the ticket: a case names the ticket it covers in its path, and
+    # it is the case's team that is being written to (#274).
+    ("case_id", TestCase, ErrorCode.test_case_not_found, "Test case not found"),
     ("ticket_id", Ticket, ErrorCode.ticket_not_found, "Ticket not found"),
     ("sprint_id", Sprint, ErrorCode.sprint_not_found, "Sprint not found"),
+    ("release_id", Release, ErrorCode.release_not_found, "Release not found"),
+    ("folder_id", TestFolder, ErrorCode.test_folder_not_found, "Folder not found"),
     ("project_id", Project, ErrorCode.project_not_found, "Project not found"),
     ("view_id", SavedView, ErrorCode.view_not_found, "View not found"),
     ("status_id", WorkflowStatus, ErrorCode.status_not_found, "Status not found"),
@@ -592,6 +604,16 @@ def delete_empty_team(session: Session, team: Team) -> None:
         ),
         delete(CustomField).where(CustomField.team_id == team_id),
         delete(Sprint).where(Sprint.team_id == team_id),
+        delete(TestCaseLabel).where(col(TestCaseLabel.case_id).in_(of_team(TestCase))),
+        delete(TestCaseTicket).where(
+            col(TestCaseTicket.case_id).in_(of_team(TestCase))
+        ),
+        delete(TestCaseVersion).where(
+            col(TestCaseVersion.case_id).in_(of_team(TestCase))
+        ),
+        delete(TestCase).where(TestCase.team_id == team_id),
+        delete(TestFolder).where(TestFolder.team_id == team_id),
+        delete(Release).where(Release.team_id == team_id),
         delete(Project).where(Project.team_id == team_id),
         delete(TicketLabelLink).where(
             col(TicketLabelLink.label_id).in_(of_team(Label))
@@ -733,6 +755,8 @@ def update_team(
         team.capacity_points = payload.capacity_points
     if payload.capacity_minutes_per_day is not None:
         team.capacity_minutes_per_day = payload.capacity_minutes_per_day
+    if payload.environments is not None:
+        team.environments = clean_environments(payload.environments)
     if payload.listed is not None:
         team.listed = payload.listed
     if payload.open_to_join is not None:

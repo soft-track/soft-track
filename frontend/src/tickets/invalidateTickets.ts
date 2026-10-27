@@ -3,6 +3,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { getSearchSearchGetQueryKey } from '@/api/generated/endpoints/search/search'
 import { getListTrashTeamsTeamIdTrashGetQueryKey } from '@/api/generated/endpoints/trash/trash'
 import { MY_WORK_KEY } from '@/mywork/useMyWork'
+import { invalidateReleases } from '@/releases/releases'
 import { invalidateProjects } from '@/team/projects'
 
 /**
@@ -17,6 +18,7 @@ export function invalidateTicketWrites(queryClient: QueryClient, teamId: number)
   queryClient.invalidateQueries({ queryKey: [`/teams/${teamId}/estimates`] })
   queryClient.invalidateQueries({ queryKey: [`/teams/${teamId}/sprints`] })
   invalidateProjects(queryClient, teamId)
+  invalidateReleases(queryClient, teamId)
   queryClient.invalidateQueries({
     predicate: (query) =>
       typeof query.queryKey[0] === 'string' && query.queryKey[0].startsWith('/tickets/'),

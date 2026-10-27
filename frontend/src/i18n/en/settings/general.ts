@@ -59,6 +59,18 @@ export const general = {
     save: 'Save',
     saved: 'Saved.',
   },
+  // Where the team's bugs are found (#273).
+  environments: {
+    heading: 'Environments',
+    intro:
+      'Where a bug can be found. A bug’s environment is one of these; taking one off leaves it on the bugs that have it.',
+    none: 'No environments. Bugs on this team are not asked where they were found.',
+    new: 'A new environment',
+    placeholder: 'Demo, Customer sandbox…',
+    add: 'Add',
+    remove: 'Remove {{name}}',
+    taken: '{{name}} is in the list already.',
+  },
   // Archiving a team, and deleting one that was a mistake (#322).
   archive: {
     heading: 'Archive',
@@ -111,6 +123,7 @@ export const general = {
     delete: 'Could not delete this team.',
     preview: 'Could not count what archiving stops.',
     capacity: 'Could not change the capacity.',
+    environments: 'Could not change the environments.',
     estimates: 'Could not change what this team estimates in.',
     save: 'Could not save this team.',
     deleting: 'Could not change who may delete.',

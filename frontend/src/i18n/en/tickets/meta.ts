@@ -15,6 +15,8 @@ export const meta = {
     no_priority: 'No priority',
   },
   type: { bug: 'Bug', task: 'Task', story: 'Story' },
+  /** How bad a bug is (#273), worst first. */
+  severity: { critical: 'Critical', major: 'Major', minor: 'Minor', trivial: 'Trivial' },
   due: {
     overdue: 'Overdue',
     this_week: 'Due this week',

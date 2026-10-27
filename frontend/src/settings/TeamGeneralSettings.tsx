@@ -67,6 +67,7 @@ export default function TeamGeneralSettings() {
       />
       <EstimateUnitSetting key={`estimates-${team.id}`} team={team} isAdmin={isAdmin} />
       <CapacityDefaults key={`capacity-${team.id}`} team={team} isAdmin={isAdmin} />
+      <Environments key={`environments-${team.id}`} team={team} isAdmin={isAdmin} />
       <DeletePolicy key={`delete-${team.id}`} team={team} isAdmin={isAdmin} />
     </div>
   )
@@ -384,6 +385,106 @@ function CapacityDefaults({ team, isAdmin }: { team: TeamRead; isAdmin: boolean 
         </p>
       )}
     </form>
+  )
+}
+
+/**
+ * Where the team's bugs are found (#273): production, staging and
+ * development to begin with, and any a team admin adds. A bug's environment
+ * is one of these; taking one off the list leaves it on the bugs that have
+ * it. Saved together, so the order is the one the pickers list.
+ */
+function Environments({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
+  const { t } = useTranslation(['settings', 'common'])
+  const queryClient = useQueryClient()
+  const updateTeam = useUpdateTeamTeamsTeamIdPatch()
+  const [names, setNames] = useState<string[]>(team.environments ?? [])
+  const [draft, setDraft] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const id = useId()
+
+  const save = async (next: string[]) => {
+    setError(null)
+    const previous = names
+    setNames(next)
+    try {
+      await updateTeam.mutateAsync({ teamId: team.id, data: { environments: next } })
+      queryClient.invalidateQueries({ queryKey: ['/teams'] })
+    } catch (err: unknown) {
+      setNames(previous)
+      setError(errorDetail(err, t('general.errors.environments')))
+    }
+  }
+
+  const add = async (event: FormEvent) => {
+    event.preventDefault()
+    const name = draft.trim()
+    if (!name) return
+    if (names.some((other) => other.toLowerCase() === name.toLowerCase())) {
+      setError(t('general.environments.taken', { name }))
+      return
+    }
+    setDraft('')
+    await save([...names, name])
+  }
+
+  return (
+    <section className="glass-strong rounded-panel p-6" aria-labelledby={`${id}-heading`}>
+      <p className="eyebrow" id={`${id}-heading`}>
+        {t('general.environments.heading')}
+      </p>
+      <p className="mt-2 text-sm text-neutral-600">{t('general.environments.intro')}</p>
+      <ul className="mt-3 flex flex-wrap gap-1.5" aria-label={t('general.environments.heading')}>
+        {names.map((name) => (
+          <li key={name} className="chip" style={{ ['--chip' as string]: 'var(--color-accent-sky)' }}>
+            {name}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => save(names.filter((other) => other !== name))}
+                aria-label={t('general.environments.remove', { name })}
+                className="rounded-full p-0.5 text-neutral-400 hover:text-neutral-800"
+              >
+                <Icon name="close" size={11} />
+              </button>
+            )}
+          </li>
+        ))}
+        {names.length === 0 && (
+          <li className="text-xs text-neutral-400">{t('general.environments.none')}</li>
+        )}
+      </ul>
+      {isAdmin && (
+        <form onSubmit={add} className="mt-3 flex flex-wrap items-center gap-2">
+          <label className="sr-only" htmlFor={`${id}-new`}>
+            {t('general.environments.new')}
+          </label>
+          <input
+            id={`${id}-new`}
+            value={draft}
+            maxLength={40}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={t('general.environments.placeholder')}
+            className="field w-56"
+          />
+          <button
+            type="submit"
+            className="btn btn-secondary"
+            disabled={!draft.trim() || updateTeam.isPending}
+          >
+            {t('general.environments.add')}
+          </button>
+        </form>
+      )}
+      {error && (
+        <p
+          role="alert"
+          className="mt-3 rounded-control bg-danger-50 px-3 py-2 text-sm text-danger-700"
+        >
+          {error}
+        </p>
+      )}
+    </section>
   )
 }
 

@@ -7,9 +7,10 @@ import { selectionGesture } from '@/board/selection'
 import { useTranslation } from '@/i18n'
 import { DueBadge } from '@/tickets/DueBadge'
 import { EstimateBadge } from '@/tickets/EstimateBadge'
-import { isResolved } from '@/tickets/ticketMeta'
+import { isResolved, severityOf } from '@/tickets/ticketMeta'
 import { TicketTypeIcon } from '@/tickets/TicketTypeIcon'
 import { PriorityIcon } from '@/tickets/PriorityIcon'
+import { SeverityBadge } from '@/tickets/SeverityBadge'
 import { AssigneeAvatar } from '@/tickets/AssigneeAvatar'
 import { isPlainClick, ticketPath, useOpenTicket } from '@/tickets/surface'
 import { isPlainKey } from '@/keyboard/typing'
@@ -22,6 +23,7 @@ export function TicketCard({
   onSelect,
   showStatus = false,
   showProject = true,
+  showSeverity = true,
 }: {
   ticket: TicketRead
   selected?: boolean
@@ -34,6 +36,8 @@ export function TicketCard({
   showStatus?: boolean
   /** Off on a board grouped by project, where the column already says it. */
   showProject?: boolean
+  /** Off on a board grouped by severity (#273), for the same reason. */
+  showSeverity?: boolean
 }) {
   const { t } = useTranslation('tickets')
   const openTicket = useOpenTicket()
@@ -164,7 +168,7 @@ export function TicketCard({
             </span>
           )}
           <TicketTypeIcon type={ticket.type} size={13} />
-          <span className="identifier text-[11px] font-medium text-neutral-400">
+          <span className="identifier whitespace-nowrap text-[11px] font-medium text-neutral-400">
             {ticket.identifier}
           </span>
         </span>
@@ -182,6 +186,10 @@ export function TicketCard({
             </span>
           )}
           {ticket.estimate != null && <EstimateBadge points={ticket.estimate} />}
+          {/* How bad, beside how soon (#273): a bug's alone. */}
+          {showSeverity && severityOf(ticket) && (
+            <SeverityBadge severity={severityOf(ticket)!} />
+          )}
           <PriorityIcon priority={ticket.priority} />
         </div>
       </div>

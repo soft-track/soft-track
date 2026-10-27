@@ -16,11 +16,13 @@ import { mywork } from '@/i18n/en/mywork'
 import { notifications } from '@/i18n/en/notifications'
 import { people } from '@/i18n/en/people'
 import { projects } from '@/i18n/en/projects'
+import { releases } from '@/i18n/en/releases'
 import { reports } from '@/i18n/en/reports'
 import { search } from '@/i18n/en/search'
 import { settings } from '@/i18n/en/settings'
 import { sharing } from '@/i18n/en/sharing'
 import { team } from '@/i18n/en/team'
+import { tests } from '@/i18n/en/tests'
 import { ui } from '@/i18n/en/ui'
 import { views } from '@/i18n/en/views'
 
@@ -37,6 +39,8 @@ export const resources = {
     projects,
     views,
     reports,
+    releases,
+    tests,
     sprints,
     automations,
     imports,

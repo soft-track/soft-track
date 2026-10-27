@@ -3,7 +3,12 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from lib_softtrack.tables import TicketPriority, TicketType, StatusCategory
+from lib_softtrack.tables import (
+    StatusCategory,
+    TicketPriority,
+    TicketSeverity,
+    TicketType,
+)
 
 
 class ParsedComment(BaseModel):
@@ -32,6 +37,15 @@ class ParsedTicket(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     comments: list[ParsedComment] = []
+    #: The versions it is fixed in and was found in (#272, #273), by name:
+    #: Jira's "Fix Version/s" and "Affects Version/s". Releases are made of
+    #: the names the team does not have yet; the first of each is kept.
+    fix_versions: list[str] = []
+    affects_versions: list[str] = []
+    #: A bug's severity and environment (#273). Jira has no severity of its
+    #: own; a "Severity" field, where a team added one, is read.
+    severity: Optional[TicketSeverity] = None
+    environment: Optional[str] = None
 
 
 class UserMatch(BaseModel):
@@ -62,6 +76,10 @@ class ImportReport(BaseModel):
     #: `undefined` check into every client that reads the report.
     labels_created: list[str]
     projects_created: list[str]
+    #: Releases made of the versions the issues name (#272, #273).
+    releases_created: list[str]
+    #: Environments added to the team's list (#273).
+    environments_added: list[str]
     users: list[UserMatch]
     #: Jira statuses and priorities that had no mapping and fell back.
     unmapped_statuses: list[str]
