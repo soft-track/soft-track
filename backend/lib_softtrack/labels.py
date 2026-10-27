@@ -18,6 +18,7 @@ from lib_softtrack.tables import (
     Label,
     SavedView,
     TicketLabelLink,
+    TestCaseLabel,
     User,
     label_name_key,
 )
@@ -246,6 +247,18 @@ def _merge(session: Session, label: Label, target: Label) -> None:
         session.delete(link)
         if link.ticket_id not in already:
             session.add(TicketLabelLink(ticket_id=link.ticket_id, label_id=target.id))
+    # The test cases carrying it (#274), the same way.
+    cased = set(
+        session.exec(
+            select(TestCaseLabel.case_id).where(TestCaseLabel.label_id == target.id)
+        ).all()
+    )
+    for link in session.exec(
+        select(TestCaseLabel).where(TestCaseLabel.label_id == label.id)
+    ).all():
+        session.delete(link)
+        if link.case_id not in cased:
+            session.add(TestCaseLabel(case_id=link.case_id, label_id=target.id))
     for view in _views_naming(session, label):
         merged: list[int] = []
         for label_id in view.label_ids:
@@ -266,6 +279,10 @@ def _merge(session: Session, label: Label, target: Label) -> None:
 def _remove(session: Session, label: Label) -> None:
     for link in session.exec(
         select(TicketLabelLink).where(TicketLabelLink.label_id == label.id)
+    ).all():
+        session.delete(link)
+    for link in session.exec(
+        select(TestCaseLabel).where(TestCaseLabel.label_id == label.id)
     ).all():
         session.delete(link)
     for view in _views_naming(session, label):

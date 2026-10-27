@@ -463,6 +463,8 @@ def reachable(client, eng, carlos):
             "ends_at": "2026-10-14",
         },
     )
+    # A release holding both, whose notes are drafted from what is done (#272).
+    release = post(f"/teams/{eng['team_id']}/releases", json={"name": "1.4.0"})
     for ticket in (secret, sign_in):
         _ok(
             client.patch(
@@ -470,6 +472,7 @@ def reachable(client, eng, carlos):
                 json={
                     "sprint_id": sprint["id"],
                     "status_id": eng["status_ids"]["Done"],
+                    "fix_version_id": release["id"],
                 },
                 headers=h,
             )
@@ -477,6 +480,7 @@ def reachable(client, eng, carlos):
     common = {
         "team_id": eng["team_id"],
         "sprint_id": sprint["id"],
+        "release_id": release["id"],
         "username": eng["user"]["username"],
     }
     return {
@@ -526,6 +530,7 @@ def test_the_sweep_is_not_vacuous(client, eng, carlos, reachable):
         f"/tickets/{hidden['ticket_id']}",
         f"/teams/{eng['team_id']}/tickets/export",
         f"/tickets/{hidden['ticket_id']}/comments",
+        f"/releases/{hidden['release_id']}/notes",
     ):
         assert HIDDEN in client.get(path, headers=eng["headers"]).text, path
     for path in (

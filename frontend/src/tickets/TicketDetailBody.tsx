@@ -19,6 +19,7 @@ import { isArchived } from '@/team/archived'
 import { useCanWrite } from '@/team/useCanWrite'
 import { useTeamContext } from '@/team/useTeamContext'
 import { PersonLink } from '@/people/PersonLink'
+import { TicketTestCases } from '@/testcases/TicketTestCases'
 import { Avatar } from '@/ui/Avatar'
 
 /**
@@ -114,6 +115,8 @@ export function TicketDetailBody({ ticketId }: { ticketId: number }) {
         <div className="ticket-body-rest">
           {!ticket.parent && <SubTicketsSection ticket={ticket} readOnly={readOnly} />}
           <TicketLinksSection ticketId={ticket.id} readOnly={readOnly} />
+          {/* The cases that cover it, for a team that keeps any (#274). */}
+          <TicketTestCases ticket={ticket} readOnly={readOnly} />
           <TimeSection
             ticketId={ticket.id}
             readOnly={readOnly}

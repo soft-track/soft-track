@@ -7,6 +7,7 @@ from lib_softtrack.models.reports import (
     Burndown,
     CreatedVsResolved,
     CumulativeFlow,
+    OpenBugsBySeverity,
     ProjectBurnup,
     Velocity,
 )
@@ -78,6 +79,17 @@ def team_created_vs_resolved(
 ):
     """Tickets opened against tickets closed, with the running backlog."""
     return reports_service.created_vs_resolved(session, current_user, team_id, days)
+
+
+@router.get("/teams/{team_id}/open-bugs-by-severity", response_model=OpenBugsBySeverity)
+def team_open_bugs_by_severity(
+    team_id: int,
+    weeks: int = Query(8, ge=1, le=52),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """The bugs open at the end of each week, by severity (#273)."""
+    return reports_service.open_bugs_by_severity(session, current_user, team_id, weeks)
 
 
 @router.get("/sprints/{sprint_id}/time-spent", response_model=TimeSpent)

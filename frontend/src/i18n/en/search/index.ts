@@ -10,6 +10,8 @@ export const search = {
     '<n>{{count}}</n> result for <query>“{{query}}”</query> · showing the first {{shown}}',
   resultsFirst_other:
     '<n>{{count}}</n> results for <query>“{{query}}”</query> · showing the first {{shown}}',
+  /** The test cases the words find (#274), after the tickets. */
+  testCases: 'Test cases',
   // Where the match was, then when the ticket last changed.
   matchedIn: {
     title: 'matched in title · {{when}}',

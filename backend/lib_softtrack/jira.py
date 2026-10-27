@@ -23,7 +23,12 @@ from datetime import datetime
 from typing import Any, Iterable, Optional
 
 from lib_softtrack.models.imports import ParsedComment, ParsedTicket
-from lib_softtrack.tables import TicketPriority, TicketType, StatusCategory
+from lib_softtrack.tables import (
+    StatusCategory,
+    TicketPriority,
+    TicketSeverity,
+    TicketType,
+)
 
 #: Jira's default workflow statuses, plus the ones teams most often add,
 #: mapped to what they *mean*. Matched case-insensitively after stripping, so
@@ -117,6 +122,42 @@ def map_priority(raw: Optional[str]) -> tuple[TicketPriority, Optional[str]]:
         return PRIORITY_FALLBACK, None
     mapped = PRIORITY_MAP.get(raw.strip().lower())
     return (mapped, None) if mapped else (PRIORITY_FALLBACK, raw.strip())
+
+
+#: Severity as teams name it in Jira (#273), onto SoftTrack's four. Jira has
+#: no severity of its own, so this reads a field a team added.
+SEVERITY_MAP: dict[str, TicketSeverity] = {
+    "blocker": TicketSeverity.critical,
+    "critical": TicketSeverity.critical,
+    "sev1": TicketSeverity.critical,
+    "s1": TicketSeverity.critical,
+    "major": TicketSeverity.major,
+    "high": TicketSeverity.major,
+    "sev2": TicketSeverity.major,
+    "s2": TicketSeverity.major,
+    "minor": TicketSeverity.minor,
+    "medium": TicketSeverity.minor,
+    "moderate": TicketSeverity.minor,
+    "sev3": TicketSeverity.minor,
+    "s3": TicketSeverity.minor,
+    "trivial": TicketSeverity.trivial,
+    "low": TicketSeverity.trivial,
+    "cosmetic": TicketSeverity.trivial,
+    "sev4": TicketSeverity.trivial,
+    "s4": TicketSeverity.trivial,
+}
+
+#: The columns a Jira CSV names versions and severity under.
+_FIX_VERSION_HEADERS = ("fix version/s", "fix versions", "fix version")
+_AFFECTS_VERSION_HEADERS = ("affects version/s", "affects versions", "affects version")
+_SEVERITY_HEADERS = ("custom field (severity)", "severity")
+
+
+def map_severity(raw: Optional[str]) -> Optional[TicketSeverity]:
+    """A severity, read from what a team called it; none for anything else."""
+    if not raw:
+        return None
+    return SEVERITY_MAP.get(raw.strip().lower().replace(" ", "").replace("-", ""))
 
 
 def _parse_datetime(raw: Optional[str]) -> Optional[datetime]:
@@ -231,6 +272,10 @@ def parse_csv(text: str) -> list[ParsedTicket]:
                 comments=[
                     _parse_csv_comment(value) for value in _all(row, _COMMENT_HEADERS)
                 ],
+                fix_versions=_all(row, _FIX_VERSION_HEADERS),
+                affects_versions=_all(row, _AFFECTS_VERSION_HEADERS),
+                severity=map_severity(_first(row, *_SEVERITY_HEADERS)),
+                environment=_first(row, "environment"),
             )
         )
     return issues
@@ -308,9 +353,20 @@ def parse_json(text: str) -> list[ParsedTicket]:
                 comments=_json_comments(
                     fields.get("comment") or fields.get("comments")
                 ),
+                fix_versions=_names(fields.get("fixVersions")),
+                affects_versions=_names(fields.get("versions")),
+                severity=map_severity(_name_of(fields.get("severity"))),
+                environment=_text_of(fields.get("environment")),
             )
         )
     return issues
+
+
+def _names(value: Any) -> list[str]:
+    """The names in a list of Jira objects -- versions, components."""
+    if not isinstance(value, list):
+        return []
+    return [name for name in (_name_of(item) for item in value) if name]
 
 
 def _name_of(value: Any) -> Optional[str]:

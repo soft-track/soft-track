@@ -8,6 +8,7 @@
 import type { TicketCreateCustomFields } from './ticketCreateCustomFields';
 import type { TicketCreateEstimate } from './ticketCreateEstimate';
 import type { TicketPriority } from './ticketPriority';
+import type { TicketSeverity } from './ticketSeverity';
 import type { TicketType } from './ticketType';
 
 export interface TicketCreate {
@@ -22,6 +23,10 @@ export interface TicketCreate {
   estimate?: TicketCreateEstimate;
   parent_id?: number | null;
   sprint_id?: number | null;
+  fix_version_id?: number | null;
+  severity?: TicketSeverity | null;
+  environment?: string | null;
+  found_in_id?: number | null;
   due_date?: string | null;
   label_ids?: number[];
   /** Values for the team's own fields, by key. On an update only the keys given change, and null clears one. */

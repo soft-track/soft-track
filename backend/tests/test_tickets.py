@@ -288,6 +288,10 @@ def test_the_export_header_names_every_column(client, export_board):
         "time_estimate_hours",
         "time_logged_hours",
         "time_remaining_hours",
+        "fix_version",
+        "bug_severity",
+        "bug_environment",
+        "found_in",
     ]
 
 
@@ -320,6 +324,11 @@ def test_every_column_carries_its_value(client, export_board, session):
         # No time estimate and nothing logged (#268).
         "",
         "0",
+        "",
+        # In no release (#272), and not a bug (#273).
+        "",
+        "",
+        "",
         "",
     ]
 

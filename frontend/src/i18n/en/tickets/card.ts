@@ -5,6 +5,8 @@ export const card = {
   subTicketsDone_one: '{{done}} of {{count}} sub-tickets done',
   subTicketsDone_other: '{{done}} of {{count}} sub-tickets done',
   unassigned: 'Unassigned',
+  /** A bug's severity beside its priority (#273): "Severity: Major". */
+  severity: 'Severity: {{severity}}',
   projectTitle: 'Epic: {{name}}',
   // Screen-reader only, after the project's name.
   /** What a screen reader hears for the badge: the name, and what it is. */

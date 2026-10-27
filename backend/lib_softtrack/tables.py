@@ -96,6 +96,11 @@ class TicketGrouping(str, enum.Enum):
 
     status = "status"
     project = "project"
+    #: One column per release the team ships (#272), and one for no release.
+    release = "release"
+    #: How bad a bug is, and where it was found (#273).
+    severity = "severity"
+    environment = "environment"
 
 
 class TicketType(str, enum.Enum):
@@ -115,6 +120,61 @@ class TicketType(str, enum.Enum):
     task = "task"
     #: A change described from the user's side.
     story = "story"
+
+
+class TicketSeverity(str, enum.Enum):
+    """How bad a bug is (#273), worst first.
+
+    Separate from priority, which says how soon: a typo on the pricing page
+    is trivial and urgent. Optional, and only a bug has one -- a ticket made
+    a task keeps the value, unshown and unfiltered, until it is a bug again.
+    """
+
+    critical = "critical"
+    major = "major"
+    minor = "minor"
+    trivial = "trivial"
+
+
+class TestCaseState(str, enum.Enum):
+    """Where a test case is in its life (#274).
+
+    A draft is still being written, ready is what a run takes, and retired
+    is out of new runs and stays in the old ones it was part of -- a result
+    from March still says what was tested in March.
+    """
+
+    __test__ = False
+
+    draft = "draft"
+    ready = "ready"
+    retired = "retired"
+
+
+class TestRunState(str, enum.Enum):
+    """A run is open while it is being run, and closed when it is finished
+    (#275): then its results are fixed, and testing again is a new run."""
+
+    __test__ = False
+
+    open = "open"
+    closed = "closed"
+
+
+class TestResult(str, enum.Enum):
+    """What happened when a case was run (#275). No result is "not run yet"."""
+
+    __test__ = False
+
+    passed = "passed"
+    failed = "failed"
+    #: Could not be run: waiting on something else.
+    blocked = "blocked"
+    skipped = "skipped"
+
+
+#: Where a bug can be found, until a team says otherwise (#273).
+DEFAULT_ENVIRONMENTS: tuple[str, ...] = ("Production", "Staging", "Development")
 
 
 class CustomFieldKind(str, enum.Enum):
@@ -154,6 +214,9 @@ class TicketSort(str, enum.Enum):
     title = "title"
     #: The board's own order, arranged by hand (part 2).
     rank = "rank"
+    #: Critical first when descending (#273). A ticket with no severity --
+    #: and every ticket that is not a bug -- comes last either way.
+    severity = "severity"
 
 
 class SortDirection(str, enum.Enum):
@@ -212,6 +275,22 @@ class SprintOutcome(str, enum.Enum):
     missed = "missed"
 
 
+class ReleaseState(str, enum.Enum):
+    """Where a release is in its life (#272).
+
+    Set, like a sprint's state and a project's: "every ticket in it is done"
+    is evidence a version is ready, not a decision to ship it. Releasing is
+    the one way to `released`, because it asks what happens to the tickets
+    that are not done.
+    """
+
+    planned = "planned"
+    released = "released"
+    #: Out of the pickers, as an archived epic is. Its tickets keep pointing
+    #: at it, so "fixed in 1.2" still reads back on an old bug.
+    archived = "archived"
+
+
 class TicketEventField(str, enum.Enum):
     """Which field a TicketEvent records a change to."""
 
@@ -249,6 +328,19 @@ class TicketEventField(str, enum.Enum):
     #: the burndown in hours replays.
     time_estimate = "time_estimate"
     remaining = "remaining"
+    #: The release a ticket ships in (#272), as the release's id.
+    fix_version = "fix_version"
+    #: A bug's details (#273): how bad, where, and the release it was found
+    #: in, as the release's id.
+    severity = "severity"
+    environment = "environment"
+    found_in = "found_in"
+    #: A test result on the bug it raised (#275): the bug's raising, and each
+    #: result of that case in that run after it. Written as it was --
+    #: `result|TC-05|1.4.0 regression` -- so the line survives the run being
+    #: renamed or the case changed, as a schedule's name does. The raising
+    #: is the result `raised`.
+    test_result = "test_result"
 
 
 class DueFilter(str, enum.Enum):
@@ -308,6 +400,8 @@ class MissingField(str, enum.Enum):
     #: No epic (the column is `project_id`).
     epic = "epic"
     sprint = "sprint"
+    #: No release to ship in (#272): the column is `fix_version_id`.
+    fix_version = "fix_version"
 
 
 class TeamRole(str, enum.Enum):
@@ -1021,6 +1115,8 @@ class Team(SQLModel, table=True):
     description: Optional[str] = None
     next_ticket_number: int = Field(default=1)
     next_sprint_number: int = Field(default=1)
+    #: Test cases are numbered per team too (#274): TC-21.
+    next_test_case_number: int = Field(default=1)
     #: The view everyone on this team lands on, unless they have chosen their
     #: own -- see UserDefaultView. Only a shared view may hold it, since a
     #: private one would be invisible to everybody it was defaulted for.
@@ -1052,6 +1148,13 @@ class Team(SQLModel, table=True):
     #: day. Both shrink with the days somebody is away.
     capacity_points: int = Field(default=10)
     capacity_minutes_per_day: int = Field(default=6 * 60)
+    #: Where the team's bugs are found (#273): production, staging and
+    #: development, and any a team admin adds. A bug's environment is one of
+    #: these, in this spelling.
+    environments: list = Field(
+        default_factory=lambda: list(DEFAULT_ENVIRONMENTS),
+        sa_column=Column(JSONValue, nullable=False),
+    )
     created_at: datetime = Field(default_factory=utcnow)
     #: Whether the team is in the team directory (#259), where people who are
     #: not on it see its name, key, size and admins and can ask to join. On
@@ -1152,6 +1255,21 @@ class Ticket(SQLModel, table=True):
     # rather than left to convention.
     parent_id: Optional[int] = Field(default=None, foreign_key="ticket.id", index=True)
     sprint_id: Optional[int] = Field(default=None, foreign_key="sprint.id", index=True)
+    #: The release it ships in (#272): one per ticket. A sprint says when the
+    #: work was done and an epic what it was part of; this says which version
+    #: a customer has to be on to have it.
+    fix_version_id: Optional[int] = Field(
+        default=None, foreign_key="release.id", index=True
+    )
+    # --- A bug's details (#273): kept when the type changes away, and only
+    # shown, filtered and counted while it is a bug. -----------------------
+    severity: Optional[TicketSeverity] = Field(default=None, index=True)
+    #: One of the team's environments, as the team spells it.
+    environment: Optional[str] = Field(default=None, index=True)
+    #: The release the bug was found in. Its fix version is "fixed in".
+    found_in_id: Optional[int] = Field(
+        default=None, foreign_key="release.id", index=True
+    )
     #: The identifier this ticket had in the system it was imported from, e.g.
     #: a Jira key like "PROJ-142". Kept so links in old documents, commit
     #: messages and chat history stay traceable after a migration -- which is
@@ -1264,6 +1382,216 @@ class SprintCapacity(SQLModel, table=True):
     days_off: int = Field(default=0)
     points: Optional[int] = None
     minutes: Optional[int] = None
+
+
+class Release(SQLModel, table=True):
+    """A version a team ships (#272): a name for a set of tickets.
+
+    Not a deploy and not a build. A sprint says when work was done and an
+    epic what it was part of; a release says which version it shipped in, so
+    "is this fixed in what the customer runs" has an answer that is not
+    somebody's memory. Tickets point here by `Ticket.fix_version_id`.
+    """
+
+    #: "1.4.0" once per team. Compared as typed: versions are not words, and
+    #: "1.4.0-RC1" and "1.4.0-rc1" can be two different builds.
+    __table_args__ = (UniqueConstraint("team_id", "name", name="uq_release_team_name"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    name: str
+    description: Optional[str] = None
+    #: A day, like an epic's target: a version is due on a date, and a
+    #: timestamp would move it across midnight for half the team.
+    target_date: Optional[date] = None
+    state: ReleaseState = Field(default=ReleaseState.planned, index=True)
+    #: The day it shipped, said when it is released. Kept when it is archived,
+    #: so an archived release still says when it went out.
+    released_on: Optional[date] = None
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class TestFolder(SQLModel, table=True):
+    """A folder of a team's test cases (#274): "Invoices", "Sign-in".
+
+    One level deep, on purpose -- labels cut across folders, and a tree of
+    folders is where a test suite goes to be lost.
+    """
+
+    __test__ = False
+    __table_args__ = (
+        UniqueConstraint("team_id", "name", name="uq_test_folder_team_name"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    name: str
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class TestCase(SQLModel, table=True):
+    """How to test something, written down (#274): a title, preconditions,
+    and numbered steps, each with what should happen.
+
+    So that how to test the invoice page is known to more than whoever tested
+    it last. The text is versioned (`TestCaseVersion`): a change to the title,
+    the preconditions or the steps is a new version, and a run records the
+    one it executed.
+    """
+
+    __test__ = False
+    __table_args__ = (
+        Index("ix_testcase_team_number", "team_id", "number", unique=True),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    #: Per team, like a ticket's: TC-21.
+    number: int
+    title: str
+    #: Markdown, with the editor tickets use.
+    preconditions: Optional[str] = None
+    #: `[{"action": "Open Invoices.", "expected": "The list, newest first."}]`,
+    #: in order. A list in a JSON column: a case is read and written whole.
+    steps: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    folder_id: Optional[int] = Field(
+        default=None, foreign_key="testfolder.id", index=True
+    )
+    #: Who keeps it up to date. Somebody on the team.
+    owner_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    state: TestCaseState = Field(default=TestCaseState.draft, index=True)
+    #: The version its text is at, starting at 1.
+    version: int = Field(default=1)
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
+class TestCaseVersion(SQLModel, table=True):
+    """The text of a test case as it was at one version (#274).
+
+    Written when a case is made and whenever its title, preconditions or
+    steps change -- not its folder, owner, state or labels, which change
+    nothing about what is tested.
+    """
+
+    __test__ = False
+    __table_args__ = (
+        UniqueConstraint("case_id", "version", name="uq_test_case_version"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    case_id: int = Field(foreign_key="testcase.id", index=True)
+    version: int
+    title: str
+    preconditions: Optional[str] = None
+    steps: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    #: What changed, in the words of whoever changed it: "step 3 now names
+    #: the PDF button". Optional.
+    note: Optional[str] = None
+    author_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class TestCaseLabel(SQLModel, table=True):
+    """A team label on a test case (#274): labels cut across folders."""
+
+    __test__ = False
+
+    case_id: int = Field(foreign_key="testcase.id", primary_key=True)
+    label_id: int = Field(foreign_key="label.id", primary_key=True, index=True)
+
+
+class TestCaseTicket(SQLModel, table=True):
+    """A ticket a test case covers (#274): a story lists the cases that cover
+    it, and a case the stories it covers. On the same team."""
+
+    __test__ = False
+
+    case_id: int = Field(foreign_key="testcase.id", primary_key=True)
+    ticket_id: int = Field(foreign_key="ticket.id", primary_key=True, index=True)
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class TestRun(SQLModel, table=True):
+    """A pass through a team's test cases (#275): that it was done, by whom,
+    against what, and what happened.
+
+    For a release, a sprint or an epic -- or none of them -- in an
+    environment, owned by somebody. Its cases are chosen when it is made, by
+    folder, by label or by hand, and copied in as `TestRunCase` rows; the
+    run is what was run, whatever happens to the folder afterwards.
+    """
+
+    __test__ = False
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    name: str
+    release_id: Optional[int] = Field(
+        default=None, foreign_key="release.id", index=True
+    )
+    sprint_id: Optional[int] = Field(default=None, foreign_key="sprint.id", index=True)
+    project_id: Optional[int] = Field(
+        default=None, foreign_key="project.id", index=True
+    )
+    #: One of the team's environments (#273), as it was spelt then.
+    environment: Optional[str] = None
+    owner_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    state: TestRunState = Field(default=TestRunState.open, index=True)
+    created_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    closed_at: Optional[datetime] = None
+    closed_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+
+
+class TestRunCase(SQLModel, table=True):
+    """One case in one run, and its result (#275).
+
+    `version` is the version of the case's text that was run: the version it
+    had when the run was made, and the one it had when a result was given.
+    A result from March says what was tested in March.
+    """
+
+    __test__ = False
+    __table_args__ = (UniqueConstraint("run_id", "case_id", name="uq_test_run_case"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    run_id: int = Field(foreign_key="testrun.id", index=True)
+    case_id: int = Field(foreign_key="testcase.id", index=True)
+    version: int
+    #: Who is to run it.
+    assignee_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    #: Null until it is run.
+    result: Optional[TestResult] = Field(default=None, index=True)
+    note: Optional[str] = None
+    #: Which step failed, counting from 1.
+    failed_step: Optional[int] = None
+    ran_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    ran_at: Optional[datetime] = Field(default=None, index=True)
+    #: The bug a failure raised.
+    bug_id: Optional[int] = Field(default=None, foreign_key="ticket.id", index=True)
+
+
+class TestResultFile(SQLModel, table=True):
+    """A file with a result (#275): the screenshot of the blank PDF. Checked
+    and stored as a ticket's attachments are, kept apart from them because a
+    result belongs to a run rather than to a ticket."""
+
+    __test__ = False
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    run_case_id: int = Field(foreign_key="testruncase.id", index=True)
+    filename: str
+    content_type: str
+    size_bytes: int
+    storage_key: str
+    uploaded_by_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
 
 
 class TicketEvent(SQLModel, table=True):
@@ -1690,6 +2018,26 @@ class SavedView(SQLModel, table=True):
     has_no: list = Field(
         default_factory=list, sa_column=Column(JSONValue, nullable=False)
     )
+    #: Release ids, for the release a ticket ships in (#272). Cleared of a
+    #: release when it is deleted -- see lib_softtrack/releases.py.
+    fix_version_ids: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    fix_version_exclude: bool = Field(default=False)
+    #: A bug's details (#273): `TicketSeverity` values, environment names
+    #: and the release ids it was found in. Each narrows to bugs.
+    severities: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    severity_exclude: bool = Field(default=False)
+    environments: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    environment_exclude: bool = Field(default=False)
+    found_in_ids: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    found_in_exclude: bool = Field(default=False)
 
     #: Not a filter -- it narrows nothing -- but part of what a view *is*: the
     #: same tickets read very differently by column and by project.
@@ -1854,6 +2202,9 @@ class AutomationRule(SQLModel, table=True):
     #: keep meaning that a fortnight later, and a fixed id does not. Mutually
     #: exclusive with `set_sprint_id`.
     move_to_active_sprint: bool = Field(default=False)
+    #: The release the ticket ships in (#272). Switched off with the
+    #: reference cleared when the release is deleted, as for a sprint.
+    set_fix_version_id: Optional[int] = Field(default=None, foreign_key="release.id")
     #: Posted with no author -- see Comment.author_id.
     comment_body: Optional[str] = None
 

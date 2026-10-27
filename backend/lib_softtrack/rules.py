@@ -51,6 +51,8 @@ from lib_softtrack.tables import (
     AutomationRun,
     AutomationTrigger,
     Comment,
+    Release,
+    ReleaseState,
     Sprint,
     Team,
     Ticket,
@@ -379,6 +381,23 @@ def _apply(
         ticket.sprint_id = sprint.id
         lines.append(f"Moved to {sprint.name or f'Sprint {sprint.number}'}")
         touched_ticket = True
+
+    # Still a release to come when it fires, not only when the rule was
+    # saved (#272): one released since has had its tickets settled.
+    if (
+        actions.set_fix_version_id is not None
+        and ticket.fix_version_id != actions.set_fix_version_id
+    ):
+        release = session.get(Release, actions.set_fix_version_id)
+        if release.state is ReleaseState.planned:
+            ticket.fix_version_id = release.id
+            lines.append(f"Set the fix version to {release.name}")
+            touched_ticket = True
+        else:
+            lines.append(
+                f"Did not set the fix version to {release.name}, "
+                "which is no longer a release to come"
+            )
 
     body = (actions.comment_body or "").strip()
     if body:

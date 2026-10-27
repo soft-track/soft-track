@@ -5,6 +5,7 @@ import {
   useMoveTicketTicketsTicketIdMovePost,
 } from '@/api/generated/endpoints/tickets/tickets'
 import type { TicketRead, StatusRead, TeamRead } from '@/api/generated/models'
+import { invalidateReleases } from '@/releases/releases'
 import { invalidateProjects } from '@/team/projects'
 
 type TicketPage = { items: TicketRead[]; total: number; limit: number; offset: number }
@@ -78,6 +79,7 @@ export function useMoveTicket(
         queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
         queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/sprints`] })
         invalidateProjects(queryClient, team.id)
+        invalidateReleases(queryClient, team.id)
       }
     } catch (err: unknown) {
       queryClient.setQueryData(queryKey, previous)

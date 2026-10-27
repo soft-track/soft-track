@@ -13,6 +13,7 @@ from lib_identity.models.identity import UserPublic
 from lib_softtrack import custom_fields as custom_fields_service
 from lib_softtrack.models.history import TicketEventRead
 from lib_softtrack.tables import (
+    Release,
     Sprint,
     Ticket,
     TicketEvent,
@@ -40,6 +41,15 @@ TRACKED: dict[str, TicketEventField] = {
     #: In minutes (#268): what the burndown in hours replays.
     "time_estimate_minutes": TicketEventField.time_estimate,
     "remaining_minutes": TicketEventField.remaining,
+    #: The release it ships in (#272): "moved on from 1.4.0" is something
+    #: people ask a ticket's history about.
+    "fix_version_id": TicketEventField.fix_version,
+    #: A bug's details (#273). Severity is what the report of open bugs by
+    #: severity replays; where it was found, and since when, is what people
+    #: ask a bug's history.
+    "severity": TicketEventField.severity,
+    "environment": TicketEventField.environment,
+    "found_in_id": TicketEventField.found_in,
 }
 
 
@@ -158,6 +168,8 @@ def _labels(session: Session, events: list[TicketEvent]) -> dict[tuple, str]:
         TicketEventField.assignee: set(),
         TicketEventField.sprint: set(),
         TicketEventField.project: set(),
+        TicketEventField.fix_version: set(),
+        TicketEventField.found_in: set(),
     }
     for event in events:
         if event.field in ids:
@@ -186,6 +198,12 @@ def _labels(session: Session, events: list[TicketEvent]) -> dict[tuple, str]:
             .execution_options(**INCLUDE_TRASHED)
         ):
             labels[(TicketEventField.project, project.id)] = project.name
+    for field in (TicketEventField.fix_version, TicketEventField.found_in):
+        if ids[field]:
+            for release in session.exec(
+                select(Release).where(Release.id.in_(ids[field]))
+            ):
+                labels[(field, release.id)] = release.name
     return labels
 
 
