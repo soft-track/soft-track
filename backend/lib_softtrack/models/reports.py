@@ -117,3 +117,23 @@ class CreatedVsResolved(BaseModel):
     days: list[CreatedResolvedPoint]
     total_created: int
     total_resolved: int
+
+
+class OpenBugsWeek(BaseModel):
+    """The bugs open at the end of one week, by how bad (#273)."""
+
+    #: The Monday the week starts on, which is what the axis says.
+    week_of: date
+    critical: int
+    major: int
+    minor: int
+    trivial: int
+    #: Open bugs with no severity, so the total is every open bug.
+    unrated: int
+
+
+class OpenBugsBySeverity(BaseModel):
+    """What is open at the end of each week, oldest week first. The week
+    under way is counted up to now."""
+
+    weeks: list[OpenBugsWeek]

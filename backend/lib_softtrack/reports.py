@@ -25,6 +25,8 @@ from lib_softtrack.models.reports import (
     CreatedVsResolved,
     CumulativeFlow,
     FlowPoint,
+    OpenBugsBySeverity,
+    OpenBugsWeek,
     ProjectBurnup,
     ProjectBurnupPoint,
     ScopeChange,
@@ -39,6 +41,8 @@ from lib_softtrack.tables import (
     Ticket,
     TicketEvent,
     TicketEventField,
+    TicketSeverity,
+    TicketType,
     StatusCategory,
     User,
     Worklog,
@@ -571,6 +575,77 @@ def created_vs_resolved(
         total_created=sum(created_on.values()),
         total_resolved=sum(resolved_on.values()),
     )
+
+
+# --- open bugs by severity (#273) -----------------------------------------
+
+
+def open_bugs_by_severity(
+    session: Session, current_user: User, team_id: int, weeks: int = 8
+) -> OpenBugsBySeverity:
+    """The bugs open at the end of each of the last `weeks` weeks, by
+    severity, replayed from history like every chart here: what the status
+    and the severity were then, not what they are now.
+
+    A bug is the ticket's type now -- types are not in the history. A ticket
+    made a bug last week counts in the weeks before as well, and one that
+    stopped being a bug drops out of them.
+    """
+    get_team_or_404(team_id, session)
+    require_team_member(team_id, current_user, session)
+
+    now = datetime.now(timezone.utc)
+    today = now.date()
+    this_monday = today - timedelta(days=today.weekday())
+    mondays = [this_monday - timedelta(weeks=back) for back in range(weeks - 1, -1, -1)]
+
+    bugs = session.exec(
+        select(Ticket).where(Ticket.team_id == team_id, Ticket.type == TicketType.bug)
+    ).all()
+    created = {bug.id: _as_utc(bug.created_at) for bug in bugs}
+    events = (
+        session.exec(
+            select(TicketEvent)
+            .where(
+                TicketEvent.ticket_id.in_(created),
+                TicketEvent.field.in_(
+                    [TicketEventField.status, TicketEventField.severity]
+                ),
+            )
+            .order_by(TicketEvent.created_at)
+        ).all()
+        if created
+        else []
+    )
+    status = _Timeline(e for e in events if e.field is TicketEventField.status)
+    severity = _Timeline(e for e in events if e.field is TicketEventField.severity)
+    resolved = {category.value for category in RESOLVED}
+
+    points = []
+    for monday in mondays:
+        # The end of the week, or now for the week under way.
+        moment = min(_end_of(monday + timedelta(days=6)), now)
+        counts = {rating: 0 for rating in TicketSeverity}
+        unrated = 0
+        for bug_id, made in created.items():
+            if made > moment or status.value_at(bug_id, moment) in resolved:
+                continue
+            rating = severity.value_at(bug_id, moment)
+            if rating in {s.value for s in TicketSeverity}:
+                counts[TicketSeverity(rating)] += 1
+            else:
+                unrated += 1
+        points.append(
+            OpenBugsWeek(
+                week_of=monday,
+                critical=counts[TicketSeverity.critical],
+                major=counts[TicketSeverity.major],
+                minor=counts[TicketSeverity.minor],
+                trivial=counts[TicketSeverity.trivial],
+                unrated=unrated,
+            )
+        )
+    return OpenBugsBySeverity(weeks=points)
 
 
 # --- time spent (#102) ---------------------------------------------------

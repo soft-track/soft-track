@@ -9,6 +9,7 @@ export const topBar = {
     roadmap: 'Roadmap',
     reports: 'Reports',
     plan: 'Plan',
+    releases: 'Releases',
   },
   groupBy: 'Group by',
   sortBy: 'Sort by',

@@ -2,6 +2,7 @@ import { useListSprintsTeamsTeamIdSprintsGet } from '@/api/generated/endpoints/s
 import { useGetEstimateSummaryTeamsTeamIdEstimatesGet } from '@/api/generated/endpoints/tickets/tickets'
 import { useListLabelsTeamsTeamIdLabelsGet } from '@/api/generated/endpoints/labels/labels'
 import { useListProjectsTeamsTeamIdProjectsGet } from '@/api/generated/endpoints/projects/projects'
+import { useListReleasesTeamsTeamIdReleasesGet } from '@/api/generated/endpoints/releases/releases'
 import { useListStatusesTeamsTeamIdStatusesGet } from '@/api/generated/endpoints/statuses/statuses'
 import { useListTeamMembersTeamsTeamIdMembersGet } from '@/api/generated/endpoints/teams/teams'
 import type { TeamRead } from '@/api/generated/models'
@@ -28,6 +29,9 @@ export function useTeamData(
   // The team's board columns. Everything that renders a status reads these
   // rather than a fixed list -- see issue #22.
   const statuses = useListStatusesTeamsTeamIdStatusesGet(id, options)
+  // The versions it ships (#272): the fix version picker, the release
+  // filter and grouping, and the roadmap's markers all read these.
+  const releases = useListReleasesTeamsTeamIdReleasesGet(id, options)
   // Rolled up on the server rather than summed from the ticket list: that
   // list is one page, so a client-side total would be the total of whatever
   // happened to be loaded.
@@ -41,6 +45,7 @@ export function useTeamData(
     members: members.data ?? [],
     sprints: sprints.data ?? [],
     statuses: statuses.data ?? [],
+    releases: releases.data ?? [],
     estimates: estimates.data,
   }
 }

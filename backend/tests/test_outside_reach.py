@@ -26,6 +26,7 @@ TEAM_SCOPED = {
     "ticket_id",
     "project_id",
     "sprint_id",
+    "release_id",
     "comment_id",
     "attachment_id",
     "link_id",

@@ -6,7 +6,15 @@ import { useTranslation } from '@/i18n'
 import type { Command } from '@/keyboard/CommandPalette'
 import { activeTeams } from '@/team/archived'
 
-export const BOARD_VIEWS = ['board', 'list', 'calendar', 'roadmap', 'reports', 'plan'] as const
+export const BOARD_VIEWS = [
+  'board',
+  'list',
+  'calendar',
+  'roadmap',
+  'reports',
+  'plan',
+  'releases',
+] as const
 export type BoardView = (typeof BOARD_VIEWS)[number]
 
 /** What the command palette can do from the board, beyond jumping to tickets --

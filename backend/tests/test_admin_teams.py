@@ -579,6 +579,7 @@ TEAM_TABLES = {
     "label",
     "outboundwebhook",
     "project",
+    "release",
     "repository",
     "savedview",
     "sharelink",
@@ -649,6 +650,7 @@ def test_deleting_a_team_leaves_nothing_pointing_at_it(client, instance, session
         Notification,
         NotificationKind,
         OutboundWebhook,
+        Release,
         Repository,
         ScheduleRun,
         ShareLink,
@@ -688,6 +690,7 @@ def test_deleting_a_team_leaves_nothing_pointing_at_it(client, instance, session
         )
     )
     label = add(Label(team_id=team_id, name="ci"))
+    release = add(Release(team_id=team_id, name="1.0"))
     status = add(
         WorkflowStatus(
             team_id=team_id,
@@ -703,6 +706,7 @@ def test_deleting_a_team_leaves_nothing_pointing_at_it(client, instance, session
             owner_id=lena_id,
             project_id=project.id,
             sprint_id=sprint.id,
+            fix_version_ids=[release.id],
         )
     )
     team = session.get(Team, team_id)
@@ -722,6 +726,7 @@ def test_deleting_a_team_leaves_nothing_pointing_at_it(client, instance, session
             if_label_id=label.id,
             if_project_id=project.id,
             set_sprint_id=sprint.id,
+            set_fix_version_id=release.id,
             created_by_id=lena_id,
         )
     )
@@ -758,6 +763,7 @@ def test_deleting_a_team_leaves_nothing_pointing_at_it(client, instance, session
     rows = [
         project,
         sprint,
+        release,
         label,
         status,
         view,

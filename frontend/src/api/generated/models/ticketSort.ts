@@ -19,4 +19,5 @@ export const TicketSort = {
   estimate: 'estimate',
   title: 'title',
   rank: 'rank',
+  severity: 'severity',
 } as const;

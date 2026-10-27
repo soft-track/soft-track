@@ -1,6 +1,6 @@
 import { parseISO } from 'date-fns'
 
-import type { ProjectRead } from '@/api/generated/models'
+import type { ProjectRead, ReleaseRead } from '@/api/generated/models'
 import { i18n } from '@/i18n'
 import { formatDate } from '@/i18n/format'
 
@@ -11,6 +11,17 @@ export type RoadmapSection = {
   title: string
   isCurrentMonth: boolean
   projects: ProjectRead[]
+  /** The releases on a day in this month (#272), soonest first. */
+  releases: ReleaseRead[]
+}
+
+/**
+ * The day a release is marked on (#272): the day it shipped, or the day it
+ * is for. None for one with neither, or one that was put away.
+ */
+export function releaseDay(release: ReleaseRead): string | null {
+  if (release.state === 'archived') return null
+  return release.released_on ?? release.target_date ?? null
 }
 
 /** States a project cannot be late in: it has already landed, or never will. */
@@ -42,8 +53,16 @@ export function isOverdue(project: ProjectRead, today: string): boolean {
  * Archived projects are left out; they were retired from planning. Projects
  * with no target date come last, in a section of their own, so they are
  * visibly unplanned rather than silently missing.
+ *
+ * Each release is marked in the month of its day (#272) -- the day it
+ * shipped, or the day it is for -- so a month can hold releases and no
+ * epics. A release with no day is not marked: it has no place on a calendar.
  */
-export function roadmapSections(projects: ProjectRead[], today: string): RoadmapSection[] {
+export function roadmapSections(
+  projects: ProjectRead[],
+  today: string,
+  releases: readonly ReleaseRead[] = [],
+): RoadmapSection[] {
   const live = projects.filter((project) => !project.archived)
   const currentMonth = today.slice(0, 7)
 
@@ -52,6 +71,14 @@ export function roadmapSections(projects: ProjectRead[], today: string): Roadmap
     if (!project.target_date) continue
     const month = project.target_date.slice(0, 7)
     byMonth.set(month, [...(byMonth.get(month) ?? []), project])
+  }
+  const releasesByMonth = new Map<string, ReleaseRead[]>()
+  for (const release of releases) {
+    const day = releaseDay(release)
+    if (!day) continue
+    const month = day.slice(0, 7)
+    releasesByMonth.set(month, [...(releasesByMonth.get(month) ?? []), release])
+    if (!byMonth.has(month)) byMonth.set(month, [])
   }
 
   const sections: RoadmapSection[] = [...byMonth.keys()].sort().map((month) => ({
@@ -64,6 +91,9 @@ export function roadmapSections(projects: ProjectRead[], today: string): Roadmap
         (a, b) =>
           a.target_date!.localeCompare(b.target_date!) || a.name.localeCompare(b.name),
       ),
+    releases: (releasesByMonth.get(month) ?? []).sort(
+      (a, b) => releaseDay(a)!.localeCompare(releaseDay(b)!) || a.name.localeCompare(b.name),
+    ),
   }))
 
   const undated = live
@@ -75,6 +105,7 @@ export function roadmapSections(projects: ProjectRead[], today: string): Roadmap
       title: i18n.t('projects:roadmap.undatedSection'),
       isCurrentMonth: false,
       projects: undated,
+      releases: [],
     })
   }
   return sections

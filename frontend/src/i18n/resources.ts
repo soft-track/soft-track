@@ -16,6 +16,7 @@ import { mywork } from '@/i18n/en/mywork'
 import { notifications } from '@/i18n/en/notifications'
 import { people } from '@/i18n/en/people'
 import { projects } from '@/i18n/en/projects'
+import { releases } from '@/i18n/en/releases'
 import { reports } from '@/i18n/en/reports'
 import { search } from '@/i18n/en/search'
 import { settings } from '@/i18n/en/settings'
@@ -37,6 +38,7 @@ export const resources = {
     projects,
     views,
     reports,
+    releases,
     sprints,
     automations,
     imports,

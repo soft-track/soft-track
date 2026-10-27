@@ -25,9 +25,11 @@ import type {
   CreatedVsResolved,
   CumulativeFlow,
   HTTPValidationError,
+  OpenBugsBySeverity,
   ProjectBurnup,
   TeamCreatedVsResolvedTeamsTeamIdCreatedVsResolvedGetParams,
   TeamCumulativeFlowTeamsTeamIdCumulativeFlowGetParams,
+  TeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGetParams,
   TeamTimeSpentTeamsTeamIdTimeSpentGetParams,
   TeamVelocityTeamsTeamIdVelocityGetParams,
   TimeSpent,
@@ -540,6 +542,107 @@ export function useTeamCreatedVsResolvedTeamsTeamIdCreatedVsResolvedGet<TData = 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getTeamCreatedVsResolvedTeamsTeamIdCreatedVsResolvedGetQueryOptions(teamId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * The bugs open at the end of each week, by severity (#273).
+ * @summary Team Open Bugs By Severity
+ */
+export const teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet = (
+    teamId: number,
+    params?: TeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGetParams,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<OpenBugsBySeverity>(
+      {url: `/teams/${teamId}/open-bugs-by-severity`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+
+
+
+
+export const getTeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGetQueryKey = (teamId: number,
+    params?: TeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGetParams,) => {
+    return [
+    `/teams/${teamId}/open-bugs-by-severity`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getTeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGetQueryOptions = <TData = Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>, TError = HTTPValidationError>(teamId: number,
+    params?: TeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getTeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGetQueryKey(teamId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>> = ({ signal }) => teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet(teamId,params, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: teamId !== null && teamId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type TeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGetQueryResult = NonNullable<Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>>
+export type TeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGetQueryError = HTTPValidationError
+
+
+export function useTeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet<TData = Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    params: undefined |  TeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>,
+          TError,
+          Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useTeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet<TData = Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    params?: TeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>,
+          TError,
+          Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useTeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet<TData = Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    params?: TeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Team Open Bugs By Severity
+ */
+
+export function useTeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet<TData = Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>, TError = HTTPValidationError>(
+ teamId: number,
+    params?: TeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof teamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getTeamOpenBugsBySeverityTeamsTeamIdOpenBugsBySeverityGetQueryOptions(teamId,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

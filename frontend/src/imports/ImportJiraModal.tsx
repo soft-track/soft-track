@@ -149,6 +149,24 @@ export function ImportJiraModal({ onClose }: { onClose: () => void }) {
                       </span>
                     </li>
                   )}
+                  {report.releases_created.length > 0 && (
+                    <li>
+                      <Count i18nKey="jira.releases" n={report.releases_created.length} />
+                      <span className="text-neutral-400">
+                        {' '}
+                        {t('jira.names', { names: report.releases_created.join(', ') })}
+                      </span>
+                    </li>
+                  )}
+                  {report.environments_added.length > 0 && (
+                    <li>
+                      <Count i18nKey="jira.environments" n={report.environments_added.length} />
+                      <span className="text-neutral-400">
+                        {' '}
+                        {t('jira.names', { names: report.environments_added.join(', ') })}
+                      </span>
+                    </li>
+                  )}
                 </ul>
               </div>
 
@@ -242,7 +260,13 @@ function Count({
   i18nKey,
   n,
 }: {
-  i18nKey: 'jira.tickets' | 'jira.comments' | 'jira.labels' | 'jira.projects'
+  i18nKey:
+    | 'jira.tickets'
+    | 'jira.comments'
+    | 'jira.labels'
+    | 'jira.projects'
+    | 'jira.releases'
+    | 'jira.environments'
   n: number
 }) {
   const { t } = useTranslation('imports')

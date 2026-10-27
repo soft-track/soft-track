@@ -238,6 +238,7 @@ def world(client, team, guest, auth):
         },
     )
     project = post(f"/teams/{team_id}/projects", json={"name": "Launch"})
+    release = post(f"/teams/{team_id}/releases", json={"name": "1.4.0"})
     view = post(
         f"/teams/{team_id}/views",
         json={"name": "Mine", "is_shared": True, "filters": {}},
@@ -293,6 +294,7 @@ def world(client, team, guest, auth):
         "attachment_id": attachment["id"],
         "sprint_id": sprint["id"],
         "project_id": project["id"],
+        "release_id": release["id"],
         "view_id": view["id"],
         "status_id": team["status_ids"]["Todo"],
         "rule_id": rule["id"],
@@ -406,6 +408,9 @@ def test_a_guest_sees_what_a_member_sees(client, team, guest, world):
         f"/tickets/{ticket_id}/links",
         f"/sprints/{world['sprint_id']}/burndown",
         f"/sprints/{world['sprint_id']}/plan",
+        f"/teams/{team_id}/releases",
+        f"/releases/{world['release_id']}",
+        f"/releases/{world['release_id']}/notes",
         f"/attachments/{world['attachment_id']}/content",
     ):
         response = client.get(path, headers=guest["headers"])

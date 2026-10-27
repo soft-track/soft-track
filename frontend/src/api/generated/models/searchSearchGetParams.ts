@@ -10,6 +10,7 @@ import type { DueFilter } from './dueFilter';
 import type { LabelMatch } from './labelMatch';
 import type { MissingField } from './missingField';
 import type { TicketPriority } from './ticketPriority';
+import type { TicketSeverity } from './ticketSeverity';
 import type { TicketType } from './ticketType';
 
 export type SearchSearchGetParams = {
@@ -140,7 +141,39 @@ created_from?: string | null;
  */
 created_to?: string | null;
 /**
- * Only tickets with no estimate, no epic or no sprint.
+ * Only tickets with no estimate, no epic, no sprint or no release.
  */
 has_no?: MissingField[];
+/**
+ * Only tickets shipping in one of these releases (#272).
+ */
+fix_version_id?: number[];
+/**
+ * Every ticket except those the filter matches.
+ */
+fix_version_exclude?: boolean;
+/**
+ * Only bugs of one of these severities (#273).
+ */
+severity?: TicketSeverity[];
+/**
+ * Every bug except those the filter matches.
+ */
+severity_exclude?: boolean;
+/**
+ * Only bugs found in one of these environments.
+ */
+environment?: string[];
+/**
+ * Every bug except those the filter matches.
+ */
+environment_exclude?: boolean;
+/**
+ * Only bugs found in one of these releases.
+ */
+found_in_id?: number[];
+/**
+ * Every bug except those the filter matches.
+ */
+found_in_exclude?: boolean;
 };

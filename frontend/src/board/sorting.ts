@@ -43,6 +43,13 @@ export const SORT_OPTIONS: Array<{ sort: TicketSort; label: string }> = [
       return i18n.t('board:arrange.sort.title')
     },
   },
+  // Critical first when descending (#273); anything not a rated bug last.
+  {
+    sort: 'severity',
+    get label() {
+      return i18n.t('board:arrange.sort.severity')
+    },
+  },
 ]
 
 const SORTS: readonly string[] = SORT_OPTIONS.map((option) => option.sort)

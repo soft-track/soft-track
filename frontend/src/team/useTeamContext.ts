@@ -4,6 +4,7 @@ import type {
   SprintRead,
   LabelRead,
   ProjectRead,
+  ReleaseRead,
   StatusRead,
   TeamMemberRead,
   TeamRead,
@@ -22,6 +23,11 @@ export interface TeamContextValue {
   sprints: SprintRead[]
   /** The team's board columns, in order. */
   statuses: StatusRead[]
+  /**
+   * The versions the team ships (#272), planned first. Optional, and empty
+   * for a team that has made none -- which is then asked nothing about them.
+   */
+  releases?: ReleaseRead[]
 }
 
 export const TeamContext = createContext<TeamContextValue | undefined>(undefined)

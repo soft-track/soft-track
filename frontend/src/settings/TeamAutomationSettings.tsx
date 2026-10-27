@@ -93,8 +93,8 @@ export default function TeamAutomationSettings() {
 function Automation({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
   const { t } = useTranslation(['settings', 'common'])
   const queryClient = useQueryClient()
-  const { statuses, labels, projects, members, sprints } = useTeamData(team)
-  const vocabulary: RuleVocabulary = { statuses, labels, projects, members, sprints }
+  const { statuses, labels, projects, members, sprints, releases } = useTeamData(team)
+  const vocabulary: RuleVocabulary = { statuses, labels, projects, members, sprints, releases }
 
   const rules = useListRulesTeamsTeamIdAutomationRulesGet(team.id)
   const runs = useListRunsTeamsTeamIdAutomationRunsGet(team.id, { limit: RECENT_RUNS })
@@ -467,6 +467,11 @@ function RuleEditor({
   const openSprints = vocabulary.sprints.filter(
     (sprint) => sprint.state !== SprintState.completed,
   )
+  // The same for releases (#272): one that has shipped is not where new work
+  // is going to ship.
+  const plannedReleases = (vocabulary.releases ?? []).filter(
+    (release) => release.state === 'planned',
+  )
 
   const setCondition = (patch: Partial<RuleConditions>) =>
     setConditions((current) => ({ ...current, ...patch }))
@@ -792,6 +797,33 @@ function RuleEditor({
                 ))}
               </Select>
             </Field>
+
+            {/* Only for a team that ships releases (#272), or a rule that
+                already names one. A release that has gone out is history,
+                so only the planned ones are offered. */}
+            {(plannedReleases.length > 0 || actions.set_fix_version_id != null) && (
+              <Field label={t('automation.editor.setFixVersion')} className="sm:col-span-2">
+                <Select
+                  dense
+                  block
+                  value={asText(actions.set_fix_version_id)}
+                  onChange={(e) => setAction({ set_fix_version_id: idOrNull(e.target.value) })}
+                >
+                  <option value="">{t('automation.editor.leaveIt')}</option>
+                  {[
+                    ...plannedReleases,
+                    ...(vocabulary.releases ?? []).filter(
+                      (release) =>
+                        release.state !== 'planned' && release.id === actions.set_fix_version_id,
+                    ),
+                  ].map((release) => (
+                    <option key={release.id} value={release.id}>
+                      {release.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            )}
           </div>
 
           <label className="mt-2 block">

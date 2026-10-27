@@ -41,6 +41,7 @@ from lib_softtrack.models.transfers import (
 )
 from lib_softtrack.tables import (
     TicketSort,
+    TicketType,
     SortDirection,
     User,
 )
@@ -77,6 +78,14 @@ CSV_COLUMNS = [
     "time_estimate_hours",
     "time_logged_hours",
     "time_remaining_hours",
+    # The release it ships in (#272), by name.
+    "fix_version",
+    # A bug's details (#273): empty on any other ticket. Named for bugs, so
+    # a team's own Severity or Environment field (#117), made before these
+    # were built in, keeps its column name.
+    "bug_severity",
+    "bug_environment",
+    "found_in",
 ]
 
 
@@ -104,6 +113,19 @@ def _csv_person(user: Optional[UserPublic]) -> str:
     return user.username or user.email
 
 
+def _csv_bug_details(row: TicketExportRow) -> list[str]:
+    """Severity, environment and found in, for a bug; nothing for the rest,
+    which keep them only for if they are a bug again (#273)."""
+    ticket = row.ticket
+    if ticket.type is not TicketType.bug:
+        return ["", "", ""]
+    return [
+        ticket.severity.value if ticket.severity else "",
+        safe_text(ticket.environment or ""),
+        safe_text(row.found_in_name),
+    ]
+
+
 def _csv_row(row: TicketExportRow, fields: list[CustomFieldRead]) -> list[str]:
     """One ticket as the columns of `CSV_COLUMNS`, then one per field."""
     ticket = row.ticket
@@ -125,6 +147,8 @@ def _csv_row(row: TicketExportRow, fields: list[CustomFieldRead]) -> list[str]:
         _csv_hours(ticket.time_estimate_minutes),
         _csv_hours(row.logged_minutes),
         _csv_hours(row.remaining_minutes),
+        safe_text(row.fix_version_name),
+        *_csv_bug_details(row),
         *custom_fields_service.export_cells(fields, ticket.custom_fields),
     ]
 
