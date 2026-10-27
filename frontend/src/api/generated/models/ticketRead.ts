@@ -32,6 +32,7 @@ export interface TicketRead {
   remaining_minutes?: number | null;
   blocked_by_count: number;
   sprint_id?: number | null;
+  fix_version_id?: number | null;
   due_date?: string | null;
   external_key?: string | null;
   parent?: ParentRef | null;

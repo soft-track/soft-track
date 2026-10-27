@@ -49,6 +49,7 @@ export const mywork = {
       schedule: 'created by a schedule',
       time_estimate: 'time estimate changed',
       remaining: 'time left changed',
+      fix_version: 'release changed',
     },
     title: '{{what}}, {{when}}',
   },

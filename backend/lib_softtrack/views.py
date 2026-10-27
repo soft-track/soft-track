@@ -31,6 +31,7 @@ from lib_softtrack.tables import (
     Label,
     LabelMatch,
     Project,
+    Release,
     SavedView,
     Team,
     TeamMember,
@@ -76,6 +77,8 @@ def view_filters(view: SavedView) -> ViewFilters:
         created_from=view.created_from,
         created_to=view.created_to,
         has_no=view.has_no,
+        fix_version_id=view.fix_version_ids,
+        fix_version_exclude=view.fix_version_exclude,
     )
 
 
@@ -125,6 +128,8 @@ def _apply_filters(view: SavedView, filters: ViewFilters) -> None:
     view.created_from = filters.created_from
     view.created_to = filters.created_to
     view.has_no = [missing.value for missing in filters.has_no]
+    view.fix_version_ids = list(filters.fix_version_id)
+    view.fix_version_exclude = filters.fix_version_exclude
 
 
 def _validate_filters(session: Session, team_id: int, filters: ViewFilters) -> None:
@@ -174,6 +179,18 @@ def _validate_filters(session: Session, team_id: int, filters: ViewFilters) -> N
                 status_code=400,
                 code=ErrorCode.not_on_this_team,
                 detail="No such sprint on this team",
+            )
+    if filters.fix_version_id:
+        found = session.exec(
+            select(func.count()).where(
+                Release.id.in_(filters.fix_version_id), Release.team_id == team_id
+            )
+        ).one()
+        if found != len(filters.fix_version_id):
+            raise api_error(
+                status_code=400,
+                code=ErrorCode.not_on_this_team,
+                detail="No such release on this team",
             )
     # The people chosen as assignee or creator are the team's. Not "me",
     # which is whoever looks, and always somebody on the team.

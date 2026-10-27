@@ -37,6 +37,8 @@ from lib_softtrack.tables import (
     Ticket,
     Label,
     Project,
+    Release,
+    ReleaseState,
     Team,
     User,
     WorkflowStatus,
@@ -75,6 +77,7 @@ _ACTION_FIELDS = (
     "add_label_id",
     "set_sprint_id",
     "move_to_active_sprint",
+    "set_fix_version_id",
     "comment_body",
 )
 
@@ -147,6 +150,16 @@ def _validate(
             code=ErrorCode.sprint_completed,
             detail="That sprint is completed; its numbers are history. "
             "Use the active sprint instead.",
+        )
+
+    release = _belongs_to_team(session, Release, actions.set_fix_version_id, team_id)
+    if release is not None and release.state is not ReleaseState.planned:
+        # The same reasoning as a completed sprint: a version that has gone
+        # out, or been put away, is not where new work is going to ship.
+        raise api_error(
+            status_code=400,
+            code=ErrorCode.release_not_planned,
+            detail=f"{release.name} is not a release still to come.",
         )
 
     # The condition as well as the action: a rule waiting for a guest to be

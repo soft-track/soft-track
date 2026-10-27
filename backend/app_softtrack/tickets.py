@@ -77,6 +77,8 @@ CSV_COLUMNS = [
     "time_estimate_hours",
     "time_logged_hours",
     "time_remaining_hours",
+    # The release it ships in (#272), by name.
+    "fix_version",
 ]
 
 
@@ -125,6 +127,7 @@ def _csv_row(row: TicketExportRow, fields: list[CustomFieldRead]) -> list[str]:
         _csv_hours(ticket.time_estimate_minutes),
         _csv_hours(row.logged_minutes),
         _csv_hours(row.remaining_minutes),
+        safe_text(row.fix_version_name),
         *custom_fields_service.export_cells(fields, ticket.custom_fields),
     ]
 

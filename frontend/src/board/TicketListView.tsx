@@ -1,6 +1,6 @@
 import { parseServerDate } from '@/api/dates'
 import type { TicketRead } from '@/api/generated/models'
-import { type BoardGrouping, groupByProject } from '@/board/grouping'
+import { type BoardGrouping, groupTickets } from '@/board/grouping'
 import { usePeekTrigger } from '@/board/peekContext'
 import { selectionGesture } from '@/board/selection'
 import { useTranslation } from '@/i18n'
@@ -27,8 +27,9 @@ export function TicketListView({
 }: {
   tickets: TicketRead[]
   /**
-   * By project, the list is split into a section per project (#63). By
-   * status it stays one flat list -- each row already carries its status dot.
+   * By project, the list is split into a section per project (#63), and by
+   * release into one per release (#272). By status it stays one flat list --
+   * each row already carries its status dot.
    */
   grouping?: BoardGrouping
   selectedIds?: readonly number[]
@@ -41,7 +42,7 @@ export function TicketListView({
   showUpdated?: boolean
 }) {
   const { t } = useTranslation(['board', 'common'])
-  const { projects } = useTeamContext()
+  const { projects, releases } = useTeamContext()
 
   if (tickets.length === 0) {
     return (
@@ -51,8 +52,8 @@ export function TicketListView({
     )
   }
 
-  if (grouping === 'project') {
-    const groups = groupByProject(tickets, projects, { includeEmpty: false })
+  if (grouping !== 'status') {
+    const groups = groupTickets(grouping, tickets, { projects, releases }, { includeEmpty: false })
     // A range runs down the list as it reads, section by section.
     const order = groups.flatMap((group) => group.tickets.map((ticket) => ticket.id))
     return (
@@ -65,10 +66,10 @@ export function TicketListView({
             >
               <span
                 className="dot"
-                style={{ ['--dot' as string]: group.project?.color ?? 'var(--color-neutral-300)' }}
+                style={{ ['--dot' as string]: group.color ?? 'var(--color-neutral-300)' }}
                 aria-hidden="true"
               />
-              {group.project?.name ?? t('list.noProject')}
+              {group.name ?? t(`arrange.none.${grouping}`)}
               <span className="identifier text-[11px] font-medium text-neutral-400">
                 {group.tickets.length}
               </span>
@@ -81,7 +82,7 @@ export function TicketListView({
                   order={order}
                   selected={selectedIds.includes(ticket.id)}
                   onSelect={onSelect}
-                  showProject={false}
+                  showProject={grouping !== 'project'}
                   showUpdated={showUpdated}
                 />
               ))}
@@ -112,20 +113,21 @@ export function TicketListView({
   )
 }
 
-function TicketRow({
+/** One ticket as a row of the list; the release page (#272) lists with it too. */
+export function TicketRow({
   ticket,
-  order,
-  selected,
+  order = [],
+  selected = false,
   onSelect,
   showProject,
-  showUpdated,
+  showUpdated = false,
 }: {
   ticket: TicketRead
-  order: readonly number[]
-  selected: boolean
+  order?: readonly number[]
+  selected?: boolean
   onSelect?: OnSelect
   showProject: boolean
-  showUpdated: boolean
+  showUpdated?: boolean
 }) {
   const { t } = useTranslation(['board', 'common'])
   const openTicket = useOpenTicket()

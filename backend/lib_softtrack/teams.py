@@ -44,6 +44,7 @@ from lib_softtrack.tables import (
     WebhookDelivery,
     Worklog,
     Project,
+    Release,
     Repository,
     RetiredTeamKey,
     SavedView,
@@ -256,6 +257,7 @@ def require_team_commenter(team_id: int, user: User, session: Session) -> TeamMe
 _TEAM_OWNED_BY_PATH = (
     ("ticket_id", Ticket, ErrorCode.ticket_not_found, "Ticket not found"),
     ("sprint_id", Sprint, ErrorCode.sprint_not_found, "Sprint not found"),
+    ("release_id", Release, ErrorCode.release_not_found, "Release not found"),
     ("project_id", Project, ErrorCode.project_not_found, "Project not found"),
     ("view_id", SavedView, ErrorCode.view_not_found, "View not found"),
     ("status_id", WorkflowStatus, ErrorCode.status_not_found, "Status not found"),
@@ -592,6 +594,7 @@ def delete_empty_team(session: Session, team: Team) -> None:
         ),
         delete(CustomField).where(CustomField.team_id == team_id),
         delete(Sprint).where(Sprint.team_id == team_id),
+        delete(Release).where(Release.team_id == team_id),
         delete(Project).where(Project.team_id == team_id),
         delete(TicketLabelLink).where(
             col(TicketLabelLink.label_id).in_(of_team(Label))

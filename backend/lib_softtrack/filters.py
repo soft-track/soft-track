@@ -46,6 +46,7 @@ WINDOW_DAYS = {
 _MISSING = {
     MissingField.epic: Ticket.project_id,
     MissingField.sprint: Ticket.sprint_id,
+    MissingField.fix_version: Ticket.fix_version_id,
 }
 
 
@@ -204,6 +205,9 @@ def filter_clauses(
         labels_clause(filters.label_id, filters.label_match, filters.label_exclude),
         one_of(Ticket.type, filters.type, filters.type_exclude),
         one_of(Ticket.creator_id, creators, filters.creator_exclude),
+        one_of(
+            Ticket.fix_version_id, filters.fix_version_id, filters.fix_version_exclude
+        ),
     ]
     # "Me" with nobody looking is nobody: chosen alone, it matches nothing
     # (and excluded, everything, which `one_of` already says).

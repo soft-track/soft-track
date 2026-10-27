@@ -24,6 +24,7 @@ export * from './people/people';
 export * from './projects/projects';
 export * from './realtime/realtime';
 export * from './reimbursements/reimbursements';
+export * from './releases/releases';
 export * from './reports/reports';
 export * from './schedules/schedules';
 export * from './search/search';

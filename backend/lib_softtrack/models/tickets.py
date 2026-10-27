@@ -65,6 +65,8 @@ class TicketCreate(BaseModel):
     estimate: Estimate = None
     parent_id: Optional[int] = None
     sprint_id: Optional[int] = None
+    #: The release it ships in (#272).
+    fix_version_id: Optional[int] = None
     due_date: Optional[date] = None
     label_ids: list[int] = []
     #: The team's own fields (#117), by key. A required one left out is
@@ -88,6 +90,8 @@ class TicketUpdate(BaseModel):
     parent_id: Optional[int] = None
     #: An explicit null moves the ticket out of its sprint, back to the backlog.
     sprint_id: Optional[int] = None
+    #: The release it ships in (#272); an explicit null leaves it in none.
+    fix_version_id: Optional[int] = None
     #: An explicit null clears the due date.
     due_date: Optional[date] = None
     #: In minutes (#268); an explicit null clears it.
@@ -141,6 +145,8 @@ class TicketRead(BaseModel):
     #: to start; the board marks anything above zero.
     blocked_by_count: int
     sprint_id: Optional[int] = None
+    #: The release it ships in (#272), one per ticket.
+    fix_version_id: Optional[int] = None
     due_date: Optional[date] = None
     #: The key this ticket had before it was imported, e.g. "PROJ-142".
     external_key: Optional[str] = None
@@ -193,6 +199,7 @@ class TicketBulkChanges(BaseModel):
     assignee_id: Optional[int] = None
     project_id: Optional[int] = None
     sprint_id: Optional[int] = None
+    fix_version_id: Optional[int] = None
     #: Labels are added and removed rather than replaced. Twenty tickets rarely
     #: share a label set, and "set these labels" across them would silently
     #: strip whatever each one had that the others did not.

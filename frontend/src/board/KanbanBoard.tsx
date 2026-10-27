@@ -14,10 +14,15 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
-import type { EstimateSummary, TicketRead, StatusRead } from '@/api/generated/models'
+import type {
+  EstimateSummary,
+  StatusRead,
+  TicketBulkChanges,
+  TicketRead,
+} from '@/api/generated/models'
 import { DropIsNotAClick } from '@/board/DropIsNotAClick'
 import { resolveDrop } from '@/board/dropTarget'
-import { type BoardGrouping, groupByProject, projectForDropTarget } from '@/board/grouping'
+import { type BoardGrouping, groupTickets } from '@/board/grouping'
 import {
   announcements,
   columnCoordinates,
@@ -54,6 +59,8 @@ type BoardColumn = {
   name: string
   color: string
   tickets: TicketRead[]
+  /** What a card dropped here changes, for every grouping but status. */
+  change?: TicketBulkChanges
   /** Points in the column, rolled up on the server. Status columns only. */
   load?: Load
   /** Where it stands against its status's WIP limit (#270), if it has one. */
@@ -190,7 +197,7 @@ function Column({
               selected={selectedIds.includes(ticket.id)}
               onSelect={onSelect}
               // Whichever the columns already say is left off the card.
-              showStatus={grouping === 'project'}
+              showStatus={grouping !== 'status'}
               showProject={grouping !== 'project'}
             />
           ))}
@@ -244,14 +251,17 @@ export function KanbanBoard({
   grouping = 'status',
   onStatusChange,
   onMove,
-  onProjectChange,
+  onGroupChange,
   estimates,
   selectedIds = [],
   onSelect,
   onBulkStatusChange,
 }: {
   tickets: TicketRead[]
-  /** Status columns, as the board always had, or one column per project (#63). */
+  /**
+   * Status columns, as the board always had, or one column per project (#63)
+   * or per release (#272).
+   */
   grouping?: BoardGrouping
   onStatusChange: (ticketId: number, status: StatusRead) => void
   /**
@@ -261,10 +271,11 @@ export function KanbanBoard({
    */
   onMove?: (ticketId: number, placement: Placement) => void
   /**
-   * A card dropped on another project's column, or a selection dragged there
-   * together. Null is the "No project" column.
+   * A card dropped on another project's or release's column, or a selection
+   * dragged there together: the change that puts them in it, as a bulk edit
+   * sends it.
    */
-  onProjectChange?: (ticketIds: readonly number[], projectId: number | null) => void
+  onGroupChange?: (ticketIds: readonly number[], changes: TicketBulkChanges) => void
   /** Server-side point rollups. Undefined while they load. */
   estimates?: EstimateSummary
   selectedIds?: readonly number[]
@@ -290,7 +301,7 @@ export function KanbanBoard({
   // handed to them while rendering.
   const [drag] = useState(() => ({ moved: false }))
   const { t } = useTranslation(['board', 'common'])
-  const { team, statuses, projects } = useTeamContext()
+  const { team, statuses, projects, releases } = useTeamContext()
   const [collapsed, setCollapsed] = useState<Set<string> | null>(null)
   // Seeded from the team's own columns on first render rather than in state's
   // initialiser: the statuses arrive with a query, so on the first pass there
@@ -312,13 +323,16 @@ export function KanbanBoard({
     })
 
   const columns: BoardColumn[] =
-    grouping === 'project'
-      ? groupByProject(tickets, projects, { includeEmpty: true }).map((group) => ({
-          id: group.key,
-          name: group.project?.name ?? t('kanban.noProject'),
-          color: group.project?.color ?? 'var(--color-neutral-300)',
-          tickets: group.tickets,
-        }))
+    grouping !== 'status'
+      ? groupTickets(grouping, tickets, { projects, releases }, { includeEmpty: true }).map(
+          (group) => ({
+            id: group.key,
+            name: group.name ?? t(`arrange.none.${grouping}`),
+            color: group.color ?? 'var(--color-neutral-300)',
+            tickets: group.tickets,
+            change: group.change,
+          }),
+        )
       : statuses.map((status) => ({
           id: statusColumnId(status),
           name: status.name,
@@ -391,18 +405,18 @@ export function KanbanBoard({
       return
     }
 
-    if (grouping === 'project') {
+    if (grouping !== 'status') {
       if (drop.kind === 'none') return
-      const projectId = projectForDropTarget(drop.columnId)
-      if (projectId === undefined || !onProjectChange) return
+      const target = columns.find((column) => column.id === drop.columnId)
+      if (!target?.change || !onGroupChange) return
       // The same rule as status: a selection moves together, a lone card
       // moves alone, and nothing already there is sent again.
       const carried =
         selectedIds.length > 1 && selectedIds.includes(ticketId) ? selectedIds : [ticketId]
       const moving = carried.filter(
-        (id) => (tickets.find((i) => i.id === id)?.project_id ?? null) !== projectId,
+        (id) => !target.tickets.some((ticket) => ticket.id === id),
       )
-      if (moving.length > 0) onProjectChange(moving, projectId)
+      if (moving.length > 0) onGroupChange(moving, target.change)
       return
     }
 

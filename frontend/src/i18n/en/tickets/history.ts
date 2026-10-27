@@ -44,6 +44,12 @@ export const history = {
     moved: '<actor>{{actor}}</actor> moved this from {{from}} to {{to}}',
     removed: '<actor>{{actor}}</actor> removed this from {{from}}',
   },
+  // The release it ships in (#272).
+  fixVersion: {
+    set: '<actor>{{actor}}</actor> set the fix version to {{to}}',
+    moved: '<actor>{{actor}}</actor> moved this from {{from}} to {{to}}',
+    cleared: '<actor>{{actor}}</actor> took this out of {{from}}',
+  },
   team: '<actor>{{actor}}</actor> moved this from {{from}} to {{to}}',
   // One of the team's own fields (#117), by the name it has now.
   field: {
@@ -64,6 +70,7 @@ export const history = {
   formerMember: 'a former member',
   deletedSprint: 'a deleted sprint',
   deletedProject: 'a deleted epic',
+  deletedRelease: 'a deleted release',
   removedOption: 'a removed option',
   anotherTeam: 'another team',
   unknownStatus: 'an unknown status',

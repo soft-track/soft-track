@@ -19,6 +19,7 @@ export interface TicketBulkChanges {
   assignee_id?: number | null;
   project_id?: number | null;
   sprint_id?: number | null;
+  fix_version_id?: number | null;
   add_label_ids?: number[];
   remove_label_ids?: number[];
 }

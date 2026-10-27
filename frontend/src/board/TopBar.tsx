@@ -24,7 +24,16 @@ const VIEWS: Array<{ id: BoardView; icon: IconName }> = [
   { id: 'reports', icon: 'chart' },
   // Sprint capacity (#269): beside Reports.
   { id: 'plan', icon: 'users' },
+  // The versions a team ships (#272).
+  { id: 'releases', icon: 'flag' },
 ]
+
+/**
+ * Views with a shape of their own rather than the team's tickets (#272):
+ * nothing to filter, arrange, search or export, and their own button for
+ * what is new in them in place of New ticket.
+ */
+const OWN_SHAPE: readonly BoardView[] = ['releases']
 
 export function TopBar({
   view,
@@ -72,14 +81,19 @@ export function TopBar({
   /** Where a notification goes: the ticket's page, by way of the board (#112). */
   onOpenNotifiedTicket: ComponentProps<typeof NotificationsBell>['onOpenTicket']
 }) {
-  const { team } = useTeamContext()
+  const { team, releases = [] } = useTeamContext()
   const { user } = useAuth()
   const { t } = useTranslation(['board', 'common'])
   // Somebody from outside sees their epics, not the team's reports (#243)
   // or who can take what (#269).
   const views = VIEWS.filter(
-    (item) => !(user?.is_external && (item.id === 'reports' || item.id === 'plan')),
+    (item) =>
+      !(
+        user?.is_external &&
+        (item.id === 'reports' || item.id === 'plan' || item.id === 'releases')
+      ),
   )
+  const ownShape = OWN_SHAPE.includes(view)
 
   return (
     <header className="glass flex flex-wrap items-center gap-2 rounded-panel px-3 py-2">
@@ -124,6 +138,10 @@ export function TopBar({
         >
           <option value="status">{t('arrange.grouping.status')}</option>
           <option value="project">{t('arrange.grouping.project')}</option>
+          {/* Only for a team that ships releases (#272), or a link that asks. */}
+          {(releases.length > 0 || grouping === 'release') && (
+            <option value="release">{t('arrange.grouping.release')}</option>
+          )}
         </Select>
       )}
 
@@ -160,15 +178,17 @@ export function TopBar({
         </div>
       )}
 
-      <FilterBar
-        filters={filters}
-        onChange={onFiltersChange}
-        onSave={onSaveView}
-        canSave={canSaveView}
-      />
+      {!ownShape && (
+        <FilterBar
+          filters={filters}
+          onChange={onFiltersChange}
+          onSave={onSaveView}
+          canSave={canSaveView}
+        />
+      )}
 
       <div className="ml-auto flex items-center gap-2">
-        <label className="relative block">
+        <label className={`relative ${ownShape ? 'hidden' : 'block'}`}>
           <span className="sr-only">{t('topBar.searchLabel')}</span>
           <Icon
             name="search"
@@ -206,12 +226,11 @@ export function TopBar({
           onOpenTicket={onOpenNotifiedTicket}
         />
 
-        <ExportCsvButton
-          filters={filters}
-          searching={search.trim().length > 0}
-        />
+        {!ownShape && (
+          <ExportCsvButton filters={filters} searching={search.trim().length > 0} />
+        )}
 
-        {onNewTicket ? (
+        {ownShape ? null : onNewTicket ? (
           <button type="button" onClick={onNewTicket} className="btn btn-primary">
             <Icon name="plus" size={14} strokeWidth={2.2} />
             <span className="hidden sm:inline">{t('topBar.newTicket')}</span>

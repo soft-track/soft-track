@@ -20,4 +20,5 @@ export const MissingField = {
   estimate: 'estimate',
   epic: 'epic',
   sprint: 'sprint',
+  fix_version: 'fix_version',
 } as const;

@@ -62,6 +62,7 @@ import { RoadmapView } from '@/projects/RoadmapView'
 import { useTeamEvents } from '@/realtime/useTeamEvents'
 import { ReportsView } from '@/reports/ReportsView'
 import { PlanView } from '@/sprints/PlanView'
+import { ReleasesView } from '@/releases/ReleasesView'
 import { SearchResults } from '@/search/SearchResults'
 import { useDebounced } from '@/search/useDebounced'
 import { rememberTeam } from '@/team/lastTeam'
@@ -120,7 +121,11 @@ export default function BoardPage() {
   // The team's reports are not for somebody from outside the organisation
   // (#243), who sees only the epics they were given.
   const setView = (next: BoardView) =>
-    setBoardView(user?.is_external && (next === 'reports' || next === 'plan') ? 'board' : next)
+    setBoardView(
+      user?.is_external && (next === 'reports' || next === 'plan' || next === 'releases')
+        ? 'board'
+        : next,
+    )
   const [search, setSearch] = useState(returning?.search ?? '')
   // The sidebar is a drawer below the `lg` breakpoint.
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -543,7 +548,8 @@ export default function BoardPage() {
             )}
             <PeekContext.Provider value={peek}>
               <div className="min-h-0 flex-1">
-                {searchQuery ? (
+                {/* The releases tab has no search: it is not a list of tickets. */}
+                {searchQuery && view !== 'releases' ? (
                   <SearchResults
                     query={searchQuery}
                     hits={searchResults.data?.items ?? []}
@@ -561,13 +567,15 @@ export default function BoardPage() {
                   <ReportsView />
                 ) : view === 'plan' ? (
                   <PlanView />
+                ) : view === 'releases' ? (
+                  <ReleasesView />
                 ) : view === 'board' ? (
                   <KanbanBoard
                     tickets={tickets}
                     grouping={grouping}
                     onStatusChange={changeStatus}
                     onMove={moveTicket}
-                    onProjectChange={(ids, projectId) => bulk.update(ids, { project_id: projectId })}
+                    onGroupChange={(ids, changes) => bulk.update(ids, changes)}
                     estimates={teamData.estimates}
                     selectedIds={selection.ids}
                     onSelect={canWrite ? selectTicket : undefined}

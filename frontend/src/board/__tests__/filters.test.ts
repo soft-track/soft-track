@@ -335,3 +335,25 @@ describe('the filters #261 added', () => {
     expect(activeCount(backlogReview)).toBe(6)
   })
 })
+
+describe('the release filter (#272)', () => {
+  const shipping: BoardFilters = { ...NO_FILTERS, release: { values: [4, 5], exclude: true } }
+
+  it('round-trips through the link and a saved view', () => {
+    expect(searchString(toSearchParams(shipping))).toBe('release!=4&release!=5')
+    expect(fromSearchParams(toSearchParams(shipping))).toEqual(shipping)
+    expect(fromViewFilters(toViewFilters(shipping))).toEqual(shipping)
+  })
+
+  it('asks the API for the fix version', () => {
+    const params = toQueryParams(shipping)
+    expect(params.fix_version_id).toEqual([4, 5])
+    expect(params.fix_version_exclude).toBe(true)
+    expect(toQueryParams({ ...NO_FILTERS, hasNo: ['fix_version'] }).has_no).toEqual(['fix_version'])
+  })
+
+  it('counts as one filter, and tells views apart', () => {
+    expect(activeCount(shipping)).toBe(1)
+    expect(sameFilters(shipping, NO_FILTERS)).toBe(false)
+  })
+})

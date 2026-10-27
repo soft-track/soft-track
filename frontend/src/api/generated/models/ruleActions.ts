@@ -31,5 +31,6 @@ export interface RuleActions {
   add_label_id?: number | null;
   set_sprint_id?: number | null;
   move_to_active_sprint?: boolean;
+  set_fix_version_id?: number | null;
   comment_body?: string | null;
 }

@@ -4624,11 +4624,38 @@
               "items": {
                 "$ref": "#/components/schemas/MissingField"
               },
-              "description": "Only tickets with no estimate, no epic or no sprint.",
+              "description": "Only tickets with no estimate, no epic, no sprint or no release.",
               "default": [],
               "title": "Has No"
             },
-            "description": "Only tickets with no estimate, no epic or no sprint."
+            "description": "Only tickets with no estimate, no epic, no sprint or no release."
+          },
+          {
+            "name": "fix_version_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets shipping in one of these releases (#272).",
+              "default": [],
+              "title": "Fix Version Id"
+            },
+            "description": "Only tickets shipping in one of these releases (#272)."
+          },
+          {
+            "name": "fix_version_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Fix Version Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
           }
         ],
         "responses": {
@@ -5224,11 +5251,38 @@
               "items": {
                 "$ref": "#/components/schemas/MissingField"
               },
-              "description": "Only tickets with no estimate, no epic or no sprint.",
+              "description": "Only tickets with no estimate, no epic, no sprint or no release.",
               "default": [],
               "title": "Has No"
             },
-            "description": "Only tickets with no estimate, no epic or no sprint."
+            "description": "Only tickets with no estimate, no epic, no sprint or no release."
+          },
+          {
+            "name": "fix_version_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets shipping in one of these releases (#272).",
+              "default": [],
+              "title": "Fix Version Id"
+            },
+            "description": "Only tickets shipping in one of these releases (#272)."
+          },
+          {
+            "name": "fix_version_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Fix Version Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
           }
         ],
         "responses": {
@@ -7500,6 +7554,366 @@
         }
       }
     },
+    "/teams/{team_id}/releases": {
+      "get": {
+        "tags": [
+          "releases"
+        ],
+        "summary": "List Releases",
+        "description": "The versions a team ships (#272): planned, then released, then\narchived, newest first in each.",
+        "operationId": "list_releases_teams__team_id__releases_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReleaseRead"
+                  },
+                  "title": "Response List Releases Teams  Team Id  Releases Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "releases"
+        ],
+        "summary": "Create Release",
+        "operationId": "create_release_teams__team_id__releases_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/releases/{release_id}": {
+      "get": {
+        "tags": [
+          "releases"
+        ],
+        "summary": "Get Release",
+        "operationId": "get_release_releases__release_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "release_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Release Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "releases"
+        ],
+        "summary": "Update Release",
+        "operationId": "update_release_releases__release_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "release_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Release Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "releases"
+        ],
+        "summary": "Delete Release",
+        "operationId": "delete_release_releases__release_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "release_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Release Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/releases/{release_id}/release": {
+      "post": {
+        "tags": [
+          "releases"
+        ],
+        "summary": "Release Release",
+        "description": "Release it: set the day it shipped, and move the tickets that are not\ndone to another planned release or leave them without one.",
+        "operationId": "release_release_releases__release_id__release_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "release_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Release Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ReleaseRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/releases/{release_id}/notes": {
+      "get": {
+        "tags": [
+          "releases"
+        ],
+        "summary": "Release Notes",
+        "description": "A draft of the release notes in markdown, from the done tickets.",
+        "operationId": "release_notes_releases__release_id__notes_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "release_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Release Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseNotes"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/search": {
       "get": {
         "tags": [
@@ -7982,11 +8396,38 @@
               "items": {
                 "$ref": "#/components/schemas/MissingField"
               },
-              "description": "Only tickets with no estimate, no epic or no sprint.",
+              "description": "Only tickets with no estimate, no epic, no sprint or no release.",
               "default": [],
               "title": "Has No"
             },
-            "description": "Only tickets with no estimate, no epic or no sprint."
+            "description": "Only tickets with no estimate, no epic, no sprint or no release."
+          },
+          {
+            "name": "fix_version_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Only tickets shipping in one of these releases (#272).",
+              "default": [],
+              "title": "Fix Version Id"
+            },
+            "description": "Only tickets shipping in one of these releases (#272)."
+          },
+          {
+            "name": "fix_version_exclude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Every ticket except those the filter matches.",
+              "default": false,
+              "title": "Fix Version Exclude"
+            },
+            "description": "Every ticket except those the filter matches."
           }
         ],
         "responses": {
@@ -19136,7 +19577,8 @@
         "enum": [
           "estimate",
           "epic",
-          "sprint"
+          "sprint",
+          "fix_version"
         ],
         "title": "MissingField",
         "description": "What a ticket can be filtered on having none of (#261).\n\nNo assignee and no due date were filters before this, and stay where\nthey are: nobody is one of the assignee choices, no due date one of the\ndue filter's."
@@ -22347,6 +22789,299 @@
         "title": "ReimbursementCarry",
         "description": "Approved claims to pay back with a draft payroll run's pay."
       },
+      "ReleaseCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ReleaseCreate"
+      },
+      "ReleaseNotes": {
+        "properties": {
+          "markdown": {
+            "type": "string",
+            "title": "Markdown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "markdown"
+        ],
+        "title": "ReleaseNotes",
+        "description": "A draft of the release notes (#272): markdown for a person to edit.\n\nDrafted from the done tickets, grouped by type -- stories, then bugs,\nthen tasks -- with each ticket's title and key. Nothing keeps it: the\ndraft is written fresh each time it is asked for, from what is done now."
+      },
+      "ReleaseProgress": {
+        "properties": {
+          "tickets_total": {
+            "type": "integer",
+            "title": "Tickets Total"
+          },
+          "tickets_done": {
+            "type": "integer",
+            "title": "Tickets Done"
+          },
+          "points_total": {
+            "type": "integer",
+            "title": "Points Total"
+          },
+          "points_done": {
+            "type": "integer",
+            "title": "Points Done"
+          },
+          "tickets_unestimated": {
+            "type": "integer",
+            "title": "Tickets Unestimated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tickets_total",
+          "tickets_done",
+          "points_total",
+          "points_done",
+          "tickets_unestimated"
+        ],
+        "title": "ReleaseProgress",
+        "description": "How much of what is in a release is done.\n\nCancelled tickets are left out of every number, as they are from a\nparent's sub-ticket progress: they will not ship, and nothing is\nwaiting on them. Tickets and points are both given, because they\ndisagree -- three of five tickets done with eleven of sixteen points\nsays something neither does alone."
+      },
+      "ReleaseRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ReleaseState"
+          },
+          "released_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Released On"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/ReleaseProgress"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "team_id",
+          "name",
+          "state",
+          "progress",
+          "created_at"
+        ],
+        "title": "ReleaseRead"
+      },
+      "ReleaseRequest": {
+        "properties": {
+          "released_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Released On"
+          },
+          "move_to_release_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Move To Release Id"
+          }
+        },
+        "type": "object",
+        "title": "ReleaseRequest",
+        "description": "What releasing asks (#272), all of it optional."
+      },
+      "ReleaseResult": {
+        "properties": {
+          "release": {
+            "$ref": "#/components/schemas/ReleaseRead"
+          },
+          "moved": {
+            "type": "integer",
+            "title": "Moved"
+          },
+          "moved_to_release_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moved To Release Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "release",
+          "moved"
+        ],
+        "title": "ReleaseResult"
+      },
+      "ReleaseState": {
+        "type": "string",
+        "enum": [
+          "planned",
+          "released",
+          "archived"
+        ],
+        "title": "ReleaseState",
+        "description": "Where a release is in its life (#272).\n\nSet, like a sprint's state and a project's: \"every ticket in it is done\"\nis evidence a version is ready, not a decision to ship it. Releasing is\nthe one way to `released`, because it asks what happens to the tickets\nthat are not done."
+      },
+      "ReleaseUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReleaseState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "released_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Released On"
+          }
+        },
+        "type": "object",
+        "title": "ReleaseUpdate",
+        "description": "Every field optional; an explicit null clears the description or the\ntarget date.\n\n`state` takes a release out of the pickers (`archived`) and back, or\nreopens a released one (`planned`, which forgets the day it shipped).\nReleasing is `POST /releases/{id}/release`, which asks what to do with\nthe tickets that are not done: `released` here is accepted only for a\nrelease that was released before it was archived."
+      },
       "ReportLoad": {
         "properties": {
           "person": {
@@ -22729,6 +23464,17 @@
             "title": "Move To Active Sprint",
             "default": false
           },
+          "set_fix_version_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Set Fix Version Id"
+          },
           "comment_body": {
             "anyOf": [
               {
@@ -22855,7 +23601,9 @@
               "creator_me": false,
               "creator_exclude": false,
               "watching": false,
-              "has_no": []
+              "has_no": [],
+              "fix_version_id": [],
+              "fix_version_exclude": false
             }
           },
           "group_by": {
@@ -25901,6 +26649,17 @@
             ],
             "title": "Sprint Id"
           },
+          "fix_version_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fix Version Id"
+          },
           "add_label_ids": {
             "items": {
               "type": "integer"
@@ -26064,6 +26823,17 @@
             ],
             "title": "Sprint Id"
           },
+          "fix_version_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fix Version Id"
+          },
           "due_date": {
             "anyOf": [
               {
@@ -26137,7 +26907,8 @@
           "trash",
           "schedule",
           "time_estimate",
-          "remaining"
+          "remaining",
+          "fix_version"
         ],
         "title": "TicketEventField",
         "description": "Which field a TicketEvent records a change to."
@@ -26234,7 +27005,8 @@
         "type": "string",
         "enum": [
           "status",
-          "project"
+          "project",
+          "release"
         ],
         "title": "TicketGrouping",
         "description": "What the board's columns, and the list's sections, are made of.\n\nA saved view stores one (#63), so \"the planning view\" can open grouped by\nproject while \"my bugs\" opens by status. Status is the default because it\nis what the board always was."
@@ -26509,6 +27281,17 @@
               }
             ],
             "title": "Sprint Id"
+          },
+          "fix_version_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fix Version Id"
           },
           "due_date": {
             "anyOf": [
@@ -26973,6 +27756,17 @@
               }
             ],
             "title": "Sprint Id"
+          },
+          "fix_version_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fix Version Id"
           },
           "due_date": {
             "anyOf": [
@@ -28416,6 +29210,19 @@
             "type": "array",
             "title": "Has No",
             "default": []
+          },
+          "fix_version_id": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Fix Version Id",
+            "default": []
+          },
+          "fix_version_exclude": {
+            "type": "boolean",
+            "title": "Fix Version Exclude",
+            "default": false
           }
         },
         "type": "object",
@@ -29001,6 +29808,7 @@
           "parent_not_found",
           "project_not_found",
           "sprint_not_found",
+          "release_not_found",
           "status_not_found",
           "label_not_found",
           "not_in_trash",
@@ -29043,6 +29851,7 @@
           "rule_name_taken",
           "department_name_taken",
           "label_name_taken",
+          "release_name_taken",
           "already_member",
           "already_team_admin",
           "link_exists",
@@ -29065,6 +29874,8 @@
           "sprint_not_completed",
           "wip_limit_reached",
           "sprint_dates_invalid",
+          "release_not_planned",
+          "release_not_released",
           "link_to_self",
           "parent_is_self",
           "parent_other_team",

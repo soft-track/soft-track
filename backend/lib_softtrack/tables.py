@@ -96,6 +96,8 @@ class TicketGrouping(str, enum.Enum):
 
     status = "status"
     project = "project"
+    #: One column per release the team ships (#272), and one for no release.
+    release = "release"
 
 
 class TicketType(str, enum.Enum):
@@ -212,6 +214,22 @@ class SprintOutcome(str, enum.Enum):
     missed = "missed"
 
 
+class ReleaseState(str, enum.Enum):
+    """Where a release is in its life (#272).
+
+    Set, like a sprint's state and a project's: "every ticket in it is done"
+    is evidence a version is ready, not a decision to ship it. Releasing is
+    the one way to `released`, because it asks what happens to the tickets
+    that are not done.
+    """
+
+    planned = "planned"
+    released = "released"
+    #: Out of the pickers, as an archived epic is. Its tickets keep pointing
+    #: at it, so "fixed in 1.2" still reads back on an old bug.
+    archived = "archived"
+
+
 class TicketEventField(str, enum.Enum):
     """Which field a TicketEvent records a change to."""
 
@@ -249,6 +267,8 @@ class TicketEventField(str, enum.Enum):
     #: the burndown in hours replays.
     time_estimate = "time_estimate"
     remaining = "remaining"
+    #: The release a ticket ships in (#272), as the release's id.
+    fix_version = "fix_version"
 
 
 class DueFilter(str, enum.Enum):
@@ -308,6 +328,8 @@ class MissingField(str, enum.Enum):
     #: No epic (the column is `project_id`).
     epic = "epic"
     sprint = "sprint"
+    #: No release to ship in (#272): the column is `fix_version_id`.
+    fix_version = "fix_version"
 
 
 class TeamRole(str, enum.Enum):
@@ -1152,6 +1174,12 @@ class Ticket(SQLModel, table=True):
     # rather than left to convention.
     parent_id: Optional[int] = Field(default=None, foreign_key="ticket.id", index=True)
     sprint_id: Optional[int] = Field(default=None, foreign_key="sprint.id", index=True)
+    #: The release it ships in (#272): one per ticket. A sprint says when the
+    #: work was done and an epic what it was part of; this says which version
+    #: a customer has to be on to have it.
+    fix_version_id: Optional[int] = Field(
+        default=None, foreign_key="release.id", index=True
+    )
     #: The identifier this ticket had in the system it was imported from, e.g.
     #: a Jira key like "PROJ-142". Kept so links in old documents, commit
     #: messages and chat history stay traceable after a migration -- which is
@@ -1264,6 +1292,33 @@ class SprintCapacity(SQLModel, table=True):
     days_off: int = Field(default=0)
     points: Optional[int] = None
     minutes: Optional[int] = None
+
+
+class Release(SQLModel, table=True):
+    """A version a team ships (#272): a name for a set of tickets.
+
+    Not a deploy and not a build. A sprint says when work was done and an
+    epic what it was part of; a release says which version it shipped in, so
+    "is this fixed in what the customer runs" has an answer that is not
+    somebody's memory. Tickets point here by `Ticket.fix_version_id`.
+    """
+
+    #: "1.4.0" once per team. Compared as typed: versions are not words, and
+    #: "1.4.0-RC1" and "1.4.0-rc1" can be two different builds.
+    __table_args__ = (UniqueConstraint("team_id", "name", name="uq_release_team_name"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    team_id: int = Field(foreign_key="team.id", index=True)
+    name: str
+    description: Optional[str] = None
+    #: A day, like an epic's target: a version is due on a date, and a
+    #: timestamp would move it across midnight for half the team.
+    target_date: Optional[date] = None
+    state: ReleaseState = Field(default=ReleaseState.planned, index=True)
+    #: The day it shipped, said when it is released. Kept when it is archived,
+    #: so an archived release still says when it went out.
+    released_on: Optional[date] = None
+    created_at: datetime = Field(default_factory=utcnow)
 
 
 class TicketEvent(SQLModel, table=True):
@@ -1690,6 +1745,12 @@ class SavedView(SQLModel, table=True):
     has_no: list = Field(
         default_factory=list, sa_column=Column(JSONValue, nullable=False)
     )
+    #: Release ids, for the release a ticket ships in (#272). Cleared of a
+    #: release when it is deleted -- see lib_softtrack/releases.py.
+    fix_version_ids: list = Field(
+        default_factory=list, sa_column=Column(JSONValue, nullable=False)
+    )
+    fix_version_exclude: bool = Field(default=False)
 
     #: Not a filter -- it narrows nothing -- but part of what a view *is*: the
     #: same tickets read very differently by column and by project.
@@ -1854,6 +1915,9 @@ class AutomationRule(SQLModel, table=True):
     #: keep meaning that a fortnight later, and a fixed id does not. Mutually
     #: exclusive with `set_sprint_id`.
     move_to_active_sprint: bool = Field(default=False)
+    #: The release the ticket ships in (#272). Switched off with the
+    #: reference cleared when the release is deleted, as for a sprint.
+    set_fix_version_id: Optional[int] = Field(default=None, foreign_key="release.id")
     #: Posted with no author -- see Comment.author_id.
     comment_body: Optional[str] = None
 

@@ -12,7 +12,8 @@ so a move is not a field change. The rules, which `plan` computes and
   category, or its first column if it has none in that category.
 - **Labels** are kept where the target team has one of the same name, ignoring
   case, and dropped otherwise.
-- **Sprint** and **project** are cleared; both belong to one team.
+- **Sprint**, **project** and **release** (#272) are cleared; each belongs
+  to one team.
 - **Assignee** is cleared if they are not on the target team.
 - **Custom fields** (#117) are cleared. They are the old team's own, and a
   "Reviewer" on the target team is a different field that may mean somebody
@@ -218,6 +219,8 @@ def _carry_out(session: Session, move: _Move, target: Team, actor: User) -> str:
     ticket.status_id = move.status.id
     ticket.sprint_id = None
     ticket.project_id = None
+    # A release is the old team's, like its sprints (#272).
+    ticket.fix_version_id = None
     if move.clear_assignee:
         ticket.assignee_id = None
     if move.detach_parent:

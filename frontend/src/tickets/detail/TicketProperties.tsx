@@ -16,6 +16,7 @@ import {
 } from '@/tickets/ticketMeta'
 import { AssigneeOptions } from '@/tickets/AssigneeOptions'
 import { TimeEstimateInput } from '@/tickets/detail/TimeEstimate'
+import { pickableReleases } from '@/releases/releases'
 import { pickableProjects } from '@/team/projects'
 import { useTeamContext } from '@/team/useTeamContext'
 import { Select } from '@/ui/Select'
@@ -41,8 +42,11 @@ export function TicketProperties({
   /** A guest's view (#104): every value shown, none of them changeable. */
   readOnly?: boolean
 }) {
-  const { t } = useTranslation('tickets')
-  const { team, members, labels, sprints, statuses, projects } = useTeamContext()
+  const { t } = useTranslation(['tickets', 'releases'])
+  const { team, members, labels, sprints, statuses, projects, releases = [] } = useTeamContext()
+  // A team that has made no release is asked nothing about one (#272); a
+  // ticket that already ships in one keeps showing it.
+  const showFixVersion = releases.length > 0 || ticket.fix_version_id != null
   // What the team estimates in (#268). A ticket that already has the other
   // kind keeps showing it, so it can be read and cleared.
   const unit = team.estimate_unit ?? 'points'
@@ -151,6 +155,33 @@ export function TicketProperties({
             ))}
         </Select>
       </Row>
+
+      {showFixVersion && (
+        <Row
+          label={
+            // What a bug calls it: the release it is fixed in.
+            ticket.type === 'bug' ? t('releases:ticket.fixedIn') : t('releases:ticket.fixVersion')
+          }
+        >
+          <Select
+            dense
+            data-field="fix-version"
+            value={ticket.fix_version_id ?? ''}
+            onChange={(e) =>
+              patch({ fix_version_id: e.target.value ? Number(e.target.value) : null })
+            }
+          >
+            <option value="">{t('releases:ticket.none')}</option>
+            {/* Archived releases are not offered, but the one this ticket
+                ships in stays listed. */}
+            {pickableReleases(releases, ticket.fix_version_id).map((release) => (
+              <option key={release.id} value={release.id}>
+                {release.name}
+              </option>
+            ))}
+          </Select>
+        </Row>
+      )}
 
       <Row label={t('properties.dueDate')}>
         <input

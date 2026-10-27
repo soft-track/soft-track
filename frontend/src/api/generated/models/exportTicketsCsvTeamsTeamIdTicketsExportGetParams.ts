@@ -126,7 +126,15 @@ created_from?: string | null;
  */
 created_to?: string | null;
 /**
- * Only tickets with no estimate, no epic or no sprint.
+ * Only tickets with no estimate, no epic, no sprint or no release.
  */
 has_no?: MissingField[];
+/**
+ * Only tickets shipping in one of these releases (#272).
+ */
+fix_version_id?: number[];
+/**
+ * Every ticket except those the filter matches.
+ */
+fix_version_exclude?: boolean;
 };

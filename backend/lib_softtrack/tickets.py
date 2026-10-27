@@ -50,6 +50,7 @@ from lib_softtrack.tables import (
     TicketSort,
     Label,
     Project,
+    Release,
     SortDirection,
     Team,
     User,
@@ -122,6 +123,7 @@ def ticket_to_read(ticket: Ticket, session: Session) -> TicketRead:
         remaining_minutes=ticket.remaining_minutes,
         blocked_by_count=open_blocker_counts(session, [ticket.id]).get(ticket.id, 0),
         sprint_id=ticket.sprint_id,
+        fix_version_id=ticket.fix_version_id,
         due_date=ticket.due_date,
         external_key=ticket.external_key,
         parent=_parent_ref(ticket, session),
@@ -217,6 +219,7 @@ def _expand_tickets(tickets: list[Ticket], session: Session) -> list[TicketRead]
             remaining_minutes=ticket.remaining_minutes,
             blocked_by_count=blocker_counts.get(ticket.id, 0),
             sprint_id=ticket.sprint_id,
+            fix_version_id=ticket.fix_version_id,
             due_date=ticket.due_date,
             external_key=ticket.external_key,
             creator=UserPublic.model_validate(users[ticket.creator_id]),
@@ -270,6 +273,7 @@ def create_ticket(
     team = get_team_or_404(team_id, session)
     require_team_member(team_id, current_user, session)
     _require_on_team(session, Project, payload.project_id, team_id, "project")
+    _require_on_team(session, Release, payload.fix_version_id, team_id, "release")
     require_assignable(team_id, payload.assignee_id, session)
     # Checked before anything is written, so a ticket refused for a missing
     # field does not use up a number -- or exist at all.
@@ -346,6 +350,7 @@ def _insert_ticket(
         assignee_id=payload.assignee_id,
         estimate=payload.estimate,
         sprint_id=payload.sprint_id,
+        fix_version_id=payload.fix_version_id,
         due_date=payload.due_date,
         # On top of its column, where a new card is looked for.
         rank=top_rank(session, team_id),
@@ -533,6 +538,8 @@ class TicketExportRow(NamedTuple):
     ticket: TicketRead
     project_name: str
     sprint_name: str
+    #: The release it ships in (#272), by name.
+    fix_version_name: str = ""
     #: Time logged on it, and what is left (#268) -- worked out, or as set.
     logged_minutes: int = 0
     remaining_minutes: Optional[int] = None
@@ -635,6 +642,21 @@ def _export_rows(tickets: list[Ticket], session: Session) -> list[TicketExportRo
         ).all()
     }
 
+    release_names = {
+        release.id: release.name
+        for release in session.exec(
+            select(Release).where(
+                Release.id.in_(
+                    {
+                        ticket.fix_version_id
+                        for ticket in tickets
+                        if ticket.fix_version_id
+                    }
+                )
+            )
+        ).all()
+    }
+
     # Imported here: time_estimates reads tickets through this module.
     from lib_softtrack.time_estimates import logged_by, remaining_of
 
@@ -650,6 +672,7 @@ def _export_rows(tickets: list[Ticket], session: Session) -> list[TicketExportRo
                 # name to print".
                 project_name=project_names.get(read.project_id, ""),
                 sprint_name=sprint_names.get(read.sprint_id, ""),
+                fix_version_name=release_names.get(read.fix_version_id, ""),
                 logged_minutes=spent,
                 remaining_minutes=remaining_of(
                     read.time_estimate_minutes,
@@ -762,6 +785,10 @@ def _apply_update(
     # the ticket under an epic its own team cannot open.
     _require_on_team(
         session, Project, data.get("project_id"), ticket.team_id, "project"
+    )
+    # A release is the team's too (#272).
+    _require_on_team(
+        session, Release, data.get("fix_version_id"), ticket.team_id, "release"
     )
     # Only a change is checked, so an edit that sends the assignee back as it
     # was still saves on a ticket assigned before guests could not be (#316).
@@ -1087,6 +1114,7 @@ def _validate_bulk_changes(
     resolve_for_team(session, team_id, changes.status_id)
     _require_on_team(session, Project, changes.project_id, team_id, "project")
     _require_on_team(session, Sprint, changes.sprint_id, team_id, "sprint")
+    _require_on_team(session, Release, changes.fix_version_id, team_id, "release")
     for label_id in {*changes.add_label_ids, *changes.remove_label_ids}:
         _require_on_team(session, Label, label_id, team_id, "label")
     if set(changes.add_label_ids) & set(changes.remove_label_ids):

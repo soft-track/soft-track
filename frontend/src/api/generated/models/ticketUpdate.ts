@@ -22,6 +22,7 @@ export interface TicketUpdate {
   estimate?: TicketUpdateEstimate;
   parent_id?: number | null;
   sprint_id?: number | null;
+  fix_version_id?: number | null;
   due_date?: string | null;
   /** Minutes. Null means no time estimate. */
   time_estimate_minutes?: number | null;

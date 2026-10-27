@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import type { TicketRead, ProjectRead } from '@/api/generated/models'
+import type { TicketRead, ProjectRead, ReleaseRead } from '@/api/generated/models'
 import {
   groupByProject,
+  groupByRelease,
   groupingFromSearchParams,
+  groupTickets,
   NO_PROJECT_KEY,
+  NO_RELEASE_KEY,
   projectForDropTarget,
   withGrouping,
 } from '@/board/grouping'
@@ -84,5 +87,61 @@ describe('projectForDropTarget', () => {
     expect(projectForDropTarget('project:12')).toBe(12)
     expect(projectForDropTarget(NO_PROJECT_KEY)).toBeNull()
     expect(projectForDropTarget('status:4')).toBeUndefined()
+  })
+})
+
+describe('grouping by release (#272)', () => {
+  const release = (id: number, name: string, state: ReleaseRead['state'] = 'planned') =>
+    ({
+      id,
+      team_id: 1,
+      name,
+      state,
+      created_at: '2026-01-01T00:00:00Z',
+      progress: {
+        tickets_total: 0,
+        tickets_done: 0,
+        points_total: 0,
+        points_done: 0,
+        tickets_unestimated: 0,
+      },
+    }) as ReleaseRead
+  const releases = [release(4, '1.4.0'), release(3, '1.3.2', 'released'), release(1, '0.9', 'archived')]
+  const shipping = (id: number, fix_version_id: number | null) =>
+    ({ id, fix_version_id }) as TicketRead
+
+  it('reads and writes the grouping in the link', () => {
+    const params = withGrouping(new URLSearchParams(''), 'release')
+    expect(params.toString()).toBe('group=release')
+    expect(groupingFromSearchParams(params)).toBe('release')
+  })
+
+  it('keeps the team’s order of releases, and tickets in none last', () => {
+    const groups = groupByRelease(
+      [shipping(10, 3), shipping(11, null), shipping(12, 4)],
+      releases,
+      { includeEmpty: false },
+    )
+    expect(groups.map((group) => group.key)).toEqual(['release:4', 'release:3', NO_RELEASE_KEY])
+  })
+
+  it('offers an empty column to drop into on the board, but never an archived one', () => {
+    const groups = groupByRelease([], releases, { includeEmpty: true })
+    expect(groups.map((group) => group.key)).toEqual(['release:4', 'release:3', NO_RELEASE_KEY])
+    // Still holding a ticket, an archived release keeps its column.
+    expect(
+      groupByRelease([shipping(10, 1)], releases, { includeEmpty: true }).map((g) => g.key),
+    ).toContain('release:1')
+  })
+
+  it('says what a drop on each column changes', () => {
+    const groups = groupTickets('release', [shipping(10, 4)], { projects: [], releases }, {
+      includeEmpty: true,
+    })
+    expect(groups.map((group) => [group.name, group.change])).toEqual([
+      ['1.4.0', { fix_version_id: 4 }],
+      ['1.3.2', { fix_version_id: 3 }],
+      [null, { fix_version_id: null }],
+    ])
   })
 })

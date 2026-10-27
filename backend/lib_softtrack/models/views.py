@@ -101,6 +101,10 @@ class ViewFilters(BaseModel):
     #: Tickets with no estimate, no epic or no sprint -- each one asked narrows
     #: further. No assignee and no due date are the assignee and due filters'.
     has_no: list[MissingField] = []
+    #: The release a ticket ships in (#272), in the shape of the first five.
+    #: No release is `has_no: fix_version`.
+    fix_version_id: list[int] = []
+    fix_version_exclude: bool = False
 
     _lists = field_validator(
         "status_id",
@@ -110,6 +114,7 @@ class ViewFilters(BaseModel):
         "type",
         "creator_id",
         "has_no",
+        "fix_version_id",
         mode="before",
     )(_as_list)
 

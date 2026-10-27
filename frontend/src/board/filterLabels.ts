@@ -2,6 +2,7 @@ import type {
   SprintRead,
   LabelRead,
   ProjectRead,
+  ReleaseRead,
   StatusRead,
   TeamMemberRead,
 } from '@/api/generated/models'
@@ -23,6 +24,8 @@ export type FilterLookups = {
   projects: ProjectRead[]
   sprints: SprintRead[]
   statuses: StatusRead[]
+  /** The team's releases (#272); none for a team that has not made any. */
+  releases?: ReleaseRead[]
 }
 
 /** One chosen value inside a chip, which can be removed on its own. */
@@ -70,6 +73,7 @@ const FIELD = {
   created: 'created',
   hasNo: 'hasNo',
   watching: 'watching',
+  release: 'release',
 } as const satisfies Record<FilterKey, string>
 
 /**
@@ -128,6 +132,11 @@ export function valueName<K extends ManyKey>(
       return (
         lookups.labels.find((label) => label.id === value)?.name ??
         i18n.t('board:filters.missing.label')
+      )
+    case 'release':
+      return (
+        (lookups.releases ?? []).find((release) => release.id === value)?.name ??
+        i18n.t('board:filters.missing.release')
       )
     default:
       return TYPE_META[value as FilterValue<'type'>].label

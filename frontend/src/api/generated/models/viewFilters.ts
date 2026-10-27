@@ -59,4 +59,6 @@ export interface ViewFilters {
   created_from?: string | null;
   created_to?: string | null;
   has_no?: MissingField[];
+  fix_version_id?: number[];
+  fix_version_exclude?: boolean;
 }

@@ -19,4 +19,5 @@ export type TicketGrouping = typeof TicketGrouping[keyof typeof TicketGrouping];
 export const TicketGrouping = {
   status: 'status',
   project: 'project',
+  release: 'release',
 } as const;

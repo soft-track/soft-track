@@ -28,6 +28,7 @@ type HistoryKey =
   | `sprint.${'added' | 'moved' | 'removed'}`
   | `due.${'set' | 'moved' | 'removed'}`
   | `project.${'added' | 'moved' | 'removed'}`
+  | `fixVersion.${'set' | 'moved' | 'cleared'}`
   | 'team'
   | `field.${'set' | 'changed' | 'cleared' | 'ticked' | 'unticked'}`
   | `trash.${'deleted' | 'restored'}`
@@ -105,6 +106,15 @@ export function describeEvent(event: TicketEventRead): EventSentence {
       if (!to) return say('project.removed', { from: before })
       if (!from) return say('project.added', { to: after })
       return say('project.moved', { from: before, to: after })
+    }
+
+    case 'fix_version': {
+      // The release it ships in (#272), named as it is now.
+      const before = named(event.old_label, 'deletedRelease')
+      const after = named(event.new_label, 'deletedRelease')
+      if (!to) return say('fixVersion.cleared', { from: before })
+      if (!from) return say('fixVersion.set', { to: after })
+      return say('fixVersion.moved', { from: before, to: after })
     }
 
     case 'team': {
@@ -202,7 +212,7 @@ function fieldValue(
 
 function named(
   label: string | null | undefined,
-  gone: 'formerMember' | 'deletedSprint' | 'deletedProject',
+  gone: 'formerMember' | 'deletedSprint' | 'deletedProject' | 'deletedRelease',
 ): string {
   return label ?? i18n.t(`tickets:history.${gone}`)
 }

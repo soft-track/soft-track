@@ -100,8 +100,14 @@ def ticket_filters(
         None, description="Only tickets created on or before this day (UTC)."
     ),
     has_no: list[MissingField] = Query(
-        [], description="Only tickets with no estimate, no epic or no sprint."
+        [],
+        description="Only tickets with no estimate, no epic, no sprint or no "
+        "release.",
     ),
+    fix_version_id: list[int] = Query(
+        [], description="Only tickets shipping in one of these releases (#272)."
+    ),
+    fix_version_exclude: bool = Query(False, description=_EXCLUDE),
 ) -> ViewFilters:
     try:
         # Every parameter above, by name: they are ViewFilters' own names.

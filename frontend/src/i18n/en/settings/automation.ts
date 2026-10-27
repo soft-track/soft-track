@@ -63,6 +63,8 @@ export const automation = {
     leaveIt: 'Leave it',
     none: 'None',
     activeSprint: 'Whichever sprint is active',
+    /** The release a ticket ships in (#272). */
+    setFixVersion: 'Set the fix version to',
     commentLabel: 'Post a comment',
     commentPlaceholder: 'Filed outside a sprint — please size it.',
     commentHint: 'Posted with no author, so nobody is quoted saying something they did not write.',

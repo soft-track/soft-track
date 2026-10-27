@@ -5,6 +5,7 @@ import {
   useUpdateTicketTicketsTicketIdPatch,
 } from '@/api/generated/endpoints/tickets/tickets'
 import type { TicketRead, StatusRead, TeamRead } from '@/api/generated/models'
+import { invalidateReleases } from '@/releases/releases'
 import { invalidateProjects } from '@/team/projects'
 
 /** The shape the list endpoint caches: a page, not a bare array. */
@@ -48,6 +49,7 @@ export function useStatusChange(
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/estimates`] })
       queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/sprints`] })
       invalidateProjects(queryClient, team.id)
+      invalidateReleases(queryClient, team.id)
     } catch (err: unknown) {
       queryClient.setQueryData(queryKey, previous)
       onError?.(err)
