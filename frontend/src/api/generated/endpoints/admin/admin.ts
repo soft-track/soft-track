@@ -43,6 +43,7 @@ import type {
   TeamRead,
   TeamRequestDecline,
   TeamRequestRead,
+  UsageRead,
   WelcomeLinkCreate,
   WelcomeLinkCreated
 } from '../../models';
@@ -1024,6 +1025,100 @@ export const useClearTotpAdminUsersUserIdClearTotpPost = <TError = HTTPValidatio
       return useMutation(getClearTotpAdminUsersUserIdClearTotpPostMutationOptions(options), queryClient);
     }
     /**
+ * Accounts, work, storage, email, webhooks and API tokens, as counts.
+ * Worked out now, for this page, and sent nowhere else.
+ * @summary Get Usage
+ */
+export const getUsageAdminUsageGet = (
+
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<UsageRead>(
+      {url: `/admin/usage`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getGetUsageAdminUsageGetQueryKey = () => {
+    return [
+    `/admin/usage`
+    ] as const;
+    }
+
+
+export const getGetUsageAdminUsageGetQueryOptions = <TData = Awaited<ReturnType<typeof getUsageAdminUsageGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUsageAdminUsageGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetUsageAdminUsageGetQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUsageAdminUsageGet>>> = ({ signal }) => getUsageAdminUsageGet(signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUsageAdminUsageGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetUsageAdminUsageGetQueryResult = NonNullable<Awaited<ReturnType<typeof getUsageAdminUsageGet>>>
+export type GetUsageAdminUsageGetQueryError = unknown
+
+
+export function useGetUsageAdminUsageGet<TData = Awaited<ReturnType<typeof getUsageAdminUsageGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUsageAdminUsageGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getUsageAdminUsageGet>>,
+          TError,
+          Awaited<ReturnType<typeof getUsageAdminUsageGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetUsageAdminUsageGet<TData = Awaited<ReturnType<typeof getUsageAdminUsageGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUsageAdminUsageGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getUsageAdminUsageGet>>,
+          TError,
+          Awaited<ReturnType<typeof getUsageAdminUsageGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetUsageAdminUsageGet<TData = Awaited<ReturnType<typeof getUsageAdminUsageGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUsageAdminUsageGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Usage
+ */
+
+export function useGetUsageAdminUsageGet<TData = Awaited<ReturnType<typeof getUsageAdminUsageGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUsageAdminUsageGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetUsageAdminUsageGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
  * Who may create teams, the people named, and the requests waiting.
  * @summary Get Team Creation
  */

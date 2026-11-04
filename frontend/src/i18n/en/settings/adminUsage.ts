@@ -1,0 +1,78 @@
+/** Settings → Administration → Usage: how much the instance is used (#312). */
+export const adminUsage = {
+  title: 'Usage',
+  siteAdmin: 'Site admin',
+  intro:
+    'Whether anybody uses this SoftTrack, how fast it is growing, and whether its email arrives.',
+  loading: 'Working out the numbers…',
+  people: {
+    label: 'Accounts',
+    active_one: 'active account',
+    active_other: 'active accounts',
+    notActivated: 'not yet activated',
+    deactivated: 'deactivated',
+    signedIn7: 'signed in, last 7 days',
+    signedIn30: 'signed in, last 30 days',
+  },
+  tickets: {
+    title: 'Tickets, per week',
+    note: 'Created and closed, as counts.',
+    teams_one: '{{count}} team in use',
+    teams_other: '{{count}} teams in use',
+    teamsAndArchived_one: '{{count}} team in use, {{archived}} archived',
+    teamsAndArchived_other: '{{count}} teams in use, {{archived}} archived',
+    created: 'Created',
+    closed: 'Closed',
+    weekPattern: 'd MMM',
+    chart: 'Tickets created and closed in each of the last 13 weeks',
+    week: 'Week of {{week}}: {{created}} created, {{closed}} closed',
+  },
+  storage: {
+    title: 'Attachments',
+    summary_one: '{{size}} in {{files}} file.',
+    summary_other: '{{size}} in {{files}} files.',
+    empty: 'Nothing is attached yet.',
+  },
+  email: {
+    title: 'Email, last 7 days',
+    sent: 'sent',
+    failed: 'failed',
+    notConfigured: 'No mail server is set up, so this instance sends no email.',
+  },
+  webhooks: {
+    title: 'Webhooks, failed',
+    empty: 'No team has an outgoing webhook.',
+  },
+  tokens: {
+    title: 'API tokens',
+    live: 'live',
+    neverUsed: 'never used',
+  },
+  lastError: {
+    title: 'Email · the last error',
+    at_one: '{{when}} · to {{count}} address',
+    at_other: '{{when}} · to {{count}} addresses',
+    today: 'today, {{time}}',
+    yesterday: 'yesterday, {{time}}',
+    earlier: '{{date}}, {{time}}',
+    datePattern: 'd MMM',
+    timePattern: 'HH:mm',
+    none: 'Nothing has failed in the last 7 days.',
+  },
+  largest: {
+    title: 'The largest files',
+    row: '{{kind}} · {{team}}',
+    empty: 'Nothing is attached yet.',
+    kinds: {
+      image: 'image',
+      video: 'video',
+      document: 'document',
+      text: 'text',
+      archive: 'archive',
+      other: 'file',
+    },
+  },
+  errors: {
+    load: 'Could not load the usage figures.',
+  },
+} as const

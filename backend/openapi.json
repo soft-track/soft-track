@@ -1704,6 +1704,33 @@
         }
       }
     },
+    "/admin/usage": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get Usage",
+        "description": "Accounts, work, storage, email, webhooks and API tokens, as counts.\nWorked out now, for this page, and sent nowhere else.",
+        "operationId": "get_usage_admin_usage_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/departments": {
       "get": {
         "tags": [
@@ -18037,6 +18064,39 @@
         "title": "DueFilter",
         "description": "The due-date questions the board can be narrowed to (#87).\n\nThree questions rather than a date range: they are what a standup asks,\nand \"this week\" means the viewer's week -- the client sends its own\ntoday, so a filter saved on a Sunday evening in Sydney does not quietly\nmean London's Sunday."
       },
+      "EmailUsage": {
+        "properties": {
+          "configured": {
+            "type": "boolean",
+            "title": "Configured"
+          },
+          "sent": {
+            "type": "integer",
+            "title": "Sent"
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MailError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "configured",
+          "sent",
+          "failed"
+        ],
+        "title": "EmailUsage"
+      },
       "EmploymentType": {
         "type": "string",
         "enum": [
@@ -18376,6 +18436,19 @@
         "type": "object",
         "title": "ExpenseUpdate",
         "description": "Only while the claim waits. Leaving a field out leaves it alone."
+      },
+      "FileKind": {
+        "type": "string",
+        "enum": [
+          "image",
+          "video",
+          "document",
+          "text",
+          "archive",
+          "other"
+        ],
+        "title": "FileKind",
+        "description": "What a file is, from its type: all the page says of a file."
       },
       "FinancePerson": {
         "properties": {
@@ -19039,6 +19112,34 @@
         "title": "LabelUsage",
         "description": "What points at one label: shown beside it in settings, and counted\nbefore it is deleted, so nothing is left filtering by a label that has\ngone (#321)."
       },
+      "LargestFile": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/FileKind"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "team_name": {
+            "type": "string",
+            "title": "Team Name"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "team_id",
+          "team_name",
+          "size_bytes"
+        ],
+        "title": "LargestFile",
+        "description": "One of the largest files: a kind, a team and a size. Never its name,\nwhich is content."
+      },
       "LastActivity": {
         "properties": {
           "kind": {
@@ -19130,6 +19231,31 @@
         ],
         "title": "LinkedTicket",
         "description": "Just enough of the other ticket to render a row and click through."
+      },
+      "MailError": {
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "recipients": {
+            "type": "integer",
+            "title": "Recipients"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "at",
+          "recipients",
+          "error"
+        ],
+        "title": "MailError",
+        "description": "What the mail server said the last time it refused a message."
       },
       "MissingField": {
         "type": "string",
@@ -21305,6 +21431,40 @@
         ],
         "title": "PeopleTimesheet",
         "description": "A team's week, or a manager's reports: a row per person."
+      },
+      "PeopleUsage": {
+        "properties": {
+          "active": {
+            "type": "integer",
+            "title": "Active"
+          },
+          "not_activated": {
+            "type": "integer",
+            "title": "Not Activated"
+          },
+          "deactivated": {
+            "type": "integer",
+            "title": "Deactivated"
+          },
+          "signed_in_last_7_days": {
+            "type": "integer",
+            "title": "Signed In Last 7 Days"
+          },
+          "signed_in_last_30_days": {
+            "type": "integer",
+            "title": "Signed In Last 30 Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "active",
+          "not_activated",
+          "deactivated",
+          "signed_in_last_7_days",
+          "signed_in_last_30_days"
+        ],
+        "title": "PeopleUsage",
+        "description": "Accounts by state, and how many signed in lately (#312). Every account\nis in exactly one of the three states."
       },
       "PersonCapacity": {
         "properties": {
@@ -25010,6 +25170,41 @@
         "type": "object",
         "title": "StatusUpdate"
       },
+      "StorageUsage": {
+        "properties": {
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "files": {
+            "type": "integer",
+            "title": "Files"
+          },
+          "teams": {
+            "items": {
+              "$ref": "#/components/schemas/TeamStorage"
+            },
+            "type": "array",
+            "title": "Teams"
+          },
+          "largest": {
+            "items": {
+              "$ref": "#/components/schemas/LargestFile"
+            },
+            "type": "array",
+            "title": "Largest"
+          }
+        },
+        "type": "object",
+        "required": [
+          "size_bytes",
+          "files",
+          "teams",
+          "largest"
+        ],
+        "title": "StorageUsage",
+        "description": "Attachment bytes, the trash included: they are stored until it is\npurged."
+      },
       "TeamArchivePreview": {
         "properties": {
           "members": {
@@ -25703,6 +25898,29 @@
         "title": "TeamRole",
         "description": "What someone may do inside one team.\n\nOrdered from most to least power. `guest` (#104) sees everything a member\nsees -- board, list, tickets, comments, sprints, reports, search -- and\nchanges nothing: no tickets, no comments, no settings. The one thing a guest\ndoes write is their own relationship to the team: watching a ticket,\nchoosing their own default view, and leaving."
       },
+      "TeamStorage": {
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "team_name": {
+            "type": "string",
+            "title": "Team Name"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team_id",
+          "team_name",
+          "size_bytes"
+        ],
+        "title": "TeamStorage"
+      },
       "TeamUpdate": {
         "properties": {
           "name": {
@@ -25844,6 +26062,30 @@
         "type": "object",
         "title": "TeamUpdate",
         "description": "What an admin may change about a team.\n\nNo `key`: identifiers like ENG-42 are already in commit messages, chat\nlogs and browser history, and renaming the prefix would strand every one\nof them. See README."
+      },
+      "TeamWebhookFailures": {
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "team_name": {
+            "type": "string",
+            "title": "Team Name"
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team_id",
+          "team_name",
+          "failed"
+        ],
+        "title": "TeamWebhookFailures",
+        "description": "A team with outgoing webhooks, and how many of the deliveries in their\nlogs failed every try."
       },
       "TicketBulkChanges": {
         "properties": {
@@ -27356,6 +27598,24 @@
         ],
         "title": "Token"
       },
+      "TokenUsage": {
+        "properties": {
+          "live": {
+            "type": "integer",
+            "title": "Live"
+          },
+          "never_used": {
+            "type": "integer",
+            "title": "Never Used"
+          }
+        },
+        "type": "object",
+        "required": [
+          "live",
+          "never_used"
+        ],
+        "title": "TokenUsage"
+      },
       "TotpCode": {
         "properties": {
           "code": {
@@ -27725,6 +27985,43 @@
         ],
         "title": "UnreadCount",
         "description": "The badge. Its own endpoint because it is polled, and the inbox is not."
+      },
+      "UsageRead": {
+        "properties": {
+          "people": {
+            "$ref": "#/components/schemas/PeopleUsage"
+          },
+          "work": {
+            "$ref": "#/components/schemas/WorkUsage"
+          },
+          "storage": {
+            "$ref": "#/components/schemas/StorageUsage"
+          },
+          "email": {
+            "$ref": "#/components/schemas/EmailUsage"
+          },
+          "webhooks": {
+            "items": {
+              "$ref": "#/components/schemas/TeamWebhookFailures"
+            },
+            "type": "array",
+            "title": "Webhooks"
+          },
+          "api_tokens": {
+            "$ref": "#/components/schemas/TokenUsage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "people",
+          "work",
+          "storage",
+          "email",
+          "webhooks",
+          "api_tokens"
+        ],
+        "title": "UsageRead",
+        "description": "Administration -> Usage (#312): counts, and nothing of the content.\nTeams are named; no ticket, comment or file is."
       },
       "UserCreate": {
         "properties": {
@@ -28616,6 +28913,31 @@
         "title": "WebhookReceipt",
         "description": "What the webhook endpoint answers with.\n\nMore than an empty 200 on purpose. Both providers show the response body\nin their delivery log, and that log is the entire debugging surface for\nwhoever is setting this up -- \"accepted, matched nothing\" is the answer to\nthe question they are about to ask, and it is much cheaper to read there\nthan to work out from a ticket page that did not change."
       },
+      "WeekCount": {
+        "properties": {
+          "week_of": {
+            "type": "string",
+            "format": "date",
+            "title": "Week Of"
+          },
+          "created": {
+            "type": "integer",
+            "title": "Created"
+          },
+          "closed": {
+            "type": "integer",
+            "title": "Closed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_of",
+          "created",
+          "closed"
+        ],
+        "title": "WeekCount",
+        "description": "Tickets created and closed in one week, Monday to Sunday, UTC."
+      },
       "WelcomeLinkCreate": {
         "properties": {
           "send_email": {
@@ -28677,6 +28999,32 @@
         ],
         "title": "WelcomeLinkRead",
         "description": "When an account's link to choose a password was made, whether it was\nemailed, and when it stops working."
+      },
+      "WorkUsage": {
+        "properties": {
+          "teams": {
+            "type": "integer",
+            "title": "Teams"
+          },
+          "archived_teams": {
+            "type": "integer",
+            "title": "Archived Teams"
+          },
+          "weeks": {
+            "items": {
+              "$ref": "#/components/schemas/WeekCount"
+            },
+            "type": "array",
+            "title": "Weeks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "teams",
+          "archived_teams",
+          "weeks"
+        ],
+        "title": "WorkUsage"
       },
       "WorkloadRead": {
         "properties": {

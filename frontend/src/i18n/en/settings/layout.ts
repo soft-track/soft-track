@@ -26,6 +26,7 @@ export const layout = {
     users: 'Users',
     departments: 'Departments',
     teams: 'Teams',
+    usage: 'Usage',
     instanceSettings: 'Settings',
     compensation: 'Compensation',
     payroll: 'Payroll runs',

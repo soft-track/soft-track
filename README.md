@@ -99,6 +99,7 @@ too, but still call an epic a *project* (`/teams/{team_id}/projects`,
 - [Sign-in rate limiting](docs/features/rate-limiting.md)
 - [Jira import](docs/features/jira-import.md)
 - [Prometheus metrics](docs/features/metrics.md)
+- [Usage, for site admins](docs/features/usage.md)
 
 ## Development and contributing
 

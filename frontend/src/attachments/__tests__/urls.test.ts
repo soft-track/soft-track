@@ -63,6 +63,8 @@ describe('formatBytes', () => {
     [1536, '2 kB'],
     [1024 * 1024, '1.0 MB'],
     [2_411_724, '2.3 MB'],
+    [1024 * 1024 * 1024, '1.0 GB'],
+    [2_040_109_466, '1.9 GB'],
   ])('renders %i as %s', (bytes, expected) => {
     expect(formatBytes(bytes)).toBe(expected)
   })
