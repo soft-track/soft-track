@@ -57,7 +57,7 @@ export async function downloadAttachment(url: string, filename: string): Promise
   link.remove()
 }
 
-/** "512 kB", "1.4 MB" -- one decimal only where it says something. */
+/** "512 kB", "1.4 MB", "1.9 GB" -- one decimal only where it says something. */
 export function formatBytes(bytes: number): string {
   // No grouping: sizes read "1023 kB", not "1,023 kB".
   if (bytes < 1024) {
@@ -67,11 +67,13 @@ export function formatBytes(bytes: number): string {
     const size = formatNumber(Math.round(bytes / 1024), { useGrouping: false })
     return i18n.t('attachments:sizes.kilobytes', { size })
   }
-  const size = formatNumber(bytes / (1024 * 1024), {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-    useGrouping: false,
-  })
+  const oneDecimal = { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: false }
+  // Gigabytes, for what a whole instance holds (#312).
+  if (bytes >= 1024 * 1024 * 1024) {
+    const size = formatNumber(bytes / (1024 * 1024 * 1024), oneDecimal)
+    return i18n.t('attachments:sizes.gigabytes', { size })
+  }
+  const size = formatNumber(bytes / (1024 * 1024), oneDecimal)
   return i18n.t('attachments:sizes.megabytes', { size })
 }
 

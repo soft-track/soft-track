@@ -34,6 +34,7 @@ import WelcomePage from '@/auth/WelcomePage'
 import AdminDepartmentsPage from '@/settings/AdminDepartmentsPage'
 import AdminTeamsPage from '@/settings/AdminTeamsPage'
 import AdminSettingsPage from '@/settings/AdminSettingsPage'
+import AdminUsagePage from '@/settings/AdminUsagePage'
 import AdminUsersPage from '@/settings/AdminUsersPage'
 import NotificationSettings from '@/settings/NotificationSettings'
 import ProfileSettings from '@/settings/ProfileSettings'
@@ -150,6 +151,7 @@ export default function App() {
               <Route path="admin/users" element={<AdminUsersPage />} />
               <Route path="admin/departments" element={<AdminDepartmentsPage />} />
               <Route path="admin/teams" element={<AdminTeamsPage />} />
+              <Route path="admin/usage" element={<AdminUsagePage />} />
               <Route path="admin/settings" element={<AdminSettingsPage />} />
             </Route>
             {/* Finance (#130): anyone without the flag who follows a link

@@ -146,6 +146,12 @@ export default function SettingsLayout() {
                 label: t('layout.nav.teams'),
                 icon: 'users' as IconName,
               },
+              // How much the instance is used, as counts (#312).
+              {
+                to: '/settings/admin/usage',
+                label: t('layout.nav.usage'),
+                icon: 'chart' as IconName,
+              },
               // The instance's own settings: who may create teams (#306).
               {
                 to: '/settings/admin/settings',

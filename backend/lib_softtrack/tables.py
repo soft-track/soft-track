@@ -882,6 +882,26 @@ class WebhookDelivery(SQLModel, table=True):
     completed_at: Optional[datetime] = None
 
 
+class MailAttempt(SQLModel, table=True):
+    """One message handed to the mail server, and whether it took it (#312).
+
+    Written by `SMTPMailer.send`, the one place mail leaves, so Administration
+    -> Usage can say how much went out in the last week, how much failed, and
+    what the server said last. Nothing of the message itself: no address, no
+    subject, no body. The page is counts, and this is not a mail archive.
+    Rows older than the page's week are swept as new ones are written.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    attempted_at: datetime = Field(default_factory=utcnow, index=True)
+    #: What the server said when it refused, with any address taken out and
+    #: cut to 500 characters. Null when it took the message.
+    error: Optional[str] = None
+    #: How many addresses the message was for -- a number, never the
+    #: addresses.
+    recipients: int = Field(default=1)
+
+
 class ApiToken(SQLModel, table=True):
     """A personal API token, for scripts and integrations (#90).
 
@@ -1173,7 +1193,9 @@ class Ticket(SQLModel, table=True):
     #: target: "due Friday" is a day, and a timestamp would move it across
     #: midnight for anybody in another timezone.
     due_date: Optional[date] = Field(default=None, index=True)
-    created_at: datetime = Field(default_factory=utcnow)
+    #: Indexed for Administration -> Usage (#312), which counts the tickets
+    #: created each week without reading the rest of the table.
+    created_at: datetime = Field(default_factory=utcnow, index=True)
     updated_at: datetime = Field(default_factory=utcnow)
     #: In the trash since (#323), and who put it there. A trashed ticket keeps
     #: everything -- comments, links, attachments, history -- and is left out

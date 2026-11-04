@@ -6,6 +6,7 @@ from sqlmodel import Session
 from lib_identity import accounts
 from lib_identity import admin as admin_service
 from lib_identity import admin_teams
+from lib_identity import usage as usage_service
 from lib_identity.admin import require_site_admin
 from lib_identity.api_tokens import RequireSession
 from lib_identity.models.admin import (
@@ -21,6 +22,7 @@ from lib_identity.models.admin import (
     WelcomeLinkCreate,
     WelcomeLinkCreated,
 )
+from lib_identity.models.usage import UsageRead
 from lib_softtrack.models.page import DEFAULT_LIMIT, MAX_LIMIT, Page
 from lib_softtrack.models.teams import TeamMemberRead
 from lib_softtrack.tables import User
@@ -206,3 +208,16 @@ def clear_totp(
     """Turn two-factor off for an account, and sign it out everywhere."""
     admin_service.admin_clear_totp(session, actor, user_id)
     return Response(status_code=204)
+
+
+# --- How much the instance is used (#312) ------------------------------------
+
+
+@router.get("/usage", response_model=UsageRead)
+def get_usage(
+    session: Session = Depends(get_session),
+    _: User = Depends(require_site_admin),
+):
+    """Accounts, work, storage, email, webhooks and API tokens, as counts.
+    Worked out now, for this page, and sent nowhere else."""
+    return usage_service.usage(session)
