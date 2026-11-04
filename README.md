@@ -63,6 +63,7 @@ too, but still call an epic a *project* (`/teams/{team_id}/projects`,
 
 - [Architecture](docs/architecture.md)
 - [Deployment and operations](docs/deployment.md)
+- [Moving from SQLite to Postgres](docs/deployment.md#moving-from-sqlite-to-postgres)
 - [Roadmap](docs/roadmap.md)
 - [Statuses and categories](docs/features/statuses.md)
 - [Labels](docs/features/labels.md)

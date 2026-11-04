@@ -71,7 +71,7 @@ The generated API client under `src/api/generated/` is checked in and up to date
 
 ## Environment and configuration
 
-- SQLite is the default database; point `DATABASE_URL` at PostgreSQL for anything more serious.
+- SQLite is the default database; point `DATABASE_URL` at PostgreSQL for anything more serious. [Which database each setup uses](#which-database-each-setup-uses) is below, and so is [moving an install from SQLite to Postgres](#moving-from-sqlite-to-postgres) with its data.
 - `SECRET_KEY` in `backend/.env.example` is a placeholder; generate a real secret before running beyond local development.
 - CORS origins for local dev are set in `backend/web.py` (`cors_origins`); add the deployed frontend origin there for production.
 - SMTP is optional. With no `SMTP_HOST`, the inbox is the only notification channel.
@@ -82,6 +82,90 @@ The generated API client under `src/api/generated/` is checked in and up to date
   [outbound webhooks](features/outbound-webhooks.md).
 - `METRICS_TOKEN` enables the authenticated `/metrics` endpoint; leave it blank to keep the endpoint hidden. See [Metrics](#metrics).
 - Signing in with Google or GitHub is optional and off until both halves of a provider's credentials are set. `API_BASE_URL` has to be right for it, because the redirect URI is built from it.
+
+## Which database each setup uses
+
+| Setup | Database | Where the data is |
+| --- | --- | --- |
+| The backend on its own (`uvicorn main:app`) | SQLite | `backend/softtrack.db` |
+| The backend image on its own (`docker run`) | SQLite | `/data/softtrack.db` in the container |
+| `docker compose` | Postgres 16 | the `softtrack-db` volume |
+
+`DATABASE_URL` overrides any of these. The schema is made the same way on both databases: on start, the app runs `alembic upgrade head` against whatever `DATABASE_URL` points to, so an empty Postgres database gets the right tables on its first boot.
+
+## Moving from SQLite to Postgres
+
+An install that started on SQLite and outgrew it keeps its data. Alembic makes the schema on Postgres, and `backend/move_to_postgres.py` copies the rows into it.
+
+The commands below move the backend image run on its own, in a container named `softtrack`, into `docker compose`. Moving to a Postgres of your own is the same steps with your own `DATABASE_URL`; the bare-backend commands are after them.
+
+**1. Stop the app and back it up.** Nothing may write during the copy, and a SQLite file copied while the app writes to it can be torn.
+
+```bash
+docker stop softtrack
+docker cp softtrack:/data ./softtrack-backup
+```
+
+`softtrack-backup/softtrack.db` is the database and `softtrack-backup/attachments/` the uploaded files. Keep both until the move is done: the SQLite file is the way back.
+
+**2. Run the same version on both sides.** The copy refuses unless both databases are at the same Alembic revision. Move with the version the SQLite install runs, or upgrade the SQLite install first by starting the new version against it once.
+
+**3. Make the schema on Postgres.**
+
+```bash
+docker compose up -d --wait db backend
+docker compose stop backend
+```
+
+The backend's first start runs the migrations. Its start command also runs `seed.py`, which puts the demo account and team into the empty database; the next step deletes them.
+
+**4. Copy the data.**
+
+```bash
+docker compose run --rm -v "$PWD/softtrack-backup:/import" backend \
+  python move_to_postgres.py --from sqlite:////import/softtrack.db --replace
+```
+
+`--to` defaults to `DATABASE_URL`, which the compose service already points at Postgres. Without `--replace` the script refuses a database that holds any rows, and with it, it deletes them first. It prints the rows it copied per table, and fails if any table's count differs from SQLite's. What it takes care of:
+
+- **Types.** Rows are read through the app's own tables, so booleans, datetimes, enums and JSON arrive as Postgres types, not as the integers and strings SQLite keeps them as.
+- **Order.** Tables are filled so that what a row points at is already there. The few links that can point at a later row -- a ticket's parent, a person's manager, a team's default view -- are copied empty and filled in once every row is in.
+- **Sequences.** Rows keep their ids, so each id sequence is moved past the highest one copied. Without that, the first new ticket would collide with the first old one.
+- **The revision.** The `alembic_version` rows on both sides have to match, or nothing is copied.
+
+**5. Bring the attachments.** They are files under `ATTACHMENT_DIR`, not rows, so the copy does not move them.
+
+```bash
+docker compose cp softtrack-backup/attachments/. backend:/data/attachments/
+```
+
+With `ATTACHMENT_STORAGE=s3` there is nothing to move: the bucket stays where it is.
+
+**6. Switch over.**
+
+```bash
+docker compose up -d
+```
+
+`seed.py` runs again on this start. It adds the demo data only when there is no `demo@softtrack.dev` account, so an install that had one gets nothing new. An install that never had one would get it now, as a site admin with the password `password123`, and if one of its teams already has the key `ENG` the demo team's key collides and the backend does not start. Such an install starts without the seed, from a `compose.override.yml` beside `docker-compose.yml`:
+
+```yaml
+services:
+  backend:
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-graceful-shutdown", "5"]
+```
+
+**7. Check it.** Sign in, open a ticket with comments and an attachment, and make a new ticket: it gets the next number, not an error. If anything is wrong, stop the stack and start the old container again, on the SQLite file it never stopped having.
+
+**Without Docker**, steps 3 and 4 are, from `backend/` with the app stopped:
+
+```bash
+DATABASE_URL=postgresql+psycopg://softtrack:secret@localhost:5432/softtrack python seed.py
+python move_to_postgres.py --from sqlite:///./softtrack.db \
+  --to postgresql+psycopg://softtrack:secret@localhost:5432/softtrack --replace
+```
+
+and the attachments stay where they are, under `ATTACHMENT_DIR` (`backend/attachments` by default). Then set `DATABASE_URL` to the Postgres URL and start the app.
 
 ## Metrics
 
