@@ -112,3 +112,41 @@ class CustomFieldRef(BaseModel):
     key: str
     name: str
     kind: CustomFieldKind
+
+
+class CustomFieldOptionCount(BaseModel):
+    """How many of the open tickets have one option (#334). Nought is a
+    count too: an option nobody chooses is one to remove."""
+
+    #: The option's id, as `CustomFieldRead.options` has it.
+    id: str
+    count: int
+
+
+class CustomFieldPersonCount(BaseModel):
+    """How many of the open tickets a user field names somebody on (#334)."""
+
+    user: UserPublic
+    count: int
+
+
+class CustomFieldUsage(BaseModel):
+    """How much one field is used (#334): counts, and never which tickets.
+
+    Out of the team's open tickets of the types the field shows on. The rest
+    of them have no value, and a checkbox's values are its ticked ones.
+    """
+
+    field_id: int
+    #: The team's open tickets of the types the field shows on.
+    open_tickets: int
+    #: How many of those have a value in it.
+    with_value: int
+    #: For `select` and `multi_select`: every option, in the field's order,
+    #: used or not. A ticket with several options counts once for each.
+    options: list[CustomFieldOptionCount] = []
+    #: For `user`: everybody it names on those tickets, most first.
+    people: list[CustomFieldPersonCount] = []
+    #: When a ticket, open or not, was last given a value in it -- filed
+    #: with one or changed to one. Null if no ticket ever has been.
+    last_set_at: Optional[datetime] = None

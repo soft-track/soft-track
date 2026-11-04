@@ -48,6 +48,34 @@ somebody sets.
 
 Only a team's admins manage its fields. Members and guests can see the list.
 
+## How much each is used
+
+Fields are easy to add and easy to forget, so each one in the list has a use
+line: how many of the team's open tickets it applies to have a value. *On 67%
+of open bugs* counts bugs only for a field that shows on bugs; *on every open
+ticket* is a field on every type. A field on few tickets is counted rather
+than made a rate — *on 3 of 24 open bugs* — and a select where nearly every
+value is one option says so: *22 of 24 say sev-3*.
+
+Opening the line breaks it down:
+
+- **Select and multi-select**: how many tickets have each option, an option
+  nobody uses included, and how many have none. A ticket with several
+  options counts once for each.
+- **User**: how many name each person, most first. Nobody is a row of its
+  own.
+- **Checkbox**: ticked against not ticked.
+- And for every kind, when a ticket was last given a value in it — filed
+  with one or changed to one, open or not.
+
+Open is any status that does not mean done or cancelled, and the trash is
+left out. The numbers are counts and nothing else: the page names no
+tickets, so anybody who can read the fields can read them, and an account
+from outside counts only the tickets of its epics. The page suggests nothing
+and warns about nothing; the numbers are for an admin to decide on. A field
+nobody fills in is usually the one to archive, and its values stay readable
+after.
+
 ## Archiving and deleting
 
 **Archive** retires a field: it leaves the form and the panel's editors, and
@@ -75,12 +103,18 @@ headed by the field's key: a person as their username, options by name
 
 **Not yet: filtering by a field.** The board, list and saved views filter by
 the built-in properties only; filtering by a team's own fields is the next
-step.
+step. Until then the counts on the Fields page are plain numbers rather than
+links to the tickets behind them.
 
 ## API
 
 - `GET /teams/{team_id}/custom-fields` — every field, archived ones included,
   in order; any member.
+- `GET /teams/{team_id}/custom-fields/usage` — how much each is used, in the
+  same order: `{field_id, open_tickets, with_value, options, people,
+  last_set_at}`, where `options` is every option's `{id, count}` and
+  `people` each person's `{user, count}`; any member. Counted in the
+  database in the same few queries however many fields there are.
 - `POST /teams/{team_id}/custom-fields` — `{name, kind, key?, options?,
   required?, applies_to?}`; admins.
 - `PATCH /custom-fields/{field_id}` — `{name?, options?, required?,

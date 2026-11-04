@@ -9609,6 +9609,58 @@
         }
       }
     },
+    "/teams/{team_id}/custom-fields/usage": {
+      "get": {
+        "tags": [
+          "custom-fields"
+        ],
+        "summary": "Custom Field Usage",
+        "description": "How much each field is used (#334): on how many of the team's open\ntickets of the types it shows on it has a value, those values by option\nor by person, and when a ticket was last given one.\n\nCounts only, naming no ticket, so any member may read them, as they read\nthe fields themselves.",
+        "operationId": "custom_field_usage_teams__team_id__custom_fields_usage_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomFieldUsage"
+                  },
+                  "title": "Response Custom Field Usage Teams  Team Id  Custom Fields Usage Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/teams/{team_id}/custom-fields/order": {
       "put": {
         "tags": [
@@ -17614,6 +17666,25 @@
         "title": "CustomFieldOption",
         "description": "One choice a `select` or `multi_select` field offers.\n\n`id` is what a ticket's value stores. It is made from the option's first\nname and kept when the option is renamed, so renaming \"prod\" to\n\"Production\" does not change any ticket."
       },
+      "CustomFieldOptionCount": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "count"
+        ],
+        "title": "CustomFieldOptionCount",
+        "description": "How many of the open tickets have one option (#334). Nought is a\ncount too: an option nobody chooses is one to remove."
+      },
       "CustomFieldOptionWrite": {
         "properties": {
           "id": {
@@ -17657,6 +17728,24 @@
         ],
         "title": "CustomFieldOrder",
         "description": "Every field that is not archived, in the order tickets should show them.\n\nAll at once, like `StatusOrder`. Archived fields keep their place, so\nrestoring one puts it back where it was."
+      },
+      "CustomFieldPersonCount": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserPublic"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "count"
+        ],
+        "title": "CustomFieldPersonCount",
+        "description": "How many of the open tickets a user field names somebody on (#334)."
       },
       "CustomFieldRead": {
         "properties": {
@@ -17832,6 +17921,58 @@
         "type": "object",
         "title": "CustomFieldUpdate",
         "description": "What an admin may change. Not the key and not the kind: both are what\nthe values already written mean."
+      },
+      "CustomFieldUsage": {
+        "properties": {
+          "field_id": {
+            "type": "integer",
+            "title": "Field Id"
+          },
+          "open_tickets": {
+            "type": "integer",
+            "title": "Open Tickets"
+          },
+          "with_value": {
+            "type": "integer",
+            "title": "With Value"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/CustomFieldOptionCount"
+            },
+            "type": "array",
+            "title": "Options",
+            "default": []
+          },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/CustomFieldPersonCount"
+            },
+            "type": "array",
+            "title": "People",
+            "default": []
+          },
+          "last_set_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Set At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "open_tickets",
+          "with_value"
+        ],
+        "title": "CustomFieldUsage",
+        "description": "How much one field is used (#334): counts, and never which tickets.\n\nOut of the team's open tickets of the types the field shows on. The rest\nof them have no value, and a checkbox's values are its ticked ones."
       },
       "DateWindow": {
         "type": "string",

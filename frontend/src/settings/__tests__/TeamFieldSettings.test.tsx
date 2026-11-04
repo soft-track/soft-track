@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 /**
  * The team's own fields in settings (#117): admins add, set, archive and
- * delete them; members see what tickets on the team will carry.
+ * delete them; members see what tickets on the team will carry, and how much
+ * each field is used (#334).
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
@@ -9,7 +10,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { CustomFieldRead } from '@/api/generated/models'
+import type { CustomFieldRead, CustomFieldUsage } from '@/api/generated/models'
 import TeamFieldSettings from '@/settings/TeamFieldSettings'
 
 const ADA = { id: 10, email: 'ada@example.com', username: 'ada', full_name: 'Ada', avatar_color: '#123', is_active: true }
@@ -18,6 +19,7 @@ const TEAM = { id: 7, name: 'Engineering', key: 'ENG', created_at: '2026-01-01T0
 const mocks = vi.hoisted(() => ({
   role: 'admin' as string,
   fields: [] as unknown[],
+  usage: [] as unknown[],
   create: { mutateAsync: vi.fn() },
   update: { mutateAsync: vi.fn() },
   reorder: { mutateAsync: vi.fn() },
@@ -41,6 +43,7 @@ vi.mock('@/api/generated/endpoints/teams/teams', async (importOriginal) => ({
 vi.mock('@/api/generated/endpoints/custom-fields/custom-fields', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/generated/endpoints/custom-fields/custom-fields')>()),
   useListCustomFieldsTeamsTeamIdCustomFieldsGet: () => ({ data: mocks.fields, isLoading: false }),
+  useCustomFieldUsageTeamsTeamIdCustomFieldsUsageGet: () => ({ data: mocks.usage }),
   useCreateCustomFieldTeamsTeamIdCustomFieldsPost: () => mocks.create,
   useUpdateCustomFieldCustomFieldsFieldIdPatch: () => mocks.update,
   useReorderCustomFieldsTeamsTeamIdCustomFieldsOrderPut: () => mocks.reorder,
@@ -95,6 +98,7 @@ function renderPage() {
 beforeEach(() => {
   mocks.role = 'admin'
   mocks.fields = []
+  mocks.usage = []
   for (const m of [mocks.create, mocks.update, mocks.reorder, mocks.remove]) {
     m.mutateAsync.mockReset().mockResolvedValue(undefined)
   }
@@ -259,5 +263,167 @@ describe('TeamFieldSettings', () => {
   it('says so when the team has none yet', () => {
     renderPage()
     expect(screen.getByText(/No fields yet/)).toBeTruthy()
+  })
+})
+
+describe('how much each field is used (#334)', () => {
+  const HOURS_AGO = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+
+  const SEVERITY = field(4, 'Severity', 'severity', {
+    kind: 'select',
+    required: true,
+    options: [
+      { id: 'sev_1', name: 'sev-1' },
+      { id: 'sev_2', name: 'sev-2' },
+      { id: 'sev_3', name: 'sev-3' },
+    ],
+    applies_to: ['bug'],
+  })
+  const REVIEWER = field(5, 'Reviewer', 'reviewer')
+  const ENVIRONMENT_WITH_QA = {
+    ...ENVIRONMENT,
+    options: [...ENVIRONMENT.options, { id: 'qa', name: 'qa' }],
+  }
+  const SENTRY = field(6, 'Sentry URL', 'sentry_url', { kind: 'url', applies_to: ['bug'] })
+  const RELEASE_NOTES = field(7, 'Release notes written', 'release_notes_written', {
+    kind: 'checkbox',
+    applies_to: ['story'],
+  })
+  const PLATFORMS = field(8, 'Platforms', 'platforms', {
+    kind: 'multi_select',
+    options: [{ id: 'ios', name: 'iOS' }],
+    applies_to: ['bug', 'story'],
+  })
+
+  const MEI = { ...ADA, id: 11, username: 'mei', full_name: 'Mei Tanaka' }
+  const RAVI = { ...ADA, id: 12, username: 'ravi', full_name: 'Ravi Patel' }
+
+  function used(row: Partial<CustomFieldUsage> & { field_id: number }): CustomFieldUsage {
+    return { open_tickets: 24, with_value: 0, options: [], people: [], last_set_at: null, ...row }
+  }
+
+  const USAGE = [
+    used({
+      field_id: 4,
+      with_value: 24,
+      options: [
+        { id: 'sev_1', count: 0 },
+        { id: 'sev_2', count: 2 },
+        { id: 'sev_3', count: 22 },
+      ],
+    }),
+    used({
+      field_id: 1,
+      open_tickets: 23,
+      with_value: 21,
+      people: [
+        { user: MEI, count: 12 },
+        { user: RAVI, count: 9 },
+      ],
+      last_set_at: HOURS_AGO,
+    }),
+    used({ field_id: 5, open_tickets: 50, with_value: 19 }),
+    used({
+      field_id: 2,
+      with_value: 16,
+      options: [
+        { id: 'production', count: 9 },
+        { id: 'staging', count: 5 },
+        { id: 'dev', count: 2 },
+        { id: 'qa', count: 0 },
+      ],
+      last_set_at: HOURS_AGO,
+    }),
+    used({ field_id: 6, with_value: 3 }),
+    used({ field_id: 7, with_value: 18, last_set_at: '2026-01-02T09:00:00' }),
+    used({ field_id: 8, open_tickets: 0 }),
+  ]
+
+  function useLine(name: string) {
+    return screen.getByRole('button', { name: new RegExp(`Show how ${name} is used$`) })
+  }
+
+  it('says under each field how many of its open tickets have a value', () => {
+    mocks.fields = [SEVERITY, QA, REVIEWER, ENVIRONMENT, SENTRY, PLATFORMS]
+    mocks.usage = USAGE
+    renderPage()
+    // Out of the types it shows on, and a select one option has taken over says so.
+    expect(useLine('Severity').textContent).toBe('on every open bug · 22 of 24 say sev-3 · Show how Severity is used')
+    expect(useLine('QA assignee').textContent).toMatch(/^on 91% of open tickets ·/)
+    expect(useLine('Reviewer').textContent).toMatch(/^on 38% of open tickets ·/)
+    expect(useLine('Environment').textContent).toMatch(/^on 67% of open bugs ·/)
+    // A handful is counted rather than made a rate.
+    expect(useLine('Sentry URL').textContent).toMatch(/^on 3 of 24 open bugs ·/)
+    expect(useLine('Platforms').textContent).toMatch(/^no open bugs and stories to count ·/)
+    // Counts, and no tickets named: nothing on the page links anywhere.
+    expect(screen.queryAllByRole('link')).toEqual([])
+  })
+
+  it('is on the fields in use and not on an archived one', () => {
+    mocks.fields = [QA, ROOT_CAUSE]
+    mocks.usage = [...USAGE, used({ field_id: 3, with_value: 4 })]
+    renderPage()
+    expect(useLine('QA assignee')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Show how Root cause is used/ })).toBeNull()
+  })
+
+  it('opens a select into a count per option, the unused one included', async () => {
+    mocks.fields = [ENVIRONMENT_WITH_QA]
+    mocks.usage = USAGE
+    const user = renderPage()
+    const line = useLine('Environment')
+    expect(line.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('list', { name: 'How Environment is used' })).toBeNull()
+
+    await user.click(line)
+    expect(line.getAttribute('aria-expanded')).toBe('true')
+    expect(line.textContent).toMatch(/Hide how Environment is used$/)
+    const breakdown = screen.getByRole('list', { name: 'How Environment is used' })
+    expect(line.getAttribute('aria-controls')).toBe(breakdown.parentElement!.id)
+    expect(within(breakdown).getAllByRole('listitem').map((row) => row.textContent)).toEqual([
+      'production9',
+      'staging5',
+      'dev2',
+      'qanobody',
+      'None8',
+    ])
+    expect(screen.getByText('Of 24 open bugs · last set on a ticket about 2 hours ago')).toBeTruthy()
+
+    await user.click(line)
+    expect(line.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('list', { name: 'How Environment is used' })).toBeNull()
+  })
+
+  it('opens a user field into a count per person, nobody a row of its own', async () => {
+    mocks.fields = [QA]
+    mocks.usage = USAGE
+    const user = renderPage()
+    await user.click(useLine('QA assignee'))
+    const breakdown = screen.getByRole('list', { name: 'How QA assignee is used' })
+    expect(within(breakdown).getAllByRole('listitem').map((row) => row.textContent)).toEqual([
+      'Mei Tanaka12',
+      'Ravi Patel9',
+      'Nobody2',
+    ])
+  })
+
+  it('opens a checkbox into ticked against not ticked', async () => {
+    mocks.fields = [RELEASE_NOTES]
+    mocks.usage = USAGE
+    const user = renderPage()
+    expect(useLine('Release notes written').textContent).toMatch(/^on 75% of open stories ·/)
+    await user.click(useLine('Release notes written'))
+    const bar = screen.getByRole('img', { name: '18 ticked, 6 not ticked' })
+    expect(bar.textContent).toBe('Ticked · 186')
+    expect(screen.getByText(/^Of 24 open stories\. Last ticked .+ ago\.$/)).toBeTruthy()
+  })
+
+  it('says when a field was never set, and nothing to break down for a link', async () => {
+    mocks.fields = [SENTRY]
+    mocks.usage = USAGE
+    const user = renderPage()
+    await user.click(useLine('Sentry URL'))
+    expect(screen.queryByRole('list', { name: 'How Sentry URL is used' })).toBeNull()
+    expect(screen.getByText('Of 24 open bugs · never set on a ticket')).toBeTruthy()
   })
 })

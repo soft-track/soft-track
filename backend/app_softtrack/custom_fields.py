@@ -9,6 +9,7 @@ from lib_softtrack.models.custom_fields import (
     CustomFieldOrder,
     CustomFieldRead,
     CustomFieldUpdate,
+    CustomFieldUsage,
 )
 from lib_softtrack.tables import User
 from web import get_session
@@ -28,6 +29,24 @@ def list_custom_fields(
     `custom_fields` are and how to show their values.
     """
     return custom_fields_service.list_fields(session, current_user, team_id)
+
+
+@router.get(
+    "/teams/{team_id}/custom-fields/usage", response_model=list[CustomFieldUsage]
+)
+def custom_field_usage(
+    team_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """How much each field is used (#334): on how many of the team's open
+    tickets of the types it shows on it has a value, those values by option
+    or by person, and when a ticket was last given one.
+
+    Counts only, naming no ticket, so any member may read them, as they read
+    the fields themselves.
+    """
+    return custom_fields_service.field_usage(session, current_user, team_id)
 
 
 @router.post(

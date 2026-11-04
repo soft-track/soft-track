@@ -29,6 +29,7 @@ import type {
   CustomFieldOrder,
   CustomFieldRead,
   CustomFieldUpdate,
+  CustomFieldUsage,
   HTTPValidationError
 } from '../../models';
 
@@ -218,6 +219,104 @@ export const useCreateCustomFieldTeamsTeamIdCustomFieldsPost = <TError = HTTPVal
       return useMutation(getCreateCustomFieldTeamsTeamIdCustomFieldsPostMutationOptions(options), queryClient);
     }
     /**
+ * How much each field is used (#334): on how many of the team's open
+ * tickets of the types it shows on it has a value, those values by option
+ * or by person, and when a ticket was last given one.
+ *
+ * Counts only, naming no ticket, so any member may read them, as they read
+ * the fields themselves.
+ * @summary Custom Field Usage
+ */
+export const customFieldUsageTeamsTeamIdCustomFieldsUsageGet = (
+    teamId: number,
+ signal?: AbortSignal
+) => {
+
+
+      return apiClient<CustomFieldUsage[]>(
+      {url: `/teams/${teamId}/custom-fields/usage`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getCustomFieldUsageTeamsTeamIdCustomFieldsUsageGetQueryKey = (teamId: number,) => {
+    return [
+    `/teams/${teamId}/custom-fields/usage`
+    ] as const;
+    }
+
+
+export const getCustomFieldUsageTeamsTeamIdCustomFieldsUsageGetQueryOptions = <TData = Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>, TError = HTTPValidationError>(teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCustomFieldUsageTeamsTeamIdCustomFieldsUsageGetQueryKey(teamId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>> = ({ signal }) => customFieldUsageTeamsTeamIdCustomFieldsUsageGet(teamId, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: teamId !== null && teamId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CustomFieldUsageTeamsTeamIdCustomFieldsUsageGetQueryResult = NonNullable<Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>>
+export type CustomFieldUsageTeamsTeamIdCustomFieldsUsageGetQueryError = HTTPValidationError
+
+
+export function useCustomFieldUsageTeamsTeamIdCustomFieldsUsageGet<TData = Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>, TError = HTTPValidationError>(
+ teamId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>,
+          TError,
+          Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCustomFieldUsageTeamsTeamIdCustomFieldsUsageGet<TData = Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>,
+          TError,
+          Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCustomFieldUsageTeamsTeamIdCustomFieldsUsageGet<TData = Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Custom Field Usage
+ */
+
+export function useCustomFieldUsageTeamsTeamIdCustomFieldsUsageGet<TData = Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>, TError = HTTPValidationError>(
+ teamId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customFieldUsageTeamsTeamIdCustomFieldsUsageGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCustomFieldUsageTeamsTeamIdCustomFieldsUsageGetQueryOptions(teamId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
  * Set the order tickets show the fields in. Takes every field that is
  * not archived, at once.
  * @summary Reorder Custom Fields

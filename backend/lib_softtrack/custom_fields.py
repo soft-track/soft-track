@@ -22,6 +22,9 @@ How each kind is stored, in `CustomFieldValue.value`:
 
 Filtering by a field is not here yet. It is the second phase, and `jsonb`
 on Postgres is what it will query.
+
+How much each field is used (#334) is at the bottom: counts for the Fields
+settings page, grouped in the database for every field at once.
 """
 
 import json
@@ -29,22 +32,26 @@ import math
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field as dataclass_field
-from datetime import date
+from datetime import date, datetime
 from typing import Iterable, Optional
 from urllib.parse import urlparse
 
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from lib_identity.models.identity import UserPublic
 from lib_softtrack.models.custom_fields import (
     CustomFieldCreate,
+    CustomFieldOptionCount,
     CustomFieldOptionWrite,
     CustomFieldOrder,
+    CustomFieldPersonCount,
     CustomFieldRead,
     CustomFieldRef,
     CustomFieldUpdate,
+    CustomFieldUsage,
     CustomFieldValueRead,
 )
+from lib_softtrack.statuses import RESOLVED, in_category
 from lib_softtrack.tables import (
     OPTION_KINDS,
     CustomField,
@@ -867,3 +874,165 @@ def history_refs(
         if e.custom_field_id in fields
     }
     return refs, labels
+
+
+# ---------------------------------------------------------------------------
+# Use (#334)
+# ---------------------------------------------------------------------------
+
+#: The kinds whose values are counted one by one: by option, by person,
+#: ticked. Text, numbers, dates and links are counted as there or not --
+#: grouped by what somebody typed, they would be a row per ticket.
+_BROKEN_DOWN = (*OPTION_KINDS, CustomFieldKind.user, CustomFieldKind.checkbox)
+
+
+def field_usage(
+    session: Session, current_user: User, team_id: int
+) -> list[CustomFieldUsage]:
+    """How much each of the team's fields is used, in the fields' order.
+
+    Out of the team's open tickets of the types a field shows on: how many
+    have a value, by option or by person, and when a ticket was last given
+    one. Counted in the database by a fixed handful of grouped queries,
+    however many fields the team has -- tests/test_field_usage.py holds it
+    to that. Counts only, naming no ticket, so any member may read them as
+    they read the fields. The trash, and the tickets an account from outside
+    may not see, are left out by the ORM as everywhere (trash.py, outside.py).
+    """
+    get_team_or_404(team_id, session)
+    require_team_member(team_id, current_user, session)
+    fields = team_fields(session, team_id)
+    if not fields:
+        return []
+    field_ids = [field.id for field in fields]
+    is_open = ~in_category(*RESOLVED)
+
+    # What each field's counts are out of: the open tickets, by type.
+    open_by_type = session.exec(
+        select(Ticket.type, func.count())
+        .where(Ticket.team_id == team_id, is_open)
+        .group_by(Ticket.type)
+    ).all()
+
+    # How many of them have a value, by field and type. By type because a
+    # value kept from when a bug became a task is not one the field asks for.
+    filled = session.exec(
+        select(CustomFieldValue.field_id, Ticket.type, func.count())
+        .join(Ticket, Ticket.id == CustomFieldValue.ticket_id)
+        .where(
+            CustomFieldValue.field_id.in_(field_ids),
+            Ticket.team_id == team_id,
+            is_open,
+        )
+        .group_by(CustomFieldValue.field_id, Ticket.type)
+    ).all()
+
+    # And the values themselves, for the kinds broken down. A multi-select's
+    # are grouped by the whole list, which is stored in option order, so the
+    # same choices are one group; each group is split into options below.
+    broken_down = [field.id for field in fields if field.kind in _BROKEN_DOWN]
+    by_value = (
+        session.exec(
+            select(
+                CustomFieldValue.field_id,
+                Ticket.type,
+                CustomFieldValue.value,
+                func.count(),
+            )
+            .join(Ticket, Ticket.id == CustomFieldValue.ticket_id)
+            .where(
+                CustomFieldValue.field_id.in_(broken_down),
+                Ticket.team_id == team_id,
+                is_open,
+            )
+            .group_by(CustomFieldValue.field_id, Ticket.type, CustomFieldValue.value)
+        ).all()
+        if broken_down
+        else []
+    )
+
+    last_set = _last_set(session, field_ids)
+
+    by_id = {field.id: field for field in fields}
+    with_value: dict[int, int] = defaultdict(int)
+    for field_id, ticket_type, count in filled:
+        if applies(by_id[field_id], ticket_type):
+            with_value[field_id] += count
+    chosen: dict[int, dict[object, int]] = defaultdict(lambda: defaultdict(int))
+    for field_id, ticket_type, value, count in by_value:
+        field = by_id[field_id]
+        if not applies(field, ticket_type):
+            continue
+        for item in value if field.kind == CustomFieldKind.multi_select else [value]:
+            chosen[field_id][item] += count
+
+    user_ids = {
+        user_id
+        for field in fields
+        if field.kind == CustomFieldKind.user
+        for user_id in chosen[field.id]
+    }
+    people = (
+        {
+            user.id: UserPublic.model_validate(user)
+            for user in session.exec(select(User).where(User.id.in_(user_ids))).all()
+        }
+        if user_ids
+        else {}
+    )
+
+    def counted(field: CustomField) -> CustomFieldUsage:
+        values = chosen[field.id]
+        named = [
+            CustomFieldPersonCount(user=people[user_id], count=count)
+            for user_id, count in values.items()
+            if field.kind == CustomFieldKind.user and user_id in people
+        ]
+        return CustomFieldUsage(
+            field_id=field.id,
+            open_tickets=sum(
+                count
+                for ticket_type, count in open_by_type
+                if applies(field, ticket_type)
+            ),
+            with_value=with_value[field.id],
+            options=[
+                CustomFieldOptionCount(id=option["id"], count=values[option["id"]])
+                for option in field.options
+            ],
+            people=sorted(
+                named, key=lambda row: (-row.count, row.user.full_name.casefold())
+            ),
+            last_set_at=last_set.get(field.id),
+        )
+
+    return [counted(field) for field in fields]
+
+
+def _last_set(session: Session, field_ids: list[int]) -> dict[int, datetime]:
+    """When a ticket was last given a value in each field: from the history,
+    and from the values themselves, because a ticket filed with a value has
+    no history row for it (`write`, `record`). A value being cleared is not
+    one being set, so it does not count."""
+    latest: dict[int, datetime] = {}
+    for field_id, when in (
+        *session.exec(
+            select(TicketEvent.custom_field_id, func.max(TicketEvent.created_at))
+            .where(
+                TicketEvent.custom_field_id.in_(field_ids),
+                TicketEvent.new_value.is_not(None),
+            )
+            .group_by(TicketEvent.custom_field_id)
+        ).all(),
+        # Through the ticket, so a value in the trash is left out the way
+        # its history is.
+        *session.exec(
+            select(CustomFieldValue.field_id, func.max(CustomFieldValue.updated_at))
+            .join(Ticket, Ticket.id == CustomFieldValue.ticket_id)
+            .where(CustomFieldValue.field_id.in_(field_ids))
+            .group_by(CustomFieldValue.field_id)
+        ).all(),
+    ):
+        if when is not None and (field_id not in latest or when > latest[field_id]):
+            latest[field_id] = when
+    return latest
