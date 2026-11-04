@@ -22,8 +22,10 @@ import { useParams } from 'react-router-dom'
 import { parseServerDate } from '@/api/dates'
 import { errorDetail } from '@/api/errors'
 import {
+  getCustomFieldUsageTeamsTeamIdCustomFieldsUsageGetQueryKey,
   getListCustomFieldsTeamsTeamIdCustomFieldsGetQueryKey,
   useCreateCustomFieldTeamsTeamIdCustomFieldsPost,
+  useCustomFieldUsageTeamsTeamIdCustomFieldsUsageGet,
   useDeleteCustomFieldCustomFieldsFieldIdDelete,
   useListCustomFieldsTeamsTeamIdCustomFieldsGet,
   useReorderCustomFieldsTeamsTeamIdCustomFieldsOrderPut,
@@ -35,12 +37,14 @@ import type {
   CustomFieldOptionWrite,
   CustomFieldRead,
   CustomFieldUpdate,
+  CustomFieldUsage,
   TeamRead,
   TicketType,
 } from '@/api/generated/models'
 import { useAuth } from '@/auth/useAuth'
 import { useTranslation } from '@/i18n'
 import { formatDate, formatList } from '@/i18n/format'
+import { FieldUse } from '@/settings/FieldUse'
 import { KEY_PATTERN, KIND_META, KIND_ORDER, keyFromName } from '@/tickets/customFields'
 import { TYPE_META, TYPE_ORDER } from '@/tickets/ticketMeta'
 import { useTeamByKey } from '@/team/useTeams'
@@ -56,6 +60,9 @@ import { useFocusTrap } from '@/ui/useFocusTrap'
  * the things a field has that a column does not: a kind, a key, whether it
  * is required, and which ticket types it shows on. Archiving is the everyday
  * way to retire one; deleting is further down, behind typing its name.
+ *
+ * Under each field in use, how much it is used (#334): the field nobody
+ * fills in is the one to archive. See FieldUse.
  */
 export default function TeamFieldSettings() {
   const { teamKey } = useParams()
@@ -92,6 +99,7 @@ function FieldList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
   const { t } = useTranslation(['settings', 'common'])
   const queryClient = useQueryClient()
   const query = useListCustomFieldsTeamsTeamIdCustomFieldsGet(team.id)
+  const usage = useCustomFieldUsageTeamsTeamIdCustomFieldsUsageGet(team.id)
   const create = useCreateCustomFieldTeamsTeamIdCustomFieldsPost()
   const update = useUpdateCustomFieldCustomFieldsFieldIdPatch()
   const reorder = useReorderCustomFieldsTeamsTeamIdCustomFieldsOrderPut()
@@ -105,6 +113,7 @@ function FieldList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
 
   const queryKey = getListCustomFieldsTeamsTeamIdCustomFieldsGetQueryKey(team.id)
   const fields = query.data ?? []
+  const usageOf = new Map((usage.data ?? []).map((row) => [row.field_id, row]))
   const active = fields.filter((field) => !field.archived_at)
   const archived = fields.filter((field) => field.archived_at)
 
@@ -118,7 +127,14 @@ function FieldList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
       setError(errorDetail(err, fallback))
       return false
     } finally {
-      await queryClient.invalidateQueries({ queryKey })
+      // The counts too: what a field shows on, and its options, are what
+      // they count.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey }),
+        queryClient.invalidateQueries({
+          queryKey: getCustomFieldUsageTeamsTeamIdCustomFieldsUsageGetQueryKey(team.id),
+        }),
+      ])
     }
   }
 
@@ -247,6 +263,7 @@ function FieldList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
                 <FieldRow
                   key={field.id}
                   field={field}
+                  usage={usageOf.get(field.id)}
                   isAdmin={isAdmin}
                   onEdit={() => {
                     setAdding(null)
@@ -326,9 +343,13 @@ function FieldList({ team, isAdmin }: { team: TeamRead; isAdmin: boolean }) {
   )
 }
 
-/** One field that is in use: drag it, edit it, set it, archive it. */
+/**
+ * One field that is in use: drag it, edit it, set it, archive it, and see
+ * how much it is used.
+ */
 function FieldRow({
   field,
+  usage,
   isAdmin,
   onEdit,
   onRequired,
@@ -336,6 +357,7 @@ function FieldRow({
   onArchive,
 }: {
   field: CustomFieldRead
+  usage?: CustomFieldUsage
   isAdmin: boolean
   onEdit: () => void
   onRequired: (required: boolean) => void
@@ -414,6 +436,11 @@ function FieldRow({
           </button>
         )}
       </span>
+
+      {usage && (
+        // Under the name: past the drag handle and the kind's badge.
+        <FieldUse field={field} usage={usage} className={isAdmin ? 'sm:pl-16' : 'sm:pl-10'} />
+      )}
     </li>
   )
 }
